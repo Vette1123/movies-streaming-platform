@@ -8,9 +8,18 @@ export const siteConfig = {
       title: 'Home',
       href: '/',
     },
+    {
+      title: 'Movies',
+      href: '/movies',
+    },
+    {
+      title: 'TV Shows',
+      href: '/tv-shows',
+    },
   ],
   links: {
     twitter: 'https://twitter.com/Sadge1996',
     github: 'https://github.com/Vette1123',
+    website: 'https://www.mohamedgado.info/',
   },
 }
