@@ -20,12 +20,12 @@ export const HeroSlider = async () => {
           // https://tailwindcss.com/docs/flex-grow
           <div
             key={src.id}
-            className="relative min-h-[500px] flex-[0_0_100%] lg:min-h-screen"
+            className="relative min-h-[400px] flex-[0_0_100%] lg:min-h-screen"
           >
             <Image
               src={getImageURL(src.backdrop_path)}
               alt={src.title}
-              className="absolute inset-0 -z-10 h-full w-full bg-center bg-no-repeat object-cover"
+              className="absolute inset-0 -z-10 h-full w-full object-fill lg:object-cover"
               fill
               sizes="(min-width: 1024px) 1024px, 100vw"
               priority
