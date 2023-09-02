@@ -20,7 +20,7 @@ export const HeroSlider = async () => {
           // https://tailwindcss.com/docs/flex-grow
           <div
             key={src.id}
-            className="relative min-h-[200px] flex-[0_0_100%] lg:min-h-screen"
+            className="relative min-h-[500px] flex-[0_0_100%] lg:min-h-screen"
           >
             <Image
               src={getImageURL(src.backdrop_path)}
@@ -34,7 +34,7 @@ export const HeroSlider = async () => {
         ))}
       </Carousel>
       <div className="pointer-events-none absolute -inset-4 z-40 rounded-md bg-slate-700/50 shadow-[inset_0_1px_0_0_rgba(148,163,184,0.1)] transition motion-reduce:transition-none lg:-inset-x-6 lg:block lg:drop-shadow-lg" />
-      <div className="absolute bottom-0 h-40 w-full bg-gradient-to-t from-black to-transparent" />
+      <div className="pointer-events-none absolute bottom-0 h-40 w-full bg-gradient-to-t from-black to-transparent" />
     </div>
   )
 }
