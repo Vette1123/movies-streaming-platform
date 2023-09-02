@@ -1,36 +1,25 @@
-import Link from 'next/link'
+import React, { Suspense } from 'react'
+import Image from 'next/image'
 
-import { siteConfig } from '@/config/site'
-import { buttonVariants } from '@/components/ui/button'
+import { apiConfig } from '@/lib/tmdbConfig'
+import { HeroSlider } from '@/components/header/hero-slider'
 
-function IndexPage() {
+async function IndexPage() {
   return (
-    <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
-      <div className="flex max-w-screen-md flex-col items-start gap-2">
-        <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
-          Sadge Next.js Starter Template
-        </h1>
-        <p className="max-w-screen-md text-lg text-muted-foreground">
-          A Next.js starter template with TypeScript, Tailwind CSS, and more.
-        </p>
-      </div>
-      <div className="flex gap-4">
-        <Link
-          href={siteConfig.links.github}
-          target="_blank"
-          rel="noreferrer"
-          className={buttonVariants()}
+    <section>
+      <div className="isolate">
+        <Suspense
+          fallback={
+            <div className="h-screen bg-red-800 w-screen">Loading...</div>
+          }
         >
-          Sadge
-        </Link>
-        <Link
-          target="_blank"
-          rel="noreferrer"
-          href={siteConfig.links.github}
-          className={buttonVariants({ variant: 'outline' })}
-        >
-          GitHub
-        </Link>
+          <HeroSlider />
+        </Suspense>
+        {/* <div>hiii</div>
+        <div>hiii</div>
+        <div>hiii</div>
+        <div>hiii</div>
+        <div>hiii</div> */}
       </div>
     </section>
   )

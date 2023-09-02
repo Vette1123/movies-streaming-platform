@@ -1,7 +1,9 @@
 import '@/styles/globals.css'
 
 import type { Metadata } from 'next'
+import { QueryProvider } from '@/providers/query-provider'
 import { ThemeProvider } from '@/providers/theme-provider'
+import { ToastProvider } from '@/providers/toast-provider'
 
 import { siteConfig } from '@/config/site'
 import { fontSans } from '@/lib/fonts'
@@ -43,7 +45,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <div className="flex min-h-screen flex-col">
               <SiteHeader />
-              <div className="flex-1">{children}</div>
+              <div className="flex-1">
+                <QueryProvider>{children}</QueryProvider>
+                <ToastProvider />
+              </div>
             </div>
           </ThemeProvider>
         </body>
