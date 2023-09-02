@@ -18,11 +18,14 @@ export const HeroSlider = async () => {
           // This is to make sure that the carousel items don't grow or shrink
           // when the carousel is initialized
           // https://tailwindcss.com/docs/flex-grow
-          <div key={src.id} className="relative h-screen flex-[0_0_100%]">
+          <div
+            key={src.id}
+            className="relative min-h-[200px] flex-[0_0_100%] lg:min-h-screen"
+          >
             <Image
               src={getImageURL(src.backdrop_path)}
               alt={src.title}
-              className="absolute inset-0 -z-10 h-full w-full object-cover"
+              className="absolute inset-0 -z-10 h-full w-full bg-center bg-no-repeat object-cover"
               fill
               sizes="(min-width: 1024px) 1024px, 100vw"
               priority

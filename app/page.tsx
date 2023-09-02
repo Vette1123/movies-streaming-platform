@@ -1,25 +1,16 @@
 import React, { Suspense } from 'react'
-import Image from 'next/image'
 
-import { apiConfig } from '@/lib/tmdbConfig'
 import { HeroSlider } from '@/components/header/hero-slider'
 
 async function IndexPage() {
   return (
-    <section>
+    <section className="h-full">
       <div className="isolate">
         <Suspense
-          fallback={
-            <div className="h-screen bg-red-800 w-screen">Loading...</div>
-          }
+          fallback={<div className="h-screen bg-red-800">Loading...</div>}
         >
           <HeroSlider />
         </Suspense>
-        {/* <div>hiii</div>
-        <div>hiii</div>
-        <div>hiii</div>
-        <div>hiii</div>
-        <div>hiii</div> */}
       </div>
     </section>
   )
