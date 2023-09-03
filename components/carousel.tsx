@@ -20,7 +20,7 @@ const Carousel = ({ children, ...options }: Props) => {
     <div className="overflow-hidden" ref={emblaRef}>
       {/* 3. The inner div must have a display:flex property */}
       {/* 4. We pass the children as-is so that the outside component can style it accordingly */}
-      <div className="flex flex-1">{children}</div>
+      <div className="flex flex-1 cursor-grabbing">{children}</div>
     </div>
   )
 }
