@@ -5,13 +5,11 @@ import { HeroSlider } from '@/components/header/hero-slider'
 async function IndexPage() {
   return (
     <section className="h-full">
-      <div className="isolate">
-        <Suspense
-          fallback={<div className="h-screen bg-red-800">Loading...</div>}
-        >
-          <HeroSlider />
-        </Suspense>
-      </div>
+      <Suspense
+        fallback={<div className="h-screen bg-red-800">Loading...</div>}
+      >
+        <HeroSlider />
+      </Suspense>
     </section>
   )
 }
