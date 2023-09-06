@@ -19,7 +19,7 @@ export const HeroSlider = async () => {
           // https://tailwindcss.com/docs/flex-grow
           <div
             key={movie.id}
-            className="embla__slide relative min-h-[500px] flex-[0_0_100%] overflow-hidden lg:min-h-screen"
+            className="relative min-h-[500px] flex-[0_0_100%] overflow-hidden lg:min-h-screen"
           >
             <HeroImage movie={movie} />
             <HeroSectionInfo movie={movie} />
