@@ -1,9 +1,9 @@
 import React from 'react'
 import { getLatestPopularMovies } from '@/services/movies'
 
-import Carousel from '../carousel'
-import { HeroImage } from './hero-image'
-import { HeroSectionInfo } from './hero-info'
+import Carousel from '@/components/carousel'
+import { HeroImage } from '@/components/header/hero-image'
+import { HeroSectionInfo } from '@/components/header/hero-info'
 
 export const HeroSlider = async () => {
   const latestMovies = await getLatestPopularMovies()

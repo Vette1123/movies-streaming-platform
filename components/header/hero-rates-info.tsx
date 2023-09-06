@@ -2,9 +2,8 @@ import React from 'react'
 
 import { Movie } from '@/types/movie-result'
 import { dateFormatter, getThreeMoviesGenres } from '@/lib/utils'
-
-import { Icons } from '../icons'
-import { Badge } from '../ui/badge'
+import { Badge } from '@/components/ui/badge'
+import { Icons } from '@/components/icons'
 
 export const HeroRatesInfos = ({ movie }: { movie: Movie }) => {
   const movieGenres = getThreeMoviesGenres(movie.genre_ids)

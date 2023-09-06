@@ -2,13 +2,24 @@
 
 import { useEffect, useState } from 'react'
 
-export const useScreenSize = () => {
-  const [screenSize, setScreenSize] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
+interface ScreenSize {
+  width: number
+  height: number
+}
+
+const useScreenSize = (): ScreenSize => {
+  const isBrowser = typeof window !== 'undefined'
+
+  const [screenSize, setScreenSize] = useState<ScreenSize>({
+    width: isBrowser ? window.innerWidth : 0,
+    height: isBrowser ? window.innerHeight : 0,
   })
 
   useEffect(() => {
+    if (!isBrowser) {
+      return // Skip useEffect on the server
+    }
+
     const handleResize = () => {
       setScreenSize({
         width: window.innerWidth,
@@ -18,17 +29,12 @@ export const useScreenSize = () => {
 
     window.addEventListener('resize', handleResize)
 
-    // Clean up the event listener when the component unmounts
     return () => {
       window.removeEventListener('resize', handleResize)
     }
-  }, [])
+  }, [isBrowser])
 
-  if (screenSize.width >= 1024) {
-    return 'lg'
-  } else if (screenSize.width >= 768) {
-    return 'md'
-  } else {
-    return 'sm'
-  }
+  return screenSize
 }
+
+export default useScreenSize

@@ -4,9 +4,8 @@ import Image from 'next/image'
 import { Movie } from '@/types/movie-result'
 import { getPosterImageURL } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-
-import { Icons } from '../icons'
-import { HeroRatesInfos } from './hero-rates-info'
+import { HeroRatesInfos } from '@/components/header/hero-rates-info'
+import { Icons } from '@/components/icons'
 
 export const HeroSectionInfo = ({ movie }: { movie: Movie }) => {
   return (
