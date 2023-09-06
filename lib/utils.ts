@@ -1,9 +1,8 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
-import { MOVIES_GENRE } from '@/types/movie-genre'
-
-import { apiConfig } from './tmdbConfig'
+import { MOVIES_GENRE } from '@/lib/genres'
+import { apiConfig } from '@/lib/tmdbConfig'
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

@@ -27,7 +27,7 @@ export const HeroSlider = async () => {
               <Image
                 src={getImageURL(movie.backdrop_path)}
                 alt={movie.title}
-                className="absolute inset-0 -z-10 h-full w-full object-fill lg:object-cover"
+                className="absolute inset-0 -z-10 h-full w-full object-cover"
                 fill
                 sizes="(min-width: 1024px) 1024px, 100vw"
                 priority

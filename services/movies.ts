@@ -15,4 +15,14 @@ const getLatestPopularMovies = async () => {
   return fetchClient.get<MovieResponse>(url)
 }
 
-export { getLatestPopularMovies }
+const getLatestTrendingMovies = async () => {
+  const url = `${movieType.trending}/movie/day?language=en-US`
+  return fetchClient.get<MovieResponse>(url)
+}
+
+const getTopRatedMovies = async () => {
+  const url = `movie/${movieType.top_rated}?language=en-US`
+  return fetchClient.get<MovieResponse>(url)
+}
+
+export { getLatestPopularMovies, getLatestTrendingMovies, getTopRatedMovies }
