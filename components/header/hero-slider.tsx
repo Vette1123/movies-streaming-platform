@@ -1,10 +1,8 @@
 import React from 'react'
-import Image from 'next/image'
 import { getLatestPopularMovies } from '@/services/movies'
 
-import { getImageURL } from '@/lib/utils'
-
 import Carousel from '../carousel'
+import { HeroImage } from './hero-image'
 import { HeroSectionInfo } from './hero-info'
 
 export const HeroSlider = async () => {
@@ -22,16 +20,9 @@ export const HeroSlider = async () => {
             // https://tailwindcss.com/docs/flex-grow
             <div
               key={movie.id}
-              className="relative min-h-[400px] flex-[0_0_100%] overflow-hidden lg:min-h-screen"
+              className="relative min-h-[500px] flex-[0_0_100%] overflow-hidden lg:min-h-screen"
             >
-              <Image
-                src={getImageURL(movie.backdrop_path)}
-                alt={movie.title}
-                className="absolute inset-0 -z-10 h-full w-full object-cover"
-                fill
-                sizes="(min-width: 1024px) 1024px, 100vw"
-                priority
-              />
+              <HeroImage movie={movie} />
               <HeroSectionInfo movie={movie} />
               <div className="pointer-events-none absolute -inset-4 rounded-md bg-slate-900/50 shadow-[inset_0_1px_0_0_rgba(148,163,184,0.1)] transition motion-reduce:transition-none lg:-inset-x-6 lg:block lg:drop-shadow-lg" />
             </div>

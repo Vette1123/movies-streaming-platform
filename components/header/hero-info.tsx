@@ -2,7 +2,7 @@ import React from 'react'
 import Image from 'next/image'
 
 import { Movie } from '@/types/movie-result'
-import { getImageURL, getPosterImageURL } from '@/lib/utils'
+import { getPosterImageURL } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
 import { Icons } from '../icons'
