@@ -5,8 +5,15 @@ import SwipeableViews from 'react-swipeable-views'
 
 export const Testing = ({ children }: { children: React.ReactNode }) => {
   return (
-    <SwipeableViews enableMouseEvents autoPlay={true}>
-      {children}
-    </SwipeableViews>
+    <div className="overflow-hidden motion-reduce:transition-none">
+      <SwipeableViews
+        enableMouseEvents
+        className="cursor-grabbing"
+        loop
+        animateTransitions={true}
+      >
+        {children}
+      </SwipeableViews>
+    </div>
   )
 }
