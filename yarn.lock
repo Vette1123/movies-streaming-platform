@@ -327,6 +327,13 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
+"@material-ui/types@^4.0.0":
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/@material-ui/types/-/types-4.1.1.tgz#b65e002d926089970a3271213a3ad7a21b17f02b"
+  integrity sha512-AN+GZNXytX9yxGi0JOfxHrRTbhFybjUJ05rnsBVjcB+16e466Z0Xe5IxawuOayVZgTBNDxmPKo5j4V6OnMtaSQ==
+  dependencies:
+    "@types/react" "*"
+
 "@next/env@13.4.19":
   version "13.4.19"
   resolved "https://registry.npmjs.org/@next/env/-/env-13.4.19.tgz"
@@ -617,7 +624,16 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-swipeable-views@^0.13.2":
+"@types/react-swipeable-views-utils@^0.13.4":
+  version "0.13.4"
+  resolved "https://registry.yarnpkg.com/@types/react-swipeable-views-utils/-/react-swipeable-views-utils-0.13.4.tgz#2a48da267b48467887b146178673f4020dec5b1e"
+  integrity sha512-v0nDk6mMIPAu/kaEnqQpDz2Z7O8ewqy2in7xwobcAAkUKKsdw3MSWFW1BkQ+dPgTrBnj/KXUzx3ZIS6UYviwyA==
+  dependencies:
+    "@material-ui/types" "^4.0.0"
+    "@types/react" "*"
+    "@types/react-swipeable-views" "*"
+
+"@types/react-swipeable-views@*", "@types/react-swipeable-views@^0.13.2":
   version "0.13.2"
   resolved "https://registry.yarnpkg.com/@types/react-swipeable-views/-/react-swipeable-views-0.13.2.tgz#c37cc8978ae60ab0dff209ef3eb1f77185aef330"
   integrity sha512-FiszBm9M0JicAgzO/IwDqpfHQRUEjPZA88UexYsVD6qHJBf5LrbGjR5Mw4+yZbf8ZxJneNqOsZbe4WGjOYG7iQ==
@@ -1246,36 +1262,6 @@ electron-to-chromium@^1.4.477:
   version "1.4.496"
   resolved "https://registry.npmjs.org/electron-to-chromium/-/electron-to-chromium-1.4.496.tgz"
   integrity sha512-qeXC3Zbykq44RCrBa4kr8v/dWzYJA8rAwpyh9Qd+NKWoJfjG5vvJqy9XOJ9H4P/lqulZBCgUWAYi+FeK5AuJ8g==
-
-embla-carousel-autoplay@^8.0.0-rc12:
-  version "8.0.0-rc12"
-  resolved "https://registry.npmjs.org/embla-carousel-autoplay/-/embla-carousel-autoplay-8.0.0-rc12.tgz"
-  integrity sha512-r7kdzpUhnI6rjCjv1CVGJEIj0HF+gEqnO7ip7rLBmmyGZ5xGhO+pjKhAlG+JqCuqr1Xhk8mxO4aGkAxyq2nKAw==
-
-embla-carousel-react@^8.0.0-rc12:
-  version "8.0.0-rc12"
-  resolved "https://registry.npmjs.org/embla-carousel-react/-/embla-carousel-react-8.0.0-rc12.tgz"
-  integrity sha512-Tyd9TNH9i8bb/0S9/WZsmEvfZm8jlFU9sgaWNNgLzbPsUtz/L6UTYuRGOBDOt2oh6VPhaL1G8vRuOAuH81G5Cg==
-  dependencies:
-    embla-carousel "8.0.0-rc12"
-    embla-carousel-reactive-utils "8.0.0-rc12"
-
-embla-carousel-reactive-utils@8.0.0-rc12:
-  version "8.0.0-rc12"
-  resolved "https://registry.npmjs.org/embla-carousel-reactive-utils/-/embla-carousel-reactive-utils-8.0.0-rc12.tgz"
-  integrity sha512-sHYqMYW2qk9UXNMLoBmo4PRe+8qOW8CJDDqfkMB0WlSfrzgi9fCc36nArQz6k9olHsVfEc3haw00KiqRBvVwEg==
-
-embla-carousel-wheel-gestures@^8.0.0-rc04:
-  version "8.0.0-rc04"
-  resolved "https://registry.yarnpkg.com/embla-carousel-wheel-gestures/-/embla-carousel-wheel-gestures-8.0.0-rc04.tgz#62a3056f0683b581f16b8b88a81b009d78bf246c"
-  integrity sha512-Rkyhixlyako1L99zKMOyl9cuBE5B/NT8/Cy0KgoinzaBALz9me5gx49U2uWMA6pnqYUIvY3iIOkJqovLP/kYFA==
-  dependencies:
-    wheel-gestures "^2.2.5"
-
-embla-carousel@8.0.0-rc12:
-  version "8.0.0-rc12"
-  resolved "https://registry.npmjs.org/embla-carousel/-/embla-carousel-8.0.0-rc12.tgz"
-  integrity sha512-/Xkf5zp9gs9Y45lSAT1Witn+r+o+EtoIIZg4V2lYTCaaqdDTxyO0Ddn+z00ya38JGNZrGH9U8wLGK5Hi76CRxw==
 
 emoji-regex@^10.2.1:
   version "10.2.1"
@@ -3363,11 +3349,6 @@ watchpack@2.4.0:
   dependencies:
     glob-to-regexp "^0.4.1"
     graceful-fs "^4.1.2"
-
-wheel-gestures@^2.2.5:
-  version "2.2.5"
-  resolved "https://registry.yarnpkg.com/wheel-gestures/-/wheel-gestures-2.2.5.tgz#d4a7cdcd402500de26f65aabc8553b657515fb7d"
-  integrity sha512-01BlXRjBVt5Gy0VH2rRqMeccHruTGq2Gd1fx0UqCPN8KDeDCmlTXsRGc/hXJk6W+wnO9CNJp2xfntMNRArBxKQ==
 
 which-boxed-primitive@^1.0.2:
   version "1.0.2"
