@@ -26,6 +26,7 @@
     "query-string": "^8.1.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-swipeable-views": "^0.14.0",
     "sonner": "^0.7.0",
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.7"
@@ -36,6 +37,7 @@
     "@types/node": "^20.5.7",
     "@types/react": "^18.2.21",
     "@types/react-dom": "^18.2.7",
+    "@types/react-swipeable-views": "^0.13.2",
     "@typescript-eslint/parser": "^6.5.0",
     "autoprefixer": "^10.4.15",
     "eslint": "^8.48.0",
