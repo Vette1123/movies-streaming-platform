@@ -9,7 +9,7 @@ import { Icons } from '@/components/icons'
 
 export const HeroSectionInfo = ({ movie }: { movie: Movie }) => {
   return (
-    <div className="container relative z-50 h-full py-16 lg:py-24">
+    <div className="container relative z-50 h-full py-20 lg:py-24">
       <div className="flex h-full items-center justify-center gap-x-8">
         <div className="flex w-full grow flex-col">
           <div>

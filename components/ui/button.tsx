@@ -21,7 +21,7 @@ const buttonVariants = cva(
         'animated-watch-now':
           'bg-primary text-secondary-foreground text-2xl font-medium font-sans hover:scale-105 transition-transform animate-border bg-gradient-to-r from-red-500 via-purple-500 to-blue-500 bg-[length:400%_400%]',
         watchNow:
-          'bg-primary text-secondary-foreground text-2xl font-medium font-sans hover:scale-105 transition-transform',
+          'bg-primary text-secondary-foreground text-xl font-medium font-sans hover:scale-105 transition-transform',
       },
       size: {
         default: 'h-10 px-4 py-2',
