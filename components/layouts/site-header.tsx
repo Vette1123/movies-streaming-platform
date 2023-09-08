@@ -9,7 +9,6 @@ import { buttonVariants } from '@/components/ui/button'
 import { Icons } from '@/components/icons'
 import { MainNav } from '@/components/layouts/main-nav'
 import { MobileNav } from '@/components/layouts/mobile-nav'
-import { ThemeToggle } from '@/components/theme-toggle'
 
 export function SiteHeader() {
   const { isShowNavBackground } = useNavbarScrollOverlay()
@@ -57,7 +56,6 @@ export function SiteHeader() {
                 <span className="sr-only">Twitter</span>
               </div>
             </Link>
-            <ThemeToggle />
           </nav>
         </div>
       </div>

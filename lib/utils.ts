@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
+import { ItemType, Movie } from '@/types/movie-result'
 import { MOVIES_GENRE } from '@/lib/genres'
 import { apiConfig } from '@/lib/tmdbConfig'
 
@@ -28,9 +29,16 @@ function numberRounder(number: number) {
   return Math.round(number * 10) / 10
 }
 
-function getThreeMoviesGenres(genres: number[]) {
+function getGenres(genres: number[]) {
   // const threeGenres = genres.slice(0, 3)
   return MOVIES_GENRE.filter((genre) => genres.includes(genre.id))
+}
+
+function itemRedirect(itemType: ItemType) {
+  if (itemType === 'movie') {
+    return '/movies'
+  }
+  return '/series'
 }
 
 export {
@@ -38,6 +46,7 @@ export {
   getImageURL,
   getPosterImageURL,
   dateFormatter,
-  getThreeMoviesGenres,
+  getGenres,
   numberRounder,
+  itemRedirect,
 }

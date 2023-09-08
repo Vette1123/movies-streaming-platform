@@ -22,6 +22,8 @@ interface MovieResponse {
 
 type Param = Record<string, string | number>
 
+type ItemType = 'movie' | 'tv'
+
 interface MultiRequestProps {
   nowPlayingMovies: Movie[]
   latestTrendingMovies: Movie[]
@@ -29,4 +31,4 @@ interface MultiRequestProps {
   allTimeTopRatedMovies: Movie[]
 }
 
-export type { Movie, MovieResponse, Param, MultiRequestProps }
+export type { Movie, MovieResponse, Param, MultiRequestProps, ItemType }

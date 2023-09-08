@@ -1,7 +1,6 @@
 import '@/styles/globals.css'
 
 import type { Metadata } from 'next'
-import { ThemeProvider } from '@/providers/theme-provider'
 import { ToastProvider } from '@/providers/toast-provider'
 
 import { siteConfig } from '@/config/site'
@@ -37,19 +36,17 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <head />
         <body
           className={cn(
-            'min-h-screen bg-background font-sans antialiased',
+            'min-h-screen scroll-smooth bg-background font-sans antialiased',
             fontSans.variable
           )}
         >
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <div className="flex flex-col">
-              <SiteHeader />
-              <div className="h-full flex-1 overflow-x-hidden">
-                {children}
-                <ToastProvider />
-              </div>
+          <div className="flex flex-col">
+            <SiteHeader />
+            <div className="h-full flex-1 overflow-x-hidden">
+              {children}
+              <ToastProvider />
             </div>
-          </ThemeProvider>
+          </div>
         </body>
       </html>
     </>

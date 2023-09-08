@@ -19,18 +19,18 @@ export const MoviesIntroSection = ({
       <Suspense fallback={<div>Loading...</div>}>
         <List
           title="Trending Movies"
-          href="/movies"
           items={latestTrendingMovies}
+          itemType="movie"
         />
       </Suspense>
       <Suspense fallback={<div>Loading...</div>}>
-        <List title="Popular Movies" href="/movies" items={popularMovies} />
+        <List title="Popular Movies" items={popularMovies} itemType="movie" />
       </Suspense>
       <Suspense fallback={<div>Loading...</div>}>
         <List
           title="Top Rated Movies"
-          href="/movies"
           items={allTimeTopRatedMovies}
+          itemType="movie"
         />
       </Suspense>
     </section>

@@ -20,7 +20,6 @@
     "framer-motion": "^10.16.2",
     "lucide-react": "^0.272.0",
     "next": "13.4.19",
-    "next-themes": "^0.2.1",
     "query-string": "^8.1.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",

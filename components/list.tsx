@@ -7,25 +7,26 @@ import Link from 'next/link'
 import { Splide, SplideSlide } from '@splidejs/react-splide'
 import { motion } from 'framer-motion'
 
-import { Movie } from '@/types/movie-result'
+import { ItemType, Movie } from '@/types/movie-result'
 import {
   CHANGE_COLOR_VARIANT,
   HIDDEN_TEXT_ARROW_VARIANT,
   HIDDEN_TEXT_VARIANT,
 } from '@/lib/motion-variants'
+import { itemRedirect } from '@/lib/utils'
 import { Card } from '@/components/card'
 import { Icons } from '@/components/icons'
 
 interface ListProps {
   title: string
-  href: string
   items: Movie[]
+  itemType?: ItemType
 }
 
-export const List = ({ title, href, items }: ListProps) => {
+export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
   return (
-    <section className="container mb-10 pb-16 pt-12">
-      <Link href="/movies">
+    <section className="container mb-10 pb-10 pt-12 lg:pb-20">
+      <Link href={itemRedirect(itemType)}>
         <motion.div
           className="mb-4 flex w-fit items-center gap-2"
           initial="rest"
@@ -63,7 +64,7 @@ export const List = ({ title, href, items }: ListProps) => {
       >
         {items.map((item) => (
           <SplideSlide key={item.id}>
-            <Card item={item} />
+            <Card item={item} itemType={itemType} />
           </SplideSlide>
         ))}
       </Splide>

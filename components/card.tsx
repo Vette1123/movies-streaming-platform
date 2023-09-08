@@ -1,9 +1,15 @@
 import React from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { CalendarDays } from 'lucide-react'
 
-import { Movie } from '@/types/movie-result'
-import { dateFormatter, getPosterImageURL, numberRounder } from '@/lib/utils'
+import { ItemType, Movie } from '@/types/movie-result'
+import {
+  dateFormatter,
+  getPosterImageURL,
+  itemRedirect,
+  numberRounder,
+} from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -14,21 +20,24 @@ import {
 
 interface CardProps {
   item: Movie
+  itemType?: ItemType
 }
 
-export const Card = ({ item }: CardProps) => {
+export const Card = ({ item, itemType = 'movie' }: CardProps) => {
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
-        <div className="group relative">
-          <Image
-            src={`${getPosterImageURL(item.poster_path)}`}
-            alt="Movie"
-            width={250}
-            height={375}
-            className="w-full cursor-pointer rounded-md object-cover shadow-xl"
-          />
-        </div>
+        <Link href={`${itemRedirect(itemType)}/${item.id}`}>
+          <div className="group relative">
+            <Image
+              src={`${getPosterImageURL(item.poster_path)}`}
+              alt="Movie"
+              width={250}
+              height={375}
+              className="w-full cursor-pointer rounded-md object-cover shadow-xl"
+            />
+          </div>
+        </Link>
       </HoverCardTrigger>
       <HoverCardContent className="w-80">
         <div className="flex justify-between space-x-4">
