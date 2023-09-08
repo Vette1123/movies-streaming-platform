@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 }
 
 function TvShows() {
-  return <div>TvShows</div>
+  return <section className="h-full">Series</section>
 }
 
 export default TvShows

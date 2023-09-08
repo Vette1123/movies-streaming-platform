@@ -3,11 +3,9 @@
 import React from 'react'
 import { Splide, SplideSlide } from '@splidejs/react-splide'
 
-import { Card } from './card'
-// Default theme
 import '@splidejs/react-splide/css'
 
-// or other themes
+import { Card } from './card'
 
 export const List = () => {
   return (
@@ -15,15 +13,15 @@ export const List = () => {
       <h3 className="mb-4 text-2xl font-bold">Trending Movies</h3>
       <Splide
         options={{
-          perPage: 4,
           rewind: true,
-          gap: '2rem',
+          gap: '1.5rem',
           arrows: true,
           pagination: false,
+          autoWidth: true,
         }}
       >
-        {Array.from({ length: 30 }, (_, i) => (
-          <SplideSlide key={i} className="min-w-[125px] lg:min-w-[250px]">
+        {Array.from({ length: 20 }, (_, i) => (
+          <SplideSlide key={i}>
             <Card />
           </SplideSlide>
         ))}

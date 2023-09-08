@@ -2,18 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+  overflow-x: hidden !important;
+}
+
 #splide01-track {
   overflow: visible !important;
-}
-.splide__arrow--next {
-  /* right: -15em !important; */
-  /* if screen width > 1024 we push it abit */
-  @media screen and (min-width: 1024px) {
-    right: -15em !important;
-  }
-  @media screen and (max-width: 1024px) {
-    right: -0.5em !important;
-  }
 }
 
 @layer base {

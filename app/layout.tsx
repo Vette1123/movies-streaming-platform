@@ -44,7 +44,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <div className="flex flex-col">
               <SiteHeader />
-              <div className="h-full flex-1 overflow-x-hidden">
+              <div className="h-full flex-1">
                 {children}
                 <ToastProvider />
               </div>

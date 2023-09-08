@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 }
 
 function Movies() {
-  return <div className="container max-w-screen-2xl pt-20">Movies</div>
+  return <section className="h-full">Movies</section>
 }
 
 export default Movies
