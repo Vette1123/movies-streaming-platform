@@ -8,7 +8,7 @@ import { ToastProvider } from '@/providers/toast-provider'
 import { siteConfig } from '@/config/site'
 import { fontSans } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
-import { SiteHeader } from '@/components/site-header'
+import { SiteHeader } from '@/components/layouts/site-header'
 
 export const metadata: Metadata = {
   title: {
@@ -45,7 +45,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <div className="flex flex-col">
               <SiteHeader />
-              <div className="h-full flex-1">
+              <div className="h-full flex-1 overflow-x-hidden">
                 <QueryProvider>{children}</QueryProvider>
                 <ToastProvider />
               </div>

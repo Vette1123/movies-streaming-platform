@@ -1,6 +1,10 @@
+'use client'
+
 import Link from 'next/link'
 
 import { siteConfig } from '@/config/site'
+import { cn } from '@/lib/utils'
+import { useNavbarScrollOverlay } from '@/hooks/use-scroll-overlay'
 import { buttonVariants } from '@/components/ui/button'
 import { Icons } from '@/components/icons'
 import { MainNav } from '@/components/layouts/main-nav'
@@ -8,8 +12,16 @@ import { MobileNav } from '@/components/layouts/mobile-nav'
 import { ThemeToggle } from '@/components/theme-toggle'
 
 export function SiteHeader() {
+  const { isShowNavBackground } = useNavbarScrollOverlay()
   return (
-    <header className="fixed inset-x-0 top-0 z-40 w-full">
+    <header
+      className={cn(
+        'fixed inset-x-0 top-0 z-40 w-full transition duration-200',
+        {
+          'bg-zinc-900/90': isShowNavBackground,
+        }
+      )}
+    >
       <div className="container flex h-16 max-w-screen-2xl items-center space-x-4 sm:justify-between sm:space-x-0">
         <MainNav items={siteConfig.mainNav} />
         <MobileNav items={siteConfig.mainNav} />

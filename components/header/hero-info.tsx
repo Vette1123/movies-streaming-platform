@@ -9,7 +9,7 @@ import { Icons } from '@/components/icons'
 
 export const HeroSectionInfo = ({ movie }: { movie: Movie }) => {
   return (
-    <div className="container relative z-50 h-full py-20 lg:py-24">
+    <div className="container relative z-50 h-full pt-20 lg:pt-28">
       <div className="flex h-full items-center justify-center gap-x-8">
         <div className="flex w-full grow flex-col">
           <div>
@@ -20,7 +20,7 @@ export const HeroSectionInfo = ({ movie }: { movie: Movie }) => {
             </p>
           </div>
           <div className="flex justify-center lg:justify-start">
-            <Button className="mt-8" size="2xl" variant="watchNow">
+            <Button className="mt-8 rounded-full" size="2xl" variant="watchNow">
               <Icons.watch className="mr-2" />
               Watch Now
             </Button>
