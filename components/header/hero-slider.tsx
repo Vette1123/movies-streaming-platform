@@ -1,22 +1,15 @@
 import React from 'react'
-import { getLatestPopularMovies } from '@/services/movies'
 
+import { Movie } from '@/types/movie-result'
 import { Carousel } from '@/components/carousel'
 import { HeroImage } from '@/components/header/hero-image'
 import { HeroSectionInfo } from '@/components/header/hero-info'
 
-export const HeroSlider = async () => {
-  const latestMovies = await getLatestPopularMovies()
-
+export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
   return (
     <div className="relative overflow-hidden">
       <Carousel>
-        {latestMovies?.results.map((movie) => (
-          // flex-[0_0_100%] is a custom class that sets flex-basis: 100%
-          // and flex-grow: 0 and flex-shrink: 0
-          // This is to make sure that the carousel items don't grow or shrink
-          // when the carousel is initialized
-          // https://tailwindcss.com/docs/flex-grow
+        {movies?.map((movie) => (
           <div
             key={movie.id}
             className="relative min-h-[500px] overflow-hidden lg:min-h-screen"

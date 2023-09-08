@@ -5,9 +5,14 @@ import { apiConfig } from '@/lib/tmdbConfig'
 export const fetchClient = {
   get: async <T>(
     url: string,
-    params?: Record<string, string | number>
+    params?: Record<string, string | number>,
+    isHeaderAuth = false
   ): Promise<T> => {
-    const query = { ...params, api_key: apiConfig.apiKey! }
+    const query = {
+      ...params,
+      ...(!isHeaderAuth && { api_key: apiConfig.apiKey! }),
+    }
+
     try {
       const res = await fetch(
         `${apiConfig.baseUrl}${url}?${new URLSearchParams(query)}`,
@@ -15,6 +20,9 @@ export const fetchClient = {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            ...(isHeaderAuth && {
+              Authorization: `Bearer ${apiConfig.headerKey}`,
+            }),
           },
         }
       )

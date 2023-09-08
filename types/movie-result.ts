@@ -20,4 +20,13 @@ interface MovieResponse {
   results: Movie[]
 }
 
-export type { Movie, MovieResponse }
+type Param = Record<string, string | number>
+
+interface MultiRequestProps {
+  nowPlayingMovies: Movie[]
+  latestTrendingMovies: Movie[]
+  popularMovies: Movie[]
+  allTimeTopRatedMovies: Movie[]
+}
+
+export type { Movie, MovieResponse, Param, MultiRequestProps }

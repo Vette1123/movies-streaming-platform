@@ -1,6 +1,7 @@
 const apiConfig = {
   baseUrl: process.env.NEXT_PUBLIC_TMDB_BASEURL,
   apiKey: process.env.TMDB_API_KEY,
+  headerKey: process.env.TMDB_HEADER_KEY,
   originalImage: (imgPath: string) =>
     `https://image.tmdb.org/t/p/original/${imgPath}`,
   w500Image: (imgPath: string) => `https://image.tmdb.org/t/p/w500/${imgPath}`,

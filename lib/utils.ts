@@ -16,17 +16,21 @@ function getPosterImageURL(path: string) {
   return `${apiConfig.w500Image(path)}`
 }
 
-function dateFormatter(date: string) {
+function dateFormatter(date: string, showDay: boolean = false) {
   return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
+    day: showDay ? 'numeric' : undefined,
   })
+}
+
+function numberRounder(number: number) {
+  return Math.round(number * 10) / 10
 }
 
 function getThreeMoviesGenres(genres: number[]) {
   // const threeGenres = genres.slice(0, 3)
-  const threeGenres = genres
-  return MOVIES_GENRE.filter((genre) => threeGenres.includes(genre.id))
+  return MOVIES_GENRE.filter((genre) => genres.includes(genre.id))
 }
 
 export {
@@ -35,4 +39,5 @@ export {
   getPosterImageURL,
   dateFormatter,
   getThreeMoviesGenres,
+  numberRounder,
 }

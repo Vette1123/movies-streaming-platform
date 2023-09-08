@@ -1,27 +1,59 @@
-import { MovieResponse } from '@/types/movie-result'
+import { toast } from 'sonner'
+
+import { MovieResponse, MultiRequestProps, Param } from '@/types/movie-result'
 import { fetchClient } from '@/lib/fetch-client'
 import { movieType } from '@/lib/tmdbConfig'
 
-// example for making api call using axios
-// const getLatestPopularMoviesAxios = async () => {
-//   const url = `movie/${movieType.now_playing}`
-//   return axiosClient.get<any, MovieResponse>(url)
-// }
-
-// making the api call using fetch
-const getLatestPopularMovies = async () => {
+const getNowPlayingMovies = async (params: Param = {}) => {
   const url = `movie/${movieType.now_playing}`
-  return fetchClient.get<MovieResponse>(url)
+  return fetchClient.get<MovieResponse>(url, params)
 }
 
-const getLatestTrendingMovies = async () => {
+const getLatestTrendingMovies = async (params: Param = {}) => {
   const url = `${movieType.trending}/movie/day?language=en-US`
-  return fetchClient.get<MovieResponse>(url)
+  return fetchClient.get<MovieResponse>(url, params, true)
 }
 
-const getTopRatedMovies = async () => {
+const getAllTimeTopRatedMovies = async (params: Param = {}) => {
   const url = `movie/${movieType.top_rated}?language=en-US`
-  return fetchClient.get<MovieResponse>(url)
+  return fetchClient.get<MovieResponse>(url, params, true)
+}
+const getPopularMovies = async (params: Param = {}) => {
+  const url = `movie/${movieType.popular}?language=en-US`
+  return fetchClient.get<MovieResponse>(url, params, true)
 }
 
-export { getLatestPopularMovies, getLatestTrendingMovies, getTopRatedMovies }
+const populateHomePageData = async (): Promise<MultiRequestProps> => {
+  try {
+    const [
+      nowPlayingResponse,
+      latestTrendingResponse,
+      popularResponse,
+      allTimeTopRatedResponse,
+    ] = await Promise.all([
+      getNowPlayingMovies(),
+      getLatestTrendingMovies(),
+      getPopularMovies(),
+      getAllTimeTopRatedMovies(),
+    ])
+
+    return {
+      nowPlayingMovies: nowPlayingResponse?.results || [],
+      latestTrendingMovies: latestTrendingResponse?.results || [],
+      popularMovies: popularResponse?.results || [],
+      allTimeTopRatedMovies: allTimeTopRatedResponse?.results || [],
+    }
+  } catch (error: any) {
+    console.error(error, 'error')
+    toast.error(error.message)
+    throw new Error(error)
+  }
+}
+
+export {
+  getNowPlayingMovies,
+  getLatestTrendingMovies,
+  getAllTimeTopRatedMovies,
+  getPopularMovies,
+  populateHomePageData,
+}
