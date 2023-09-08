@@ -2,11 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  overflow-x: hidden !important;
-}
-
-#splide01-track {
+.splide__track.splide__track--slide {
   overflow: visible !important;
 }
 
