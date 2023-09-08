@@ -1,11 +1,13 @@
 'use client'
 
 import React from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 
 import { MovieDetails } from '@/types/movie-details'
+import { STREAMING_MOVIES_API_URL } from '@/lib/constants'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 import { HeroImage } from '@/components/header/hero-image'
+import { Icons } from '@/components/icons'
 
 export const DetailsHero = ({ movie }: { movie: MovieDetails }) => {
   const [isIframeShown, setIsIframeShown] = React.useState(false)
@@ -13,23 +15,34 @@ export const DetailsHero = ({ movie }: { movie: MovieDetails }) => {
 
   const playVideo = () => {
     if (iframeRef.current) {
-      iframeRef.current.src = `https://vidsrc.to/embed/movie/${movie?.id}?autoplay=1`
+      iframeRef.current.src = `${STREAMING_MOVIES_API_URL}/movie/${movie?.id}?autoplay=1`
       setIsIframeShown(true)
     }
   }
   return (
-    <section className="relative isolate h-screen min-h-[500px] overflow-hidden">
+    <section className="relative isolate h-[500px] overflow-hidden lg:h-screen">
       <HeroImage movie={movie} />
       <div className="container relative z-50 h-full max-w-screen-2xl">
         <div className="flex h-full items-center justify-center">
-          <Button
-            onClick={playVideo}
-            className={cn({
-              hidden: isIframeShown,
-            })}
-          >
-            Play
-          </Button>
+          <AnimatePresence>
+            {!isIframeShown && (
+              <motion.div
+                transition={{ type: 'spring', stiffness: 500 }}
+                initial={{ opacity: 0, y: 80 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -150 }}
+                className={cn({
+                  hidden: isIframeShown,
+                })}
+              >
+                <Icons.playIcon
+                  onClick={playVideo}
+                  fill="#a5b4fc"
+                  className={cn('h-24 w-24 cursor-pointer text-primary')}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
           <iframe
             className={cn('h-full w-full py-20', {
               hidden: !isIframeShown,
