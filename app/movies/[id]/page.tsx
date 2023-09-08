@@ -1,7 +1,15 @@
 import React from 'react'
+import { getMovieDetailsById } from '@/services/movies'
 
-const MoviePage = ({ params }: { params: { id: string } }) => {
-  return <div>MoviePage</div>
+import { DetailsHero } from '@/components/movie/details-hero'
+
+const MoviePage = async ({ params }: { params: { id: string } }) => {
+  const movieDetails = await getMovieDetailsById(params?.id)
+  return (
+    <header className="relative">
+      <DetailsHero movie={movieDetails} />
+    </header>
+  )
 }
 
 export default MoviePage

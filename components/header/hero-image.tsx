@@ -1,10 +1,11 @@
 import React from 'react'
 import Image from 'next/image'
 
+import { MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
 import { getImageURL, getPosterImageURL } from '@/lib/utils'
 
-export const HeroImage = ({ movie }: { movie: Movie }) => {
+export const HeroImage = ({ movie }: { movie: Movie | MovieDetails }) => {
   return (
     <>
       <Image

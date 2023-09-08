@@ -1,5 +1,6 @@
 import { toast } from 'sonner'
 
+import { MovieDetails } from '@/types/movie-details'
 import { MovieResponse, MultiRequestProps, Param } from '@/types/movie-result'
 import { fetchClient } from '@/lib/fetch-client'
 import { movieType } from '@/lib/tmdbConfig'
@@ -50,10 +51,16 @@ const populateHomePageData = async (): Promise<MultiRequestProps> => {
   }
 }
 
+const getMovieDetailsById = async (id: string, params: Param = {}) => {
+  const url = `movie/${id}?language=en-US`
+  return fetchClient.get<MovieDetails>(url, params, true)
+}
+
 export {
   getNowPlayingMovies,
   getLatestTrendingMovies,
   getAllTimeTopRatedMovies,
   getPopularMovies,
   populateHomePageData,
+  getMovieDetailsById,
 }
