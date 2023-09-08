@@ -1,3 +1,3 @@
-const TOP_OFFSET = 200
+const TOP_OFFSET = 60
 
 export { TOP_OFFSET }

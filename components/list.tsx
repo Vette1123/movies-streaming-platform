@@ -18,10 +18,12 @@ export const List = () => {
           perPage: 4,
           rewind: true,
           gap: '2rem',
+          arrows: true,
+          pagination: false,
         }}
       >
         {Array.from({ length: 30 }, (_, i) => (
-          <SplideSlide key={i}>
+          <SplideSlide key={i} className="min-w-[125px] lg:min-w-[250px]">
             <Card />
           </SplideSlide>
         ))}
