@@ -39,14 +39,14 @@ export const Card = ({ item, itemType = 'movie' }: CardProps) => {
           </div>
         </Link>
       </HoverCardTrigger>
-      <HoverCardContent className="w-80">
+      <HoverCardContent className="hidden w-80 md:block">
         <div className="flex justify-between space-x-4">
           <Avatar>
             <AvatarImage src="/personal-logo.png" />
             <AvatarFallback>VC</AvatarFallback>
           </Avatar>
           <div className="space-y-1">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <h4 className="text-sm font-semibold">
                 {item.title} ({item.release_date.slice(0, 4)})
               </h4>
