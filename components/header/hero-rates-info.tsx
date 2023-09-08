@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Icons } from '@/components/icons'
 
 export const HeroRatesInfos = ({ movie }: { movie: Movie }) => {
-  const movieGenres = getGenres(movie.genre_ids)
+  const movieGenres = getGenres(movie?.genre_ids)
   return (
     <div className="mt-4 flex flex-wrap items-center gap-2 lg:gap-3">
       <Badge className="uppercase">{movie.original_language}</Badge>

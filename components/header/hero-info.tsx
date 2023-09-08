@@ -3,9 +3,8 @@ import Image from 'next/image'
 
 import { Movie } from '@/types/movie-result'
 import { getPosterImageURL } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
+import { AnimatedWatchButton } from '@/components/header/animated-watch-button'
 import { HeroRatesInfos } from '@/components/header/hero-rates-info'
-import { Icons } from '@/components/icons'
 
 export const HeroSectionInfo = ({ movie }: { movie: Movie }) => {
   return (
@@ -19,12 +18,7 @@ export const HeroSectionInfo = ({ movie }: { movie: Movie }) => {
               {movie.overview}
             </p>
           </div>
-          <div className="flex justify-center lg:justify-start">
-            <Button className="mt-8 rounded-full" size="2xl" variant="watchNow">
-              <Icons.watch className="mr-2" />
-              Watch Now
-            </Button>
-          </div>
+          <AnimatedWatchButton movieId={movie?.id} />
         </div>
         <div className="hidden lg:flex">
           <div className="relative min-h-[700px] w-[400px]">
