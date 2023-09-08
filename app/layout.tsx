@@ -1,7 +1,6 @@
 import '@/styles/globals.css'
 
 import type { Metadata } from 'next'
-import { QueryProvider } from '@/providers/query-provider'
 import { ThemeProvider } from '@/providers/theme-provider'
 import { ToastProvider } from '@/providers/toast-provider'
 
@@ -46,7 +45,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             <div className="flex flex-col">
               <SiteHeader />
               <div className="h-full flex-1 overflow-x-hidden">
-                <QueryProvider>{children}</QueryProvider>
+                {children}
                 <ToastProvider />
               </div>
             </div>
