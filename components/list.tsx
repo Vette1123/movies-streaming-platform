@@ -56,21 +56,26 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
           </motion.span>
         </Link>
       </motion.div>
-      <Splide
-        options={{
-          rewind: true,
-          gap: '1.5rem',
-          arrows: true,
-          pagination: false,
-          autoWidth: true,
-        }}
-      >
-        {items.map((item) => (
-          <SplideSlide key={item.id}>
-            <Card item={item} itemType={itemType} />
-          </SplideSlide>
-        ))}
-      </Splide>
+      {items.length === 0 && (
+        <p className="text-lg text-gray-400">No items to show</p>
+      )}
+      {items.length > 0 && (
+        <Splide
+          options={{
+            rewind: true,
+            gap: '1.5rem',
+            arrows: true,
+            pagination: false,
+            autoWidth: true,
+          }}
+        >
+          {items.map((item) => (
+            <SplideSlide key={item.id}>
+              <Card item={item} itemType={itemType} />
+            </SplideSlide>
+          ))}
+        </Splide>
+      )}
     </nav>
   )
 }

@@ -2,17 +2,23 @@ import React from 'react'
 import Image from 'next/image'
 
 import { MovieCredits, MovieDetails } from '@/types/movie-details'
+import { Movie } from '@/types/movie-result'
 import { getPosterImageURL } from '@/lib/utils'
+import { DetailsCredits } from '@/components/movie/details-credits'
 import { DetailsExtraInfo } from '@/components/movie/details-extra-info'
 
-import { DetailsCredits } from './details-credits'
+import { List } from '../list'
 
 export const DetailsPageContent = ({
   movie,
   movieCredits,
+  similarMovies,
+  recommendedMovies,
 }: {
   movie: MovieDetails
   movieCredits: MovieCredits
+  similarMovies: Movie[]
+  recommendedMovies: Movie[]
 }) => {
   const director = movieCredits?.crew?.find((crew) => crew.job === 'Director')
     ?.name
@@ -36,6 +42,8 @@ export const DetailsPageContent = ({
           <DetailsCredits movieCredits={movieCredits} />
         </section>
       </div>
+      <List title="Recommended Movies" items={recommendedMovies} />
+      <List title="Similar Movies" items={similarMovies} />
     </section>
   )
 }

@@ -65,17 +65,32 @@ const getMovieCreditsById = async (id: string, params: Param = {}) => {
   return fetchClient.get<MovieCredits>(url, params, true)
 }
 
+const getSimilarMoviesById = async (id: string, params: Param = {}) => {
+  const url = `movie/${id}/similar?language=en-US`
+  return fetchClient.get<MovieResponse>(url, params, true)
+}
+
+const getRecommendedMoviesById = async (id: string, params: Param = {}) => {
+  const url = `movie/${id}/recommendations?language=en-US`
+  return fetchClient.get<MovieResponse>(url, params, true)
+}
+
 const populateDetailsPageData = async (
   id: string
 ): Promise<MultiDetailsRequestProps> => {
   try {
-    const [movieDetails, movieCredits] = await Promise.all([
-      getMovieDetailsById(id),
-      getMovieCreditsById(id),
-    ])
+    const [movieDetails, movieCredits, similarMovies, recommendedMovies] =
+      await Promise.all([
+        getMovieDetailsById(id),
+        getMovieCreditsById(id),
+        getSimilarMoviesById(id),
+        getRecommendedMoviesById(id),
+      ])
     return {
       movieDetails,
       movieCredits,
+      similarMovies: similarMovies?.results || [],
+      recommendedMovies: recommendedMovies?.results || [],
     }
   } catch (error: any) {
     console.error(error, 'error')

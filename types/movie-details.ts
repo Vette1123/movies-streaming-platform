@@ -1,4 +1,5 @@
 import { MovieGenre } from '@/types/movie-genre'
+import { Movie } from '@/types/movie-result'
 
 interface MovieDetails {
   adult: boolean
@@ -79,6 +80,8 @@ interface MovieCredits {
 interface MultiDetailsRequestProps {
   movieDetails: MovieDetails
   movieCredits: MovieCredits
+  similarMovies: Movie[]
+  recommendedMovies: Movie[]
 }
 
 export type { MovieDetails, MovieCredits, MultiDetailsRequestProps }
