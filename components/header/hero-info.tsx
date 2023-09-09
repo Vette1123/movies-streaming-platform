@@ -14,7 +14,7 @@ export const HeroSectionInfo = ({ movie }: { movie: Movie }) => {
           <div>
             <h2 className="text-sm font-bold lg:text-6xl">{movie.title}</h2>
             <HeroRatesInfos movie={movie} />
-            <p className="prose-invert mt-4 text-xs font-bold lg:text-lg">
+            <p className="prose-invert mt-2 text-xs font-bold lg:text-lg">
               {movie.overview}
             </p>
           </div>

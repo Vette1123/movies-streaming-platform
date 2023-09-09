@@ -1,6 +1,10 @@
 import { toast } from 'sonner'
 
-import { MovieDetails } from '@/types/movie-details'
+import {
+  MovieCredits,
+  MovieDetails,
+  MultiDetailsRequestProps,
+} from '@/types/movie-details'
 import { MovieResponse, MultiRequestProps, Param } from '@/types/movie-result'
 import { fetchClient } from '@/lib/fetch-client'
 import { movieType } from '@/lib/tmdbConfig'
@@ -56,6 +60,30 @@ const getMovieDetailsById = async (id: string, params: Param = {}) => {
   return fetchClient.get<MovieDetails>(url, params, true)
 }
 
+const getMovieCreditsById = async (id: string, params: Param = {}) => {
+  const url = `movie/${id}/credits?language=en-US`
+  return fetchClient.get<MovieCredits>(url, params, true)
+}
+
+const populateDetailsPageData = async (
+  id: string
+): Promise<MultiDetailsRequestProps> => {
+  try {
+    const [movieDetails, movieCredits] = await Promise.all([
+      getMovieDetailsById(id),
+      getMovieCreditsById(id),
+    ])
+    return {
+      movieDetails,
+      movieCredits,
+    }
+  } catch (error: any) {
+    console.error(error, 'error')
+    toast.error(error.message)
+    throw new Error(error)
+  }
+}
+
 export {
   getNowPlayingMovies,
   getLatestTrendingMovies,
@@ -63,4 +91,6 @@ export {
   getPopularMovies,
   populateHomePageData,
   getMovieDetailsById,
+  getMovieCreditsById,
+  populateDetailsPageData,
 }

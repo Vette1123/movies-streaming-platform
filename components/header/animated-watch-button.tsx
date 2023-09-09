@@ -15,7 +15,7 @@ interface AnimatedWatchButtonProps {
 export const AnimatedWatchButton = ({ movieId }: AnimatedWatchButtonProps) => {
   return (
     <motion.div
-      className={cn('flex w-fit justify-center lg:justify-start')}
+      className={cn('flex justify-center lg:w-fit lg:justify-start')}
       whileHover={{ scale: 1.1 }}
       transition={{ type: 'spring', stiffness: 500 }}
       initial={{ opacity: 0, y: 80 }}

@@ -1,7 +1,10 @@
 import { MovieDetails } from '@/types/movie-details'
 import { convertMinutesToHours, moneyFormatter } from '@/lib/utils'
 
-export const extraInfoFormatter = (movie: MovieDetails) => [
+export const extraInfoFormatter = (
+  movie: MovieDetails,
+  director: string | undefined
+) => [
   {
     name: 'Runtime:',
     value: convertMinutesToHours(movie?.runtime),
@@ -22,5 +25,10 @@ export const extraInfoFormatter = (movie: MovieDetails) => [
   {
     name: 'Revenue:',
     value: moneyFormatter(movie?.revenue),
+  },
+  {
+    name: 'Director:',
+    value: director,
+    isLink: true,
   },
 ]
