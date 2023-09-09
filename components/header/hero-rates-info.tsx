@@ -19,7 +19,7 @@ export const HeroRatesInfos = ({
   const movieGenres = getGenres(movie?.genre_ids, movieDetails?.genres)
 
   return (
-    <div className="my-2 flex flex-wrap items-center gap-2 lg:gap-3">
+    <div className="my-4 flex flex-wrap items-center gap-2 lg:gap-3">
       <Badge className="uppercase">{item?.original_language}</Badge>
       <Badge className="uppercase">{item?.adult ? 'NC-17' : 'G'}</Badge>
       <div className="flex items-center text-xs lg:text-base">

@@ -1,12 +1,13 @@
 import '@/styles/globals.css'
 
 import type { Metadata } from 'next'
+import { QueryProvider } from '@/providers/query-provider'
 import { ToastProvider } from '@/providers/toast-provider'
 
 import { siteConfig } from '@/config/site'
 import { fontSans } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
-import Footer from '@/components/footer'
+import { Footer } from '@/components/footer'
 import { SiteHeader } from '@/components/layouts/site-header'
 
 export const metadata: Metadata = {
@@ -44,7 +45,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <div className="flex flex-col">
             <SiteHeader />
             <div className="h-full flex-1 overflow-x-hidden">
-              {children}
+              <QueryProvider>{children}</QueryProvider>
               <ToastProvider />
               <Footer />
             </div>

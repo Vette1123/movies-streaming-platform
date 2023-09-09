@@ -34,4 +34,23 @@ const CHANGE_COLOR_VARIANT = {
   },
 }
 
-export { HIDDEN_TEXT_VARIANT, CHANGE_COLOR_VARIANT, HIDDEN_TEXT_ARROW_VARIANT }
+const CARD_VARIANT = {
+  rest: { opacity: 0.8, scale: 1, y: 0 },
+  hover: {
+    opacity: 1,
+    scale: 1.1,
+    y: -10,
+    transition: {
+      duration: 0.8,
+      ease: 'easeIn',
+      type: 'spring',
+    },
+  },
+}
+
+export {
+  HIDDEN_TEXT_VARIANT,
+  CHANGE_COLOR_VARIANT,
+  HIDDEN_TEXT_ARROW_VARIANT,
+  CARD_VARIANT,
+}

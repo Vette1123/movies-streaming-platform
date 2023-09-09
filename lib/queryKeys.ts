@@ -1,3 +1,3 @@
 export const QUERY_KEYS = {
-  NOW_PLAYING_MOVIES: 'nowPlayingMovies',
+  MOVIES_KEY: 'movies_react-query_key',
 }

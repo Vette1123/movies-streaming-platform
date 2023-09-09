@@ -51,8 +51,8 @@ function moneyFormatter(money: number) {
 }
 
 function convertMinutesToHours(minutes: number): string {
-  if (isNaN(minutes)) {
-    throw new Error('Minutes must be a number')
+  if (!minutes) {
+    return 'N/A'
   }
 
   const hours = Math.floor(minutes / 60)

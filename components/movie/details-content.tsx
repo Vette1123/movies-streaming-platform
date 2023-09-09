@@ -4,10 +4,9 @@ import Image from 'next/image'
 import { MovieCredits, MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
 import { getPosterImageURL } from '@/lib/utils'
+import { List } from '@/components/list'
 import { DetailsCredits } from '@/components/movie/details-credits'
 import { DetailsExtraInfo } from '@/components/movie/details-extra-info'
-
-import { List } from '../list'
 
 export const DetailsPageContent = ({
   movie,

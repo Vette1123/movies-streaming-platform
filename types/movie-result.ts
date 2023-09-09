@@ -31,4 +31,13 @@ interface MultiRequestProps {
   allTimeTopRatedMovies: Movie[]
 }
 
-export type { Movie, MovieResponse, Param, MultiRequestProps, ItemType }
+type PopularMovieAction = (params?: Param) => Promise<MovieResponse>
+
+export type {
+  Movie,
+  MovieResponse,
+  Param,
+  MultiRequestProps,
+  ItemType,
+  PopularMovieAction,
+}

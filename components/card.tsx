@@ -1,9 +1,11 @@
 import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { CalendarDays } from 'lucide-react'
 
 import { ItemType, Movie } from '@/types/movie-result'
+import { CARD_VARIANT } from '@/lib/motion-variants'
 import {
   dateFormatter,
   getPosterImageURL,
@@ -21,22 +23,29 @@ import {
 interface CardProps {
   item: Movie
   itemType?: ItemType
+  isTruncateOverview?: boolean
 }
 
-export const Card = ({ item, itemType = 'movie' }: CardProps) => {
+export const Card = ({
+  item,
+  itemType = 'movie',
+  isTruncateOverview = true,
+}: CardProps) => {
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
         <Link href={`${itemRedirect(itemType)}/${item.id}`}>
-          <div className="group relative">
-            <Image
-              src={`${getPosterImageURL(item.poster_path)}`}
-              alt="Movie"
-              width={250}
-              height={375}
-              className="w-full cursor-pointer rounded-md object-cover shadow-xl"
-            />
-          </div>
+          <motion.div initial="rest" whileHover="hover" animate="rest">
+            <motion.div className="group relative" variants={CARD_VARIANT}>
+              <Image
+                src={`${getPosterImageURL(item.poster_path)}`}
+                alt="Movie"
+                width={250}
+                height={375}
+                className="w-full cursor-pointer rounded-md object-cover shadow-xl"
+              />
+            </motion.div>
+          </motion.div>
         </Link>
       </HoverCardTrigger>
       <HoverCardContent className="hidden w-80 md:block">
@@ -53,7 +62,7 @@ export const Card = ({ item, itemType = 'movie' }: CardProps) => {
               <Badge>{numberRounder(item.vote_average)}</Badge>
             </div>
             <p className="text-sm">
-              {item.overview.length > 100 ? (
+              {isTruncateOverview && item.overview.length > 100 ? (
                 <>{item.overview.slice(0, 100)}...</>
               ) : (
                 item.overview
