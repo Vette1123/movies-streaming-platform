@@ -35,10 +35,12 @@ export const DetailsExtraInfo = ({
                 href={`${SEARCH_ACTOR_GOOGLE}${info.value}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group w-fit underline underline-offset-4 transition-all ease-in-out hover:text-cyan-200"
+                className="group w-fit transition-all ease-in-out hover:text-cyan-200"
               >
                 <span className="inline-flex items-center gap-1">
-                  {info.value}
+                  <span className="underline underline-offset-4">
+                    {info.value}
+                  </span>
                   <Icons.arrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" />
                 </span>
               </Link>

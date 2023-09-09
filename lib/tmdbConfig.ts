@@ -4,7 +4,7 @@ const apiConfig = {
   headerKey: process.env.TMDB_HEADER_KEY,
   originalImage: (imgPath: string) =>
     `https://image.tmdb.org/t/p/original/${imgPath}`,
-  w500Image: (imgPath: string) => `https://image.tmdb.org/t/p/w500/${imgPath}`,
+  w500Image: (imgPath: string) => `https://image.tmdb.org/t/p/w500${imgPath}`,
 }
 
 const category = {
