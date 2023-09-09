@@ -25,13 +25,16 @@ interface ListProps {
 
 export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
   return (
-    <section className="container mb-10 pb-10 pt-12 lg:pb-20">
-      <Link href={itemRedirect(itemType)}>
-        <motion.div
+    <nav className="pb-10 pt-12 lg:pb-20">
+      <motion.div
+        initial="rest"
+        whileHover="hover"
+        animate="rest"
+        className="w-fit"
+      >
+        <Link
+          href={itemRedirect(itemType)}
           className="mb-4 flex w-fit items-center gap-2"
-          initial="rest"
-          whileHover="hover"
-          animate="rest"
         >
           <motion.h2
             className="text-2xl font-bold transition"
@@ -40,19 +43,19 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
             {title}
           </motion.h2>
           <motion.div
-            className="text-base text-cyan-200"
+            className="mt-1 text-base text-cyan-200"
             variants={HIDDEN_TEXT_VARIANT}
           >
             <span className="font-sans text-sm font-medium">Explore All</span>
           </motion.div>
           <motion.span
             variants={HIDDEN_TEXT_ARROW_VARIANT}
-            className="text-base text-cyan-200"
+            className="mt-1 text-base text-cyan-200"
           >
             <Icons.arrowRight className="ml-1 inline-block h-4 w-4" />
           </motion.span>
-        </motion.div>
-      </Link>
+        </Link>
+      </motion.div>
       <Splide
         options={{
           rewind: true,
@@ -68,6 +71,6 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
           </SplideSlide>
         ))}
       </Splide>
-    </section>
+    </nav>
   )
 }

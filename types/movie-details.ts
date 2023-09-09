@@ -1,3 +1,5 @@
+import { MovieGenre } from '@/types/movie-genre'
+
 interface MovieDetails {
   adult: boolean
   backdrop_path: string
@@ -8,10 +10,7 @@ interface MovieDetails {
     backdrop_path: string
   }
   budget: number
-  genres: {
-    id: number
-    name: string
-  }[]
+  genres: MovieGenre[]
   homepage: string
   id: number
   imdb_id: string

@@ -15,7 +15,7 @@ export const MoviesIntroSection = ({
   popularMovies,
 }: MoviesIntroSectionProps) => {
   return (
-    <section>
+    <section className="container">
       <Suspense fallback={<div>Loading...</div>}>
         <List
           title="Trending Movies"

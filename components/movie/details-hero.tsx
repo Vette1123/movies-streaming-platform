@@ -20,7 +20,7 @@ export const DetailsHero = ({ movie }: { movie: MovieDetails }) => {
     }
   }
   return (
-    <section className="relative isolate h-[500px] overflow-hidden lg:h-screen">
+    <section className="relative isolate h-[500px] overflow-hidden lg:h-[80dvh]">
       <HeroImage movie={movie} />
       <div className="container relative z-50 h-full max-w-screen-2xl">
         <div className="flex h-full items-center justify-center">
@@ -53,7 +53,7 @@ export const DetailsHero = ({ movie }: { movie: MovieDetails }) => {
             src=""
             autoSave="true"
             about={movie.title}
-            allow="autoplay *; encrypted-media *; fullscreen *; geolocation *; midi *;  accelerometer *; gyroscope *; encrypted-media *;"
+            allow="autoplay *;"
           ></iframe>
         </div>
       </div>

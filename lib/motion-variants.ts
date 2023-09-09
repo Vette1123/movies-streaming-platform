@@ -1,7 +1,8 @@
 const HIDDEN_TEXT_VARIANT = {
-  rest: { opacity: 0, ease: 'easeOut', duration: 0.2, x: -50 },
+  rest: { opacity: 0, display: 'none', ease: 'easeOut', duration: 0.2, x: -50 },
   hover: {
     opacity: 1,
+    display: 'block',
     x: 0,
     transition: {
       duration: 0.8,
@@ -11,23 +12,22 @@ const HIDDEN_TEXT_VARIANT = {
   },
 }
 const HIDDEN_TEXT_ARROW_VARIANT = {
-  rest: { opacity: 0, ease: 'easeOut', duration: 0.2, x: 50 },
+  rest: { opacity: 0, display: 'none', ease: 'easeOut', x: 50 },
   hover: {
     opacity: 1,
+    display: 'block',
     x: 0,
     transition: {
-      duration: 1.2,
       ease: 'easeIn',
       type: 'spring',
     },
   },
 }
 const CHANGE_COLOR_VARIANT = {
-  rest: { color: '#fff', ease: 'easeOut', duration: 0.2 },
+  rest: { color: '#fff', ease: 'easeOut' },
   hover: {
     color: '#a5f3fc',
     transition: {
-      duration: 0.4,
       ease: 'easeIn',
       type: 'spring',
     },

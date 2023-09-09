@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 }
 
 function Movies() {
-  return <section className="h-full">Movies</section>
+  return <section className="w-screen">Movies</section>
 }
 
 export default Movies
