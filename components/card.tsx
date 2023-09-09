@@ -1,5 +1,4 @@
 import React from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { CalendarDays } from 'lucide-react'
@@ -19,6 +18,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card'
+import BlurImage from '@/components/blurred-image'
 
 interface CardProps {
   item: Movie
@@ -37,7 +37,7 @@ export const Card = ({
         <Link href={`${itemRedirect(itemType)}/${item.id}`}>
           <motion.div initial="rest" whileHover="hover" animate="rest">
             <motion.div className="group relative" variants={CARD_VARIANT}>
-              <Image
+              <BlurImage
                 src={`${getPosterImageURL(item.poster_path)}`}
                 alt="Movie"
                 width={250}
