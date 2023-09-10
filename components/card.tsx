@@ -3,7 +3,8 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { CalendarDays } from 'lucide-react'
 
-import { ItemType, Movie } from '@/types/movie-result'
+import { ItemType } from '@/types/movie-result'
+import { MediaType } from '@/types/series-result'
 import { CARD_VARIANT } from '@/lib/motion-variants'
 import {
   dateFormatter,
@@ -21,7 +22,7 @@ import {
 import { BlurredImage } from '@/components/blurred-image'
 
 interface CardProps {
-  item: Movie
+  item: MediaType
   itemType?: ItemType
   isTruncateOverview?: boolean
 }
@@ -64,7 +65,10 @@ export const Card = ({
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-2">
               <h4 className="text-sm font-semibold">
-                {item.title} ({item.release_date.slice(0, 4)})
+                {item?.title || item?.name} (
+                {item?.release_date?.slice(0, 4) ||
+                  item?.first_air_date?.slice(0, 4)}
+                )
               </h4>
               <Badge>{numberRounder(item.vote_average)}</Badge>
             </div>
@@ -72,13 +76,16 @@ export const Card = ({
               {isTruncateOverview && item.overview.length > 100 ? (
                 <>{item.overview.slice(0, 100)}...</>
               ) : (
-                item.overview
+                item.overview.slice(0, 400)
               )}
             </p>
             <div className="flex items-center pt-2">
               <CalendarDays className="mr-2 h-4 w-4 opacity-70" />{' '}
               <span className="text-xs text-muted-foreground">
-                {dateFormatter(item.release_date, true)}
+                {dateFormatter(
+                  item?.release_date || item?.first_air_date,
+                  true
+                )}
               </span>
             </div>
           </div>

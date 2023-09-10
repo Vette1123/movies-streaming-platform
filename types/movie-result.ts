@@ -1,3 +1,5 @@
+import { MediaResponse, Series } from '@/types/series-result'
+
 type Movie = {
   adult: boolean
   backdrop_path: string
@@ -29,9 +31,12 @@ interface MultiRequestProps {
   latestTrendingMovies: Movie[]
   popularMovies: Movie[]
   allTimeTopRatedMovies: Movie[]
+  latestTrendingSeries: Series[]
+  popularSeries: Series[]
+  allTimeTopRatedSeries: Series[]
 }
 
-type PopularMovieAction = (params?: Param) => Promise<MovieResponse>
+type PopularMediaAction<T> = (params?: Param) => Promise<T>
 
 export type {
   Movie,
@@ -39,5 +44,5 @@ export type {
   Param,
   MultiRequestProps,
   ItemType,
-  PopularMovieAction,
+  PopularMediaAction,
 }

@@ -1,5 +1,8 @@
-'use server'
-
+import {
+  getAllTimeTopRatedSeries,
+  getLatestTrendingSeries,
+  getPopularSeries,
+} from '@/services/series'
 import { toast } from 'sonner'
 
 import {
@@ -26,6 +29,7 @@ const getAllTimeTopRatedMovies = async (params: Param = {}) => {
   return fetchClient.get<MovieResponse>(url, params, true)
 }
 const getPopularMovies = async (params: Param = {}) => {
+  'use server'
   const url = `movie/${movieType.popular}?language=en-US`
   return fetchClient.get<MovieResponse>(url, params, true)
 }
@@ -35,20 +39,29 @@ const populateHomePageData = async (): Promise<MultiRequestProps> => {
     const [
       nowPlayingResponse,
       latestTrendingResponse,
-      popularResponse,
+      popularMoviesResponse,
       allTimeTopRatedResponse,
+      latestTrendingSeries,
+      popularSeriesResponse,
+      allTimeTopRatedSeries,
     ] = await Promise.all([
       getNowPlayingMovies(),
       getLatestTrendingMovies(),
       getPopularMovies(),
       getAllTimeTopRatedMovies(),
+      getLatestTrendingSeries(),
+      getPopularSeries(),
+      getAllTimeTopRatedSeries(),
     ])
 
     return {
       nowPlayingMovies: nowPlayingResponse?.results || [],
       latestTrendingMovies: latestTrendingResponse?.results || [],
-      popularMovies: popularResponse?.results || [],
+      popularMovies: popularMoviesResponse?.results || [],
       allTimeTopRatedMovies: allTimeTopRatedResponse?.results || [],
+      latestTrendingSeries: latestTrendingSeries?.results || [],
+      popularSeries: popularSeriesResponse?.results || [],
+      allTimeTopRatedSeries: allTimeTopRatedSeries?.results || [],
     }
   } catch (error: any) {
     console.error(error, 'error')

@@ -2,12 +2,13 @@ import React, { Suspense } from 'react'
 
 import { MovieCredits, MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
+import { MediaType } from '@/types/series-result'
 import { getPosterImageURL } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
 import { List } from '@/components/list'
 import { SliderHorizontalListLoader } from '@/components/loaders/slider-horizontal-list-loader'
-import { DetailsCredits } from '@/components/movie/details-credits'
-import { DetailsExtraInfo } from '@/components/movie/details-extra-info'
+import { DetailsCredits } from '@/components/media/details-credits'
+import { DetailsExtraInfo } from '@/components/media/details-extra-info'
 
 export const DetailsPageContent = ({
   movie,
@@ -43,10 +44,13 @@ export const DetailsPageContent = ({
         </section>
       </div>
       <Suspense fallback={<SliderHorizontalListLoader />}>
-        <List title="Recommended Movies" items={recommendedMovies} />
+        <List
+          title="Recommended Movies"
+          items={recommendedMovies as MediaType[]}
+        />
       </Suspense>
       <Suspense fallback={<SliderHorizontalListLoader />}>
-        <List title="Similar Movies" items={similarMovies} />
+        <List title="Similar Movies" items={similarMovies as MediaType[]} />
       </Suspense>
     </section>
   )

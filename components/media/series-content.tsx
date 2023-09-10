@@ -1,27 +1,26 @@
 'use client'
 
 import React from 'react'
-import { useInfiniteQuery } from '@tanstack/react-query'
 import { useInView } from 'react-intersection-observer'
 
-import { MovieResponse, Param, PopularMovieAction } from '@/types/movie-result'
-import { QUERY_KEYS } from '@/lib/queryKeys'
-import { useInfiniteScroll } from '@/hooks/use-infinite-scroll'
+import { PopularMediaAction } from '@/types/movie-result'
+import { MediaType, SeriesResponse } from '@/types/series-result'
+import { useSeriesInfiniteScroll } from '@/hooks/use-series-infinite-scroll'
 import { Card } from '@/components/card'
 
-interface MoviesContentProps {
-  movies: MovieResponse
-  getPopularMoviesAction: PopularMovieAction
+interface MediaContentProps {
+  media: SeriesResponse
+  getPopularMediaAction: PopularMediaAction<SeriesResponse>
 }
 
-export const MoviesContent = ({
-  movies,
-  getPopularMoviesAction,
-}: MoviesContentProps) => {
+export const SeriesContent = ({
+  media,
+  getPopularMediaAction,
+}: MediaContentProps) => {
   const [myRef, inView] = useInView()
-  const { data, fetchNextPage } = useInfiniteScroll({
-    movies,
-    popularMovieAction: getPopularMoviesAction,
+  const { data, fetchNextPage } = useSeriesInfiniteScroll({
+    media,
+    popularMediaAction: getPopularMediaAction,
   })
 
   React.useEffect(() => {
@@ -40,7 +39,11 @@ export const MoviesContent = ({
           <React.Fragment key={index}>
             {page &&
               page?.results?.map((movie) => (
-                <Card key={movie.id} item={movie} isTruncateOverview={false} />
+                <Card
+                  key={movie.id}
+                  item={movie as MediaType}
+                  isTruncateOverview={false}
+                />
               ))}
           </React.Fragment>
         ))}

@@ -7,7 +7,8 @@ import Link from 'next/link'
 import { Splide, SplideSlide } from '@splidejs/react-splide'
 import { motion } from 'framer-motion'
 
-import { ItemType, Movie } from '@/types/movie-result'
+import { ItemType } from '@/types/movie-result'
+import { MediaType } from '@/types/series-result'
 import {
   CHANGE_COLOR_VARIANT,
   HIDDEN_TEXT_ARROW_VARIANT,
@@ -19,7 +20,7 @@ import { Icons } from '@/components/icons'
 
 interface ListProps {
   title: string
-  items: Movie[]
+  items: MediaType[]
   itemType?: ItemType
 }
 

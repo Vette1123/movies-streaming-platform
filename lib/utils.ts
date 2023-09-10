@@ -33,7 +33,6 @@ function numberRounder(number: number | undefined) {
 
 function getGenres(genres: number[] = [], defaultGenres: MovieGenre[] = []) {
   if (defaultGenres.length) return defaultGenres
-  // const threeGenres = genres.slice(0, 3)
   return MOVIES_GENRE.filter((genre) => genres.includes(genre.id))
 }
 
@@ -41,7 +40,7 @@ function itemRedirect(itemType: ItemType) {
   if (itemType === 'movie') {
     return '/movies'
   }
-  return '/series'
+  return '/tv-shows'
 }
 
 function moneyFormatter(money: number) {

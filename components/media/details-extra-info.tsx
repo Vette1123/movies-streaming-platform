@@ -6,7 +6,7 @@ import { SEARCH_ACTOR_GOOGLE } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { HeroRatesInfos } from '@/components/header/hero-rates-info'
 import { Icons } from '@/components/icons'
-import { extraInfoFormatter } from '@/components/movie/extra-info'
+import { extraInfoFormatter } from '@/components/media/extra-info'
 
 export const DetailsExtraInfo = ({
   movie,
