@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 
 import { MovieCredits, MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
 import { getPosterImageURL } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
 import { List } from '@/components/list'
+import { SliderHorizontalListLoader } from '@/components/loaders/slider-horizontal-list-loader'
 import { DetailsCredits } from '@/components/movie/details-credits'
 import { DetailsExtraInfo } from '@/components/movie/details-extra-info'
 
@@ -32,7 +33,7 @@ export const DetailsPageContent = ({
               className="h-full w-full rounded-lg object-fill shadow-lg lg:object-cover"
               fill
               sizes="(min-width: 1024px) 1024px, 100vw"
-              priority
+              intro
             />
           </div>
         </div>
@@ -41,8 +42,12 @@ export const DetailsPageContent = ({
           <DetailsCredits movieCredits={movieCredits} />
         </section>
       </div>
-      <List title="Recommended Movies" items={recommendedMovies} />
-      <List title="Similar Movies" items={similarMovies} />
+      <Suspense fallback={<SliderHorizontalListLoader />}>
+        <List title="Recommended Movies" items={recommendedMovies} />
+      </Suspense>
+      <Suspense fallback={<SliderHorizontalListLoader />}>
+        <List title="Similar Movies" items={similarMovies} />
+      </Suspense>
     </section>
   )
 }

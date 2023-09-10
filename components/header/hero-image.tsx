@@ -12,20 +12,20 @@ export const HeroImage = ({ movie }: { movie: Movie | MovieDetails }) => {
         <BlurredImage
           src={getImageURL(movie.backdrop_path)}
           alt={movie.title}
-          className="absolute inset-0 -z-10 hidden h-full w-full object-cover lg:block"
+          className="hidden h-full w-full object-cover lg:block"
           fill
           sizes="(min-width: 1024px) 1024px, 100vw"
-          priority
+          intro
         />
       )}
       {movie.poster_path && (
         <BlurredImage
           src={getPosterImageURL(movie.poster_path)}
           alt={movie.title}
-          className="absolute inset-0 -z-10 block h-full w-full object-cover lg:hidden"
+          className="block h-full w-full object-cover lg:hidden"
           fill
           sizes="(min-width: 1024px) 1024px, 100vw"
-          priority
+          intro
         />
       )}
     </>

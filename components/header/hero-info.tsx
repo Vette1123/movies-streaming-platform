@@ -28,7 +28,7 @@ export const HeroSectionInfo = ({ movie }: { movie: Movie }) => {
               className="h-full w-full rounded-lg object-fill shadow-lg lg:object-cover"
               fill
               sizes="(min-width: 1024px) 1024px, 100vw"
-              priority
+              intro
             />
           </div>
         </div>

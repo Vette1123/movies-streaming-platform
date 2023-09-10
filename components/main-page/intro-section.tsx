@@ -2,6 +2,7 @@ import React, { Suspense } from 'react'
 
 import { Movie } from '@/types/movie-result'
 import { List } from '@/components/list'
+import { SliderHorizontalListLoader } from '@/components/loaders/slider-horizontal-list-loader'
 
 interface MoviesIntroSectionProps {
   latestTrendingMovies: Movie[]
@@ -16,17 +17,17 @@ export const MoviesIntroSection = ({
 }: MoviesIntroSectionProps) => {
   return (
     <section className="container">
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<SliderHorizontalListLoader />}>
         <List
           title="Trending Movies"
           items={latestTrendingMovies}
           itemType="movie"
         />
       </Suspense>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<SliderHorizontalListLoader />}>
         <List title="Popular Movies" items={popularMovies} itemType="movie" />
       </Suspense>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<SliderHorizontalListLoader />}>
         <List
           title="Top Rated Movies"
           items={allTimeTopRatedMovies}

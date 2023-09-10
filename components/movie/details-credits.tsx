@@ -31,6 +31,7 @@ export const DetailsCredits = ({
                   fill
                   className="cursor-pointer rounded-lg bg-cover shadow-md"
                   sizes="(min-width: 640px) 140px, 100px"
+                  intro
                 />
               </div>
             )}

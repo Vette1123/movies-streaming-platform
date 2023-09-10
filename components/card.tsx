@@ -48,7 +48,6 @@ export const Card = ({
                   alt="Movie"
                   width={250}
                   height={375}
-                  priority
                   className="cursor-pointer rounded-md object-cover shadow-xl"
                 />
               </motion.div>

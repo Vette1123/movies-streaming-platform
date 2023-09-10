@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
 import { MovieGenre } from '@/types/movie-genre'
-import { ItemType, Movie } from '@/types/movie-result'
+import { ItemType } from '@/types/movie-result'
 import { MOVIES_GENRE } from '@/lib/genres'
 import { apiConfig } from '@/lib/tmdbConfig'
 
