@@ -14,7 +14,6 @@ export const useInfiniteScroll = ({ movies, popularMovieAction }: Props) => {
     queryKey: [QUERY_KEYS.MOVIES_KEY],
     queryFn: async ({ pageParam = 1 }) => {
       const data = await popularMovieAction({ page: pageParam })
-      console.log('data', data)
       return data
     },
     getNextPageParam: (_, pages) => pages.length + 1,

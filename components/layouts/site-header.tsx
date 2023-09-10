@@ -6,6 +6,7 @@ import { siteConfig } from '@/config/site'
 import { cn } from '@/lib/utils'
 import { useNavbarScrollOverlay } from '@/hooks/use-scroll-overlay'
 import { buttonVariants } from '@/components/ui/button'
+import { CommandMenu } from '@/components/command-menu'
 import { Icons } from '@/components/icons'
 import { MainNav } from '@/components/layouts/main-nav'
 import { MobileNav } from '@/components/layouts/mobile-nav'
@@ -25,6 +26,9 @@ export function SiteHeader() {
         <MainNav items={siteConfig.mainNav} />
         <MobileNav items={siteConfig.mainNav} />
         <div className="flex flex-1 items-center justify-end space-x-4">
+          <div className="w-full flex-1 md:w-auto md:flex-none">
+            <CommandMenu />
+          </div>
           <nav className="flex items-center space-x-1">
             <Link
               href={siteConfig.links.github}

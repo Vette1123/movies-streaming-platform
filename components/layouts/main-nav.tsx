@@ -5,9 +5,8 @@ import { motion } from 'framer-motion'
 import { NavItem } from '@/types/navbar'
 import { siteConfig } from '@/config/site'
 import { cn } from '@/lib/utils'
+import { buttonVariants } from '@/components/ui/button'
 import { Icons } from '@/components/icons'
-
-import { buttonVariants } from '../ui/button'
 
 interface MainNavProps {
   items?: NavItem[]
