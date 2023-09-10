@@ -4,9 +4,12 @@ import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { searchMovieAction } from '@/actions/search'
 import { Home, Tv } from 'lucide-react'
+import { useDebouncedCallback } from 'use-debounce'
 
 import { Movie } from '@/types/movie-result'
+import { SEARCH_DEBOUNCE } from '@/lib/constants'
 import { cn, getPosterImageURL } from '@/lib/utils'
+import { useCMDKListener } from '@/hooks/use-cmdk-listener'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,33 +25,24 @@ import {
 import { Icons } from '@/components/icons'
 
 export function CommandMenu({ ...props }: CommandDialogProps) {
-  const router = useRouter()
-  const [open, setOpen] = React.useState(false)
+  const { open, setOpen, runCommand, isLoading, setIsLoading } =
+    useCMDKListener()
   const [data, setData] = React.useState<Movie[]>([])
+  const router = useRouter()
 
   const getMovieResults = async (value: string) => {
+    setIsLoading(true)
     const data = await searchMovieAction({ query: value })
     if (data?.results?.length) {
       setData(data?.results)
     }
+    setIsLoading(false)
   }
 
-  React.useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setOpen((open) => !open)
-      }
-    }
-
-    document.addEventListener('keydown', down)
-    return () => document.removeEventListener('keydown', down)
-  }, [])
-
-  const runCommand = React.useCallback((command: () => unknown) => {
-    setOpen(false)
-    command()
-  }, [])
+  const debouncedGetMovieResults = useDebouncedCallback(
+    getMovieResults,
+    SEARCH_DEBOUNCE
+  )
 
   return (
     <>
@@ -69,7 +63,8 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput
           placeholder="Type a command or search..."
-          onValueChange={getMovieResults}
+          onValueChange={debouncedGetMovieResults}
+          isLoading={isLoading}
         />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
@@ -77,8 +72,9 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
             {data
               ?.filter(
                 (movie) =>
-                  data.findIndex((m) => m.title === movie.title) ===
-                  data.indexOf(movie)
+                  data.findIndex(
+                    (m) => m.title.toLowerCase() === movie.title.toLowerCase()
+                  ) === data.indexOf(movie)
               )
               ?.map(
                 (movie) =>
