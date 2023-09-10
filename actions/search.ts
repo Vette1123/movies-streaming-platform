@@ -1,9 +1,10 @@
 'use server'
 
-import { MovieResponse, Param } from '@/types/movie-result'
+import { Param } from '@/types/movie-result'
+import { MediaResponse } from '@/types/series-result'
 import { fetchClient } from '@/lib/fetch-client'
 
 export const searchMovieAction = (params: Param = {}) => {
-  const url = `search/movie?include_adult=false&language=en-US`
-  return fetchClient.get<MovieResponse>(url, params, true)
+  const url = `search/multi?include_adult=false&language=en-US&page=1`
+  return fetchClient.get<MediaResponse>(url, params, true)
 }

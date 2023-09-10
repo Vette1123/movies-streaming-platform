@@ -2,7 +2,8 @@ import React from 'react'
 import { Metadata } from 'next'
 import { getPopularSeries } from '@/services/series'
 
-import { SeriesContent } from '@/components/media/series-content'
+import { QUERY_KEYS } from '@/lib/queryKeys'
+import { MediaContent } from '@/components/media/media-content'
 
 export const metadata: Metadata = {
   title: 'TV Shows',
@@ -13,7 +14,11 @@ async function TvShows() {
   const series = await getPopularSeries()
   return (
     <section className="container h-full py-20 lg:py-36">
-      <SeriesContent media={series} getPopularMediaAction={getPopularSeries} />
+      <MediaContent
+        media={series}
+        getPopularMediaAction={getPopularSeries}
+        queryKey={QUERY_KEYS.SERIES_KEY}
+      />
     </section>
   )
 }

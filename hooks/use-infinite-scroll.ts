@@ -1,19 +1,22 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 
 import { MovieResponse, PopularMediaAction } from '@/types/movie-result'
+import { MediaResponse } from '@/types/series-result'
 import { QUERY_KEYS } from '@/lib/queryKeys'
 
 interface Props {
-  popularMediaAction: PopularMediaAction<MovieResponse>
+  popularMediaAction: PopularMediaAction<MediaResponse>
   media: MovieResponse
+  queryKey: typeof QUERY_KEYS.SERIES_KEY | typeof QUERY_KEYS.MOVIES_KEY
 }
 
-export const useMoviesInfiniteScroll = ({
+export const useInfiniteScroll = ({
   media,
   popularMediaAction,
+  queryKey,
 }: Props) => {
   const { data, fetchNextPage } = useInfiniteQuery({
-    queryKey: [QUERY_KEYS.MOVIES_KEY],
+    queryKey: [queryKey],
     queryFn: async ({ pageParam = 1 }) => {
       const data = await popularMediaAction({ page: pageParam })
       return data

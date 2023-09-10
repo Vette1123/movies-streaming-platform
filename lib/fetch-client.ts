@@ -1,5 +1,4 @@
 import queryString from 'query-string'
-import { toast } from 'sonner'
 
 import { apiConfig } from '@/lib/tmdbConfig'
 
@@ -30,7 +29,7 @@ export const fetchClient = {
 
       return await res.json()
     } catch (error: any) {
-      toast.error(error.message)
+      console.error(error)
       throw error
     }
   },
@@ -46,7 +45,7 @@ export const fetchClient = {
       })
       return await res.json()
     } catch (error: any) {
-      toast.error(error.message)
+      console.error(error)
       throw error
     }
   },

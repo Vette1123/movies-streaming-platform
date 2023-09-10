@@ -7,6 +7,7 @@ import { Home, Tv } from 'lucide-react'
 import { useDebouncedCallback } from 'use-debounce'
 
 import { Movie } from '@/types/movie-result'
+import { MediaType } from '@/types/series-result'
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
 import { cn, getPosterImageURL } from '@/lib/utils'
 import { useCMDKListener } from '@/hooks/use-cmdk-listener'
@@ -27,10 +28,11 @@ import { Icons } from '@/components/icons'
 export function CommandMenu({ ...props }: CommandDialogProps) {
   const { open, setOpen, runCommand, isLoading, setIsLoading } =
     useCMDKListener()
-  const [data, setData] = React.useState<Movie[]>([])
+  const [data, setData] = React.useState<MediaType[]>([])
   const router = useRouter()
 
   const getMovieResults = async (value: string) => {
+    if (!value) return
     setIsLoading(true)
     const data = await searchMovieAction({ query: value })
     if (data?.results?.length) {
@@ -44,6 +46,18 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
     SEARCH_DEBOUNCE
   )
 
+  const deduplicatedData: MediaType[] = (data || []).reduce(
+    (acc, movie) => {
+      const lowercaseTitle = movie?.title?.toLowerCase()
+      if (!lowercaseTitle || !acc.uniqueTitles[lowercaseTitle]) {
+        acc.uniqueTitles[lowercaseTitle] = true
+        acc.result.push(movie)
+      }
+      return acc
+    },
+    { uniqueTitles: {} as Record<string, boolean>, result: [] as MediaType[] }
+  ).result
+
   return (
     <>
       <Button
@@ -54,7 +68,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
         onClick={() => setOpen(true)}
         {...props}
       >
-        <span className="hidden lg:inline-flex">Search for a movie...</span>
+        <span className="hidden lg:inline-flex">Search for a...</span>
         <span className="inline-flex lg:hidden">Search...</span>
         <kbd className="pointer-events-none absolute right-2 top-2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
           <span className="text-xs">⌘</span>K
@@ -69,36 +83,35 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Search Movies...">
-            {data
-              ?.filter(
-                (movie) =>
-                  data.findIndex(
-                    (m) => m.title.toLowerCase() === movie.title.toLowerCase()
-                  ) === data.indexOf(movie)
-              )
-              ?.map(
-                (movie) =>
-                  movie?.poster_path && (
-                    <CommandItem
-                      key={movie.id}
-                      value={movie.title}
-                      className="cursor-pointer"
-                      onSelect={() => {
-                        runCommand(() => router.push(`/movies/${movie.id}`))
-                      }}
-                    >
-                      <div className="flex max-w-md items-center gap-2">
-                        <Avatar>
-                          <AvatarImage
-                            src={`${getPosterImageURL(movie.poster_path)}`}
-                          />
-                          <AvatarFallback>G</AvatarFallback>
-                        </Avatar>
-                        <p className="truncate">{movie.title}</p>
-                      </div>
-                    </CommandItem>
-                  )
-              )}
+            {deduplicatedData?.map(
+              (movie) =>
+                movie?.poster_path && (
+                  <CommandItem
+                    key={movie.id}
+                    value={movie?.title || movie?.name}
+                    className="cursor-pointer"
+                    onSelect={() => {
+                      runCommand(() => {
+                        if (movie?.media_type && movie?.media_type === 'tv') {
+                          router.push(`/tv-shows/${movie.id}`)
+                          return
+                        }
+                        router.push(`/movies/${movie.id}`)
+                      })
+                    }}
+                  >
+                    <div className="flex max-w-md items-center gap-2">
+                      <Avatar>
+                        <AvatarImage
+                          src={`${getPosterImageURL(movie.poster_path)}`}
+                        />
+                        <AvatarFallback>G</AvatarFallback>
+                      </Avatar>
+                      <p className="truncate">{movie?.title || movie?.name}</p>
+                    </div>
+                  </CommandItem>
+                )
+            )}
           </CommandGroup>
           <CommandSeparator />
           <CommandGroup heading="Shortcuts...">

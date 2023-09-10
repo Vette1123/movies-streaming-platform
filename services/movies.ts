@@ -11,6 +11,7 @@ import {
   MultiDetailsRequestProps,
 } from '@/types/movie-details'
 import { MovieResponse, MultiRequestProps, Param } from '@/types/movie-result'
+import { MediaResponse } from '@/types/series-result'
 import { fetchClient } from '@/lib/fetch-client'
 import { movieType } from '@/lib/tmdbConfig'
 
@@ -31,7 +32,7 @@ const getAllTimeTopRatedMovies = async (params: Param = {}) => {
 const getPopularMovies = async (params: Param = {}) => {
   'use server'
   const url = `movie/${movieType.popular}?language=en-US`
-  return fetchClient.get<MovieResponse>(url, params, true)
+  return fetchClient.get<MediaResponse>(url, params, true)
 }
 
 const populateHomePageData = async (): Promise<MultiRequestProps> => {
@@ -65,7 +66,7 @@ const populateHomePageData = async (): Promise<MultiRequestProps> => {
     }
   } catch (error: any) {
     console.error(error, 'error')
-    toast.error(error.message)
+    // toast.error(error.message)
     throw new Error(error)
   }
 }
@@ -109,7 +110,7 @@ const populateDetailsPageData = async (
     }
   } catch (error: any) {
     console.error(error, 'error')
-    toast.error(error.message)
+    // toast.error(error.message)
     throw new Error(error)
   }
 }

@@ -4,23 +4,27 @@ import React from 'react'
 import { useInView } from 'react-intersection-observer'
 
 import { PopularMediaAction } from '@/types/movie-result'
-import { MediaType, SeriesResponse } from '@/types/series-result'
-import { useSeriesInfiniteScroll } from '@/hooks/use-series-infinite-scroll'
+import { MediaResponse, MediaType } from '@/types/series-result'
+import { QUERY_KEYS } from '@/lib/queryKeys'
+import { useInfiniteScroll } from '@/hooks/use-infinite-scroll'
 import { Card } from '@/components/card'
 
 interface MediaContentProps {
-  media: SeriesResponse
-  getPopularMediaAction: PopularMediaAction<SeriesResponse>
+  media: MediaResponse
+  getPopularMediaAction: PopularMediaAction<MediaResponse>
+  queryKey: typeof QUERY_KEYS.SERIES_KEY | typeof QUERY_KEYS.MOVIES_KEY
 }
 
-export const SeriesContent = ({
+export const MediaContent = ({
   media,
   getPopularMediaAction,
+  queryKey,
 }: MediaContentProps) => {
   const [myRef, inView] = useInView()
-  const { data, fetchNextPage } = useSeriesInfiniteScroll({
+  const { data, fetchNextPage } = useInfiniteScroll({
     media,
     popularMediaAction: getPopularMediaAction,
+    queryKey,
   })
 
   React.useEffect(() => {
