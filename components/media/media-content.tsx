@@ -47,6 +47,7 @@ export const MediaContent = ({
                   key={movie.id}
                   item={movie as MediaType}
                   isTruncateOverview={false}
+                  itemType={queryKey === QUERY_KEYS.MOVIES_KEY ? 'movie' : 'tv'}
                 />
               ))}
           </React.Fragment>
