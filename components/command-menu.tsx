@@ -74,29 +74,35 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Search Movies...">
-            {data?.map(
-              (movie, index) =>
-                movie?.poster_path && (
-                  <CommandItem
-                    key={index}
-                    value={movie.title}
-                    className="cursor-pointer"
-                    onSelect={() => {
-                      runCommand(() => router.push(`/movies/${movie.id}`))
-                    }}
-                  >
-                    <div className="flex max-w-md items-center gap-2">
-                      <Avatar>
-                        <AvatarImage
-                          src={`${getPosterImageURL(movie.poster_path)}`}
-                        />
-                        <AvatarFallback>G</AvatarFallback>
-                      </Avatar>
-                      <p className="truncate">{movie.title}</p>
-                    </div>
-                  </CommandItem>
-                )
-            )}
+            {data
+              ?.filter(
+                (movie) =>
+                  data.findIndex((m) => m.title === movie.title) ===
+                  data.indexOf(movie)
+              )
+              ?.map(
+                (movie) =>
+                  movie?.poster_path && (
+                    <CommandItem
+                      key={movie.id}
+                      value={movie.title}
+                      className="cursor-pointer"
+                      onSelect={() => {
+                        runCommand(() => router.push(`/movies/${movie.id}`))
+                      }}
+                    >
+                      <div className="flex max-w-md items-center gap-2">
+                        <Avatar>
+                          <AvatarImage
+                            src={`${getPosterImageURL(movie.poster_path)}`}
+                          />
+                          <AvatarFallback>G</AvatarFallback>
+                        </Avatar>
+                        <p className="truncate">{movie.title}</p>
+                      </div>
+                    </CommandItem>
+                  )
+              )}
           </CommandGroup>
           <CommandSeparator />
           <CommandGroup heading="Shortcuts...">
