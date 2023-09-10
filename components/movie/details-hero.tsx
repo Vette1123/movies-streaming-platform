@@ -15,8 +15,8 @@ export const DetailsHero = ({ movie }: { movie: MovieDetails }) => {
 
   const playVideo = () => {
     if (iframeRef.current) {
-      iframeRef.current.src = `${STREAMING_MOVIES_API_URL}/movie/${movie?.id}?autoplay=1`
       setIsIframeShown(true)
+      iframeRef.current.src = `${STREAMING_MOVIES_API_URL}/movie/${movie?.id}?autoplay=1`
     }
   }
   return (
@@ -50,7 +50,6 @@ export const DetailsHero = ({ movie }: { movie: MovieDetails }) => {
             allowFullScreen
             ref={iframeRef}
             content="noindex,nofollow"
-            src=""
             autoSave="true"
             about={movie.title}
             allow="autoplay *;"

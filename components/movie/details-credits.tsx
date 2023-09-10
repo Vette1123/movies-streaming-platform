@@ -23,15 +23,17 @@ export const DetailsCredits = ({
             rel="noopener noreferrer"
             className="transition-all duration-300 ease-in-out hover:scale-105"
           >
-            <div className="relative min-h-[200px] min-w-[140px]">
-              <Image
-                src={getPosterImageURL(cast.profile_path)}
-                alt={cast.name}
-                fill
-                className="cursor-pointer rounded-lg bg-cover shadow-md"
-                sizes="(min-width: 640px) 140px, 100px"
-              />
-            </div>
+            {cast.profile_path && (
+              <div className="relative min-h-[200px] min-w-[140px]">
+                <Image
+                  src={getPosterImageURL(cast.profile_path)}
+                  alt={cast.name}
+                  fill
+                  className="cursor-pointer rounded-lg bg-cover shadow-md"
+                  sizes="(min-width: 640px) 140px, 100px"
+                />
+              </div>
+            )}
             <p className="max-w-[140px] truncate">{cast.name}</p>
           </Link>
         ))}

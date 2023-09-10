@@ -19,6 +19,7 @@ function getPosterImageURL(path: string) {
 }
 
 function dateFormatter(date: string, showDay: boolean = false) {
+  if (!date) return 'N/A'
   return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -44,6 +45,7 @@ function itemRedirect(itemType: ItemType) {
 }
 
 function moneyFormatter(money: number) {
+  if (!money) return 'N/A'
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -51,9 +53,7 @@ function moneyFormatter(money: number) {
 }
 
 function convertMinutesToHours(minutes: number): string {
-  if (!minutes) {
-    return 'N/A'
-  }
+  if (!minutes) return 'N/A'
 
   const hours = Math.floor(minutes / 60)
   const min = minutes % 60

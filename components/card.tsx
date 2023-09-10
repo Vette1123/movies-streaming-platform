@@ -34,19 +34,26 @@ export const Card = ({
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
-        <Link href={`${itemRedirect(itemType)}/${item.id}`}>
-          <motion.div initial="rest" whileHover="hover" animate="rest">
-            <motion.div className="group relative" variants={CARD_VARIANT}>
-              <BlurImage
-                src={`${getPosterImageURL(item.poster_path)}`}
-                alt="Movie"
-                width={250}
-                height={375}
-                className="w-full cursor-pointer rounded-md object-cover shadow-xl"
-              />
+        {item?.poster_path && (
+          <Link href={`${itemRedirect(itemType)}/${item.id}`}>
+            <motion.div
+              initial="rest"
+              whileHover="hover"
+              animate="rest"
+              className="pointer-events-none lg:pointer-events-auto"
+            >
+              <motion.div className="group relative" variants={CARD_VARIANT}>
+                <BlurImage
+                  src={`${getPosterImageURL(item.poster_path)}`}
+                  alt="Movie"
+                  width={250}
+                  height={375}
+                  className="w-full cursor-pointer rounded-md object-cover shadow-xl"
+                />
+              </motion.div>
             </motion.div>
-          </motion.div>
-        </Link>
+          </Link>
+        )}
       </HoverCardTrigger>
       <HoverCardContent className="hidden w-80 md:block">
         <div className="flex justify-between space-x-4">
