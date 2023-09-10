@@ -1,8 +1,8 @@
 import React from 'react'
-import Image from 'next/image'
 
 import { Movie } from '@/types/movie-result'
 import { getPosterImageURL } from '@/lib/utils'
+import { BlurredImage } from '@/components/blurred-image'
 import { AnimatedWatchButton } from '@/components/header/animated-watch-button'
 import { HeroRatesInfos } from '@/components/header/hero-rates-info'
 
@@ -22,7 +22,7 @@ export const HeroSectionInfo = ({ movie }: { movie: Movie }) => {
         </div>
         <div className="hidden lg:flex">
           <div className="relative min-h-[700px] w-[400px]">
-            <Image
+            <BlurredImage
               src={getPosterImageURL(movie.poster_path)}
               alt={movie.title}
               className="h-full w-full rounded-lg object-fill shadow-lg lg:object-cover"

@@ -1,10 +1,10 @@
 import React from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 
 import { MovieCredits } from '@/types/movie-details'
 import { SEARCH_ACTOR_GOOGLE } from '@/lib/constants'
 import { getPosterImageURL } from '@/lib/utils'
+import { BlurredImage } from '@/components/blurred-image'
 
 export const DetailsCredits = ({
   movieCredits,
@@ -25,7 +25,7 @@ export const DetailsCredits = ({
           >
             {cast.profile_path && (
               <div className="relative min-h-[200px] min-w-[140px]">
-                <Image
+                <BlurredImage
                   src={getPosterImageURL(cast.profile_path)}
                   alt={cast.name}
                   fill

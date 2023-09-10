@@ -1,15 +1,15 @@
 import React from 'react'
-import Image from 'next/image'
 
 import { MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
 import { getImageURL, getPosterImageURL } from '@/lib/utils'
+import { BlurredImage } from '@/components/blurred-image'
 
 export const HeroImage = ({ movie }: { movie: Movie | MovieDetails }) => {
   return (
     <>
       {movie.backdrop_path && (
-        <Image
+        <BlurredImage
           src={getImageURL(movie.backdrop_path)}
           alt={movie.title}
           className="absolute inset-0 -z-10 hidden h-full w-full object-cover lg:block"
@@ -19,7 +19,7 @@ export const HeroImage = ({ movie }: { movie: Movie | MovieDetails }) => {
         />
       )}
       {movie.poster_path && (
-        <Image
+        <BlurredImage
           src={getPosterImageURL(movie.poster_path)}
           alt={movie.title}
           className="absolute inset-0 -z-10 block h-full w-full object-cover lg:hidden"

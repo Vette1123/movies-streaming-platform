@@ -18,7 +18,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card'
-import BlurImage from '@/components/blurred-image'
+import { BlurredImage } from '@/components/blurred-image'
 
 interface CardProps {
   item: Movie
@@ -43,12 +43,13 @@ export const Card = ({
               className="pointer-events-none lg:pointer-events-auto"
             >
               <motion.div className="group relative" variants={CARD_VARIANT}>
-                <BlurImage
+                <BlurredImage
                   src={`${getPosterImageURL(item.poster_path)}`}
                   alt="Movie"
                   width={250}
                   height={375}
-                  className="w-full cursor-pointer rounded-md object-cover shadow-xl"
+                  priority
+                  className="cursor-pointer rounded-md object-cover shadow-xl"
                 />
               </motion.div>
             </motion.div>

@@ -9,11 +9,11 @@ interface BlurImageProps extends ImageProps {
   src: string
   alt: string
   className: string
-  width: number
-  height: number
+  width?: number
+  height?: number
 }
 
-export default function BlurImage({
+export function BlurredImage({
   src,
   alt,
   className,
@@ -24,7 +24,7 @@ export default function BlurImage({
   const [isLoading, setLoading] = React.useState(true)
 
   return (
-    <div className="w-full overflow-hidden rounded-lg bg-slate-900">
+    <div className="w-fit overflow-hidden rounded-lg bg-slate-900">
       <Image
         {...props}
         alt={alt}
@@ -32,8 +32,8 @@ export default function BlurImage({
         width={width}
         height={height}
         className={cn(className, 'duration-700 ease-in-out', {
-          'blur-2xl grayscale': isLoading,
-          'blur-0 grayscale-0': !isLoading,
+          'blur-lg': isLoading,
+          'blur-0': !isLoading,
         })}
         onLoadingComplete={() => setLoading(false)}
       />
