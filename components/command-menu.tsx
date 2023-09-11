@@ -48,7 +48,8 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
 
   const deduplicatedData: MediaType[] = (data || []).reduce(
     (acc, movie) => {
-      const lowercaseTitle = movie?.title?.toLowerCase()
+      const lowercaseTitle =
+        movie?.title?.toLowerCase() || movie?.name.toLowerCase()
       if (!lowercaseTitle || !acc.uniqueTitles[lowercaseTitle]) {
         acc.uniqueTitles[lowercaseTitle] = true
         acc.result.push(movie)
