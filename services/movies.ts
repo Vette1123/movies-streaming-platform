@@ -3,7 +3,6 @@ import {
   getLatestTrendingSeries,
   getPopularSeries,
 } from '@/services/series'
-import { toast } from 'sonner'
 
 import {
   MovieCredits,
@@ -66,7 +65,6 @@ const populateHomePageData = async (): Promise<MultiRequestProps> => {
     }
   } catch (error: any) {
     console.error(error, 'error')
-    // toast.error(error.message)
     throw new Error(error)
   }
 }
@@ -110,7 +108,6 @@ const populateDetailsPageData = async (
     }
   } catch (error: any) {
     console.error(error, 'error')
-    // toast.error(error.message)
     throw new Error(error)
   }
 }

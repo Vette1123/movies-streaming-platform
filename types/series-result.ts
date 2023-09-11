@@ -23,7 +23,7 @@ interface SeriesResponse {
   results: Series[]
 }
 
-type MediaType = Movie & Series
+type MediaType = Movie
 
 type MediaResponse = {
   page: number

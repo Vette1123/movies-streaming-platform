@@ -6,7 +6,6 @@ import { searchMovieAction } from '@/actions/search'
 import { Home, Tv } from 'lucide-react'
 import { useDebouncedCallback } from 'use-debounce'
 
-import { Movie } from '@/types/movie-result'
 import { MediaType } from '@/types/series-result'
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
 import { cn, getPosterImageURL } from '@/lib/utils'
@@ -48,8 +47,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
 
   const deduplicatedData: MediaType[] = (data || []).reduce(
     (acc, movie) => {
-      const lowercaseTitle =
-        movie?.title?.toLowerCase() || movie?.name.toLowerCase()
+      const lowercaseTitle = movie?.title?.toLowerCase()
       if (!lowercaseTitle || !acc.uniqueTitles[lowercaseTitle]) {
         acc.uniqueTitles[lowercaseTitle] = true
         acc.result.push(movie)
@@ -89,7 +87,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                 movie?.poster_path && (
                   <CommandItem
                     key={movie.id}
-                    value={movie?.title || movie?.name}
+                    value={movie?.title}
                     className="cursor-pointer"
                     onSelect={() => {
                       runCommand(() => {
@@ -108,7 +106,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                         />
                         <AvatarFallback>G</AvatarFallback>
                       </Avatar>
-                      <p className="truncate">{movie?.title || movie?.name}</p>
+                      <p className="truncate">{movie?.title}</p>
                     </div>
                   </CommandItem>
                 )

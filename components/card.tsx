@@ -65,10 +65,7 @@ export const Card = ({
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-2">
               <h4 className="text-sm font-semibold">
-                {item?.title || item?.name} (
-                {item?.release_date?.slice(0, 4) ||
-                  item?.first_air_date?.slice(0, 4)}
-                )
+                {item?.title} ({item?.release_date?.slice(0, 4)})
               </h4>
               <Badge>{numberRounder(item.vote_average)}</Badge>
             </div>
@@ -82,10 +79,7 @@ export const Card = ({
             <div className="flex items-center pt-2">
               <CalendarDays className="mr-2 h-4 w-4 opacity-70" />{' '}
               <span className="text-xs text-muted-foreground">
-                {dateFormatter(
-                  item?.release_date || item?.first_air_date,
-                  true
-                )}
+                {dateFormatter(item?.release_date, true)}
               </span>
             </div>
           </div>

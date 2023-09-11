@@ -1,4 +1,4 @@
-import { MediaResponse, Series } from '@/types/series-result'
+import { MediaType } from '@/types/series-result'
 
 type Movie = {
   adult: boolean
@@ -15,6 +15,7 @@ type Movie = {
   video: boolean
   vote_average: number
   vote_count: number
+  media_type?: string
 }
 
 interface MovieResponse {
@@ -31,9 +32,9 @@ interface MultiRequestProps {
   latestTrendingMovies: Movie[]
   popularMovies: Movie[]
   allTimeTopRatedMovies: Movie[]
-  latestTrendingSeries: Series[]
-  popularSeries: Series[]
-  allTimeTopRatedSeries: Series[]
+  latestTrendingSeries: MediaType[]
+  popularSeries: MediaType[]
+  allTimeTopRatedSeries: MediaType[]
 }
 
 type PopularMediaAction<T> = (params?: Param) => Promise<T>
