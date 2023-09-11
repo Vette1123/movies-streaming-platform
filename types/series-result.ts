@@ -1,4 +1,4 @@
-import { Movie } from './movie-result'
+import { Movie } from '@/types/movie-result'
 
 type Series = {
   adult: boolean
@@ -30,4 +30,9 @@ type MediaResponse = {
   results: MediaType[]
 }
 
-export type { Series, SeriesResponse, MediaType, MediaResponse }
+type SearchResponse = {
+  page: number
+  results: (Series & Movie)[]
+}
+
+export type { Series, SeriesResponse, MediaType, MediaResponse, SearchResponse }
