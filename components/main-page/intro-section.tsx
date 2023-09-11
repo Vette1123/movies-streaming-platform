@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react'
 
 import { Movie } from '@/types/movie-result'
-import { MediaType, Series } from '@/types/series-result'
+import { MediaType } from '@/types/series-result'
 import { List } from '@/components/list'
 import { SliderHorizontalListLoader } from '@/components/loaders/slider-horizontal-list-loader'
 
@@ -9,9 +9,9 @@ interface MoviesIntroSectionProps {
   latestTrendingMovies: Movie[]
   allTimeTopRatedMovies: Movie[]
   popularMovies: Movie[]
-  latestTrendingSeries: Series[]
-  popularSeries: Series[]
-  allTimeTopRatedSeries: Series[]
+  latestTrendingSeries: MediaType[]
+  popularSeries: MediaType[]
+  allTimeTopRatedSeries: MediaType[]
 }
 
 export const MoviesIntroSection = ({
@@ -27,42 +27,34 @@ export const MoviesIntroSection = ({
       <Suspense fallback={<SliderHorizontalListLoader />}>
         <List
           title="Trending Movies"
-          items={latestTrendingMovies as MediaType[]}
+          items={latestTrendingMovies}
           itemType="movie"
         />
       </Suspense>
       <Suspense fallback={<SliderHorizontalListLoader />}>
-        <List
-          title="Popular Movies"
-          items={popularMovies as MediaType[]}
-          itemType="movie"
-        />
+        <List title="Popular Movies" items={popularMovies} itemType="movie" />
       </Suspense>
       <Suspense fallback={<SliderHorizontalListLoader />}>
         <List
           title="Top Rated Movies"
-          items={allTimeTopRatedMovies as MediaType[]}
+          items={allTimeTopRatedMovies}
           itemType="movie"
         />
       </Suspense>
       <Suspense fallback={<SliderHorizontalListLoader />}>
         <List
           title="Trending Series"
-          items={latestTrendingSeries as MediaType[]}
+          items={latestTrendingSeries}
           itemType="tv"
         />
       </Suspense>
       <Suspense fallback={<SliderHorizontalListLoader />}>
-        <List
-          title="Popular Series"
-          items={popularSeries as MediaType[]}
-          itemType="tv"
-        />
+        <List title="Popular Series" items={popularSeries} itemType="tv" />
       </Suspense>
       <Suspense fallback={<SliderHorizontalListLoader />}>
         <List
           title="Top Rated Series"
-          items={allTimeTopRatedSeries as MediaType[]}
+          items={allTimeTopRatedSeries}
           itemType="tv"
         />
       </Suspense>
