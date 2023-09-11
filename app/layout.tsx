@@ -3,6 +3,7 @@ import '@/styles/globals.css'
 import type { Metadata } from 'next'
 import { QueryProvider } from '@/providers/query-provider'
 import { ToastProvider } from '@/providers/toast-provider'
+import { Analytics } from '@vercel/analytics/react'
 
 import { siteConfig } from '@/config/site'
 import { fontSans } from '@/lib/fonts'
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             <div className="h-full flex-1 overflow-x-hidden">
               <QueryProvider>{children}</QueryProvider>
               <ToastProvider />
+              <Analytics mode="production" />
               <Footer />
             </div>
           </div>

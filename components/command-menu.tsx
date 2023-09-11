@@ -81,7 +81,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
         />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup heading="Search Movies...">
+          <CommandGroup heading="Search Movies & Series...">
             {deduplicatedData?.map(
               (movie) =>
                 movie?.poster_path && (
