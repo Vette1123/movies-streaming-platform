@@ -1,6 +1,8 @@
+import { Credit } from '@/types/credit'
 import { EpisodeToAir, Network } from '@/types/episode'
 import { MovieGenre } from '@/types/movie-genre'
 import { ProductionCompany, ProductionCountry } from '@/types/production'
+import { Series } from '@/types/series-result'
 
 type Season = {
   air_date: string
@@ -53,4 +55,11 @@ interface SeriesDetails {
   vote_count: number
 }
 
-export type { SeriesDetails }
+interface MultiSeriesDetailsRequestProps {
+  seriesDetails: SeriesDetails
+  seriesCredits: Credit
+  similarSeries: Series[]
+  recommendedSeries: Series[]
+}
+
+export type { SeriesDetails, MultiSeriesDetailsRequestProps }

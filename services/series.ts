@@ -1,6 +1,11 @@
 import { seriesDTO } from '@/dtos/series'
 
+import { Credit } from '@/types/credit'
 import { Param } from '@/types/movie-result'
+import {
+  MultiSeriesDetailsRequestProps,
+  SeriesDetails,
+} from '@/types/series-details'
 import { SeriesResponse } from '@/types/series-result'
 import { fetchClient } from '@/lib/fetch-client'
 import { tvType } from '@/lib/tmdbConfig'
@@ -24,4 +29,54 @@ const getAllTimeTopRatedSeries = async (params: Param = {}) => {
   return seriesDTO(rawData)
 }
 
-export { getLatestTrendingSeries, getPopularSeries, getAllTimeTopRatedSeries }
+const getSeriesDetailsById = async (id: string, params: Param = {}) => {
+  const url = `tv/${id}?language=en-US`
+  return fetchClient.get<SeriesDetails>(url, params, true)
+}
+
+const getSeriesCreditsById = async (id: string, params: Param = {}) => {
+  const url = `tv/${id}/credits?language=en-US`
+  return fetchClient.get<Credit>(url, params, true)
+}
+
+const getSimilarSeriesById = async (id: string, params: Param = {}) => {
+  const url = `tv/${id}/similar?language=en-US`
+  return fetchClient.get<SeriesResponse>(url, params, true)
+}
+
+const getRecommendedSeriesById = async (id: string, params: Param = {}) => {
+  const url = `tv/${id}/recommendations?language=en-US`
+  return fetchClient.get<SeriesResponse>(url, params, true)
+}
+
+const populateSeriesDetailsPageData = async (
+  id: string
+): Promise<MultiSeriesDetailsRequestProps> => {
+  try {
+    const [seriesDetails, seriesCredits, similarSeries, recommendedSeries] =
+      await Promise.all([
+        getSeriesDetailsById(id),
+        getSeriesCreditsById(id),
+        getSimilarSeriesById(id),
+        getRecommendedSeriesById(id),
+      ])
+    return {
+      seriesDetails,
+      seriesCredits,
+      similarSeries: similarSeries?.results || [],
+      recommendedSeries: recommendedSeries?.results || [],
+    }
+  } catch (error: any) {
+    console.error(error, 'error')
+    throw new Error(error)
+  }
+}
+
+export {
+  getLatestTrendingSeries,
+  getPopularSeries,
+  getAllTimeTopRatedSeries,
+  getSeriesDetailsById,
+  getSeriesCreditsById,
+  populateSeriesDetailsPageData,
+}

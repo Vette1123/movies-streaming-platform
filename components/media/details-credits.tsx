@@ -1,16 +1,12 @@
 import React from 'react'
 import Link from 'next/link'
 
-import { MovieCredits } from '@/types/movie-details'
+import { Credit } from '@/types/credit'
 import { SEARCH_ACTOR_GOOGLE } from '@/lib/constants'
 import { getPosterImageURL } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
 
-export const DetailsCredits = ({
-  movieCredits,
-}: {
-  movieCredits: MovieCredits
-}) => {
+export const DetailsCredits = ({ movieCredits }: { movieCredits: Credit }) => {
   return (
     <>
       <h2 className="text:sm font-semibold lg:text-2xl">Cast</h2>

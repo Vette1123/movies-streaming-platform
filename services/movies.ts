@@ -4,11 +4,11 @@ import {
   getPopularSeries,
 } from '@/services/series'
 
+import { Credit } from '@/types/credit'
 import { MediaResponse } from '@/types/media'
 import {
-  MovieCredits,
   MovieDetails,
-  MultiDetailsRequestProps,
+  MultiMovieDetailsRequestProps,
 } from '@/types/movie-details'
 import { MovieResponse, MultiRequestProps, Param } from '@/types/movie-result'
 import { fetchClient } from '@/lib/fetch-client'
@@ -76,7 +76,7 @@ const getMovieDetailsById = async (id: string, params: Param = {}) => {
 
 const getMovieCreditsById = async (id: string, params: Param = {}) => {
   const url = `movie/${id}/credits?language=en-US`
-  return fetchClient.get<MovieCredits>(url, params, true)
+  return fetchClient.get<Credit>(url, params, true)
 }
 
 const getSimilarMoviesById = async (id: string, params: Param = {}) => {
@@ -89,9 +89,9 @@ const getRecommendedMoviesById = async (id: string, params: Param = {}) => {
   return fetchClient.get<MovieResponse>(url, params, true)
 }
 
-const populateDetailsPageData = async (
+const populateMovieDetailsPage = async (
   id: string
-): Promise<MultiDetailsRequestProps> => {
+): Promise<MultiMovieDetailsRequestProps> => {
   try {
     const [movieDetails, movieCredits, similarMovies, recommendedMovies] =
       await Promise.all([
@@ -120,5 +120,5 @@ export {
   populateHomePageData,
   getMovieDetailsById,
   getMovieCreditsById,
-  populateDetailsPageData,
+  populateMovieDetailsPage as populateDetailsPageData,
 }

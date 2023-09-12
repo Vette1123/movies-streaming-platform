@@ -1,7 +1,8 @@
 import React, { Suspense } from 'react'
 
+import { Credit } from '@/types/credit'
 import { MediaType } from '@/types/media'
-import { MovieCredits, MovieDetails } from '@/types/movie-details'
+import { MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
 import { getPosterImageURL } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
@@ -17,7 +18,7 @@ export const DetailsPageContent = ({
   recommendedMovies,
 }: {
   movie: MovieDetails
-  movieCredits: MovieCredits
+  movieCredits: Credit
   similarMovies: Movie[]
   recommendedMovies: Movie[]
 }) => {
@@ -25,7 +26,7 @@ export const DetailsPageContent = ({
     ?.name
   return (
     <section className="container max-w-screen-2xl pb-10 pt-12 lg:pb-20">
-      <div className="flex flex-col-reverse gap-8 lg:flex-row">
+      <div className="flex flex-col gap-8 lg:flex-row">
         <div className="hidden lg:block">
           <div className="relative min-h-[600px] w-[400px]">
             <BlurredImage
@@ -42,14 +43,6 @@ export const DetailsPageContent = ({
           <DetailsExtraInfo movie={movie} director={director} />
           <DetailsCredits movieCredits={movieCredits} />
         </section>
-        <div className="max-w-xs flex-col lg:flex-row">
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Corrupti
-          itaque natus iusto aliquid inventore officiis recusandae voluptate!
-          Harum rem a voluptatum eos vel, praesentium perferendis quidem
-          corporis laborum odit nihil, distinctio voluptas repellendus illum
-          nostrum nobis quis culpa accusamus quam ullam, tenetur eius maiores.
-          Atque nobis deleniti reiciendis ratione obcaecati!
-        </div>
       </div>
       <Suspense fallback={<SliderHorizontalListLoader />}>
         <List
