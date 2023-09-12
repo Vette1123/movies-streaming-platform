@@ -1,5 +1,3 @@
-import { Movie } from '@/types/movie-result'
-
 type Series = {
   adult: boolean
   backdrop_path: string
@@ -23,16 +21,4 @@ interface SeriesResponse {
   results: Series[]
 }
 
-type MediaType = Movie
-
-type MediaResponse = {
-  page: number
-  results: MediaType[]
-}
-
-type SearchResponse = {
-  page: number
-  results: (Series & Movie)[]
-}
-
-export type { Series, SeriesResponse, MediaType, MediaResponse, SearchResponse }
+export type { Series, SeriesResponse }

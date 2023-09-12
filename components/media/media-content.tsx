@@ -3,8 +3,8 @@
 import React from 'react'
 import { useInView } from 'react-intersection-observer'
 
+import { MediaResponse, MediaType } from '@/types/media'
 import { PopularMediaAction } from '@/types/movie-result'
-import { MediaResponse, MediaType } from '@/types/series-result'
 import { QUERY_KEYS } from '@/lib/queryKeys'
 import { useInfiniteScroll } from '@/hooks/use-infinite-scroll'
 import { Card } from '@/components/card'

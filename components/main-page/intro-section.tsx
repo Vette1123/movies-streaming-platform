@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react'
 
+import { MediaType } from '@/types/media'
 import { Movie } from '@/types/movie-result'
-import { MediaType } from '@/types/series-result'
 import { List } from '@/components/list'
 import { SliderHorizontalListLoader } from '@/components/loaders/slider-horizontal-list-loader'
 

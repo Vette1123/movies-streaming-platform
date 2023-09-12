@@ -1,8 +1,8 @@
 import React, { Suspense } from 'react'
 
+import { MediaType } from '@/types/media'
 import { MovieCredits, MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
-import { MediaType } from '@/types/series-result'
 import { getPosterImageURL } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
 import { List } from '@/components/list'
@@ -24,8 +24,8 @@ export const DetailsPageContent = ({
   const director = movieCredits?.crew?.find((crew) => crew.job === 'Director')
     ?.name
   return (
-    <section className="container pb-10 pt-12 lg:pb-20">
-      <div className="flex flex-row gap-8">
+    <section className="container max-w-screen-2xl pb-10 pt-12 lg:pb-20">
+      <div className="flex flex-col-reverse gap-8 lg:flex-row">
         <div className="hidden lg:block">
           <div className="relative min-h-[600px] w-[400px]">
             <BlurredImage
@@ -42,6 +42,14 @@ export const DetailsPageContent = ({
           <DetailsExtraInfo movie={movie} director={director} />
           <DetailsCredits movieCredits={movieCredits} />
         </section>
+        <div className="max-w-xs flex-col lg:flex-row">
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Corrupti
+          itaque natus iusto aliquid inventore officiis recusandae voluptate!
+          Harum rem a voluptatum eos vel, praesentium perferendis quidem
+          corporis laborum odit nihil, distinctio voluptas repellendus illum
+          nostrum nobis quis culpa accusamus quam ullam, tenetur eius maiores.
+          Atque nobis deleniti reiciendis ratione obcaecati!
+        </div>
       </div>
       <Suspense fallback={<SliderHorizontalListLoader />}>
         <List

@@ -1,4 +1,5 @@
-import { MediaResponse, SeriesResponse } from '@/types/series-result'
+import { MediaResponse } from '@/types/media'
+import { SeriesResponse } from '@/types/series-result'
 
 export const seriesDTO = (seriesResponse: SeriesResponse): MediaResponse => ({
   page: seriesResponse.page,

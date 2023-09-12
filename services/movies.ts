@@ -4,13 +4,13 @@ import {
   getPopularSeries,
 } from '@/services/series'
 
+import { MediaResponse } from '@/types/media'
 import {
   MovieCredits,
   MovieDetails,
   MultiDetailsRequestProps,
 } from '@/types/movie-details'
 import { MovieResponse, MultiRequestProps, Param } from '@/types/movie-result'
-import { MediaResponse } from '@/types/series-result'
 import { fetchClient } from '@/lib/fetch-client'
 import { movieType } from '@/lib/tmdbConfig'
 

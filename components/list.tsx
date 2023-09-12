@@ -7,8 +7,8 @@ import Link from 'next/link'
 import { Splide, SplideSlide } from '@splidejs/react-splide'
 import { motion } from 'framer-motion'
 
+import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
-import { MediaType } from '@/types/series-result'
 import {
   CHANGE_COLOR_VARIANT,
   HIDDEN_TEXT_ARROW_VARIANT,

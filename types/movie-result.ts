@@ -1,4 +1,4 @@
-import { MediaType } from '@/types/series-result'
+import { MediaType } from '@/types/media'
 
 type Movie = {
   adult: boolean

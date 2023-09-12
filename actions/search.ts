@@ -3,7 +3,7 @@
 import { searchDTO } from '@/dtos/search'
 
 import { Param } from '@/types/movie-result'
-import { SearchResponse } from '@/types/series-result'
+import { SearchResponse } from '@/types/search'
 import { fetchClient } from '@/lib/fetch-client'
 
 export const searchMovieAction = async (params: Param = {}) => {

@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 
+import { MediaResponse } from '@/types/media'
 import { MovieResponse, PopularMediaAction } from '@/types/movie-result'
-import { MediaResponse } from '@/types/series-result'
 import { QUERY_KEYS } from '@/lib/queryKeys'
 
 interface Props {

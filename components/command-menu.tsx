@@ -6,7 +6,7 @@ import { searchMovieAction } from '@/actions/search'
 import { Home, Tv } from 'lucide-react'
 import { useDebouncedCallback } from 'use-debounce'
 
-import { MediaType } from '@/types/series-result'
+import { MediaType } from '@/types/media'
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
 import { cn, getPosterImageURL } from '@/lib/utils'
 import { useCMDKListener } from '@/hooks/use-cmdk-listener'

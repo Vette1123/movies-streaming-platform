@@ -1,7 +1,7 @@
 import { seriesDTO } from '@/dtos/series'
 
 import { Param } from '@/types/movie-result'
-import { MediaResponse, SeriesResponse } from '@/types/series-result'
+import { SeriesResponse } from '@/types/series-result'
 import { fetchClient } from '@/lib/fetch-client'
 import { tvType } from '@/lib/tmdbConfig'
 

@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { CalendarDays } from 'lucide-react'
 
+import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
-import { MediaType } from '@/types/series-result'
 import { CARD_VARIANT } from '@/lib/motion-variants'
 import {
   dateFormatter,
