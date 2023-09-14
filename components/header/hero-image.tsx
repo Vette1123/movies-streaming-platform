@@ -24,6 +24,7 @@ export const HeroImage = ({ movie, series }: HeroImageProps) => {
           fill
           sizes="(min-width: 1024px) 1024px, 100vw"
           intro
+          priority
         />
       )}
       {media?.poster_path && (
@@ -34,6 +35,7 @@ export const HeroImage = ({ movie, series }: HeroImageProps) => {
           fill
           sizes="(min-width: 1024px) 1024px, 100vw"
           intro
+          priority
         />
       )}
     </>
