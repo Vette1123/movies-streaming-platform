@@ -18,7 +18,7 @@ export function SiteHeader() {
       className={cn(
         'fixed inset-x-0 top-0 z-40 w-full transition duration-200',
         {
-          'bg-zinc-900/90': isShowNavBackground,
+          'bg-background/80': isShowNavBackground,
         }
       )}
     >

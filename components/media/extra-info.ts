@@ -72,9 +72,13 @@ export const seriesExtraInfoFormatter = (
         },
       ]
     : []),
-  {
-    name: 'Created By:',
-    value: series?.created_by?.map((creator) => creator.name).join(', '),
-    isLink: true,
-  },
+  ...(series?.created_by?.length
+    ? [
+        {
+          name: 'Created By:',
+          value: series?.created_by?.map((creator) => creator.name).join(', '),
+          isLink: true,
+        },
+      ]
+    : []),
 ]

@@ -41,7 +41,7 @@ export const SeriesDetailsContent = ({
             />
           </div>
         </div>
-        <section className="flex flex-col gap-4">
+        <section className="flex flex-1 flex-col gap-4">
           <SeriesDetailsExtraInfo series={series} director={director} />
           <DetailsCredits movieCredits={seriesCredits} />
         </section>
