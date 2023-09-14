@@ -16,16 +16,55 @@ export const metadata: Metadata = {
     default: siteConfig.name,
     template: `%s - ${siteConfig.name}`,
   },
+  appleWebApp: {
+    title: siteConfig.name,
+  },
   description: siteConfig.description,
+  creator: siteConfig.links.github,
+  openGraph: {
+    locale: siteConfig.openGraph.locale,
+    siteName: siteConfig.name,
+    url: siteConfig.links.github,
+    type: 'website',
+    title: siteConfig.name,
+    description: siteConfig.description,
+    ttl: 604800,
+    emails: siteConfig.email,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    creator: siteConfig.twitterTag,
+    site: siteConfig.twitterTag,
+    images: [
+      {
+        url: siteConfig.image,
+        alt: siteConfig.name,
+      },
+    ],
+  },
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: 'white' },
     { media: '(prefers-color-scheme: dark)', color: 'black' },
   ],
   icons: {
     icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
+    shortcut: '/favicon-32x32.png',
     apple: '/apple-touch-icon.png',
+    hostname: '/browserconfig.xml',
+    username: '/site.webmanifest',
   },
+  publisher: siteConfig.links.github,
+  applicationName: siteConfig.name,
+  colorScheme: 'light dark',
+  keywords: siteConfig.keywords,
+  appLinks: {
+    web: [
+      {
+        url: siteConfig.websiteURL,
+      },
+    ],
+  },
+  metadataBase: new URL(siteConfig.websiteURL),
 }
 
 interface RootLayoutProps {
