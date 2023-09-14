@@ -1,29 +1,31 @@
 import React from 'react'
 import Link from 'next/link'
 
-import { MovieDetails } from '@/types/movie-details'
+import { SeriesDetails } from '@/types/series-details'
 import { SEARCH_ACTOR_GOOGLE } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { HeroRatesInfos } from '@/components/header/hero-rates-info'
 import { Icons } from '@/components/icons'
-import { movieExtraInfoFormatter } from '@/components/media/extra-info'
+import { seriesExtraInfoFormatter } from '@/components/media/extra-info'
 
-export const DetailsExtraInfo = ({
-  movie,
-  director,
-}: {
-  movie: MovieDetails
+interface SeriesDetailsExtraInfoProps {
+  series: SeriesDetails
   director: string | undefined
-}) => {
-  const extraInfo = movieExtraInfoFormatter(movie, director)
+}
+
+export const SeriesDetailsExtraInfo = ({
+  series,
+  director,
+}: SeriesDetailsExtraInfoProps) => {
+  const extraInfo = seriesExtraInfoFormatter(series, director)
   return (
     <section>
-      <p className="text-sm font-bold lg:text-3xl">{movie.title}</p>
-      <HeroRatesInfos movieDetails={movie} />
+      <p className="text-sm font-bold lg:text-3xl">{series.name}</p>
+      <HeroRatesInfos seriesDetails={series} />
       <p className="prose-invert text-xs font-semibold lg:text-lg">
-        {movie.overview}
+        {series.overview}
       </p>
-      <div className="my-4 flex max-w-sm flex-col space-y-1">
+      <div className="my-4 flex max-w-lg flex-col space-y-1">
         {extraInfo.map((info) => (
           <div
             key={info.name}

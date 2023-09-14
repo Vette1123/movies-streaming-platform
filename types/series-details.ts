@@ -1,8 +1,8 @@
 import { Credit } from '@/types/credit'
 import { EpisodeToAir, Network } from '@/types/episode'
+import { MediaType } from '@/types/media'
 import { MovieGenre } from '@/types/movie-genre'
 import { ProductionCompany, ProductionCountry } from '@/types/production'
-import { Series } from '@/types/series-result'
 
 type Season = {
   air_date: string
@@ -24,7 +24,13 @@ type SpokenLanguage = {
 interface SeriesDetails {
   adult: boolean
   backdrop_path: string
-  created_by: []
+  created_by: {
+    id: number
+    credit_id: string
+    name: string
+    gender: number
+    profile_path: string
+  }[]
   episode_run_time: number[]
   first_air_date: string
   genres: MovieGenre[]
@@ -58,8 +64,8 @@ interface SeriesDetails {
 interface MultiSeriesDetailsRequestProps {
   seriesDetails: SeriesDetails
   seriesCredits: Credit
-  similarSeries: Series[]
-  recommendedSeries: Series[]
+  similarSeries: MediaType[]
+  recommendedSeries: MediaType[]
 }
 
-export type { SeriesDetails, MultiSeriesDetailsRequestProps }
+export type { SeriesDetails, MultiSeriesDetailsRequestProps, Season }

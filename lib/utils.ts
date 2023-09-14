@@ -3,6 +3,8 @@ import { twMerge } from 'tailwind-merge'
 
 import { MovieGenre } from '@/types/movie-genre'
 import { ItemType } from '@/types/movie-result'
+import { SeasonDetails } from '@/types/season-details'
+import { Season } from '@/types/series-details'
 import { MOVIES_GENRE } from '@/lib/genres'
 import { apiConfig } from '@/lib/tmdbConfig'
 
@@ -63,6 +65,18 @@ function convertMinutesToHours(minutes: number): string {
   return `${hoursString} ${minString}`
 }
 
+function seasonsFormatter(seasons: Season[]) {
+  return seasons.map((season) => {
+    if (season.season_number === 0) return null
+    return {
+      id: season.id,
+      name: season.name,
+      poster_path: season.poster_path,
+      season_number: season.season_number,
+    }
+  })
+}
+
 export {
   cn,
   getImageURL,
@@ -73,4 +87,5 @@ export {
   itemRedirect,
   moneyFormatter,
   convertMinutesToHours,
+  seasonsFormatter,
 }

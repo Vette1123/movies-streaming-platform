@@ -23,7 +23,7 @@ export const MoviesIntroSection = ({
   allTimeTopRatedSeries,
 }: MoviesIntroSectionProps) => {
   return (
-    <section className="container">
+    <section className="container max-w-screen-2xl">
       <Suspense fallback={<SliderHorizontalListLoader />}>
         <List
           title="Trending Movies"

@@ -1,21 +1,21 @@
 import React from 'react'
-import { populateDetailsPageData } from '@/services/movies'
+import { populateSeriesDetailsPageData } from '@/services/series'
 
-import { DetailsPageContent } from '@/components/media/details-content'
-import { DetailsHero } from '@/components/media/details-hero'
+import { SeriesDetailsContent } from '@/components/series/details-content'
+import { SeriesDetailsHero } from '@/components/series/details-hero'
 
 const TVSeries = async ({ params }: { params: { id: string } }) => {
-  const { movieCredits, movieDetails, similarMovies, recommendedMovies } =
-    await populateDetailsPageData(params?.id)
+  const { seriesDetails, seriesCredits, similarSeries, recommendedSeries } =
+    await populateSeriesDetailsPageData(params?.id)
 
   return (
     <header className="relative">
-      <DetailsHero movie={movieDetails} />
-      <DetailsPageContent
-        movie={movieDetails}
-        movieCredits={movieCredits}
-        similarMovies={similarMovies}
-        recommendedMovies={recommendedMovies}
+      <SeriesDetailsHero series={seriesDetails} />
+      <SeriesDetailsContent
+        series={seriesDetails}
+        seriesCredits={seriesCredits}
+        similarSeries={similarSeries}
+        recommendedSeries={recommendedSeries}
       />
     </header>
   )

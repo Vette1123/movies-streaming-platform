@@ -41,12 +41,14 @@ const getSeriesCreditsById = async (id: string, params: Param = {}) => {
 
 const getSimilarSeriesById = async (id: string, params: Param = {}) => {
   const url = `tv/${id}/similar?language=en-US`
-  return fetchClient.get<SeriesResponse>(url, params, true)
+  const rawData = await fetchClient.get<SeriesResponse>(url, params, true)
+  return seriesDTO(rawData)
 }
 
 const getRecommendedSeriesById = async (id: string, params: Param = {}) => {
   const url = `tv/${id}/recommendations?language=en-US`
-  return fetchClient.get<SeriesResponse>(url, params, true)
+  const rawData = await fetchClient.get<SeriesResponse>(url, params, true)
+  return seriesDTO(rawData)
 }
 
 const populateSeriesDetailsPageData = async (

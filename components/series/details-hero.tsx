@@ -3,25 +3,44 @@
 import React from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 
-import { MovieDetails } from '@/types/movie-details'
+import { SeriesDetails } from '@/types/series-details'
 import { STREAMING_MOVIES_API_URL } from '@/lib/constants'
 import { cn } from '@/lib/utils'
+import { useMounted } from '@/hooks/use-mounted'
+import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { HeroImage } from '@/components/header/hero-image'
 import { Icons } from '@/components/icons'
 
-export const MovieDetailsHero = ({ movie }: { movie: MovieDetails }) => {
+export const SeriesDetailsHero = ({ series }: { series: SeriesDetails }) => {
+  const { episodeQueryINT, seasonQueryINT } = useSearchQueryParams()
   const [isIframeShown, setIsIframeShown] = React.useState(false)
+  const isMounted = useMounted()
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
 
-  const playVideo = () => {
-    if (iframeRef.current) {
+  const autoplaySessionURL = `${STREAMING_MOVIES_API_URL}/tv/${series?.id}/${seasonQueryINT}/${episodeQueryINT}?autoplay=1`
+
+  const playDefaultSeries = () => {
+    if (iframeRef.current && !episodeQueryINT && !seasonQueryINT) {
       setIsIframeShown(true)
-      iframeRef.current.src = `${STREAMING_MOVIES_API_URL}/movie/${movie?.id}?autoplay=1`
+      iframeRef.current.src = `${STREAMING_MOVIES_API_URL}/tv/${series?.id}?autoplay=1`
+    }
+    if (iframeRef.current && episodeQueryINT && seasonQueryINT) {
+      setIsIframeShown(true)
+      iframeRef.current.src = autoplaySessionURL
     }
   }
+
+  React.useEffect(() => {
+    if (iframeRef.current && episodeQueryINT && seasonQueryINT && isMounted) {
+      setIsIframeShown(true)
+      iframeRef.current.src = autoplaySessionURL
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [episodeQueryINT, seasonQueryINT, series?.id])
+
   return (
     <section className="relative isolate h-[500px] overflow-hidden lg:h-[80dvh]">
-      <HeroImage movie={movie} />
+      <HeroImage series={series} />
       <div className="container relative z-50 h-full max-w-screen-2xl">
         <div className="flex h-full items-center justify-center">
           <AnimatePresence>
@@ -36,7 +55,7 @@ export const MovieDetailsHero = ({ movie }: { movie: MovieDetails }) => {
                 })}
               >
                 <Icons.playIcon
-                  onClick={playVideo}
+                  onClick={playDefaultSeries}
                   fill="#a5b4fc"
                   className={cn('h-24 w-24 cursor-pointer text-primary')}
                 />
@@ -51,7 +70,7 @@ export const MovieDetailsHero = ({ movie }: { movie: MovieDetails }) => {
             ref={iframeRef}
             content="noindex,nofollow"
             autoSave="true"
-            about={movie.title}
+            about={series.name}
             allow="autoplay *;"
           ></iframe>
         </div>

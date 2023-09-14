@@ -1,7 +1,8 @@
 import { MovieDetails } from '@/types/movie-details'
+import { SeriesDetails } from '@/types/series-details'
 import { convertMinutesToHours, moneyFormatter } from '@/lib/utils'
 
-export const extraInfoFormatter = (
+export const movieExtraInfoFormatter = (
   movie: MovieDetails,
   director: string | undefined
 ) => [
@@ -29,6 +30,51 @@ export const extraInfoFormatter = (
   {
     name: 'Director:',
     value: director,
+    isLink: true,
+  },
+]
+
+export const seriesExtraInfoFormatter = (
+  series: SeriesDetails,
+  director: string | undefined
+) => [
+  {
+    name: 'First Air Date:',
+    value: series?.first_air_date,
+  },
+  {
+    name: 'Last Air Date:',
+    value: series?.last_air_date,
+  },
+  {
+    name: 'Status:',
+    value: series?.status,
+  },
+  {
+    name: 'Original Language:',
+    value: series?.original_language,
+    className: 'uppercase',
+  },
+  {
+    name: 'Number of Seasons:',
+    value: series?.number_of_seasons,
+  },
+  {
+    name: 'Number of Episodes:',
+    value: series?.number_of_episodes,
+  },
+  ...(director
+    ? [
+        {
+          name: 'Director:',
+          value: director,
+          isLink: true,
+        },
+      ]
+    : []),
+  {
+    name: 'Created By:',
+    value: series?.created_by?.map((creator) => creator.name).join(', '),
     isLink: true,
   },
 ]

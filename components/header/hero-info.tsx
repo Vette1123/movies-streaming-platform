@@ -29,6 +29,7 @@ export const HeroSectionInfo = ({ movie }: { movie: Movie }) => {
               fill
               sizes="(min-width: 1024px) 1024px, 30vw"
               intro
+              priority
             />
           </div>
         </div>

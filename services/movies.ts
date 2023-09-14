@@ -120,5 +120,5 @@ export {
   populateHomePageData,
   getMovieDetailsById,
   getMovieCreditsById,
-  populateMovieDetailsPage as populateDetailsPageData,
+  populateMovieDetailsPage,
 }
