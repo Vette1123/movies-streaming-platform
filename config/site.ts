@@ -24,4 +24,5 @@ export const siteConfig = {
     github: 'https://github.com/Vette1123',
     website: 'https://www.mohamedgado.info/',
   },
+  siteUrl: 'https://www.reely.live',
 }

@@ -1,10 +1,40 @@
 import React from 'react'
-import { populateMovieDetailsPage } from '@/services/movies'
+import { Metadata, ResolvingMetadata } from 'next'
+import {
+  getMovieDetailsById,
+  populateMovieDetailsPage,
+} from '@/services/movies'
 
+import { PageDetailsProps } from '@/types/page-details'
 import { DetailsPageContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
 
-const MoviePage = async ({ params }: { params: { id: string } }) => {
+export async function generateMetadata(
+  { params }: PageDetailsProps,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  // read route params
+  const id = params.id
+
+  const movieDetails = await getMovieDetailsById(id)
+
+  const previousImages = (await parent).openGraph?.images || []
+
+  return {
+    title: movieDetails.title,
+    description: movieDetails.overview,
+    metadataBase: new URL(`/movies/${id}`, process.env.NEXT_PUBLIC_BASE_URL),
+    openGraph: {
+      images: [
+        movieDetails.backdrop_path,
+        movieDetails.poster_path,
+        ...previousImages,
+      ],
+    },
+  }
+}
+
+const MoviePage = async ({ params }: PageDetailsProps) => {
   const { movieCredits, movieDetails, similarMovies, recommendedMovies } =
     await populateMovieDetailsPage(params?.id)
 
