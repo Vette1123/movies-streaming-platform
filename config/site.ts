@@ -2,7 +2,7 @@ export type SiteConfig = typeof siteConfig
 
 export const siteConfig = {
   name: 'Sadge',
-  description: 'Build your Sadge UI with Tailwind CSS and Next.js.',
+  description: 'Sadge is a movie and tv show tracker built by Mohamed Gado.',
   mainNav: [
     {
       title: 'Home',
