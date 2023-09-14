@@ -46,7 +46,9 @@ export function SeasonsSelector({
                     key={season?.id}
                     value={String(season?.season_number)}
                   >
-                    {season.name}
+                    {season.name.startsWith('Season')
+                      ? season.name
+                      : `Season ${season?.season_number}`}
                   </SelectItem>
                   {idx !== formattedSeasons?.length - 1 && <SelectSeparator />}
                 </React.Fragment>
