@@ -51,6 +51,10 @@ export const seriesExtraInfoFormatter = (
     value: series?.status,
   },
   {
+    name: 'Original Country:',
+    value: series?.origin_country?.join(', '),
+  },
+  {
     name: 'Original Language:',
     value: series?.original_language,
     className: 'uppercase',
@@ -76,7 +80,7 @@ export const seriesExtraInfoFormatter = (
     ? [
         {
           name: 'Created By:',
-          value: series?.created_by?.map((creator) => creator.name).join(', '),
+          value: series?.created_by?.map((creator) => creator.name).at(0),
           isLink: true,
         },
       ]
