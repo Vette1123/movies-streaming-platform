@@ -7,7 +7,7 @@ import { MovieDetails } from '@/types/movie-details'
 import { STREAMING_MOVIES_API_URL } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { HeroImage } from '@/components/header/hero-image'
-import { Icons } from '@/components/icons'
+import { PlayButton } from '@/components/play-button'
 
 export const MovieDetailsHero = ({ movie }: { movie: MovieDetails }) => {
   const [isIframeShown, setIsIframeShown] = React.useState(false)
@@ -35,11 +35,7 @@ export const MovieDetailsHero = ({ movie }: { movie: MovieDetails }) => {
                   hidden: isIframeShown,
                 })}
               >
-                <Icons.playIcon
-                  onClick={playVideo}
-                  fill="#a5b4fc"
-                  className={cn('h-24 w-24 cursor-pointer text-primary')}
-                />
+                <PlayButton onClick={playVideo} />
               </motion.div>
             )}
           </AnimatePresence>

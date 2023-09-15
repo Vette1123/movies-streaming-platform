@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 import { useMounted } from '@/hooks/use-mounted'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { HeroImage } from '@/components/header/hero-image'
-import { Icons } from '@/components/icons'
+import { PlayButton } from '@/components/play-button'
 
 export const SeriesDetailsHero = ({ series }: { series: SeriesDetails }) => {
   const { episodeQueryINT, seasonQueryINT } = useSearchQueryParams()
@@ -54,11 +54,7 @@ export const SeriesDetailsHero = ({ series }: { series: SeriesDetails }) => {
                   hidden: isIframeShown,
                 })}
               >
-                <Icons.playIcon
-                  onClick={playDefaultSeries}
-                  fill="#a5b4fc"
-                  className={cn('h-24 w-24 cursor-pointer text-primary')}
-                />
+                <PlayButton onClick={playDefaultSeries} />
               </motion.div>
             )}
           </AnimatePresence>
