@@ -20,11 +20,10 @@ export const useEpisodeHandler = (seriesID: number) => {
     },
     []
   )
-  const { data: episodes } = useQuery({
+  const { data: episodes, isLoading: isEpisodesLoading } = useQuery({
     queryKey: [selectedSeason, seriesID],
     queryFn: () => getSeasonEpisodes(seriesID, selectedSeason),
     enabled: Boolean(seriesID),
-    refetchOnWindowFocus: false,
   })
 
   return {
@@ -32,5 +31,6 @@ export const useEpisodeHandler = (seriesID: number) => {
     setSelectedSeason,
     getSeasonEpisodes,
     episodes,
+    isEpisodesLoading,
   }
 }
