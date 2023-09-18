@@ -1,9 +1,8 @@
-import { clsx, type ClassValue } from 'clsx'
+import { ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
 import { MovieGenre } from '@/types/movie-genre'
 import { ItemType } from '@/types/movie-result'
-import { SeasonDetails } from '@/types/season-details'
 import { Season } from '@/types/series-details'
 import { MOVIES_GENRE } from '@/lib/genres'
 import { apiConfig } from '@/lib/tmdbConfig'
