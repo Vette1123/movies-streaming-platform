@@ -7,7 +7,7 @@ import { autoPlay } from 'react-swipeable-views-utils'
 const AutoPlaySwipeableViews = autoPlay(SwipeableViews)
 
 interface CarouselProps {
-  children: React.ReactNode
+  children: any
 }
 
 export const Carousel = ({ children }: CarouselProps) => {
