@@ -6,7 +6,11 @@ import { autoPlay } from 'react-swipeable-views-utils'
 
 const AutoPlaySwipeableViews = autoPlay(SwipeableViews)
 
-export const Carousel = ({ children }: { children: React.ReactNode }) => {
+interface CarouselProps {
+  children: React.ReactNode
+}
+
+export const Carousel = ({ children }: CarouselProps) => {
   return (
     <AutoPlaySwipeableViews
       enableMouseEvents
