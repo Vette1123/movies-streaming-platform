@@ -6,8 +6,9 @@ import { SeriesDetails } from '@/types/series-details'
 import { getImageURL, getPosterImageURL } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
 
+export type HeroImageMedia = (Movie | MovieDetails) & SeriesDetails
 interface HeroImageProps {
-  movie?: (Movie | MovieDetails) & SeriesDetails
+  movie?: HeroImageMedia
 }
 
 export const HeroImage = ({ movie }: HeroImageProps) => {
