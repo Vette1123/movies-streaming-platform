@@ -1,12 +1,14 @@
-'use client'
-
 import React from 'react'
 import SwipeableViews from 'react-swipeable-views'
 import { autoPlay } from 'react-swipeable-views-utils'
 
 const AutoPlaySwipeableViews = autoPlay(SwipeableViews)
 
-export const Carousel = ({ children }: { children: React.ReactNode }) => {
+interface CarouselProps {
+  children: React.ReactNode
+}
+
+export const Carousel: React.FC<CarouselProps> = ({ children }) => {
   return (
     <AutoPlaySwipeableViews
       enableMouseEvents
