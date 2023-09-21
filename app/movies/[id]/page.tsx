@@ -6,7 +6,7 @@ import {
 } from '@/services/movies'
 
 import { PageDetailsProps } from '@/types/page-details'
-import { DetailsPageContent } from '@/components/media/details-content'
+import { MoviesDetailsContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
 
 export async function generateMetadata(
@@ -41,7 +41,7 @@ const MoviePage = async ({ params }: PageDetailsProps) => {
   return (
     <header className="relative">
       <MovieDetailsHero movie={movieDetails} />
-      <DetailsPageContent
+      <MoviesDetailsContent
         movie={movieDetails}
         movieCredits={movieCredits}
         similarMovies={similarMovies}

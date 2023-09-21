@@ -75,50 +75,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <>
       <html lang="en" suppressHydrationWarning>
-        <head>
-          {/* <meta
-            httpEquiv="Content-Security-Policy"
-            content="frame-src 'none';"
-          />
-
-          <meta
-            httpEquiv="Content-Security-Policy"
-            content="frame-src 'self';"
-          /> */}
-
-          {/* <meta
-            httpEquiv="Content-Security-Policy"
-            content="child-src 'none';"
-          /> */}
-          <meta
-            httpEquiv="Content-Security-Policy"
-            content="object-src 'none';"
-          />
-          <meta
-            httpEquiv="Content-Security-Policy"
-            content="form-action 'self';"
-          />
-          <meta
-            httpEquiv="Content-Security-Policy"
-            content="connect-src 'self';"
-          />
-          <meta
-            httpEquiv="Content-Security-Policy"
-            content="media-src 'self';"
-          />
-          <meta
-            httpEquiv="Content-Security-Policy"
-            content="base-uri 'self';"
-          />
-          <meta
-            httpEquiv="Content-Security-Policy"
-            content="manifest-src 'self';"
-          />
-          <meta
-            httpEquiv="Content-Security-Policy"
-            content="worker-src 'self';"
-          />
-        </head>
+        <head />
         <body
           className={cn(
             'min-h-screen scroll-smooth bg-background font-sans antialiased',

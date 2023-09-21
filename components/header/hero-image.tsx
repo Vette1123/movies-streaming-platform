@@ -7,13 +7,12 @@ import { getImageURL, getPosterImageURL } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
 
 interface HeroImageProps {
-  movie?: Movie | MovieDetails
-  series?: SeriesDetails
+  movie?: (Movie | MovieDetails) & SeriesDetails
 }
 
-export const HeroImage = ({ movie, series }: HeroImageProps) => {
-  const media = (movie || series) as MovieDetails & SeriesDetails & Movie
-  const alt = media?.title || media?.name
+export const HeroImage = ({ movie }: HeroImageProps) => {
+  const media = movie
+  const alt = media?.title || media?.name || 'ALT TEXT'
   return (
     <>
       {media?.backdrop_path && (
