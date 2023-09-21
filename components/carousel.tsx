@@ -8,7 +8,7 @@ interface CarouselProps {
   children: React.ReactNode
 }
 
-export const Carousel: React.FC<CarouselProps> = ({ children }) => {
+export function Carousel({ children }: CarouselProps) {
   return (
     <AutoPlaySwipeableViews
       enableMouseEvents
@@ -20,5 +20,5 @@ export const Carousel: React.FC<CarouselProps> = ({ children }) => {
     >
       {children}
     </AutoPlaySwipeableViews>
-  )
+  ) as React.ReactNode
 }
