@@ -1,10 +1,20 @@
+'use client'
+
 import React from 'react'
 import SwipeableViews from 'react-swipeable-views'
 import { autoPlay } from 'react-swipeable-views-utils'
 
-const AutoPlaySwipeableViews = autoPlay(SwipeableViews)
+const AutoPlaySwipeableViews = autoPlay(SwipeableViews) as React.ComponentType<{
+  children: React.ReactNode
+  enableMouseEvents: boolean
+  className: string
+  loop: boolean
+  animateTransitions: boolean
+  threshold: number
+  autoPlay: boolean
+}>
 
-export function Carousel({ children }: any) {
+export function Carousel({ children }: { children: React.ReactNode }) {
   return (
     <AutoPlaySwipeableViews
       enableMouseEvents
@@ -16,5 +26,5 @@ export function Carousel({ children }: any) {
     >
       {children}
     </AutoPlaySwipeableViews>
-  ) as React.ReactNode
+  )
 }
