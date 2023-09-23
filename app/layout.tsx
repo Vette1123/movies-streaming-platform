@@ -69,9 +69,10 @@ export const metadata: Metadata = {
 
 interface RootLayoutProps {
   children: React.ReactNode
+  modal: React.ReactNode
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default function RootLayout({ children, modal }: RootLayoutProps) {
   return (
     <>
       <html lang="en" suppressHydrationWarning>
@@ -89,6 +90,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
               <ToastProvider />
               <Analytics mode="production" />
               <Footer />
+              {modal && modal}
             </div>
           </div>
         </body>

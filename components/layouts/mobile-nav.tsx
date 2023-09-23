@@ -52,6 +52,7 @@ export function MobileNav({ items }: MobileNavProps) {
                 pathname={pathname}
                 setIsOpen={setIsOpen}
                 disabled={item.disabled}
+                scroll={item.scroll}
               >
                 {item.title}
               </MobileLink>
@@ -85,6 +86,7 @@ interface MobileLinkProps {
   disabled?: boolean
   pathname: string
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
+  scroll?: boolean
 }
 
 function MobileLink({
@@ -93,10 +95,12 @@ function MobileLink({
   disabled,
   pathname,
   setIsOpen,
+  scroll,
 }: MobileLinkProps) {
   return (
     <Link
       href={href}
+      scroll={scroll}
       className={cn(
         'w-fit text-base font-medium text-foreground/70 transition-colors hover:text-foreground',
         pathname === href && 'text-secondary-foreground',

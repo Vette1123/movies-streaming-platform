@@ -7,14 +7,22 @@ export const siteConfig = {
     {
       title: 'Home',
       href: '/',
+      scroll: true,
     },
     {
       title: 'Movies',
       href: '/movies',
+      scroll: true,
     },
     {
       title: 'TV Shows',
       href: '/tv-shows',
+      scroll: true,
+    },
+    {
+      title: 'Disclaimer',
+      href: '/disclaimer',
+      scroll: false,
     },
   ],
   personalLogo:

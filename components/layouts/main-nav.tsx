@@ -30,6 +30,7 @@ export function MainNav({ items }: MainNavProps) {
                 <Link
                   key={index}
                   href={item.href}
+                  scroll={item.scroll}
                   className={cn(
                     'flex items-center text-base font-medium text-secondary-foreground',
                     pathname === item.href && 'underline underline-offset-4',
