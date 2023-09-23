@@ -17,6 +17,7 @@ export const DetailsHero = forwardRef<
   }
 >(({ movie, isIframeShown, playVideo, series }, ref) => {
   const media = (movie || series) as MovieDetails & SeriesDetails
+  const title = media?.title || media?.name
   return (
     <section className="relative isolate h-[500px] overflow-hidden lg:h-[80dvh]">
       <HeroImage movie={media} />
@@ -43,10 +44,15 @@ export const DetailsHero = forwardRef<
             })}
             allowFullScreen
             ref={ref}
+            autoFocus
             content="noindex,nofollow"
-            autoSave="true"
-            about={media?.title || media?.name}
-            allow="autoplay *;"
+            autoSave={title.toLowerCase().trim()}
+            id={title}
+            name={title}
+            title={title}
+            about={media?.overview}
+            key={media?.id}
+            allow="autoplay; encrypted-media"
           ></iframe>
         </div>
       </div>
