@@ -34,7 +34,7 @@ const Modal: FC<ModalProps> = ({ children }) => {
 
   return (
     <Dialog open onOpenChange={handleOnOpenChange}>
-      <DialogContent className="max-w-screen-md">
+      <DialogContent className="top-[50%] max-w-screen-md">
         <DialogHeader>
           <DialogTitle>Disclaimer</DialogTitle>
           <DialogDescription>
