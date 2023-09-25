@@ -24,6 +24,8 @@ import {
 } from '@/components/ui/command'
 import { Icons } from '@/components/icons'
 
+import { Badge } from './ui/badge'
+
 export function CommandMenu({ ...props }: CommandDialogProps) {
   const { open, setOpen, runCommand, isLoading, setIsLoading } =
     useCMDKListener()
@@ -67,8 +69,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
         onClick={() => setOpen(true)}
         {...props}
       >
-        <span className="hidden lg:inline-flex">Search movies...</span>
-        <span className="inline-flex lg:hidden">Search...</span>
+        <span className="inline-flex">Search...</span>
         <kbd className="pointer-events-none absolute right-2 top-2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
           <span className="text-xs">⌘</span>K
         </kbd>
@@ -88,7 +89,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                   <CommandItem
                     key={movie.id}
                     value={movie?.title}
-                    className="cursor-pointer"
+                    className="group/command-item cursor-pointer transition-colors duration-200 hover:bg-primary-foreground/50"
                     onSelect={() => {
                       runCommand(() => {
                         if (movie?.media_type && movie?.media_type === 'tv') {
@@ -99,17 +100,35 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                       })
                     }}
                   >
-                    <div className="flex max-w-md items-center gap-2">
-                      <Avatar>
-                        <AvatarImage
-                          src={`${getPosterImageURL(movie.poster_path)}`}
-                        />
-                        <AvatarFallback>G</AvatarFallback>
-                      </Avatar>
-                      <p className="truncate">{movie?.title}</p>
+                    <div className="flex w-full items-center justify-between gap-2">
+                      <div className="flex max-w-sm items-center gap-2">
+                        <Avatar>
+                          <AvatarImage
+                            src={`${getPosterImageURL(movie.poster_path)}`}
+                          />
+                          <AvatarFallback>G</AvatarFallback>
+                        </Avatar>
+                        <p className="truncate">{movie?.title}</p>
+                      </div>
+                      <div>
+                        <Badge
+                          variant="outline"
+                          className="bg-primary-foreground/70 text-xs"
+                        >
+                          {movie?.media_type}
+                        </Badge>
+                      </div>
                     </div>
                   </CommandItem>
                 )
+            )}
+            {!deduplicatedData?.length && (
+              <CommandItem className="justify-center">
+                <div className="flex items-center gap-2">
+                  <Icons.search className="h-4 w-4" />
+                  Please type a movie or series name...
+                </div>
+              </CommandItem>
             )}
           </CommandGroup>
           <CommandSeparator />

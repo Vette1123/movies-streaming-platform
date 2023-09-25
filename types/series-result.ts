@@ -1,3 +1,5 @@
+import { ItemType } from '@/types/movie-result'
+
 type Series = {
   adult: boolean
   backdrop_path: string
@@ -7,7 +9,7 @@ type Series = {
   original_name: string
   overview: string
   poster_path: string
-  media_type: string
+  media_type: ItemType
   genre_ids: number[]
   popularity: number
   first_air_date: string

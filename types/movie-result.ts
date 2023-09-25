@@ -15,7 +15,7 @@ type Movie = {
   video: boolean
   vote_average: number
   vote_count: number
-  media_type?: string
+  media_type?: ItemType
 }
 
 interface MovieResponse {
