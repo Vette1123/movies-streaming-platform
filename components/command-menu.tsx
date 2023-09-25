@@ -123,10 +123,12 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                 )
             )}
             {!deduplicatedData?.length && (
-              <CommandItem className="justify-center">
+              <CommandItem className="h-8 justify-center">
                 <div className="flex items-center gap-2">
                   <Icons.search className="h-4 w-4" />
-                  Please type a movie or series name...
+                  <p className="text-sm">
+                    Please type a movie or series name...
+                  </p>
                 </div>
               </CommandItem>
             )}
