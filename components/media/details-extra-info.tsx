@@ -23,7 +23,7 @@ export const DetailsExtraInfo = ({
       <p className="prose-invert text-xs font-semibold lg:text-lg">
         {movie.overview}
       </p>
-      <div className="my-4 flex max-w-sm flex-col space-y-1">
+      <div className="my-4 flex max-w-lg flex-col space-y-1">
         {extraInfo.map((info) => (
           <div
             key={info.name}

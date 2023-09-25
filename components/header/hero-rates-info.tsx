@@ -31,7 +31,7 @@ export const HeroRatesInfos = ({
   return (
     <div className="my-4 flex flex-wrap items-center gap-2 lg:gap-3">
       <Badge className="uppercase">{item?.original_language}</Badge>
-      <Badge className="uppercase">{item?.adult ? 'NC-17' : 'G'}</Badge>
+      <Badge className="uppercase">{item?.adult ? 'NC-17' : 'PG-13'}</Badge>
       <div className="flex items-center text-xs lg:text-base">
         <Icons.fullStar className="mr-1 h-6 w-6" />
         <p className="font-semibold">{numberRounder(item?.vote_average)}</p>
