@@ -5,7 +5,7 @@ const MOVIES_GENRE = [
   },
   {
     id: 12,
-    name: 'Abenteuer',
+    name: 'Adventure',
   },
   {
     id: 16,
@@ -13,15 +13,15 @@ const MOVIES_GENRE = [
   },
   {
     id: 35,
-    name: 'Komödie',
+    name: 'Comedy',
   },
   {
     id: 80,
-    name: 'Krimi',
+    name: 'Crime',
   },
   {
     id: 99,
-    name: 'Dokumentarfilm',
+    name: 'Documentary',
   },
   {
     id: 18,
@@ -29,7 +29,7 @@ const MOVIES_GENRE = [
   },
   {
     id: 10751,
-    name: 'Familie',
+    name: 'Family',
   },
   {
     id: 14,
@@ -37,7 +37,7 @@ const MOVIES_GENRE = [
   },
   {
     id: 36,
-    name: 'Historie',
+    name: 'History',
   },
   {
     id: 27,
@@ -45,7 +45,7 @@ const MOVIES_GENRE = [
   },
   {
     id: 10402,
-    name: 'Musik',
+    name: 'Music',
   },
   {
     id: 9648,
@@ -53,7 +53,7 @@ const MOVIES_GENRE = [
   },
   {
     id: 10749,
-    name: 'Liebesfilm',
+    name: 'Romance',
   },
   {
     id: 878,
@@ -61,7 +61,7 @@ const MOVIES_GENRE = [
   },
   {
     id: 10770,
-    name: 'TV-Film',
+    name: 'TV Movie',
   },
   {
     id: 53,
@@ -69,7 +69,7 @@ const MOVIES_GENRE = [
   },
   {
     id: 10752,
-    name: 'Kriegsfilm',
+    name: 'War',
   },
   {
     id: 37,
