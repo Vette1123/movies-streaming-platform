@@ -49,9 +49,9 @@ export function Footer() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            Vercel,
-          </Link>{' '}
-          Using{' '}
+            Vercel
+          </Link>
+          , Using{' '}
           <Link
             href="https://vidsrc.to/"
             className="font-medium text-slate-300/75"
@@ -59,6 +59,15 @@ export function Footer() {
             rel="noopener noreferrer"
           >
             VidSrc
+          </Link>
+          ,{' '}
+          <Link
+            href="https://mywebb-mustafaarslankaya.vercel.app"
+            className="font-medium text-slate-300/75"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Arslankaya &#10084;
           </Link>
         </p>
       </div>

@@ -1,7 +1,7 @@
 import React from 'react'
 
-import { DisclaimerContent } from '@/components/disclaimer-content'
-import DisclaimerModal from '@/components/disclaimer-modal'
+import { DisclaimerContent } from '@/components/disclaimer/disclaimer-content'
+import DisclaimerModal from '@/components/disclaimer/disclaimer-modal'
 
 function Disclaimer() {
   return (

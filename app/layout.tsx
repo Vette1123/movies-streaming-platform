@@ -8,7 +8,7 @@ import { Analytics } from '@vercel/analytics/react'
 import { siteConfig } from '@/config/site'
 import { fontSans } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
-import { Footer } from '@/components/footer'
+import { Footer } from '@/components/layouts/footer'
 import { SiteHeader } from '@/components/layouts/site-header'
 
 export const metadata: Metadata = {

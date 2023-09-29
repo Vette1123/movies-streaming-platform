@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { DisclaimerContent } from '@/components/disclaimer-content'
+import { DisclaimerContent } from '@/components/disclaimer/disclaimer-content'
 
 function Disclaimer() {
   return (
