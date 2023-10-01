@@ -22,7 +22,7 @@ export const HeroImage = ({ movie }: HeroImageProps) => {
           alt={alt}
           className="hidden h-full w-full object-cover lg:block"
           fill
-          sizes="(min-width: 1024px) 1024px, 100vw"
+          sizes="(min-width: 1024px) 1024px, 100vw , (max-width: 768px) 768px, 100vw, (max-width: 640px) 640px, 100vw"
           intro
           priority
         />
