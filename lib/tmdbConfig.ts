@@ -3,9 +3,15 @@ const apiConfig = {
   apiKey: process.env.TMDB_API_KEY,
   headerKey: process.env.TMDB_HEADER_KEY,
   originalImage: (imgPath: string) =>
-    `https://image.tmdb.org/t/p/original${imgPath}`,
-  w500Image: (imgPath: string) => `https://image.tmdb.org/t/p/w500${imgPath}`,
+    `https://ik.imagekit.io/6inz30h0z/original${imgPath}`,
+  w500Image: (imgPath: string) =>
+    `https://ik.imagekit.io/6inz30h0z/w500${imgPath}`,
 }
+
+// old
+// originalImage: (imgPath: string) =>
+// `https://image.tmdb.org/t/p/original${imgPath}`,
+// w500Image: (imgPath: string) => `https://image.tmdb.org/t/p/w500${imgPath}`,
 
 const category = {
   movie: 'movie',
