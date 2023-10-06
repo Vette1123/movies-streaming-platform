@@ -60,15 +60,15 @@ export function Footer() {
           >
             VidSrc
           </Link>
-          ,{' '}
-          <Link
+          .{/* ,{' '} */}
+          {/* <Link
             href="https://mywebb-mustafaarslankaya.vercel.app"
             className="font-medium text-slate-300/75"
             target="_blank"
             rel="noopener noreferrer"
           >
             Arslankaya &#10084;
-          </Link>
+          </Link> */}
         </p>
       </div>
     </footer>
