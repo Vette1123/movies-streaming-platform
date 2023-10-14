@@ -24,6 +24,8 @@ export const fetchClient = {
               Authorization: `Bearer ${apiConfig.headerKey}`,
             }),
           },
+          // data will revalidate every 8 hours
+          next: { revalidate: 28800 },
         }
       )
 
