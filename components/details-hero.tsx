@@ -18,6 +18,7 @@ export const DetailsHero = forwardRef<
 >(({ movie, isIframeShown, playVideo, series }, ref) => {
   const media = (movie || series) as MovieDetails & SeriesDetails
   const title = media?.title || media?.name
+
   return (
     <section className="relative isolate h-[500px] overflow-hidden lg:h-[80dvh]">
       <HeroImage movie={media} />
@@ -52,7 +53,7 @@ export const DetailsHero = forwardRef<
             title={title}
             about={media?.overview}
             key={media?.id}
-            allow="autoplay; encrypted-media"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           ></iframe>
         </div>
       </div>

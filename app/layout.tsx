@@ -42,10 +42,6 @@ export const metadata: Metadata = {
       },
     ],
   },
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' },
-  ],
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon-32x32.png',
@@ -55,7 +51,6 @@ export const metadata: Metadata = {
   },
   publisher: siteConfig.links.github,
   applicationName: siteConfig.name,
-  colorScheme: 'light dark',
   keywords: siteConfig.keywords,
   appLinks: {
     web: [

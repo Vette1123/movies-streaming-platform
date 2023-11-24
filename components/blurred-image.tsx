@@ -28,7 +28,7 @@ export function BlurredImage({
         'blur-lg': isLoading,
         'blur-0': !isLoading,
       })}
-      onLoadingComplete={() => setLoading(false)}
+      onLoad={() => setLoading(false)}
     />
   ) : (
     <div className="w-fit overflow-hidden rounded-lg bg-slate-900">
@@ -40,7 +40,7 @@ export function BlurredImage({
           'blur-lg': isLoading,
           'blur-0': !isLoading,
         })}
-        onLoadingComplete={() => setLoading(false)}
+        onLoad={() => setLoading(false)}
       />
     </div>
   )
