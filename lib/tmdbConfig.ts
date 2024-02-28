@@ -3,9 +3,9 @@ const apiConfig = {
   apiKey: process.env.TMDB_API_KEY,
   headerKey: process.env.TMDB_HEADER_KEY,
   originalImage: (imgPath: string) =>
-    `https://ik.imagekit.io/6inz30h0z/original${imgPath}`,
+    `https://ik.imagekit.io/ep36kalau/original${imgPath}`,
   w500Image: (imgPath: string) =>
-    `https://ik.imagekit.io/6inz30h0z/w500${imgPath}`,
+    `https://ik.imagekit.io/ep36kalau/w500${imgPath}`,
 }
 
 // old
