@@ -16,8 +16,8 @@ export function MainNav({ items }: MainNavProps) {
   const pathname = usePathname()
   return (
     <div className="hidden gap-6 md:gap-10 lg:flex">
-      <Link href="/" className="flex items-center space-x-2">
-        <Icons.logo className="h-6 w-6" />
+      <Link href="/" className="flex items-baseline space-x-2">
+        <Icons.reelLogo className="h-7 w-7" />
         <span className="inline-block text-3xl font-bold text-secondary-foreground">
           {siteConfig.name}
         </span>

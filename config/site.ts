@@ -1,8 +1,8 @@
 export type SiteConfig = typeof siteConfig
 
 export const siteConfig = {
-  name: 'Sadge',
-  description: 'Sadge is a movie and tv show tracker built by Mohamed Gado.',
+  name: 'Reely',
+  description: 'Reely is a movie and tv show tracker built by Mohamed Gado.',
   mainNav: [
     {
       title: 'Home',
