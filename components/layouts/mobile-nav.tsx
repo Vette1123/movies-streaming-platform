@@ -39,7 +39,7 @@ export function MobileNav({ items }: MobileNavProps) {
             className="flex w-fit items-center"
             onClick={() => setIsOpen(false)}
           >
-            <Icons.logo className="mr-2 h-6 w-6" aria-hidden="true" />
+            <Icons.reelLogo className="mr-2 h-6 w-6" aria-hidden="true" />
             <span className="text-lg font-bold">{siteConfig.name}</span>
           </Link>
         </div>
