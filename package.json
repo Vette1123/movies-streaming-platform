@@ -47,7 +47,7 @@
     "@types/react-dom": "^18.2.17",
     "@types/react-swipeable-views": "^0.13.5",
     "@types/react-swipeable-views-utils": "^0.13.7",
-    "@typescript-eslint/parser": "^6.12.0",
+    "@typescript-eslint/parser": "^7.0.0",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.54.0",
     "eslint-config-next": "^14.0.3",
