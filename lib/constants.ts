@@ -1,7 +1,8 @@
 const TOP_OFFSET = 60
-// const STREAMING_MOVIES_API_URL = 'https://vidsrc.to/embed'
-const STREAMING_MOVIES_API_URL = 'https://vidsrc.pro/embed'
-const SEARCH_ACTOR_GOOGLE = 'https://www.google.com/search?q='
+const STREAMING_MOVIES_API_URL =
+  process.env.NEXT_PUBLIC_STREAMING_MOVIES_API_URL
+const SEARCH_ACTOR_GOOGLE = process.env.NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE
+const IMAGE_CACHE_HOST_URL = process.env.IMAGE_CACHE_HOST_URL
 const SEARCH_DEBOUNCE = 400
 
 export {
@@ -9,4 +10,5 @@ export {
   STREAMING_MOVIES_API_URL,
   SEARCH_ACTOR_GOOGLE,
   SEARCH_DEBOUNCE,
+  IMAGE_CACHE_HOST_URL,
 }
