@@ -31,6 +31,7 @@ export const siteConfig = {
     twitter: 'https://twitter.com/Sadge1996',
     github: 'https://github.com/Vette1123',
     website: 'https://www.mohamedgado.info/',
+    buyMeACoffee: 'https://buymeacoffee.com/vetteotp',
   },
   openGraph: {
     locale: 'en_US',

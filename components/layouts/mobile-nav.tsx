@@ -24,7 +24,7 @@ export function MobileNav({ items }: MobileNavProps) {
           variant="ghost"
           className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 lg:hidden"
         >
-          <Icons.menu className="h-6 w-6" />
+          <Icons.menu className="size-6" />
           <span className="sr-only">Toggle Menu</span>
         </Button>
       </SheetTrigger>
@@ -39,7 +39,7 @@ export function MobileNav({ items }: MobileNavProps) {
             className="flex w-fit items-center"
             onClick={() => setIsOpen(false)}
           >
-            <Icons.reelLogo className="mr-2 h-6 w-6" aria-hidden="true" />
+            <Icons.reelLogo className="mr-2 size-6" aria-hidden="true" />
             <span className="text-lg font-bold">{siteConfig.name}</span>
           </Link>
         </div>
@@ -59,7 +59,23 @@ export function MobileNav({ items }: MobileNavProps) {
             </div>
           ))}
         </div>
-        <div className="px-9 pb-10">
+        <div className="space-y-6 px-9 pb-10">
+          <Link
+            href={siteConfig.links.buyMeACoffee}
+            target="_blank"
+            rel="noreferrer"
+            className={cn(
+              buttonVariants({
+                variant: 'default',
+                size: 'default',
+                className: 'w-full',
+              }),
+              'text-white'
+            )}
+          >
+            <Icons.buyMeACoffee className="mr-2 size-5" />
+            Buy me a coffee
+          </Link>
           <Link
             href={siteConfig.links.website}
             target="_blank"
@@ -69,7 +85,8 @@ export function MobileNav({ items }: MobileNavProps) {
                 variant: 'default',
                 size: 'default',
                 className: 'w-full',
-              })
+              }),
+              'text-white'
             )}
           >
             Visit my portfolio

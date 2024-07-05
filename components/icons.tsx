@@ -1,4 +1,6 @@
+import BuyMeCoffe from '@/public/Buy Me a Coffee.svg'
 import {
+  Coffee,
   LucideIcon,
   LucideProps,
   Menu,
@@ -22,6 +24,8 @@ export const Icons = {
   star: StarIcon,
   playIcon: PlayCircle,
   search: Search,
+  buyMeACoffee: Coffee,
+
   fullStar: (props: LucideProps) => (
     <svg
       viewBox="0 0 576 512"
