@@ -22,7 +22,7 @@
     "@vercel/og": "^0.5.20",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
-    "cmdk": "^0.2.0",
+    "cmdk": "^1.0.0",
     "framer-motion": "^10.16.5",
     "lucide-react": "^0.292.0",
     "next": "14.0.3",
