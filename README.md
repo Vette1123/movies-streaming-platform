@@ -16,4 +16,6 @@ Welcome to [Reely Live!](https://www.reely.live)! This is your go-to platform fo
 
 ## Support
 
-Would appreciate your support and feedback,[![Buy Me A Coffee!](https://cdn.buymeacoffee.com/buttons/default-orange.png)](https://buymeacoffee.com/vetteotp)
+Would appreciate your support and feedback.
+
+[![Buy Me A Coffee!](https://cdn.buymeacoffee.com/buttons/default-orange.png)](https://buymeacoffee.com/vetteotp)
