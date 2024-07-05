@@ -1,4 +1,3 @@
-import BuyMeCoffe from '@/public/Buy Me a Coffee.svg'
 import {
   Coffee,
   LucideIcon,
