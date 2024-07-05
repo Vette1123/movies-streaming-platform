@@ -39,8 +39,8 @@ importers:
         specifier: ^1.1.1
         version: 1.3.1(next@14.0.3(@babel/core@7.24.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
       '@vercel/og':
-        specifier: ^0.5.20
-        version: 0.5.20
+        specifier: ^0.6.0
+        version: 0.6.2
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.0
@@ -894,8 +894,8 @@ packages:
   '@radix-ui/rect@1.1.0':
     resolution: {integrity: sha512-A9+lCBZoaMJlVKcRBz2YByCG+Cp2t6nAnMnNba+XiWxnj6r4JUFqfsgwocMBZU9LPtdxC6wB56ySYpc7LQIoJg==}
 
-  '@resvg/resvg-wasm@2.6.0':
-    resolution: {integrity: sha512-iDkBM6Ivex8nULtBu8cX670/lfsGxq8U1cuqE+qS9xFpPQP1enPdVm/33Kq3+B+bAldA+AHNZnCgpmlHo/fZrQ==}
+  '@resvg/resvg-wasm@2.4.0':
+    resolution: {integrity: sha512-C7c51Nn4yTxXFKvgh2txJFNweaVcfUPQxwEUFw4aWsCmfiBDJsTSwviIF8EcwjQ6k8bPyMWCl1vw4BdxE569Cg==}
     engines: {node: '>= 10'}
 
   '@rushstack/eslint-patch@1.10.3':
@@ -1000,8 +1000,8 @@ packages:
       react:
         optional: true
 
-  '@vercel/og@0.5.20':
-    resolution: {integrity: sha512-zi+ZXSx/peXA+1lq7s/5Vzmm/TTfTSf/5P1qNYnh42+7X+pZmahWoXt0i7SWiq3WagfsNUNA4hUDapDiHRoXqA==}
+  '@vercel/og@0.6.2':
+    resolution: {integrity: sha512-OTe0KE37F5Y2eTys6eMnfopC+P4qr2ooXUTFyFPTplYSPwowmFk/HLD1FXtbKLjqsIH0SgekcJWad+C5uX4nkg==}
     engines: {node: '>=16'}
 
   JSONStream@1.3.5:
@@ -3876,7 +3876,7 @@ snapshots:
 
   '@radix-ui/rect@1.1.0': {}
 
-  '@resvg/resvg-wasm@2.6.0': {}
+  '@resvg/resvg-wasm@2.4.0': {}
 
   '@rushstack/eslint-patch@1.10.3': {}
 
@@ -3990,9 +3990,9 @@ snapshots:
       next: 14.0.3(@babel/core@7.24.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       react: 18.2.0
 
-  '@vercel/og@0.5.20':
+  '@vercel/og@0.6.2':
     dependencies:
-      '@resvg/resvg-wasm': 2.6.0
+      '@resvg/resvg-wasm': 2.4.0
       satori: 0.10.9
       yoga-wasm-web: 0.3.3
 
