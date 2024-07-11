@@ -70,7 +70,7 @@ importers:
         version: 18.2.0(react@18.2.0)
       react-intersection-observer:
         specifier: ^9.5.3
-        version: 9.10.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        version: 9.12.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       react-swipeable-views:
         specifier: ^0.14.0
         version: 0.14.0(react@18.2.0)
@@ -2465,8 +2465,8 @@ packages:
     peerDependencies:
       react: ^16.3.0
 
-  react-intersection-observer@9.10.3:
-    resolution: {integrity: sha512-9NYfKwPZRovB6QJee7fDg0zz/SyYrqXtn5xTZU0vwLtLVBtfu9aZt1pVmr825REE49VPDZ7Lm5SNHjJBOTZHpA==}
+  react-intersection-observer@9.12.0:
+    resolution: {integrity: sha512-KmczTRfcIg5hcmqFbb1fKPprT7AkOjj0ohUCs1iOwWe9BJPnC5nQ7dRX44z2W1jHiRt1uQST0AxGqWL6X8pN2A==}
     peerDependencies:
       react: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -5612,7 +5612,7 @@ snapshots:
       react: 18.2.0
       warning: 4.0.3
 
-  react-intersection-observer@9.10.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0):
+  react-intersection-observer@9.12.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0):
     dependencies:
       react: 18.2.0
     optionalDependencies:
