@@ -139,8 +139,8 @@ importers:
         specifier: ^3.13.0
         version: 3.17.4(tailwindcss@3.4.4)
       husky:
-        specifier: ^8.0.3
-        version: 8.0.3
+        specifier: ^9.0.0
+        version: 9.0.11
       postcss:
         specifier: ^8.4.31
         version: 8.4.39
@@ -1800,9 +1800,9 @@ packages:
     resolution: {integrity: sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==}
     engines: {node: '>=10.17.0'}
 
-  husky@8.0.3:
-    resolution: {integrity: sha512-+dQSyqPh4x1hlO1swXBiNb2HzTDN1I2IGLQx1GrBuiqFJfoMrnZWwVmatvSiO+Iz8fBUnf+lekwNo4c2LlXItg==}
-    engines: {node: '>=14'}
+  husky@9.0.11:
+    resolution: {integrity: sha512-AB6lFlbwwyIqMdHYhwPe+kjOC3Oc5P3nThEoW/AaO2BX3vJDjWPFxYLxokUZOo6RNX20He3AaT8sESs9NJcmEw==}
+    engines: {node: '>=18'}
     hasBin: true
 
   ignore@5.3.1:
@@ -4994,7 +4994,7 @@ snapshots:
 
   human-signals@2.1.0: {}
 
-  husky@8.0.3: {}
+  husky@9.0.11: {}
 
   ignore@5.3.1: {}
 
