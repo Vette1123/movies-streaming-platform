@@ -23,7 +23,7 @@ export function Footer() {
           </Link>{' '}
           by{' '}
           <Link
-            href="https://www.mohamedgado.info/"
+            href="https://www.mohamedgado.site/"
             className="font-medium text-slate-300/75"
             target="_blank"
             rel="noopener noreferrer"
