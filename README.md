@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Welcome to [Reely Live!](https://www.reely.live)! This is your go-to platform for discovering and streaming the latest movies and exclusive content, designed to enhance your viewing experience.
+Welcome to [Reely Site!](https://www.reely.site)! This is your go-to platform for discovering and streaming the latest movies and exclusive content, designed to enhance your viewing experience.
 
 ## Features
 
