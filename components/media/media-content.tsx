@@ -20,7 +20,10 @@ export const MediaContent = ({
   getPopularMediaAction,
   queryKey,
 }: MediaContentProps) => {
-  const [myRef, inView] = useInView()
+  const [myRef, inView] = useInView({
+    threshold: 0,
+    rootMargin: '0px 0px 200px 0px',
+  })
   const { data, fetchNextPage } = useInfiniteScroll({
     media,
     popularMediaAction: getPopularMediaAction,
