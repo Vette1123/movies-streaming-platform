@@ -101,14 +101,16 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                     }}
                   >
                     <div className="flex w-full items-center justify-between gap-2">
-                      <div className="flex max-w-sm items-center gap-2">
+                      <div className="flex items-center gap-2">
                         <Avatar>
                           <AvatarImage
                             src={`${getPosterImageURL(movie.poster_path)}`}
                           />
                           <AvatarFallback>G</AvatarFallback>
                         </Avatar>
-                        <p className="truncate">{movie?.title}</p>
+                        <p className="max-w-[200px] truncate md:max-w-xs">
+                          {movie?.title}
+                        </p>
                       </div>
                       <div>
                         <Badge
@@ -125,7 +127,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
             {!deduplicatedData?.length && (
               <CommandItem className="h-8 justify-center">
                 <div className="flex items-center gap-2">
-                  <Icons.search className="h-4 w-4" />
+                  <Icons.search className="size-4" />
                   <p className="text-sm">
                     Please type a movie or series name...
                   </p>
@@ -139,21 +141,21 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
               className="cursor-pointer"
               onSelect={() => runCommand(() => router.push(`/movies`))}
             >
-              <Icons.playIcon className="mr-2 h-4 w-4" />
+              <Icons.playIcon className="mr-2 size-4" />
               Movies
             </CommandItem>
             <CommandItem
               className="cursor-pointer"
               onSelect={() => runCommand(() => router.push(`/tv-shows`))}
             >
-              <Tv className="mr-2 h-4 w-4" />
+              <Tv className="mr-2 size-4" />
               Series
             </CommandItem>
             <CommandItem
               className="cursor-pointer"
               onSelect={() => runCommand(() => router.push(`/`))}
             >
-              <Home className="mr-2 h-4 w-4" />
+              <Home className="mr-2 size-4" />
               Home
             </CommandItem>
             <CommandItem
