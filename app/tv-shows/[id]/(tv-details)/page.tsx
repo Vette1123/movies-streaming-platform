@@ -6,6 +6,7 @@ import {
 } from '@/services/series'
 
 import { PageDetailsProps } from '@/types/page-details'
+import { getPosterImageURL } from '@/lib/utils'
 import { SeriesDetailsContent } from '@/components/series/details-content'
 import { SeriesDetailsHero } from '@/components/series/details-hero'
 
@@ -17,6 +18,7 @@ export async function generateMetadata(
   const id = params.id
 
   const movieDetails = await getSeriesDetailsById(id)
+  console.log('movieDetails', movieDetails)
 
   const previousImages = (await parent).openGraph?.images || []
 
@@ -26,8 +28,8 @@ export async function generateMetadata(
     metadataBase: new URL(`/movies/${id}`, process.env.NEXT_PUBLIC_BASE_URL),
     openGraph: {
       images: [
-        movieDetails.backdrop_path,
-        movieDetails.poster_path,
+        getPosterImageURL(movieDetails?.backdrop_path),
+        getPosterImageURL(movieDetails?.poster_path),
         ...previousImages,
       ],
     },

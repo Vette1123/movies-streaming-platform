@@ -6,6 +6,7 @@ import {
 } from '@/services/movies'
 
 import { PageDetailsProps } from '@/types/page-details'
+import { getPosterImageURL } from '@/lib/utils'
 import { MoviesDetailsContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
 
@@ -26,8 +27,8 @@ export async function generateMetadata(
     metadataBase: new URL(`/movies/${id}`, process.env.NEXT_PUBLIC_BASE_URL),
     openGraph: {
       images: [
-        movieDetails.backdrop_path,
-        movieDetails.poster_path,
+        getPosterImageURL(movieDetails.backdrop_path),
+        getPosterImageURL(movieDetails.poster_path),
         ...previousImages,
       ],
     },
