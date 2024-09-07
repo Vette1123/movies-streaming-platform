@@ -72,7 +72,7 @@ export function SiteHeader() {
                 })}
               >
                 <Icons.buyMeACoffee className="size-5" />
-                <span className="sr-only">Twitter</span>
+                <span className="sr-only">Buy me a coffee</span>
               </div>
             </Link>
           </nav>

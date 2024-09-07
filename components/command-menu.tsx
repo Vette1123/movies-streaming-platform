@@ -174,6 +174,19 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                 Portfolio
               </div>
             </CommandItem>
+            <CommandItem
+              className="cursor-pointer"
+              onSelect={() =>
+                runCommand(() =>
+                  window.open(`https://buymeacoffee.com/vetteotp`, '_blank')
+                )
+              }
+            >
+              <div className="flex items-center gap-4">
+                <Icons.buyMeACoffee className="size-5" />
+                Buy me a coffee
+              </div>
+            </CommandItem>
           </CommandGroup>
           <CommandSeparator />
         </CommandList>
