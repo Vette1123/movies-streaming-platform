@@ -50,14 +50,24 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
   const deduplicatedData: MediaType[] = (data || []).reduce(
     (acc, movie) => {
       const lowercaseTitle = movie?.title?.toLowerCase()
-      if (!lowercaseTitle || !acc.uniqueTitles[lowercaseTitle]) {
-        acc.uniqueTitles[lowercaseTitle] = true
-        acc.result.push(movie)
+      if (lowercaseTitle) {
+        const releaseDate = movie?.release_date?.split('-')
+        // const releaseYearMonth = releaseDate
+        //   ? `${releaseDate[0]}-${releaseDate[1]}`
+        //   : ''
+        const releaseYear = releaseDate ? releaseDate[0] : ''
+        const titleCount = acc.titleCounts[lowercaseTitle] || 0
+        const uniqueTitle =
+          titleCount > 0 && releaseYear
+            ? `${movie.title} - (${releaseYear})`
+            : movie.title
+        acc.titleCounts[lowercaseTitle] = titleCount + 1
+        acc.result.push({ ...movie, title: uniqueTitle })
       }
       return acc
     },
-    { uniqueTitles: {} as Record<string, boolean>, result: [] as MediaType[] }
-  ).result
+    { titleCounts: {} as Record<string, number>, result: [] as MediaType[] }
+  )?.result
 
   return (
     <>
