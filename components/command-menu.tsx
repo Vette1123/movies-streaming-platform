@@ -26,6 +26,20 @@ import { Icons } from '@/components/icons'
 
 import { Badge } from './ui/badge'
 
+const handleUniqueTitle = (
+  titleCount: number,
+  releaseYearMonth: string,
+  movie: MediaType
+) => {
+  if (titleCount > 0 && releaseYearMonth) {
+    return `${movie.title} - (${releaseYearMonth})`
+  }
+  if (titleCount > 0) {
+    return `${movie.title} - (${titleCount})`
+  }
+  return movie.title
+}
+
 export function CommandMenu({ ...props }: CommandDialogProps) {
   const { open, setOpen, runCommand, isLoading, setIsLoading } =
     useCMDKListener()
@@ -52,15 +66,16 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
       const lowercaseTitle = movie?.title?.toLowerCase()
       if (lowercaseTitle) {
         const releaseDate = movie?.release_date?.split('-')
-        // const releaseYearMonth = releaseDate
-        //   ? `${releaseDate[0]}-${releaseDate[1]}`
-        //   : ''
-        const releaseYear = releaseDate ? releaseDate[0] : ''
+        const releaseYearMonth =
+          releaseDate && releaseDate?.filter(Boolean).length
+            ? `${releaseDate[0]}-${releaseDate[1]}`
+            : ''
         const titleCount = acc.titleCounts[lowercaseTitle] || 0
-        const uniqueTitle =
-          titleCount > 0 && releaseYear
-            ? `${movie.title} - (${releaseYear})`
-            : movie.title
+        const uniqueTitle = handleUniqueTitle(
+          titleCount,
+          releaseYearMonth,
+          movie
+        )
         acc.titleCounts[lowercaseTitle] = titleCount + 1
         acc.result.push({ ...movie, title: uniqueTitle })
       }
