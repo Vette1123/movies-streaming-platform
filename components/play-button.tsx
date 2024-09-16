@@ -12,7 +12,7 @@ export const PlayButton = ({ onClick }: PlayButtonProps) => {
     <div className="rounded-full bg-gradient-to-br from-purple-600 to-blue-500 text-center font-medium text-white transition-colors duration-500 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500">
       <Icons.playIcon
         onClick={onClick}
-        className={cn('h-24 w-24 cursor-pointer')}
+        className={cn('size-24 cursor-pointer')}
       />
     </div>
   )

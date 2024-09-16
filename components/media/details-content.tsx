@@ -21,8 +21,9 @@ export const MoviesDetailsContent = ({
   similarMovies: Movie[]
   recommendedMovies: Movie[]
 }) => {
-  const director = movieCredits?.crew?.find((crew) => crew.job === 'Director')
-    ?.name
+  const director = movieCredits?.crew?.find(
+    (crew) => crew.job === 'Director'
+  )?.name
   return (
     <section className="container max-w-screen-2xl pb-10 pt-12 lg:pb-20">
       <div className="flex flex-col gap-8 lg:flex-row">

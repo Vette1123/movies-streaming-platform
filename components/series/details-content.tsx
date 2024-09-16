@@ -24,8 +24,9 @@ export const SeriesDetailsContent = ({
   similarSeries,
   recommendedSeries,
 }: SeriesDetailsContentProps) => {
-  const director = seriesCredits?.crew?.find((crew) => crew.job === 'Director')
-    ?.name
+  const director = seriesCredits?.crew?.find(
+    (crew) => crew.job === 'Director'
+  )?.name
   return (
     <section className="container max-w-screen-2xl pb-10 pt-12 lg:pb-20">
       <div className="flex flex-col-reverse gap-8 lg:flex-row">

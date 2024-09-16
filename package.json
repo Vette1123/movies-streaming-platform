@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prettier:format": "prettier --write .",
+    "prettier:check": "prettier --check ."
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.0",
