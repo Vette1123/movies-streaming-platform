@@ -28,7 +28,7 @@ export function WatchedItemCard({ item }: WatchedItemCardProps) {
   }
 
   return (
-    <Link href={handleRedirect()}>
+    <Link href={handleRedirect()} className="h-fit">
       <motion.div initial="rest" whileHover="hover" animate="rest">
         <motion.div variants={CARD_VARIANT}>
           <Card className="overflow-hidden">

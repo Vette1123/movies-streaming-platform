@@ -6,11 +6,13 @@ import { useSearchQueryParams } from '@/hooks/use-search-params'
 interface WatchedMediaHookResult {
   handleWatchMedia: (media: MovieDetails & SeriesDetails) => void
   watchedItems: ReturnType<typeof useLocalStorage>[0]
+  deleteWatchedItems: () => void
 }
 
 export function useWatchedMedia(): WatchedMediaHookResult {
   const [watchedItems, setWatchedItems] = useLocalStorage('watchedItems', [])
   const { seasonQueryINT, episodeQueryINT } = useSearchQueryParams()
+  const deleteWatchedItems = () => setWatchedItems([])
 
   const handleWatchMedia = (media: MovieDetails & SeriesDetails) => {
     const isMovie = 'title' in media
@@ -59,5 +61,5 @@ export function useWatchedMedia(): WatchedMediaHookResult {
     // If it's a movie and already in localStorage, do nothing
   }
 
-  return { handleWatchMedia, watchedItems }
+  return { handleWatchMedia, watchedItems, deleteWatchedItems }
 }

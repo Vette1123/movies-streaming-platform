@@ -15,6 +15,7 @@ interface EpisodesProps {
   isEpisodesLoading: boolean
   backdrop_path: string
   poster_path: string
+  series_name: string
 }
 
 export const Episodes = ({
@@ -23,6 +24,7 @@ export const Episodes = ({
   isEpisodesLoading,
   backdrop_path,
   poster_path,
+  series_name,
 }: EpisodesProps) => {
   const router = useRouter()
   const [watchedItems, setWatchedItems] = useLocalStorage('watchedItems', [])
@@ -38,7 +40,7 @@ export const Episodes = ({
         ...watchedItems,
         {
           id: episode?.show_id,
-          title: episode?.name,
+          title: series_name,
           poster_path: poster_path,
           type: 'series',
           season: Number(selectedSeason),
