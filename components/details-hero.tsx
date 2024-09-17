@@ -35,12 +35,12 @@ export const DetailsHero = forwardRef<
                   hidden: isIframeShown,
                 })}
               >
-                <PlayButton onClick={playVideo} />
+                <PlayButton onClick={playVideo} media={media} />
               </motion.div>
             )}
           </AnimatePresence>
           <iframe
-            className={cn('h-full w-full py-20', {
+            className={cn('size-full py-20', {
               hidden: !isIframeShown,
             })}
             allowFullScreen

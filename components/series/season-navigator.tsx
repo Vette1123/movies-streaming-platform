@@ -20,6 +20,8 @@ export const SeasonNavigator = ({ series }: { series: SeriesDetails }) => {
           episodes={episodes}
           selectedSeason={selectedSeason}
           isEpisodesLoading={isEpisodesLoading}
+          backdrop_path={series?.backdrop_path}
+          poster_path={series?.poster_path}
         />
       </ScrollArea>
     </aside>

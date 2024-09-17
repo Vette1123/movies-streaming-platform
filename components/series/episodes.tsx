@@ -4,6 +4,7 @@ import { Loader } from 'lucide-react'
 
 import { EpisodeDetails } from '@/types/episode'
 import { cn } from '@/lib/utils'
+import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useScrollToTop } from '@/hooks/use-scroll-to-top'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { Separator } from '@/components/ui/separator'
@@ -12,22 +13,65 @@ interface EpisodesProps {
   episodes: EpisodeDetails[] | undefined
   selectedSeason: string
   isEpisodesLoading: boolean
+  backdrop_path: string
+  poster_path: string
 }
 
 export const Episodes = ({
   episodes,
   selectedSeason,
   isEpisodesLoading,
+  backdrop_path,
+  poster_path,
 }: EpisodesProps) => {
   const router = useRouter()
+  const [watchedItems, setWatchedItems] = useLocalStorage('watchedItems', [])
   const { episodeQueryINT, seasonQueryINT } = useSearchQueryParams()
   const { scrollToTop } = useScrollToTop()
+
+  const handleWatchEpisode = (episode: EpisodeDetails) => {
+    const existingItemIndex = watchedItems.findIndex(
+      (item) => item.id === episode?.show_id
+    )
+    if (existingItemIndex === -1) {
+      setWatchedItems([
+        ...watchedItems,
+        {
+          id: episode?.show_id,
+          title: episode?.name,
+          poster_path: poster_path,
+          type: 'series',
+          season: Number(selectedSeason),
+          episode: episode?.episode_number,
+          overview: episode?.overview,
+          backdrop_path: backdrop_path,
+          added_at: new Date().toISOString(),
+        },
+      ])
+    } else {
+      const existingItem = watchedItems[existingItemIndex]
+
+      const updatedItems = [...watchedItems]
+      updatedItems[existingItemIndex] = {
+        ...existingItem,
+        season: Number(selectedSeason),
+        episode: episode?.episode_number,
+      }
+      setWatchedItems(updatedItems)
+    }
+
+    router.push(
+      `?season=${selectedSeason}&episode=${episode?.episode_number}`,
+      { scroll: false }
+    )
+    scrollToTop()
+  }
 
   return (
     <section className="p-4">
       {!episodes?.length && isEpisodesLoading && (
         <div className="flex items-center justify-center">
-          <Loader className="mr-2 h-6 w-6 shrink-0 animate-spin opacity-80" />
+          <Loader className="mr-2 size-6 shrink-0 animate-spin opacity-80" />
         </div>
       )}
       {!episodes?.length && !isEpisodesLoading && (
@@ -47,11 +91,7 @@ export const Episodes = ({
                 )}
                 role="button"
                 onClick={() => {
-                  router.push(
-                    `?season=${selectedSeason}&episode=${episode?.episode_number}`,
-                    { scroll: false }
-                  )
-                  scrollToTop()
+                  handleWatchEpisode(episode)
                 }}
               >
                 {episode.episode_number}. {episode.name}

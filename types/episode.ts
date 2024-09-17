@@ -44,6 +44,7 @@ interface EpisodeDetails {
   guest_stars: GuestStar[]
   name: string
   overview: string
+  show_id: number
   id: number
   production_code: string
   runtime: number

@@ -18,7 +18,6 @@ export async function generateMetadata(
   const id = params.id
 
   const movieDetails = await getSeriesDetailsById(id)
-  console.log('movieDetails', movieDetails)
 
   const previousImages = (await parent).openGraph?.images || []
 

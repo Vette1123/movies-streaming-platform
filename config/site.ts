@@ -20,6 +20,11 @@ export const siteConfig = {
       scroll: true,
     },
     {
+      title: 'Watch History',
+      href: '/watch-history',
+      scroll: true,
+    },
+    {
       title: 'Disclaimer',
       href: '/disclaimer',
       scroll: false,
