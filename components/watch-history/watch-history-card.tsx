@@ -1,5 +1,4 @@
 import React from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { CalendarDays, Film, Tv } from 'lucide-react'
@@ -9,7 +8,7 @@ import { WatchedItem } from '@/hooks/use-local-storage'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 
-import { BlurredImage } from './blurred-image'
+import { BlurredImage } from '../blurred-image'
 
 interface WatchedItemCardProps {
   item: WatchedItem
