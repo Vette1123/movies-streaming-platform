@@ -46,6 +46,7 @@ export const Episodes = ({
           overview: episode?.overview,
           backdrop_path: backdrop_path,
           added_at: new Date().toISOString(),
+          modified_at: new Date().toISOString(),
         },
       ])
     } else {
@@ -56,6 +57,7 @@ export const Episodes = ({
         ...existingItem,
         season: Number(selectedSeason),
         episode: episode?.episode_number,
+        modified_at: new Date().toISOString(),
       }
       setWatchedItems(updatedItems)
     }

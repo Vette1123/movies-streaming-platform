@@ -36,7 +36,13 @@ export const WatchHistoryContainer = () => {
   return (
     <div className="flex min-h-screen flex-1">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5 lg:gap-8">
-        {watchedItems?.map((item) => <WatchedItemCard item={item} />)}
+        {watchedItems
+          ?.sort(
+            (a, b) =>
+              new Date(b.modified_at).getTime() -
+              new Date(a.modified_at).getTime()
+          )
+          ?.map((item) => <WatchedItemCard item={item} />)}
       </div>
     </div>
   )

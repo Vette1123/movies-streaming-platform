@@ -10,6 +10,7 @@ export interface WatchedItem {
   season?: number
   episode?: number
   added_at: string
+  modified_at: string
 }
 
 export function useLocalStorage(key: string, initialValue: WatchedItem[] = []) {

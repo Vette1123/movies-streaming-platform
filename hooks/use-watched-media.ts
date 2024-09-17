@@ -30,6 +30,7 @@ export function useWatchedMedia(): WatchedMediaHookResult {
           backdrop_path: media.backdrop_path,
           poster_path: media.poster_path,
           added_at: new Date().toISOString(),
+          modified_at: new Date().toISOString(),
           ...(isMovie
             ? {}
             : {
@@ -50,6 +51,7 @@ export function useWatchedMedia(): WatchedMediaHookResult {
           ...existingItem,
           season: seasonQueryINT || existingItem.season,
           episode: episodeQueryINT || existingItem.episode,
+          modified_at: new Date().toISOString(),
         }
         setWatchedItems(updatedItems)
       }
