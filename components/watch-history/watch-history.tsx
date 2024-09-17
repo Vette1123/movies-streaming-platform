@@ -1,12 +1,11 @@
 'use client'
 
 import React from 'react'
-import { Trash } from 'lucide-react'
 
 import { useMounted } from '@/hooks/use-mounted'
 import { useWatchedMedia } from '@/hooks/use-watched-media'
 
-import { Button } from '../ui/button'
+import { DeleteHistoryAlert } from './delete-alert'
 import { WatchedItemCard } from './watch-history-card'
 import { WatchedItemCardSkeleton } from './watch-history-skeleton'
 
@@ -39,10 +38,7 @@ export const WatchHistoryContainer = () => {
     <div className="flex min-h-screen flex-1 flex-col">
       <div className="mb-2 flex justify-end">
         {/* clear history */}
-        <Button variant="outline" onClick={deleteWatchedItems}>
-          <Trash className="mr-2 size-4" />
-          Clear history
-        </Button>
+        <DeleteHistoryAlert onDelete={deleteWatchedItems} />
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-2 lg:grid-cols-5">
         {watchedItems
