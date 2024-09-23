@@ -3,6 +3,7 @@ import '@/styles/globals.css'
 import type { Metadata } from 'next'
 import { QueryProvider } from '@/providers/query-provider'
 import { ToastProvider } from '@/providers/toast-provider'
+import { GoogleTagManager } from '@next/third-parties/google'
 import { Analytics } from '@vercel/analytics/react'
 
 import { siteConfig } from '@/config/site'
@@ -96,6 +97,7 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
               <ToastProvider />
               <Analytics mode="production" />
               <Footer />
+              <GoogleTagManager gtmId={process.env.GTM_ID as string} />
               {modal && modal}
             </div>
           </div>

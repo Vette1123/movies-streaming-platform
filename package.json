@@ -11,6 +11,7 @@
     "prettier:check": "prettier --check ."
   },
   "dependencies": {
+    "@next/third-parties": "^14.2.13",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-dialog": "^1.1.1",
