@@ -7,6 +7,7 @@ import { GoogleTagManager } from '@next/third-parties/google'
 import { Analytics } from '@vercel/analytics/react'
 
 import { siteConfig } from '@/config/site'
+import { GOOGLE_GTM_ID } from '@/lib/constants'
 import { fontSans } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import { Footer } from '@/components/layouts/footer'
@@ -97,9 +98,8 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
               <ToastProvider />
               <Analytics mode="production" />
               <Footer />
-              <GoogleTagManager
-                gtmId={process.env.NEXT_PUBLIC_GTM_ID as string}
-              />
+              <GoogleTagManager gtmId={GOOGLE_GTM_ID as string} />
+              {/* <GoogleAnalytics gaId={GOOGLE_MEASUREMENT_ID as string} /> */}
               {modal && modal}
             </div>
           </div>
