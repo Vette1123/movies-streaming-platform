@@ -97,7 +97,9 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
               <ToastProvider />
               <Analytics mode="production" />
               <Footer />
-              <GoogleTagManager gtmId={process.env.GTM_ID as string} />
+              <GoogleTagManager
+                gtmId={process.env.NEXT_PUBLIC_GTM_ID as string}
+              />
               {modal && modal}
             </div>
           </div>
