@@ -13,7 +13,7 @@ export const MovieDetailsHero = ({ movie }: { movie: MovieDetails }) => {
   const playVideo = () => {
     if (iframeRef.current) {
       setIsIframeShown(true)
-      iframeRef.current.src = `${STREAMING_MOVIES_API_URL}/movie/${movie?.id}?autoplay=1`
+      iframeRef.current.src = `${STREAMING_MOVIES_API_URL}/movie/${movie?.id}`
     }
   }
   return (

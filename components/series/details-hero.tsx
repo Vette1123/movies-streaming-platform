@@ -14,12 +14,12 @@ export const SeriesDetailsHero = ({ series }: { series: SeriesDetails }) => {
   const isMounted = useMounted()
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
 
-  const autoplaySessionURL = `${STREAMING_MOVIES_API_URL}/tv/${series?.id}/${seasonQueryINT}/${episodeQueryINT}?autoplay=1`
+  const autoplaySessionURL = `${STREAMING_MOVIES_API_URL}/tv/${series?.id}/${seasonQueryINT}/${episodeQueryINT}`
 
   const playDefaultSeries = () => {
     if (iframeRef.current && !episodeQueryINT && !seasonQueryINT) {
       setIsIframeShown(true)
-      iframeRef.current.src = `${STREAMING_MOVIES_API_URL}/tv/${series?.id}?autoplay=1`
+      iframeRef.current.src = `${STREAMING_MOVIES_API_URL}/tv/${series?.id}`
     }
     if (iframeRef.current && episodeQueryINT && seasonQueryINT) {
       setIsIframeShown(true)
