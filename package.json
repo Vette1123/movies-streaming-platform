@@ -29,7 +29,7 @@
     "cmdk": "^0.2.0",
     "framer-motion": "^11.3.31",
     "lucide-react": "^0.436.0",
-    "next": "14.2.7",
+    "next": "14.2.20",
     "posthog-js": "^1.164.1",
     "query-string": "^9.1.0",
     "react": "18.3.1",
