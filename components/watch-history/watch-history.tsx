@@ -47,7 +47,7 @@ export const WatchHistoryContainer = () => {
               new Date(b.modified_at).getTime() -
               new Date(a.modified_at).getTime()
           )
-          ?.map((item) => <WatchedItemCard item={item} />)}
+          ?.map((item) => <WatchedItemCard key={item.id} item={item} />)}
       </div>
     </div>
   )

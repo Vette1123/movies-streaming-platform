@@ -57,8 +57,14 @@ export function useWatchedMedia(): WatchedMediaHookResult {
         }
         setWatchedItems(updatedItems)
       }
+    } else {
+      const updatedItems = [...watchedItems]
+      updatedItems[existingItemIndex] = {
+        ...watchedItems[existingItemIndex],
+        modified_at: new Date().toISOString(),
+      }
+      setWatchedItems(updatedItems)
     }
-    // If it's a movie and already in localStorage, do nothing
   }
 
   return { handleWatchMedia, watchedItems, deleteWatchedItems }
