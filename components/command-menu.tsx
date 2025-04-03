@@ -26,17 +26,34 @@ import { Icons } from '@/components/icons'
 
 import { Badge } from './ui/badge'
 
-const handleUniqueTitle = (
-  titleCount: number,
-  releaseYearMonth: string,
-  movie: MediaType
-) => {
-  if (titleCount > 0 && releaseYearMonth) {
-    return `${movie.title} - (${releaseYearMonth})`
+const handleUniqueTitle = (movie: MediaType, isDuplicate: boolean) => {
+  if (!isDuplicate) return movie.title
+
+  // Build a comprehensive suffix with more differentiating info
+  const parts: string[] = []
+
+  // Add year if available
+  if (movie.release_date) {
+    const year = movie.release_date.split('-')[0]
+    parts.push(year)
   }
-  if (titleCount > 0) {
-    return `${movie.title} - (${titleCount})`
+
+  // Add media type if available
+  if (movie.media_type) {
+    parts.push(movie.media_type)
   }
+
+  // Add rating if available (rounded to 1 decimal place)
+  if (movie.vote_average) {
+    parts.push(`${movie.vote_average.toFixed(1)}★`)
+  }
+
+  // If we have any differentiating info, add it
+  if (parts.length > 0) {
+    return `${movie.title} (${parts.join(' • ')})`
+  }
+
+  // Fallback if no extra info is available
   return movie.title
 }
 
@@ -61,28 +78,37 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
     SEARCH_DEBOUNCE
   )
 
-  const deduplicatedData: MediaType[] = (data || []).reduce(
-    (acc, movie) => {
-      const lowercaseTitle = movie?.title?.toLowerCase()
-      if (lowercaseTitle) {
-        const releaseDate = movie?.release_date?.split('-')
-        const releaseYearMonth =
-          releaseDate && releaseDate?.filter(Boolean).length
-            ? `${releaseDate[0]}-${releaseDate[1]}`
-            : ''
-        const titleCount = acc.titleCounts[lowercaseTitle] || 0
-        const uniqueTitle = handleUniqueTitle(
-          titleCount,
-          releaseYearMonth,
-          movie
-        )
-        acc.titleCounts[lowercaseTitle] = titleCount + 1
-        acc.result.push({ ...movie, title: uniqueTitle })
+  const deduplicatedData: MediaType[] = React.useMemo(() => {
+    if (!data?.length) return []
+
+    // First, build a map of titles and count occurrences
+    const titleCounts: Record<string, number> = {}
+    data.forEach((movie) => {
+      if (movie?.title) {
+        const lowercaseTitle = movie.title.toLowerCase()
+        titleCounts[lowercaseTitle] = (titleCounts[lowercaseTitle] || 0) + 1
       }
-      return acc
-    },
-    { titleCounts: {} as Record<string, number>, result: [] as MediaType[] }
-  )?.result
+    })
+
+    // Process each movie with the knowledge of which titles have duplicates
+    const processedData = data.map((movie) => {
+      if (!movie?.title) return movie
+
+      const lowercaseTitle = movie.title.toLowerCase()
+      const isDuplicate = titleCounts[lowercaseTitle] > 1
+      const uniqueTitle = handleUniqueTitle(movie, isDuplicate)
+
+      return { ...movie, title: uniqueTitle }
+    })
+
+    // Sort by vote_average in descending order (highest votes first)
+    return processedData.sort((a, b) => {
+      // Fallback to 0 if vote_average is undefined
+      const voteA = a.vote_average || 0
+      const voteB = b.vote_average || 0
+      return voteB - voteA
+    })
+  }, [data])
 
   return (
     <>
@@ -133,9 +159,19 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                           />
                           <AvatarFallback>G</AvatarFallback>
                         </Avatar>
-                        <p className="max-w-[200px] truncate md:max-w-xs">
-                          {movie?.title}
-                        </p>
+                        <div className="flex flex-col">
+                          <p className="max-w-[200px] truncate font-medium md:max-w-xs">
+                            {movie?.title}
+                          </p>
+                          {movie?.release_date && (
+                            <p className="text-xs text-muted-foreground">
+                              {movie.release_date.split('-')[0]}
+                              {movie.vote_average
+                                ? ` • ${movie.vote_average.toFixed(1)}★`
+                                : ''}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <div>
                         <Badge
