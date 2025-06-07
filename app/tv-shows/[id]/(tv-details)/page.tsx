@@ -11,9 +11,10 @@ import { SeriesDetailsContent } from '@/components/series/details-content'
 import { SeriesDetailsHero } from '@/components/series/details-hero'
 
 export async function generateMetadata(
-  { params }: PageDetailsProps,
+  props: PageDetailsProps,
   parent: ResolvingMetadata
 ): Promise<Metadata> {
+  const params = await props.params
   // read route params
   const id = params.id
 
@@ -35,7 +36,8 @@ export async function generateMetadata(
   }
 }
 
-const TVSeries = async ({ params }: PageDetailsProps) => {
+const TVSeries = async (props: PageDetailsProps) => {
+  const params = await props.params
   const { seriesDetails, seriesCredits, similarSeries, recommendedSeries } =
     await populateSeriesDetailsPageData(params?.id)
 

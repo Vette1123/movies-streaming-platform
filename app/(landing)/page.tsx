@@ -7,7 +7,7 @@ import { MoviesIntroSection } from '@/components/main-page/intro-section'
 
 async function IndexPage() {
   const {
-    nowPlayingMovies,
+    trendingMediaForHero,
     latestTrendingMovies,
     allTimeTopRatedMovies,
     popularMovies,
@@ -18,7 +18,7 @@ async function IndexPage() {
   return (
     <section className="h-full">
       <Suspense fallback={<FullScreenLoader />}>
-        <HeroSlider movies={nowPlayingMovies} />
+        <HeroSlider movies={trendingMediaForHero} />
       </Suspense>
       <MoviesIntroSection
         latestTrendingMovies={latestTrendingMovies}

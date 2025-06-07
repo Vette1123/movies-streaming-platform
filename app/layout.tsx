@@ -1,7 +1,7 @@
 import '@/styles/globals.css'
 
 import type { Metadata } from 'next'
-import Script from 'next/script'
+// import Script from 'next/script'
 import { CSPostHogProvider } from '@/providers/posthog-provider'
 import { QueryProvider } from '@/providers/query-provider'
 import { ToastProvider } from '@/providers/toast-provider'
@@ -105,9 +105,9 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
               {modal && modal}
             </div>
           </div>
-          <div id="container-be6850e2d2f1956aae5617cd0073c730"></div>
+          {/* <div id="container-be6850e2d2f1956aae5617cd0073c730"></div> */}
         </body>
-        <Script
+        {/* <Script
           strategy="lazyOnload"
           type="text/javascript"
           src="//pl26666813.profitableratecpm.com/8e/cd/41/8ecd41eb7e7a77406e555f83886e04dc.js"
@@ -141,7 +141,7 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
           strategy="lazyOnload"
           type="text/javascript"
           src="//www.highperformanceformat.com/523b89856227f68d3c91c27fc62af535/invoke.js"
-        />
+        /> */}
       </html>
     </>
   )

@@ -16,6 +16,8 @@ type Movie = {
   vote_average: number
   vote_count: number
   media_type?: ItemType
+  name?: string
+  first_air_date?: string
 }
 
 interface MovieResponse {
@@ -28,7 +30,7 @@ type Param = Record<string, string | number>
 type ItemType = 'movie' | 'tv'
 
 interface MultiRequestProps {
-  nowPlayingMovies: Movie[]
+  trendingMediaForHero: Movie[]
   latestTrendingMovies: Movie[]
   popularMovies: Movie[]
   allTimeTopRatedMovies: Movie[]

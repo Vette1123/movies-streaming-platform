@@ -10,7 +10,12 @@ import {
   MovieDetails,
   MultiMovieDetailsRequestProps,
 } from '@/types/movie-details'
-import { MovieResponse, MultiRequestProps, Param } from '@/types/movie-result'
+import {
+  Movie,
+  MovieResponse,
+  MultiRequestProps,
+  Param,
+} from '@/types/movie-result'
 import { fetchClient } from '@/lib/fetch-client'
 import { movieType } from '@/lib/tmdbConfig'
 
@@ -34,10 +39,38 @@ const getPopularMovies = async (params: Param = {}) => {
   return fetchClient.get<MediaResponse>(url, params, true)
 }
 
+// New function to get trending media (movies and TV shows) for the week
+const getTrendingAllWeek = async (page: number = 1, params: Param = {}) => {
+  const url = `trending/all/week?language=en-US&page=${page}`
+  return fetchClient.get<MovieResponse>(url, params, true) // Assuming MovieResponse can handle mixed media types if structured similarly
+}
+
+// New function to get 40 trending items (2 pages)
+const getTrendingMediaForHeroSlider = async (
+  params: Param = {}
+): Promise<Movie[]> => {
+  try {
+    const [page1Response, page2Response] = await Promise.all([
+      getTrendingAllWeek(1, params),
+      getTrendingAllWeek(2, params),
+    ])
+
+    const combinedResults = [
+      ...(page1Response?.results || []),
+      ...(page2Response?.results || []),
+    ]
+
+    return combinedResults // Ensure we only take up to 40 items
+  } catch (error) {
+    console.error('Error fetching trending media for hero slider:', error)
+    return [] // Return empty array or throw error as per desired error handling
+  }
+}
+
 const populateHomePageData = async (): Promise<MultiRequestProps> => {
   try {
     const [
-      nowPlayingResponse,
+      trendingMediaHeroResponse, // Replaced nowPlayingResponse
       latestTrendingResponse,
       popularMoviesResponse,
       allTimeTopRatedResponse,
@@ -45,7 +78,7 @@ const populateHomePageData = async (): Promise<MultiRequestProps> => {
       popularSeriesResponse,
       allTimeTopRatedSeries,
     ] = await Promise.all([
-      getNowPlayingMovies(),
+      getTrendingMediaForHeroSlider(), // Replaced getNowPlayingMovies()
       getLatestTrendingMovies(),
       getPopularMovies(),
       getAllTimeTopRatedMovies(),
@@ -55,7 +88,7 @@ const populateHomePageData = async (): Promise<MultiRequestProps> => {
     ])
 
     return {
-      nowPlayingMovies: nowPlayingResponse?.results || [],
+      trendingMediaForHero: trendingMediaHeroResponse || [], // Changed from nowPlayingMovies
       latestTrendingMovies: latestTrendingResponse?.results || [],
       popularMovies: popularMoviesResponse?.results || [],
       allTimeTopRatedMovies: allTimeTopRatedResponse?.results || [],
@@ -121,4 +154,5 @@ export {
   getMovieDetailsById,
   getMovieCreditsById,
   populateMovieDetailsPage,
+  getTrendingMediaForHeroSlider, // Export the new function
 }

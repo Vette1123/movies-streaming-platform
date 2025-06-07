@@ -20,7 +20,7 @@ export const HeroImage = ({ movie }: HeroImageProps) => {
         <BlurredImage
           src={getImageURL(media?.backdrop_path)}
           alt={alt}
-          className="hidden h-full w-full object-cover lg:block"
+          className="hidden size-full object-cover lg:block"
           fill
           sizes="(min-width: 1024px) 1024px, 100vw , (max-width: 768px) 768px, 100vw, (max-width: 640px) 640px, 100vw"
           intro
@@ -31,9 +31,9 @@ export const HeroImage = ({ movie }: HeroImageProps) => {
         <BlurredImage
           src={getPosterImageURL(media?.poster_path)}
           alt={alt}
-          className="block h-full w-full object-cover lg:hidden"
+          className="block size-full object-cover lg:hidden"
           fill
-          sizes="(min-width: 1024px) 1024px, 100vw"
+          sizes="(max-width: 640px) 640px, (max-width: 768px) 768px, (max-width: 1024px) 1024px, 100vw"
           intro
           priority
         />

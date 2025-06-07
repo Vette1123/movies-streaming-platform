@@ -56,7 +56,7 @@ export const Card = ({
           </Link>
         )}
       </HoverCardTrigger>
-      <HoverCardContent className="hidden w-80 md:block">
+      <HoverCardContent className="hidden w-80 md:block" side="right">
         <div className="flex justify-between space-x-4">
           <Avatar>
             <AvatarImage src="/personal-logo.png" />

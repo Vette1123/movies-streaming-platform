@@ -4,15 +4,23 @@ import React from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 
+import { ItemType } from '@/types/movie-result'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { Icons } from '@/components/icons'
 
 interface AnimatedWatchButtonProps {
   movieId: number
+  mediaType?: ItemType
 }
 
-export const AnimatedWatchButton = ({ movieId }: AnimatedWatchButtonProps) => {
+export const AnimatedWatchButton = ({
+  movieId,
+  mediaType,
+}: AnimatedWatchButtonProps) => {
+  const href =
+    mediaType === 'tv' ? `/tv-shows/${movieId}` : `/movies/${movieId}`
+
   return (
     <motion.div
       className={cn('flex justify-center lg:w-fit lg:justify-start')}
@@ -22,7 +30,7 @@ export const AnimatedWatchButton = ({ movieId }: AnimatedWatchButtonProps) => {
       animate={{ opacity: 1, y: 0 }}
     >
       <Link
-        href={`/movies/${movieId}`}
+        href={href}
         className={cn(
           'mt-6',
           buttonVariants({

@@ -61,6 +61,22 @@ export function MobileNav({ items }: MobileNavProps) {
         </div>
         <div className="space-y-6 px-9 pb-10">
           <Link
+            href="https://www.profitableratecpm.com/hwxt5zz7i?key=a5dba98951e6803fa620281826ca66d3"
+            target="_blank"
+            rel="noreferrer"
+            className={cn(
+              buttonVariants({
+                variant: 'default',
+                size: 'default',
+                className: 'w-full',
+              }),
+              'text-white'
+            )}
+          >
+            <Icons.buyMeACoffee className="mr-2 size-5" />
+            Support
+          </Link>
+          <Link
             href={siteConfig.links.buyMeACoffee}
             target="_blank"
             rel="noreferrer"
