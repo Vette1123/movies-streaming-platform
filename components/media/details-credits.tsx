@@ -20,7 +20,7 @@ export const DetailsCredits = ({ movieCredits }: { movieCredits: Credit }) => {
             className="flex flex-col transition-all duration-300 ease-in-out hover:scale-105"
           >
             {cast.profile_path ? (
-              <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg shadow-md">
+              <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg shadow-md">
                 <BlurredImage
                   src={getPosterImageURL(cast.profile_path)}
                   alt={cast.name}
@@ -31,7 +31,7 @@ export const DetailsCredits = ({ movieCredits }: { movieCredits: Credit }) => {
                 />
               </div>
             ) : (
-              <div className="relative aspect-[2/3] w-full rounded-lg bg-gray-800 shadow-md"></div>
+              <div className="relative aspect-2/3 w-full rounded-lg bg-gray-800 shadow-md"></div>
             )}
             <p className="mt-1 truncate text-sm sm:text-base">{cast.name}</p>
           </Link>

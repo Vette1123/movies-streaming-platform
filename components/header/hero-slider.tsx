@@ -20,7 +20,7 @@ export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
           </div>
         ))}
       </Carousel>
-      <div className="pointer-events-none absolute bottom-0 h-32 w-full bg-gradient-to-t from-black to-transparent" />
+      <div className="pointer-events-none absolute bottom-0 h-32 w-full bg-linear-to-t from-black to-transparent" />
     </div>
   )
 }

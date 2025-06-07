@@ -22,7 +22,7 @@ export const DetailsHero = forwardRef<
   return (
     <section className="relative isolate h-[500px] overflow-hidden lg:h-[80dvh]">
       <HeroImage movie={media} />
-      <div className="container relative z-50 h-full max-w-screen-2xl">
+      <div className="container relative z-50 h-full max-w-(--breakpoint-2xl)">
         <div className="flex h-full items-center justify-center">
           <AnimatePresence>
             {!isIframeShown && (

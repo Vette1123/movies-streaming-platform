@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 export function WatchedItemCardSkeleton() {
   return (
     <Card className="overflow-hidden">
-      <Skeleton className="aspect-[2/3] w-full" />
+      <Skeleton className="aspect-2/3 w-full" />
       <CardContent className="space-y-2 p-4">
         <Skeleton className="h-5 w-4/5" />
         <Skeleton className="h-4 w-2/3" />

@@ -378,7 +378,7 @@ export function Carousel({
 
           {/* Current position indicator */}
           <div className="my-2 text-center">
-            <span className="rounded-full bg-black/50 px-2 py-1 text-xs text-white/90 backdrop-blur-sm sm:text-sm">
+            <span className="rounded-full bg-black/50 px-2 py-1 text-xs text-white/90 backdrop-blur-xs sm:text-sm">
               {currentIndex + 1} / {childrenArray.length}
             </span>
           </div>
@@ -391,7 +391,7 @@ export function Carousel({
           {/* Left Arrow */}
           <button
             onClick={() => handleButtonClick(-1)}
-            className="absolute left-2 top-1/2 z-30 -translate-y-1/2 rounded-full bg-black/30 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/50 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white/50 group-hover:opacity-100 sm:left-4 sm:p-2 lg:opacity-0"
+            className="absolute left-2 top-1/2 z-30 -translate-y-1/2 rounded-full bg-black/30 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/50 focus:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-white/50 group-hover:opacity-100 sm:left-4 sm:p-2 lg:opacity-0"
             aria-label="Previous slide"
           >
             <svg
@@ -414,7 +414,7 @@ export function Carousel({
           {/* Right Arrow */}
           <button
             onClick={() => handleButtonClick(1)}
-            className="absolute right-2 top-1/2 z-30 -translate-y-1/2 rounded-full bg-black/30 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/50 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white/50 group-hover:opacity-100 sm:right-4 sm:p-2 lg:opacity-0"
+            className="absolute right-2 top-1/2 z-30 -translate-y-1/2 rounded-full bg-black/30 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/50 focus:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-white/50 group-hover:opacity-100 sm:right-4 sm:p-2 lg:opacity-0"
             aria-label="Next slide"
           >
             <svg
@@ -437,7 +437,7 @@ export function Carousel({
           {/* Mobile-only swipe indicator with better positioning */}
           {!isDragging && (
             <div className="absolute bottom-20 left-1/2 z-30 -translate-x-1/2 text-center sm:bottom-20 lg:hidden">
-              <div className="animate-pulse rounded-full bg-black/30 px-3 py-1.5 text-xs text-white/80 backdrop-blur-sm">
+              <div className="animate-pulse rounded-full bg-black/30 px-3 py-1.5 text-xs text-white/80 backdrop-blur-xs">
                 👆 Swipe to navigate
               </div>
             </div>

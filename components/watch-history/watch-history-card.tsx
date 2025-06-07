@@ -32,7 +32,7 @@ export function WatchedItemCard({ item }: WatchedItemCardProps) {
       <motion.div initial="rest" whileHover="hover" animate="rest">
         <motion.div variants={CARD_VARIANT}>
           <Card className="overflow-hidden">
-            <div className="relative aspect-[2/3] w-full">
+            <div className="relative aspect-2/3 w-full">
               <BlurredImage
                 src={`${getPosterImageURL(item.poster_path)}`}
                 width={250}

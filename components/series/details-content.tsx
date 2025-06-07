@@ -28,7 +28,7 @@ export const SeriesDetailsContent = ({
     (crew) => crew.job === 'Director'
   )?.name
   return (
-    <section className="container max-w-screen-2xl pb-10 pt-12 lg:pb-20">
+    <section className="container max-w-(--breakpoint-2xl) pb-10 pt-12 lg:pb-20">
       <div className="flex flex-col-reverse gap-8 lg:flex-row">
         <div className="hidden lg:block">
           <div className="relative min-h-[600px] w-[400px]">

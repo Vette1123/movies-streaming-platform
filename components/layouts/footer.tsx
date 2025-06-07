@@ -82,7 +82,7 @@ export function Footer() {
           target="_blank"
           rel="noreferrer"
           href={siteConfig.links.buyMeACoffee}
-          className={cn('text-white', buttonVariants({ variant: 'outline' }))}
+          className={cn('text-white', buttonVariants({ variant: 'outline-solid' }))}
         >
           <Icons.buyMeACoffee className="mr-2 size-5" />
           Buy me a coffee
