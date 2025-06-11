@@ -101,8 +101,8 @@ importers:
         specifier: ^4.1.1
         version: 4.4.1(prettier@3.5.3)
       '@opennextjs/cloudflare':
-        specifier: 1.2.0
-        version: 1.2.0(wrangler@4.19.1)
+        specifier: 1.2.1
+        version: 1.2.1(wrangler@4.19.1)
       '@tailwindcss/postcss':
         specifier: ^4.1.8
         version: 4.1.8
@@ -1176,8 +1176,8 @@ packages:
     resolution: {integrity: sha512-wni+CWlRCyWfhNfekQBBPPkrDDnaGdZLN9hMybKI0wKOKTO+zhPOqR65Eh3V0pzWAi84Sureb5mdMuLwCxAAcw==}
     hasBin: true
 
-  '@opennextjs/cloudflare@1.2.0':
-    resolution: {integrity: sha512-0gKygN1EnCUUUHBjZCE1OKYfbt94S/h3lypoxe2n/v72Nk/ppsSU5/MFbn/smSSSpwATxk+PHiV/Gjm9TA6NFw==}
+  '@opennextjs/cloudflare@1.2.1':
+    resolution: {integrity: sha512-cOco+nHwlo/PLB1bThF8IIvaS8PgAT9MEI5ZttFO/qt6spgvr2lUaPkpjgSIQmI3sBIEG2cLUykvQ2nbbZEcVw==}
     hasBin: true
     peerDependencies:
       wrangler: ^4.19.1
@@ -4521,7 +4521,7 @@ snapshots:
       '@aws-crypto/sha256-js': 3.0.0
       '@aws-crypto/supports-web-crypto': 3.0.0
       '@aws-crypto/util': 3.0.0
-      '@aws-sdk/types': 3.398.0
+      '@aws-sdk/types': 3.821.0
       '@aws-sdk/util-locate-window': 3.804.0
       '@aws-sdk/util-utf8-browser': 3.259.0
       tslib: 1.14.1
@@ -4539,7 +4539,7 @@ snapshots:
   '@aws-crypto/sha256-js@3.0.0':
     dependencies:
       '@aws-crypto/util': 3.0.0
-      '@aws-sdk/types': 3.398.0
+      '@aws-sdk/types': 3.821.0
       tslib: 1.14.1
 
   '@aws-crypto/sha256-js@5.2.0':
@@ -4558,7 +4558,7 @@ snapshots:
 
   '@aws-crypto/util@3.0.0':
     dependencies:
-      '@aws-sdk/types': 3.398.0
+      '@aws-sdk/types': 3.821.0
       '@aws-sdk/util-utf8-browser': 3.259.0
       tslib: 1.14.1
 
@@ -6006,7 +6006,7 @@ snapshots:
       - aws-crt
       - supports-color
 
-  '@opennextjs/cloudflare@1.2.0(wrangler@4.19.1)':
+  '@opennextjs/cloudflare@1.2.1(wrangler@4.19.1)':
     dependencies:
       '@dotenvx/dotenvx': 1.31.0
       '@opennextjs/aws': 3.6.5
@@ -9159,8 +9159,7 @@ snapshots:
 
   semver@7.7.1: {}
 
-  semver@7.7.2:
-    optional: true
+  semver@7.7.2: {}
 
   send@1.2.0:
     dependencies:
@@ -9215,7 +9214,7 @@ snapshots:
     dependencies:
       color: 4.2.3
       detect-libc: 2.0.4
-      semver: 7.7.1
+      semver: 7.7.2
     optionalDependencies:
       '@img/sharp-darwin-arm64': 0.33.5
       '@img/sharp-darwin-x64': 0.33.5
