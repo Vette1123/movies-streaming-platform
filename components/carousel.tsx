@@ -435,13 +435,13 @@ export function Carousel({
             </svg>
           </button>{' '}
           {/* Mobile-only swipe indicator with better positioning */}
-          {!isDragging && (
+          {/*!isDragging && (
             <div className="absolute bottom-20 left-1/2 z-30 -translate-x-1/2 text-center sm:bottom-20 lg:hidden">
               <div className="animate-pulse rounded-full bg-black/30 px-3 py-1.5 text-xs text-white/80 backdrop-blur-xs">
                 👆 Swipe to navigate
               </div>
             </div>
-          )}
+          ) */}
         </>
       )}
     </div>
