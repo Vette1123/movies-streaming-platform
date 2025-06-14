@@ -1,7 +1,30 @@
 'use client'
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion, PanInfo } from 'framer-motion'
+import React, { useMemo } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useCarousel } from '@/hooks/use-carousel'
+import {
+  CAROUSEL_SLIDE_VARIANTS,
+  CAROUSEL_BACKGROUND_VARIANTS,
+  CAROUSEL_PLACEHOLDER_VARIANTS,
+  CAROUSEL_SINGLE_SLIDE_VARIANTS,
+  CAROUSEL_NAVIGATION_VARIANTS,
+  CAROUSEL_DOT_VARIANTS,
+  CAROUSEL_ARROW_VARIANTS,
+  CAROUSEL_ARROW_ICON_VARIANTS,
+  CAROUSEL_CONTENT_VARIANTS,
+  CAROUSEL_POSITION_INDICATOR_VARIANTS,
+  CAROUSEL_POSITION_TEXT_VARIANTS,
+  CAROUSEL_ELLIPSIS_VARIANTS,
+  CAROUSEL_SLIDE_TRANSITION,
+  CAROUSEL_BACKGROUND_TRANSITION,
+  CAROUSEL_DRAG_CONSTRAINTS,
+  CAROUSEL_DRAG_TRANSITION,
+  CAROUSEL_WHILE_DRAG,
+  CAROUSEL_WHILE_HOVER,
+  CAROUSEL_WHILE_TAP,
+} from '@/lib/motion-variants'
 
 interface CarouselProps {
   children: React.ReactNode
@@ -15,191 +38,45 @@ export function Carousel({
   autoPlayInterval = 5000,
 }: CarouselProps) {
   const childrenArray = React.Children.toArray(children)
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [direction, setDirection] = useState(0)
-  const [isUserInteracting, setIsUserInteracting] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
-  const autoPlayRef = useRef<NodeJS.Timeout | null>(null)
-  const userInteractionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const childrenCount = useMemo(() => childrenArray.length, [childrenArray.length])
 
-  const paginate = useCallback(
-    (newDirection: number) => {
-      setDirection(newDirection)
-      setCurrentIndex((prevIndex) => {
-        if (newDirection > 0) {
-          return prevIndex === childrenArray.length - 1 ? 0 : prevIndex + 1
-        } else {
-          return prevIndex === 0 ? childrenArray.length - 1 : prevIndex - 1
-        }
-      })
-    },
-    [childrenArray.length]
-  )
-
-  // Enhanced auto-play with user interaction handling
-  const startAutoPlay = useCallback(() => {
-    if (!autoPlay || childrenArray.length <= 1 || isUserInteracting) return
-
-    if (autoPlayRef.current) {
-      clearInterval(autoPlayRef.current)
-    }
-
-    autoPlayRef.current = setInterval(() => {
-      if (!isUserInteracting && !isDragging) {
-        paginate(1)
-      }
-    }, autoPlayInterval)
-  }, [
+  const {
+    currentIndex,
+    direction,
+    isDragging,
+    isMounted,
+    hasMultipleSlides,
+    showAllDots,
+    handleDragStart,
+    handleDragEnd,
+    handleHoverStart,
+    handleHoverEnd,
+    handleButtonClick,
+    handleDotClick,
+  } = useCarousel({
+    childrenCount,
     autoPlay,
     autoPlayInterval,
-    paginate,
-    childrenArray.length,
-    isUserInteracting,
-    isDragging,
-  ])
+  })
 
-  const stopAutoPlay = useCallback(() => {
-    if (autoPlayRef.current) {
-      clearInterval(autoPlayRef.current)
-      autoPlayRef.current = null
-    }
-  }, [])
+  // Memoized slide transition for performance
+  const slideTransition = useMemo(() => CAROUSEL_SLIDE_TRANSITION(isDragging), [isDragging])
 
-  const handleUserInteraction = useCallback(
-    (interacting: boolean) => {
-      setIsUserInteracting(interacting)
-
-      if (userInteractionTimeoutRef.current) {
-        clearTimeout(userInteractionTimeoutRef.current)
-      }
-
-      if (interacting) {
-        stopAutoPlay()
-      } else {
-        // Resume auto-play after a delay when user stops interacting
-        userInteractionTimeoutRef.current = setTimeout(() => {
-          setIsUserInteracting(false)
-        }, 3000) // 3 seconds delay before resuming auto-play
-      }
-    },
-    [stopAutoPlay]
-  )
-
-  // Auto-play effect
-  useEffect(() => {
-    startAutoPlay()
-    return () => stopAutoPlay()
-  }, [startAutoPlay, stopAutoPlay])
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (autoPlayRef.current) clearInterval(autoPlayRef.current)
-      if (userInteractionTimeoutRef.current)
-        clearTimeout(userInteractionTimeoutRef.current)
-    }
-  }, [])
-
-  const slideVariants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? '100%' : '-100%',
-      opacity: 1,
-      scale: 0.98,
-      rotateY: direction * 2,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-      scale: 1,
-      rotateY: 0,
-    },
-    exit: (direction: number) => ({
-      x: direction < 0 ? '100%' : '-100%',
-      opacity: 1,
-      scale: 0.98,
-      rotateY: direction * -2,
-    }),
-  }
-
-  // Enhanced drag handling with much better UX
-  const handleDragStart = (event: any, info: PanInfo) => {
-    // Prevent drag if user is interacting with buttons or clickable elements
-    const target = event.target as HTMLElement
-    const isInteractiveElement = target.closest(
-      'button, a, input, select, textarea, [role="button"]'
-    )
-
-    if (isInteractiveElement) {
-      return false // Prevent drag
-    }
-
-    setIsDragging(true)
-    handleUserInteraction(true)
-  }
-  const handleDragEnd = (event: any, info: PanInfo) => {
-    setIsDragging(false)
-
-    // Much more intuitive thresholds
-    const isMobile = window.innerWidth < 768
-    const containerWidth = event.currentTarget?.offsetWidth || window.innerWidth
-
-    // Percentage-based thresholds for better UX
-    const distanceThreshold = containerWidth * (isMobile ? 0.12 : 0.15) // 12% on mobile, 15% on desktop
-    const velocityThreshold = isMobile ? 250 : 400
-
-    const velocity = Math.abs(info.velocity.x)
-    const offset = info.offset.x
-    const distance = Math.abs(offset)
-
-    // More intuitive logic: either significant distance OR high velocity
-    const hasSignificantDistance = distance > distanceThreshold
-    const hasHighVelocity = velocity > velocityThreshold
-
-    const shouldChangeSlide = hasSignificantDistance || hasHighVelocity
-
-    if (shouldChangeSlide) {
-      // Immediate transition for better responsiveness
-      if (offset > 0) {
-        paginate(-1) // Swipe right, go to previous
-      } else {
-        paginate(1) // Swipe left, go to next
-      }
-    }
-
-    // Resume auto-play after user interaction delay
-    setTimeout(() => {
-      handleUserInteraction(false)
-    }, 50)
-  }
-
-  const handleHoverStart = () => {
-    handleUserInteraction(true)
-  }
-
-  const handleHoverEnd = () => {
-    handleUserInteraction(false)
-  }
-
-  const handleButtonClick = (newDirection: number) => {
-    handleUserInteraction(true)
-    paginate(newDirection)
-    handleUserInteraction(false)
-  }
-
-  const handleDotClick = (index: number) => {
-    handleUserInteraction(true)
-    setDirection(index > currentIndex ? 1 : -1)
-    setCurrentIndex(index)
-    handleUserInteraction(false)
-  }
-
-  if (childrenArray.length === 0) {
+  if (childrenCount === 0) {
     return null
   }
 
-  if (childrenArray.length === 1) {
-    return <div className="relative overflow-hidden">{childrenArray[0]}</div>
+  if (childrenCount === 1) {
+    return (
+      <motion.div 
+        className="relative overflow-hidden"
+        {...CAROUSEL_SINGLE_SLIDE_VARIANTS}
+      >
+        {childrenArray[0]}
+      </motion.div>
+    )
   }
+
   return (
     <div
       className="group relative overflow-hidden transition-opacity duration-300"
@@ -209,68 +86,49 @@ export function Carousel({
         minHeight: 'var(--carousel-height, auto)',
       }}
     >
-      {' '}
-      {/* Background container to prevent blank screen */}
-      <div className="absolute inset-0 z-0 transition-opacity duration-150">
-        {childrenArray[currentIndex]}
+      {/* Instant placeholder background to prevent blank screen */}
+      <motion.div 
+        className="absolute inset-0 z-0 bg-gradient-to-br from-gray-800/80 via-gray-900/90 to-black/95"
+        variants={CAROUSEL_PLACEHOLDER_VARIANTS}
+        initial="initial"
+        animate={isMounted ? "loaded" : "initial"}
+      />
+
+      {/* Multi-layered background for seamless transitions */}
+      <div className="absolute inset-0 z-10">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`bg-${currentIndex}`}
+            variants={CAROUSEL_BACKGROUND_VARIANTS}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={CAROUSEL_BACKGROUND_TRANSITION}
+            className="absolute inset-0"
+          >
+            {childrenArray[currentIndex]}
+          </motion.div>
+        </AnimatePresence>
       </div>
-      {/* Main animated slide container */}
+
+      {/* Main animated slide container with enhanced effects */}
       <AnimatePresence mode="popLayout" custom={direction}>
         <motion.div
           key={currentIndex}
           custom={direction}
-          variants={slideVariants}
-          initial="enter"
+          variants={CAROUSEL_SLIDE_VARIANTS}
+          initial={isMounted ? "enter" : "center"}
           animate="center"
           exit="exit"
-          transition={{
-            x: {
-              type: 'spring',
-              stiffness: isDragging ? 600 : 400,
-              damping: isDragging ? 35 : 40,
-              mass: isDragging ? 0.3 : 0.6,
-            },
-            opacity: {
-              duration: isDragging ? 0.1 : 0.25,
-              ease: [0.25, 0.46, 0.45, 0.94],
-            },
-            scale: {
-              duration: isDragging ? 0.1 : 0.25,
-              ease: [0.25, 0.46, 0.45, 0.94],
-            },
-            rotateY: {
-              type: 'spring',
-              stiffness: 500,
-              damping: 30,
-            },
-          }}
+          transition={slideTransition}
           drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.08}
+          dragConstraints={CAROUSEL_DRAG_CONSTRAINTS}
+          dragElastic={0.06}
           dragMomentum={false}
-          dragTransition={{
-            bounceStiffness: 1000,
-            bounceDamping: 50,
-            power: 0.2,
-            timeConstant: 600,
-          }}
-          whileDrag={{
-            scale: 0.97,
-            rotateY: direction * 1.5,
-            cursor: 'grabbing',
-            transition: {
-              duration: 0.1,
-              ease: 'easeOut',
-            },
-          }}
-          whileHover={{
-            scale: 1.01,
-            transition: { duration: 0.2 },
-          }}
-          whileTap={{
-            scale: 0.98,
-            transition: { duration: 0.1 },
-          }}
+          dragTransition={CAROUSEL_DRAG_TRANSITION}
+          whileDrag={CAROUSEL_WHILE_DRAG(direction)}
+          whileHover={CAROUSEL_WHILE_HOVER}
+          whileTap={CAROUSEL_WHILE_TAP}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
           className="relative z-20 cursor-grab select-none will-change-transform active:cursor-grabbing"
@@ -279,169 +137,200 @@ export function Carousel({
             WebkitUserSelect: 'none',
             userSelect: 'none',
             backfaceVisibility: 'hidden',
-            perspective: '1000px',
+            perspective: '1200px',
             transform: 'translateZ(0)', // Force hardware acceleration
             WebkitTransform: 'translateZ(0)',
           }}
         >
-          {' '}
-          <div className="pointer-events-auto transform-gpu will-change-transform">
+          <motion.div 
+            className="pointer-events-auto transform-gpu will-change-transform"
+            {...CAROUSEL_CONTENT_VARIANTS}
+          >
             {childrenArray[currentIndex]}
-          </div>
+          </motion.div>
         </motion.div>
-      </AnimatePresence>{' '}
-      {/* Enhanced Navigation Dots - Always visible for easy navigation */}
-      {childrenArray.length > 1 && (
-        <div className="absolute bottom-3 left-1/2 z-30 -translate-x-1/2 px-2 sm:bottom-6 sm:px-4">
+      </AnimatePresence>
+
+      {/* Enhanced Navigation Dots with smooth animations */}
+      {hasMultipleSlides && (
+        <motion.div 
+          className="absolute bottom-3 left-1/2 z-30 -translate-x-1/2 px-2 sm:bottom-6 sm:px-4"
+          variants={CAROUSEL_NAVIGATION_VARIANTS}
+          initial="initial"
+          animate={CAROUSEL_NAVIGATION_VARIANTS.animate(isMounted)}
+          transition={CAROUSEL_NAVIGATION_VARIANTS.transition}
+        >
           {/* For small number of slides - show all dots */}
-          {childrenArray.length <= 15 && (
+          {showAllDots && (
             <div className="flex max-w-[90vw] flex-wrap justify-center gap-1.5 sm:max-w-none sm:gap-2">
               {childrenArray.map((_, index) => (
-                <button
+                <motion.button
                   key={index}
                   onClick={() => handleDotClick(index)}
-                  className={`size-2.5 rounded-full transition-all duration-300 hover:scale-110 sm:size-3 ${
+                  className={`size-2.5 cursor-pointer rounded-full transition-all duration-300 hover:scale-110 sm:size-3 ${
                     index === currentIndex
                       ? 'scale-110 bg-white shadow-lg ring-2 ring-white/30 sm:scale-125'
                       : 'bg-white/40 hover:bg-white/70'
                   }`}
                   aria-label={`Go to slide ${index + 1}`}
+                  variants={CAROUSEL_DOT_VARIANTS}
+                  initial="initial"
+                  animate={CAROUSEL_DOT_VARIANTS.animate(isMounted)}
+                  whileHover="hover"
+                  whileTap="tap"
+                  transition={CAROUSEL_DOT_VARIANTS.transition(index)}
                 />
               ))}
             </div>
           )}
 
           {/* For large number of slides - show pagination with truncation */}
-          {childrenArray.length > 15 && (
+          {!showAllDots && (
             <div className="flex items-center justify-center gap-1 sm:gap-1.5">
               {/* First page */}
-              <button
+              <motion.button
                 onClick={() => handleDotClick(0)}
-                className={`size-2.5 rounded-full transition-all duration-300 hover:scale-110 sm:size-3 ${
+                className={`size-2.5 cursor-pointer rounded-full transition-all duration-300 hover:scale-110 sm:size-3 ${
                   0 === currentIndex
                     ? 'scale-110 bg-white shadow-lg ring-2 ring-white/30 sm:scale-125'
                     : 'bg-white/40 hover:bg-white/70'
                 }`}
                 aria-label="Go to first slide"
-              />{' '}
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.9 }}
+              />
+
               {/* Show dots around current position */}
               {currentIndex > 3 && (
-                <>
-                  <span className="px-1 text-xs text-white/60">...</span>
-                </>
+                <motion.span 
+                  className="px-1 text-xs text-white/60"
+                  variants={CAROUSEL_ELLIPSIS_VARIANTS}
+                  initial="initial"
+                  animate={CAROUSEL_ELLIPSIS_VARIANTS.animate(isMounted)}
+                  transition={CAROUSEL_ELLIPSIS_VARIANTS.transition}
+                >
+                  ...
+                </motion.span>
               )}
+
               {/* Show 5 dots around current position */}
               {Array.from(
-                { length: Math.min(5, childrenArray.length) },
+                { length: Math.min(5, childrenCount) },
                 (_, i) => {
                   const startIndex = Math.max(
                     1,
-                    Math.min(currentIndex - 2, childrenArray.length - 6)
+                    Math.min(currentIndex - 2, childrenCount - 6)
                   )
                   const index = startIndex + i
 
-                  if (index >= childrenArray.length - 1 || index <= 0)
+                  if (index >= childrenCount - 1 || index <= 0)
                     return null
 
                   return (
-                    <button
+                    <motion.button
                       key={index}
                       onClick={() => handleDotClick(index)}
-                      className={`size-2.5 rounded-full transition-all duration-300 hover:scale-110 sm:size-3 ${
+                      className={`size-2.5 cursor-pointer rounded-full transition-all duration-300 hover:scale-110 sm:size-3 ${
                         index === currentIndex
                           ? 'scale-110 bg-white shadow-lg ring-2 ring-white/30 sm:scale-125'
                           : 'bg-white/40 hover:bg-white/70'
                       }`}
                       aria-label={`Go to slide ${index + 1}`}
+                      whileHover={{ scale: 1.2 }}
+                      whileTap={{ scale: 0.9 }}
                     />
                   )
                 }
-              )}{' '}
-              {/* Show ellipsis if there are more slides */}
-              {currentIndex < childrenArray.length - 4 && (
-                <>
-                  <span className="px-1 text-xs text-white/60">...</span>
-                </>
               )}
+
+              {/* Show ellipsis if there are more slides */}
+              {currentIndex < childrenCount - 4 && (
+                <motion.span 
+                  className="px-1 text-xs text-white/60"
+                  variants={CAROUSEL_ELLIPSIS_VARIANTS}
+                  initial="initial"
+                  animate={CAROUSEL_ELLIPSIS_VARIANTS.animate(isMounted)}
+                  transition={CAROUSEL_ELLIPSIS_VARIANTS.transition}
+                >
+                  ...
+                </motion.span>
+              )}
+
               {/* Last page */}
-              <button
-                onClick={() => handleDotClick(childrenArray.length - 1)}
-                className={`size-2.5 rounded-full transition-all duration-300 hover:scale-110 sm:size-3 ${
-                  childrenArray.length - 1 === currentIndex
+              <motion.button
+                onClick={() => handleDotClick(childrenCount - 1)}
+                className={`size-2.5 cursor-pointer rounded-full transition-all duration-300 hover:scale-110 sm:size-3 ${
+                  childrenCount - 1 === currentIndex
                     ? 'scale-110 bg-white shadow-lg ring-2 ring-white/30 sm:scale-125'
                     : 'bg-white/40 hover:bg-white/70'
                 }`}
                 aria-label="Go to last slide"
-              />{' '}
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.9 }}
+              />
             </div>
           )}
 
-          {/* Current position indicator */}
-          <div className="my-2 text-center">
-            <span className="rounded-full bg-black/50 px-2 py-1 text-xs text-white/90 backdrop-blur-xs sm:text-sm">
-              {currentIndex + 1} / {childrenArray.length}
-            </span>
-          </div>
-        </div>
+          {/* Current position indicator with enhanced animation */}
+          <motion.div 
+            className="my-2 text-center"
+            {...CAROUSEL_POSITION_INDICATOR_VARIANTS}
+          >
+            <motion.span 
+              className="rounded-full bg-black/50 px-2 py-1 text-xs text-white/90 backdrop-blur-sm sm:text-sm"
+              key={currentIndex}
+              {...CAROUSEL_POSITION_TEXT_VARIANTS}
+            >
+              {currentIndex + 1} / {childrenCount}
+            </motion.span>
+          </motion.div>
+        </motion.div>
       )}
-      {/* Navigation arrows - responsive */}
-      {childrenArray.length > 1 && (
+
+      {/* Enhanced Navigation arrows with smooth animations */}
+      {hasMultipleSlides && (
         <>
-          {' '}
           {/* Left Arrow */}
-          <button
+          <motion.button
             onClick={() => handleButtonClick(-1)}
-            className="absolute left-2 top-1/2 z-30 -translate-y-1/2 rounded-full bg-black/30 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/50 focus:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-white/50 group-hover:opacity-100 sm:left-4 sm:p-2 lg:opacity-0"
+            className="absolute left-3 top-1/2 z-30 -translate-y-1/2 hidden items-center justify-center size-10 rounded-full bg-white/10 backdrop-blur-md text-white opacity-0 transition-all duration-300 hover:bg-white/20 hover:scale-105 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white/30 group-hover:opacity-100 sm:left-6 sm:size-12 lg:flex lg:opacity-0 shadow-lg border border-white/20"
             aria-label="Previous slide"
+            variants={CAROUSEL_ARROW_VARIANTS}
+            initial={CAROUSEL_ARROW_VARIANTS.initial('left')}
+            animate="animate"
+            whileHover="hover"
+            whileTap="tap"
+            transition={CAROUSEL_ARROW_VARIANTS.transition}
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="sm:size-6"
+            <motion.div
+              variants={CAROUSEL_ARROW_ICON_VARIANTS}
+              whileHover={CAROUSEL_ARROW_ICON_VARIANTS.hover('left')}
+              transition={CAROUSEL_ARROW_ICON_VARIANTS.transition}
             >
-              <path
-                d="M15 18L9 12L15 6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
+              <ChevronLeft className="size-5 sm:size-6" strokeWidth={2.5} />
+            </motion.div>
+          </motion.button>
+
           {/* Right Arrow */}
-          <button
+          <motion.button
             onClick={() => handleButtonClick(1)}
-            className="absolute right-2 top-1/2 z-30 -translate-y-1/2 rounded-full bg-black/30 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/50 focus:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-white/50 group-hover:opacity-100 sm:right-4 sm:p-2 lg:opacity-0"
+            className="absolute right-3 top-1/2 z-30 -translate-y-1/2 hidden items-center justify-center size-10 rounded-full bg-white/10 backdrop-blur-md text-white opacity-0 transition-all duration-300 hover:bg-white/20 hover:scale-105 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white/30 group-hover:opacity-100 sm:right-6 sm:size-12 lg:flex lg:opacity-0 shadow-lg border border-white/20"
             aria-label="Next slide"
+            variants={CAROUSEL_ARROW_VARIANTS}
+            initial={CAROUSEL_ARROW_VARIANTS.initial('right')}
+            animate="animate"
+            whileHover="hover"
+            whileTap="tap"
+            transition={CAROUSEL_ARROW_VARIANTS.transition}
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="sm:size-6"
+            <motion.div
+              variants={CAROUSEL_ARROW_ICON_VARIANTS}
+              whileHover={CAROUSEL_ARROW_ICON_VARIANTS.hover('right')}
+              transition={CAROUSEL_ARROW_ICON_VARIANTS.transition}
             >
-              <path
-                d="M9 18L15 12L9 6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>{' '}
-          {/* Mobile-only swipe indicator with better positioning */}
-          {/*!isDragging && (
-            <div className="absolute bottom-20 left-1/2 z-30 -translate-x-1/2 text-center sm:bottom-20 lg:hidden">
-              <div className="animate-pulse rounded-full bg-black/30 px-3 py-1.5 text-xs text-white/80 backdrop-blur-xs">
-                👆 Swipe to navigate
-              </div>
-            </div>
-          ) */}
+              <ChevronRight className="size-5 sm:size-6" strokeWidth={2.5} />
+            </motion.div>
+          </motion.button>
         </>
       )}
     </div>

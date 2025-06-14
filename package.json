@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.1.1",
-    "@opennextjs/cloudflare": "1.2.1",
+    "@opennextjs/cloudflare": "1.3.0",
     "@tailwindcss/postcss": "^4.1.8",
     "@tailwindcss/typography": "^0.5.10",
     "@types/node": "^22.5.1",
@@ -63,7 +63,7 @@
     "prettier": "^3.3.3",
     "tailwindcss": "^4.1.8",
     "typescript": "^5.5.4",
-    "wrangler": "^4.19.1"
+    "wrangler": "^4.20.0"
   },
   "pnpm": {
     "overrides": {
