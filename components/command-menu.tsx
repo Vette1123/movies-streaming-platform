@@ -223,7 +223,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
               className="cursor-pointer"
               onSelect={() =>
                 runCommand(() =>
-                  window.open(`https://www.mohamedgado.site/`, '_blank')
+                  window.open(`https://www.mohamedgado.com/`, '_blank')
                 )
               }
             >

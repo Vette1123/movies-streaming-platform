@@ -35,7 +35,7 @@ export const siteConfig = {
   links: {
     twitter: 'https://twitter.com/Sadge1996',
     github: 'https://github.com/Vette1123',
-    website: 'https://www.mohamedgado.site/',
+    website: 'https://www.mohamedgado.com/',
     buyMeACoffee: 'https://buymeacoffee.com/vetteotp',
   },
   openGraph: {
