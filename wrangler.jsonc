@@ -30,4 +30,9 @@
       "service": "reely-cloudflare",
     },
   ],
+  "vars": {
+    "CACHE_VERSION": "v1",
+    "ENABLE_CACHE_DEBUG": "false",
+    "MAX_CACHE_SIZE": "10485760"
+  },
 }
