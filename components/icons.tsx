@@ -1,4 +1,5 @@
 import {
+  Briefcase,
   Coffee,
   LucideIcon,
   LucideProps,
@@ -24,6 +25,7 @@ export const Icons = {
   playIcon: PlayCircle,
   search: Search,
   buyMeACoffee: Coffee,
+  portfolio: Briefcase,
 
   fullStar: (props: LucideProps) => (
     <svg
