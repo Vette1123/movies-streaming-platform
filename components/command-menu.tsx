@@ -25,6 +25,7 @@ import {
 import { Icons } from '@/components/icons'
 
 import { Badge } from './ui/badge'
+import { siteConfig } from '@/config/site'
 
 const handleUniqueTitle = (movie: MediaType, isDuplicate: boolean) => {
   if (!isDuplicate) return movie.title
@@ -223,7 +224,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
               className="cursor-pointer"
               onSelect={() =>
                 runCommand(() =>
-                  window.open(`https://www.mohamedgado.com/`, '_blank')
+                  window.open(siteConfig.author.website, '_blank')
                 )
               }
             >

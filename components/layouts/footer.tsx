@@ -23,7 +23,7 @@ export function Footer() {
           </Link>{' '}
           by{' '}
           <Link
-            href="https://www.mohamedgado.com/"
+            href={siteConfig.author.website}
             className="font-medium text-slate-300/75"
             target="_blank"
             rel="noopener noreferrer"
@@ -55,7 +55,7 @@ export function Footer() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            Vercel
+            Cloudflare
           </Link>
           , Using{' '}
           <Link
@@ -66,15 +66,7 @@ export function Footer() {
           >
             VidSrc
           </Link>
-          .{/* ,{' '} */}
-          {/* <Link
-            href="https://mywebb-mustafaarslankaya.vercel.app"
-            className="font-medium text-slate-300/75"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Arslankaya &#10084;
-          </Link> */}
+          .
         </p>
       </div>
       <div className="flex items-center justify-center">
