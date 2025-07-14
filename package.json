@@ -31,7 +31,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^0.2.0",
-    "framer-motion": "^11.3.31",
+    "framer-motion": "^12.23.5",
     "lucide-react": "^0.436.0",
     "next": "15.3.5",
     "posthog-js": "^1.256.2",

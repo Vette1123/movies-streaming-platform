@@ -35,16 +35,6 @@ export const metadata: Metadata = {
   generator: siteConfig.seo.generator,
   keywords: siteConfig.keywords,
   referrer: siteConfig.seo.referrer as 'origin-when-cross-origin',
-  colorScheme: siteConfig.seo.colorScheme as 'dark light',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: siteConfig.theme.colors.light },
-    { media: '(prefers-color-scheme: dark)', color: siteConfig.theme.colors.dark },
-  ],
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-  },
   
   // Enhanced Open Graph
   openGraph: {
