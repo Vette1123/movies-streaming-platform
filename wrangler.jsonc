@@ -6,10 +6,10 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
     "directory": ".open-next/assets",
-    "binding": "ASSETS",
+    "binding": "ASSETS"
   },
   "observability": {
-    "enabled": true,
+    "enabled": true
   },
   "placement": {
     "mode": "smart"
@@ -17,22 +17,17 @@
   "kv_namespaces": [
     {
       "binding": "NEXT_INC_CACHE_KV",
-      "id": "eb6499ab89774a56b9c5665dbd5d03bc",
-    },
+      "id": "eb6499ab89774a56b9c5665dbd5d03bc"
+    }
   ],
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "reely-cloudflare",
+      "service": "reely-cloudflare"
     },
     {
       "binding": "NEXT_CACHE_REVALIDATION_WORKER",
-      "service": "reely-cloudflare",
-    },
-  ],
-  "vars": {
-    "CACHE_VERSION": "v1",
-    "ENABLE_CACHE_DEBUG": "false",
-    "MAX_CACHE_SIZE": "10485760"
-  },
+      "service": "reely-cloudflare"
+    }
+  ]
 }
