@@ -3,7 +3,7 @@ export type SiteConfig = typeof siteConfig
 export const siteConfig = {
   name: 'Reely',
   description: 'Reely is a movie and tv show tracker built by Mohamed Gado.',
-  
+
   // Author and creator information
   author: {
     name: 'Mohamed Gado',
@@ -11,7 +11,7 @@ export const siteConfig = {
     website: 'https://www.mohamedgado.com/',
     twitter: '@Sadge1996',
   },
-  
+
   // Theme and visual configuration
   theme: {
     colors: {
@@ -21,7 +21,7 @@ export const siteConfig = {
       tile: '#000000',
     },
   },
-  
+
   // SEO and metadata configuration
   seo: {
     locale: 'en_US',
@@ -33,7 +33,7 @@ export const siteConfig = {
     referrer: 'origin-when-cross-origin',
     colorScheme: 'dark light',
   },
-  
+
   // Open Graph enhanced configuration
   openGraph: {
     locale: 'en_US',
@@ -54,14 +54,14 @@ export const siteConfig = {
     },
     ttl: 604800, // 7 days
   },
-  
+
   // Twitter card configuration
   twitter: {
     card: 'summary_large_image',
     creator: '@Sadge1996',
     site: '@Sadge1996',
   },
-  
+
   // Progressive Web App configuration
   pwa: {
     capable: true,
@@ -69,7 +69,7 @@ export const siteConfig = {
     startupImage: '/icons/apple-touch-icon.png',
     manifestPath: '/site.webmanifest',
   },
-  
+
   // Icons configuration
   icons: {
     favicon: '/favicon.ico',
@@ -78,7 +78,7 @@ export const siteConfig = {
     appleTouchIcon: '/apple-touch-icon.png',
     browserConfig: '/browserconfig.xml',
   },
-  
+
   // Performance optimization
   performance: {
     preconnectDomains: [
@@ -91,13 +91,13 @@ export const siteConfig = {
       '//www.google-analytics.com',
     ],
   },
-  
+
   // Security configuration
   security: {
     contentSecurityPolicy: "default-src 'self'",
     formatDetection: 'telephone=no',
   },
-  
+
   // Structured data for JSON-LD
   structuredData: {
     '@context': 'https://schema.org',
@@ -154,7 +154,6 @@ export const siteConfig = {
     'https://pbs.twimg.com/profile_images/1446549954231738370/IVkXC16N_400x400.jpg',
   keywords: [
     'Reely',
-    'Reely Site',
     'Reely Tracker',
     'Movie Tracker',
     'TV Show Tracker',
