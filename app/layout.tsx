@@ -209,60 +209,6 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
   return (
     <>
       <html lang="en" suppressHydrationWarning>
-        <head>
-          {/* Preconnect to external domains for performance */}
-          {siteConfig.performance.preconnectDomains.map((domain) => (
-            <link key={domain} rel="preconnect" href={domain} />
-          ))}
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-          
-          {/* DNS prefetch for faster resource loading */}
-          {siteConfig.performance.dnsPrefetchDomains.map((domain) => (
-            <link key={domain} rel="dns-prefetch" href={domain} />
-          ))}
-          
-          {/* Manifest for PWA support */}
-          <link rel="manifest" href={siteConfig.pwa.manifestPath} />
-          
-          {/* Additional meta tags for better SEO */}
-          <meta name="format-detection" content={siteConfig.security.formatDetection} />
-          <meta name="mobile-web-app-capable" content="yes" />
-          <meta name="apple-mobile-web-app-capable" content="yes" />
-          <meta name="apple-mobile-web-app-status-bar-style" content={siteConfig.pwa.statusBarStyle} />
-          
-          {/* Structured Data - JSON-LD */}
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
-                ...siteConfig.structuredData,
-                name: siteConfig.name,
-                description: siteConfig.description,
-                url: siteConfig.websiteURL,
-                sameAs: [
-                  siteConfig.links.twitter,
-                  siteConfig.links.github,
-                ],
-                potentialAction: {
-                  ...siteConfig.structuredData.searchAction,
-                  target: {
-                    ...siteConfig.structuredData.searchAction.target,
-                    urlTemplate: `${siteConfig.websiteURL}${siteConfig.structuredData.searchAction.target.urlTemplate}`,
-                  },
-                },
-                publisher: {
-                  '@type': 'Person',
-                  name: siteConfig.author.name,
-                  url: siteConfig.author.website,
-                  sameAs: [
-                    siteConfig.links.twitter,
-                    siteConfig.links.github,
-                  ],
-                },
-              }),
-            }}
-          />
-        </head>
         <body
           className={cn(
             'min-h-screen scroll-smooth bg-background font-sans antialiased',
