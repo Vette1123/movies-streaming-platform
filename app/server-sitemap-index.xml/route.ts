@@ -1,11 +1,13 @@
 import { getServerSideSitemapIndex } from 'next-sitemap'
+import { siteConfig } from '@/config/site'
 
 export async function GET(request: Request) {
-  // Method to source urls from cms
-  // const urls = await fetch('https//example.com/api')
+  const baseUrl = siteConfig.websiteURL
 
   return getServerSideSitemapIndex([
-    'https://example.com/path-1.xml',
-    'https://example.com/path-2.xml',
+    `${baseUrl}/sitemap-static.xml`,
+    `${baseUrl}/sitemap-movies.xml`,
+    `${baseUrl}/sitemap-tv-shows.xml`,
+    `${baseUrl}/sitemap-trending.xml`,
   ])
 }
