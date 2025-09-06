@@ -13,4 +13,6 @@ export const seriesDTO = (seriesResponse: SeriesResponse): MediaResponse => ({
       video: false,
     }
   }),
+  total_pages: seriesResponse?.total_pages,
+  total_results: seriesResponse?.total_results,
 })

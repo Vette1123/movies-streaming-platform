@@ -21,6 +21,8 @@ type Series = {
 interface SeriesResponse {
   page: number
   results: Series[]
+  total_pages?: number
+  total_results?: number
 }
 
 export type { Series, SeriesResponse }
