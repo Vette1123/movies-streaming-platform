@@ -7,6 +7,7 @@ import { Home, Tv } from 'lucide-react'
 import { useDebouncedCallback } from 'use-debounce'
 
 import { MediaType } from '@/types/media'
+import { siteConfig } from '@/config/site'
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
 import { cn, getPosterImageURL } from '@/lib/utils'
 import { useCMDKListener } from '@/hooks/use-cmdk-listener'
@@ -25,7 +26,6 @@ import {
 import { Icons } from '@/components/icons'
 
 import { Badge } from './ui/badge'
-import { siteConfig } from '@/config/site'
 
 const handleUniqueTitle = (movie: MediaType, isDuplicate: boolean) => {
   if (!isDuplicate) return movie.title
