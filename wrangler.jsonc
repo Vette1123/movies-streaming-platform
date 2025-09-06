@@ -30,4 +30,14 @@
       "service": "reely-cloudflare",
     },
   ],
+  "vars": {
+    "ENVIRONMENT": "production",
+    "NODE_ENV": "production",
+  },
+  "build": {
+    "command": "pnpm build:worker",
+  },
+  "triggers": {
+    "crons": ["0 2 * * *"],
+  },
 }
