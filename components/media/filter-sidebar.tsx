@@ -244,7 +244,7 @@ export const FilterSidebar = ({
         )}
       </div>
 
-      <ScrollArea className="max-h-[80vh] lg:max-h-full overflow-y-auto">
+      <ScrollArea className="max-h-[80vh] lg:max-h-full pb-8 lg:pb-0 overflow-y-auto">
         <div className="space-y-4 lg:space-y-6 pr-4">
           {/* Sort */}
           <FilterSection
