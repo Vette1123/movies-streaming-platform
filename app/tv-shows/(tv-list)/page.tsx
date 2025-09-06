@@ -23,6 +23,9 @@ async function TvShows() {
         media={series}
         getPopularMediaAction={getPopularSeries}
         queryKey={QUERY_KEYS.SERIES_KEY}
+        enableFilters={true}
+        filterLayout="sidebar"
+        title="TV Shows"
       />
     </section>
   )

@@ -76,6 +76,20 @@ function seasonsFormatter(seasons: Season[]) {
   })
 }
 
+function formatDate(
+  date: Date,
+  format: 'short' | 'long' | 'medium' = 'medium'
+): string {
+  const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month:
+      format === 'short' ? '2-digit' : format === 'long' ? 'long' : 'short',
+    day: '2-digit',
+  }
+
+  return date.toLocaleDateString('en-US', options)
+}
+
 export {
   cn,
   getImageURL,
@@ -87,4 +101,5 @@ export {
   moneyFormatter,
   convertMinutesToHours,
   seasonsFormatter,
+  formatDate,
 }

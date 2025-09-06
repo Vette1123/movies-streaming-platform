@@ -23,6 +23,8 @@ type Movie = {
 interface MovieResponse {
   page: number
   results: Movie[]
+  total_pages?: number
+  total_results?: number
 }
 
 type Param = Record<string, string | number>

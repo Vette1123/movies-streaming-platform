@@ -6,6 +6,7 @@ import { CSPostHogProvider } from '@/providers/posthog-provider'
 import { QueryProvider } from '@/providers/query-provider'
 import { ToastProvider } from '@/providers/toast-provider'
 import { GoogleTagManager } from '@next/third-parties/google'
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
 
 import { siteConfig } from '@/config/site'
 import { GOOGLE_GTM_ID } from '@/lib/constants'
@@ -14,7 +15,7 @@ import { cn } from '@/lib/utils'
 import { Footer } from '@/components/layouts/footer'
 import { SiteHeader } from '@/components/layouts/site-header'
 
-const generateOgImageUrl = (title: string, description: string) => 
+const generateOgImageUrl = (title: string, description: string) =>
   `${siteConfig.websiteURL}/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`
 
 export const metadata: Metadata = {
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
   generator: siteConfig.seo.generator,
   keywords: siteConfig.keywords,
   referrer: siteConfig.seo.referrer as 'origin-when-cross-origin',
-  
+
   // Enhanced Open Graph
   openGraph: {
     type: siteConfig.openGraph.type as 'website',
@@ -92,7 +93,8 @@ export const metadata: Metadata = {
     startupImage: [
       {
         url: siteConfig.pwa.startupImage,
-        media: '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)',
+        media:
+          '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)',
       },
     ],
   },
@@ -116,7 +118,11 @@ export const metadata: Metadata = {
     ],
     shortcut: siteConfig.icons.favicon,
     apple: [
-      { url: siteConfig.icons.appleTouchIcon, sizes: '180x180', type: 'image/png' },
+      {
+        url: siteConfig.icons.appleTouchIcon,
+        sizes: '180x180',
+        type: 'image/png',
+      },
     ],
     other: [
       {
@@ -158,7 +164,7 @@ export const metadata: Metadata = {
 
   // Enhanced metadata base
   metadataBase: new URL(siteConfig.websiteURL),
-  
+
   // Additional SEO enhancements
   alternates: {
     canonical: siteConfig.websiteURL,
@@ -176,7 +182,7 @@ export const metadata: Metadata = {
 
   // Category for app stores
   category: siteConfig.seo.category as 'entertainment',
-  
+
   // Additional meta tags via other
   other: {
     'mobile-web-app-capable': 'yes',
@@ -193,7 +199,7 @@ export const metadata: Metadata = {
     'msapplication-window': 'width=1024;height=768',
     'msapplication-navbutton-color': siteConfig.theme.colors.primary,
     // Security headers
-    'referrer': siteConfig.seo.referrer,
+    referrer: siteConfig.seo.referrer,
     'content-security-policy': siteConfig.security.contentSecurityPolicy,
     // Performance hints
     'dns-prefetch': 'true',
@@ -218,9 +224,11 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
           <div className="flex flex-col">
             <SiteHeader />
             <div className="h-full flex-1 overflow-x-hidden">
-              <QueryProvider>
-                <CSPostHogProvider>{children}</CSPostHogProvider>
-              </QueryProvider>
+              <NuqsAdapter>
+                <QueryProvider>
+                  <CSPostHogProvider>{children}</CSPostHogProvider>
+                </QueryProvider>
+              </NuqsAdapter>
               <ToastProvider />
               <Footer />
               <GoogleTagManager gtmId={GOOGLE_GTM_ID as string} />

@@ -23,6 +23,9 @@ async function Movies() {
         media={movies}
         getPopularMediaAction={getPopularMovies}
         queryKey={QUERY_KEYS.MOVIES_KEY}
+        enableFilters={true}
+        filterLayout="sidebar"
+        title="Movies"
       />
     </section>
   )

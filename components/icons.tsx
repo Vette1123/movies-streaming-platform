@@ -1,15 +1,19 @@
 import {
   Briefcase,
   Coffee,
+  Filter,
   LucideIcon,
   LucideProps,
   Menu,
   Moon,
   PlayCircle,
   Search,
+  Settings,
+  SlidersHorizontal,
   StarIcon,
   SunMedium,
   Twitter,
+  X,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -26,6 +30,10 @@ export const Icons = {
   search: Search,
   buyMeACoffee: Coffee,
   portfolio: Briefcase,
+  filter: Filter,
+  settings: Settings,
+  sliders: SlidersHorizontal,
+  close: X,
 
   fullStar: (props: LucideProps) => (
     <svg
