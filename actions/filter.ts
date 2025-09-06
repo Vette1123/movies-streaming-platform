@@ -6,7 +6,7 @@ import { Param } from '@/types/movie-result'
 import { fetchClient } from '@/lib/fetch-client'
 
 // Discover movies with filters
-const discoverMovies = async (
+export const discoverMoviesAction = async (
   filterParams: FilterParams = {},
   params: Param = {}
 ): Promise<MediaResponse> => {
@@ -37,7 +37,7 @@ const discoverMovies = async (
 }
 
 // Discover TV series with filters
-const discoverSeries = async (
+export const discoverSeriesAction = async (
   filterParams: FilterParams = {},
   params: Param = {}
 ): Promise<MediaResponse> => {
@@ -77,7 +77,7 @@ const discoverSeries = async (
 }
 
 // Get movie genres
-const getMovieGenres = async () => {
+export const getMovieGenresAction = async () => {
   const url = 'genre/movie/list'
   return fetchClient.get<{ genres: { id: number; name: string }[] }>(
     url,
@@ -87,7 +87,7 @@ const getMovieGenres = async () => {
 }
 
 // Get TV genres
-const getTVGenres = async () => {
+export const getTVGenresAction = async () => {
   const url = 'genre/tv/list'
   return fetchClient.get<{ genres: { id: number; name: string }[] }>(
     url,
@@ -97,7 +97,7 @@ const getTVGenres = async () => {
 }
 
 // Get available languages
-const getLanguages = async () => {
+export const getLanguagesAction = async () => {
   const url = 'configuration/languages'
   return fetchClient.get<
     { iso_639_1: string; english_name: string; name: string }[]
@@ -105,20 +105,11 @@ const getLanguages = async () => {
 }
 
 // Get available countries
-const getCountries = async () => {
+export const getCountriesAction = async () => {
   const url = 'configuration/countries'
   return fetchClient.get<{ iso_3166_1: string; english_name: string }[]>(
     url,
     {},
     true
   )
-}
-
-export {
-  discoverMovies,
-  discoverSeries,
-  getMovieGenres,
-  getTVGenres,
-  getLanguages,
-  getCountries,
 }

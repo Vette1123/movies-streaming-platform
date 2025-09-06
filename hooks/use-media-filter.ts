@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useMemo } from 'react'
-import { discoverMovies, discoverSeries } from '@/services/filter'
+import { discoverMoviesAction, discoverSeriesAction } from '@/actions/filter'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import {
   parseAsArrayOf,
@@ -184,7 +184,7 @@ export const useMediaFilter = ({
   const queryKey =
     mediaType === 'movie' ? QUERY_KEYS.MOVIES_KEY : QUERY_KEYS.SERIES_KEY
   const discoverFunction =
-    mediaType === 'movie' ? discoverMovies : discoverSeries
+    mediaType === 'movie' ? discoverMoviesAction : discoverSeriesAction
 
   const {
     data,
