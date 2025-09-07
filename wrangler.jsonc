@@ -11,6 +11,7 @@
   "observability": {
     "enabled": true,
   },
+  "preview_urls": false,
   // "placement": {
   //   "mode": "smart",
   // },
@@ -23,10 +24,6 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "reely-cloudflare",
-    },
-    {
-      "binding": "NEXT_CACHE_REVALIDATION_WORKER",
       "service": "reely-cloudflare",
     },
   ],
