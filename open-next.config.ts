@@ -6,5 +6,4 @@ import { defineCloudflareConfig } from '@opennextjs/cloudflare'
 export default defineCloudflareConfig({
   // Use KV incremental cache for ISR/SSG pages - this is the core caching mechanism
   // incrementalCache: kvIncrementalCache,
-  enableCacheInterception: true,
 })
