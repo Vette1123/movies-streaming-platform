@@ -12,21 +12,21 @@
     "enabled": true,
   },
   "preview_urls": false,
-  // "placement": {
-  //   "mode": "smart",
-  // },
-  "kv_namespaces": [
-    {
-      "binding": "NEXT_INC_CACHE_KV",
-      "id": "eb6499ab89774a56b9c5665dbd5d03bc",
-    },
-  ],
-  "services": [
-    {
-      "binding": "WORKER_SELF_REFERENCE",
-      "service": "reely-cloudflare",
-    },
-  ],
+  "placement": {
+    "mode": "smart",
+  },
+  // "kv_namespaces": [
+  //   {
+  //     "binding": "NEXT_INC_CACHE_KV",
+  //     "id": "eb6499ab89774a56b9c5665dbd5d03bc",
+  //   },
+  // ],
+  // "services": [
+  //   {
+  //     "binding": "WORKER_SELF_REFERENCE",
+  //     "service": "reely-cloudflare",
+  //   },
+  // ],
   "vars": {
     "ENVIRONMENT": "production",
     "NODE_ENV": "production",

@@ -36,6 +36,7 @@ interface SeriesDetails {
   genres: MovieGenre[]
   homepage: string
   id: number
+  imdb_id?: string
   in_production: boolean
   languages: string[]
   last_air_date: string
@@ -59,6 +60,7 @@ interface SeriesDetails {
   type: string
   vote_average: number
   vote_count: number
+  imdbRating?: string | null
 }
 
 interface MultiSeriesDetailsRequestProps {

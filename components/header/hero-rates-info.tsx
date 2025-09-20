@@ -28,13 +28,29 @@ export const HeroRatesInfos = ({
     movieDetails?.genres || seriesDetails?.genres
   )
 
+  const displayRating = () => {
+    // Show IMDB rating if available for movieDetails or seriesDetails
+    if (movieDetails?.imdbRating) {
+      return <span className="font-semibold">{movieDetails.imdbRating}</span>
+    }
+
+    if (seriesDetails?.imdbRating) {
+      return <span className="font-semibold">{seriesDetails.imdbRating}</span>
+    }
+
+    // Fallback to TMDB rating
+    return (
+      <span className="font-semibold">{numberRounder(item?.vote_average)}</span>
+    )
+  }
+
   return (
     <div className="my-4 flex flex-wrap items-center gap-2 lg:gap-3">
       <Badge className="uppercase">{item?.original_language}</Badge>
       <Badge className="uppercase">{item?.adult ? 'NC-17' : 'PG-13'}</Badge>
       <div className="flex items-center text-xs lg:text-base">
         <Icons.fullStar className="mr-1 h-6 w-6" />
-        <p className="font-semibold">{numberRounder(item?.vote_average)}</p>
+        {displayRating()}
       </div>
       <p className="text-xs text-popover-foreground lg:text-base">
         {dateFormatter(item?.release_date || item?.first_air_date)}

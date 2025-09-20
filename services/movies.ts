@@ -1,3 +1,4 @@
+import { getIMDbRating } from '@/actions/imdb-rating'
 import {
   getAllTimeTopRatedSeries,
   getLatestTrendingSeries,
@@ -104,7 +105,20 @@ const populateHomePageData = async (): Promise<MultiRequestProps> => {
 
 const getMovieDetailsById = async (id: string, params: Param = {}) => {
   const url = `movie/${id}?language=en-US`
-  return fetchClient.get<MovieDetails>(url, params, true)
+  const movieDetails = await fetchClient.get<MovieDetails>(url, params, true)
+
+  if (movieDetails.imdb_id) {
+    const imdbRating = await getIMDbRating(movieDetails.imdb_id)
+    return {
+      ...movieDetails,
+      imdbRating,
+    }
+  }
+
+  return {
+    ...movieDetails,
+    imdbRating: null,
+  }
 }
 
 const getMovieCreditsById = async (id: string, params: Param = {}) => {

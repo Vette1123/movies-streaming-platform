@@ -1,3 +1,4 @@
+import { getIMDbRating } from '@/actions/imdb-rating'
 import { seriesDTO } from '@/dtos/series'
 
 import { Credit } from '@/types/credit'
@@ -31,7 +32,20 @@ const getAllTimeTopRatedSeries = async (params: Param = {}) => {
 
 const getSeriesDetailsById = async (id: string, params: Param = {}) => {
   const url = `tv/${id}?language=en-US`
-  return fetchClient.get<SeriesDetails>(url, params, true)
+  const seriesDetails = await fetchClient.get<SeriesDetails>(url, params, true)
+  // Fetch IMDB rating if imdb_id is available
+  if (seriesDetails.imdb_id) {
+    const imdbRating = await getIMDbRating(seriesDetails.imdb_id)
+    return {
+      ...seriesDetails,
+      imdbRating,
+    }
+  }
+
+  return {
+    ...seriesDetails,
+    imdbRating: null,
+  }
 }
 
 const getSeriesCreditsById = async (id: string, params: Param = {}) => {
