@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 
@@ -14,10 +14,22 @@ interface AnimatedWatchButtonProps {
   mediaType?: ItemType
 }
 
+// Global variable to track if animation has played
+let hasAnimated = false
+
 export const AnimatedWatchButton = ({
   movieId,
   mediaType,
 }: AnimatedWatchButtonProps) => {
+  const [shouldAnimate, setShouldAnimate] = useState(!hasAnimated)
+
+  useEffect(() => {
+    if (!hasAnimated) {
+      hasAnimated = true
+      setShouldAnimate(true)
+    }
+  }, [])
+
   const href =
     mediaType === 'tv' ? `/tv-shows/${movieId}` : `/movies/${movieId}`
 
@@ -26,7 +38,7 @@ export const AnimatedWatchButton = ({
       className={cn('flex justify-center lg:w-fit lg:justify-start')}
       whileHover={{ scale: 1.1 }}
       transition={{ type: 'spring', stiffness: 500 }}
-      initial={{ opacity: 0, y: 80 }}
+      initial={shouldAnimate ? { opacity: 0, y: 80 } : { opacity: 1, y: 0 }}
       animate={{ opacity: 1, y: 0 }}
     >
       <Link
