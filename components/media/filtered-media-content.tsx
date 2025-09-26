@@ -1,10 +1,9 @@
 'use client'
 
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 import { useInView } from 'react-intersection-observer'
 
 import { MediaResponse, MediaType } from '@/types/media'
-import { QUERY_KEYS } from '@/lib/queryKeys'
 import { useMediaFilter } from '@/hooks/use-media-filter'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/card'
@@ -28,17 +27,18 @@ export const FilteredMediaContent = ({
   layout = 'dialog',
   title,
 }: FilteredMediaContentProps) => {
+  // Local state for filter open/close to prevent URL pollution and mobile refresh issues
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+
   const {
     filter,
     filterParams,
     data,
     isLoading,
     hasActiveFilters,
-    isFilterOpen,
     updateFilter,
     toggleGenre,
     clearFilters,
-    setIsFilterOpen,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -51,11 +51,21 @@ export const FilteredMediaContent = ({
     rootMargin: '0px 0px 200px 0px',
   })
 
+  // Optimized infinite scroll with debounce to prevent multiple rapid calls
   React.useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage()
+    if (inView && hasNextPage && !isFetchingNextPage && !isLoading) {
+      const timeoutId = setTimeout(() => {
+        fetchNextPage()
+      }, 100) // Small debounce to prevent rapid calls
+
+      return () => clearTimeout(timeoutId)
     }
-  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
+  }, [inView, hasNextPage, isFetchingNextPage, isLoading, fetchNextPage])
+
+  // Handle filter close on mobile to prevent issues
+  const handleFilterOpenChange = useCallback((open: boolean) => {
+    setIsFilterOpen(open)
+  }, [])
 
   const pages = data?.pages || []
 
@@ -79,7 +89,7 @@ export const FilteredMediaContent = ({
           <FilterSheet
             mediaType={mediaType}
             isOpen={isFilterOpen}
-            onOpenChange={setIsFilterOpen}
+            onOpenChange={handleFilterOpenChange}
             filter={filter}
             updateFilter={updateFilter}
             toggleGenre={toggleGenre}
@@ -94,7 +104,7 @@ export const FilteredMediaContent = ({
           <FilterDialog
             mediaType={mediaType}
             isOpen={isFilterOpen}
-            onOpenChange={setIsFilterOpen}
+            onOpenChange={handleFilterOpenChange}
             filter={filter}
             updateFilter={updateFilter}
             toggleGenre={toggleGenre}
@@ -145,7 +155,7 @@ export const FilteredMediaContent = ({
               <FilterSheet
                 mediaType={mediaType}
                 isOpen={isFilterOpen}
-                onOpenChange={setIsFilterOpen}
+                onOpenChange={handleFilterOpenChange}
                 filter={filter}
                 updateFilter={updateFilter}
                 toggleGenre={toggleGenre}

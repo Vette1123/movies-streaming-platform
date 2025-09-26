@@ -1,9 +1,8 @@
 'use client'
 
-import React from 'react'
+import React, { useCallback } from 'react'
 
 import { MediaFilter } from '@/types/filter'
-import { useMediaFilter } from '@/hooks/use-media-filter'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -50,10 +49,33 @@ export const FilterDialog = ({
   sections,
   toggleSection,
 }: FilterDialogProps) => {
+  // Prevent event bubbling that can cause mobile refresh issues
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      onOpenChange(open)
+    },
+    [onOpenChange]
+  )
+
+  const handleTriggerClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      onOpenChange(true)
+    },
+    [onOpenChange]
+  )
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          onClick={handleTriggerClick}
+          type="button"
+        >
           <Icons.filter className="h-4 w-4" />
           Filters
           {hasActiveFilters && (
@@ -63,7 +85,11 @@ export const FilterDialog = ({
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md max-h-[80vh] overflow-hidden">
+      <DialogContent
+        className="max-w-md max-h-[80vh] overflow-hidden"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Icons.sliders className="size-5" />

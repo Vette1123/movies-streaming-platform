@@ -35,7 +35,6 @@ const defaultValues = {
   minRuntime: 0,
   maxRuntime: 300,
   originalLanguage: '',
-  isFilterOpen: false,
   // Section states
   sortSection: true,
   genresSection: true,
@@ -62,7 +61,6 @@ const filterParsers = {
   minRuntime: parseAsInteger.withDefault(defaultValues.minRuntime),
   maxRuntime: parseAsInteger.withDefault(defaultValues.maxRuntime),
   originalLanguage: parseAsString.withDefault(defaultValues.originalLanguage),
-  isFilterOpen: parseAsBoolean.withDefault(defaultValues.isFilterOpen),
   // Section states
   sortSection: parseAsBoolean.withDefault(defaultValues.sortSection),
   genresSection: parseAsBoolean.withDefault(defaultValues.genresSection),
@@ -98,8 +96,6 @@ export const useMediaFilter = ({
     }),
     [urlState]
   )
-
-  const isFilterOpen = urlState.isFilterOpen
 
   // Convert MediaFilter to API FilterParams
   const filterParams = useMemo((): FilterParams => {
@@ -286,17 +282,6 @@ export const useMediaFilter = ({
     setUrlState(defaultValues)
   }, [setUrlState])
 
-  const setIsFilterOpen = useCallback(
-    (open: boolean) => {
-      setUrlState({ isFilterOpen: open })
-    },
-    [setUrlState]
-  )
-
-  const toggleFilterPanel = useCallback(() => {
-    setUrlState({ isFilterOpen: !urlState.isFilterOpen })
-  }, [urlState.isFilterOpen, setUrlState])
-
   const toggleSection = useCallback(
     (sectionKey: string) => {
       const validSectionKeys = [
@@ -320,7 +305,6 @@ export const useMediaFilter = ({
     filter,
     filterParams,
     hasActiveFilters,
-    isFilterOpen,
 
     // Section states
     sections: {
@@ -343,8 +327,6 @@ export const useMediaFilter = ({
     toggleGenre,
     setSortBy,
     clearFilters,
-    toggleFilterPanel,
-    setIsFilterOpen,
     toggleSection,
     fetchNextPage,
     refetch,

@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useCallback } from 'react'
 
 import { MediaFilter } from '@/types/filter'
 import { Button } from '@/components/ui/button'
@@ -49,10 +49,33 @@ export const FilterSheet = ({
   sections,
   toggleSection,
 }: FilterSheetProps) => {
+  // Prevent event bubbling that can cause mobile refresh issues
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      onOpenChange(open)
+    },
+    [onOpenChange]
+  )
+
+  const handleTriggerClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      onOpenChange(true)
+    },
+    [onOpenChange]
+  )
+
   return (
-    <Sheet open={isOpen} onOpenChange={onOpenChange}>
+    <Sheet open={isOpen} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          onClick={handleTriggerClick}
+          type="button"
+        >
           <Icons.filter className="h-4 w-4" />
           Filters
           {hasActiveFilters && (
@@ -62,7 +85,12 @@ export const FilterSheet = ({
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[350px] sm:w-[400px]">
+      <SheetContent
+        side="right"
+        className="w-[350px] sm:w-[400px] overflow-hidden"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Icons.sliders className="h-5 w-5" />
