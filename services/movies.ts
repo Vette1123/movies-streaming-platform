@@ -1,4 +1,3 @@
-import { getIMDbRating } from '@/actions/imdb-rating'
 import {
   getAllTimeTopRatedSeries,
   getLatestTrendingSeries,
@@ -107,13 +106,13 @@ const getMovieDetailsById = async (id: string, params: Param = {}) => {
   const url = `movie/${id}?language=en-US`
   const movieDetails = await fetchClient.get<MovieDetails>(url, params, true)
 
-  if (movieDetails.imdb_id) {
-    const imdbRating = await getIMDbRating(movieDetails.imdb_id)
-    return {
-      ...movieDetails,
-      imdbRating,
-    }
-  }
+  // if (movieDetails.imdb_id) {
+  //   const imdbRating = await getIMDbRating(movieDetails.imdb_id)
+  //   return {
+  //     ...movieDetails,
+  //     imdbRating,
+  //   }
+  // }
 
   return {
     ...movieDetails,
