@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
-<url><loc>https://www.reely.space/sitemap.xml</loc><lastmod>2025-10-15T01:18:43.411Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://www.reely.space/(.)disclaimer</loc><lastmod>2025-10-15T01:18:43.411Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://www.reely.space/twitter-image.png</loc><lastmod>2025-10-15T01:18:43.411Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://www.reely.space/robots.txt</loc><lastmod>2025-10-15T01:18:43.411Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://www.reely.space/opengraph-image.png</loc><lastmod>2025-10-15T01:18:43.411Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://www.reely.space/disclaimer</loc><lastmod>2025-10-15T01:18:43.411Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://www.reely.space/watch-history</loc><lastmod>2025-10-15T01:18:43.411Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://www.reely.space/movies</loc><lastmod>2025-10-15T01:18:43.411Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://www.reely.space/tv-shows</loc><lastmod>2025-10-15T01:18:43.411Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://www.reely.space</loc><lastmod>2025-10-15T01:18:43.411Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://www.reely.space/twitter-image.png</loc><lastmod>2025-10-15T01:24:50.823Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://www.reely.space/sitemap.xml</loc><lastmod>2025-10-15T01:24:50.823Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://www.reely.space/robots.txt</loc><lastmod>2025-10-15T01:24:50.823Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://www.reely.space/(.)disclaimer</loc><lastmod>2025-10-15T01:24:50.823Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://www.reely.space/watch-history</loc><lastmod>2025-10-15T01:24:50.823Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://www.reely.space/disclaimer</loc><lastmod>2025-10-15T01:24:50.823Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://www.reely.space/movies</loc><lastmod>2025-10-15T01:24:50.823Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://www.reely.space/opengraph-image.png</loc><lastmod>2025-10-15T01:24:50.823Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://www.reely.space</loc><lastmod>2025-10-15T01:24:50.823Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://www.reely.space/tv-shows</loc><lastmod>2025-10-15T01:24:50.823Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
 </urlset>
