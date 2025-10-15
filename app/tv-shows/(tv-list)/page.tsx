@@ -6,12 +6,31 @@ import { siteConfig } from '@/config/site'
 import { QUERY_KEYS } from '@/lib/queryKeys'
 import { MediaContent } from '@/components/media/media-content'
 
+const generateOgImageUrl = (title: string, description: string) =>
+  `${siteConfig.websiteURL}/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`
+
 export const metadata: Metadata = {
   title: 'TV Shows',
-  description: 'TV Shows List',
-  metadataBase: new URL('/movies', process.env.NEXT_PUBLIC_BASE_URL),
+  description: 'Discover and explore popular TV shows, trending series, and all-time favorites.',
+  metadataBase: new URL('/tv-shows', process.env.NEXT_PUBLIC_BASE_URL),
   openGraph: {
-    images: [siteConfig.personalLogo, siteConfig.links.twitter],
+    title: 'TV Shows - ' + siteConfig.name,
+    description: 'Discover and explore popular TV shows, trending series, and all-time favorites.',
+    url: '/tv-shows',
+    images: [
+      {
+        url: generateOgImageUrl('TV Shows', 'Discover and explore popular TV shows'),
+        width: siteConfig.openGraph.images.default.width,
+        height: siteConfig.openGraph.images.default.height,
+        alt: 'TV Shows - ' + siteConfig.name,
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'TV Shows - ' + siteConfig.name,
+    description: 'Discover and explore popular TV shows, trending series, and all-time favorites.',
+    images: [generateOgImageUrl('TV Shows', 'Discover and explore popular TV shows')],
   },
 }
 

@@ -20,18 +20,34 @@ export async function generateMetadata(
 
   const movieDetails = await getMovieDetailsById(id)
 
-  const previousImages = (await parent).openGraph?.images || []
-
   return {
     title: movieDetails.title,
     description: movieDetails.overview,
     metadataBase: new URL(`/movies/${id}`, process.env.NEXT_PUBLIC_BASE_URL),
     openGraph: {
+      title: movieDetails.title,
+      description: movieDetails.overview,
+      url: `/movies/${id}`,
       images: [
-        ...previousImages,
-        getPosterImageURL(movieDetails.poster_path),
-        getPosterImageURL(movieDetails.backdrop_path),
+        {
+          url: getPosterImageURL(movieDetails.backdrop_path),
+          width: 1280,
+          height: 720,
+          alt: movieDetails.title,
+        },
+        {
+          url: getPosterImageURL(movieDetails.poster_path),
+          width: 500,
+          height: 750,
+          alt: movieDetails.title,
+        },
       ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: movieDetails.title,
+      description: movieDetails.overview,
+      images: [getPosterImageURL(movieDetails.backdrop_path)],
     },
   }
 }

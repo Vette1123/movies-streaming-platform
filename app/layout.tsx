@@ -46,22 +46,7 @@ export const metadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     url: siteConfig.websiteURL,
-    images: [
-      {
-        url: generateOgImageUrl(siteConfig.name, siteConfig.description),
-        width: siteConfig.openGraph.images.default.width,
-        height: siteConfig.openGraph.images.default.height,
-        alt: siteConfig.openGraph.images.default.alt,
-        type: siteConfig.openGraph.images.default.type,
-      },
-      {
-        url: siteConfig.image,
-        width: siteConfig.openGraph.images.fallback.width,
-        height: siteConfig.openGraph.images.fallback.height,
-        alt: siteConfig.name,
-        type: siteConfig.openGraph.images.fallback.type,
-      },
-    ],
+    // Images removed from root layout to allow child pages to override without inheritance
     emails: [siteConfig.author.email],
     phoneNumbers: [],
     faxNumbers: [],
@@ -75,14 +60,7 @@ export const metadata: Metadata = {
     creator: siteConfig.twitter.creator,
     title: siteConfig.name,
     description: siteConfig.description,
-    images: [
-      {
-        url: generateOgImageUrl(siteConfig.name, siteConfig.description),
-        alt: siteConfig.openGraph.images.default.alt,
-        width: siteConfig.openGraph.images.default.width,
-        height: siteConfig.openGraph.images.default.height,
-      },
-    ],
+    // Images removed from root layout to allow child pages to override without inheritance
   },
 
   // App-specific metadata

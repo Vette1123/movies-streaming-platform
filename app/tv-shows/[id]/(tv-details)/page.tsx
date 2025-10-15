@@ -18,20 +18,36 @@ export async function generateMetadata(
   // read route params
   const id = params.id
 
-  const movieDetails = await getSeriesDetailsById(id)
-
-  const previousImages = (await parent).openGraph?.images || []
+  const seriesDetails = await getSeriesDetailsById(id)
 
   return {
-    title: movieDetails.name,
-    description: movieDetails.overview,
-    metadataBase: new URL(`/movies/${id}`, process.env.NEXT_PUBLIC_BASE_URL),
+    title: seriesDetails.name,
+    description: seriesDetails.overview,
+    metadataBase: new URL(`/tv-shows/${id}`, process.env.NEXT_PUBLIC_BASE_URL),
     openGraph: {
+      title: seriesDetails.name,
+      description: seriesDetails.overview,
+      url: `/tv-shows/${id}`,
       images: [
-        ...previousImages,
-        getPosterImageURL(movieDetails?.poster_path),
-        getPosterImageURL(movieDetails?.backdrop_path),
+        {
+          url: getPosterImageURL(seriesDetails?.backdrop_path),
+          width: 1280,
+          height: 720,
+          alt: seriesDetails.name,
+        },
+        {
+          url: getPosterImageURL(seriesDetails?.poster_path),
+          width: 500,
+          height: 750,
+          alt: seriesDetails.name,
+        },
       ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: seriesDetails.name,
+      description: seriesDetails.overview,
+      images: [getPosterImageURL(seriesDetails?.backdrop_path)],
     },
   }
 }
