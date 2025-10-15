@@ -9,9 +9,9 @@ export const MovieTVListLoader = () => {
         {Array.from({ length: 20 }).map((_, i) => (
           <SkeletonContainer key={i}>
             <div className="space-y-3">
-              <div className="h-36 rounded-lg bg-gray-500" />
-              <div className="h-3 w-11/12 rounded-lg bg-gray-500" />
-              <div className="h-3 w-8/12 rounded-lg bg-gray-500" />
+              <div className="h-36 rounded-lg bg-muted/80" />
+              <div className="h-3 w-11/12 rounded-lg bg-muted" />
+              <div className="h-3 w-8/12 rounded-lg bg-muted/70" />
             </div>
           </SkeletonContainer>
         ))}
