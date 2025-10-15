@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { SkeletonContainer } from '../ui/skeleton'
-// 
+
 export const SliderHorizontalListLoader = () => {
   return (
     <div className="container h-full pb-10 pt-12 lg:pb-20">
