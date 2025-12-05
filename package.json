@@ -38,14 +38,14 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.5",
     "lucide-react": "^0.436.0",
-    "next": "15.5.5",
+    "next": "16.0.7",
     "next-sitemap": "^4.2.3",
     "nuqs": "^2.6.0",
     "posthog-js": "^1.256.2",
     "query-string": "^9.1.0",
-    "react": "19.2.0",
+    "react": "19.2.1",
     "react-day-picker": "^9.9.0",
-    "react-dom": "19.2.0",
+    "react-dom": "19.2.1",
     "react-intersection-observer": "^9.13.0",
     "sonner": "^2.0.6",
     "tailwind-merge": "^3.3.1",
@@ -54,8 +54,8 @@
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.1.1",
-    "@opennextjs/aws": "^3.9.0",
-    "@opennextjs/cloudflare": "1.13.1",
+    "@opennextjs/aws": "^3.9.4",
+    "@opennextjs/cloudflare": "1.14.3",
     "@tailwindcss/postcss": "^4.1.8",
     "@tailwindcss/typography": "^0.5.10",
     "@types/node": "^24.0.10",
@@ -72,7 +72,7 @@
     "prettier": "^3.3.3",
     "tailwindcss": "^4.1.14",
     "typescript": "^5.5.4",
-    "wrangler": "^4.51.0"
+    "wrangler": "^4.53.0"
   },
   "pnpm": {
     "overrides": {
