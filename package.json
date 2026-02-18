@@ -72,7 +72,7 @@
     "prettier": "^3.3.3",
     "tailwindcss": "^4.1.14",
     "typescript": "^5.5.4",
-    "wrangler": "^4.65.0"
+    "wrangler": "^4.66.0"
   },
   "pnpm": {
     "overrides": {
