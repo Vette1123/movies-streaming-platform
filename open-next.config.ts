@@ -5,8 +5,8 @@ import staticAssetsIncrementalCache from '@opennextjs/cloudflare/overrides/incre
 // This configuration leverages KV incremental cache and cache interception for better performance
 // Based on @opennextjs/cloudflare documentation: https://opennext.js.org/cloudflare
 export default defineCloudflareConfig({
-  incrementalCache: staticAssetsIncrementalCache,
-  enableCacheInterception: true,
+  // incrementalCache: staticAssetsIncrementalCache,
+  // enableCacheInterception: true,
   // Use KV incremental cache for ISR/SSG pages - this is the core caching mechanism
   // incrementalCache: kvIncrementalCache,
 })
