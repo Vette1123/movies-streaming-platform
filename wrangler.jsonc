@@ -18,12 +18,12 @@
   // "placement": {
   //   "mode": "smart",
   // },
-  "kv_namespaces": [
-    {
-      "binding": "NEXT_INC_CACHE_KV",
-      "id": "eb6499ab89774a56b9c5665dbd5d03bc",
-    },
-  ],
+  // "kv_namespaces": [
+  //   {
+  //     "binding": "NEXT_INC_CACHE_KV",
+  //     "id": "eb6499ab89774a56b9c5665dbd5d03bc",
+  //   },
+  // ],
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
