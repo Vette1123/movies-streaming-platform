@@ -1,4 +1,5 @@
 {
+  "account_id": "90d6fc64545d1c449331032979dcbfb5",
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
   "name": "movies-streaming-platform",
