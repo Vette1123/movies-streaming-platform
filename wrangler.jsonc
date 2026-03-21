@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
-  "name": "reely-cloudflare",
+  "name": "movies-streaming-platform",
   "compatibility_date": "2024-12-30",
   "compatibility_flags": [
     "nodejs_compat",
@@ -27,7 +27,7 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "reely-cloudflare",
+      "service": "movies-streaming-platform",
     },
   ],
   "vars": {
