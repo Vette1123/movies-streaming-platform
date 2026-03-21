@@ -1,38 +1,38 @@
 {
-  "account_id": "90d6fc64545d1c449331032979dcbfb5",
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "main": ".open-next/worker.js",
-  "name": "movies-streaming-platform",
-  "compatibility_date": "2024-12-30",
-  "compatibility_flags": [
-    "nodejs_compat",
-    "global_fetch_strictly_public"
-  ],
-  "assets": {
-    "directory": ".open-next/assets",
-    "binding": "ASSETS",
-  },
-  "observability": {
-    "enabled": true,
-  },
-  "preview_urls": false,
-  "placement": {
-    "mode": "smart",
-  },
-  // "kv_namespaces": [
-  //   {
-  //     "binding": "NEXT_INC_CACHE_KV",
-  //     "id": "eb6499ab89774a56b9c5665dbd5d03bc",
-  //   },
-  // ],
-  "services": [
-    {
-      "binding": "WORKER_SELF_REFERENCE",
-      "service": "movies-streaming-platform",
-    },
-  ],
-  "vars": {
-    "ENVIRONMENT": "production",
-    "NODE_ENV": "production",
-  },
+	"account_id": "90d6fc64545d1c449331032979dcbfb5",
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"main": ".open-next/worker.js",
+	"name": "movies-streaming-platform",
+	"compatibility_date": "2024-12-30",
+	"compatibility_flags": [
+		"nodejs_compat",
+		"global_fetch_strictly_public"
+	],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS",
+	},
+	"observability": {
+		"enabled": true,
+	},
+	"preview_urls": false,
+	"placement": {
+		"mode": "smart",
+	},
+	"services": [
+		{
+			"binding": "WORKER_SELF_REFERENCE",
+			"service": "movies-streaming-platform",
+		},
+	],
+	"vars": {
+		"ENVIRONMENT": "production",
+		"NODE_ENV": "production",
+	},
+	"kv_namespaces": [
+		{
+			"binding": "reely_space",
+			"id": "ddfb30c4847f452eab3ea753644ad6d7"
+		}
+	],
 }
