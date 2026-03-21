@@ -31,8 +31,8 @@
 	},
 	"kv_namespaces": [
 		{
-			"binding": "reely_space",
-			"id": "ddfb30c4847f452eab3ea753644ad6d7"
+			"binding": "NEXT_INC_CACHE_KV",
+			"id": "fb4b60e2d15d44cba26f847280e58062"
 		}
 	],
 }
