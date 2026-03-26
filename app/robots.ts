@@ -1,5 +1,6 @@
-import { siteConfig } from '@/config/site'
 import { MetadataRoute } from 'next'
+
+import { siteConfig } from '@/config/site'
 
 const baseUrl = siteConfig.websiteURL
 
@@ -8,11 +9,16 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       // Main crawlers - full access with optimizations
       {
-        userAgent: ['Googlebot', 'Bingbot', 'DuckDuckBot', 'facebookexternalhit'],
+        userAgent: [
+          'Googlebot',
+          'Bingbot',
+          'DuckDuckBot',
+          'facebookexternalhit',
+        ],
         allow: [
           '/',
           '/movies',
-          '/tv-shows', 
+          '/tv-shows',
           '/movies/*',
           '/tv-shows/*',
           '/disclaimer',
@@ -43,12 +49,7 @@ export default function robots(): MetadataRoute.Robots {
           '/api/og/*', // Allow OG image generation
           '/_next/static/',
         ],
-        disallow: [
-          '/api/*',
-          '/watch-history',
-          '/user/',
-          '/admin/',
-        ],
+        disallow: ['/api/*', '/watch-history', '/user/', '/admin/'],
       },
       // General crawlers - standard access
       {
@@ -80,7 +81,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: [
           'AhrefsBot',
-          'SemrushBot', 
+          'SemrushBot',
           'MJ12bot',
           'DotBot',
           'AspiegelBot',

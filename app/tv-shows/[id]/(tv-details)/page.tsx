@@ -54,12 +54,12 @@ export async function generateMetadata(
 
 const TVSeries = async (props: PageDetailsProps) => {
   const params = await props.params
-  const { seriesDetails, seriesCredits, similarSeries, recommendedSeries } =
+  const { seriesDetails, seriesCredits, similarSeries, recommendedSeries, trailerKey } =
     await populateSeriesDetailsPageData(params?.id)
 
   return (
     <header className="relative">
-      <SeriesDetailsHero series={seriesDetails} />
+      <SeriesDetailsHero series={seriesDetails} trailerKey={trailerKey} />
       <SeriesDetailsContent
         series={seriesDetails}
         seriesCredits={seriesCredits}

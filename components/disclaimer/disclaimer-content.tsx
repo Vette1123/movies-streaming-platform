@@ -75,9 +75,10 @@ export const DisclaimerContent = ({
           <p>
             Reely.space does not knowingly collect or distribute content
             considered obscene or harmful to minors as defined by applicable
-            law. However, Reely.space has no control over third party content and
-            some material accessible through Reely.space may be inappropriate for
-            minors. Parents are advised to supervise minors using the service.
+            law. However, Reely.space has no control over third party content
+            and some material accessible through Reely.space may be
+            inappropriate for minors. Parents are advised to supervise minors
+            using the service.
           </p>
         </div>
         <div className="text-base text-muted-foreground">

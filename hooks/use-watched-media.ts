@@ -9,12 +9,15 @@ interface WatchedMediaHookResult {
   handleWatchMedia: (media: MediaItem) => void
   watchedItems: ReturnType<typeof useLocalStorage>[0]
   deleteWatchedItems: () => void
+  deleteWatchedItemById: (id: number) => void
 }
 
 export function useWatchedMedia(): WatchedMediaHookResult {
   const [watchedItems, setWatchedItems] = useLocalStorage('watchedItems', [])
   const { seasonQueryINT, episodeQueryINT } = useSearchQueryParams()
   const deleteWatchedItems = () => setWatchedItems([])
+  const deleteWatchedItemById = (id: number) =>
+    setWatchedItems(watchedItems.filter((item) => item.id !== id))
 
   const handleWatchMedia = (media: MediaItem) => {
     const isMovie = 'title' in media
@@ -88,5 +91,5 @@ export function useWatchedMedia(): WatchedMediaHookResult {
     }
   }
 
-  return { handleWatchMedia, watchedItems, deleteWatchedItems }
+  return { handleWatchMedia, watchedItems, deleteWatchedItems, deleteWatchedItemById }
 }

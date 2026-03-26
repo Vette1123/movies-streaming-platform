@@ -39,6 +39,8 @@ interface MultiRequestProps {
   latestTrendingSeries: MediaType[]
   popularSeries: MediaType[]
   allTimeTopRatedSeries: MediaType[]
+  nowPlayingMovies: Movie[]
+  upcomingMovies: Movie[]
 }
 
 type PopularMediaAction<T> = (params?: Param) => Promise<T>

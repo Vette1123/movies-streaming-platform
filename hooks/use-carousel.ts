@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PanInfo } from 'framer-motion'
+
 import { useMounted } from '@/hooks/use-mounted'
 
 interface UseCarouselProps {
@@ -9,7 +10,6 @@ interface UseCarouselProps {
   autoPlay?: boolean
   autoPlayInterval?: number
 }
-
 
 export const useCarousel = ({
   childrenCount,
@@ -55,7 +55,14 @@ export const useCarousel = ({
         paginate(1)
       }
     }, autoPlayInterval)
-  }, [autoPlay, autoPlayInterval, paginate, childrenCount, isUserInteracting, isDragging])
+  }, [
+    autoPlay,
+    autoPlayInterval,
+    paginate,
+    childrenCount,
+    isUserInteracting,
+    isDragging,
+  ])
 
   const stopAutoPlay = useCallback(() => {
     if (autoPlayRef.current) {
@@ -102,56 +109,63 @@ export const useCarousel = ({
   }, [])
 
   // Enhanced drag handling with much better UX
-  const handleDragStart = useCallback((event: any, info: PanInfo) => {
-    // Prevent drag if user is interacting with buttons or clickable elements
-    const target = event.target as HTMLElement
-    const isInteractiveElement = target.closest(
-      'button, a, input, select, textarea, [role="button"]'
-    )
+  const handleDragStart = useCallback(
+    (event: any, info: PanInfo) => {
+      // Prevent drag if user is interacting with buttons or clickable elements
+      const target = event.target as HTMLElement
+      const isInteractiveElement = target.closest(
+        'button, a, input, select, textarea, [role="button"]'
+      )
 
-    if (isInteractiveElement) {
-      return false // Prevent drag
-    }
-
-    setIsDragging(true)
-    handleUserInteraction(true)
-  }, [handleUserInteraction])
-
-  const handleDragEnd = useCallback((event: any, info: PanInfo) => {
-    setIsDragging(false)
-
-    // Much more intuitive thresholds
-    const isMobile = window.innerWidth < 768
-    const containerWidth = event.currentTarget?.offsetWidth || window.innerWidth
-
-    // Percentage-based thresholds for better UX
-    const distanceThreshold = containerWidth * (isMobile ? 0.12 : 0.15) // 12% on mobile, 15% on desktop
-    const velocityThreshold = isMobile ? 250 : 400
-
-    const velocity = Math.abs(info.velocity.x)
-    const offset = info.offset.x
-    const distance = Math.abs(offset)
-
-    // More intuitive logic: either significant distance OR high velocity
-    const hasSignificantDistance = distance > distanceThreshold
-    const hasHighVelocity = velocity > velocityThreshold
-
-    const shouldChangeSlide = hasSignificantDistance || hasHighVelocity
-
-    if (shouldChangeSlide) {
-      // Immediate transition for better responsiveness
-      if (offset > 0) {
-        paginate(-1) // Swipe right, go to previous
-      } else {
-        paginate(1) // Swipe left, go to next
+      if (isInteractiveElement) {
+        return false // Prevent drag
       }
-    }
 
-    // Resume auto-play after user interaction delay
-    setTimeout(() => {
-      handleUserInteraction(false)
-    }, 50)
-  }, [paginate, handleUserInteraction])
+      setIsDragging(true)
+      handleUserInteraction(true)
+    },
+    [handleUserInteraction]
+  )
+
+  const handleDragEnd = useCallback(
+    (event: any, info: PanInfo) => {
+      setIsDragging(false)
+
+      // Much more intuitive thresholds
+      const isMobile = window.innerWidth < 768
+      const containerWidth =
+        event.currentTarget?.offsetWidth || window.innerWidth
+
+      // Percentage-based thresholds for better UX
+      const distanceThreshold = containerWidth * (isMobile ? 0.12 : 0.15) // 12% on mobile, 15% on desktop
+      const velocityThreshold = isMobile ? 250 : 400
+
+      const velocity = Math.abs(info.velocity.x)
+      const offset = info.offset.x
+      const distance = Math.abs(offset)
+
+      // More intuitive logic: either significant distance OR high velocity
+      const hasSignificantDistance = distance > distanceThreshold
+      const hasHighVelocity = velocity > velocityThreshold
+
+      const shouldChangeSlide = hasSignificantDistance || hasHighVelocity
+
+      if (shouldChangeSlide) {
+        // Immediate transition for better responsiveness
+        if (offset > 0) {
+          paginate(-1) // Swipe right, go to previous
+        } else {
+          paginate(1) // Swipe left, go to next
+        }
+      }
+
+      // Resume auto-play after user interaction delay
+      setTimeout(() => {
+        handleUserInteraction(false)
+      }, 50)
+    },
+    [paginate, handleUserInteraction]
+  )
 
   const handleHoverStart = useCallback(() => {
     handleUserInteraction(true)
@@ -161,18 +175,24 @@ export const useCarousel = ({
     handleUserInteraction(false)
   }, [handleUserInteraction])
 
-  const handleButtonClick = useCallback((newDirection: number) => {
-    handleUserInteraction(true)
-    paginate(newDirection)
-    handleUserInteraction(false)
-  }, [handleUserInteraction, paginate])
+  const handleButtonClick = useCallback(
+    (newDirection: number) => {
+      handleUserInteraction(true)
+      paginate(newDirection)
+      handleUserInteraction(false)
+    },
+    [handleUserInteraction, paginate]
+  )
 
-  const handleDotClick = useCallback((index: number) => {
-    handleUserInteraction(true)
-    setDirection(index > currentIndex ? 1 : -1)
-    setCurrentIndex(index)
-    handleUserInteraction(false)
-  }, [currentIndex, handleUserInteraction])
+  const handleDotClick = useCallback(
+    (index: number) => {
+      handleUserInteraction(true)
+      setDirection(index > currentIndex ? 1 : -1)
+      setCurrentIndex(index)
+      handleUserInteraction(false)
+    },
+    [currentIndex, handleUserInteraction]
+  )
 
   return {
     currentIndex,
@@ -190,4 +210,4 @@ export const useCarousel = ({
     handleButtonClick,
     handleDotClick,
   }
-} 
+}

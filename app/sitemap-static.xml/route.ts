@@ -1,9 +1,10 @@
 import { getServerSideSitemap } from 'next-sitemap'
+
 import { siteConfig } from '@/config/site'
 
 export async function GET(request: Request) {
   const baseUrl = siteConfig.websiteURL
-  
+
   // Static routes in your application
   const staticRoutes = [
     {
@@ -35,7 +36,7 @@ export async function GET(request: Request) {
       lastmod: new Date().toISOString(),
       changefreq: 'monthly' as const,
       priority: 0.3,
-    }
+    },
   ]
 
   return getServerSideSitemap(staticRoutes)

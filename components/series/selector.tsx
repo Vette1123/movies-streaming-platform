@@ -46,9 +46,18 @@ export function SeasonsSelector({
                     key={season?.id}
                     value={String(season?.season_number)}
                   >
-                    {season.name.startsWith('Season')
-                      ? season.name
-                      : `Season ${season?.season_number}`}
+                    <span className="flex items-center justify-between gap-3">
+                      <span>
+                        {season.name.startsWith('Season')
+                          ? season.name
+                          : `Season ${season?.season_number}`}
+                      </span>
+                      {season.episode_count > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          {season.episode_count} ep{season.episode_count !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </span>
                   </SelectItem>
                   {idx !== formattedSeasons?.length - 1 && <SelectSeparator />}
                 </React.Fragment>

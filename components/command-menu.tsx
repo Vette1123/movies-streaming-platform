@@ -3,7 +3,8 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { searchMovieAction } from '@/actions/search'
-import { Home, Tv } from 'lucide-react'
+import { Bookmark, Clock, Home, Tv } from 'lucide-react'
+import posthog from 'posthog-js'
 import { useDebouncedCallback } from 'use-debounce'
 
 import { MediaType } from '@/types/media'
@@ -62,11 +63,33 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
   const { open, setOpen, runCommand, isLoading, setIsLoading } =
     useCMDKListener()
   const [data, setData] = React.useState<MediaType[]>([])
+  const [recentSearches, setRecentSearches] = React.useState<string[]>([])
   const router = useRouter()
+
+  React.useEffect(() => {
+    if (open) {
+      try {
+        const stored = localStorage.getItem('recentSearches')
+        if (stored) setRecentSearches(JSON.parse(stored))
+      } catch {}
+    }
+  }, [open])
+
+  const saveRecentSearch = (query: string) => {
+    const updated = [query, ...recentSearches.filter((s) => s !== query)].slice(
+      0,
+      5
+    )
+    setRecentSearches(updated)
+    try {
+      localStorage.setItem('recentSearches', JSON.stringify(updated))
+    } catch {}
+  }
 
   const getMovieResults = async (value: string) => {
     if (!value) return
     setIsLoading(true)
+    posthog.capture('searched', { query: value })
     const data = await searchMovieAction({ query: value })
     if (data?.results?.length) {
       setData(data?.results)
@@ -134,6 +157,28 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
         />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
+          {recentSearches.length > 0 && !deduplicatedData.length && (
+            <>
+              <CommandGroup heading="Recent Searches">
+                {recentSearches.map((search) => (
+                  <CommandItem
+                    key={search}
+                    value={search}
+                    className="cursor-pointer"
+                    onSelect={() => {
+                      runCommand(() => {
+                        router.push(`/movies?query=${encodeURIComponent(search)}`)
+                      })
+                    }}
+                  >
+                    <Icons.search className="mr-2 size-4 opacity-60" />
+                    {search}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+              <CommandSeparator />
+            </>
+          )}
           <CommandGroup heading="Search Movies & Series...">
             {deduplicatedData?.map(
               (movie) =>
@@ -144,6 +189,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                     className="group/command-item cursor-pointer transition-colors duration-200 hover:bg-primary-foreground/50"
                     onSelect={() => {
                       runCommand(() => {
+                        saveRecentSearch(movie.title)
                         if (movie?.media_type && movie?.media_type === 'tv') {
                           router.push(`/tv-shows/${movie.id}`)
                           return
@@ -198,7 +244,14 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
             )}
           </CommandGroup>
           <CommandSeparator />
-          <CommandGroup heading="Shortcuts...">
+          <CommandGroup heading="Shortcuts">
+            <CommandItem
+              className="cursor-pointer"
+              onSelect={() => runCommand(() => router.push(`/`))}
+            >
+              <Home className="mr-2 size-4" />
+              Home
+            </CommandItem>
             <CommandItem
               className="cursor-pointer"
               onSelect={() => runCommand(() => router.push(`/movies`))}
@@ -215,39 +268,17 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
             </CommandItem>
             <CommandItem
               className="cursor-pointer"
-              onSelect={() => runCommand(() => router.push(`/`))}
+              onSelect={() => runCommand(() => router.push(`/watchlist`))}
             >
-              <Home className="mr-2 size-4" />
-              Home
+              <Bookmark className="mr-2 size-4" />
+              My Watchlist
             </CommandItem>
             <CommandItem
               className="cursor-pointer"
-              onSelect={() =>
-                runCommand(() =>
-                  window.open(siteConfig.author.website, '_blank')
-                )
-              }
+              onSelect={() => runCommand(() => router.push(`/watch-history`))}
             >
-              <div className="flex items-center gap-4">
-                <Avatar>
-                  <AvatarImage src="/personal-logo.png" />
-                  <AvatarFallback>G</AvatarFallback>
-                </Avatar>
-                Portfolio
-              </div>
-            </CommandItem>
-            <CommandItem
-              className="cursor-pointer"
-              onSelect={() =>
-                runCommand(() =>
-                  window.open(`https://buymeacoffee.com/vetteotp`, '_blank')
-                )
-              }
-            >
-              <div className="flex items-center gap-4">
-                <Icons.buyMeACoffee className="size-5" />
-                Buy me a coffee
-              </div>
+              <Clock className="mr-2 size-4" />
+              Watch History
             </CommandItem>
           </CommandGroup>
           <CommandSeparator />

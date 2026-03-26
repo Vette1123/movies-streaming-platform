@@ -114,77 +114,77 @@ const CAROUSEL_PLACEHOLDER_VARIANTS = {
 const CAROUSEL_SINGLE_SLIDE_VARIANTS = {
   initial: { opacity: 0, scale: 0.98 },
   animate: { opacity: 1, scale: 1 },
-  transition: { 
-    duration: 0.6, 
-    ease: [0.25, 0.46, 0.45, 0.94] 
+  transition: {
+    duration: 0.6,
+    ease: [0.25, 0.46, 0.45, 0.94],
   },
 }
 
 const CAROUSEL_NAVIGATION_VARIANTS = {
   initial: { opacity: 0, y: 20 },
-  animate: (isMounted: boolean) => ({ 
-    opacity: isMounted ? 1 : 0, 
-    y: 0 
+  animate: (isMounted: boolean) => ({
+    opacity: isMounted ? 1 : 0,
+    y: 0,
   }),
   transition: { duration: 0.5, delay: 0.3 },
 }
 
 const CAROUSEL_DOT_VARIANTS = {
   initial: { opacity: 0, scale: 0 },
-  animate: (isMounted: boolean) => ({ 
-    opacity: isMounted ? 1 : 0, 
-    scale: isMounted ? 1 : 0 
+  animate: (isMounted: boolean) => ({
+    opacity: isMounted ? 1 : 0,
+    scale: isMounted ? 1 : 0,
   }),
   hover: { scale: 1.2 },
   tap: { scale: 0.9 },
-  transition: (index: number) => ({ 
-    duration: 0.3, 
+  transition: (index: number) => ({
+    duration: 0.3,
     delay: 0.4 + index * 0.05,
     type: 'spring',
     stiffness: 400,
-    damping: 25
+    damping: 25,
   }),
 }
 
 const CAROUSEL_ARROW_VARIANTS = {
-  initial: (direction: 'left' | 'right') => ({ 
+  initial: (direction: 'left' | 'right') => ({
     x: direction === 'left' ? -20 : 20,
     scale: 0.8,
     opacity: 0,
   }),
-  animate: { 
-    x: 0, 
+  animate: {
+    x: 0,
     scale: 1,
     opacity: 1,
   },
-  hover: { 
-    scale: 1.05, 
+  hover: {
+    scale: 1.05,
     backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderColor: 'rgba(255, 255, 255, 0.4)',
-    transition: { 
+    transition: {
       duration: 0.2,
-      ease: [0.25, 0.46, 0.45, 0.94]
-    }
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
   },
-  tap: { 
+  tap: {
     scale: 0.98,
-    transition: { duration: 0.1 }
+    transition: { duration: 0.1 },
   },
-  transition: { 
-    duration: 0.6, 
+  transition: {
+    duration: 0.6,
     delay: 0.2,
-    ease: [0.25, 0.46, 0.45, 0.94]
+    ease: [0.25, 0.46, 0.45, 0.94],
   },
 }
 
 const CAROUSEL_ARROW_ICON_VARIANTS = {
-  hover: (direction: 'left' | 'right') => ({ 
+  hover: (direction: 'left' | 'right') => ({
     x: direction === 'left' ? -2 : 2,
     scale: 1.05,
   }),
-  transition: { 
-    type: 'spring', 
-    stiffness: 500, 
+  transition: {
+    type: 'spring',
+    stiffness: 500,
     damping: 25,
     mass: 0.5,
   },
@@ -268,9 +268,9 @@ const CAROUSEL_WHILE_DRAG = (direction: number) => ({
 
 const CAROUSEL_WHILE_HOVER = {
   scale: 1.005,
-  transition: { 
+  transition: {
     duration: 0.3,
-    ease: [0.25, 0.46, 0.45, 0.94]
+    ease: [0.25, 0.46, 0.45, 0.94],
   },
 }
 

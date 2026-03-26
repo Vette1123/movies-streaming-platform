@@ -1,9 +1,18 @@
-import { siteConfig } from '@/config/site'
-import { getPopularMovies, getAllTimeTopRatedMovies, getLatestTrendingMovies } from '@/services/movies'
-import { getPopularSeries, getAllTimeTopRatedSeries, getLatestTrendingSeries } from '@/services/series'
 import type { MetadataRoute } from 'next'
+import {
+  getAllTimeTopRatedMovies,
+  getLatestTrendingMovies,
+  getPopularMovies,
+} from '@/services/movies'
+import {
+  getAllTimeTopRatedSeries,
+  getLatestTrendingSeries,
+  getPopularSeries,
+} from '@/services/series'
 
- const baseUrl = siteConfig.websiteURL
+import { siteConfig } from '@/config/site'
+
+const baseUrl = siteConfig.websiteURL
 
 const generateMovieUrls = async (): Promise<MetadataRoute.Sitemap> => {
   try {
@@ -23,8 +32,7 @@ const generateMovieUrls = async (): Promise<MetadataRoute.Sitemap> => {
 
     // Remove duplicates by ID
     const uniqueMovies = allMovies.filter(
-      (movie, index, self) => 
-        index === self.findIndex(m => m.id === movie.id)
+      (movie, index, self) => index === self.findIndex((m) => m.id === movie.id)
     )
 
     return uniqueMovies.map((movie) => ({
@@ -32,9 +40,9 @@ const generateMovieUrls = async (): Promise<MetadataRoute.Sitemap> => {
       lastModified: new Date().toISOString(),
       changeFrequency: 'monthly' as const,
       priority: 0.8,
-      images: movie.poster_path 
+      images: movie.poster_path
         ? [`https://image.tmdb.org/t/p/w500${movie.poster_path}`]
-        : undefined
+        : undefined,
     }))
   } catch (error) {
     console.error('Error generating movie URLs for sitemap:', error)
@@ -60,8 +68,8 @@ const generateTVShowUrls = async (): Promise<MetadataRoute.Sitemap> => {
 
     // Remove duplicates by ID
     const uniqueSeries = allSeries.filter(
-      (series, index, self) => 
-        index === self.findIndex(s => s.id === series.id)
+      (series, index, self) =>
+        index === self.findIndex((s) => s.id === series.id)
     )
 
     return uniqueSeries.map((series) => ({
@@ -69,9 +77,9 @@ const generateTVShowUrls = async (): Promise<MetadataRoute.Sitemap> => {
       lastModified: new Date().toISOString(),
       changeFrequency: 'monthly' as const,
       priority: 0.8,
-      images: series.poster_path 
+      images: series.poster_path
         ? [`https://image.tmdb.org/t/p/w500${series.poster_path}`]
-        : undefined
+        : undefined,
     }))
   } catch (error) {
     console.error('Error generating TV show URLs for sitemap:', error)

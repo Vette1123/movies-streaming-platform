@@ -54,12 +54,12 @@ export async function generateMetadata(
 
 const MoviePage = async (props: PageDetailsProps) => {
   const params = await props.params
-  const { movieCredits, movieDetails, similarMovies, recommendedMovies } =
+  const { movieCredits, movieDetails, similarMovies, recommendedMovies, trailerKey } =
     await populateMovieDetailsPage(params?.id)
 
   return (
     <header className="relative">
-      <MovieDetailsHero movie={movieDetails} />
+      <MovieDetailsHero movie={movieDetails} trailerKey={trailerKey} />
       <MoviesDetailsContent
         movie={movieDetails}
         movieCredits={movieCredits}

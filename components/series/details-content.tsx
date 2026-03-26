@@ -28,36 +28,63 @@ export const SeriesDetailsContent = ({
     (crew) => crew.job === 'Director'
   )?.name
   return (
-    <section className="container max-w-(--breakpoint-2xl) pb-10 pt-12 lg:pb-20">
-      <div className="flex flex-col-reverse gap-8 lg:flex-row">
-        <div className="hidden lg:block">
-          <div className="relative min-h-[600px] w-[400px]">
+    <section className="container max-w-(--breakpoint-2xl) pb-10 pt-10 lg:pb-24">
+      {/* Poster — mobile only */}
+      <div className="mb-6 flex justify-center lg:hidden">
+        <div className="relative h-[210px] w-[140px] overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/10">
+          <BlurredImage
+            src={getPosterImageURL(series.poster_path)}
+            alt={series.name}
+            className="size-full object-cover"
+            fill
+            sizes="140px"
+          />
+        </div>
+      </div>
+
+      {/* Main info row */}
+      <div className="flex flex-col gap-10 lg:flex-row">
+        {/* Poster — desktop only */}
+        <div className="hidden shrink-0 lg:block">
+          <div className="relative h-[540px] w-[360px] overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/10">
             <BlurredImage
               src={getPosterImageURL(series.poster_path)}
               alt={series.name}
-              className="h-full w-full rounded-lg object-fill shadow-lg lg:object-cover"
+              className="size-full object-cover"
               fill
-              sizes="(min-width: 1024px) 1024px, 100vw"
+              sizes="360px"
               intro
             />
           </div>
         </div>
-        <section className="flex flex-1 flex-col gap-4">
+
+        {/* Info + cast + season navigator */}
+        <div className="flex min-w-0 flex-1 flex-col gap-8">
           <SeriesDetailsExtraInfo series={series} director={director} />
-          <DetailsCredits movieCredits={seriesCredits} />
-        </section>
-        <SeasonNavigator series={series} />
+          <div className="border-t border-white/10 pt-6">
+            <DetailsCredits movieCredits={seriesCredits} />
+          </div>
+          <div className="border-t border-white/10 pt-6">
+            <SeasonNavigator series={series} />
+          </div>
+        </div>
       </div>
-      <Suspense fallback={<SliderHorizontalListLoader />}>
-        <List
-          title="Recommended Series"
-          items={recommendedSeries}
-          itemType="tv"
-        />
-      </Suspense>
-      <Suspense fallback={<SliderHorizontalListLoader />}>
-        <List title="Similar Series" items={similarSeries} itemType="tv" />
-      </Suspense>
+
+      {/* Recommendations */}
+      {recommendedSeries.length > 0 && (
+        <div className="mt-12 border-t border-white/10 pt-8">
+          <Suspense fallback={<SliderHorizontalListLoader />}>
+            <List title="Recommended" items={recommendedSeries} itemType="tv" />
+          </Suspense>
+        </div>
+      )}
+      {similarSeries.length > 0 && (
+        <div className="mt-4">
+          <Suspense fallback={<SliderHorizontalListLoader />}>
+            <List title="More Like This" items={similarSeries} itemType="tv" />
+          </Suspense>
+        </div>
+      )}
     </section>
   )
 }

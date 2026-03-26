@@ -11,15 +11,20 @@ const generateOgImageUrl = (title: string, description: string) =>
 
 export const metadata: Metadata = {
   title: 'TV Shows',
-  description: 'Discover and explore popular TV shows, trending series, and all-time favorites.',
+  description:
+    'Discover and explore popular TV shows, trending series, and all-time favorites.',
   metadataBase: new URL('/tv-shows', process.env.NEXT_PUBLIC_BASE_URL),
   openGraph: {
     title: 'TV Shows - ' + siteConfig.name,
-    description: 'Discover and explore popular TV shows, trending series, and all-time favorites.',
+    description:
+      'Discover and explore popular TV shows, trending series, and all-time favorites.',
     url: '/tv-shows',
     images: [
       {
-        url: generateOgImageUrl('TV Shows', 'Discover and explore popular TV shows'),
+        url: generateOgImageUrl(
+          'TV Shows',
+          'Discover and explore popular TV shows'
+        ),
         width: siteConfig.openGraph.images.default.width,
         height: siteConfig.openGraph.images.default.height,
         alt: 'TV Shows - ' + siteConfig.name,
@@ -29,8 +34,11 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'TV Shows - ' + siteConfig.name,
-    description: 'Discover and explore popular TV shows, trending series, and all-time favorites.',
-    images: [generateOgImageUrl('TV Shows', 'Discover and explore popular TV shows')],
+    description:
+      'Discover and explore popular TV shows, trending series, and all-time favorites.',
+    images: [
+      generateOgImageUrl('TV Shows', 'Discover and explore popular TV shows'),
+    ],
   },
 }
 

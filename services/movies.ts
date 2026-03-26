@@ -20,8 +20,13 @@ import { fetchClient } from '@/lib/fetch-client'
 import { movieType } from '@/lib/tmdbConfig'
 
 const getNowPlayingMovies = async (params: Param = {}) => {
-  const url = `movie/${movieType.now_playing}`
-  return fetchClient.get<MovieResponse>(url, params)
+  const url = `movie/${movieType.now_playing}?language=en-US`
+  return fetchClient.get<MovieResponse>(url, params, true)
+}
+
+const getUpcomingMovies = async (params: Param = {}) => {
+  const url = `movie/${movieType.upcoming}?language=en-US`
+  return fetchClient.get<MovieResponse>(url, params, true)
 }
 
 const getLatestTrendingMovies = async (params: Param = {}) => {
@@ -70,31 +75,37 @@ const getTrendingMediaForHeroSlider = async (
 const populateHomePageData = async (): Promise<MultiRequestProps> => {
   try {
     const [
-      trendingMediaHeroResponse, // Replaced nowPlayingResponse
+      trendingMediaHeroResponse,
       latestTrendingResponse,
       popularMoviesResponse,
       allTimeTopRatedResponse,
       latestTrendingSeries,
       popularSeriesResponse,
       allTimeTopRatedSeries,
+      nowPlayingResponse,
+      upcomingResponse,
     ] = await Promise.all([
-      getTrendingMediaForHeroSlider(), // Replaced getNowPlayingMovies()
+      getTrendingMediaForHeroSlider(),
       getLatestTrendingMovies(),
       getPopularMovies(),
       getAllTimeTopRatedMovies(),
       getLatestTrendingSeries(),
       getPopularSeries(),
       getAllTimeTopRatedSeries(),
+      getNowPlayingMovies(),
+      getUpcomingMovies(),
     ])
 
     return {
-      trendingMediaForHero: trendingMediaHeroResponse || [], // Changed from nowPlayingMovies
+      trendingMediaForHero: trendingMediaHeroResponse || [],
       latestTrendingMovies: latestTrendingResponse?.results || [],
       popularMovies: popularMoviesResponse?.results || [],
       allTimeTopRatedMovies: allTimeTopRatedResponse?.results || [],
       latestTrendingSeries: latestTrendingSeries?.results || [],
       popularSeries: popularSeriesResponse?.results || [],
       allTimeTopRatedSeries: allTimeTopRatedSeries?.results || [],
+      nowPlayingMovies: nowPlayingResponse?.results || [],
+      upcomingMovies: upcomingResponse?.results || [],
     }
   } catch (error: any) {
     console.error(error, 'error')
@@ -135,22 +146,32 @@ const getRecommendedMoviesById = async (id: string, params: Param = {}) => {
   return fetchClient.get<MovieResponse>(url, params, true)
 }
 
+const getMovieVideos = async (id: string, params: Param = {}) => {
+  const url = `movie/${id}/videos?language=en-US`
+  return fetchClient.get<{ results: { key: string; site: string; type: string; official: boolean }[] }>(url, params, true)
+}
+
 const populateMovieDetailsPage = async (
   id: string
 ): Promise<MultiMovieDetailsRequestProps> => {
   try {
-    const [movieDetails, movieCredits, similarMovies, recommendedMovies] =
+    const [movieDetails, movieCredits, similarMovies, recommendedMovies, videos] =
       await Promise.all([
         getMovieDetailsById(id),
         getMovieCreditsById(id),
         getSimilarMoviesById(id),
         getRecommendedMoviesById(id),
+        getMovieVideos(id),
       ])
+    const trailerKey =
+      videos?.results?.find((v) => v.type === 'Trailer' && v.site === 'YouTube' && v.official)?.key ||
+      videos?.results?.find((v) => v.type === 'Trailer' && v.site === 'YouTube')?.key
     return {
       movieDetails,
       movieCredits,
       similarMovies: similarMovies?.results || [],
       recommendedMovies: recommendedMovies?.results || [],
+      trailerKey,
     }
   } catch (error: any) {
     console.error(error, 'error')
@@ -160,6 +181,7 @@ const populateMovieDetailsPage = async (
 
 export {
   getNowPlayingMovies,
+  getUpcomingMovies,
   getLatestTrendingMovies,
   getAllTimeTopRatedMovies,
   getPopularMovies,
@@ -167,5 +189,5 @@ export {
   getMovieDetailsById,
   getMovieCreditsById,
   populateMovieDetailsPage,
-  getTrendingMediaForHeroSlider, // Export the new function
+  getTrendingMediaForHeroSlider,
 }

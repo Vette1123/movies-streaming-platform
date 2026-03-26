@@ -129,6 +129,16 @@ export const siteConfig = {
       scroll: true,
     },
     {
+      title: 'Search',
+      href: '/search',
+      scroll: true,
+    },
+    {
+      title: 'Watchlist',
+      href: '/watchlist',
+      scroll: true,
+    },
+    {
       title: 'Watch History',
       href: '/watch-history',
       scroll: true,
