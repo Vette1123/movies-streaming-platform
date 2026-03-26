@@ -8,7 +8,13 @@ import { useMounted } from '@/hooks/use-mounted'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { DetailsHero } from '@/components/details-hero'
 
-export const SeriesDetailsHero = ({ series }: { series: SeriesDetails }) => {
+export const SeriesDetailsHero = ({
+  series,
+  trailerKey,
+}: {
+  series: SeriesDetails
+  trailerKey?: string
+}) => {
   const { episodeQueryINT, seasonQueryINT } = useSearchQueryParams()
   const [isIframeShown, setIsIframeShown] = React.useState(false)
   const isMounted = useMounted()
@@ -40,6 +46,7 @@ export const SeriesDetailsHero = ({ series }: { series: SeriesDetails }) => {
       series={series}
       isIframeShown={isIframeShown}
       playVideo={playDefaultSeries}
+      trailerKey={trailerKey}
       ref={iframeRef}
     />
   )

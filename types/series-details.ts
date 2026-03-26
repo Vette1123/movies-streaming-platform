@@ -68,6 +68,7 @@ interface MultiSeriesDetailsRequestProps {
   seriesCredits: Credit
   similarSeries: MediaType[]
   recommendedSeries: MediaType[]
+  trailerKey?: string
 }
 
 export type { SeriesDetails, MultiSeriesDetailsRequestProps, Season }

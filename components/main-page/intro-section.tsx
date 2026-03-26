@@ -4,6 +4,9 @@ import { MediaType } from '@/types/media'
 import { Movie } from '@/types/movie-result'
 import { List } from '@/components/list'
 import { SliderHorizontalListLoader } from '@/components/loaders/slider-horizontal-list-loader'
+import { Top10List } from '@/components/top10-list'
+import { BecauseYouWatched } from '@/components/main-page/because-you-watched'
+import { ContinueWatching } from '@/components/main-page/continue-watching'
 
 interface MoviesIntroSectionProps {
   latestTrendingMovies: Movie[]
@@ -12,6 +15,8 @@ interface MoviesIntroSectionProps {
   latestTrendingSeries: MediaType[]
   popularSeries: MediaType[]
   allTimeTopRatedSeries: MediaType[]
+  nowPlayingMovies: Movie[]
+  upcomingMovies: Movie[]
 }
 
 export const MoviesIntroSection = ({
@@ -21,9 +26,18 @@ export const MoviesIntroSection = ({
   latestTrendingSeries,
   popularSeries,
   allTimeTopRatedSeries,
+  nowPlayingMovies,
+  upcomingMovies,
 }: MoviesIntroSectionProps) => {
   return (
     <section className="container max-w-(--breakpoint-2xl)">
+      <ContinueWatching />
+      <BecauseYouWatched />
+      {nowPlayingMovies.length > 0 && (
+        <Suspense fallback={<SliderHorizontalListLoader />}>
+          <List title="Now Playing" items={nowPlayingMovies} itemType="movie" />
+        </Suspense>
+      )}
       <Suspense fallback={<SliderHorizontalListLoader />}>
         <List
           title="Trending Movies"
@@ -31,16 +45,19 @@ export const MoviesIntroSection = ({
           itemType="movie"
         />
       </Suspense>
+      <Top10List
+        title="Top 10 Movies Today"
+        items={allTimeTopRatedMovies}
+        itemType="movie"
+      />
       <Suspense fallback={<SliderHorizontalListLoader />}>
         <List title="Popular Movies" items={popularMovies} itemType="movie" />
       </Suspense>
-      <Suspense fallback={<SliderHorizontalListLoader />}>
-        <List
-          title="Top Rated Movies"
-          items={allTimeTopRatedMovies}
-          itemType="movie"
-        />
-      </Suspense>
+      {upcomingMovies.length > 0 && (
+        <Suspense fallback={<SliderHorizontalListLoader />}>
+          <List title="Coming Soon" items={upcomingMovies} itemType="movie" />
+        </Suspense>
+      )}
       <Suspense fallback={<SliderHorizontalListLoader />}>
         <List
           title="Trending Series"
@@ -48,15 +65,13 @@ export const MoviesIntroSection = ({
           itemType="tv"
         />
       </Suspense>
+      <Top10List
+        title="Top 10 Series Today"
+        items={allTimeTopRatedSeries}
+        itemType="tv"
+      />
       <Suspense fallback={<SliderHorizontalListLoader />}>
         <List title="Popular Series" items={popularSeries} itemType="tv" />
-      </Suspense>
-      <Suspense fallback={<SliderHorizontalListLoader />}>
-        <List
-          title="Top Rated Series"
-          items={allTimeTopRatedSeries}
-          itemType="tv"
-        />
       </Suspense>
     </section>
   )

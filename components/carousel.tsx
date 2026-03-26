@@ -3,28 +3,29 @@
 import React, { useMemo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useCarousel } from '@/hooks/use-carousel'
+
 import {
-  CAROUSEL_SLIDE_VARIANTS,
-  CAROUSEL_BACKGROUND_VARIANTS,
-  CAROUSEL_PLACEHOLDER_VARIANTS,
-  CAROUSEL_SINGLE_SLIDE_VARIANTS,
-  CAROUSEL_NAVIGATION_VARIANTS,
-  CAROUSEL_DOT_VARIANTS,
-  CAROUSEL_ARROW_VARIANTS,
   CAROUSEL_ARROW_ICON_VARIANTS,
-  CAROUSEL_CONTENT_VARIANTS,
-  CAROUSEL_POSITION_INDICATOR_VARIANTS,
-  CAROUSEL_POSITION_TEXT_VARIANTS,
-  CAROUSEL_ELLIPSIS_VARIANTS,
-  CAROUSEL_SLIDE_TRANSITION,
+  CAROUSEL_ARROW_VARIANTS,
   CAROUSEL_BACKGROUND_TRANSITION,
+  CAROUSEL_BACKGROUND_VARIANTS,
+  CAROUSEL_CONTENT_VARIANTS,
+  CAROUSEL_DOT_VARIANTS,
   CAROUSEL_DRAG_CONSTRAINTS,
   CAROUSEL_DRAG_TRANSITION,
+  CAROUSEL_ELLIPSIS_VARIANTS,
+  CAROUSEL_NAVIGATION_VARIANTS,
+  CAROUSEL_PLACEHOLDER_VARIANTS,
+  CAROUSEL_POSITION_INDICATOR_VARIANTS,
+  CAROUSEL_POSITION_TEXT_VARIANTS,
+  CAROUSEL_SINGLE_SLIDE_VARIANTS,
+  CAROUSEL_SLIDE_TRANSITION,
+  CAROUSEL_SLIDE_VARIANTS,
   CAROUSEL_WHILE_DRAG,
   CAROUSEL_WHILE_HOVER,
   CAROUSEL_WHILE_TAP,
 } from '@/lib/motion-variants'
+import { useCarousel } from '@/hooks/use-carousel'
 
 interface CarouselProps {
   children: React.ReactNode
@@ -38,7 +39,10 @@ export function Carousel({
   autoPlayInterval = 5000,
 }: CarouselProps) {
   const childrenArray = React.Children.toArray(children)
-  const childrenCount = useMemo(() => childrenArray.length, [childrenArray.length])
+  const childrenCount = useMemo(
+    () => childrenArray.length,
+    [childrenArray.length]
+  )
 
   const {
     currentIndex,
@@ -60,7 +64,10 @@ export function Carousel({
   })
 
   // Memoized slide transition for performance
-  const slideTransition = useMemo(() => CAROUSEL_SLIDE_TRANSITION(isDragging), [isDragging])
+  const slideTransition = useMemo(
+    () => CAROUSEL_SLIDE_TRANSITION(isDragging),
+    [isDragging]
+  )
 
   if (childrenCount === 0) {
     return null
@@ -68,7 +75,7 @@ export function Carousel({
 
   if (childrenCount === 1) {
     return (
-      <motion.div 
+      <motion.div
         className="relative overflow-hidden"
         {...CAROUSEL_SINGLE_SLIDE_VARIANTS}
       >
@@ -87,11 +94,11 @@ export function Carousel({
       }}
     >
       {/* Instant placeholder background to prevent blank screen */}
-      <motion.div 
+      <motion.div
         className="absolute inset-0 z-0 bg-gradient-to-br from-gray-800/80 via-gray-900/90 to-black/95"
         variants={CAROUSEL_PLACEHOLDER_VARIANTS}
         initial="initial"
-        animate={isMounted ? "loaded" : "initial"}
+        animate={isMounted ? 'loaded' : 'initial'}
       />
 
       {/* Multi-layered background for seamless transitions */}
@@ -117,7 +124,7 @@ export function Carousel({
           key={currentIndex}
           custom={direction}
           variants={CAROUSEL_SLIDE_VARIANTS}
-          initial={isMounted ? "enter" : "center"}
+          initial={isMounted ? 'enter' : 'center'}
           animate="center"
           exit="exit"
           transition={slideTransition}
@@ -142,7 +149,7 @@ export function Carousel({
             WebkitTransform: 'translateZ(0)',
           }}
         >
-          <motion.div 
+          <motion.div
             className="pointer-events-auto transform-gpu will-change-transform"
             {...CAROUSEL_CONTENT_VARIANTS}
           >
@@ -153,7 +160,7 @@ export function Carousel({
 
       {/* Enhanced Navigation Dots with smooth animations */}
       {hasMultipleSlides && (
-        <motion.div 
+        <motion.div
           className="absolute bottom-3 left-1/2 z-30 -translate-x-1/2 px-2 sm:bottom-6 sm:px-4"
           variants={CAROUSEL_NAVIGATION_VARIANTS}
           initial="initial"
@@ -202,7 +209,7 @@ export function Carousel({
 
               {/* Show dots around current position */}
               {currentIndex > 3 && (
-                <motion.span 
+                <motion.span
                   className="px-1 text-xs text-white/60"
                   variants={CAROUSEL_ELLIPSIS_VARIANTS}
                   initial="initial"
@@ -214,38 +221,34 @@ export function Carousel({
               )}
 
               {/* Show 5 dots around current position */}
-              {Array.from(
-                { length: Math.min(5, childrenCount) },
-                (_, i) => {
-                  const startIndex = Math.max(
-                    1,
-                    Math.min(currentIndex - 2, childrenCount - 6)
-                  )
-                  const index = startIndex + i
+              {Array.from({ length: Math.min(5, childrenCount) }, (_, i) => {
+                const startIndex = Math.max(
+                  1,
+                  Math.min(currentIndex - 2, childrenCount - 6)
+                )
+                const index = startIndex + i
 
-                  if (index >= childrenCount - 1 || index <= 0)
-                    return null
+                if (index >= childrenCount - 1 || index <= 0) return null
 
-                  return (
-                    <motion.button
-                      key={index}
-                      onClick={() => handleDotClick(index)}
-                      className={`size-2.5 cursor-pointer rounded-full transition-all duration-300 hover:scale-110 sm:size-3 ${
-                        index === currentIndex
-                          ? 'scale-110 bg-white shadow-lg ring-2 ring-white/30 sm:scale-125'
-                          : 'bg-white/40 hover:bg-white/70'
-                      }`}
-                      aria-label={`Go to slide ${index + 1}`}
-                      whileHover={{ scale: 1.2 }}
-                      whileTap={{ scale: 0.9 }}
-                    />
-                  )
-                }
-              )}
+                return (
+                  <motion.button
+                    key={index}
+                    onClick={() => handleDotClick(index)}
+                    className={`size-2.5 cursor-pointer rounded-full transition-all duration-300 hover:scale-110 sm:size-3 ${
+                      index === currentIndex
+                        ? 'scale-110 bg-white shadow-lg ring-2 ring-white/30 sm:scale-125'
+                        : 'bg-white/40 hover:bg-white/70'
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                    whileHover={{ scale: 1.2 }}
+                    whileTap={{ scale: 0.9 }}
+                  />
+                )
+              })}
 
               {/* Show ellipsis if there are more slides */}
               {currentIndex < childrenCount - 4 && (
-                <motion.span 
+                <motion.span
                   className="px-1 text-xs text-white/60"
                   variants={CAROUSEL_ELLIPSIS_VARIANTS}
                   initial="initial"
@@ -272,11 +275,11 @@ export function Carousel({
           )}
 
           {/* Current position indicator with enhanced animation */}
-          <motion.div 
+          <motion.div
             className="my-2 text-center"
             {...CAROUSEL_POSITION_INDICATOR_VARIANTS}
           >
-            <motion.span 
+            <motion.span
               className="rounded-full bg-black/50 px-2 py-1 text-xs text-white/90 backdrop-blur-sm sm:text-sm"
               key={currentIndex}
               {...CAROUSEL_POSITION_TEXT_VARIANTS}

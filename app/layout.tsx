@@ -1,5 +1,6 @@
 import '@/styles/globals.css'
 
+import { Suspense } from 'react'
 import type { Metadata } from 'next'
 // import Script from 'next/script'
 import { CSPostHogProvider } from '@/providers/posthog-provider'
@@ -13,7 +14,10 @@ import { GOOGLE_GTM_ID } from '@/lib/constants'
 import { fontSans } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import { Footer } from '@/components/layouts/footer'
+import { MobileBottomNav } from '@/components/layouts/mobile-bottom-nav'
 import { SiteHeader } from '@/components/layouts/site-header'
+import { PostHogPageView } from '@/components/posthog-page-view'
+import { ScrollToTop } from '@/components/scroll-to-top'
 
 const generateOgImageUrl = (title: string, description: string) =>
   `${siteConfig.websiteURL}/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`
@@ -201,13 +205,20 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
         >
           <div className="flex flex-col">
             <SiteHeader />
-            <div className="h-full flex-1 overflow-x-hidden">
+            <div className="h-full flex-1 overflow-x-hidden pb-16 lg:pb-0">
               <NuqsAdapter>
                 <QueryProvider>
-                  <CSPostHogProvider>{children}</CSPostHogProvider>
+                  <CSPostHogProvider>
+                    <Suspense>
+                      <PostHogPageView />
+                    </Suspense>
+                    {children}
+                  </CSPostHogProvider>
                 </QueryProvider>
               </NuqsAdapter>
               <ToastProvider />
+              <ScrollToTop />
+              <MobileBottomNav />
               <Footer />
               <GoogleTagManager gtmId={GOOGLE_GTM_ID as string} />
               {/* <GoogleAnalytics gaId={GOOGLE_MEASUREMENT_ID as string} /> */}

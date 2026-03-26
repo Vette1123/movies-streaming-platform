@@ -64,22 +64,32 @@ const getRecommendedSeriesById = async (id: string, params: Param = {}) => {
   return seriesDTO(rawData)
 }
 
+const getSeriesVideos = async (id: string, params: Param = {}) => {
+  const url = `tv/${id}/videos?language=en-US`
+  return fetchClient.get<{ results: { key: string; site: string; type: string; official: boolean }[] }>(url, params, true)
+}
+
 const populateSeriesDetailsPageData = async (
   id: string
 ): Promise<MultiSeriesDetailsRequestProps> => {
   try {
-    const [seriesDetails, seriesCredits, similarSeries, recommendedSeries] =
+    const [seriesDetails, seriesCredits, similarSeries, recommendedSeries, videos] =
       await Promise.all([
         getSeriesDetailsById(id),
         getSeriesCreditsById(id),
         getSimilarSeriesById(id),
         getRecommendedSeriesById(id),
+        getSeriesVideos(id),
       ])
+    const trailerKey =
+      videos?.results?.find((v) => v.type === 'Trailer' && v.site === 'YouTube' && v.official)?.key ||
+      videos?.results?.find((v) => v.type === 'Trailer' && v.site === 'YouTube')?.key
     return {
       seriesDetails,
       seriesCredits,
       similarSeries: similarSeries?.results || [],
       recommendedSeries: recommendedSeries?.results || [],
+      trailerKey,
     }
   } catch (error: any) {
     console.error(error, 'error')

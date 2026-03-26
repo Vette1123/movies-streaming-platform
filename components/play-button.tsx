@@ -22,11 +22,16 @@ export function PlayButton({ onClick, media }: PlayButtonProps) {
   }
 
   return (
-    <div className="rounded-full bg-linear-to-br from-purple-600 to-blue-500 text-center font-medium text-white transition-colors duration-500 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500">
-      <Icons.playIcon
-        onClick={handleClick}
-        className={cn('size-24 cursor-pointer')}
-      />
+    <div className="relative flex items-center justify-center">
+      {/* Pulse rings */}
+      <span className="absolute inline-flex size-28 animate-ping rounded-full bg-purple-500/30" />
+      <span className="absolute inline-flex size-32 animate-ping rounded-full bg-blue-500/20 [animation-delay:0.4s]" />
+      <div className="relative rounded-full bg-linear-to-br from-purple-600 to-blue-500 text-center font-medium text-white shadow-2xl shadow-purple-500/40 transition-all duration-500 hover:scale-110 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 hover:shadow-pink-500/40">
+        <Icons.playIcon
+          onClick={handleClick}
+          className={cn('size-24 cursor-pointer')}
+        />
+      </div>
     </div>
   )
 }

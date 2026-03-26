@@ -3,8 +3,8 @@ User-agent: *
 Allow: /
 
 # Host
-Host: https://www.reely.space
+Host: https://reely.space
 
 # Sitemaps
-Sitemap: https://www.reely.space/sitemap.xml
-Sitemap: https://www.reely.space/server-sitemap-index.xml
+Sitemap: https://reely.space/sitemap.xml
+Sitemap: https://reely.space/server-sitemap-index.xml

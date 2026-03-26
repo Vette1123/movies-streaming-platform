@@ -53,6 +53,7 @@ interface MultiMovieDetailsRequestProps {
   movieCredits: Credit
   similarMovies: Movie[]
   recommendedMovies: Movie[]
+  trailerKey?: string
 }
 
 export type { MovieDetails, MultiMovieDetailsRequestProps }

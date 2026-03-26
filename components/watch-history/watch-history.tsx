@@ -10,7 +10,7 @@ import { WatchedItemCard } from './watch-history-card'
 import { WatchedItemCardSkeleton } from './watch-history-skeleton'
 
 export const WatchHistoryContainer = () => {
-  const { watchedItems, deleteWatchedItems } = useWatchedMedia()
+  const { watchedItems, deleteWatchedItems, deleteWatchedItemById } = useWatchedMedia()
   const isMounted = useMounted()
 
   if (!isMounted) {
@@ -25,10 +25,10 @@ export const WatchHistoryContainer = () => {
 
   if (!watchedItems.length) {
     return (
-      <div className="flex min-h-screen flex-1 flex-col items-center">
-        <p className="text-lg text-gray-500">No watched items yet</p>
-        <p className="text-sm text-gray-400">
-          Start watching your favorite movies and TV shows to see them here
+      <div className="flex min-h-[50vh] flex-1 flex-col items-center justify-center gap-2">
+        <p className="text-lg text-muted-foreground">No watched items yet</p>
+        <p className="text-sm text-muted-foreground/60">
+          Start watching your favourite movies and TV shows to see them here
         </p>
       </div>
     )
@@ -36,18 +36,19 @@ export const WatchHistoryContainer = () => {
 
   return (
     <div className="flex min-h-screen flex-1 flex-col">
-      <div className="mb-2 flex justify-end">
-        {/* clear history */}
+      <div className="mb-4 flex justify-end">
         <DeleteHistoryAlert onDelete={deleteWatchedItems} />
       </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2 lg:grid-cols-5">
+      <div className="flex flex-wrap gap-4">
         {watchedItems
           ?.sort(
             (a, b) =>
               new Date(b.modified_at).getTime() -
               new Date(a.modified_at).getTime()
           )
-          ?.map((item) => <WatchedItemCard key={item.id} item={item} />)}
+          ?.map((item) => (
+            <WatchedItemCard key={item.id} item={item} onDelete={deleteWatchedItemById} />
+          ))}
       </div>
     </div>
   )

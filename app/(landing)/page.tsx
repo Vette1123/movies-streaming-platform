@@ -26,6 +26,8 @@ async function IndexPage() {
     latestTrendingSeries,
     popularSeries,
     allTimeTopRatedSeries,
+    nowPlayingMovies,
+    upcomingMovies,
   } = await populateHomePageData()
   return (
     <section className="h-full">
@@ -39,6 +41,8 @@ async function IndexPage() {
         latestTrendingSeries={latestTrendingSeries}
         popularSeries={popularSeries}
         allTimeTopRatedSeries={allTimeTopRatedSeries}
+        nowPlayingMovies={nowPlayingMovies}
+        upcomingMovies={upcomingMovies}
       />
     </section>
   )

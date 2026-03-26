@@ -1,4 +1,5 @@
 import { getServerSideSitemapIndex } from 'next-sitemap'
+
 import { siteConfig } from '@/config/site'
 
 export async function GET(request: Request) {
