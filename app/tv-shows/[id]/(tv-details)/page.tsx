@@ -5,6 +5,7 @@ import {
   populateSeriesDetailsPageData,
 } from '@/services/series'
 
+import { siteConfig } from '@/config/site'
 import { PageDetailsProps } from '@/types/page-details'
 import { getPosterImageURL } from '@/lib/utils'
 import { SeriesDetailsContent } from '@/components/series/details-content'
@@ -23,11 +24,10 @@ export async function generateMetadata(
   return {
     title: seriesDetails.name,
     description: seriesDetails.overview,
-    metadataBase: new URL(`/tv-shows/${id}`, process.env.NEXT_PUBLIC_BASE_URL),
     openGraph: {
       title: seriesDetails.name,
       description: seriesDetails.overview,
-      url: `/tv-shows/${id}`,
+      url: `${siteConfig.websiteURL}/tv-shows/${id}`,
       images: [
         {
           url: getPosterImageURL(seriesDetails?.backdrop_path),

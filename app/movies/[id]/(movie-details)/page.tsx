@@ -5,6 +5,7 @@ import {
   populateMovieDetailsPage,
 } from '@/services/movies'
 
+import { siteConfig } from '@/config/site'
 import { PageDetailsProps } from '@/types/page-details'
 import { getPosterImageURL } from '@/lib/utils'
 import { MoviesDetailsContent } from '@/components/media/details-content'
@@ -23,11 +24,10 @@ export async function generateMetadata(
   return {
     title: movieDetails.title,
     description: movieDetails.overview,
-    metadataBase: new URL(`/movies/${id}`, process.env.NEXT_PUBLIC_BASE_URL),
     openGraph: {
       title: movieDetails.title,
       description: movieDetails.overview,
-      url: `/movies/${id}`,
+      url: `${siteConfig.websiteURL}/movies/${id}`,
       images: [
         {
           url: getPosterImageURL(movieDetails.backdrop_path),
