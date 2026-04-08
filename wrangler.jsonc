@@ -16,9 +16,9 @@
 		"enabled": true,
 	},
 	"preview_urls": false,
-	"placement": {
-		"mode": "smart",
-	},
+	// "placement": {
+	// 	"mode": "smart",
+	// },
 	"services": [
 		{
 			"binding": "WORKER_SELF_REFERENCE",
