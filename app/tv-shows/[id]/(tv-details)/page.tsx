@@ -1,5 +1,5 @@
 import React from 'react'
-import { Metadata, ResolvingMetadata } from 'next'
+import { Metadata } from 'next'
 import {
   getSeriesDetailsById,
   populateSeriesDetailsPageData,
@@ -7,47 +7,80 @@ import {
 
 import { siteConfig } from '@/config/site'
 import { PageDetailsProps } from '@/types/page-details'
-import { getPosterImageURL } from '@/lib/utils'
+import { getImageURL, getPosterImageURL } from '@/lib/utils'
+import {
+  breadcrumbJsonLd,
+  JsonLd,
+  tvSeriesJsonLd,
+} from '@/lib/structured-data'
 import { SeriesDetailsContent } from '@/components/series/details-content'
 import { SeriesDetailsHero } from '@/components/series/details-hero'
 
 export async function generateMetadata(
-  props: PageDetailsProps,
-  parent: ResolvingMetadata
+  props: PageDetailsProps
 ): Promise<Metadata> {
   const params = await props.params
-  // read route params
   const id = params.id
 
   const seriesDetails = await getSeriesDetailsById(id)
 
+  const year = seriesDetails.first_air_date?.slice(0, 4)
+  const title = year
+    ? `${seriesDetails.name} (${year})`
+    : seriesDetails.name
+  const description =
+    seriesDetails.overview?.slice(0, 200) ||
+    `Details, cast, and streaming info for ${seriesDetails.name} on ${siteConfig.name}.`
+  const canonicalPath = `/tv-shows/${id}`
+  const backdrop = seriesDetails.backdrop_path
+    ? getImageURL(seriesDetails.backdrop_path)
+    : undefined
+  const poster = seriesDetails.poster_path
+    ? getPosterImageURL(seriesDetails.poster_path)
+    : undefined
+
+  const images = [
+    backdrop && {
+      url: backdrop,
+      width: 1280,
+      height: 720,
+      alt: seriesDetails.name,
+    },
+    poster && {
+      url: poster,
+      width: 500,
+      height: 750,
+      alt: seriesDetails.name,
+    },
+  ].filter(Boolean) as Array<{ url: string; width: number; height: number; alt: string }>
+
   return {
-    title: seriesDetails.name,
-    description: seriesDetails.overview,
+    title,
+    description,
+    keywords: [
+      seriesDetails.name,
+      ...(seriesDetails.genres?.map((g) => g.name) ?? []),
+      'tv series',
+      'episodes',
+      'cast',
+      'streaming',
+      siteConfig.name,
+    ],
+    alternates: {
+      canonical: canonicalPath,
+    },
     openGraph: {
-      title: seriesDetails.name,
-      description: seriesDetails.overview,
-      url: `${siteConfig.websiteURL}/tv-shows/${id}`,
-      images: [
-        {
-          url: getPosterImageURL(seriesDetails?.backdrop_path),
-          width: 1280,
-          height: 720,
-          alt: seriesDetails.name,
-        },
-        {
-          url: getPosterImageURL(seriesDetails?.poster_path),
-          width: 500,
-          height: 750,
-          alt: seriesDetails.name,
-        },
-      ],
+      type: 'video.tv_show',
+      title,
+      description,
+      url: `${siteConfig.websiteURL}${canonicalPath}`,
+      images,
     },
     twitter: {
       card: 'summary_large_image',
-      title: seriesDetails.name,
-      description: seriesDetails.overview,
-      images: [getPosterImageURL(seriesDetails?.backdrop_path)],
+      title,
+      description,
+      images: images.map((i) => i.url),
     },
   }
 }
@@ -57,8 +90,35 @@ const TVSeries = async (props: PageDetailsProps) => {
   const { seriesDetails, seriesCredits, similarSeries, recommendedSeries } =
     await populateSeriesDetailsPageData(params?.id)
 
+  const jsonLd = tvSeriesJsonLd({
+    id: seriesDetails.id,
+    name: seriesDetails.name,
+    description: seriesDetails.overview,
+    firstAirDate: seriesDetails.first_air_date,
+    lastAirDate: seriesDetails.last_air_date,
+    numberOfSeasons: seriesDetails.number_of_seasons,
+    numberOfEpisodes: seriesDetails.number_of_episodes,
+    genres: seriesDetails.genres?.map((g) => g.name),
+    imageUrl: seriesDetails.backdrop_path
+      ? getImageURL(seriesDetails.backdrop_path)
+      : seriesDetails.poster_path
+        ? getPosterImageURL(seriesDetails.poster_path)
+        : null,
+    voteAverage: seriesDetails.vote_average,
+    voteCount: seriesDetails.vote_count,
+    tagline: seriesDetails.tagline,
+  })
+
   return (
     <header className="relative">
+      <JsonLd data={jsonLd} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: 'Home', url: '/' },
+          { name: 'TV Shows', url: '/tv-shows' },
+          { name: seriesDetails.name, url: `/tv-shows/${seriesDetails.id}` },
+        ])}
+      />
       <SeriesDetailsHero series={seriesDetails} />
       <SeriesDetailsContent
         series={seriesDetails}

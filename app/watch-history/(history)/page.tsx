@@ -6,10 +6,18 @@ import { WatchHistoryContainer } from '@/components/watch-history/watch-history'
 
 export const metadata: Metadata = {
   title: 'Watch History',
-  description: 'Watch History',
-  metadataBase: new URL('/watch-history', process.env.NEXT_PUBLIC_BASE_URL),
-  openGraph: {
-    images: [siteConfig.personalLogo, siteConfig.links.twitter],
+  description: `Your personal watch history on ${siteConfig.name}. Track what you've watched and pick up where you left off.`,
+  alternates: {
+    canonical: '/watch-history',
+  },
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
   },
 }
 

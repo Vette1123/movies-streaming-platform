@@ -4,32 +4,42 @@ import { getPopularMovies } from '@/services/movies'
 
 import { siteConfig } from '@/config/site'
 import { QUERY_KEYS } from '@/lib/queryKeys'
+import {
+  breadcrumbJsonLd,
+  collectionPageJsonLd,
+  JsonLd,
+} from '@/lib/structured-data'
 import { MediaContent } from '@/components/media/media-content'
 
-const generateOgImageUrl = (title: string, description: string) =>
-  `${siteConfig.websiteURL}/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`
+const MOVIES_TITLE = `Movies — Browse Popular, Trending & Top Rated`
+const MOVIES_DESCRIPTION =
+  'Browse popular, trending, and top-rated movies. Filter by genre, year, and rating to find your next watch on Reely.'
+const MOVIES_URL = `${siteConfig.websiteURL}/movies`
 
 export const metadata: Metadata = {
   title: 'Movies',
-  description: 'Discover and explore popular movies, trending releases, and all-time favorites.',
+  description: MOVIES_DESCRIPTION,
+  keywords: [
+    'popular movies',
+    'trending movies',
+    'top rated movies',
+    'new releases',
+    'movie tracker',
+    ...siteConfig.keywords,
+  ],
+  alternates: {
+    canonical: '/movies',
+  },
   openGraph: {
-    title: 'Movies - ' + siteConfig.name,
-    description: 'Discover and explore popular movies, trending releases, and all-time favorites.',
-    url: siteConfig.websiteURL + '/movies',
-    images: [
-      {
-        url: generateOgImageUrl('Movies', 'Discover and explore popular movies'),
-        width: siteConfig.openGraph.images.default.width,
-        height: siteConfig.openGraph.images.default.height,
-        alt: 'Movies - ' + siteConfig.name,
-      },
-    ],
+    title: MOVIES_TITLE,
+    description: MOVIES_DESCRIPTION,
+    url: MOVIES_URL,
+    type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Movies - ' + siteConfig.name,
-    description: 'Discover and explore popular movies, trending releases, and all-time favorites.',
-    images: [generateOgImageUrl('Movies', 'Discover and explore popular movies')],
+    title: MOVIES_TITLE,
+    description: MOVIES_DESCRIPTION,
   },
 }
 
@@ -37,6 +47,19 @@ async function Movies() {
   const movies = await getPopularMovies()
   return (
     <section className="container h-full py-20 lg:py-36">
+      <JsonLd
+        data={collectionPageJsonLd({
+          name: MOVIES_TITLE,
+          description: MOVIES_DESCRIPTION,
+          url: MOVIES_URL,
+        })}
+      />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: 'Home', url: '/' },
+          { name: 'Movies', url: '/movies' },
+        ])}
+      />
       <MediaContent
         media={movies}
         getPopularMediaAction={getPopularMovies}

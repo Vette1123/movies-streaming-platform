@@ -1,86 +1,56 @@
+import type { MetadataRoute } from 'next'
+
 import { siteConfig } from '@/config/site'
-import { MetadataRoute } from 'next'
 
 const baseUrl = siteConfig.websiteURL
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
-      // Main crawlers - full access with optimizations
       {
-        userAgent: ['Googlebot', 'Bingbot', 'DuckDuckBot', 'facebookexternalhit'],
-        allow: [
-          '/',
-          '/movies',
-          '/tv-shows', 
-          '/movies/*',
-          '/tv-shows/*',
-          '/disclaimer',
-          '/_next/static/',
-          '/api/og/*', // Allow OG image generation
+        userAgent: [
+          'Googlebot',
+          'Bingbot',
+          'DuckDuckBot',
+          'facebookexternalhit',
+          'LinkedInBot',
+          'WhatsApp',
+          'TwitterBot',
+          'TelegramBot',
+          'Slackbot',
+          'Applebot',
         ],
-        disallow: [
-          '/api/*',
-          '/_next/',
-          '/admin/',
-          '/private/',
-          '*.json$',
-          '/watch-history', // Private user data
-          '/user/',
-          '/auth/',
-          '/login',
-          '/register',
-        ],
-        crawlDelay: 1, // Be respectful - 1 second delay
-      },
-      // Social media crawlers - optimized for sharing
-      {
-        userAgent: ['LinkedInBot', 'WhatsApp', 'TwitterBot', 'TelegramBot'],
-        allow: [
-          '/',
-          '/movies/*',
-          '/tv-shows/*',
-          '/api/og/*', // Allow OG image generation
-          '/_next/static/',
-        ],
-        disallow: [
-          '/api/*',
-          '/watch-history',
-          '/user/',
-          '/admin/',
-        ],
-      },
-      // General crawlers - standard access
-      {
-        userAgent: '*',
-        allow: [
-          '/',
-          '/movies',
-          '/tv-shows',
-          '/movies/*',
-          '/tv-shows/*',
-          '/disclaimer',
-        ],
+        allow: ['/'],
         disallow: [
           '/api/',
-          '/_next/',
+          '/watch-history',
           '/admin/',
           '/private/',
-          '/watch-history',
-          '/user/',
           '/auth/',
           '/login',
           '/register',
-          '*.json$',
-          '/*?*', // Disallow query parameters to avoid duplicate content
+          '/*?*',
+        ],
+      },
+      {
+        userAgent: '*',
+        allow: ['/'],
+        disallow: [
+          '/api/',
+          '/watch-history',
+          '/admin/',
+          '/private/',
+          '/auth/',
+          '/login',
+          '/register',
+          '/*?*',
         ],
         crawlDelay: 2,
       },
-      // Block malicious bots
       {
         userAgent: [
           'AhrefsBot',
-          'SemrushBot', 
+          'SemrushBot',
           'MJ12bot',
           'DotBot',
           'AspiegelBot',
@@ -93,9 +63,7 @@ export default function robots(): MetadataRoute.Robots {
     ],
     sitemap: [
       `${baseUrl}/sitemap.xml`,
-      `${baseUrl}/sitemap-index.xml`,
-      `${baseUrl}/sitemap-images.xml`,
-      `${baseUrl}/sitemap-news.xml`,
+      `${baseUrl}/server-sitemap-index.xml`,
     ],
     host: baseUrl,
   }

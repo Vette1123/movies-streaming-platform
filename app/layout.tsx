@@ -1,7 +1,6 @@
 import '@/styles/globals.css'
 
-import type { Metadata } from 'next'
-// import Script from 'next/script'
+import type { Metadata, Viewport } from 'next'
 import { CSPostHogProvider } from '@/providers/posthog-provider'
 import { QueryProvider } from '@/providers/query-provider'
 import { ToastProvider } from '@/providers/toast-provider'
@@ -11,20 +10,36 @@ import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { siteConfig } from '@/config/site'
 import { GOOGLE_GTM_ID } from '@/lib/constants'
 import { fontSans } from '@/lib/fonts'
+import {
+  JsonLd,
+  organizationJsonLd,
+  websiteJsonLd,
+} from '@/lib/structured-data'
 import { cn } from '@/lib/utils'
 import { Footer } from '@/components/layouts/footer'
 import { SiteHeader } from '@/components/layouts/site-header'
 
-const generateOgImageUrl = (title: string, description: string) =>
-  `${siteConfig.websiteURL}/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: siteConfig.theme.colors.light },
+    { media: '(prefers-color-scheme: dark)', color: siteConfig.theme.colors.dark },
+  ],
+  colorScheme: 'dark light',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover',
+}
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.websiteURL),
   title: {
-    default: siteConfig.name,
-    template: `%s - ${siteConfig.name}`,
+    default: `${siteConfig.name} — Movie & TV Show Tracker`,
+    template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
   applicationName: siteConfig.seo.applicationName,
+  manifest: siteConfig.pwa.manifestPath,
   creator: siteConfig.author.name,
   publisher: siteConfig.seo.publisher,
   authors: [
@@ -36,34 +51,31 @@ export const metadata: Metadata = {
   generator: siteConfig.seo.generator,
   keywords: siteConfig.keywords,
   referrer: siteConfig.seo.referrer as 'origin-when-cross-origin',
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
+  },
 
-  // Enhanced Open Graph
   openGraph: {
     type: siteConfig.openGraph.type as 'website',
     locale: siteConfig.openGraph.locale,
     alternateLocale: siteConfig.seo.alternateLocales,
     siteName: siteConfig.openGraph.siteName,
-    title: siteConfig.name,
+    title: `${siteConfig.name} — Movie & TV Show Tracker`,
     description: siteConfig.description,
     url: siteConfig.websiteURL,
-    // Images removed from root layout to allow child pages to override without inheritance
-    emails: [siteConfig.author.email],
-    phoneNumbers: [],
-    faxNumbers: [],
     ttl: siteConfig.openGraph.ttl,
   },
 
-  // Enhanced Twitter
   twitter: {
     card: siteConfig.twitter.card as 'summary_large_image',
     site: siteConfig.twitter.site,
     creator: siteConfig.twitter.creator,
-    title: siteConfig.name,
+    title: `${siteConfig.name} — Movie & TV Show Tracker`,
     description: siteConfig.description,
-    // Images removed from root layout to allow child pages to override without inheritance
   },
 
-  // App-specific metadata
   appleWebApp: {
     capable: siteConfig.pwa.capable,
     title: siteConfig.name,
@@ -77,7 +89,6 @@ export const metadata: Metadata = {
     ],
   },
 
-  // Enhanced app links
   appLinks: {
     web: [
       {
@@ -87,7 +98,6 @@ export const metadata: Metadata = {
     ],
   },
 
-  // Enhanced icons
   icons: {
     icon: [
       { url: siteConfig.icons.favicon, sizes: 'any' },
@@ -104,13 +114,13 @@ export const metadata: Metadata = {
     ],
     other: [
       {
-        rel: 'apple-touch-icon-precomposed',
-        url: siteConfig.icons.appleTouchIcon,
+        rel: 'mask-icon',
+        url: '/safari-pinned-tab.svg',
+        color: siteConfig.theme.colors.dark,
       },
     ],
   },
 
-  // Enhanced robots
   robots: {
     index: true,
     follow: true,
@@ -125,7 +135,6 @@ export const metadata: Metadata = {
     },
   },
 
-  // Verification (add these to your site config if you have them)
   ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION && {
     verification: {
       google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
@@ -140,47 +149,21 @@ export const metadata: Metadata = {
     },
   }),
 
-  // Enhanced metadata base
-  metadataBase: new URL(siteConfig.websiteURL),
-
-  // Additional SEO enhancements
   alternates: {
     canonical: siteConfig.websiteURL,
     languages: {
       'en-US': siteConfig.websiteURL,
-      'en-GB': siteConfig.websiteURL,
-    },
-    media: {
-      'only screen and (max-width: 600px)': `${siteConfig.websiteURL}/mobile`,
-    },
-    types: {
-      'application/rss+xml': `${siteConfig.websiteURL}/feed.xml`,
+      'x-default': siteConfig.websiteURL,
     },
   },
 
-  // Category for app stores
   category: siteConfig.seo.category as 'entertainment',
 
-  // Additional meta tags via other
   other: {
-    'mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-status-bar-style': siteConfig.pwa.statusBarStyle,
-    'format-detection': siteConfig.security.formatDetection,
     'msapplication-TileColor': siteConfig.theme.colors.tile,
     'msapplication-config': siteConfig.icons.browserConfig,
-    'theme-color': siteConfig.theme.colors.dark,
-    // Rich snippets preparation
+    'apple-mobile-web-app-title': siteConfig.name,
     'application-name': siteConfig.seo.applicationName,
-    'msapplication-tooltip': siteConfig.description,
-    'msapplication-starturl': siteConfig.websiteURL,
-    'msapplication-window': 'width=1024;height=768',
-    'msapplication-navbutton-color': siteConfig.theme.colors.primary,
-    // Security headers
-    referrer: siteConfig.seo.referrer,
-    'content-security-policy': siteConfig.security.contentSecurityPolicy,
-    // Performance hints
-    'dns-prefetch': 'true',
   },
 }
 
@@ -191,67 +174,35 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children, modal }: RootLayoutProps) {
   return (
-    <>
-      <html lang="en" suppressHydrationWarning>
-        <body
-          className={cn(
-            'min-h-screen scroll-smooth bg-background font-sans antialiased',
-            fontSans.variable
-          )}
-        >
-          <div className="flex flex-col">
-            <SiteHeader />
-            <div className="h-full flex-1 overflow-x-hidden">
-              <NuqsAdapter>
-                <QueryProvider>
-                  <CSPostHogProvider>{children}</CSPostHogProvider>
-                </QueryProvider>
-              </NuqsAdapter>
-              <ToastProvider />
-              <Footer />
-              <GoogleTagManager gtmId={GOOGLE_GTM_ID as string} />
-              {/* <GoogleAnalytics gaId={GOOGLE_MEASUREMENT_ID as string} /> */}
-              {modal && modal}
-            </div>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://image.tmdb.org" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <JsonLd data={websiteJsonLd} />
+        <JsonLd data={organizationJsonLd} />
+      </head>
+      <body
+        className={cn(
+          'min-h-screen scroll-smooth bg-background font-sans antialiased',
+          fontSans.variable
+        )}
+      >
+        <div className="flex flex-col">
+          <SiteHeader />
+          <div className="h-full flex-1 overflow-x-hidden">
+            <NuqsAdapter>
+              <QueryProvider>
+                <CSPostHogProvider>{children}</CSPostHogProvider>
+              </QueryProvider>
+            </NuqsAdapter>
+            <ToastProvider />
+            <Footer />
+            {GOOGLE_GTM_ID && <GoogleTagManager gtmId={GOOGLE_GTM_ID} />}
+            {modal && modal}
           </div>
-          {/* <div id="container-be6850e2d2f1956aae5617cd0073c730"></div> */}
-        </body>
-        {/* <Script
-          strategy="lazyOnload"
-          type="text/javascript"
-          src="//pl26666813.profitableratecpm.com/8e/cd/41/8ecd41eb7e7a77406e555f83886e04dc.js"
-        />
-        <Script
-          strategy="lazyOnload"
-          data-cfasync="false"
-          src="//pl26666864.profitableratecpm.com/be6850e2d2f1956aae5617cd0073c730/invoke.js"
-        />
-        <Script
-          strategy="lazyOnload"
-          data-cfasync="false"
-          src="//pl26667450.profitableratecpm.com/31/d5/3d/31d53d91907f9b8b1df13ee2306bfcae.js"
-        />
-        <Script
-          strategy="lazyOnload"
-          type="text/javascript"
-          id="new-script-options"
-        >
-          {`
-            atOptions = {
-              'key' : '523b89856227f68d3c91c27fc62af535',
-              'format' : 'iframe',
-              'height' : 250,
-              'width' : 300,
-              'params' : {}
-            };
-          `}
-        </Script>
-        <Script
-          strategy="lazyOnload"
-          type="text/javascript"
-          src="//www.highperformanceformat.com/523b89856227f68d3c91c27fc62af535/invoke.js"
-        /> */}
-      </html>
-    </>
+        </div>
+      </body>
+    </html>
   )
 }

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Metadata, ResolvingMetadata } from 'next'
+import { Metadata } from 'next'
 import {
   getMovieDetailsById,
   populateMovieDetailsPage,
@@ -7,47 +7,81 @@ import {
 
 import { siteConfig } from '@/config/site'
 import { PageDetailsProps } from '@/types/page-details'
-import { getPosterImageURL } from '@/lib/utils'
+import { getImageURL, getPosterImageURL } from '@/lib/utils'
+import {
+  breadcrumbJsonLd,
+  JsonLd,
+  movieJsonLd,
+} from '@/lib/structured-data'
 import { MoviesDetailsContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
 
 export async function generateMetadata(
-  props: PageDetailsProps,
-  parent: ResolvingMetadata
+  props: PageDetailsProps
 ): Promise<Metadata> {
   const params = await props.params
-  // read route params
   const id = params.id
 
   const movieDetails = await getMovieDetailsById(id)
 
+  const year = movieDetails.release_date?.slice(0, 4)
+  const title = year
+    ? `${movieDetails.title} (${year})`
+    : movieDetails.title
+  const description =
+    movieDetails.overview?.slice(0, 200) ||
+    `Details, cast, and streaming info for ${movieDetails.title} on ${siteConfig.name}.`
+  const canonicalPath = `/movies/${id}`
+  const backdrop = movieDetails.backdrop_path
+    ? getImageURL(movieDetails.backdrop_path)
+    : undefined
+  const poster = movieDetails.poster_path
+    ? getPosterImageURL(movieDetails.poster_path)
+    : undefined
+
+  const images = [
+    backdrop && {
+      url: backdrop,
+      width: 1280,
+      height: 720,
+      alt: movieDetails.title,
+    },
+    poster && {
+      url: poster,
+      width: 500,
+      height: 750,
+      alt: movieDetails.title,
+    },
+  ].filter(Boolean) as Array<{ url: string; width: number; height: number; alt: string }>
+
   return {
-    title: movieDetails.title,
-    description: movieDetails.overview,
+    title,
+    description,
+    keywords: [
+      movieDetails.title,
+      ...(movieDetails.genres?.map((g) => g.name) ?? []),
+      'watch online',
+      'movie details',
+      'cast',
+      'streaming',
+      siteConfig.name,
+    ],
+    alternates: {
+      canonical: canonicalPath,
+    },
     openGraph: {
-      title: movieDetails.title,
-      description: movieDetails.overview,
-      url: `${siteConfig.websiteURL}/movies/${id}`,
-      images: [
-        {
-          url: getPosterImageURL(movieDetails.backdrop_path),
-          width: 1280,
-          height: 720,
-          alt: movieDetails.title,
-        },
-        {
-          url: getPosterImageURL(movieDetails.poster_path),
-          width: 500,
-          height: 750,
-          alt: movieDetails.title,
-        },
-      ],
+      type: 'video.movie',
+      title,
+      description,
+      url: `${siteConfig.websiteURL}${canonicalPath}`,
+      images,
+      releaseDate: movieDetails.release_date || undefined,
     },
     twitter: {
       card: 'summary_large_image',
-      title: movieDetails.title,
-      description: movieDetails.overview,
-      images: [getPosterImageURL(movieDetails.backdrop_path)],
+      title,
+      description,
+      images: images.map((i) => i.url),
     },
   }
 }
@@ -57,8 +91,33 @@ const MoviePage = async (props: PageDetailsProps) => {
   const { movieCredits, movieDetails, similarMovies, recommendedMovies } =
     await populateMovieDetailsPage(params?.id)
 
+  const jsonLd = movieJsonLd({
+    id: movieDetails.id,
+    title: movieDetails.title,
+    description: movieDetails.overview,
+    releaseDate: movieDetails.release_date,
+    runtime: movieDetails.runtime,
+    genres: movieDetails.genres?.map((g) => g.name),
+    imageUrl: movieDetails.backdrop_path
+      ? getImageURL(movieDetails.backdrop_path)
+      : movieDetails.poster_path
+        ? getPosterImageURL(movieDetails.poster_path)
+        : null,
+    voteAverage: movieDetails.vote_average,
+    voteCount: movieDetails.vote_count,
+    tagline: movieDetails.tagline,
+  })
+
   return (
     <header className="relative">
+      <JsonLd data={jsonLd} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: 'Home', url: '/' },
+          { name: 'Movies', url: '/movies' },
+          { name: movieDetails.title, url: `/movies/${movieDetails.id}` },
+        ])}
+      />
       <MovieDetailsHero movie={movieDetails} />
       <MoviesDetailsContent
         movie={movieDetails}

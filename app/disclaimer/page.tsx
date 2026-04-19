@@ -1,6 +1,26 @@
 import React from 'react'
+import { Metadata } from 'next'
 
+import { siteConfig } from '@/config/site'
 import { DisclaimerContent } from '@/components/disclaimer/disclaimer-content'
+
+export const metadata: Metadata = {
+  title: 'Disclaimer',
+  description: `Legal disclaimer for ${siteConfig.name}. Information about content sources, rights, and responsibilities.`,
+  alternates: {
+    canonical: '/disclaimer',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: `Disclaimer | ${siteConfig.name}`,
+    description: `Legal disclaimer for ${siteConfig.name}.`,
+    url: `${siteConfig.websiteURL}/disclaimer`,
+    type: 'article',
+  },
+}
 
 function Disclaimer() {
   return (
