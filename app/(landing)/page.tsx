@@ -26,10 +26,20 @@ export const metadata: Metadata = {
     description: HOME_DESCRIPTION,
     url: siteConfig.websiteURL,
     type: 'website',
+    images: [
+      {
+        url: '/opengraph-image.png',
+        width: siteConfig.openGraph.images.default.width,
+        height: siteConfig.openGraph.images.default.height,
+        alt: siteConfig.openGraph.images.default.alt,
+        type: siteConfig.openGraph.images.default.type,
+      },
+    ],
   },
   twitter: {
     title: `${siteConfig.name} — Discover & Track Movies and TV Shows`,
     description: HOME_DESCRIPTION,
+    images: ['/opengraph-image.png'],
   },
 }
 

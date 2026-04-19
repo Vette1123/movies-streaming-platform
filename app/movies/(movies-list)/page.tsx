@@ -35,11 +35,21 @@ export const metadata: Metadata = {
     description: MOVIES_DESCRIPTION,
     url: MOVIES_URL,
     type: 'website',
+    images: [
+      {
+        url: '/opengraph-image.png',
+        width: siteConfig.openGraph.images.default.width,
+        height: siteConfig.openGraph.images.default.height,
+        alt: siteConfig.openGraph.images.default.alt,
+        type: siteConfig.openGraph.images.default.type,
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: MOVIES_TITLE,
     description: MOVIES_DESCRIPTION,
+    images: ['/opengraph-image.png'],
   },
 }
 

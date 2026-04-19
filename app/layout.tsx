@@ -65,6 +65,15 @@ export const metadata: Metadata = {
     title: `${siteConfig.name} — Movie & TV Show Tracker`,
     description: siteConfig.description,
     url: siteConfig.websiteURL,
+    images: [
+      {
+        url: '/opengraph-image.png',
+        width: siteConfig.openGraph.images.default.width,
+        height: siteConfig.openGraph.images.default.height,
+        alt: siteConfig.openGraph.images.default.alt,
+        type: siteConfig.openGraph.images.default.type,
+      },
+    ],
     ttl: siteConfig.openGraph.ttl,
   },
 
@@ -74,6 +83,7 @@ export const metadata: Metadata = {
     creator: siteConfig.twitter.creator,
     title: `${siteConfig.name} — Movie & TV Show Tracker`,
     description: siteConfig.description,
+    images: ['/opengraph-image.png'],
   },
 
   appleWebApp: {

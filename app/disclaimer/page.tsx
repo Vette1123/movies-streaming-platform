@@ -19,6 +19,21 @@ export const metadata: Metadata = {
     description: `Legal disclaimer for ${siteConfig.name}.`,
     url: `${siteConfig.websiteURL}/disclaimer`,
     type: 'article',
+    images: [
+      {
+        url: '/opengraph-image.png',
+        width: siteConfig.openGraph.images.default.width,
+        height: siteConfig.openGraph.images.default.height,
+        alt: siteConfig.openGraph.images.default.alt,
+        type: siteConfig.openGraph.images.default.type,
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `Disclaimer | ${siteConfig.name}`,
+    description: `Legal disclaimer for ${siteConfig.name}.`,
+    images: ['/opengraph-image.png'],
   },
 }
 
