@@ -8,6 +8,7 @@ interface UseCarouselProps {
   childrenCount: number
   autoPlay?: boolean
   autoPlayInterval?: number
+  storageKey?: string
 }
 
 
@@ -15,14 +16,27 @@ export const useCarousel = ({
   childrenCount,
   autoPlay = true,
   autoPlayInterval = 5000,
+  storageKey,
 }: UseCarouselProps) => {
-  const [currentIndex, setCurrentIndex] = useState(0)
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    if (!storageKey || typeof sessionStorage === 'undefined') return 0
+    const stored = sessionStorage.getItem(storageKey)
+    if (stored === null) return 0
+    const parsed = parseInt(stored, 10)
+    return parsed >= 0 && parsed < childrenCount ? parsed : 0
+  })
   const [direction, setDirection] = useState(0)
   const [isUserInteracting, setIsUserInteracting] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const isMounted = useMounted()
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null)
   const userInteractionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    if (storageKey) {
+      sessionStorage.setItem(storageKey, String(currentIndex))
+    }
+  }, [currentIndex, storageKey])
 
   // Memoized values for performance
   const hasMultipleSlides = useMemo(() => childrenCount > 1, [childrenCount])

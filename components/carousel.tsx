@@ -31,12 +31,14 @@ interface CarouselProps {
   children: React.ReactNode
   autoPlay?: boolean
   autoPlayInterval?: number
+  storageKey?: string
 }
 
 export function Carousel({
   children,
   autoPlay = true,
   autoPlayInterval = 5000,
+  storageKey,
 }: CarouselProps) {
   const childrenArray = React.Children.toArray(children)
   const childrenCount = useMemo(
@@ -61,6 +63,7 @@ export function Carousel({
     childrenCount,
     autoPlay,
     autoPlayInterval,
+    storageKey,
   })
 
   // Memoized slide transition for performance

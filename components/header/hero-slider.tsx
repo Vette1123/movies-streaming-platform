@@ -8,7 +8,7 @@ import { HeroSectionInfo } from '@/components/header/hero-info'
 export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
   return (
     <div className="relative overflow-hidden">
-      <Carousel>
+      <Carousel storageKey="hero-carousel">
         {movies?.map((movie) => (
           <div
             key={movie.id}
