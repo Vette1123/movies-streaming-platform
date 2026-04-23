@@ -1,5 +1,6 @@
 import React from 'react'
 import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import {
   getMovieDetailsById,
   populateMovieDetailsPage,
@@ -22,7 +23,13 @@ export async function generateMetadata(
   const params = await props.params
   const id = params.id
 
-  const movieDetails = await getMovieDetailsById(id)
+  let movieDetails
+  try {
+    movieDetails = await getMovieDetailsById(id)
+  } catch {
+    notFound()
+  }
+  if (!movieDetails?.id) notFound()
 
   const year = movieDetails.release_date?.slice(0, 4)
   const title = year
@@ -88,8 +95,15 @@ export async function generateMetadata(
 
 const MoviePage = async (props: PageDetailsProps) => {
   const params = await props.params
+  let result
+  try {
+    result = await populateMovieDetailsPage(params?.id)
+  } catch {
+    notFound()
+  }
   const { movieCredits, movieDetails, similarMovies, recommendedMovies } =
-    await populateMovieDetailsPage(params?.id)
+    result!
+  if (!movieDetails?.id) notFound()
 
   const jsonLd = movieJsonLd({
     id: movieDetails.id,

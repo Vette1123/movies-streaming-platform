@@ -1,40 +1,55 @@
 import { siteConfig } from '@/config/site'
-import { getPopularMovies, getAllTimeTopRatedMovies, getLatestTrendingMovies } from '@/services/movies'
-import { getPopularSeries, getAllTimeTopRatedSeries, getLatestTrendingSeries } from '@/services/series'
+import {
+  getPopularMovies,
+  getAllTimeTopRatedMovies,
+  getLatestTrendingMovies,
+  getNowPlayingMovies,
+} from '@/services/movies'
+import {
+  getPopularSeries,
+  getAllTimeTopRatedSeries,
+  getLatestTrendingSeries,
+} from '@/services/series'
 import type { MetadataRoute } from 'next'
 
- const baseUrl = siteConfig.websiteURL
+const baseUrl = siteConfig.websiteURL
 
 const generateMovieUrls = async (): Promise<MetadataRoute.Sitemap> => {
   try {
-    // Fetch multiple sources of movies for comprehensive coverage
-    const [popularMovies, topRatedMovies, trendingMovies] = await Promise.all([
+    const [p1, p2, tr1, tr2, tp1, tp2, np] = await Promise.all([
       getPopularMovies({ page: 1 }),
-      getAllTimeTopRatedMovies({ page: 1 }),
+      getPopularMovies({ page: 2 }),
       getLatestTrendingMovies({ page: 1 }),
+      getLatestTrendingMovies({ page: 2 }),
+      getAllTimeTopRatedMovies({ page: 1 }),
+      getAllTimeTopRatedMovies({ page: 2 }),
+      getNowPlayingMovies({ page: 1 }),
     ])
 
-    // Combine all movies and remove duplicates
-    const allMovies = [
-      ...(popularMovies?.results || []),
-      ...(topRatedMovies?.results || []),
-      ...(trendingMovies?.results || []),
+    const all = [
+      ...(p1?.results || []),
+      ...(p2?.results || []),
+      ...(tr1?.results || []),
+      ...(tr2?.results || []),
+      ...(tp1?.results || []),
+      ...(tp2?.results || []),
+      ...(np?.results || []),
     ]
 
-    // Remove duplicates by ID
-    const uniqueMovies = allMovies.filter(
-      (movie, index, self) => 
-        index === self.findIndex(m => m.id === movie.id)
+    const unique = all.filter(
+      (m, i, self) => i === self.findIndex((x) => x.id === m.id)
     )
 
-    return uniqueMovies.map((movie) => ({
+    return unique.map((movie) => ({
       url: `${baseUrl}/movies/${movie.id}`,
-      lastModified: new Date().toISOString(),
+      lastModified: movie.release_date
+        ? new Date(movie.release_date).toISOString()
+        : undefined,
       changeFrequency: 'monthly' as const,
-      priority: 0.8,
-      images: movie.poster_path 
+      priority: (movie as any).popularity > 50 ? 0.8 : 0.6,
+      images: movie.poster_path
         ? [`https://image.tmdb.org/t/p/w500${movie.poster_path}`]
-        : undefined
+        : undefined,
     }))
   } catch (error) {
     console.error('Error generating movie URLs for sitemap:', error)
@@ -44,34 +59,38 @@ const generateMovieUrls = async (): Promise<MetadataRoute.Sitemap> => {
 
 const generateTVShowUrls = async (): Promise<MetadataRoute.Sitemap> => {
   try {
-    // Fetch multiple sources of TV shows for comprehensive coverage
-    const [popularSeries, topRatedSeries, trendingSeries] = await Promise.all([
+    const [p1, p2, tr1, tr2, tp1, tp2] = await Promise.all([
       getPopularSeries({ page: 1 }),
-      getAllTimeTopRatedSeries({ page: 1 }),
+      getPopularSeries({ page: 2 }),
       getLatestTrendingSeries({ page: 1 }),
+      getLatestTrendingSeries({ page: 2 }),
+      getAllTimeTopRatedSeries({ page: 1 }),
+      getAllTimeTopRatedSeries({ page: 2 }),
     ])
 
-    // Combine all series and remove duplicates
-    const allSeries = [
-      ...(popularSeries?.results || []),
-      ...(topRatedSeries?.results || []),
-      ...(trendingSeries?.results || []),
+    const all = [
+      ...(p1?.results || []),
+      ...(p2?.results || []),
+      ...(tr1?.results || []),
+      ...(tr2?.results || []),
+      ...(tp1?.results || []),
+      ...(tp2?.results || []),
     ]
 
-    // Remove duplicates by ID
-    const uniqueSeries = allSeries.filter(
-      (series, index, self) => 
-        index === self.findIndex(s => s.id === series.id)
+    const unique = all.filter(
+      (s, i, self) => i === self.findIndex((x) => x.id === s.id)
     )
 
-    return uniqueSeries.map((series) => ({
+    return unique.map((series) => ({
       url: `${baseUrl}/tv-shows/${series.id}`,
-      lastModified: new Date().toISOString(),
+      lastModified: (series as any).first_air_date
+        ? new Date((series as any).first_air_date).toISOString()
+        : undefined,
       changeFrequency: 'monthly' as const,
-      priority: 0.8,
-      images: series.poster_path 
+      priority: (series as any).popularity > 50 ? 0.8 : 0.6,
+      images: series.poster_path
         ? [`https://image.tmdb.org/t/p/w500${series.poster_path}`]
-        : undefined
+        : undefined,
     }))
   } catch (error) {
     console.error('Error generating TV show URLs for sitemap:', error)
@@ -79,62 +98,48 @@ const generateTVShowUrls = async (): Promise<MetadataRoute.Sitemap> => {
   }
 }
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const currentDate = new Date().toISOString()
+const SITE_LAUNCH_DATE = '2024-01-01T00:00:00.000Z'
 
-  // Static routes with SEO optimization
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
-      lastModified: currentDate,
+      lastModified: SITE_LAUNCH_DATE,
       changeFrequency: 'daily',
       priority: 1.0,
     },
     {
       url: `${baseUrl}/movies`,
-      lastModified: currentDate,
+      lastModified: SITE_LAUNCH_DATE,
       changeFrequency: 'daily',
       priority: 0.9,
     },
     {
       url: `${baseUrl}/tv-shows`,
-      lastModified: currentDate,
+      lastModified: SITE_LAUNCH_DATE,
       changeFrequency: 'daily',
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/watch-history`,
-      lastModified: currentDate,
-      changeFrequency: 'weekly',
-      priority: 0.6,
-    },
-    {
       url: `${baseUrl}/disclaimer`,
-      lastModified: currentDate,
+      lastModified: SITE_LAUNCH_DATE,
       changeFrequency: 'yearly',
       priority: 0.3,
     },
   ]
 
   try {
-    // Generate dynamic routes for movies and TV shows
     const [movieUrls, tvShowUrls] = await Promise.all([
       generateMovieUrls(),
       generateTVShowUrls(),
     ])
 
-    // Combine all routes
-    const allRoutes = [...staticRoutes, ...movieUrls, ...tvShowUrls]
-
-    // Sort by priority (highest first) and then by URL for consistency
-    return allRoutes.sort((a, b) => {
-      const priorityDiff = (b.priority || 0) - (a.priority || 0)
-      if (priorityDiff !== 0) return priorityDiff
-      return a.url.localeCompare(b.url)
+    return [...staticRoutes, ...movieUrls, ...tvShowUrls].sort((a, b) => {
+      const diff = (b.priority || 0) - (a.priority || 0)
+      return diff !== 0 ? diff : a.url.localeCompare(b.url)
     })
   } catch (error) {
     console.error('Error generating sitemap:', error)
-    // Return at least static routes if dynamic generation fails
     return staticRoutes
   }
 }

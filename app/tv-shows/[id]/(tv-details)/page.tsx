@@ -1,5 +1,6 @@
 import React from 'react'
 import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import {
   getSeriesDetailsById,
   populateSeriesDetailsPageData,
@@ -22,7 +23,13 @@ export async function generateMetadata(
   const params = await props.params
   const id = params.id
 
-  const seriesDetails = await getSeriesDetailsById(id)
+  let seriesDetails
+  try {
+    seriesDetails = await getSeriesDetailsById(id)
+  } catch {
+    notFound()
+  }
+  if (!seriesDetails?.id) notFound()
 
   const year = seriesDetails.first_air_date?.slice(0, 4)
   const title = year
@@ -87,8 +94,15 @@ export async function generateMetadata(
 
 const TVSeries = async (props: PageDetailsProps) => {
   const params = await props.params
+  let result
+  try {
+    result = await populateSeriesDetailsPageData(params?.id)
+  } catch {
+    notFound()
+  }
   const { seriesDetails, seriesCredits, similarSeries, recommendedSeries } =
-    await populateSeriesDetailsPageData(params?.id)
+    result!
+  if (!seriesDetails?.id) notFound()
 
   const jsonLd = tvSeriesJsonLd({
     id: seriesDetails.id,

@@ -29,6 +29,9 @@ export const fetchClient = {
         }
       )
 
+      if (!res.ok) {
+        throw new Error(`TMDB API error: ${res.status}`)
+      }
       return await res.json()
     } catch (error: any) {
       console.error(error)
@@ -45,6 +48,9 @@ export const fetchClient = {
         },
         body: JSON.stringify(body),
       })
+      if (!res.ok) {
+        throw new Error(`TMDB API error: ${res.status}`)
+      }
       return await res.json()
     } catch (error: any) {
       console.error(error)
