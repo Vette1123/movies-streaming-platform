@@ -47,7 +47,7 @@ export const DetailsHero = forwardRef<
             ref={ref}
             autoFocus
             content="noindex,nofollow"
-            autoSave={title.toLowerCase().trim()}
+            autoSave={title?.toLowerCase().trim()}
             id={title}
             name={title}
             title={title}
