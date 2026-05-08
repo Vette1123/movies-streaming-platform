@@ -50,6 +50,7 @@ export function Carousel({
     currentIndex,
     direction,
     isDragging,
+    isRestoring,
     isMounted,
     hasMultipleSlides,
     showAllDots,
@@ -110,7 +111,7 @@ export function Carousel({
           <motion.div
             key={`bg-${currentIndex}`}
             variants={CAROUSEL_BACKGROUND_VARIANTS}
-            initial="enter"
+            initial={isRestoring ? 'center' : 'enter'}
             animate="center"
             exit="exit"
             transition={CAROUSEL_BACKGROUND_TRANSITION}
@@ -127,7 +128,7 @@ export function Carousel({
           key={currentIndex}
           custom={direction}
           variants={CAROUSEL_SLIDE_VARIANTS}
-          initial={isMounted ? 'enter' : 'center'}
+          initial={isMounted && !isRestoring ? 'enter' : 'center'}
           animate="center"
           exit="exit"
           transition={slideTransition}

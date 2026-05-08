@@ -18,17 +18,29 @@ export const useCarousel = ({
   autoPlayInterval = 5000,
   storageKey,
 }: UseCarouselProps) => {
-  const [currentIndex, setCurrentIndex] = useState(() => {
-    if (!storageKey || typeof sessionStorage === 'undefined') return 0
-    const stored = sessionStorage.getItem(storageKey)
-    if (stored === null) return 0
-    const parsed = parseInt(stored, 10)
-    return parsed >= 0 && parsed < childrenCount ? parsed : 0
-  })
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [direction, setDirection] = useState(0)
   const [isUserInteracting, setIsUserInteracting] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [isRestoring, setIsRestoring] = useState(false)
   const isMounted = useMounted()
+
+  // Restore saved position after hydration to avoid server/client mismatch
+  useEffect(() => {
+    if (!storageKey) return
+    const stored = sessionStorage.getItem(storageKey)
+    if (stored === null) return
+    const parsed = parseInt(stored, 10)
+    if (parsed > 0 && parsed < childrenCount) {
+      setIsRestoring(true)
+      setCurrentIndex(parsed)
+      // Two rAF frames: first commits the silent jump, second re-enables animations
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setIsRestoring(false))
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null)
   const userInteractionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -193,6 +205,7 @@ export const useCarousel = ({
     direction,
     isUserInteracting,
     isDragging,
+    isRestoring,
     isMounted,
     hasMultipleSlides,
     showAllDots,

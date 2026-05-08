@@ -1,3 +1,5 @@
+import { cache } from 'react'
+
 import { seriesDTO } from '@/dtos/series'
 
 import { Credit } from '@/types/credit'
@@ -29,7 +31,7 @@ const getAllTimeTopRatedSeries = async (params: Param = {}) => {
   return seriesDTO(rawData)
 }
 
-const getSeriesDetailsById = async (id: string, params: Param = {}) => {
+const getSeriesDetailsById = cache(async (id: string, params: Param = {}) => {
   const url = `tv/${id}?language=en-US`
   const seriesDetails = await fetchClient.get<SeriesDetails>(url, params, true)
   // Fetch IMDB rating if imdb_id is available
@@ -45,7 +47,7 @@ const getSeriesDetailsById = async (id: string, params: Param = {}) => {
     ...seriesDetails,
     imdbRating: null,
   }
-}
+})
 
 const getSeriesCreditsById = async (id: string, params: Param = {}) => {
   const url = `tv/${id}/credits?language=en-US`

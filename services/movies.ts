@@ -1,3 +1,5 @@
+import { cache } from 'react'
+
 import {
   getAllTimeTopRatedSeries,
   getLatestTrendingSeries,
@@ -102,7 +104,7 @@ const populateHomePageData = async (): Promise<MultiRequestProps> => {
   }
 }
 
-const getMovieDetailsById = async (id: string, params: Param = {}) => {
+const getMovieDetailsById = cache(async (id: string, params: Param = {}) => {
   const url = `movie/${id}?language=en-US`
   const movieDetails = await fetchClient.get<MovieDetails>(url, params, true)
 
@@ -118,7 +120,7 @@ const getMovieDetailsById = async (id: string, params: Param = {}) => {
     ...movieDetails,
     imdbRating: null,
   }
-}
+})
 
 const getMovieCreditsById = async (id: string, params: Param = {}) => {
   const url = `movie/${id}/credits?language=en-US`

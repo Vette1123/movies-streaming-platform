@@ -18,6 +18,9 @@ const nextConfig = {
     ],
   },
   typescript: { ignoreBuildErrors: false },
+  experimental: {
+    optimizePackageImports: ['framer-motion', 'date-fns'],
+  },
 }
 
 export default nextConfig

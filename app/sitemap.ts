@@ -1,3 +1,5 @@
+export const revalidate = 86400
+
 import { siteConfig } from '@/config/site'
 import {
   getPopularMovies,
