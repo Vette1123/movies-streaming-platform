@@ -17,6 +17,8 @@ import {
 import { MoviesDetailsContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
 
+export const revalidate = 28800
+
 export async function generateMetadata(
   props: PageDetailsProps
 ): Promise<Metadata> {

@@ -12,6 +12,8 @@ import { HeroSlider } from '@/components/header/hero-slider'
 import { FullScreenLoader } from '@/components/loaders/intro-pages-loader'
 import { MoviesIntroSection } from '@/components/main-page/intro-section'
 
+export const revalidate = 28800
+
 const HOME_DESCRIPTION =
   'Discover trending movies and TV shows, track what you watch, and never miss a release. Reely brings the latest, top-rated, and popular titles into one seamless experience.'
 

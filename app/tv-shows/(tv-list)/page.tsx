@@ -11,6 +11,8 @@ import {
 } from '@/lib/structured-data'
 import { MediaContent } from '@/components/media/media-content'
 
+export const revalidate = 28800
+
 const TV_TITLE = `TV Shows — Browse Popular, Trending & Top Rated`
 const TV_DESCRIPTION =
   'Browse popular, trending, and top-rated TV shows. Track what you watch, discover new series, and never miss an episode on Reely.'

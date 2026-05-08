@@ -16,9 +16,9 @@
 		"enabled": true,
 	},
 	"preview_urls": false,
-	// "placement": {
-	// 	"mode": "smart",
-	// },
+	"placement": {
+		"mode": "smart",
+	},
 	"services": [
 		{
 			"binding": "WORKER_SELF_REFERENCE",
@@ -29,10 +29,10 @@
 		"ENVIRONMENT": "production",
 		"NODE_ENV": "production",
 	},
-	// "kv_namespaces": [
-	// 	{
-	// 		"binding": "NEXT_INC_CACHE_KV",
-	// 		"id": "fb4b60e2d15d44cba26f847280e58062"
-	// 	}
-	// ],
+	"kv_namespaces": [
+		{
+			"binding": "NEXT_INC_CACHE_KV",
+			"id": "cd422b9f51424c32b976ee260b967be3"
+		}
+	],
 }

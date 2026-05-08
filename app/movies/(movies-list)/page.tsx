@@ -11,6 +11,8 @@ import {
 } from '@/lib/structured-data'
 import { MediaContent } from '@/components/media/media-content'
 
+export const revalidate = 28800
+
 const MOVIES_TITLE = `Movies — Browse Popular, Trending & Top Rated`
 const MOVIES_DESCRIPTION =
   'Browse popular, trending, and top-rated movies. Filter by genre, year, and rating to find your next watch on Reely.'

@@ -1,15 +1,9 @@
 import { defineCloudflareConfig } from '@opennextjs/cloudflare'
-// import staticAssetsIncrementalCache from '@opennextjs/cloudflare/overrides/incremental-cache/static-assets-incremental-cache'
-// import kvIncrementalCache from '@opennextjs/cloudflare/overrides/incremental-cache/kv-incremental-cache'
+import kvIncrementalCache from '@opennextjs/cloudflare/overrides/incremental-cache/kv-incremental-cache'
 import memoryQueue from '@opennextjs/cloudflare/overrides/queue/memory-queue'
 
-// Enhanced caching configuration for optimal Cloudflare Workers performance
-// This configuration leverages KV incremental cache and cache interception for better performance
-// Based on @opennextjs/cloudflare documentation: https://opennext.js.org/cloudflare
 export default defineCloudflareConfig({
-  // incrementalCache: staticAssetsIncrementalCache,
-  // enableCacheInterception: true,
-  // Use KV incremental cache for ISR/SSG pages - this is the core caching mechanism
-  // incrementalCache: kvIncrementalCache,
+  incrementalCache: kvIncrementalCache,
+  enableCacheInterception: true,
   queue: memoryQueue,
 })
