@@ -29,10 +29,10 @@
 		"ENVIRONMENT": "production",
 		"NODE_ENV": "production",
 	},
-	"kv_namespaces": [
-		{
-			"binding": "NEXT_INC_CACHE_KV",
-			"id": "cd422b9f51424c32b976ee260b967be3"
-		}
-	],
+	// "kv_namespaces": [
+	// 	{
+	// 		"binding": "NEXT_INC_CACHE_KV",
+	// 		"id": "cd422b9f51424c32b976ee260b967be3"
+	// 	}
+	// ],
 }
