@@ -10,37 +10,38 @@ import { DetailsHero } from '@/components/details-hero'
 
 export const SeriesDetailsHero = ({ series }: { series: SeriesDetails }) => {
   const { episodeQueryINT, seasonQueryINT } = useSearchQueryParams()
-  const [isIframeShown, setIsIframeShown] = React.useState(false)
+  const [isVideoShown, setIsVideoShown] = React.useState(false)
+  const [videoUrl, setVideoUrl] = React.useState<string | undefined>()
   const isMounted = useMounted()
-  const iframeRef = React.useRef<HTMLIFrameElement>(null)
 
-  const autoplaySessionURL = `${STREAMING_MOVIES_API_URL}/tv/${series?.id}/${seasonQueryINT}/${episodeQueryINT}`
+  // Mock video URL for testing since we don't have a real m3u8 API
+  const mockVideoUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'
 
   const playDefaultSeries = () => {
-    if (iframeRef.current && !episodeQueryINT && !seasonQueryINT) {
-      setIsIframeShown(true)
-      iframeRef.current.src = `${STREAMING_MOVIES_API_URL}/tv/${series?.id}`
+    if (!episodeQueryINT && !seasonQueryINT) {
+      setIsVideoShown(true)
+      setVideoUrl(mockVideoUrl)
     }
-    if (iframeRef.current && episodeQueryINT && seasonQueryINT) {
-      setIsIframeShown(true)
-      iframeRef.current.src = autoplaySessionURL
+    if (episodeQueryINT && seasonQueryINT) {
+      setIsVideoShown(true)
+      setVideoUrl(mockVideoUrl)
     }
   }
 
   React.useEffect(() => {
-    if (iframeRef.current && episodeQueryINT && seasonQueryINT && isMounted) {
-      setIsIframeShown(true)
-      iframeRef.current.src = autoplaySessionURL
+    if (episodeQueryINT && seasonQueryINT && isMounted) {
+      setIsVideoShown(true)
+      setVideoUrl(mockVideoUrl)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [episodeQueryINT, seasonQueryINT, series?.id])
+  }, [episodeQueryINT, seasonQueryINT, series?.id, isMounted])
 
   return (
     <DetailsHero
       series={series}
-      isIframeShown={isIframeShown}
+      isVideoShown={isVideoShown}
       playVideo={playDefaultSeries}
-      ref={iframeRef}
+      videoUrl={videoUrl}
     />
   )
 }
