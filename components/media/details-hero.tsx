@@ -7,21 +7,21 @@ import { STREAMING_MOVIES_API_URL } from '@/lib/constants'
 import { DetailsHero } from '@/components/details-hero'
 
 export const MovieDetailsHero = ({ movie }: { movie: MovieDetails }) => {
-  const [isIframeShown, setIsIframeShown] = React.useState(false)
-  const iframeRef = React.useRef<HTMLIFrameElement>(null)
+  const [isVideoShown, setIsVideoShown] = React.useState(false)
+  const [videoUrl, setVideoUrl] = React.useState<string | undefined>()
 
   const playVideo = () => {
-    if (iframeRef.current) {
-      setIsIframeShown(true)
-      iframeRef.current.src = `${STREAMING_MOVIES_API_URL}/movie/${movie?.id}`
-    }
+    setIsVideoShown(true)
+    // Mock video URL for testing since we don't have a real m3u8 API
+    setVideoUrl('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8')
   }
+
   return (
     <DetailsHero
       movie={movie}
-      isIframeShown={isIframeShown}
+      isVideoShown={isVideoShown}
       playVideo={playVideo}
-      ref={iframeRef}
+      videoUrl={videoUrl}
     />
   )
 }
