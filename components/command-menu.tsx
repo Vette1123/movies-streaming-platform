@@ -126,7 +126,11 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
           <span className="text-xs">⌘</span>K
         </kbd>
       </Button>
-      <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandDialog
+        open={open}
+        onOpenChange={setOpen}
+        shouldFilter={false}
+      >
         <CommandInput
           placeholder="Type a command or search..."
           onValueChange={debouncedGetMovieResults}
@@ -140,7 +144,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                 movie?.poster_path && (
                   <CommandItem
                     key={movie.id}
-                    value={movie?.title}
+                    value={`${movie.id}-${movie.title}`}
                     className="group/command-item hover:bg-primary-foreground/50 cursor-pointer transition-colors duration-200"
                     onSelect={() => {
                       runCommand(() => {
@@ -152,15 +156,15 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                       })
                     }}
                   >
-                    <div className="flex w-full items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
+                    <div className="flex w-full flex-col items-center justify-between gap-2 text-center sm:flex-row sm:text-left">
+                      <div className="flex flex-col items-center gap-2 sm:flex-row">
                         <Avatar>
                           <AvatarImage
                             src={`${getPosterImageURL(movie.poster_path)}`}
                           />
                           <AvatarFallback>G</AvatarFallback>
                         </Avatar>
-                        <div className="flex flex-col">
+                        <div className="flex flex-col items-center sm:items-start">
                           <p className="max-w-[200px] truncate font-medium md:max-w-xs">
                             {movie?.title}
                           </p>
