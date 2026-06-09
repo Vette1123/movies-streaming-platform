@@ -195,7 +195,7 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
       </head>
       <body
         className={cn(
-          'min-h-screen scroll-smooth bg-background font-sans antialiased',
+          'bg-background min-h-screen scroll-smooth font-sans antialiased',
           fontSans.variable
         )}
       >

@@ -79,14 +79,14 @@ export const FilterDialog = ({
           <Icons.filter className="h-4 w-4" />
           Filters
           {hasActiveFilters && (
-            <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+            <span className="bg-primary text-primary-foreground ml-1 flex h-5 w-5 items-center justify-center rounded-full text-xs">
               !
             </span>
           )}
         </Button>
       </DialogTrigger>
       <DialogContent
-        className="max-w-md max-h-[80vh] overflow-hidden"
+        className="max-h-[80vh] max-w-md overflow-hidden"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >

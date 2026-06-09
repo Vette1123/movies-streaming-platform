@@ -1,3 +1,5 @@
+declare module '@splidejs/react-splide/css'
+
 declare module '@splidejs/react-splide' {
   import * as React from 'react'
   import type { Splide as SplideCore, Options } from '@splidejs/splide'

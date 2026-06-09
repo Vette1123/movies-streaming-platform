@@ -9,7 +9,7 @@ import { HeroRatesInfos } from '@/components/header/hero-rates-info'
 export const HeroSectionInfo = ({ movie }: { movie: Movie }) => {
   return (
     <div className="absolute inset-0 z-50 pb-36 lg:pb-0">
-      <div className="container relative flex h-full items-center justify-center gap-x-8 pt-20 lg:pt-28">
+      <div className="relative container flex h-full items-center justify-center gap-x-8 pt-20 lg:pt-28">
         <div className="flex w-full grow flex-col">
           <div>
             <h2 className="text-sm font-bold lg:text-6xl">

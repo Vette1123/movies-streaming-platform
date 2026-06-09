@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 
@@ -21,13 +21,10 @@ export const AnimatedWatchButton = ({
   movieId,
   mediaType,
 }: AnimatedWatchButtonProps) => {
-  const [shouldAnimate, setShouldAnimate] = useState(!hasAnimated)
+  const shouldAnimate = !hasAnimated
 
   useEffect(() => {
-    if (!hasAnimated) {
-      hasAnimated = true
-      setShouldAnimate(true)
-    }
+    hasAnimated = true
   }, [])
 
   const href =

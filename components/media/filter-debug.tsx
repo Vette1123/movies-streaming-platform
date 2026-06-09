@@ -20,8 +20,8 @@ export const FilterDebug = ({
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 max-w-sm bg-background border rounded-lg p-4 shadow-lg text-xs">
-      <h3 className="font-semibold mb-2">Filter Debug</h3>
+    <div className="bg-background fixed right-4 bottom-4 z-50 max-w-sm rounded-lg border p-4 text-xs shadow-lg">
+      <h3 className="mb-2 font-semibold">Filter Debug</h3>
       <div className="space-y-2">
         <div>
           <strong>Selected Genres:</strong>{' '}
@@ -36,7 +36,7 @@ export const FilterDebug = ({
         </div>
         <div>
           <strong>API Params:</strong>
-          <pre className="text-xs mt-1 bg-muted p-2 rounded overflow-auto max-h-32">
+          <pre className="bg-muted mt-1 max-h-32 overflow-auto rounded p-2 text-xs">
             {JSON.stringify(filterParams, null, 2)}
           </pre>
         </div>

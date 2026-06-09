@@ -22,7 +22,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
       <div className="flex gap-4">
         <button
           onClick={reset}
-          className="rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-80"
+          className="bg-primary text-primary-foreground rounded-md px-5 py-2.5 text-sm font-medium transition-opacity hover:opacity-80"
         >
           Try Again
         </button>

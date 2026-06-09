@@ -40,7 +40,7 @@ export function WatchedItemCard({ item }: WatchedItemCardProps) {
                 height={375}
                 className="cursor-pointer rounded-md object-cover shadow-xl"
               />
-              <div className="absolute right-2 top-2">
+              <div className="absolute top-2 right-2">
                 <Badge variant="secondary">
                   {item.type === 'movie' ? (
                     <Film className="size-4" />
@@ -54,12 +54,12 @@ export function WatchedItemCard({ item }: WatchedItemCardProps) {
               <div className="flex items-baseline justify-between">
                 <h3 className="truncate font-semibold">{item.title}</h3>
                 {item.type === 'series' && (
-                  <span className="ml-2 shrink-0 text-xs text-muted-foreground">
+                  <span className="text-muted-foreground ml-2 shrink-0 text-xs">
                     S{item.season}, E{item.episode}
                   </span>
                 )}
               </div>
-              <div className="mt-2 flex items-center text-xs text-muted-foreground">
+              <div className="text-muted-foreground mt-2 flex items-center text-xs">
                 <CalendarDays className="mr-1 size-3" />
                 {dateFormatter(item.added_at, true)}
               </div>

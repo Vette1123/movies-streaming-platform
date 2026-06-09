@@ -32,7 +32,9 @@ export const useCarousel = ({
     if (stored === null) return
     const parsed = parseInt(stored, 10)
     if (parsed > 0 && parsed < childrenCount) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsRestoring(true)
+       
       setCurrentIndex(parsed)
       // Two rAF frames: first commits the silent jump, second re-enables animations
       requestAnimationFrame(() => {

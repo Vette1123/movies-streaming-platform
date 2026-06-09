@@ -69,7 +69,7 @@ export const FilteredMediaContent = ({
 
   const pages = data?.pages || []
 
-  const FilterComponent = () => {
+  const renderFilter = () => {
     switch (layout) {
       case 'sidebar':
         return (
@@ -123,7 +123,7 @@ export const FilteredMediaContent = ({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {title && <h1 className="text-2xl font-bold">{title}</h1>}
         <div className="flex items-center gap-4">
-          {layout !== 'sidebar' && <FilterComponent />}
+          {layout !== 'sidebar' && renderFilter()}
         </div>
       </div>
 
@@ -140,18 +140,18 @@ export const FilteredMediaContent = ({
       >
         {/* Sidebar Layout - Always visible on desktop to prevent layout shift */}
         {layout === 'sidebar' && (
-          <aside className="hidden lg:block w-80 xl:w-96 flex-shrink-0">
+          <aside className="hidden w-80 flex-shrink-0 lg:block xl:w-96">
             <div className="sticky top-6">
-              <FilterComponent />
+              {renderFilter()}
             </div>
           </aside>
         )}
 
         {/* Content - Always takes remaining space */}
-        <main className="flex-1 min-w-0">
+        <main className="min-w-0 flex-1">
           {/* Mobile Filter for Sidebar Layout */}
           {layout === 'sidebar' && (
-            <div className="lg:hidden mb-6">
+            <div className="mb-6 lg:hidden">
               <FilterSheet
                 mediaType={mediaType}
                 isOpen={isFilterOpen}

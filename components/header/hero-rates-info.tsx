@@ -52,7 +52,7 @@ export const HeroRatesInfos = ({
         <Icons.fullStar className="mr-1 h-6 w-6" />
         {displayRating()}
       </div>
-      <p className="text-xs text-popover-foreground lg:text-base">
+      <p className="text-popover-foreground text-xs lg:text-base">
         {dateFormatter(item?.release_date || item?.first_air_date)}
       </p>
       {movieGenres.map((genre) => (

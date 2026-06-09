@@ -135,7 +135,7 @@ function MobileLink({
       href={href}
       scroll={scroll}
       className={cn(
-        'w-fit text-base font-medium text-foreground/70 transition-colors hover:text-foreground',
+        'text-foreground/70 hover:text-foreground w-fit text-base font-medium transition-colors',
         pathname === href && 'text-secondary-foreground',
         disabled && 'pointer-events-none opacity-60'
       )}

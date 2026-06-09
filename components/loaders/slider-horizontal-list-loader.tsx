@@ -4,14 +4,14 @@ import { SkeletonContainer } from '../ui/skeleton'
 
 export const SliderHorizontalListLoader = () => {
   return (
-    <div className="container h-full pb-10 pt-12 lg:pb-20">
+    <div className="container h-full pt-12 pb-10 lg:pb-20">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5 lg:gap-8">
         {Array.from({ length: 5 }).map((_, i) => (
           <SkeletonContainer key={i}>
             <div className="space-y-3">
-              <div className="h-36 rounded-lg bg-muted/80" />
-              <div className="h-3 w-11/12 rounded-lg bg-muted" />
-              <div className="h-3 w-8/12 rounded-lg bg-muted/70" />
+              <div className="bg-muted/80 h-36 rounded-lg" />
+              <div className="bg-muted h-3 w-11/12 rounded-lg" />
+              <div className="bg-muted/70 h-3 w-8/12 rounded-lg" />
             </div>
           </SkeletonContainer>
         ))}

@@ -18,7 +18,7 @@ export function MainNav({ items }: MainNavProps) {
     <div className="hidden gap-6 md:gap-10 lg:flex">
       <Link href="/" className="flex items-baseline space-x-2">
         <Icons.reelLogo className="h-7 w-7" />
-        <span className="inline-block text-3xl font-bold text-secondary-foreground">
+        <span className="text-secondary-foreground inline-block text-3xl font-bold">
           {siteConfig.name}
         </span>
       </Link>
@@ -32,7 +32,7 @@ export function MainNav({ items }: MainNavProps) {
                   href={item.href}
                   scroll={item.scroll}
                   className={cn(
-                    'flex items-center text-base font-medium text-secondary-foreground',
+                    'text-secondary-foreground flex items-center text-base font-medium',
                     pathname === item.href && 'underline underline-offset-4',
                     buttonVariants({
                       size: 'text',

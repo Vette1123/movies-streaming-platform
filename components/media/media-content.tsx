@@ -28,20 +28,6 @@ export const MediaContent = ({
   filterLayout = 'dialog',
   title,
 }: MediaContentProps) => {
-  // If filters are enabled, use the FilteredMediaContent component
-  if (enableFilters) {
-    const mediaType = queryKey === QUERY_KEYS.MOVIES_KEY ? 'movie' : 'tv'
-    return (
-      <FilteredMediaContent
-        initialData={media}
-        mediaType={mediaType}
-        layout={filterLayout}
-        title={title}
-      />
-    )
-  }
-
-  // Original implementation for backward compatibility
   const [myRef, inView] = useInView({
     threshold: 0,
     rootMargin: '0px 0px 200px 0px',
@@ -53,10 +39,22 @@ export const MediaContent = ({
   })
 
   React.useEffect(() => {
-    if (inView) {
+    if (!enableFilters && inView) {
       fetchNextPage()
     }
-  }, [inView, fetchNextPage])
+  }, [enableFilters, inView, fetchNextPage])
+
+  if (enableFilters) {
+    const mediaType = queryKey === QUERY_KEYS.MOVIES_KEY ? 'movie' : 'tv'
+    return (
+      <FilteredMediaContent
+        initialData={media}
+        mediaType={mediaType}
+        layout={filterLayout}
+        title={title}
+      />
+    )
+  }
 
   if (!data) return <div className="text-muted-foreground">No data found</div>
   const { pages } = data

@@ -142,7 +142,7 @@ export function Carousel({
           whileTap={CAROUSEL_WHILE_TAP}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
-          className="relative z-20 cursor-grab select-none will-change-transform active:cursor-grabbing"
+          className="relative z-20 cursor-grab will-change-transform select-none active:cursor-grabbing"
           style={{
             touchAction: 'pan-y pinch-zoom',
             WebkitUserSelect: 'none',
@@ -296,7 +296,7 @@ export function Carousel({
           {/* Left Arrow */}
           <motion.button
             onClick={() => handleButtonClick(-1)}
-            className="absolute left-3 top-1/2 z-30 -translate-y-1/2 hidden items-center justify-center size-10 rounded-full bg-white/10 backdrop-blur-md text-white opacity-0 transition-all duration-300 hover:bg-white/20 hover:scale-105 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white/30 group-hover:opacity-100 sm:left-6 sm:size-12 lg:flex lg:opacity-0 shadow-lg border border-white/20"
+            className="absolute top-1/2 left-3 z-30 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white opacity-0 shadow-lg backdrop-blur-md transition-all duration-300 group-hover:opacity-100 hover:scale-105 hover:bg-white/20 focus:opacity-100 focus:ring-2 focus:ring-white/30 focus:outline-none sm:left-6 sm:size-12 lg:flex lg:opacity-0"
             aria-label="Previous slide"
             initial={CAROUSEL_ARROW_VARIANTS.initial('left')}
             animate={CAROUSEL_ARROW_VARIANTS.animate}
@@ -315,7 +315,7 @@ export function Carousel({
           {/* Right Arrow */}
           <motion.button
             onClick={() => handleButtonClick(1)}
-            className="absolute right-3 top-1/2 z-30 -translate-y-1/2 hidden items-center justify-center size-10 rounded-full bg-white/10 backdrop-blur-md text-white opacity-0 transition-all duration-300 hover:bg-white/20 hover:scale-105 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white/30 group-hover:opacity-100 sm:right-6 sm:size-12 lg:flex lg:opacity-0 shadow-lg border border-white/20"
+            className="absolute top-1/2 right-3 z-30 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white opacity-0 shadow-lg backdrop-blur-md transition-all duration-300 group-hover:opacity-100 hover:scale-105 hover:bg-white/20 focus:opacity-100 focus:ring-2 focus:ring-white/30 focus:outline-none sm:right-6 sm:size-12 lg:flex lg:opacity-0"
             aria-label="Next slide"
             initial={CAROUSEL_ARROW_VARIANTS.initial('right')}
             animate={CAROUSEL_ARROW_VARIANTS.animate}

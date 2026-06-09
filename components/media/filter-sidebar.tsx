@@ -74,12 +74,12 @@ const FilterSection = ({
   }
 
   return (
-    <div className={cn('border-b border-border/40 pb-4', className)}>
+    <div className={cn('border-border/40 border-b pb-4', className)}>
       <Button
         variant="ghost"
         size="sm"
         onClick={handleToggle}
-        className="w-full justify-between p-0 h-auto font-medium text-sm text-foreground hover:bg-transparent"
+        className="text-foreground h-auto w-full justify-between p-0 text-sm font-medium hover:bg-transparent"
         aria-expanded={isOpen}
       >
         {title}
@@ -148,6 +148,7 @@ export const FilterSidebar = ({
   ])
 
   // Sync local state when filter changes externally (e.g., clear filters)
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     setLocalRating([filter.minRating || 0, filter.maxRating || 10])
     setLocalVotes(filter.minVotes || 0)
@@ -156,6 +157,7 @@ export const FilterSidebar = ({
       to: filter.toDate || '',
     })
     setLocalRuntime([filter.minRuntime || 0, filter.maxRuntime || 300])
+  /* eslint-enable react-hooks/set-state-in-effect */
   }, [
     filter.minRating,
     filter.maxRating,
@@ -244,8 +246,8 @@ export const FilterSidebar = ({
         )}
       </div>
 
-      <ScrollArea className="max-h-[80vh] lg:max-h-full pb-8 lg:pb-0 overflow-y-auto">
-        <div className="space-y-4 lg:space-y-6 pr-4">
+      <ScrollArea className="max-h-[80vh] overflow-y-auto pb-8 lg:max-h-full lg:pb-0">
+        <div className="space-y-4 pr-4 lg:space-y-6">
           {/* Sort */}
           <FilterSection
             title="Sort By"
@@ -272,7 +274,7 @@ export const FilterSidebar = ({
             isOpen={sections.genres}
             onToggle={() => handleSectionToggle('genres')}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {currentGenres.map((genre) => {
                 const isSelected = filter.selectedGenres.includes(genre.id)
                 const isExcluded = filter.excludedGenres.includes(genre.id)
@@ -284,7 +286,7 @@ export const FilterSidebar = ({
                       size="sm"
                       onClick={() => toggleGenre(genre.id, false)}
                       className={cn(
-                        'w-full justify-start text-xs h-8 cursor-pointer',
+                        'h-8 w-full cursor-pointer justify-start text-xs',
                         isSelected && 'bg-primary text-primary-foreground',
                         isExcluded && 'opacity-50'
                       )}
@@ -342,7 +344,7 @@ export const FilterSidebar = ({
           >
             <div className="space-y-4">
               <div className="space-y-3">
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="text-muted-foreground flex justify-between text-xs">
                   <span>Rating Range</span>
                   <span>
                     {localRating[0].toFixed(1)} - {localRating[1].toFixed(1)}
@@ -358,7 +360,7 @@ export const FilterSidebar = ({
                   step={0.1}
                   className="w-full"
                 />
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="text-muted-foreground flex justify-between text-xs">
                   <span>0</span>
                   <span>10</span>
                 </div>
@@ -366,7 +368,7 @@ export const FilterSidebar = ({
                   <Button
                     size="sm"
                     onClick={handleRatingSave}
-                    className="w-full h-7 text-xs"
+                    className="h-7 w-full text-xs"
                   >
                     Save Rating
                   </Button>
@@ -374,7 +376,7 @@ export const FilterSidebar = ({
               </div>
 
               <div className="space-y-3">
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="text-muted-foreground flex justify-between text-xs">
                   <span>Minimum Votes</span>
                   <span>{localVotes}</span>
                 </div>
@@ -386,7 +388,7 @@ export const FilterSidebar = ({
                   step={10}
                   className="w-full"
                 />
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="text-muted-foreground flex justify-between text-xs">
                   <span>0</span>
                   <span>1000+</span>
                 </div>
@@ -394,7 +396,7 @@ export const FilterSidebar = ({
                   <Button
                     size="sm"
                     onClick={handleVotesSave}
-                    className="w-full h-7 text-xs"
+                    className="h-7 w-full text-xs"
                   >
                     Save Votes
                   </Button>
@@ -436,7 +438,7 @@ export const FilterSidebar = ({
                 <Button
                   size="sm"
                   onClick={handleDatesSave}
-                  className="w-full h-7 text-xs"
+                  className="h-7 w-full text-xs"
                 >
                   Save Dates
                 </Button>
@@ -452,7 +454,7 @@ export const FilterSidebar = ({
               onToggle={() => handleSectionToggle('runtime')}
             >
               <div className="space-y-3">
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="text-muted-foreground flex justify-between text-xs">
                   <span>Runtime Range</span>
                   <span>
                     {localRuntime[0]} - {localRuntime[1]} min
@@ -468,7 +470,7 @@ export const FilterSidebar = ({
                   step={5}
                   className="w-full"
                 />
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="text-muted-foreground flex justify-between text-xs">
                   <span>0 min</span>
                   <span>300+ min</span>
                 </div>
@@ -476,7 +478,7 @@ export const FilterSidebar = ({
                   <Button
                     size="sm"
                     onClick={handleRuntimeSave}
-                    className="w-full h-7 text-xs"
+                    className="h-7 w-full text-xs"
                   >
                     Save Runtime
                   </Button>

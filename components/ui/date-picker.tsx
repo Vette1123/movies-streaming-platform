@@ -180,7 +180,7 @@ const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>(
       return (
         <div className={cn('flex flex-col gap-2', className)}>
           {label && (
-            <Label htmlFor={id} className="text-xs text-muted-foreground">
+            <Label htmlFor={id} className="text-muted-foreground text-xs">
               {label}
               {required && <span className="text-destructive ml-1">*</span>}
             </Label>

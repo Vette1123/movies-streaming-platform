@@ -86,7 +86,7 @@ export const Episodes = ({
             <React.Fragment key={episode.id}>
               <p
                 className={cn(
-                  'cursor-pointer rounded-md p-2 text-sm hover:bg-accent',
+                  'hover:bg-accent cursor-pointer rounded-md p-2 text-sm',
                   {
                     'bg-accent':
                       episodeQueryINT === episode?.episode_number &&
