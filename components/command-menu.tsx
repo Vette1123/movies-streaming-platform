@@ -157,28 +157,33 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                     }}
                   >
                     <div className="flex w-full min-w-0 flex-nowrap items-center gap-2 overflow-hidden">
-                      <Avatar className="size-8 shrink-0">
+                      <Avatar className="size-9 shrink-0">
                         <AvatarImage
                           src={`${getPosterImageURL(movie.poster_path)}`}
                         />
                         <AvatarFallback>G</AvatarFallback>
                       </Avatar>
-                      <p className="min-w-0 flex-1 truncate text-sm">
-                        <span className="font-medium">{movie?.title}</span>
-                        {movie?.release_date && (
-                          <span className="text-muted-foreground hidden text-xs sm:inline">
-                            {' '}
-                            • {movie.release_date.split('-')[0]}
-                            {movie.vote_average
-                              ? ` • ${movie.vote_average.toFixed(1)}★`
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <p className="truncate text-sm font-medium">
+                          {movie?.title}
+                        </p>
+                        {(movie?.release_date || movie?.vote_average) && (
+                          <p className="text-muted-foreground truncate text-xs">
+                            {movie?.release_date &&
+                              movie.release_date.split('-')[0]}
+                            {movie?.release_date && movie?.vote_average
+                              ? ' • '
                               : ''}
-                          </span>
+                            {movie?.vote_average
+                              ? `${movie.vote_average.toFixed(1)}★`
+                              : ''}
+                          </p>
                         )}
-                      </p>
+                      </div>
                       {movie?.media_type && (
                         <Badge
                           variant="outline"
-                          className="bg-primary-foreground/70 shrink-0 text-xs"
+                          className="bg-primary-foreground/70 shrink-0 text-xs capitalize"
                         >
                           {movie.media_type}
                         </Badge>
