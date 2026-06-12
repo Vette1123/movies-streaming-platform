@@ -37,16 +37,11 @@
 			"service": "movies-streaming-platform",
 		},
 	],
+	// Preserve vars configured in the Cloudflare Dashboard on deploy
+	"keep_vars": true,
 	"vars": {
 		"ENVIRONMENT": "production",
 		"NODE_ENV": "production",
-		"NEXT_PUBLIC_BASE_URL": "https://www.reely.space",
-		"NEXT_PUBLIC_IMAGE_CACHE_HOST_URL": "https://ik.imagekit.io/sj10xynjt",
-		"NEXT_PUBLIC_POSTHOG_HOST": "https://us.i.posthog.com",
-		"NEXT_PUBLIC_POSTHOG_KEY": "phc_BeFe3x457Mm3sJfMJ1r4uHi9ZL10J4B1PZHaapNIFBR",
-		"NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE": "https://www.google.com/search?q=",
-		"NEXT_PUBLIC_STREAMING_MOVIES_API_URL": "https://vidsrc.to/embed",
-		"NEXT_PUBLIC_TMDB_BASEURL": "https://api.themoviedb.org/3/",
 	},
 	// "kv_namespaces": [
 	// 	{
