@@ -156,36 +156,33 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                       })
                     }}
                   >
-                    <div className="flex w-full flex-col items-center justify-between gap-2 text-center sm:flex-row sm:text-left">
-                      <div className="flex flex-col items-center gap-2 sm:flex-row">
-                        <Avatar>
-                          <AvatarImage
-                            src={`${getPosterImageURL(movie.poster_path)}`}
-                          />
-                          <AvatarFallback>G</AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col items-center sm:items-start">
-                          <p className="max-w-[200px] truncate font-medium md:max-w-xs">
-                            {movie?.title}
-                          </p>
-                          {movie?.release_date && (
-                            <p className="text-muted-foreground text-xs">
-                              {movie.release_date.split('-')[0]}
-                              {movie.vote_average
-                                ? ` • ${movie.vote_average.toFixed(1)}★`
-                                : ''}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div>
+                    <div className="flex w-full min-w-0 flex-nowrap items-center gap-2 overflow-hidden">
+                      <Avatar className="size-8 shrink-0">
+                        <AvatarImage
+                          src={`${getPosterImageURL(movie.poster_path)}`}
+                        />
+                        <AvatarFallback>G</AvatarFallback>
+                      </Avatar>
+                      <p className="min-w-0 flex-1 truncate text-sm">
+                        <span className="font-medium">{movie?.title}</span>
+                        {movie?.release_date && (
+                          <span className="text-muted-foreground hidden text-xs sm:inline">
+                            {' '}
+                            • {movie.release_date.split('-')[0]}
+                            {movie.vote_average
+                              ? ` • ${movie.vote_average.toFixed(1)}★`
+                              : ''}
+                          </span>
+                        )}
+                      </p>
+                      {movie?.media_type && (
                         <Badge
                           variant="outline"
-                          className="bg-primary-foreground/70 text-xs"
+                          className="bg-primary-foreground/70 shrink-0 text-xs"
                         >
-                          {movie?.media_type}
+                          {movie.media_type}
                         </Badge>
-                      </div>
+                      )}
                     </div>
                   </CommandItem>
                 )
