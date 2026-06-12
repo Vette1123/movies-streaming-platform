@@ -3,7 +3,7 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"main": ".open-next/worker.js",
 	"name": "movies-streaming-platform",
-	"compatibility_date": "2025-06-01",
+	"compatibility_date": "2026-06-11",
 	"compatibility_flags": [
 		"nodejs_compat",
 		"global_fetch_strictly_public"
