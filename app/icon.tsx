@@ -1,12 +1,12 @@
 import { ImageResponse } from 'next/og'
 
+import { loadInter } from './_fonts/load'
+
 export const size = { width: 64, height: 64 }
 export const contentType = 'image/png'
 
 export default async function Icon() {
-  const font = await fetch(
-    new URL('./_fonts/Inter-Black.woff', import.meta.url)
-  ).then((r) => r.arrayBuffer())
+  const font = await loadInter(900, 'R')
 
   return new ImageResponse(
     (

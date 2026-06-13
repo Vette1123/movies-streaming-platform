@@ -1,18 +1,20 @@
 import { ImageResponse } from 'next/og'
 
+import { loadInter } from './_fonts/load'
+
 export const alt =
   'Reely — Watch movies & TV shows free. Discover, track, and stream.'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
+const BLACK_GLYPHS = 'Reely'
+const BOLD_GLYPHS =
+  'Watch movies & TV shows. Free.Discover, track, and stream thousands of trending titles — no signup, no paywall.FREE TO STREAMreely.spaceMOVIESTV SHOWSTRENDINGMade bymohamedgado.com'
+
 export default async function OpenGraphImage() {
   const [interBlack, interBold] = await Promise.all([
-    fetch(new URL('./_fonts/Inter-Black.woff', import.meta.url)).then((r) =>
-      r.arrayBuffer()
-    ),
-    fetch(new URL('./_fonts/Inter-Bold.woff', import.meta.url)).then((r) =>
-      r.arrayBuffer()
-    ),
+    loadInter(900, BLACK_GLYPHS),
+    loadInter(700, BOLD_GLYPHS),
   ])
 
   return new ImageResponse(
