@@ -3,7 +3,8 @@
 // What this configures (all free-plan features):
 //   1. Custom rule: allowlist social scrapers + search bots (skip later WAF/RL)
 //   2. Custom rule: challenge obvious scraper UAs (python-requests, curl, etc.)
-//   3. Rate limit: 60 req/min per IP on /movies/[id] and /tv-shows/[id]
+//   3. Rate limit: 100 req/10s per IP on /movies/[id] and /tv-shows/[id]
+//      (high on purpose — see RATELIMIT_RULE: must clear Next.js prefetch bursts)
 //   4. Bot Fight Mode: enabled
 //
 // Idempotent — managed rules are identified by description prefix "[reely-waf]"
@@ -160,12 +161,19 @@ const RATELIMIT_RULE = {
     'starts_with(http.request.uri.path, "/movies/") or starts_with(http.request.uri.path, "/tv-shows/")',
   // Free plan only allows `block` for rate limits (no managed_challenge).
   action: 'block',
-  // Free plan caps period to 10s. 15 req/10s ≈ 90/min — well above human
-  // browsing (clicking through pages), tight enough to bite bulk scrapers.
+  // Free plan caps period to 10s and only lets the expression match on Path /
+  // Verified Bot — NOT query string or headers. That matters: Next.js App
+  // Router <Link> prefetches detail pages (`/movies/[id]?_rsc=...`) as they
+  // enter the viewport, and those hit the SAME path as real navigation, so we
+  // cannot exclude them. A content-dense grid can fire dozens of prefetches in
+  // one 10s window. The threshold therefore has to clear a normal browser's
+  // prefetch burst, not just human page-views: 100 req/10s (~600/min) sits well
+  // above any real scroll-and-browse session while still blocking bulk scrapers
+  // that hammer full HTML pages. Lower it only if you confirm prefetch is off.
   ratelimit: {
     characteristics: ['ip.src', 'cf.colo.id'],
     period: 10,
-    requests_per_period: 15,
+    requests_per_period: 100,
     mitigation_timeout: 10,
   },
 }
