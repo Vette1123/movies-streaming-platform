@@ -79,8 +79,11 @@ function cleanRule(r) {
   return out
 }
 
-async function putRuleset(zoneId, ruleset, managedRules, position) {
-  const others = stripManaged(ruleset.rules).map(cleanRule)
+async function putRuleset(zoneId, ruleset, managedRules, opts = {}) {
+  const { position = 'top', replaceAll = false } = opts
+  const others = replaceAll
+    ? []
+    : stripManaged(ruleset.rules).map(cleanRule)
   const ours = managedRules.map(cleanRule)
   const rules = position === 'top' ? [...ours, ...others] : [...others, ...ours]
   await cf(`/zones/${zoneId}/rulesets/${ruleset.id}`, {
@@ -150,13 +153,20 @@ const BLOCK_RULE = {
 
 const RATELIMIT_RULE = {
   description: `${TAG} rate limit detail page scraping`,
-  expression: '(http.request.uri.path matches "^/(movies|tv-shows)/[0-9]+/?$")',
-  action: 'managed_challenge',
+  // Free plan doesn't allow `matches` (regex) in rate-limit expressions;
+  // starts_with is the closest. `/movies` and `/tv-shows` (list pages) don't
+  // have a trailing slash, so they're not caught — only detail pages match.
+  expression:
+    'starts_with(http.request.uri.path, "/movies/") or starts_with(http.request.uri.path, "/tv-shows/")',
+  // Free plan only allows `block` for rate limits (no managed_challenge).
+  action: 'block',
+  // Free plan caps period to 10s. 15 req/10s ≈ 90/min — well above human
+  // browsing (clicking through pages), tight enough to bite bulk scrapers.
   ratelimit: {
-    characteristics: ['ip.src'],
-    period: 60,
-    requests_per_period: 60,
-    mitigation_timeout: 60,
+    characteristics: ['ip.src', 'cf.colo.id'],
+    period: 10,
+    requests_per_period: 15,
+    mitigation_timeout: 10,
   },
 }
 
@@ -167,11 +177,13 @@ async function main() {
   console.log(`Zone: ${ZONE_NAME} (${zoneId})`)
 
   const customRs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_firewall_custom')
-  await putRuleset(zoneId, customRs, [ALLOW_RULE, BLOCK_RULE], 'top')
+  await putRuleset(zoneId, customRs, [ALLOW_RULE, BLOCK_RULE], { position: 'top' })
   console.log('✓ Custom rules: allowlist + block-scrapers')
 
+  // Free plan allows only 1 rate-limit rule. We replace any existing rule
+  // (e.g. the default "Leaked credential check") since Reely has no auth.
   const rlRs = await getOrCreatePhaseEntrypoint(zoneId, 'http_ratelimit')
-  await putRuleset(zoneId, rlRs, [RATELIMIT_RULE], 'top')
+  await putRuleset(zoneId, rlRs, [RATELIMIT_RULE], { replaceAll: true })
   console.log('✓ Rate limit: /movies/[id] and /tv-shows/[id]')
 
   try {
