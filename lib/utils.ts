@@ -19,6 +19,14 @@ function getPosterImageURL(path: string) {
   return `${apiConfig.w500Image(path)}`
 }
 
+function getThumbPosterURL(path: string) {
+  return `${apiConfig.w185Image(path)}`
+}
+
+function getThumbBackdropURL(path: string) {
+  return `${apiConfig.w300Image(path)}`
+}
+
 function dateFormatter(date: string, showDay: boolean = false) {
   if (!date) return 'N/A'
   return new Date(date).toLocaleDateString('en-US', {
@@ -94,6 +102,8 @@ export {
   cn,
   getImageURL,
   getPosterImageURL,
+  getThumbPosterURL,
+  getThumbBackdropURL,
   dateFormatter,
   getGenres,
   numberRounder,

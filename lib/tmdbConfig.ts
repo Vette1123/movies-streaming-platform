@@ -7,6 +7,8 @@ const apiConfig = {
   originalImage: (imgPath: string) =>
     `${IMAGE_CACHE_HOST_URL}/original${imgPath}`,
   w500Image: (imgPath: string) => `${IMAGE_CACHE_HOST_URL}/w500${imgPath}`,
+  w185Image: (imgPath: string) => `${IMAGE_CACHE_HOST_URL}/w185${imgPath}`,
+  w300Image: (imgPath: string) => `${IMAGE_CACHE_HOST_URL}/w300${imgPath}`,
 }
 
 // old

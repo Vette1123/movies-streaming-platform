@@ -1,15 +1,16 @@
 'use client'
 
 import * as React from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { searchMovieAction } from '@/actions/search'
-import { Home, Search, Tv } from 'lucide-react'
+import { Film, Home, Search, Tv } from 'lucide-react'
 import { useDebouncedCallback } from 'use-debounce'
 
 import { MediaType } from '@/types/media'
 import { siteConfig } from '@/config/site'
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
-import { cn, getPosterImageURL } from '@/lib/utils'
+import { cn, getThumbBackdropURL, getThumbPosterURL } from '@/lib/utils'
 import { useCMDKListener } from '@/hooks/use-cmdk-listener'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -29,30 +30,47 @@ import { Badge } from './ui/badge'
 
 type SearchStatus = 'idle' | 'loading' | 'empty' | 'results'
 
-const handleUniqueTitle = (movie: MediaType, isDuplicate: boolean) => {
-  if (!isDuplicate) return movie.title
+const compactNumber = new Intl.NumberFormat('en', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+})
 
-  const parts: string[] = []
+const escapeRegExp = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-  if (movie.release_date) {
-    const year = movie.release_date.split('-')[0]
-    parts.push(year)
-  }
+const HighlightedText = React.memo(function HighlightedText({
+  text,
+  query,
+}: {
+  text: string
+  query: string
+}) {
+  if (!text) return null
+  if (!query) return <>{text}</>
 
-  if (movie.media_type) {
-    parts.push(movie.media_type)
-  }
+  const parts = text.split(new RegExp(`(${escapeRegExp(query)})`, 'i'))
+  const lowered = query.toLowerCase()
 
-  if (movie.vote_average) {
-    parts.push(`${movie.vote_average.toFixed(1)}★`)
-  }
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === lowered ? (
+          <mark
+            key={i}
+            className="bg-primary/25 text-foreground rounded-sm px-0.5"
+          >
+            {part}
+          </mark>
+        ) : (
+          <React.Fragment key={i}>{part}</React.Fragment>
+        )
+      )}
+    </>
+  )
+})
 
-  if (parts.length > 0) {
-    return `${movie.title} (${parts.join(' • ')})`
-  }
-
-  return movie.title
-}
+const mediaHref = (movie: MediaType) =>
+  movie?.media_type === 'tv' ? `/tv-shows/${movie.id}` : `/movies/${movie.id}`
 
 export function CommandMenu({ ...props }: CommandDialogProps) {
   const { open, setOpen, runCommand, isLoading, setIsLoading } =
@@ -64,6 +82,8 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
 
   // Sequence id to drop stale responses when the user types quickly.
   const requestSeqRef = React.useRef(0)
+  // Tracks last result count so skeletons match list height between queries.
+  const [skeletonCount, setSkeletonCount] = React.useState(4)
 
   const trimmedQuery = query.trim()
 
@@ -75,8 +95,16 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
       try {
         const res = await searchMovieAction({ query: trimmed })
         if (seq !== requestSeqRef.current) return
-        setData(res?.results ?? [])
+        const results = res?.results ?? []
+        setData(results)
         setHasSearched(true)
+        const renderable = results.filter(
+          (m) =>
+            m?.media_type !== ('person' as MediaType['media_type'])
+        ).length
+        if (renderable > 0) {
+          setSkeletonCount(Math.max(3, Math.min(6, renderable)))
+        }
       } catch {
         if (seq !== requestSeqRef.current) return
         setData([])
@@ -96,7 +124,6 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
     setQuery(value)
     const trimmed = value.trim()
     if (!trimmed) {
-      // Cancel any pending search and reset to idle.
       debouncedRunSearch.cancel()
       requestSeqRef.current++
       setData([])
@@ -104,7 +131,6 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
       setIsLoading(false)
       return
     }
-    // Show loading immediately for tighter feedback, even before the debounce fires.
     setIsLoading(true)
     debouncedRunSearch(trimmed)
   }
@@ -112,7 +138,6 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
   const handleOpenChange = (next: boolean) => {
     setOpen(next)
     if (!next) {
-      // Reset everything when the dialog closes so reopening is clean.
       debouncedRunSearch.cancel()
       requestSeqRef.current++
       setQuery('')
@@ -122,37 +147,14 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
     }
   }
 
-  const deduplicatedData: MediaType[] = React.useMemo(() => {
-    if (!data?.length) return []
-
-    const titleCounts: Record<string, number> = {}
-    data.forEach((movie) => {
-      if (movie?.title) {
-        const lowercaseTitle = movie.title.toLowerCase()
-        titleCounts[lowercaseTitle] = (titleCounts[lowercaseTitle] || 0) + 1
-      }
-    })
-
-    const processedData = data.map((movie) => {
-      if (!movie?.title) return movie
-
-      const lowercaseTitle = movie.title.toLowerCase()
-      const isDuplicate = titleCounts[lowercaseTitle] > 1
-      const uniqueTitle = handleUniqueTitle(movie, isDuplicate)
-
-      return { ...movie, title: uniqueTitle }
-    })
-
-    return processedData.sort((a, b) => {
-      const voteA = a.vote_average || 0
-      const voteB = b.vote_average || 0
-      return voteB - voteA
-    })
-  }, [data])
-
   const visibleResults = React.useMemo(
-    () => deduplicatedData.filter((movie) => movie?.poster_path),
-    [deduplicatedData]
+    () =>
+      (data ?? [])
+        .filter((movie) => movie?.media_type !== ('person' as MediaType['media_type']))
+        .sort(
+          (a, b) => (b?.vote_average ?? 0) - (a?.vote_average ?? 0)
+        ),
+    [data]
   )
 
   const status: SearchStatus = !trimmedQuery
@@ -162,6 +164,13 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
       : hasSearched && visibleResults.length === 0
         ? 'empty'
         : 'results'
+
+  const resultsHeading =
+    status === 'results' && visibleResults.length > 0
+      ? `Search Movies & Series · ${visibleResults.length} ${
+          visibleResults.length === 1 ? 'result' : 'results'
+        }`
+      : 'Search Movies & Series...'
 
   return (
     <>
@@ -190,7 +199,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
           isLoading={isLoading}
         />
         <CommandList>
-          <CommandGroup heading="Search Movies & Series...">
+          <CommandGroup heading={resultsHeading}>
             {status === 'idle' && (
               <div
                 role="status"
@@ -209,15 +218,16 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                 className="flex flex-col gap-1 py-1"
               >
                 <span className="sr-only">Searching…</span>
-                {Array.from({ length: 4 }).map((_, i) => (
+                {Array.from({ length: skeletonCount }).map((_, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-2 px-2 py-2"
+                    className="flex items-center gap-3 px-2 py-2"
                   >
-                    <Skeleton className="size-9 shrink-0 rounded-full" />
+                    <Skeleton className="aspect-video h-[54px] shrink-0 rounded-md" />
                     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                       <Skeleton className="h-3.5 w-1/2" />
-                      <Skeleton className="h-3 w-1/4" />
+                      <Skeleton className="h-3 w-1/3" />
+                      <Skeleton className="h-3 w-3/4" />
                     </div>
                     <Skeleton className="h-5 w-12 shrink-0 rounded-full" />
                   </div>
@@ -229,71 +239,137 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
               <div
                 role="status"
                 aria-live="polite"
-                className="flex flex-col items-center justify-center gap-1 py-6 text-center"
+                className="flex flex-col items-center justify-center gap-1 px-4 py-6 text-center"
               >
                 <Icons.search
                   className="text-muted-foreground size-5"
                   aria-hidden
                 />
                 <p className="text-sm font-medium">No results found</p>
-                <p className="text-muted-foreground max-w-[260px] truncate text-xs">
+                <p className="text-muted-foreground w-full text-xs break-words">
                   Nothing matched “{trimmedQuery}”. Try a different title.
                 </p>
               </div>
             )}
 
             {status === 'results' &&
-              visibleResults.map((movie) => (
-                <CommandItem
-                  key={movie.id}
-                  value={`${movie.id}-${movie.title}`}
-                  className="group/command-item hover:bg-primary-foreground/50 cursor-pointer transition-colors duration-200"
-                  onSelect={() => {
-                    runCommand(() => {
-                      if (movie?.media_type && movie?.media_type === 'tv') {
-                        router.push(`/tv-shows/${movie.id}`)
-                        return
-                      }
-                      router.push(`/movies/${movie.id}`)
-                    })
-                  }}
-                >
-                  <div className="flex w-full min-w-0 flex-nowrap items-center gap-2 overflow-hidden">
-                    <Avatar className="size-9 shrink-0">
-                      <AvatarImage
-                        src={`${getPosterImageURL(movie.poster_path)}`}
-                      />
-                      <AvatarFallback>G</AvatarFallback>
-                    </Avatar>
-                    <div className="flex min-w-0 flex-1 flex-col">
-                      <p className="truncate text-sm font-medium">
-                        {movie?.title}
-                      </p>
-                      {(movie?.release_date || movie?.vote_average) && (
-                        <p className="text-muted-foreground truncate text-xs">
-                          {movie?.release_date &&
-                            movie.release_date.split('-')[0]}
-                          {movie?.release_date && movie?.vote_average
-                            ? ' • '
-                            : ''}
-                          {movie?.vote_average
-                            ? `${movie.vote_average.toFixed(1)}★`
-                            : ''}
-                        </p>
-                      )}
-                    </div>
-                    {movie?.media_type && (
-                      <Badge
-                        variant="outline"
-                        className="bg-primary-foreground/70 shrink-0 text-xs capitalize"
-                      >
-                        {movie.media_type}
-                      </Badge>
-                    )}
-                  </div>
-                </CommandItem>
-              ))}
+              visibleResults.map((movie) => {
+                const href = mediaHref(movie)
+                const year = movie?.release_date
+                  ? movie.release_date.split('-')[0]
+                  : null
+                const rating = movie?.vote_average
+                  ? movie.vote_average.toFixed(1)
+                  : null
+                const votes = movie?.vote_count
+                  ? compactNumber.format(movie.vote_count)
+                  : null
+                const showOriginal =
+                  !!movie?.original_title &&
+                  movie.original_title.toLowerCase() !==
+                    (movie?.title ?? '').toLowerCase()
 
+                return (
+                  <CommandItem
+                    key={`${movie.media_type ?? 'movie'}-${movie.id}`}
+                    value={`${movie.id}-${movie.title}`}
+                    className="group/command-item hover:bg-primary-foreground/50 cursor-pointer transition-colors duration-200"
+                    onSelect={() => {
+                      runCommand(() => router.push(href))
+                    }}
+                    onMouseEnter={() => router.prefetch(href)}
+                    onFocus={() => router.prefetch(href)}
+                  >
+                    <div className="flex w-full min-w-0 flex-nowrap items-center gap-3 overflow-hidden">
+                      {movie?.backdrop_path ? (
+                        <div className="bg-muted ring-border/60 relative aspect-video h-[54px] shrink-0 overflow-hidden rounded-md shadow-sm ring-1">
+                          <Image
+                            src={getThumbBackdropURL(movie.backdrop_path)}
+                            alt={movie?.title ?? ''}
+                            fill
+                            sizes="96px"
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                      ) : movie?.poster_path ? (
+                        <div className="bg-muted ring-border/60 relative aspect-video h-[54px] shrink-0 overflow-hidden rounded-md shadow-sm ring-1">
+                          <Image
+                            src={getThumbPosterURL(movie.poster_path)}
+                            alt={movie?.title ?? ''}
+                            fill
+                            sizes="96px"
+                            className="object-cover object-top"
+                            unoptimized
+                          />
+                        </div>
+                      ) : (
+                        <div className="bg-muted text-muted-foreground ring-border/60 flex aspect-video h-[54px] shrink-0 items-center justify-center rounded-md shadow-sm ring-1">
+                          {movie?.media_type === 'tv' ? (
+                            <Tv className="size-4" aria-hidden />
+                          ) : (
+                            <Film className="size-4" aria-hidden />
+                          )}
+                        </div>
+                      )}
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <p className="truncate text-sm font-medium">
+                          <HighlightedText
+                            text={movie?.title ?? ''}
+                            query={trimmedQuery}
+                          />
+                        </p>
+                        {(year || rating || showOriginal) && (
+                          <p className="text-muted-foreground truncate text-xs">
+                            {showOriginal && (
+                              <span className="italic">
+                                {movie.original_title}
+                              </span>
+                            )}
+                            {showOriginal && (year || rating) && ' • '}
+                            {year}
+                            {year && rating && ' • '}
+                            {rating && (
+                              <>
+                                {rating}★
+                                {votes && (
+                                  <span className="text-muted-foreground/80">
+                                    {' '}
+                                    · {votes}
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </p>
+                        )}
+                        {movie?.overview && (
+                          <p className="text-muted-foreground/90 line-clamp-2 text-xs leading-snug">
+                            {movie.overview}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        {movie?.media_type && (
+                          <Badge
+                            variant="outline"
+                            className="bg-primary-foreground/70 text-xs capitalize"
+                          >
+                            {movie.media_type}
+                          </Badge>
+                        )}
+                        {movie?.adult && (
+                          <Badge
+                            variant="outline"
+                            className="border-destructive/40 text-destructive text-[10px]"
+                          >
+                            18+
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CommandItem>
+                )
+              })}
           </CommandGroup>
           <CommandSeparator />
           <CommandGroup heading="Shortcuts...">
@@ -350,6 +426,31 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
           </CommandGroup>
           <CommandSeparator />
         </CommandList>
+        <div
+          className="text-muted-foreground bg-muted/30 flex items-center justify-between gap-2 border-t px-3 py-2 text-[11px]"
+          aria-hidden
+        >
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1">
+              <kbd className="bg-background rounded border px-1 font-mono">
+                ↑↓
+              </kbd>
+              navigate
+            </span>
+            <span className="flex items-center gap-1">
+              <kbd className="bg-background rounded border px-1 font-mono">
+                ↵
+              </kbd>
+              open
+            </span>
+          </div>
+          <span className="flex items-center gap-1">
+            <kbd className="bg-background rounded border px-1 font-mono">
+              esc
+            </kbd>
+            close
+          </span>
+        </div>
       </CommandDialog>
     </>
   )
