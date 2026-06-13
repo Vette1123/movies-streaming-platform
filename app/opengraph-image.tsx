@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
 import { ImageResponse } from 'next/og'
 
 export const alt =
@@ -7,14 +5,14 @@ export const alt =
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-async function loadFont(filename: string) {
-  return readFile(join(process.cwd(), 'app', '_fonts', filename))
-}
-
 export default async function OpenGraphImage() {
   const [interBlack, interBold] = await Promise.all([
-    loadFont('Inter-Black.woff'),
-    loadFont('Inter-Bold.woff'),
+    fetch(new URL('./_fonts/Inter-Black.woff', import.meta.url)).then((r) =>
+      r.arrayBuffer()
+    ),
+    fetch(new URL('./_fonts/Inter-Bold.woff', import.meta.url)).then((r) =>
+      r.arrayBuffer()
+    ),
   ])
 
   return new ImageResponse(

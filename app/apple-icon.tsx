@@ -1,14 +1,12 @@
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
 import { ImageResponse } from 'next/og'
 
 export const size = { width: 180, height: 180 }
 export const contentType = 'image/png'
 
 export default async function AppleIcon() {
-  const font = await readFile(
-    join(process.cwd(), 'app', '_fonts', 'Inter-Black.woff')
-  )
+  const font = await fetch(
+    new URL('./_fonts/Inter-Black.woff', import.meta.url)
+  ).then((r) => r.arrayBuffer())
 
   return new ImageResponse(
     (
