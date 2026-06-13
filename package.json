@@ -14,7 +14,7 @@
     "build:worker": "pnpm opennextjs-cloudflare build",
     "preview:worker": "pnpm opennextjs-cloudflare preview",
     "preview": "pnpm build:worker && pnpm preview:worker",
-    "deploy": "pnpm build:worker && pnpm opennextjs-cloudflare deploy"
+    "deploy": "pnpm build:worker && node scripts/cf-deploy.mjs"
   },
   "dependencies": {
     "@next/third-parties": "16.2.7",
