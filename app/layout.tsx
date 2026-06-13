@@ -65,15 +65,6 @@ export const metadata: Metadata = {
     title: `${siteConfig.name} — Movie & TV Show Tracker`,
     description: siteConfig.description,
     url: siteConfig.websiteURL,
-    images: [
-      {
-        url: '/opengraph-image.png',
-        width: siteConfig.openGraph.images.default.width,
-        height: siteConfig.openGraph.images.default.height,
-        alt: siteConfig.openGraph.images.default.alt,
-        type: siteConfig.openGraph.images.default.type,
-      },
-    ],
     ttl: siteConfig.openGraph.ttl,
   },
 
@@ -83,20 +74,12 @@ export const metadata: Metadata = {
     creator: siteConfig.twitter.creator,
     title: `${siteConfig.name} — Movie & TV Show Tracker`,
     description: siteConfig.description,
-    images: ['/opengraph-image.png'],
   },
 
   appleWebApp: {
     capable: siteConfig.pwa.capable,
     title: siteConfig.name,
     statusBarStyle: siteConfig.pwa.statusBarStyle as 'black-translucent',
-    startupImage: [
-      {
-        url: siteConfig.pwa.startupImage,
-        media:
-          '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)',
-      },
-    ],
   },
 
   appLinks: {
@@ -109,19 +92,6 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    icon: [
-      { url: siteConfig.icons.favicon, sizes: 'any' },
-      { url: siteConfig.icons.favicon16, sizes: '16x16', type: 'image/png' },
-      { url: siteConfig.icons.favicon32, sizes: '32x32', type: 'image/png' },
-    ],
-    shortcut: siteConfig.icons.favicon,
-    apple: [
-      {
-        url: siteConfig.icons.appleTouchIcon,
-        sizes: '180x180',
-        type: 'image/png',
-      },
-    ],
     other: [
       {
         rel: 'mask-icon',

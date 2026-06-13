@@ -37,21 +37,11 @@ export const metadata: Metadata = {
     description: TV_DESCRIPTION,
     url: TV_URL,
     type: 'website',
-    images: [
-      {
-        url: '/opengraph-image.png',
-        width: siteConfig.openGraph.images.default.width,
-        height: siteConfig.openGraph.images.default.height,
-        alt: siteConfig.openGraph.images.default.alt,
-        type: siteConfig.openGraph.images.default.type,
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: TV_TITLE,
     description: TV_DESCRIPTION,
-    images: ['/opengraph-image.png'],
   },
 }
 
