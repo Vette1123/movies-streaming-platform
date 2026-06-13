@@ -16,56 +16,56 @@ export default async function AppleIcon() {
         style={{
           width: '100%',
           height: '100%',
-          background: '#000',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontFamily: 'Inter',
           position: 'relative',
           overflow: 'hidden',
+          backgroundImage:
+            'linear-gradient(140deg, #2563eb 0%, #1d4ed8 45%, #0c1e4d 100%)',
         }}
       >
         <div
           style={{
             position: 'absolute',
-            top: -60,
-            right: -60,
-            width: 200,
-            height: 200,
+            top: -36,
+            left: -36,
+            width: 160,
+            height: 160,
             background:
-              'radial-gradient(circle, rgba(245,165,36,0.45), rgba(245,165,36,0) 70%)',
+              'radial-gradient(circle, rgba(147,197,253,0.55), rgba(147,197,253,0) 65%)',
+            display: 'flex',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: -40,
+            right: -40,
+            width: 140,
+            height: 140,
+            background:
+              'radial-gradient(circle, rgba(15,23,42,0.55), rgba(15,23,42,0) 65%)',
             display: 'flex',
           }}
         />
         <div
           style={{
             display: 'flex',
-            fontSize: 144,
+            fontSize: 140,
             fontWeight: 900,
             color: 'transparent',
             backgroundImage:
-              'linear-gradient(180deg, #fafafa 0%, #f5a524 100%)',
+              'linear-gradient(180deg, #ffffff 0%, #dbeafe 60%, #93c5fd 100%)',
             backgroundClip: 'text',
-            letterSpacing: '-0.09em',
+            letterSpacing: '-0.08em',
             lineHeight: 1,
-            marginLeft: -8,
+            marginTop: -4,
           }}
         >
           R
         </div>
-        <div
-          style={{
-            position: 'absolute',
-            right: 28,
-            bottom: 34,
-            width: 0,
-            height: 0,
-            borderLeft: '26px solid #f5a524',
-            borderTop: '17px solid transparent',
-            borderBottom: '17px solid transparent',
-            display: 'flex',
-          }}
-        />
       </div>
     ),
     {

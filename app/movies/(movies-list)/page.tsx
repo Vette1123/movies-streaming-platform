@@ -37,11 +37,13 @@ export const metadata: Metadata = {
     description: MOVIES_DESCRIPTION,
     url: MOVIES_URL,
     type: 'website',
+    images: '/opengraph-image',
   },
   twitter: {
     card: 'summary_large_image',
     title: MOVIES_TITLE,
     description: MOVIES_DESCRIPTION,
+    images: '/twitter-image',
   },
 }
 

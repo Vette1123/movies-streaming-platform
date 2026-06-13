@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { ImageResponse } from 'next/og'
 
-export const size = { width: 32, height: 32 }
+export const size = { width: 64, height: 64 }
 export const contentType = 'image/png'
 
 export default async function Icon() {
@@ -16,41 +16,57 @@ export default async function Icon() {
         style={{
           width: '100%',
           height: '100%',
-          background: '#000',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontFamily: 'Inter',
           position: 'relative',
-          borderRadius: 7,
+          borderRadius: 14,
+          overflow: 'hidden',
+          backgroundImage:
+            'linear-gradient(140deg, #2563eb 0%, #1d4ed8 45%, #0c1e4d 100%)',
         }}
       >
         <div
           style={{
+            position: 'absolute',
+            top: -14,
+            left: -14,
+            width: 58,
+            height: 58,
+            background:
+              'radial-gradient(circle, rgba(147,197,253,0.55), rgba(147,197,253,0) 65%)',
             display: 'flex',
-            fontSize: 26,
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: -16,
+            right: -16,
+            width: 50,
+            height: 50,
+            background:
+              'radial-gradient(circle, rgba(15,23,42,0.55), rgba(15,23,42,0) 65%)',
+            display: 'flex',
+          }}
+        />
+        <div
+          style={{
+            display: 'flex',
+            fontSize: 50,
             fontWeight: 900,
-            color: '#fafafa',
-            letterSpacing: '-0.1em',
+            color: 'transparent',
+            backgroundImage:
+              'linear-gradient(180deg, #ffffff 0%, #dbeafe 60%, #93c5fd 100%)',
+            backgroundClip: 'text',
+            letterSpacing: '-0.08em',
             lineHeight: 1,
-            marginLeft: -2,
+            marginTop: -2,
           }}
         >
           R
         </div>
-        <div
-          style={{
-            position: 'absolute',
-            right: 5,
-            bottom: 6,
-            width: 0,
-            height: 0,
-            borderLeft: '6px solid #f5a524',
-            borderTop: '4px solid transparent',
-            borderBottom: '4px solid transparent',
-            display: 'flex',
-          }}
-        />
       </div>
     ),
     {

@@ -91,16 +91,6 @@ export const metadata: Metadata = {
     ],
   },
 
-  icons: {
-    other: [
-      {
-        rel: 'mask-icon',
-        url: '/safari-pinned-tab.svg',
-        color: siteConfig.theme.colors.dark,
-      },
-    ],
-  },
-
   robots: {
     index: true,
     follow: true,
@@ -159,6 +149,11 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
         <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="" />
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link
+          rel="mask-icon"
+          href="/safari-pinned-tab.svg"
+          color={siteConfig.theme.colors.dark}
+        />
         <meta name="google-adsense-account" content="ca-pub-3842960431278714"></meta>
         <JsonLd data={websiteJsonLd} />
         <JsonLd data={organizationJsonLd} />

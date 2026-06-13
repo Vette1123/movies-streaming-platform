@@ -19,11 +19,13 @@ export const metadata: Metadata = {
     description: `Legal disclaimer for ${siteConfig.name}.`,
     url: `${siteConfig.websiteURL}/disclaimer`,
     type: 'article',
+    images: '/opengraph-image',
   },
   twitter: {
     card: 'summary_large_image',
     title: `Disclaimer | ${siteConfig.name}`,
     description: `Legal disclaimer for ${siteConfig.name}.`,
+    images: '/twitter-image',
   },
 }
 
