@@ -17,6 +17,7 @@
     "deploy": "node scripts/cf-deploy.mjs",
     "deploy:full": "pnpm build:worker && node scripts/cf-deploy.mjs",
     "fonts:og": "node scripts/build-og-fonts.mjs",
+    "og:build": "node scripts/build-og-image.mjs",
     "waf:apply": "node scripts/cf-waf-setup.mjs"
   },
   "dependencies": {
@@ -66,6 +67,7 @@
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "@typescript-eslint/parser": "^8.0.0",
+    "esbuild": "^0.28.1",
     "eslint": "^9.7.0",
     "eslint-config-next": "16.2.9",
     "eslint-config-prettier": "^10.0.0",

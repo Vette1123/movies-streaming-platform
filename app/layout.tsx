@@ -66,6 +66,15 @@ export const metadata: Metadata = {
     description: siteConfig.description,
     url: siteConfig.websiteURL,
     ttl: siteConfig.openGraph.ttl,
+    images: [
+      {
+        url: '/opengraph-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Reely — Watch movies & TV shows free. Discover, track, and stream.',
+        type: 'image/png',
+      },
+    ],
   },
 
   twitter: {
@@ -74,6 +83,7 @@ export const metadata: Metadata = {
     creator: siteConfig.twitter.creator,
     title: `${siteConfig.name} — Movie & TV Show Tracker`,
     description: siteConfig.description,
+    images: ['/opengraph-image.png'],
   },
 
   appleWebApp: {
