@@ -15,7 +15,8 @@
     "preview:worker": "pnpm opennextjs-cloudflare preview",
     "preview": "pnpm build:worker && pnpm preview:worker",
     "deploy": "node scripts/cf-deploy.mjs",
-    "deploy:full": "pnpm build:worker && node scripts/cf-deploy.mjs"
+    "deploy:full": "pnpm build:worker && node scripts/cf-deploy.mjs",
+    "fonts:og": "node scripts/build-og-fonts.mjs"
   },
   "dependencies": {
     "@next/third-parties": "16.2.7",

@@ -1,20 +1,20 @@
 import { ImageResponse } from 'next/og'
 
-import { loadInter } from './_fonts/load'
+import {
+  loadInter,
+  OG_INTER_GLYPHS_700,
+  OG_INTER_GLYPHS_900,
+} from './_fonts/load'
 
 export const alt =
   'Reely — Watch movies & TV shows free. Discover, track, and stream.'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-const BLACK_GLYPHS = 'Reely'
-const BOLD_GLYPHS =
-  'Watch movies & TV shows. Free.Discover, track, and stream thousands of trending titles — no signup, no paywall.FREE TO STREAMreely.spaceMOVIESTV SHOWSTRENDINGMade bymohamedgado.com'
-
 export default async function OpenGraphImage() {
   const [interBlack, interBold] = await Promise.all([
-    loadInter(900, BLACK_GLYPHS),
-    loadInter(700, BOLD_GLYPHS),
+    loadInter(900, OG_INTER_GLYPHS_900),
+    loadInter(700, OG_INTER_GLYPHS_700),
   ])
 
   return new ImageResponse(
