@@ -21,6 +21,35 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['framer-motion', 'date-fns'],
   },
+  async redirects() {
+    return [
+      {
+        source: '/sitemap-movies.xml',
+        destination: '/sitemap.xml',
+        permanent: true,
+      },
+      {
+        source: '/sitemap-tv-shows.xml',
+        destination: '/sitemap.xml',
+        permanent: true,
+      },
+      {
+        source: '/sitemap-trending.xml',
+        destination: '/sitemap.xml',
+        permanent: true,
+      },
+      {
+        source: '/sitemap-static.xml',
+        destination: '/sitemap.xml',
+        permanent: true,
+      },
+      {
+        source: '/server-sitemap-index.xml',
+        destination: '/sitemap.xml',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 export default nextConfig

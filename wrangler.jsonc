@@ -1,52 +1,49 @@
 {
-	"account_id": "90d6fc64545d1c449331032979dcbfb5",
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"main": ".open-next/worker.js",
-	"name": "movies-streaming-platform",
-	"compatibility_date": "2026-06-11",
-	"compatibility_flags": [
-		"nodejs_compat",
-		"global_fetch_strictly_public"
-	],
-	"assets": {
-		"directory": ".open-next/assets",
-		"binding": "ASSETS",
-	},
-	"observability": {
-		"enabled": true,
-	},
-	"preview_urls": false,
-	// "placement": {
-	// 	"mode": "smart",
-	// },
-	"routes": [
-		{
-			"pattern": "reely.space",
-			"zone_name": "reely.space",
-			"custom_domain": true,
-		},
-		{
-			"pattern": "www.reely.space",
-			"zone_name": "reely.space",
-			"custom_domain": true,
-		},
-	],
-	"services": [
-		{
-			"binding": "WORKER_SELF_REFERENCE",
-			"service": "movies-streaming-platform",
-		},
-	],
-	// Preserve vars configured in the Cloudflare Dashboard on deploy
-	"keep_vars": true,
-	"vars": {
-		"ENVIRONMENT": "production",
-		"NODE_ENV": "production",
-	},
-	// "kv_namespaces": [
-	// 	{
-	// 		"binding": "NEXT_INC_CACHE_KV",
-	// 		"id": "fb4b60e2d15d44cba26f847280e58062"
-	// 	}
-	// ],
+  "account_id": "90d6fc64545d1c449331032979dcbfb5",
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "movies-streaming-platform",
+  "compatibility_date": "2026-06-11",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  "observability": {
+    "enabled": true,
+  },
+  "preview_urls": false,
+  // "placement": {
+  // 	"mode": "smart",
+  // },
+  "routes": [
+    {
+      "pattern": "reely.space",
+      "zone_name": "reely.space",
+      "custom_domain": true,
+    },
+    {
+      "pattern": "www.reely.space",
+      "zone_name": "reely.space",
+      "custom_domain": true,
+    },
+  ],
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "movies-streaming-platform",
+    },
+  ],
+  // Preserve vars configured in the Cloudflare Dashboard on deploy
+  "keep_vars": true,
+  "vars": {
+    "ENVIRONMENT": "production",
+    "NODE_ENV": "production",
+  },
+  "kv_namespaces": [
+    {
+      "binding": "NEXT_INC_CACHE_KV",
+      "id": "cd422b9f51424c32b976ee260b967be3",
+    },
+  ],
 }
