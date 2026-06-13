@@ -16,7 +16,8 @@
     "preview": "pnpm build:worker && pnpm preview:worker",
     "deploy": "node scripts/cf-deploy.mjs",
     "deploy:full": "pnpm build:worker && node scripts/cf-deploy.mjs",
-    "fonts:og": "node scripts/build-og-fonts.mjs"
+    "fonts:og": "node scripts/build-og-fonts.mjs",
+    "waf:apply": "node scripts/cf-waf-setup.mjs"
   },
   "dependencies": {
     "@next/third-parties": "16.2.7",
