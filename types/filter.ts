@@ -75,24 +75,4 @@ type SortOption =
   | 'name.asc'
   | 'name.desc'
 
-interface FilterOption {
-  label: string
-  value: string | number
-}
-
-interface FilterSection {
-  title: string
-  type: 'multiselect' | 'range' | 'select' | 'checkbox' | 'date'
-  options?: FilterOption[]
-  min?: number
-  max?: number
-  step?: number
-}
-
-export type {
-  FilterParams,
-  MediaFilter,
-  SortOption,
-  FilterOption,
-  FilterSection,
-}
+export type { FilterParams, MediaFilter, SortOption }

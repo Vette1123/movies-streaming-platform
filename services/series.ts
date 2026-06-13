@@ -94,6 +94,5 @@ export {
   getPopularSeries,
   getAllTimeTopRatedSeries,
   getSeriesDetailsById,
-  getSeriesCreditsById,
   populateSeriesDetailsPageData,
 }

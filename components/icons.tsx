@@ -2,7 +2,6 @@ import {
   Briefcase,
   Coffee,
   Filter,
-  LucideIcon,
   LucideProps,
   Menu,
   Moon,
@@ -16,8 +15,6 @@ import {
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
-
-export type Icon = LucideIcon
 
 export const Icons = {
   sun: SunMedium,

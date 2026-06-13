@@ -167,7 +167,5 @@ export {
   getPopularMovies,
   populateHomePageData,
   getMovieDetailsById,
-  getMovieCreditsById,
   populateMovieDetailsPage,
-  getTrendingMediaForHeroSlider, // Export the new function
 }

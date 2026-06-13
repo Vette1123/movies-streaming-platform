@@ -16,11 +16,6 @@ const apiConfig = {
 // `https://image.tmdb.org/t/p/original${imgPath}`,
 // w500Image: (imgPath: string) => `https://image.tmdb.org/t/p/w500${imgPath}`,
 
-const category = {
-  movie: 'movie',
-  tv: 'tv',
-}
-
 const movieType = {
   upcoming: 'upcoming',
   popular: 'popular',
@@ -36,4 +31,4 @@ const tvType = {
   trending: 'trending',
 }
 
-export { apiConfig, category, movieType, tvType }
+export { apiConfig, movieType, tvType }

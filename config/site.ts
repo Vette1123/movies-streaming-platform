@@ -39,19 +39,6 @@ export const siteConfig = {
     locale: 'en_US',
     type: 'website',
     siteName: 'Reely',
-    images: {
-      default: {
-        width: 1200,
-        height: 630,
-        alt: 'Reely - Movie and TV Show Tracker',
-        type: 'image/png',
-      },
-      fallback: {
-        width: 800,
-        height: 600,
-        type: 'image/jpeg',
-      },
-    },
     ttl: 604800, // 7 days
   },
 
@@ -66,16 +53,11 @@ export const siteConfig = {
   pwa: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    startupImage: '/icons/apple-touch-icon.png',
     manifestPath: '/site.webmanifest',
   },
 
   // Icons configuration
   icons: {
-    favicon: '/favicon.ico',
-    favicon16: '/favicon-16x16.png',
-    favicon32: '/favicon-32x32.png',
-    appleTouchIcon: '/apple-touch-icon.png',
     browserConfig: '/browserconfig.xml',
   },
 
