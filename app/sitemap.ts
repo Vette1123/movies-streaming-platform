@@ -50,9 +50,6 @@ const generateMovieUrls = async (): Promise<MetadataRoute.Sitemap> => {
       lastModified,
       changeFrequency: 'monthly' as const,
       priority: (movie as any).popularity > 50 ? 0.8 : 0.6,
-      images: movie.poster_path
-        ? [`https://image.tmdb.org/t/p/w500${movie.poster_path}`]
-        : undefined,
     }))
   } catch (error) {
     console.error('Error generating movie URLs for sitemap:', error)
@@ -90,9 +87,6 @@ const generateTVShowUrls = async (): Promise<MetadataRoute.Sitemap> => {
       lastModified,
       changeFrequency: 'monthly' as const,
       priority: (series as any).popularity > 50 ? 0.8 : 0.6,
-      images: series.poster_path
-        ? [`https://image.tmdb.org/t/p/w500${series.poster_path}`]
-        : undefined,
     }))
   } catch (error) {
     console.error('Error generating TV show URLs for sitemap:', error)
