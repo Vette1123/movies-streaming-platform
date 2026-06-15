@@ -8,6 +8,8 @@
 //   4. Bot Fight Mode: enabled
 //   5. Dynamic redirect: 301 apex (reely.space/*) → www.reely.space/*
 //      Needs Zone.Transform Rules: Edit on the API token.
+//   6. Cache rule: force /movies and /tv-shows paths to be CDN-eligible
+//      (Worker responses bypass cache by default). Needs Zone.Cache Rules.
 //
 // Idempotent — managed rules are identified by description prefix "[reely-waf]"
 // and replaced on each run. Any other custom rules in the zone are preserved.
@@ -203,6 +205,46 @@ const REDIRECT_APEX_RULE = {
   },
 }
 
+// Worker responses skip CF's edge cache by default; this rule overrides that
+// for the routes we want CDN-cached and pins the TTL ourselves.
+//
+// Why not `mode: 'respect_origin'`? The origin Cache-Control is correct, but
+// Next.js also emits `Vary: rsc, next-router-state-tree, next-router-prefetch,
+// next-router-segment-prefetch` for App Router client navigation. CF respects
+// Vary, so each value-combination of those headers would get a separate cache
+// entry — and prefetch traffic would fill the cache without ever HIT'ing on
+// real navigation. We pin the cache key to just method+host+path+device so
+// real Googlebot/user GETs collide on the same entry.
+const CACHE_RULE = {
+  description: `${TAG} edge-cache detail pages, pin TTL + cache key`,
+  expression:
+    '(starts_with(http.request.uri.path, "/movies")) or (starts_with(http.request.uri.path, "/tv-shows"))',
+  action: 'set_cache_settings',
+  action_parameters: {
+    cache: true,
+    edge_ttl: {
+      mode: 'override_origin',
+      default: 28800,
+      status_code_ttl: [
+        { status_code: 200, value: 28800 },
+        { status_code_range: { from: 300, to: 399 }, value: 3600 },
+        { status_code_range: { from: 400, to: 499 }, value: 60 },
+        { status_code_range: { from: 500, to: 599 }, value: 0 },
+      ],
+    },
+    browser_ttl: { mode: 'respect_origin' },
+    cache_key: {
+      ignore_query_strings_order: true,
+      cache_deception_armor: true,
+      custom_key: {
+        query_string: { exclude: { all: true } },
+      },
+    },
+    serve_stale: { disable_stale_while_updating: false },
+    respect_strong_etags: false,
+  },
+}
+
 async function main() {
   const zones = await cf(`/zones?name=${encodeURIComponent(ZONE_NAME)}`)
   if (!zones.length) throw new Error(`Zone not found: ${ZONE_NAME}`)
@@ -216,6 +258,10 @@ async function main() {
   const redirectRs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_dynamic_redirect')
   await putRuleset(zoneId, redirectRs, [REDIRECT_APEX_RULE], { position: 'top' })
   console.log(`✓ Redirect rule: ${ZONE_NAME} → www.${ZONE_NAME}`)
+
+  const cacheRs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_cache_settings')
+  await putRuleset(zoneId, cacheRs, [CACHE_RULE], { position: 'top' })
+  console.log('✓ Cache rule: /movies, /tv-shows edge-cacheable (respect origin)')
 
   // Free plan allows only 1 rate-limit rule. We replace any existing rule
   // (e.g. the default "Leaked credential check") since Reely has no auth.
