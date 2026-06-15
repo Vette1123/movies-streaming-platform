@@ -45,7 +45,6 @@ export default function robots(): MetadataRoute.Robots {
           '/register',
           '/*?*',
         ],
-        crawlDelay: 2,
       },
       {
         userAgent: [

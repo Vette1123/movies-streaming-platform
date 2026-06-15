@@ -7,6 +7,10 @@
 //      (high on purpose — see RATELIMIT_RULE: must clear Next.js prefetch bursts)
 //   4. Bot Fight Mode: enabled
 //
+// Note: apex (reely.space) → www redirect lives in next.config.mjs instead of
+// here, because the project's CF API token doesn't include Transform Rules /
+// Single Redirects scope. Keep it in next config until the token is expanded.
+//
 // Idempotent — managed rules are identified by description prefix "[reely-waf]"
 // and replaced on each run. Any other custom rules in the zone are preserved.
 //

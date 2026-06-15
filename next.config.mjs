@@ -24,6 +24,12 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'reely.space' }],
+        destination: 'https://www.reely.space/:path*',
+        permanent: true,
+      },
+      {
         source: '/sitemap-movies.xml',
         destination: '/sitemap.xml',
         permanent: true,
