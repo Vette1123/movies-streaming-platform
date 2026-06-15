@@ -6,10 +6,8 @@
 //   3. Rate limit: 100 req/10s per IP on /movies/[id] and /tv-shows/[id]
 //      (high on purpose — see RATELIMIT_RULE: must clear Next.js prefetch bursts)
 //   4. Bot Fight Mode: enabled
-//
-// Note: apex (reely.space) → www redirect lives in next.config.mjs instead of
-// here, because the project's CF API token doesn't include Transform Rules /
-// Single Redirects scope. Keep it in next config until the token is expanded.
+//   5. Dynamic redirect: 301 apex (reely.space/*) → www.reely.space/*
+//      Needs Zone.Transform Rules: Edit on the API token.
 //
 // Idempotent — managed rules are identified by description prefix "[reely-waf]"
 // and replaced on each run. Any other custom rules in the zone are preserved.
@@ -55,7 +53,11 @@ async function getOrCreatePhaseEntrypoint(zoneId, phase) {
   try {
     return await cf(`/zones/${zoneId}/rulesets/phases/${phase}/entrypoint`)
   } catch (err) {
-    if (!String(err).includes('404')) throw err
+    // CF returns HTTP 200 + error code 10003 when the phase entrypoint hasn't
+    // been created yet, so we match the error code/text rather than a status.
+    const msg = String(err)
+    const missing = msg.includes('404') || msg.includes('10003') || msg.includes('could not find entrypoint')
+    if (!missing) throw err
   }
   return cf(`/zones/${zoneId}/rulesets`, {
     method: 'POST',
@@ -186,6 +188,21 @@ const RATELIMIT_RULE = {
   },
 }
 
+const REDIRECT_APEX_RULE = {
+  description: `${TAG} 301 apex → www`,
+  expression: `(http.host eq "${ZONE_NAME}")`,
+  action: 'redirect',
+  action_parameters: {
+    from_value: {
+      status_code: 301,
+      target_url: {
+        expression: `concat("https://www.${ZONE_NAME}", http.request.uri.path)`,
+      },
+      preserve_query_string: true,
+    },
+  },
+}
+
 async function main() {
   const zones = await cf(`/zones?name=${encodeURIComponent(ZONE_NAME)}`)
   if (!zones.length) throw new Error(`Zone not found: ${ZONE_NAME}`)
@@ -195,6 +212,10 @@ async function main() {
   const customRs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_firewall_custom')
   await putRuleset(zoneId, customRs, [ALLOW_RULE, BLOCK_RULE], { position: 'top' })
   console.log('✓ Custom rules: allowlist + block-scrapers')
+
+  const redirectRs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_dynamic_redirect')
+  await putRuleset(zoneId, redirectRs, [REDIRECT_APEX_RULE], { position: 'top' })
+  console.log(`✓ Redirect rule: ${ZONE_NAME} → www.${ZONE_NAME}`)
 
   // Free plan allows only 1 rate-limit rule. We replace any existing rule
   // (e.g. the default "Leaked credential check") since Reely has no auth.
