@@ -137,7 +137,11 @@ const orExpr = (frags) =>
 
 const ALLOW_RULE = {
   description: `${TAG} allow social scrapers and verified search bots`,
-  expression: orExpr(SCRAPER_UAS),
+  // `cf.client.bot` is true for bots Cloudflare verified via reverse DNS
+  // (Googlebot, Bingbot, etc.). Including it ensures GSC's sitemap fetcher
+  // and other verified-bot infra bypass Bot Fight Mode regardless of how
+  // their UA string looks at the edge.
+  expression: `(cf.client.bot) or ${orExpr(SCRAPER_UAS)}`,
   action: 'skip',
   action_parameters: {
     ruleset: 'current',
