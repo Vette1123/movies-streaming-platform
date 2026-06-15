@@ -16,6 +16,8 @@ import type { MetadataRoute } from 'next'
 
 const baseUrl = siteConfig.websiteURL
 
+const buildDate = (): string => new Date().toISOString()
+
 const generateMovieUrls = async (): Promise<MetadataRoute.Sitemap> => {
   try {
     const [p1, p2, tr1, tr2, tp1, tp2, np] = await Promise.all([
@@ -42,11 +44,10 @@ const generateMovieUrls = async (): Promise<MetadataRoute.Sitemap> => {
       (m, i, self) => i === self.findIndex((x) => x.id === m.id)
     )
 
+    const lastModified = buildDate()
     return unique.map((movie) => ({
       url: `${baseUrl}/movies/${movie.id}`,
-      lastModified: movie.release_date
-        ? new Date(movie.release_date).toISOString()
-        : undefined,
+      lastModified,
       changeFrequency: 'monthly' as const,
       priority: (movie as any).popularity > 50 ? 0.8 : 0.6,
       images: movie.poster_path
@@ -83,11 +84,10 @@ const generateTVShowUrls = async (): Promise<MetadataRoute.Sitemap> => {
       (s, i, self) => i === self.findIndex((x) => x.id === s.id)
     )
 
+    const lastModified = buildDate()
     return unique.map((series) => ({
       url: `${baseUrl}/tv-shows/${series.id}`,
-      lastModified: (series as any).first_air_date
-        ? new Date((series as any).first_air_date).toISOString()
-        : undefined,
+      lastModified,
       changeFrequency: 'monthly' as const,
       priority: (series as any).popularity > 50 ? 0.8 : 0.6,
       images: series.poster_path
