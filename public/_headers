@@ -1,0 +1,8 @@
+# Cloudflare Static Assets header overrides.
+# CF defaults to `max-age=0, must-revalidate` for files in public/. That's
+# fine for icons / manifests, but Next.js hashes filenames under _next/static
+# (e.g. chunks.<hash>.js, fonts named with a content hash), so those files
+# never change — they're safe to cache for a year with immutable.
+
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
