@@ -5,7 +5,10 @@
 //   2. Custom rule: challenge obvious scraper UAs (python-requests, curl, etc.)
 //   3. Rate limit: 100 req/10s per IP on /movies/[id] and /tv-shows/[id]
 //      (high on purpose — see RATELIMIT_RULE: must clear Next.js prefetch bursts)
-//   4. Bot Fight Mode: enabled
+//   4. Bot Fight Mode: DISABLED — free-plan Bot Fight Mode runs outside the WAF
+//      phases and CANNOT be bypassed by the skip/allow rule below, so it
+//      challenges Googlebot/GSC and breaks sitemap fetching + indexing. Scraper
+//      defense is handled by the BLOCK_RULE + rate limit instead.
 //   5. Dynamic redirect: 301 apex (reely.space/*) → www.reely.space/*
 //      Needs Zone.Transform Rules: Edit on the API token.
 //   6. Cache rule: force /movies and /tv-shows paths to be CDN-eligible
@@ -146,9 +149,10 @@ const orExpr = (frags) =>
 const ALLOW_RULE = {
   description: `${TAG} allow social scrapers and verified search bots`,
   // `cf.client.bot` is true for bots Cloudflare verified via reverse DNS
-  // (Googlebot, Bingbot, etc.). Including it ensures GSC's sitemap fetcher
-  // and other verified-bot infra bypass Bot Fight Mode regardless of how
-  // their UA string looks at the edge.
+  // (Googlebot, Bingbot, etc.). Including it lets verified-bot infra bypass the
+  // rate limit and Super Bot Fight Mode phases. NOTE: it does NOT exempt them
+  // from free-plan Bot Fight Mode (that runs before these phases) — which is
+  // why Bot Fight Mode is kept disabled below.
   expression: `(cf.client.bot) or ${orExpr(SCRAPER_UAS)}`,
   action: 'skip',
   action_parameters: {
@@ -269,15 +273,21 @@ async function main() {
   await putRuleset(zoneId, rlRs, [RATELIMIT_RULE], { replaceAll: true })
   console.log('✓ Rate limit: /movies/[id] and /tv-shows/[id]')
 
+  // Free-plan Bot Fight Mode is intentionally OFF. It is NOT compatible with the
+  // WAF skip action — it runs before the firewall_custom/sbfm phases, so the
+  // ALLOW_RULE above can't exempt verified bots from it. Left on, it serves the
+  // "Just a moment..." JS challenge to Googlebot/Bingbot and GSC's sitemap
+  // fetcher, which surfaces in Search Console as "Couldn't fetch". Obvious
+  // scrapers are still challenged by BLOCK_RULE and throttled by RATELIMIT_RULE.
   try {
     await cf(`/zones/${zoneId}/bot_management`, {
       method: 'PUT',
-      body: JSON.stringify({ fight_mode: true }),
+      body: JSON.stringify({ fight_mode: false }),
     })
-    console.log('✓ Bot Fight Mode enabled')
+    console.log('✓ Bot Fight Mode disabled (would challenge Googlebot/GSC)')
   } catch (err) {
     console.warn(`! Bot Fight Mode toggle skipped: ${err.message}`)
-    console.warn('  Enable it manually at Security → Bots if you want it on.')
+    console.warn('  Disable it manually at Security → Bots so Googlebot can crawl.')
   }
 
   console.log('\nDone. Verify at:')
