@@ -40,6 +40,27 @@ function numberRounder(number: number | undefined) {
   if (number) return Math.round(number * 10) / 10
 }
 
+const RECENTLY_RELEASED_DAYS = 30
+
+/**
+ * Whether a release/air date falls within the last `withinDays` (and is not in
+ * the future). Used to flag freshly released movies and series seasons as "new".
+ */
+function isRecentlyReleased(
+  date?: string,
+  withinDays: number = RECENTLY_RELEASED_DAYS
+) {
+  if (!date) return false
+  const released = new Date(date)
+  if (Number.isNaN(released.getTime())) return false
+
+  const diffMs = Date.now() - released.getTime()
+  if (diffMs < 0) return false // not released yet
+
+  const diffDays = diffMs / (1000 * 60 * 60 * 24)
+  return diffDays <= withinDays
+}
+
 function getGenres(genres: number[] = [], defaultGenres: MovieGenre[] = []) {
   if (defaultGenres.length) return defaultGenres
   return MOVIES_GENRE.filter((genre) => genres.includes(genre.id))
@@ -80,6 +101,7 @@ function seasonsFormatter(seasons: Season[]) {
       name: season.name,
       poster_path: season.poster_path,
       season_number: season.season_number,
+      air_date: season.air_date,
     }
   })
 }
@@ -107,6 +129,7 @@ export {
   dateFormatter,
   getGenres,
   numberRounder,
+  isRecentlyReleased,
   itemRedirect,
   moneyFormatter,
   convertMinutesToHours,

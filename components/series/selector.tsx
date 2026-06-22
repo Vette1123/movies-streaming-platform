@@ -1,8 +1,9 @@
 import * as React from 'react'
 
 import { SeriesDetails } from '@/types/series-details'
-import { seasonsFormatter } from '@/lib/utils'
+import { isRecentlyReleased, seasonsFormatter } from '@/lib/utils'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
+import { NewBadge } from '@/components/new-badge'
 import {
   Select,
   SelectContent,
@@ -46,9 +47,14 @@ export function SeasonsSelector({
                     key={season?.id}
                     value={String(season?.season_number)}
                   >
-                    {season.name.startsWith('Season')
-                      ? season.name
-                      : `Season ${season?.season_number}`}
+                    <span className="flex items-center gap-2">
+                      {season.name.startsWith('Season')
+                        ? season.name
+                        : `Season ${season?.season_number}`}
+                      {isRecentlyReleased(season?.air_date) && (
+                        <NewBadge className="relative left-0 top-0" />
+                      )}
+                    </span>
                   </SelectItem>
                   {idx !== formattedSeasons?.length - 1 && <SelectSeparator />}
                 </React.Fragment>

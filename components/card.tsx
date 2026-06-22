@@ -9,11 +9,13 @@ import { CARD_VARIANT } from '@/lib/motion-variants'
 import {
   dateFormatter,
   getPosterImageURL,
+  isRecentlyReleased,
   itemRedirect,
   numberRounder,
 } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { NewBadge } from '@/components/new-badge'
 import {
   HoverCard,
   HoverCardContent,
@@ -32,6 +34,8 @@ export const Card = ({
   itemType = 'movie',
   isTruncateOverview = true,
 }: CardProps) => {
+  const isNew = isRecentlyReleased(item?.release_date || item?.first_air_date)
+
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
@@ -44,6 +48,7 @@ export const Card = ({
               className="pointer-events-none lg:pointer-events-auto"
             >
               <motion.div className="group relative" variants={CARD_VARIANT}>
+                {isNew && <NewBadge />}
                 <BlurredImage
                   src={`${getPosterImageURL(item.poster_path)}`}
                   alt="Movie"
