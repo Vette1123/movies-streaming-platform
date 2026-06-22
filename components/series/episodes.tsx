@@ -3,11 +3,17 @@ import { useRouter } from 'next/navigation'
 import { Loader } from 'lucide-react'
 
 import { EpisodeDetails } from '@/types/episode'
-import { cn } from '@/lib/utils'
+import { cn, isRecentlyReleased } from '@/lib/utils'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useScrollToTop } from '@/hooks/use-scroll-to-top'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
+import { NewBadge } from '@/components/new-badge'
 import { Separator } from '@/components/ui/separator'
+
+// Weekly release cadence + a week's grace, mirroring the "New Episode" window
+// streaming apps use. Keeps the badge cross-season: whichever season holds a
+// recently-aired episode lights up automatically.
+const NEW_EPISODE_DAYS = 14
 
 interface EpisodesProps {
   episodes: EpisodeDetails[] | undefined
@@ -86,7 +92,7 @@ export const Episodes = ({
             <React.Fragment key={episode.id}>
               <p
                 className={cn(
-                  'hover:bg-accent cursor-pointer rounded-md p-2 text-sm',
+                  'hover:bg-accent flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm',
                   {
                     'bg-accent':
                       episodeQueryINT === episode?.episode_number &&
@@ -98,7 +104,12 @@ export const Episodes = ({
                   handleWatchEpisode(episode)
                 }}
               >
-                {episode.episode_number}. {episode.name}
+                <span>
+                  {episode.episode_number}. {episode.name}
+                </span>
+                {isRecentlyReleased(episode?.air_date, NEW_EPISODE_DAYS) && (
+                  <NewBadge className="relative left-0 top-0 shrink-0" />
+                )}
               </p>
               {idx !== episodes?.length - 1 && <Separator className="my-3" />}
             </React.Fragment>
