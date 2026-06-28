@@ -3,9 +3,10 @@ import Link from 'next/link'
 
 import { SeriesDetails } from '@/types/series-details'
 import { SEARCH_ACTOR_GOOGLE } from '@/lib/constants'
-import { cn } from '@/lib/utils'
+import { cn, isRecentlyReleased } from '@/lib/utils'
 import { HeroRatesInfos } from '@/components/header/hero-rates-info'
 import { Icons } from '@/components/icons'
+import { NewBadge } from '@/components/new-badge'
 import { seriesExtraInfoFormatter } from '@/components/media/extra-info'
 
 interface SeriesDetailsExtraInfoProps {
@@ -18,8 +19,12 @@ export const SeriesDetailsExtraInfo = ({
   director,
 }: SeriesDetailsExtraInfoProps) => {
   const extraInfo = seriesExtraInfoFormatter(series, director)
+  const isNew = isRecentlyReleased(series.first_air_date)
   return (
     <section>
+      {isNew && (
+        <NewBadge className="relative left-0 top-0 mb-2 px-2.5 py-1 text-[11px] lg:text-xs" />
+      )}
       <p className="text-sm font-bold lg:text-3xl">{series.name}</p>
       <HeroRatesInfos seriesDetails={series} />
       <p className="prose-invert text-xs font-semibold lg:text-lg">

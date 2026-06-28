@@ -3,9 +3,10 @@ import Link from 'next/link'
 
 import { MovieDetails } from '@/types/movie-details'
 import { SEARCH_ACTOR_GOOGLE } from '@/lib/constants'
-import { cn } from '@/lib/utils'
+import { cn, isRecentlyReleased } from '@/lib/utils'
 import { HeroRatesInfos } from '@/components/header/hero-rates-info'
 import { Icons } from '@/components/icons'
+import { NewBadge } from '@/components/new-badge'
 import { movieExtraInfoFormatter } from '@/components/media/extra-info'
 
 export const DetailsExtraInfo = ({
@@ -16,8 +17,12 @@ export const DetailsExtraInfo = ({
   director: string | undefined
 }) => {
   const extraInfo = movieExtraInfoFormatter(movie, director)
+  const isNew = isRecentlyReleased(movie.release_date)
   return (
     <section>
+      {isNew && (
+        <NewBadge className="relative left-0 top-0 mb-2 px-2.5 py-1 text-[11px] lg:text-xs" />
+      )}
       <p className="text-sm font-bold lg:text-3xl">{movie.title}</p>
       <HeroRatesInfos movieDetails={movie} />
       <p className="prose-invert text-xs font-semibold lg:text-lg">
