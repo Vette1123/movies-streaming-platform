@@ -58,7 +58,7 @@
     "@eslint/eslintrc": "^3.0.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
     "@opennextjs/aws": "^4.0.3",
-    "@opennextjs/cloudflare": "1.19.11",
+    "@opennextjs/cloudflare": "1.20.1",
     "@tailwindcss/postcss": "^4.3.0",
     "@tailwindcss/typography": "^0.5.20",
     "@types/node": "^25.0.0",
@@ -76,6 +76,6 @@
     "prettier": "^3.8.3",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.0",
-    "wrangler": "^4.104.0"
+    "wrangler": "^4.107.0"
   }
 }
