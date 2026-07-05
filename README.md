@@ -101,6 +101,6 @@ Copy `.env.sample` to `.env.local` and fill in the values you need. Only TMDB-re
 
 ## 🙌 Credits
 
-Built by [Mohamed Gado](https://mohamedgado.com). Data and imagery courtesy of [TMDB](https://www.themoviedb.org/) — Reely is not endorsed or certified by TMDB.
+Built by [Mohamed Gado](https://www.mohamedgado.com/). Data and imagery courtesy of [TMDB](https://www.themoviedb.org/) — Reely is not endorsed or certified by TMDB.
 
 [![Buy Me A Coffee!](https://cdn.buymeacoffee.com/buttons/default-orange.png)](https://buymeacoffee.com/vetteotp)
