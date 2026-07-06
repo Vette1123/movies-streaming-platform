@@ -2,6 +2,8 @@ import React from 'react'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import {
+  getAllTimeTopRatedSeries,
+  getLatestTrendingSeries,
   getPopularSeries,
   getSeriesDetailsById,
   populateSeriesDetailsPageData,
@@ -29,11 +31,19 @@ export const dynamicParams = true
 
 export async function generateStaticParams() {
   try {
-    const pages = await Promise.all(
-      [1, 2].map((page) => getPopularSeries({ page }))
-    )
+    // Prerender the head of the traffic distribution: popular (4 pages),
+    // all-time top rated, and today's trending. Deduped → ~100 hottest titles
+    // baked into the cache at build so they never cold-render at runtime.
+    const responses = await Promise.all([
+      getPopularSeries({ page: 1 }),
+      getPopularSeries({ page: 2 }),
+      getPopularSeries({ page: 3 }),
+      getPopularSeries({ page: 4 }),
+      getAllTimeTopRatedSeries({ page: 1 }),
+      getLatestTrendingSeries({ page: 1 }),
+    ])
     const ids = new Set<string>()
-    for (const res of pages) {
+    for (const res of responses) {
       for (const series of res?.results ?? []) ids.add(String(series.id))
     }
     return Array.from(ids, (id) => ({ id }))
