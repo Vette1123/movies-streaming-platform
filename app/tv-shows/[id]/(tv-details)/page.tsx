@@ -34,17 +34,22 @@ export const dynamicParams = true
 
 export async function generateStaticParams() {
   try {
-    // Prerender the head of the traffic distribution: popular (4 pages),
-    // all-time top rated, and today's trending. Deduped → ~100 hottest titles
-    // baked into the cache at build so they never cold-render at runtime.
-    const responses = await Promise.all([
-      getPopularSeries({ page: 1 }),
-      getPopularSeries({ page: 2 }),
-      getPopularSeries({ page: 3 }),
-      getPopularSeries({ page: 4 }),
-      getAllTimeTopRatedSeries({ page: 1 }),
-      getLatestTrendingSeries({ page: 1 }),
-    ])
+    // Prerender the head of the traffic distribution: popular (10 pages),
+    // all-time top rated (5), and today's trending (2). Deduped → ~300 hottest
+    // titles baked into static assets at build so they never cold-render at
+    // runtime — the more we prebuild, the smaller the long tail that has to
+    // render on the Worker (10ms CPU) and write to KV on demand. TMDB returns 20
+    // ids/page; the head captures the vast majority of real human traffic.
+    const requests = [
+      ...Array.from({ length: 10 }, (_, i) => getPopularSeries({ page: i + 1 })),
+      ...Array.from({ length: 5 }, (_, i) =>
+        getAllTimeTopRatedSeries({ page: i + 1 })
+      ),
+      ...Array.from({ length: 2 }, (_, i) =>
+        getLatestTrendingSeries({ page: i + 1 })
+      ),
+    ]
+    const responses = await Promise.all(requests)
     const ids = new Set<string>()
     for (const res of responses) {
       for (const series of res?.results ?? []) ids.add(String(series.id))

@@ -50,3 +50,17 @@ jobs:
           NEXT_PUBLIC_IMAGE_CACHE_HOST_URL: ${{ secrets.NEXT_PUBLIC_IMAGE_CACHE_HOST_URL }}
           NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
           NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
+
+      # Re-apply the edge-cache + WAF rules on every deploy so they can't silently
+      # drift off (they were never wired in before, so prod ran with NO edge cache
+      # — every request hit the Worker and burned the free-plan 10ms CPU budget).
+      # Idempotent: rules are keyed by the "[reely-waf]" description prefix and
+      # replaced in place. Runs AFTER deploy so a WAF failure never blocks the
+      # Worker rollout. REQUIRES the token to carry Zone.Cache Rules +
+      # Zone.Transform Rules + Zone WAF: Edit — if it lacks them this step fails
+      # loudly (that's the point: a red step here means the cache rule isn't live).
+      - name: Apply Cloudflare cache + WAF rules
+        run: pnpm run waf:apply
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ZONE_NAME: reely.space

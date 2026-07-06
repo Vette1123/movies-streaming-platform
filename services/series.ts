@@ -2,11 +2,10 @@ import { cache } from 'react'
 
 import { seriesDTO } from '@/dtos/series'
 
-import { Credit } from '@/types/credit'
 import { Param } from '@/types/movie-result'
 import {
   MultiSeriesDetailsRequestProps,
-  SeriesDetails,
+  SeriesDetailsWithExtras,
 } from '@/types/series-details'
 import { SeriesResponse } from '@/types/series-result'
 import { fetchClient } from '@/lib/fetch-client'
@@ -31,57 +30,49 @@ const getAllTimeTopRatedSeries = async (params: Param = {}) => {
   return seriesDTO(rawData)
 }
 
-const getSeriesDetailsById = cache(async (id: string, params: Param = {}) => {
-  const url = `tv/${id}?language=en-US`
-  const seriesDetails = await fetchClient.get<SeriesDetails>(url, params, true)
-  // Fetch IMDB rating if imdb_id is available
-  // if (seriesDetails.imdb_id) {
-  //   const imdbRating = await getIMDbRating(seriesDetails.imdb_id)
-  //   return {
-  //     ...seriesDetails,
-  //     imdbRating,
-  //   }
-  // }
+// Single TMDB request that returns details + credits + similar +
+// recommendations via `append_to_response`, replacing four separate calls. On a
+// cold on-demand render (long-tail id not prebuilt) that's ONE KV fetch-cache
+// write and ONE JSON parse instead of four — the difference between staying
+// under the free-plan 10ms Worker CPU / 1k KV-writes-per-day limits and blowing
+// them (Error 1102 / "KV put() limit exceeded"). cache() dedupes it with
+// generateMetadata so the whole page renders on a single fetch.
+const getSeriesWithExtras = cache(async (id: string, params: Param = {}) => {
+  const url = `tv/${id}?language=en-US&append_to_response=credits,similar,recommendations`
+  return fetchClient.get<SeriesDetailsWithExtras>(url, params, true)
+})
 
+// Kept for generateMetadata, which only needs the core fields. Delegates to the
+// cached combined fetch so metadata + page share a single TMDB request.
+const getSeriesDetailsById = cache(async (id: string, params: Param = {}) => {
+  const series = await getSeriesWithExtras(id, params)
   return {
-    ...seriesDetails,
+    ...series,
     imdbRating: null,
   }
 })
 
-const getSeriesCreditsById = async (id: string, params: Param = {}) => {
-  const url = `tv/${id}/credits?language=en-US`
-  return fetchClient.get<Credit>(url, params, true)
-}
-
-const getSimilarSeriesById = async (id: string, params: Param = {}) => {
-  const url = `tv/${id}/similar?language=en-US`
-  const rawData = await fetchClient.get<SeriesResponse>(url, params, true)
-  return seriesDTO(rawData)
-}
-
-const getRecommendedSeriesById = async (id: string, params: Param = {}) => {
-  const url = `tv/${id}/recommendations?language=en-US`
-  const rawData = await fetchClient.get<SeriesResponse>(url, params, true)
-  return seriesDTO(rawData)
-}
+// Carousels are horizontal scrollers — 12 items is plenty and trims server-side
+// render work vs. TMDB's full 20-item page.
+const RELATED_LIMIT = 12
 
 const populateSeriesDetailsPageData = async (
   id: string
 ): Promise<MultiSeriesDetailsRequestProps> => {
   try {
-    const [seriesDetails, seriesCredits, similarSeries, recommendedSeries] =
-      await Promise.all([
-        getSeriesDetailsById(id),
-        getSeriesCreditsById(id),
-        getSimilarSeriesById(id),
-        getRecommendedSeriesById(id),
-      ])
+    const data = await getSeriesWithExtras(id)
+    if (!data?.id) throw new Error('Series not found')
     return {
-      seriesDetails,
-      seriesCredits,
-      similarSeries: similarSeries?.results || [],
-      recommendedSeries: recommendedSeries?.results || [],
+      seriesDetails: { ...data, imdbRating: null },
+      seriesCredits: data.credits ?? { id: data.id, cast: [], crew: [] },
+      similarSeries: (data.similar
+        ? seriesDTO(data.similar).results
+        : []
+      ).slice(0, RELATED_LIMIT),
+      recommendedSeries: (data.recommendations
+        ? seriesDTO(data.recommendations).results
+        : []
+      ).slice(0, RELATED_LIMIT),
     }
   } catch (error: any) {
     console.error(error, 'error')

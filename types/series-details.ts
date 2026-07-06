@@ -3,6 +3,7 @@ import { EpisodeToAir, Network } from '@/types/episode'
 import { MediaType } from '@/types/media'
 import { MovieGenre } from '@/types/movie-genre'
 import { ProductionCompany, ProductionCountry } from '@/types/production'
+import { SeriesResponse } from '@/types/series-result'
 
 type Season = {
   air_date: string
@@ -70,4 +71,17 @@ interface MultiSeriesDetailsRequestProps {
   recommendedSeries: MediaType[]
 }
 
-export type { SeriesDetails, MultiSeriesDetailsRequestProps, Season }
+// Shape of a single `tv/{id}?append_to_response=credits,similar,recommendations`
+// call — one TMDB request in place of four. See services/series.ts.
+interface SeriesDetailsWithExtras extends SeriesDetails {
+  credits?: Credit
+  similar?: SeriesResponse
+  recommendations?: SeriesResponse
+}
+
+export type {
+  SeriesDetails,
+  SeriesDetailsWithExtras,
+  MultiSeriesDetailsRequestProps,
+  Season,
+}

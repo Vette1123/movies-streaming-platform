@@ -1,6 +1,6 @@
 import { Credit } from '@/types/credit'
 import { MovieGenre } from '@/types/movie-genre'
-import { Movie } from '@/types/movie-result'
+import { Movie, MovieResponse } from '@/types/movie-result'
 
 interface MovieDetails {
   adult: boolean
@@ -55,4 +55,16 @@ interface MultiMovieDetailsRequestProps {
   recommendedMovies: Movie[]
 }
 
-export type { MovieDetails, MultiMovieDetailsRequestProps }
+// Shape of a single `movie/{id}?append_to_response=credits,similar,recommendations`
+// call — one TMDB request in place of four. See services/movies.ts.
+interface MovieDetailsWithExtras extends MovieDetails {
+  credits?: Credit
+  similar?: MovieResponse
+  recommendations?: MovieResponse
+}
+
+export type {
+  MovieDetails,
+  MovieDetailsWithExtras,
+  MultiMovieDetailsRequestProps,
+}
