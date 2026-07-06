@@ -14,6 +14,11 @@ import {
 
 import { FilterParams, MediaFilter, SortOption } from '@/types/filter'
 import { MediaResponse } from '@/types/media'
+import {
+  trackFilterChanged,
+  trackFiltersCleared,
+  trackLoadMore,
+} from '@/lib/analytics'
 import { QUERY_KEYS } from '@/lib/queryKeys'
 
 interface UseMediaFilterProps {
@@ -218,6 +223,9 @@ export const useMediaFilter = ({
   // Filter update functions
   const updateFilter = useCallback(
     (updates: Partial<MediaFilter>) => {
+      Object.entries(updates).forEach(([key, value]) => {
+        trackFilterChanged({ media_type: mediaType, filter_type: key, value })
+      })
       const urlUpdates: Partial<typeof urlState> = {}
 
       // Map MediaFilter properties to URL state
@@ -245,7 +253,7 @@ export const useMediaFilter = ({
 
       setUrlState(urlUpdates)
     },
-    [setUrlState]
+    [setUrlState, mediaType]
   )
 
   const toggleGenre = useCallback(
@@ -256,6 +264,12 @@ export const useMediaFilter = ({
       const currentTargetGenres = urlState[targetArray]
       const currentOtherGenres = urlState[otherArray]
 
+      const isAdding = !currentTargetGenres.includes(genreId)
+      trackFilterChanged({
+        media_type: mediaType,
+        filter_type: exclude ? 'excludeGenre' : 'genre',
+        value: { genreId, active: isAdding },
+      })
       const newTargetGenres = currentTargetGenres.includes(genreId)
         ? currentTargetGenres.filter((id) => id !== genreId)
         : [...currentTargetGenres, genreId]
@@ -268,7 +282,7 @@ export const useMediaFilter = ({
         [otherArray]: newOtherGenres,
       })
     },
-    [urlState, setUrlState]
+    [urlState, setUrlState, mediaType]
   )
 
   const setSortBy = useCallback(
@@ -279,8 +293,17 @@ export const useMediaFilter = ({
   )
 
   const clearFilters = useCallback(() => {
+    trackFiltersCleared({ media_type: mediaType })
     setUrlState(defaultValues)
-  }, [setUrlState])
+  }, [setUrlState, mediaType])
+
+  const trackedFetchNextPage = useCallback(() => {
+    trackLoadMore({
+      media_type: mediaType,
+      page: (data?.pages?.length ?? 0) + 1,
+    })
+    return fetchNextPage()
+  }, [fetchNextPage, data?.pages?.length, mediaType])
 
   const toggleSection = useCallback(
     (sectionKey: string) => {
@@ -328,7 +351,7 @@ export const useMediaFilter = ({
     setSortBy,
     clearFilters,
     toggleSection,
-    fetchNextPage,
+    fetchNextPage: trackedFetchNextPage,
     refetch,
   }
 }

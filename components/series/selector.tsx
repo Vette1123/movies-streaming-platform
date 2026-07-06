@@ -1,6 +1,7 @@
 import * as React from 'react'
 
 import { SeriesDetails } from '@/types/series-details'
+import { trackSeasonSelected } from '@/lib/analytics'
 import { isRecentlyReleased, seasonsFormatter } from '@/lib/utils'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { NewBadge } from '@/components/new-badge'
@@ -29,7 +30,10 @@ export function SeasonsSelector({
 
   return (
     <Select
-      onValueChange={setSelectedSeason}
+      onValueChange={(value) => {
+        trackSeasonSelected({ media_id: series?.id, season: Number(value) })
+        setSelectedSeason(value)
+      }}
       defaultValue={seasonQuerySTR || '1'}
       disabled={!formattedSeasons?.length}
     >

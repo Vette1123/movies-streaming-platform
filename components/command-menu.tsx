@@ -9,6 +9,13 @@ import { useDebouncedCallback } from 'use-debounce'
 
 import { MediaType } from '@/types/media'
 import { siteConfig } from '@/config/site'
+import {
+  trackCommandShortcutUsed,
+  trackSearchNoResults,
+  trackSearchOpened,
+  trackSearchPerformed,
+  trackSearchResultClicked,
+} from '@/lib/analytics'
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
 import { cn, getThumbBackdropURL, getThumbPosterURL } from '@/lib/utils'
 import { useCMDKListener } from '@/hooks/use-cmdk-listener'
@@ -87,6 +94,11 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
 
   const trimmedQuery = query.trim()
 
+  // Fire once each time the palette opens (button click or ⌘K).
+  React.useEffect(() => {
+    if (open) trackSearchOpened()
+  }, [open])
+
   const runSearch = React.useCallback(
     async (value: string) => {
       const trimmed = value.trim()
@@ -102,6 +114,10 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
           (m) =>
             m?.media_type !== ('person' as MediaType['media_type'])
         ).length
+        trackSearchPerformed({ query: trimmed, results_count: renderable })
+        if (renderable === 0) {
+          trackSearchNoResults({ query: trimmed })
+        }
         if (renderable > 0) {
           setSkeletonCount(Math.max(3, Math.min(6, renderable)))
         }
@@ -253,7 +269,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
             )}
 
             {status === 'results' &&
-              visibleResults.map((movie) => {
+              visibleResults.map((movie, index) => {
                 const href = mediaHref(movie)
                 const year = movie?.release_date
                   ? movie.release_date.split('-')[0]
@@ -275,6 +291,13 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                     value={`${movie.id}-${movie.title}`}
                     className="group/command-item hover:bg-primary-foreground/50 cursor-pointer transition-colors duration-200"
                     onSelect={() => {
+                      trackSearchResultClicked({
+                        query: trimmedQuery,
+                        media_id: movie.id,
+                        media_type: movie.media_type === 'tv' ? 'tv' : 'movie',
+                        title: movie.title,
+                        position: index,
+                      })
                       runCommand(() => router.push(href))
                     }}
                     onMouseEnter={() => router.prefetch(href)}
@@ -375,32 +398,42 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
           <CommandGroup heading="Shortcuts...">
             <CommandItem
               className="cursor-pointer"
-              onSelect={() => runCommand(() => router.push(`/movies`))}
+              onSelect={() => {
+                trackCommandShortcutUsed({ shortcut: 'movies' })
+                runCommand(() => router.push(`/movies`))
+              }}
             >
               <Icons.playIcon className="mr-2 size-4" />
               Movies
             </CommandItem>
             <CommandItem
               className="cursor-pointer"
-              onSelect={() => runCommand(() => router.push(`/tv-shows`))}
+              onSelect={() => {
+                trackCommandShortcutUsed({ shortcut: 'series' })
+                runCommand(() => router.push(`/tv-shows`))
+              }}
             >
               <Tv className="mr-2 size-4" />
               Series
             </CommandItem>
             <CommandItem
               className="cursor-pointer"
-              onSelect={() => runCommand(() => router.push(`/`))}
+              onSelect={() => {
+                trackCommandShortcutUsed({ shortcut: 'home' })
+                runCommand(() => router.push(`/`))
+              }}
             >
               <Home className="mr-2 size-4" />
               Home
             </CommandItem>
             <CommandItem
               className="cursor-pointer"
-              onSelect={() =>
+              onSelect={() => {
+                trackCommandShortcutUsed({ shortcut: 'portfolio' })
                 runCommand(() =>
                   window.open(siteConfig.author.website, '_blank')
                 )
-              }
+              }}
             >
               <div className="flex items-center gap-4">
                 <Avatar>
@@ -412,11 +445,12 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
             </CommandItem>
             <CommandItem
               className="cursor-pointer"
-              onSelect={() =>
+              onSelect={() => {
+                trackCommandShortcutUsed({ shortcut: 'buy_me_a_coffee' })
                 runCommand(() =>
                   window.open(`https://buymeacoffee.com/vetteotp`, '_blank')
                 )
-              }
+              }}
             >
               <div className="flex items-center gap-4">
                 <Icons.buyMeACoffee className="size-5" />

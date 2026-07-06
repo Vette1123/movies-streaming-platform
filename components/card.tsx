@@ -5,6 +5,7 @@ import { CalendarDays } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
+import { trackMediaCardClicked } from '@/lib/analytics'
 import { CARD_VARIANT } from '@/lib/motion-variants'
 import {
   dateFormatter,
@@ -40,7 +41,17 @@ export const Card = ({
     <HoverCard>
       <HoverCardTrigger asChild>
         {item?.poster_path && (
-          <Link href={`${itemRedirect(itemType)}/${item.id}`}>
+          <Link
+            href={`${itemRedirect(itemType)}/${item.id}`}
+            onClick={() =>
+              trackMediaCardClicked({
+                media_id: item.id,
+                media_type: itemType === 'tv' ? 'tv' : 'movie',
+                title: item?.title || item?.name,
+                source: 'card',
+              })
+            }
+          >
             <motion.div
               initial="rest"
               whileHover="hover"

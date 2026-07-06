@@ -1,5 +1,10 @@
 import { MovieDetails } from '@/types/movie-details'
 import { SeriesDetails } from '@/types/series-details'
+import {
+  trackWatchHistoryAdded,
+  trackWatchHistoryCleared,
+  trackWatchHistoryUpdated,
+} from '@/lib/analytics'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 
@@ -14,7 +19,10 @@ interface WatchedMediaHookResult {
 export function useWatchedMedia(): WatchedMediaHookResult {
   const [watchedItems, setWatchedItems] = useLocalStorage('watchedItems', [])
   const { seasonQueryINT, episodeQueryINT } = useSearchQueryParams()
-  const deleteWatchedItems = () => setWatchedItems([])
+  const deleteWatchedItems = () => {
+    trackWatchHistoryCleared({ item_count: watchedItems.length })
+    setWatchedItems([])
+  }
 
   const handleWatchMedia = (media: MediaItem) => {
     const isMovie = 'title' in media
@@ -23,6 +31,13 @@ export function useWatchedMedia(): WatchedMediaHookResult {
     )
 
     if (existingItemIndex === -1) {
+      trackWatchHistoryAdded({
+        media_id: media.id,
+        media_type: isMovie ? 'movie' : 'tv',
+        title: isMovie
+          ? (media as MovieDetails).title
+          : (media as SeriesDetails).name,
+      })
       // Item not in localStorage, add it
       if (isMovie) {
         // Handle movie
@@ -74,6 +89,12 @@ export function useWatchedMedia(): WatchedMediaHookResult {
             episode: episodeQueryINT || existingItem.episode,
             modified_at: new Date().toISOString(),
           }
+          trackWatchHistoryUpdated({
+            media_id: media.id,
+            media_type: 'tv',
+            season: seasonQueryINT || existingItem.season,
+            episode: episodeQueryINT || existingItem.episode,
+          })
           setWatchedItems(updatedItems)
         }
       } else {
