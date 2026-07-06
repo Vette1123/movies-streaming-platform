@@ -3,6 +3,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import {
   getMovieDetailsById,
+  getPopularMovies,
   populateMovieDetailsPage,
 } from '@/services/movies'
 
@@ -18,6 +19,28 @@ import { MoviesDetailsContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
 
 export const revalidate = 28800
+
+// Pre-render the most popular movie pages at build time so they ship as static
+// assets (served by the ASSETS binding — zero Worker CPU, even on an edge-cache
+// miss). `dynamicParams` stays true, so any non-prebuilt id still renders on
+// demand and gets edge-cached. Fail-soft to [] so a TMDB hiccup at build never
+// breaks the deploy (empty list = current all-dynamic behaviour, no regression).
+export const dynamicParams = true
+
+export async function generateStaticParams() {
+  try {
+    const pages = await Promise.all(
+      [1, 2].map((page) => getPopularMovies({ page }))
+    )
+    const ids = new Set<string>()
+    for (const res of pages) {
+      for (const movie of res?.results ?? []) ids.add(String(movie.id))
+    }
+    return Array.from(ids, (id) => ({ id }))
+  } catch {
+    return []
+  }
+}
 
 export async function generateMetadata(
   props: PageDetailsProps

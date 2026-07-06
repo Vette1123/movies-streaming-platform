@@ -2,6 +2,7 @@ import React from 'react'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import {
+  getPopularSeries,
   getSeriesDetailsById,
   populateSeriesDetailsPageData,
 } from '@/services/series'
@@ -18,6 +19,28 @@ import { SeriesDetailsContent } from '@/components/series/details-content'
 import { SeriesDetailsHero } from '@/components/series/details-hero'
 
 export const revalidate = 28800
+
+// Pre-render the most popular series pages at build time so they ship as static
+// assets (served by the ASSETS binding — zero Worker CPU, even on an edge-cache
+// miss). `dynamicParams` stays true, so any non-prebuilt id still renders on
+// demand and gets edge-cached. Fail-soft to [] so a TMDB hiccup at build never
+// breaks the deploy (empty list = current all-dynamic behaviour, no regression).
+export const dynamicParams = true
+
+export async function generateStaticParams() {
+  try {
+    const pages = await Promise.all(
+      [1, 2].map((page) => getPopularSeries({ page }))
+    )
+    const ids = new Set<string>()
+    for (const res of pages) {
+      for (const series of res?.results ?? []) ids.add(String(series.id))
+    }
+    return Array.from(ids, (id) => ({ id }))
+  } catch {
+    return []
+  }
+}
 
 export async function generateMetadata(
   props: PageDetailsProps
