@@ -15,6 +15,9 @@
 //      CDN-eligible (Worker responses bypass cache by default). This is what
 //      keeps the free-plan 10ms Worker CPU limit from being hit under traffic —
 //      an edge HIT never runs the Worker. Needs Zone.Cache Rules.
+//   7. Tiered Cache (free on all plans): edge misses consult an upper-tier data
+//      center before the origin Worker, so a cold render happens in a few tier
+//      colos instead of independently across all ~300 edge locations.
 //
 // Idempotent — managed rules are identified by description prefix "[reely-waf]"
 // and replaced on each run. Any other custom rules in the zone are preserved.
@@ -273,6 +276,20 @@ async function main() {
   const cacheRs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_cache_settings')
   await putRuleset(zoneId, cacheRs, [CACHE_RULE], { position: 'top' })
   console.log('✓ Cache rule: /, /disclaimer, /movies, /tv-shows edge-cacheable (pinned TTL)')
+
+  // Tiered Cache (free on all plans). Upper-tier colos absorb edge misses before
+  // they reach the origin Worker, so cold renders (and the CPU they burn)
+  // collapse from ~300 edge locations to a handful of tiers. Idempotent.
+  try {
+    await cf(`/zones/${zoneId}/argo/tiered_caching`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: 'on' }),
+    })
+    console.log('✓ Tiered Cache enabled (fewer origin Worker renders)')
+  } catch (err) {
+    console.warn(`! Tiered Cache toggle skipped: ${err.message}`)
+    console.warn('  Enable manually at Caching → Tiered Cache.')
+  }
 
   // Free plan allows only 1 rate-limit rule. We replace any existing rule
   // (e.g. the default "Leaked credential check") since Reely has no auth.
