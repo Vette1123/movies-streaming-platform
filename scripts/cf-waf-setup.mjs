@@ -287,68 +287,96 @@ const VARY_STRIP_RULE = {
   },
 }
 
+// Each phase needs a DIFFERENT token permission, so a gap in one (e.g. Zone
+// WAF: Edit missing) must not block the others — above all it must not block the
+// edge-cache rule, which is the real defence against the 10ms Worker CPU limit.
+// step() isolates each phase: logs ✓/✗, records the failure, and keeps going.
+const failures = []
+async function step(label, fn) {
+  try {
+    await fn()
+    console.log(`✓ ${label}`)
+    return true
+  } catch (err) {
+    console.warn(`✗ ${label}\n    ${err.message}`)
+    failures.push(label)
+    return false
+  }
+}
+
 async function main() {
   const zones = await cf(`/zones?name=${encodeURIComponent(ZONE_NAME)}`)
   if (!zones.length) throw new Error(`Zone not found: ${ZONE_NAME}`)
   const zoneId = zones[0].id
   console.log(`Zone: ${ZONE_NAME} (${zoneId})`)
 
-  const customRs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_firewall_custom')
-  await putRuleset(zoneId, customRs, [ALLOW_RULE, BLOCK_RULE], { position: 'top' })
-  console.log('✓ Custom rules: allowlist + block-scrapers')
+  await step('Custom rules: allowlist + block-scrapers (needs Zone WAF: Edit)', async () => {
+    const rs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_firewall_custom')
+    await putRuleset(zoneId, rs, [ALLOW_RULE, BLOCK_RULE], { position: 'top' })
+  })
 
-  const redirectRs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_dynamic_redirect')
-  await putRuleset(zoneId, redirectRs, [REDIRECT_APEX_RULE], { position: 'top' })
-  console.log(`✓ Redirect rule: ${ZONE_NAME} → www.${ZONE_NAME}`)
+  await step(`Redirect ${ZONE_NAME} → www (needs Zone Transform Rules: Edit)`, async () => {
+    const rs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_dynamic_redirect')
+    await putRuleset(zoneId, rs, [REDIRECT_APEX_RULE], { position: 'top' })
+  })
 
-  const cacheRs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_cache_settings')
-  await putRuleset(zoneId, cacheRs, [CACHE_RULE], { position: 'top' })
-  console.log('✓ Cache rule: /, /disclaimer, /movies, /tv-shows edge-cacheable (pinned TTL)')
-
-  // Must pair with the cache rule: strips Vary so CF will actually cache.
-  const respHeadersRs = await getOrCreatePhaseEntrypoint(zoneId, 'http_response_headers_transform')
-  await putRuleset(zoneId, respHeadersRs, [VARY_STRIP_RULE], { position: 'top' })
-  console.log('✓ Response header rule: strip Vary on document pages (enables caching)')
+  // --- The edge cache: the actual CPU fix. Needs BOTH of the next two. ---
+  const cacheOk = await step(
+    'Cache rule: edge-cache /, /disclaimer, /movies, /tv-shows (needs Zone Cache Rules: Edit)',
+    async () => {
+      const rs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_cache_settings')
+      await putRuleset(zoneId, rs, [CACHE_RULE], { position: 'top' })
+    }
+  )
+  const varyOk = await step(
+    'Vary-strip: lets CF actually cache the HTML (needs Zone Transform Rules: Edit)',
+    async () => {
+      const rs = await getOrCreatePhaseEntrypoint(zoneId, 'http_response_headers_transform')
+      await putRuleset(zoneId, rs, [VARY_STRIP_RULE], { position: 'top' })
+    }
+  )
 
   // Tiered Cache (free on all plans). Upper-tier colos absorb edge misses before
-  // they reach the origin Worker, so cold renders (and the CPU they burn)
-  // collapse from ~300 edge locations to a handful of tiers. Idempotent.
-  try {
+  // they reach the origin Worker, so cold renders collapse from ~300 edge
+  // locations to a handful of tiers. Idempotent.
+  await step('Tiered Cache on (needs Zone Settings: Edit)', async () => {
     await cf(`/zones/${zoneId}/argo/tiered_caching`, {
       method: 'PATCH',
       body: JSON.stringify({ value: 'on' }),
     })
-    console.log('✓ Tiered Cache enabled (fewer origin Worker renders)')
-  } catch (err) {
-    console.warn(`! Tiered Cache toggle skipped: ${err.message}`)
-    console.warn('  Enable manually at Caching → Tiered Cache.')
-  }
+  })
 
   // Free plan allows only 1 rate-limit rule. We replace any existing rule
   // (e.g. the default "Leaked credential check") since Reely has no auth.
-  const rlRs = await getOrCreatePhaseEntrypoint(zoneId, 'http_ratelimit')
-  await putRuleset(zoneId, rlRs, [RATELIMIT_RULE], { replaceAll: true })
-  console.log('✓ Rate limit: /movies/[id] and /tv-shows/[id]')
+  await step('Rate limit: /movies/[id] and /tv-shows/[id] (needs Zone WAF: Edit)', async () => {
+    const rs = await getOrCreatePhaseEntrypoint(zoneId, 'http_ratelimit')
+    await putRuleset(zoneId, rs, [RATELIMIT_RULE], { replaceAll: true })
+  })
 
-  // Free-plan Bot Fight Mode is intentionally OFF. It is NOT compatible with the
-  // WAF skip action — it runs before the firewall_custom/sbfm phases, so the
-  // ALLOW_RULE above can't exempt verified bots from it. Left on, it serves the
-  // "Just a moment..." JS challenge to Googlebot/Bingbot and GSC's sitemap
-  // fetcher, which surfaces in Search Console as "Couldn't fetch". Obvious
-  // scrapers are still challenged by BLOCK_RULE and throttled by RATELIMIT_RULE.
-  try {
+  // Free-plan Bot Fight Mode is intentionally OFF — it runs before the WAF
+  // phases so ALLOW_RULE can't exempt Googlebot/GSC, and left on it serves the
+  // "Just a moment..." challenge that breaks sitemap fetching + indexing.
+  await step('Bot Fight Mode off (needs Zone Bot Management: Edit)', async () => {
     await cf(`/zones/${zoneId}/bot_management`, {
       method: 'PUT',
       body: JSON.stringify({ fight_mode: false }),
     })
-    console.log('✓ Bot Fight Mode disabled (would challenge Googlebot/GSC)')
-  } catch (err) {
-    console.warn(`! Bot Fight Mode toggle skipped: ${err.message}`)
-    console.warn('  Disable it manually at Security → Bots so Googlebot can crawl.')
-  }
+  })
 
-  console.log('\nDone. Verify at:')
-  console.log(`  https://dash.cloudflare.com/?to=/:account/${ZONE_NAME}/security/waf`)
+  // Green ONLY if edge caching is live (cache rule + Vary-strip both applied).
+  // Secondary rules (WAF, rate limit, redirect, bot mode) can be skipped without
+  // failing the run — they don't affect the CPU limit.
+  console.log('')
+  if (failures.length) {
+    console.warn(`Skipped ${failures.length} of the above (missing token perms) — see ✗ lines.\n`)
+  }
+  if (!(cacheOk && varyOk)) {
+    console.error('FAILED: edge cache NOT applied — the cache rule and/or Vary-strip above failed.')
+    console.error('Add BOTH to the token for reely.space: Zone · Cache Rules · Edit AND Zone · Transform Rules · Edit.')
+    process.exit(1)
+  }
+  console.log('✓ Edge cache is LIVE (cache rule + Vary-strip applied).')
+  console.log('  Verify: curl -sI https://www.reely.space/movies/278 | grep cf-cache-status')
 }
 
 main().catch((err) => {
