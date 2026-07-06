@@ -1,10 +1,18 @@
 name: Deploy
 
 on:
+  push:
+    branches: [main] # deploy on every push to main (single source of truth)
   schedule:
     - cron: '0 2 * * *' # 04:00 Egypt time (UTC+2) — morning refresh before the day's peak traffic
     - cron: '0 18 * * *' # 20:00 Egypt time (UTC+2) — night refresh
   workflow_dispatch:
+
+# Serialize deploys: if a push and a scheduled run (or two quick pushes) overlap,
+# cancel the older in-flight run so only ONE build + KV populate happens.
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: true
 
 jobs:
   deploy:
