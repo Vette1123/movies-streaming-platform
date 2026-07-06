@@ -214,25 +214,32 @@ const REDIRECT_APEX_RULE = {
   },
 }
 
+// The public, cacheable page paths. `/watch-history` is intentionally excluded
+// (personal + noindex). Keep in sync with next.config.mjs `headers()`.
+const CACHEABLE_PATHS =
+  '(http.request.uri.path eq "/") or (http.request.uri.path eq "/disclaimer") or (starts_with(http.request.uri.path, "/movies")) or (starts_with(http.request.uri.path, "/tv-shows"))'
+
+// Only full-document navigations/crawls are cached — NOT React Server Component
+// requests. App Router prefetch + client navigation send `RSC: 1`; those hit
+// the same URL as a real page load but return an RSC payload, not HTML. If both
+// shared a cache entry they'd collide (HTML served to an RSC fetch or vice
+// versa). Bypassing cache for RSC requests keeps one clean HTML entry per path;
+// RSC still renders on the Worker (cheap, and it's a fraction of traffic).
+const NOT_RSC = '(not any(http.request.headers["rsc"][*] == "1"))'
+
+const CACHEABLE_EXPR = `${NOT_RSC} and (${CACHEABLE_PATHS})`
+
 // Worker responses skip CF's edge cache by default; this rule overrides that
-// for the routes we want CDN-cached and pins the TTL ourselves.
-//
-// Why not `mode: 'respect_origin'`? The origin Cache-Control is correct, but
-// Next.js also emits `Vary: rsc, next-router-state-tree, next-router-prefetch,
-// next-router-segment-prefetch` for App Router client navigation. CF respects
-// Vary, so each value-combination of those headers would get a separate cache
-// entry — and prefetch traffic would fill the cache without ever HIT'ing on
-// real navigation. We pin the cache key to just method+host+path+device so
-// real Googlebot/user GETs collide on the same entry.
+// for the routes we want CDN-cached and pins the TTL ourselves. An edge HIT
+// never runs the Worker, so it's the single biggest defence against the
+// free-plan 10ms CPU limit. Works together with VARY_STRIP_RULE below — CF
+// won't cache a response carrying Next.js's `Vary: rsc,...` header, so that
+// header is stripped (in the response phase, before the cache stores) for these
+// same requests. Without the strip, this rule is a no-op (proven in prod:
+// responses returned no cf-cache-status at all).
 const CACHE_RULE = {
-  description: `${TAG} edge-cache public pages, pin TTL + cache key`,
-  // Homepage `/` is the highest-traffic, heaviest-render page (hero slider + 7
-  // TMDB-populated rails). Left uncached, every visit re-runs the full SSR on
-  // the Worker and blows the free-plan 10ms CPU limit under load → 5xx. Caching
-  // it at the edge is the single biggest CPU win. `/watch-history` is personal
-  // + noindex, so it's deliberately excluded (not matched below).
-  expression:
-    '(http.request.uri.path eq "/") or (http.request.uri.path eq "/disclaimer") or (starts_with(http.request.uri.path, "/movies")) or (starts_with(http.request.uri.path, "/tv-shows"))',
+  description: `${TAG} edge-cache public document pages, pin TTL + cache key`,
+  expression: CACHEABLE_EXPR,
   action: 'set_cache_settings',
   action_parameters: {
     cache: true,
@@ -259,6 +266,27 @@ const CACHE_RULE = {
   },
 }
 
+// Next.js emits `Vary: rsc, next-router-state-tree, next-router-prefetch,
+// next-router-segment-prefetch, next-url` on every App Router page. Cloudflare
+// (free plan) treats any response with a Vary other than Accept-Encoding as
+// UNCACHEABLE, so CACHE_RULE above never actually cached anything. Response
+// header transform rules run before the response is written to cache (the same
+// reason removing Set-Cookie makes a response cacheable), so stripping Vary here
+// lets the edge cache the HTML. Scoped to the exact same document requests as
+// CACHE_RULE — RSC requests keep their Vary and are never cached, so no HTML/RSC
+// cache collision is possible. Needs Zone.Transform Rules: Edit (same token
+// scope the redirect rule already uses).
+const VARY_STRIP_RULE = {
+  description: `${TAG} strip Vary on cacheable pages so CF will edge-cache them`,
+  expression: CACHEABLE_EXPR,
+  action: 'rewrite',
+  action_parameters: {
+    headers: {
+      Vary: { operation: 'remove' },
+    },
+  },
+}
+
 async function main() {
   const zones = await cf(`/zones?name=${encodeURIComponent(ZONE_NAME)}`)
   if (!zones.length) throw new Error(`Zone not found: ${ZONE_NAME}`)
@@ -276,6 +304,11 @@ async function main() {
   const cacheRs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_cache_settings')
   await putRuleset(zoneId, cacheRs, [CACHE_RULE], { position: 'top' })
   console.log('✓ Cache rule: /, /disclaimer, /movies, /tv-shows edge-cacheable (pinned TTL)')
+
+  // Must pair with the cache rule: strips Vary so CF will actually cache.
+  const respHeadersRs = await getOrCreatePhaseEntrypoint(zoneId, 'http_response_headers_transform')
+  await putRuleset(zoneId, respHeadersRs, [VARY_STRIP_RULE], { position: 'top' })
+  console.log('✓ Response header rule: strip Vary on document pages (enables caching)')
 
   // Tiered Cache (free on all plans). Upper-tier colos absorb edge misses before
   // they reach the origin Worker, so cold renders (and the CPU they burn)
