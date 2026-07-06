@@ -40,10 +40,9 @@
     "ENVIRONMENT": "production",
     "NODE_ENV": "production",
   },
-  "kv_namespaces": [
-    {
-      "binding": "NEXT_INC_CACHE_KV",
-      "id": "cd422b9f51424c32b976ee260b967be3",
-    },
-  ],
+  // No KV incremental cache: free-plan KV caps at 1k writes/day, which ISR blows
+  // through and crashes the site. Caching is handled entirely by the Cloudflare
+  // edge CDN cache rule (see scripts/cf-waf-setup.mjs) — no storage binding, no
+  // quota. If ISR persistence is ever needed, use R2 (10GB / 1M writes free),
+  // never KV.
 }

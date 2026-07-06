@@ -11,8 +11,10 @@
 //      defense is handled by the BLOCK_RULE + rate limit instead.
 //   5. Dynamic redirect: 301 apex (reely.space/*) → www.reely.space/*
 //      Needs Zone.Transform Rules: Edit on the API token.
-//   6. Cache rule: force /movies and /tv-shows paths to be CDN-eligible
-//      (Worker responses bypass cache by default). Needs Zone.Cache Rules.
+//   6. Cache rule: force /, /disclaimer, /movies and /tv-shows paths to be
+//      CDN-eligible (Worker responses bypass cache by default). This is what
+//      keeps the free-plan 10ms Worker CPU limit from being hit under traffic —
+//      an edge HIT never runs the Worker. Needs Zone.Cache Rules.
 //
 // Idempotent — managed rules are identified by description prefix "[reely-waf]"
 // and replaced on each run. Any other custom rules in the zone are preserved.
@@ -220,9 +222,14 @@ const REDIRECT_APEX_RULE = {
 // real navigation. We pin the cache key to just method+host+path+device so
 // real Googlebot/user GETs collide on the same entry.
 const CACHE_RULE = {
-  description: `${TAG} edge-cache detail pages, pin TTL + cache key`,
+  description: `${TAG} edge-cache public pages, pin TTL + cache key`,
+  // Homepage `/` is the highest-traffic, heaviest-render page (hero slider + 7
+  // TMDB-populated rails). Left uncached, every visit re-runs the full SSR on
+  // the Worker and blows the free-plan 10ms CPU limit under load → 5xx. Caching
+  // it at the edge is the single biggest CPU win. `/watch-history` is personal
+  // + noindex, so it's deliberately excluded (not matched below).
   expression:
-    '(starts_with(http.request.uri.path, "/movies")) or (starts_with(http.request.uri.path, "/tv-shows"))',
+    '(http.request.uri.path eq "/") or (http.request.uri.path eq "/disclaimer") or (starts_with(http.request.uri.path, "/movies")) or (starts_with(http.request.uri.path, "/tv-shows"))',
   action: 'set_cache_settings',
   action_parameters: {
     cache: true,
@@ -265,7 +272,7 @@ async function main() {
 
   const cacheRs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_cache_settings')
   await putRuleset(zoneId, cacheRs, [CACHE_RULE], { position: 'top' })
-  console.log('✓ Cache rule: /movies, /tv-shows edge-cacheable (respect origin)')
+  console.log('✓ Cache rule: /, /disclaimer, /movies, /tv-shows edge-cacheable (pinned TTL)')
 
   // Free plan allows only 1 rate-limit rule. We replace any existing rule
   // (e.g. the default "Leaked credential check") since Reely has no auth.

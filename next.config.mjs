@@ -21,22 +21,20 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['framer-motion', 'date-fns'],
   },
-  // Override Next's default `Cache-Control: private, no-store` on detail
-  // routes so the Cloudflare edge cache (CDN, not KV — no quota cost) keeps
-  // a rendered copy for 8h. Without this, every Googlebot crawl re-renders
-  // and pressures TMDB, which surfaces as 5xx in GSC's index coverage report.
+  // Override Next's default `Cache-Control: private, no-store` on public pages
+  // so the Cloudflare edge cache (CDN — no KV, no quota cost) keeps a rendered
+  // copy for 8h. Without this, every visit / crawl re-renders on the Worker,
+  // burning the free-plan 10ms CPU budget (→ 5xx under load) and pressuring
+  // TMDB. The homepage is the heaviest render, so it matters most here. Paths
+  // must stay in sync with the CDN cache rule in scripts/cf-waf-setup.mjs.
+  // `/watch-history` is intentionally omitted — it's personal + noindex.
   async headers() {
-    const detailCache = 'public, max-age=0, s-maxage=28800, stale-while-revalidate=86400'
-    return [
-      {
-        source: '/movies/:id',
-        headers: [{ key: 'Cache-Control', value: detailCache }],
-      },
-      {
-        source: '/tv-shows/:id',
-        headers: [{ key: 'Cache-Control', value: detailCache }],
-      },
-    ]
+    const edgeCache = 'public, max-age=0, s-maxage=28800, stale-while-revalidate=86400'
+    const cachedPaths = ['/', '/movies', '/tv-shows', '/movies/:id', '/tv-shows/:id']
+    return cachedPaths.map((source) => ({
+      source,
+      headers: [{ key: 'Cache-Control', value: edgeCache }],
+    }))
   },
   async redirects() {
     return [
