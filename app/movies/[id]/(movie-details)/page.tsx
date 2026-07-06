@@ -20,7 +20,10 @@ import {
 import { MoviesDetailsContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
 
-export const revalidate = 28800
+// 24h: movie metadata is essentially static and CI redeploys twice daily
+// (repopulating the cache with fresh data), so a shorter window would only
+// churn KV writes against the free-plan 1k/day cap for no freshness gain.
+export const revalidate = 86400
 
 // Pre-render the most popular movie pages at build time so they ship as static
 // assets (served by the ASSETS binding — zero Worker CPU, even on an edge-cache
