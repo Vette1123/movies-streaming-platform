@@ -4,8 +4,14 @@ on:
   push:
     branches: [main] # deploy on every push to main (single source of truth)
   schedule:
-    - cron: '0 2 * * *' # 04:00 Egypt time (UTC+2) — morning refresh before the day's peak traffic
-    - cron: '0 18 * * *' # 20:00 Egypt time (UTC+2) — night refresh
+    # 4x/day, spaced 6h apart to spread KV writes evenly across the day.
+    # NOTE: cron is UTC. Egypt = UTC+2 (winter) / UTC+3 (summer DST, late-Apr→late-Oct),
+    # so local times below shift +1h in summer. GitHub also delays scheduled runs a
+    # few min-to-30min under load (and rarely skips one) — exact-minute firing isn't guaranteed.
+    - cron: '0 0 * * *' # 02:00 winter / 03:00 summer Egypt — overnight refresh
+    - cron: '0 6 * * *' # 08:00 winter / 09:00 summer Egypt — morning refresh
+    - cron: '0 12 * * *' # 14:00 winter / 15:00 summer Egypt — midday refresh
+    - cron: '0 18 * * *' # 20:00 winter / 21:00 summer Egypt — evening refresh
   workflow_dispatch:
 
 # Serialize deploys: if a push and a scheduled run (or two quick pushes) overlap,
