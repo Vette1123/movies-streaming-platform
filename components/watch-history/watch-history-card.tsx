@@ -31,6 +31,10 @@ export function WatchedItemCard({ item }: WatchedItemCardProps) {
   return (
     <Link
       href={handleRedirect()}
+      // Watch-history is a full grid; viewport auto-prefetch would fire one RSC
+      // request per watched item at once. Prefetch on hover only (page is
+      // personal/noindex, so eager prefetch isn't worth the rate-limit risk).
+      prefetch={false}
       className="h-fit"
       onClick={() =>
         trackWatchHistoryItemClicked({

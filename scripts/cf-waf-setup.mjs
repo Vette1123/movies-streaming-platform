@@ -186,15 +186,15 @@ const RATELIMIT_RULE = {
   // Verified Bot — NOT query string or headers. That matters: Next.js App
   // Router <Link> prefetches detail pages (`/movies/[id]?_rsc=...`) as they
   // enter the viewport, and those hit the SAME path as real navigation, so we
-  // cannot exclude them. A content-dense grid can fire dozens of prefetches in
-  // one 10s window. The threshold therefore has to clear a normal browser's
-  // prefetch burst, not just human page-views: 100 req/10s (~600/min) sits well
-  // above any real scroll-and-browse session while still blocking bulk scrapers
-  // that hammer full HTML pages. Lower it only if you confirm prefetch is off.
+  // cannot exclude them. Card/watch-history links now use prefetch={false}
+  // (hover-only), which killed the on-load viewport storm — but nav + hover
+  // prefetch + real page-views still stack up. 300 req/10s (~1800/min) sits well
+  // above any real browse session while still blocking bulk scrapers that hammer
+  // full HTML pages. Was 100/10s; a homepage of carousels tripped it on load.
   ratelimit: {
     characteristics: ['ip.src', 'cf.colo.id'],
     period: 10,
-    requests_per_period: 100,
+    requests_per_period: 300,
     mitigation_timeout: 10,
   },
 }
