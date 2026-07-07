@@ -41,7 +41,7 @@
     "date-fns": "^4.4.0",
     "framer-motion": "^12.40.0",
     "lucide-react": "^1.0.0",
-    "next": "16.2.9",
+    "next": "16.2.10",
     "nuqs": "^2.8.9",
     "posthog-js": "^1.383.2",
     "query-string": "^9.4.0",
