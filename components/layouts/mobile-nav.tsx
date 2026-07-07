@@ -36,6 +36,7 @@ export function MobileNav({ items }: MobileNavProps) {
           <Link
             aria-label="Home"
             href="/"
+            prefetch={false}
             className="flex w-fit items-center"
             onClick={() => setIsOpen(false)}
           >
@@ -134,6 +135,7 @@ function MobileLink({
     <Link
       href={href}
       scroll={scroll}
+      prefetch={false}
       className={cn(
         'text-foreground/70 hover:text-foreground w-fit text-base font-medium transition-colors',
         pathname === href && 'text-secondary-foreground',

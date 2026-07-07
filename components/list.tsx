@@ -35,6 +35,9 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
       >
         <Link
           href={itemRedirect(itemType)}
+          // Homepage stacks many carousels; each heading would viewport-prefetch a
+          // section route. Every prefetch is an extra Worker RSC hit — skip it.
+          prefetch={false}
           className="mb-4 flex w-fit items-center gap-2"
         >
           <motion.h2

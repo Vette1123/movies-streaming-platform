@@ -41,6 +41,9 @@ export const AnimatedWatchButton = ({
     >
       <Link
         href={href}
+        // Hero button on every detail page; viewport auto-prefetch would fire an
+        // RSC request for the heavy watch route on each view. Fetch on click.
+        prefetch={false}
         onClick={() =>
           trackHeroWatchClicked({
             media_id: movieId,

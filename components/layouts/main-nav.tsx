@@ -16,7 +16,7 @@ export function MainNav({ items }: MainNavProps) {
   const pathname = usePathname()
   return (
     <div className="hidden gap-6 md:gap-10 lg:flex">
-      <Link href="/" className="flex items-baseline space-x-2">
+      <Link href="/" prefetch={false} className="flex items-baseline space-x-2">
         <Icons.reelLogo className="h-7 w-7" />
         <span className="text-secondary-foreground inline-block text-3xl font-bold">
           {siteConfig.name}
@@ -31,6 +31,9 @@ export function MainNav({ items }: MainNavProps) {
                   key={index}
                   href={item.href}
                   scroll={item.scroll}
+                  // Header is always in-viewport, so every nav route auto-prefetches
+                  // on each page load — one Worker RSC hit per route. Fetch on click.
+                  prefetch={false}
                   className={cn(
                     'text-secondary-foreground flex items-center text-base font-medium',
                     pathname === item.href && 'underline underline-offset-4',

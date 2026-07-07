@@ -34,25 +34,28 @@ export const dynamicParams = true
 
 export async function generateStaticParams() {
   try {
-    // Prerender the head of the traffic distribution: popular (10 pages),
-    // all-time top rated (5), and today's trending (2). Deduped → ~300 hottest
+    // Prerender the head of the traffic distribution: popular (20 pages),
+    // all-time top rated (10), and today's trending (3). Deduped → ~500 hottest
     // titles baked into static assets at build so they never cold-render at
     // runtime — the more we prebuild, the smaller the long tail that has to
     // render on the Worker (10ms CPU) and write to KV on demand. TMDB returns 20
     // ids/page; the head captures the vast majority of real human traffic.
+    // allSettled (not all): a single TMDB 429/hiccup drops just that page, not
+    // the whole prebuild set — important now that we fan out more requests.
     const requests = [
-      ...Array.from({ length: 10 }, (_, i) => getPopularMovies({ page: i + 1 })),
-      ...Array.from({ length: 5 }, (_, i) =>
+      ...Array.from({ length: 20 }, (_, i) => getPopularMovies({ page: i + 1 })),
+      ...Array.from({ length: 10 }, (_, i) =>
         getAllTimeTopRatedMovies({ page: i + 1 })
       ),
-      ...Array.from({ length: 2 }, (_, i) =>
+      ...Array.from({ length: 3 }, (_, i) =>
         getLatestTrendingMovies({ page: i + 1 })
       ),
     ]
-    const responses = await Promise.all(requests)
+    const responses = await Promise.allSettled(requests)
     const ids = new Set<string>()
     for (const res of responses) {
-      for (const movie of res?.results ?? []) ids.add(String(movie.id))
+      if (res.status !== 'fulfilled') continue
+      for (const movie of res.value?.results ?? []) ids.add(String(movie.id))
     }
     return Array.from(ids, (id) => ({ id }))
   } catch {
