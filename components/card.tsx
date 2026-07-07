@@ -43,6 +43,11 @@ export const Card = ({
         {item?.poster_path && (
           <Link
             href={`${itemRedirect(itemType)}/${item.id}`}
+            // Viewport auto-prefetch fires one RSC request per card; a homepage
+            // of carousels mounts 100+ cards at once and trips the CF rate-limit
+            // (100 req/10s on detail paths) → 1015 on our own page load. Prefetch
+            // on hover only — pairs with the HoverCard, keeps nav snappy.
+            prefetch={false}
             onClick={() =>
               trackMediaCardClicked({
                 media_id: item.id,
