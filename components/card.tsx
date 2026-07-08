@@ -1,3 +1,5 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -7,6 +9,7 @@ import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
 import { trackMediaCardClicked } from '@/lib/analytics'
 import { CARD_VARIANT } from '@/lib/motion-variants'
+import { useMounted } from '@/hooks/use-mounted'
 import {
   dateFormatter,
   getPosterImageURL,
@@ -35,7 +38,14 @@ export const Card = ({
   itemType = 'movie',
   isTruncateOverview = true,
 }: CardProps) => {
-  const isNew = isRecentlyReleased(item?.release_date || item?.first_air_date)
+  // isRecentlyReleased() reads Date.now(), so the "New" badge is non-deterministic
+  // between the prerendered HTML (baked at build/revalidate) and client hydration:
+  // a title can cross the 30-day window in the meantime, flipping the badge and
+  // tripping a hydration mismatch (React error #418). Gate on mount so SSR and the
+  // first client render agree (no badge), then reveal it after hydration.
+  const isMounted = useMounted()
+  const isNew =
+    isMounted && isRecentlyReleased(item?.release_date || item?.first_air_date)
 
   return (
     <HoverCard>
