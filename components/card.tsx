@@ -9,17 +9,15 @@ import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
 import { trackMediaCardClicked } from '@/lib/analytics'
 import { CARD_VARIANT } from '@/lib/motion-variants'
-import { useMounted } from '@/hooks/use-mounted'
 import {
   dateFormatter,
   getPosterImageURL,
-  isRecentlyReleased,
   itemRedirect,
   numberRounder,
 } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { NewBadge } from '@/components/new-badge'
+import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 import {
   HoverCard,
   HoverCardContent,
@@ -38,15 +36,6 @@ export const Card = ({
   itemType = 'movie',
   isTruncateOverview = true,
 }: CardProps) => {
-  // isRecentlyReleased() reads Date.now(), so the "New" badge is non-deterministic
-  // between the prerendered HTML (baked at build/revalidate) and client hydration:
-  // a title can cross the 30-day window in the meantime, flipping the badge and
-  // tripping a hydration mismatch (React error #418). Gate on mount so SSR and the
-  // first client render agree (no badge), then reveal it after hydration.
-  const isMounted = useMounted()
-  const isNew =
-    isMounted && isRecentlyReleased(item?.release_date || item?.first_air_date)
-
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
@@ -74,7 +63,9 @@ export const Card = ({
               className="pointer-events-none lg:pointer-events-auto"
             >
               <motion.div className="group relative" variants={CARD_VARIANT}>
-                {isNew && <NewBadge />}
+                <NewBadgeWhenRecent
+                  date={item?.release_date || item?.first_air_date}
+                />
                 <BlurredImage
                   src={`${getPosterImageURL(item.poster_path)}`}
                   alt="Movie"

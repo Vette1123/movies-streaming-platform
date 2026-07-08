@@ -3,11 +3,11 @@ import { useRouter } from 'next/navigation'
 import { Loader } from 'lucide-react'
 
 import { EpisodeDetails } from '@/types/episode'
-import { cn, isRecentlyReleased } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useScrollToTop } from '@/hooks/use-scroll-to-top'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
-import { NewBadge } from '@/components/new-badge'
+import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 import { Separator } from '@/components/ui/separator'
 
 // Weekly release cadence + a week's grace, mirroring the "New Episode" window
@@ -107,9 +107,11 @@ export const Episodes = ({
                 <span>
                   {episode.episode_number}. {episode.name}
                 </span>
-                {isRecentlyReleased(episode?.air_date, NEW_EPISODE_DAYS) && (
-                  <NewBadge className="relative left-0 top-0 shrink-0" />
-                )}
+                <NewBadgeWhenRecent
+                  date={episode?.air_date}
+                  withinDays={NEW_EPISODE_DAYS}
+                  className="relative left-0 top-0 shrink-0"
+                />
               </p>
               {idx !== episodes?.length - 1 && <Separator className="my-3" />}
             </React.Fragment>

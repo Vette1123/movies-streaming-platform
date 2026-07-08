@@ -2,9 +2,9 @@ import * as React from 'react'
 
 import { SeriesDetails } from '@/types/series-details'
 import { trackSeasonSelected } from '@/lib/analytics'
-import { isRecentlyReleased, seasonsFormatter } from '@/lib/utils'
+import { seasonsFormatter } from '@/lib/utils'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
-import { NewBadge } from '@/components/new-badge'
+import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 import {
   Select,
   SelectContent,
@@ -55,9 +55,10 @@ export function SeasonsSelector({
                       {season.name.startsWith('Season')
                         ? season.name
                         : `Season ${season?.season_number}`}
-                      {isRecentlyReleased(season?.air_date) && (
-                        <NewBadge className="relative left-0 top-0" />
-                      )}
+                      <NewBadgeWhenRecent
+                        date={season?.air_date}
+                        className="relative left-0 top-0"
+                      />
                     </span>
                   </SelectItem>
                   {idx !== formattedSeasons?.length - 1 && <SelectSeparator />}
