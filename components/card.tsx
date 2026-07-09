@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { CalendarDays } from 'lucide-react'
+import { CalendarDays, Film, Tv } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
@@ -17,13 +17,13 @@ import {
 } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card'
 import { BlurredImage } from '@/components/blurred-image'
+import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 
 interface CardProps {
   item: MediaType
@@ -36,47 +36,61 @@ export const Card = ({
   itemType = 'movie',
   isTruncateOverview = true,
 }: CardProps) => {
+  const title = item?.title || item?.name
+  const releaseDate = item?.release_date || item?.first_air_date
+  const year = releaseDate?.slice(0, 4)
+  const overview = item?.overview ?? ''
+
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
-        {item?.poster_path && (
-          <Link
-            href={`${itemRedirect(itemType)}/${item.id}`}
-            // Viewport auto-prefetch fires one RSC request per card; a homepage
-            // of carousels mounts 100+ cards at once and trips the CF rate-limit
-            // (100 req/10s on detail paths) → 1015 on our own page load. Prefetch
-            // on hover only — pairs with the HoverCard, keeps nav snappy.
-            prefetch={false}
-            onClick={() =>
-              trackMediaCardClicked({
-                media_id: item.id,
-                media_type: itemType === 'tv' ? 'tv' : 'movie',
-                title: item?.title || item?.name,
-                source: 'card',
-              })
-            }
+        <Link
+          href={`${itemRedirect(itemType)}/${item.id}`}
+          // Viewport auto-prefetch fires one RSC request per card; a homepage
+          // of carousels mounts 100+ cards at once and trips the CF rate-limit
+          // (100 req/10s on detail paths) → 1015 on our own page load. Prefetch
+          // on hover only — pairs with the HoverCard, keeps nav snappy.
+          prefetch={false}
+          onClick={() =>
+            trackMediaCardClicked({
+              media_id: item.id,
+              media_type: itemType === 'tv' ? 'tv' : 'movie',
+              title,
+              source: 'card',
+            })
+          }
+        >
+          <motion.div
+            initial="rest"
+            whileHover="hover"
+            animate="rest"
+            className="pointer-events-none lg:pointer-events-auto"
           >
-            <motion.div
-              initial="rest"
-              whileHover="hover"
-              animate="rest"
-              className="pointer-events-none lg:pointer-events-auto"
-            >
-              <motion.div className="group relative" variants={CARD_VARIANT}>
-                <NewBadgeWhenRecent
-                  date={item?.release_date || item?.first_air_date}
-                />
+            <motion.div className="group relative" variants={CARD_VARIANT}>
+              <NewBadgeWhenRecent date={releaseDate} />
+              {item?.poster_path ? (
                 <BlurredImage
                   src={`${getPosterImageURL(item.poster_path)}`}
-                  alt="Movie"
+                  alt={title ?? 'Poster'}
                   width={250}
                   height={375}
                   className="cursor-pointer rounded-md object-cover shadow-xl"
                 />
-              </motion.div>
+              ) : (
+                <div className="bg-muted text-muted-foreground flex aspect-2/3 w-[250px] max-w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md p-4 text-center shadow-xl">
+                  {itemType === 'tv' ? (
+                    <Tv className="size-8 opacity-60" aria-hidden />
+                  ) : (
+                    <Film className="size-8 opacity-60" aria-hidden />
+                  )}
+                  <span className="line-clamp-3 text-xs font-medium">
+                    {title}
+                  </span>
+                </div>
+              )}
             </motion.div>
-          </Link>
-        )}
+          </motion.div>
+        </Link>
       </HoverCardTrigger>
       <HoverCardContent className="hidden w-80 md:block" side="right">
         <div className="flex justify-between space-x-4">
@@ -87,21 +101,20 @@ export const Card = ({
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-2">
               <h4 className="text-sm font-semibold">
-                {item?.title} ({item?.release_date?.slice(0, 4)})
+                {title}
+                {year ? ` (${year})` : ''}
               </h4>
               <Badge>{numberRounder(item.vote_average)}</Badge>
             </div>
             <p className="text-sm">
-              {isTruncateOverview && item.overview.length > 100 ? (
-                <>{item.overview.slice(0, 100)}...</>
-              ) : (
-                item.overview.slice(0, 400)
-              )}
+              {isTruncateOverview && overview.length > 100
+                ? `${overview.slice(0, 100)}...`
+                : overview.slice(0, 400)}
             </p>
             <div className="flex items-center pt-2">
               <CalendarDays className="mr-2 size-4 opacity-70" />{' '}
               <span className="text-muted-foreground text-xs">
-                {dateFormatter(item?.release_date, true)}
+                {dateFormatter(releaseDate ?? '', true)}
               </span>
             </div>
           </div>
