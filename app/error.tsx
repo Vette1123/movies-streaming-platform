@@ -2,6 +2,8 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import posthog from 'posthog-js'
 
 interface ErrorProps {
   error: Error & { digest?: string }
@@ -9,9 +11,20 @@ interface ErrorProps {
 }
 
 export default function GlobalError({ error, reset }: ErrorProps) {
+  const pathname = usePathname()
+
   useEffect(() => {
     console.error(error)
-  }, [error])
+    // Explicitly report errors that reached the route error boundary. React
+    // catches render errors before they hit window.onerror, so this is what
+    // gives PostHog the component context (Next's `digest` maps to the server
+    // component stack) plus the exact screen it broke on.
+    posthog.captureException(error, {
+      error_boundary: 'app/error.tsx',
+      error_digest: error.digest,
+      error_pathname: pathname,
+    })
+  }, [error, pathname])
 
   return (
     <main className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 text-center">

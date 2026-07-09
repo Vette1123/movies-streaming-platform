@@ -8,6 +8,46 @@ import { PostHogProvider, usePostHog } from 'posthog-js/react'
 import { trackPwaInstallable, trackPwaInstalled } from '@/lib/analytics'
 import { enrichPersonProfile } from '@/lib/person'
 
+/**
+ * Runtime context attached to every captured $exception. Our production stack
+ * frames are minified and often fail to symbolicate (the source chunk 403s),
+ * so the raw stack tells us little. These props answer "where / on what screen
+ * did it happen" directly: the exact route, viewport + screen + DPR, display
+ * mode (PWA vs browser), network quality, memory, and page visibility — the
+ * "screen, component, and so on" that makes an exception actionable.
+ */
+function errorContext(): Record<string, unknown> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const nav = navigator as Navigator & {
+      connection?: { effectiveType?: string; downlink?: number; rtt?: number }
+      deviceMemory?: number
+    }
+    const conn = nav.connection
+    return {
+      error_pathname: window.location.pathname,
+      error_url: window.location.href,
+      error_referrer: document.referrer || undefined,
+      viewport_width: window.innerWidth,
+      viewport_height: window.innerHeight,
+      screen_width: window.screen?.width,
+      screen_height: window.screen?.height,
+      device_pixel_ratio: window.devicePixelRatio,
+      orientation: window.screen?.orientation?.type,
+      document_visibility: document.visibilityState,
+      online: nav.onLine,
+      network_effective_type: conn?.effectiveType,
+      network_downlink: conn?.downlink,
+      device_memory_gb: nav.deviceMemory,
+      display_mode: window.matchMedia?.('(display-mode: standalone)').matches
+        ? 'standalone'
+        : 'browser',
+    }
+  } catch {
+    return {}
+  }
+}
+
 if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
     api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST as string,
@@ -31,6 +71,14 @@ if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
     // Error Tracking: autocapture unhandled errors / promise rejections
     // as $exception events.
     capture_exceptions: true,
+    // Enrich every $exception with route + device context (see errorContext).
+    // Wrapped defensively so enrichment can never drop an exception event.
+    before_send: (event) => {
+      if (event && event.event === '$exception') {
+        event.properties = { ...event.properties, ...errorContext() }
+      }
+      return event
+    },
     // This app has no login, so identified_only would leave every visitor
     // profile-less. 'always' gives each visitor a person profile enriched
     // with geo / device / UTM (auto) plus our own props (see lib/person.ts).

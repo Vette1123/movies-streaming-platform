@@ -33,6 +33,13 @@ function dateFormatter(date: string, showDay: boolean = false) {
     year: 'numeric',
     month: 'long',
     day: showDay ? 'numeric' : undefined,
+    // Pin to UTC so the server (UTC runtime) and the client (visitor's local
+    // zone) render the SAME text. TMDB dates are calendar dates with no time
+    // component; without this, a date like "2026-07-01" renders "July 2026" on
+    // the server but "June 2026" for negative-offset (e.g. US) visitors, whose
+    // local clock rolls it back a day across the month boundary — a text-content
+    // hydration mismatch (React #418). See HeroRatesInfos / Card date display.
+    timeZone: 'UTC',
   })
 }
 
@@ -115,6 +122,9 @@ function formatDate(
     month:
       format === 'short' ? '2-digit' : format === 'long' ? 'long' : 'short',
     day: '2-digit',
+    // Same UTC pinning as dateFormatter — keep server/client render identical
+    // and avoid timezone-driven hydration mismatches (React #418).
+    timeZone: 'UTC',
   }
 
   return date.toLocaleDateString('en-US', options)
