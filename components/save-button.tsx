@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { Bookmark, BookmarkCheck } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { MovieDetails } from '@/types/movie-details'
 import { SeriesDetails } from '@/types/series-details'
@@ -24,6 +25,18 @@ export function SaveButton({ media, className }: SaveButtonProps) {
   // the first client render to stay hydration-safe (React #418).
   const saved = isMounted && isSaved(media.id)
 
+  const handleClick = () => {
+    const title = media?.title || media?.name
+    // `saved` is the pre-toggle state, so it tells us which way we're flipping.
+    if (saved) {
+      toggle(media)
+      toast(`Removed “${title}” from your watchlist`)
+    } else {
+      toggle(media)
+      toast.success(`Saved “${title}” to your watchlist`)
+    }
+  }
+
   return (
     <Button
       type="button"
@@ -31,9 +44,9 @@ export function SaveButton({ media, className }: SaveButtonProps) {
       size="lg"
       aria-pressed={saved}
       aria-label={saved ? 'Remove from watchlist' : 'Save to watchlist'}
-      onClick={() => toggle(media)}
+      onClick={handleClick}
       className={cn(
-        'gap-2 rounded-full backdrop-blur-sm transition-colors',
+        'cursor-pointer gap-2 rounded-full backdrop-blur-sm transition-colors',
         !saved && 'bg-background/40 hover:bg-background/60',
         className
       )}
