@@ -1,7 +1,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { CalendarDays, Film, Tv } from 'lucide-react'
+import { CalendarDays, Film, Tv, X } from 'lucide-react'
 
 import { trackWatchHistoryItemClicked } from '@/lib/analytics'
 import { dateFormatter, getPosterImageURL } from '@/lib/utils'
@@ -13,6 +13,9 @@ import { BlurredImage } from '../blurred-image'
 
 interface WatchedItemCardProps {
   item: WatchedItem
+  // When provided, a remove control is shown on the card (used by /watchlist so
+  // the page is self-sufficient — no need to open the detail page to un-save).
+  onRemove?: (id: number) => void
 }
 
 const CARD_VARIANT = {
@@ -20,7 +23,7 @@ const CARD_VARIANT = {
   hover: { scale: 1.05 },
 }
 
-export function WatchedItemCard({ item }: WatchedItemCardProps) {
+export function WatchedItemCard({ item, onRemove }: WatchedItemCardProps) {
   const handleRedirect = () => {
     if (item.type === 'movie') {
       return `/movies/${item.id}`
@@ -40,7 +43,7 @@ export function WatchedItemCard({ item }: WatchedItemCardProps) {
       // request per watched item at once. Prefetch on hover only (page is
       // personal/noindex, so eager prefetch isn't worth the rate-limit risk).
       prefetch={false}
-      className="h-fit"
+      className="group h-fit"
       onClick={() =>
         trackWatchHistoryItemClicked({
           media_id: item.id,
@@ -69,6 +72,21 @@ export function WatchedItemCard({ item }: WatchedItemCardProps) {
                   )}
                 </Badge>
               </div>
+              {onRemove && (
+                <button
+                  type="button"
+                  aria-label={`Remove ${item.title} from watchlist`}
+                  onClick={(e) => {
+                    // The card is a <Link>; stop the click from navigating.
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onRemove(item.id)
+                  }}
+                  className="absolute top-2 left-2 grid size-7 cursor-pointer place-items-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:scale-110 hover:bg-black/80 lg:opacity-0 lg:group-hover:opacity-100"
+                >
+                  <X className="size-4" />
+                </button>
+              )}
             </div>
             <CardContent className="p-4">
               <div className="flex items-baseline justify-between">

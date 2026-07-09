@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { toast } from 'sonner'
 
 import { useMounted } from '@/hooks/use-mounted'
 import { useWatchlist } from '@/hooks/use-watchlist'
@@ -8,8 +9,14 @@ import { WatchedItemCard } from '@/components/watch-history/watch-history-card'
 import { WatchedItemCardSkeleton } from '@/components/watch-history/watch-history-skeleton'
 
 export const WatchlistContainer = () => {
-  const { watchlist } = useWatchlist()
+  const { watchlist, remove } = useWatchlist()
   const isMounted = useMounted()
+
+  const handleRemove = (id: number) => {
+    const item = watchlist.find((entry) => entry.id === id)
+    remove(id)
+    if (item) toast(`Removed “${item.title}” from your watchlist`)
+  }
 
   // localStorage is client-only — render skeletons on the server / first client
   // render so the markup matches (hydration-safe), then reveal the real list.
@@ -44,7 +51,11 @@ export const WatchlistContainer = () => {
               new Date(b.added_at).getTime() - new Date(a.added_at).getTime()
           )
           ?.map((item) => (
-            <WatchedItemCard key={item.id} item={item} />
+            <WatchedItemCard
+              key={item.id}
+              item={item}
+              onRemove={handleRemove}
+            />
           ))}
       </div>
     </div>

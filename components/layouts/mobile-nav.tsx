@@ -106,6 +106,7 @@ export function MobileNav({ items }: MobileNavProps) {
               'text-white'
             )}
           >
+            <Icons.portfolio className="mr-2 size-5" />
             Visit my portfolio
           </Link>
         </div>

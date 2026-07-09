@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Loader2 } from 'lucide-react'
 
 import { MovieDetails } from '@/types/movie-details'
 import { SeriesDetails } from '@/types/series-details'
@@ -7,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { HeroImage } from '@/components/header/hero-image'
 import { PlayButton } from '@/components/play-button'
 import { SaveButton } from '@/components/save-button'
+import { ShareButton } from '@/components/share-button'
 import { TrailerDialog } from '@/components/trailer-dialog'
 
 export const DetailsHero = forwardRef<
@@ -22,6 +24,13 @@ export const DetailsHero = forwardRef<
   const media = (movie || series) as MovieDetails & SeriesDetails
   const title = media?.title || media?.name
   const isMovie = !!movie
+
+  // Bridge the blank gap between "Watch" click and the streaming iframe painting
+  // its first frame: show a spinner while the iframe is shown but hasn't loaded.
+  const [iframeLoaded, setIframeLoaded] = React.useState(false)
+  React.useEffect(() => {
+    if (isIframeShown) setIframeLoaded(false)
+  }, [isIframeShown])
 
   return (
     <section className="relative isolate h-[500px] overflow-hidden lg:h-[80dvh]">
@@ -50,10 +59,20 @@ export const DetailsHero = forwardRef<
                     />
                   )}
                   <SaveButton media={media} />
+                  <ShareButton
+                    title={title}
+                    mediaId={media?.id}
+                    mediaType={isMovie ? 'movie' : 'tv'}
+                  />
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
+          {isIframeShown && !iframeLoaded && (
+            <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
+              <Loader2 className="size-12 animate-spin text-white/80" />
+            </div>
+          )}
           <iframe
             className={cn('size-full py-20', {
               hidden: !isIframeShown,
@@ -61,6 +80,7 @@ export const DetailsHero = forwardRef<
             allowFullScreen
             ref={ref}
             autoFocus
+            onLoad={() => setIframeLoaded(true)}
             content="noindex,nofollow"
             autoSave={title?.toLowerCase().trim()}
             id={title}

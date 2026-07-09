@@ -46,7 +46,7 @@ export function SaveButton({ media, className }: SaveButtonProps) {
       aria-label={saved ? 'Remove from watchlist' : 'Save to watchlist'}
       onClick={handleClick}
       className={cn(
-        'cursor-pointer gap-2 rounded-full backdrop-blur-sm transition-colors',
+        'gap-2 rounded-full backdrop-blur-sm transition hover:scale-105 active:scale-95',
         !saved && 'bg-background/40 hover:bg-background/60',
         className
       )}

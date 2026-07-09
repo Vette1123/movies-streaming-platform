@@ -26,6 +26,7 @@ export const EVENTS = {
   // Hero / CTAs
   HERO_WATCH_CLICKED: 'hero_watch_clicked',
   TRAILER_PLAYED: 'trailer_played',
+  MEDIA_SHARED: 'media_shared',
   // Watchlist (save for later — distinct from watch history)
   WATCHLIST_ADDED: 'watchlist_added',
   WATCHLIST_REMOVED: 'watchlist_removed',
@@ -37,6 +38,7 @@ export const EVENTS = {
   WATCH_HISTORY_ADDED: 'watch_history_added',
   WATCH_HISTORY_UPDATED: 'watch_history_updated',
   WATCH_HISTORY_ITEM_CLICKED: 'watch_history_item_clicked',
+  WATCH_HISTORY_ITEM_REMOVED: 'watch_history_item_removed',
   WATCH_HISTORY_CLEARED: 'watch_history_cleared',
   // PWA install lifecycle
   PWA_INSTALLABLE: 'pwa_installable',
@@ -162,6 +164,16 @@ export function trackTrailerPlayed(props: {
   track(EVENTS.TRAILER_PLAYED, props)
 }
 
+export function trackMediaShared(props: {
+  media_id?: number
+  media_type?: MediaKind
+  title?: string
+  // 'web_share' = native OS share sheet; 'clipboard' = copy-link fallback.
+  method: 'web_share' | 'clipboard'
+}): void {
+  track(EVENTS.MEDIA_SHARED, props)
+}
+
 // ---- Watchlist --------------------------------------------------------------
 
 export function trackWatchlistAdded(props: {
@@ -220,6 +232,14 @@ export function trackWatchHistoryItemClicked(props: {
   title?: string
 }): void {
   track(EVENTS.WATCH_HISTORY_ITEM_CLICKED, props)
+}
+
+export function trackWatchHistoryItemRemoved(props: {
+  media_id: number
+  media_type: MediaKind
+  title?: string
+}): void {
+  track(EVENTS.WATCH_HISTORY_ITEM_REMOVED, props)
 }
 
 export function trackWatchHistoryCleared(props: { item_count: number }): void {

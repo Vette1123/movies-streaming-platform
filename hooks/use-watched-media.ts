@@ -5,6 +5,7 @@ import { SeriesDetails } from '@/types/series-details'
 import {
   trackWatchHistoryAdded,
   trackWatchHistoryCleared,
+  trackWatchHistoryItemRemoved,
   trackWatchHistoryUpdated,
 } from '@/lib/analytics'
 import { syncWatchStats } from '@/lib/person'
@@ -17,6 +18,7 @@ interface WatchedMediaHookResult {
   handleWatchMedia: (media: MediaItem) => void
   watchedItems: ReturnType<typeof useLocalStorage>[0]
   deleteWatchedItems: () => void
+  removeWatchedItem: (id: number) => void
 }
 
 export function useWatchedMedia(): WatchedMediaHookResult {
@@ -32,6 +34,18 @@ export function useWatchedMedia(): WatchedMediaHookResult {
   const deleteWatchedItems = () => {
     trackWatchHistoryCleared({ item_count: watchedItems.length })
     setWatchedItems([])
+  }
+
+  const removeWatchedItem = (id: number) => {
+    const existing = watchedItems.find((item) => item.id === id)
+    setWatchedItems(watchedItems.filter((item) => item.id !== id))
+    if (existing) {
+      trackWatchHistoryItemRemoved({
+        media_id: id,
+        media_type: existing.type === 'movie' ? 'movie' : 'tv',
+        title: existing.title,
+      })
+    }
   }
 
   const handleWatchMedia = (media: MediaItem) => {
@@ -119,5 +133,10 @@ export function useWatchedMedia(): WatchedMediaHookResult {
     }
   }
 
-  return { handleWatchMedia, watchedItems, deleteWatchedItems }
+  return {
+    handleWatchMedia,
+    watchedItems,
+    deleteWatchedItems,
+    removeWatchedItem,
+  }
 }

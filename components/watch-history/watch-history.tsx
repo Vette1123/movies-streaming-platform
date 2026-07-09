@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { toast } from 'sonner'
 
 import { useMounted } from '@/hooks/use-mounted'
 import { useWatchedMedia } from '@/hooks/use-watched-media'
@@ -10,8 +11,15 @@ import { WatchedItemCard } from './watch-history-card'
 import { WatchedItemCardSkeleton } from './watch-history-skeleton'
 
 export const WatchHistoryContainer = () => {
-  const { watchedItems, deleteWatchedItems } = useWatchedMedia()
+  const { watchedItems, deleteWatchedItems, removeWatchedItem } =
+    useWatchedMedia()
   const isMounted = useMounted()
+
+  const handleRemove = (id: number) => {
+    const item = watchedItems.find((entry) => entry.id === id)
+    removeWatchedItem(id)
+    if (item) toast(`Removed “${item.title}” from your watch history`)
+  }
 
   if (!isMounted) {
     return (
@@ -47,7 +55,13 @@ export const WatchHistoryContainer = () => {
               new Date(b.modified_at).getTime() -
               new Date(a.modified_at).getTime()
           )
-          ?.map((item) => <WatchedItemCard key={item.id} item={item} />)}
+          ?.map((item) => (
+            <WatchedItemCard
+              key={item.id}
+              item={item}
+              onRemove={handleRemove}
+            />
+          ))}
       </div>
     </div>
   )

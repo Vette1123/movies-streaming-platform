@@ -42,7 +42,7 @@ export function TrailerDialog({
           type="button"
           variant="outline"
           size="lg"
-          className="bg-background/40 hover:bg-background/60 cursor-pointer gap-2 rounded-full backdrop-blur-sm transition-colors"
+          className="bg-background/40 hover:bg-background/60 gap-2 rounded-full backdrop-blur-sm transition hover:scale-105 active:scale-95"
         >
           <Play className="size-5 fill-current" />
           <span>Trailer</span>
