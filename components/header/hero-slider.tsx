@@ -15,8 +15,12 @@ export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
             className="relative min-h-[500px] overflow-hidden lg:min-h-screen"
           >
             <HeroImage movie={movie as HeroImageMedia} />
+            {/* Cinematic legibility scrim — dark behind the copy on the left,
+                clearing toward the poster on the right so the artwork breathes. */}
+            <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-black/90 via-black/55 to-black/20 lg:to-transparent" />
+            {/* Vertical grounding for the title, meta row and CTA. */}
+            <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/10 to-black/30" />
             <HeroSectionInfo movie={movie} />
-            <div className="pointer-events-none absolute -inset-4 rounded-md bg-slate-900/50 shadow-[inset_0_1px_0_0_rgba(148,163,184,0.1)] transition motion-reduce:transition-none lg:-inset-x-6 lg:block lg:drop-shadow-lg" />
           </div>
         ))}
       </Carousel>

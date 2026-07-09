@@ -48,11 +48,11 @@ export const HeroRatesInfos = ({
     <div className="my-4 flex flex-wrap items-center gap-2 lg:gap-3">
       <Badge className="uppercase">{item?.original_language}</Badge>
       <Badge className="uppercase">{item?.adult ? 'NC-17' : 'PG-13'}</Badge>
-      <div className="flex items-center text-xs lg:text-base">
+      <div className="flex items-center text-xs text-white drop-shadow-sm lg:text-base">
         <Icons.fullStar className="mr-1 h-6 w-6" />
         {displayRating()}
       </div>
-      <p className="text-popover-foreground text-xs lg:text-base">
+      <p className="text-xs text-white/90 drop-shadow-sm lg:text-base">
         {dateFormatter(item?.release_date || item?.first_air_date)}
       </p>
       {movieGenres.map((genre) => (
