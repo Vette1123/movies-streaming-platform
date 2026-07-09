@@ -205,6 +205,18 @@
       'rlig' 1,
       'calt' 1;
   }
+  /*
+    Tailwind v4's Preflight no longer sets `cursor: pointer` on buttons, so
+    every actionable control (native <button>, Radix triggers that render a
+    button such as Select/Dialog, and role="button" elements) would otherwise
+    show the default arrow. Apply it globally here instead of per-component.
+    Disabled controls keep the default cursor (or their own cursor-not-allowed
+    utility, which lives in the utilities layer and outranks this base rule).
+  */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
 }
 
 ::-webkit-scrollbar {
