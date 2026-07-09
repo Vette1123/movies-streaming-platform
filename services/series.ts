@@ -1,5 +1,4 @@
 import { cache } from 'react'
-
 import { seriesDTO } from '@/dtos/series'
 
 import { Param } from '@/types/movie-result'
@@ -10,6 +9,7 @@ import {
 import { SeriesResponse } from '@/types/series-result'
 import { fetchClient } from '@/lib/fetch-client'
 import { tvType } from '@/lib/tmdbConfig'
+import { pickTrailerKey } from '@/lib/videos'
 
 const getLatestTrendingSeries = async (params: Param = {}) => {
   const url = `${tvType.trending}/tv/day?language=en-US`
@@ -38,7 +38,9 @@ const getAllTimeTopRatedSeries = async (params: Param = {}) => {
 // them (Error 1102 / "KV put() limit exceeded"). cache() dedupes it with
 // generateMetadata so the whole page renders on a single fetch.
 const getSeriesWithExtras = cache(async (id: string, params: Param = {}) => {
-  const url = `tv/${id}?language=en-US&append_to_response=credits,similar,recommendations`
+  // `videos` rides along on the same append_to_response — still ONE TMDB
+  // request / one KV write — and powers the "Watch Trailer" CTA.
+  const url = `tv/${id}?language=en-US&append_to_response=credits,similar,recommendations,videos`
   return fetchClient.get<SeriesDetailsWithExtras>(url, params, true)
 })
 
@@ -73,6 +75,7 @@ const populateSeriesDetailsPageData = async (
         ? seriesDTO(data.recommendations).results
         : []
       ).slice(0, RELATED_LIMIT),
+      trailerKey: pickTrailerKey(data.videos?.results),
     }
   } catch (error: any) {
     console.error(error, 'error')

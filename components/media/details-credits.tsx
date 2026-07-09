@@ -10,8 +10,8 @@ export const DetailsCredits = ({ movieCredits }: { movieCredits: Credit }) => {
   return (
     <>
       <h2 className="text-base font-semibold md:text-xl lg:text-2xl">Cast</h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6">
-        {movieCredits?.cast?.slice(0, 6)?.map((cast) => (
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5">
+        {movieCredits?.cast?.slice(0, 10)?.map((cast) => (
           <Link
             href={`${SEARCH_ACTOR_GOOGLE}${cast.name}`}
             key={cast.id}
@@ -34,6 +34,11 @@ export const DetailsCredits = ({ movieCredits }: { movieCredits: Credit }) => {
               <div className="relative aspect-2/3 w-full rounded-lg bg-gray-800 shadow-md"></div>
             )}
             <p className="mt-1 truncate text-sm sm:text-base">{cast.name}</p>
+            {cast.character && (
+              <p className="text-muted-foreground truncate text-xs">
+                {cast.character}
+              </p>
+            )}
           </Link>
         ))}
       </div>

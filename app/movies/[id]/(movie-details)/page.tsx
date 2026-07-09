@@ -9,14 +9,10 @@ import {
   populateMovieDetailsPage,
 } from '@/services/movies'
 
-import { siteConfig } from '@/config/site'
 import { PageDetailsProps } from '@/types/page-details'
+import { siteConfig } from '@/config/site'
+import { breadcrumbJsonLd, JsonLd, movieJsonLd } from '@/lib/structured-data'
 import { getImageURL, getPosterImageURL } from '@/lib/utils'
-import {
-  breadcrumbJsonLd,
-  JsonLd,
-  movieJsonLd,
-} from '@/lib/structured-data'
 import { MoviesDetailsContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
 
@@ -43,7 +39,9 @@ export async function generateStaticParams() {
     // allSettled (not all): a single TMDB 429/hiccup drops just that page, not
     // the whole prebuild set — important now that we fan out more requests.
     const requests = [
-      ...Array.from({ length: 20 }, (_, i) => getPopularMovies({ page: i + 1 })),
+      ...Array.from({ length: 20 }, (_, i) =>
+        getPopularMovies({ page: i + 1 })
+      ),
       ...Array.from({ length: 10 }, (_, i) =>
         getAllTimeTopRatedMovies({ page: i + 1 })
       ),
@@ -78,9 +76,7 @@ export async function generateMetadata(
   if (!movieDetails?.id) notFound()
 
   const year = movieDetails.release_date?.slice(0, 4)
-  const title = year
-    ? `${movieDetails.title} (${year})`
-    : movieDetails.title
+  const title = year ? `${movieDetails.title} (${year})` : movieDetails.title
   const description =
     movieDetails.overview?.slice(0, 200) ||
     `Details, cast, and streaming info for ${movieDetails.title} on ${siteConfig.name}.`
@@ -105,7 +101,12 @@ export async function generateMetadata(
       height: 750,
       alt: movieDetails.title,
     },
-  ].filter(Boolean) as Array<{ url: string; width: number; height: number; alt: string }>
+  ].filter(Boolean) as Array<{
+    url: string
+    width: number
+    height: number
+    alt: string
+  }>
 
   return {
     title,
@@ -147,8 +148,13 @@ const MoviePage = async (props: PageDetailsProps) => {
   } catch {
     notFound()
   }
-  const { movieCredits, movieDetails, similarMovies, recommendedMovies } =
-    result!
+  const {
+    movieCredits,
+    movieDetails,
+    similarMovies,
+    recommendedMovies,
+    trailerKey,
+  } = result!
   if (!movieDetails?.id) notFound()
 
   const jsonLd = movieJsonLd({
@@ -178,7 +184,7 @@ const MoviePage = async (props: PageDetailsProps) => {
           { name: movieDetails.title, url: `/movies/${movieDetails.id}` },
         ])}
       />
-      <MovieDetailsHero movie={movieDetails} />
+      <MovieDetailsHero movie={movieDetails} trailerKey={trailerKey} />
       <MoviesDetailsContent
         movie={movieDetails}
         movieCredits={movieCredits}

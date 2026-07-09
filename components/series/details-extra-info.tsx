@@ -6,8 +6,8 @@ import { SEARCH_ACTOR_GOOGLE } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { HeroRatesInfos } from '@/components/header/hero-rates-info'
 import { Icons } from '@/components/icons'
-import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 import { seriesExtraInfoFormatter } from '@/components/media/extra-info'
+import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 
 interface SeriesDetailsExtraInfoProps {
   series: SeriesDetails
@@ -26,6 +26,11 @@ export const SeriesDetailsExtraInfo = ({
         className="relative left-0 top-0 mb-2 px-2.5 py-1 text-[11px] lg:text-xs"
       />
       <p className="text-sm font-bold lg:text-3xl">{series.name}</p>
+      {series.tagline && (
+        <p className="text-muted-foreground mt-1 text-xs italic lg:text-base">
+          {series.tagline}
+        </p>
+      )}
       <HeroRatesInfos seriesDetails={series} />
       <p className="prose-invert text-xs font-semibold lg:text-lg">
         {series.overview}

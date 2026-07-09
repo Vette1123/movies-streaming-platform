@@ -1,6 +1,7 @@
 import { Credit } from '@/types/credit'
 import { MovieGenre } from '@/types/movie-genre'
 import { Movie, MovieResponse } from '@/types/movie-result'
+import { VideosResponse } from '@/types/video'
 
 interface MovieDetails {
   adult: boolean
@@ -53,14 +54,17 @@ interface MultiMovieDetailsRequestProps {
   movieCredits: Credit
   similarMovies: Movie[]
   recommendedMovies: Movie[]
+  // Best YouTube trailer/teaser key, if any (see lib/videos.ts).
+  trailerKey?: string
 }
 
-// Shape of a single `movie/{id}?append_to_response=credits,similar,recommendations`
-// call — one TMDB request in place of four. See services/movies.ts.
+// Shape of a single `movie/{id}?append_to_response=credits,similar,recommendations,videos`
+// call — one TMDB request in place of five. See services/movies.ts.
 interface MovieDetailsWithExtras extends MovieDetails {
   credits?: Credit
   similar?: MovieResponse
   recommendations?: MovieResponse
+  videos?: VideosResponse
 }
 
 export type {

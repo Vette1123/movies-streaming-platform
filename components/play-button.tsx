@@ -41,11 +41,15 @@ export function PlayButton({ onClick, media }: PlayButtonProps) {
   }
 
   return (
-    <div className="rounded-full bg-linear-to-br from-purple-600 to-blue-500 text-center font-medium text-white transition-colors duration-500 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500">
-      <Icons.playIcon
-        onClick={handleClick}
-        className={cn('size-24 cursor-pointer')}
-      />
-    </div>
+    <button
+      type="button"
+      onClick={handleClick}
+      aria-label={`Watch ${media?.title || media?.name || 'now'}`}
+      className={cn(
+        'focus-visible:ring-ring rounded-full bg-linear-to-br from-purple-600 to-blue-500 text-center font-medium text-white transition-colors duration-500 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden'
+      )}
+    >
+      <Icons.playIcon className={cn('size-24 cursor-pointer')} />
+    </button>
   )
 }

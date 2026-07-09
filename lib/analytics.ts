@@ -25,6 +25,10 @@ export const EVENTS = {
   COMMAND_SHORTCUT_USED: 'command_shortcut_used',
   // Hero / CTAs
   HERO_WATCH_CLICKED: 'hero_watch_clicked',
+  TRAILER_PLAYED: 'trailer_played',
+  // Watchlist (save for later — distinct from watch history)
+  WATCHLIST_ADDED: 'watchlist_added',
+  WATCHLIST_REMOVED: 'watchlist_removed',
   // Navigation health
   PAGE_NOT_FOUND: 'page_not_found',
   // Series navigation
@@ -148,6 +152,32 @@ export function trackHeroWatchClicked(props: {
   media_type: MediaKind
 }): void {
   track(EVENTS.HERO_WATCH_CLICKED, props)
+}
+
+export function trackTrailerPlayed(props: {
+  media_id: number
+  media_type: MediaKind
+  title?: string
+}): void {
+  track(EVENTS.TRAILER_PLAYED, props)
+}
+
+// ---- Watchlist --------------------------------------------------------------
+
+export function trackWatchlistAdded(props: {
+  media_id: number
+  media_type: MediaKind
+  title?: string
+}): void {
+  track(EVENTS.WATCHLIST_ADDED, props)
+}
+
+export function trackWatchlistRemoved(props: {
+  media_id: number
+  media_type: MediaKind
+  title?: string
+}): void {
+  track(EVENTS.WATCHLIST_REMOVED, props)
 }
 
 // ---- Navigation health ------------------------------------------------------

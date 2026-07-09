@@ -1,5 +1,4 @@
 import { cache } from 'react'
-
 import {
   getAllTimeTopRatedSeries,
   getLatestTrendingSeries,
@@ -19,6 +18,7 @@ import {
 } from '@/types/movie-result'
 import { fetchClient } from '@/lib/fetch-client'
 import { movieType } from '@/lib/tmdbConfig'
+import { pickTrailerKey } from '@/lib/videos'
 
 const getNowPlayingMovies = async (params: Param = {}) => {
   const url = `movie/${movieType.now_playing}`
@@ -111,7 +111,9 @@ const populateHomePageData = async (): Promise<MultiRequestProps> => {
 // them (Error 1102 / "KV put() limit exceeded"). cache() dedupes it with
 // generateMetadata so the whole page renders on a single fetch.
 const getMovieWithExtras = cache(async (id: string, params: Param = {}) => {
-  const url = `movie/${id}?language=en-US&append_to_response=credits,similar,recommendations`
+  // `videos` rides along on the same append_to_response — still ONE TMDB
+  // request / one KV write — and powers the "Watch Trailer" CTA.
+  const url = `movie/${id}?language=en-US&append_to_response=credits,similar,recommendations,videos`
   return fetchClient.get<MovieDetailsWithExtras>(url, params, true)
 })
 
@@ -143,6 +145,7 @@ const populateMovieDetailsPage = async (
         0,
         RELATED_LIMIT
       ),
+      trailerKey: pickTrailerKey(data.videos?.results),
     }
   } catch (error: any) {
     console.error(error, 'error')

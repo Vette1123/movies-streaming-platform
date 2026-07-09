@@ -6,6 +6,8 @@ import { SeriesDetails } from '@/types/series-details'
 import { cn } from '@/lib/utils'
 import { HeroImage } from '@/components/header/hero-image'
 import { PlayButton } from '@/components/play-button'
+import { SaveButton } from '@/components/save-button'
+import { TrailerDialog } from '@/components/trailer-dialog'
 
 export const DetailsHero = forwardRef<
   HTMLIFrameElement,
@@ -14,10 +16,12 @@ export const DetailsHero = forwardRef<
     series?: SeriesDetails
     isIframeShown: boolean
     playVideo: () => void
+    trailerKey?: string
   }
->(({ movie, isIframeShown, playVideo, series }, ref) => {
+>(({ movie, isIframeShown, playVideo, series, trailerKey }, ref) => {
   const media = (movie || series) as MovieDetails & SeriesDetails
   const title = media?.title || media?.name
+  const isMovie = !!movie
 
   return (
     <section className="relative isolate h-[500px] overflow-hidden lg:h-[80dvh]">
@@ -31,11 +35,22 @@ export const DetailsHero = forwardRef<
                 initial={{ opacity: 0, y: 80 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -150 }}
-                className={cn({
+                className={cn('flex flex-col items-center gap-5', {
                   hidden: isIframeShown,
                 })}
               >
                 <PlayButton onClick={playVideo} media={media} />
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  {trailerKey && (
+                    <TrailerDialog
+                      trailerKey={trailerKey}
+                      mediaId={media?.id}
+                      mediaType={isMovie ? 'movie' : 'tv'}
+                      title={title}
+                    />
+                  )}
+                  <SaveButton media={media} />
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

@@ -25,7 +25,12 @@ export function WatchedItemCard({ item }: WatchedItemCardProps) {
     if (item.type === 'movie') {
       return `/movies/${item.id}`
     }
-    return `/tv-shows/${item.id}?season=${item.season}&episode=${item.episode}`
+    // Watchlist items are saved without a season/episode; only deep-link to a
+    // specific episode when we actually have one (watch-history items do).
+    if (item.season && item.episode) {
+      return `/tv-shows/${item.id}?season=${item.season}&episode=${item.episode}`
+    }
+    return `/tv-shows/${item.id}`
   }
 
   return (

@@ -9,14 +9,10 @@ import {
   populateSeriesDetailsPageData,
 } from '@/services/series'
 
-import { siteConfig } from '@/config/site'
 import { PageDetailsProps } from '@/types/page-details'
+import { siteConfig } from '@/config/site'
+import { breadcrumbJsonLd, JsonLd, tvSeriesJsonLd } from '@/lib/structured-data'
 import { getImageURL, getPosterImageURL } from '@/lib/utils'
-import {
-  breadcrumbJsonLd,
-  JsonLd,
-  tvSeriesJsonLd,
-} from '@/lib/structured-data'
 import { SeriesDetailsContent } from '@/components/series/details-content'
 import { SeriesDetailsHero } from '@/components/series/details-hero'
 
@@ -43,7 +39,9 @@ export async function generateStaticParams() {
     // allSettled (not all): a single TMDB 429/hiccup drops just that page, not
     // the whole prebuild set — important now that we fan out more requests.
     const requests = [
-      ...Array.from({ length: 20 }, (_, i) => getPopularSeries({ page: i + 1 })),
+      ...Array.from({ length: 20 }, (_, i) =>
+        getPopularSeries({ page: i + 1 })
+      ),
       ...Array.from({ length: 10 }, (_, i) =>
         getAllTimeTopRatedSeries({ page: i + 1 })
       ),
@@ -78,9 +76,7 @@ export async function generateMetadata(
   if (!seriesDetails?.id) notFound()
 
   const year = seriesDetails.first_air_date?.slice(0, 4)
-  const title = year
-    ? `${seriesDetails.name} (${year})`
-    : seriesDetails.name
+  const title = year ? `${seriesDetails.name} (${year})` : seriesDetails.name
   const description =
     seriesDetails.overview?.slice(0, 200) ||
     `Details, cast, and streaming info for ${seriesDetails.name} on ${siteConfig.name}.`
@@ -105,7 +101,12 @@ export async function generateMetadata(
       height: 750,
       alt: seriesDetails.name,
     },
-  ].filter(Boolean) as Array<{ url: string; width: number; height: number; alt: string }>
+  ].filter(Boolean) as Array<{
+    url: string
+    width: number
+    height: number
+    alt: string
+  }>
 
   return {
     title,
@@ -146,8 +147,13 @@ const TVSeries = async (props: PageDetailsProps) => {
   } catch {
     notFound()
   }
-  const { seriesDetails, seriesCredits, similarSeries, recommendedSeries } =
-    result!
+  const {
+    seriesDetails,
+    seriesCredits,
+    similarSeries,
+    recommendedSeries,
+    trailerKey,
+  } = result!
   if (!seriesDetails?.id) notFound()
 
   const jsonLd = tvSeriesJsonLd({
@@ -179,7 +185,7 @@ const TVSeries = async (props: PageDetailsProps) => {
           { name: seriesDetails.name, url: `/tv-shows/${seriesDetails.id}` },
         ])}
       />
-      <SeriesDetailsHero series={seriesDetails} />
+      <SeriesDetailsHero series={seriesDetails} trailerKey={trailerKey} />
       <SeriesDetailsContent
         series={seriesDetails}
         seriesCredits={seriesCredits}

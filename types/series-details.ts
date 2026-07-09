@@ -4,6 +4,7 @@ import { MediaType } from '@/types/media'
 import { MovieGenre } from '@/types/movie-genre'
 import { ProductionCompany, ProductionCountry } from '@/types/production'
 import { SeriesResponse } from '@/types/series-result'
+import { VideosResponse } from '@/types/video'
 
 type Season = {
   air_date: string
@@ -69,14 +70,17 @@ interface MultiSeriesDetailsRequestProps {
   seriesCredits: Credit
   similarSeries: MediaType[]
   recommendedSeries: MediaType[]
+  // Best YouTube trailer/teaser key, if any (see lib/videos.ts).
+  trailerKey?: string
 }
 
-// Shape of a single `tv/{id}?append_to_response=credits,similar,recommendations`
-// call — one TMDB request in place of four. See services/series.ts.
+// Shape of a single `tv/{id}?append_to_response=credits,similar,recommendations,videos`
+// call — one TMDB request in place of five. See services/series.ts.
 interface SeriesDetailsWithExtras extends SeriesDetails {
   credits?: Credit
   similar?: SeriesResponse
   recommendations?: SeriesResponse
+  videos?: VideosResponse
 }
 
 export type {

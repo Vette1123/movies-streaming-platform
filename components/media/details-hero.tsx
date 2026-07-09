@@ -7,7 +7,13 @@ import { trackMediaDetailViewed } from '@/lib/analytics'
 import { STREAMING_MOVIES_API_URL } from '@/lib/constants'
 import { DetailsHero } from '@/components/details-hero'
 
-export const MovieDetailsHero = ({ movie }: { movie: MovieDetails }) => {
+export const MovieDetailsHero = ({
+  movie,
+  trailerKey,
+}: {
+  movie: MovieDetails
+  trailerKey?: string
+}) => {
   const [isIframeShown, setIsIframeShown] = React.useState(false)
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
 
@@ -36,6 +42,7 @@ export const MovieDetailsHero = ({ movie }: { movie: MovieDetails }) => {
       movie={movie}
       isIframeShown={isIframeShown}
       playVideo={playVideo}
+      trailerKey={trailerKey}
       ref={iframeRef}
     />
   )
