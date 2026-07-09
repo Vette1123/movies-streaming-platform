@@ -111,8 +111,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
         setData(results)
         setHasSearched(true)
         const renderable = results.filter(
-          (m) =>
-            m?.media_type !== ('person' as MediaType['media_type'])
+          (m) => m?.media_type !== ('person' as MediaType['media_type'])
         ).length
         trackSearchPerformed({ query: trimmed, results_count: renderable })
         if (renderable === 0) {
@@ -166,10 +165,10 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
   const visibleResults = React.useMemo(
     () =>
       (data ?? [])
-        .filter((movie) => movie?.media_type !== ('person' as MediaType['media_type']))
-        .sort(
-          (a, b) => (b?.vote_average ?? 0) - (a?.vote_average ?? 0)
-        ),
+        .filter(
+          (movie) => movie?.media_type !== ('person' as MediaType['media_type'])
+        )
+        .sort((a, b) => (b?.vote_average ?? 0) - (a?.vote_average ?? 0)),
     [data]
   )
 
@@ -193,14 +192,18 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
       <Button
         variant="outline"
         className={cn(
-          'text-muted-foreground relative w-full justify-start text-sm sm:pr-12 md:w-40 lg:w-64'
+          'text-muted-foreground hover:border-primary/40 relative w-full justify-start pl-9 text-sm transition-colors sm:pr-14 md:w-44 lg:w-64'
         )}
         onClick={() => setOpen(true)}
         {...props}
       >
-        <span className="inline-flex">Search...</span>
-        <kbd className="bg-muted pointer-events-none absolute top-2 right-2 hidden h-5 items-center gap-1 rounded border px-1.5 font-mono text-[10px] font-medium opacity-100 select-none sm:flex">
-          <span className="text-xs">⌘</span>K
+        <Search
+          className="absolute left-3 size-4 shrink-0 opacity-60"
+          aria-hidden
+        />
+        <span className="truncate">Search...</span>
+        <kbd className="bg-background text-muted-foreground pointer-events-none absolute top-1/2 right-2 hidden h-6 -translate-y-1/2 items-center gap-1 rounded-md border px-1.5 font-mono text-[11px] font-medium shadow-sm select-none sm:flex">
+          <span className="text-sm leading-none">⌘</span>K
         </kbd>
       </Button>
       <CommandDialog
@@ -214,7 +217,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
           onValueChange={handleValueChange}
           isLoading={isLoading}
         />
-        <CommandList>
+        <CommandList className="max-h-[65vh] sm:max-h-[460px]">
           <CommandGroup heading={resultsHeading}>
             {status === 'idle' && (
               <div
@@ -235,10 +238,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
               >
                 <span className="sr-only">Searching…</span>
                 {Array.from({ length: skeletonCount }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-3 px-2 py-2"
-                  >
+                  <div key={i} className="flex items-center gap-3 px-2 py-2">
                     <Skeleton className="aspect-video h-[54px] shrink-0 rounded-md" />
                     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                       <Skeleton className="h-3.5 w-1/2" />

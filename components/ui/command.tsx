@@ -25,7 +25,8 @@ const Command = React.forwardRef<
 Command.displayName = CommandPrimitive.displayName
 
 interface CommandDialogProps
-  extends DialogProps,
+  extends
+    DialogProps,
     Omit<
       React.ComponentPropsWithoutRef<typeof CommandPrimitive>,
       keyof DialogProps
@@ -46,7 +47,7 @@ const CommandDialog = ({
       defaultOpen={defaultOpen}
       modal={modal}
     >
-      <DialogContent className="overflow-hidden p-0 shadow-lg">
+      <DialogContent className="top-[7vh] w-[calc(100%-1.5rem)] max-w-xl translate-y-0 overflow-hidden rounded-xl p-0 shadow-2xl sm:w-full sm:max-w-xl sm:rounded-xl lg:top-[9vh]">
         <VisuallyHidden.Root>
           <DialogTitle>Search</DialogTitle>
         </VisuallyHidden.Root>
