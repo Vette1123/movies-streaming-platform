@@ -44,6 +44,7 @@
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-border: border 4s ease infinite;
+  --animate-equalize: equalize 1s ease-in-out infinite;
 
   @keyframes accordion-down {
     from {
@@ -74,6 +75,15 @@
     100% {
       transform: translateX(100%);
       opacity: 0.5;
+    }
+  }
+  @keyframes equalize {
+    0%,
+    100% {
+      transform: scaleY(0.35);
+    }
+    50% {
+      transform: scaleY(1);
     }
   }
 }

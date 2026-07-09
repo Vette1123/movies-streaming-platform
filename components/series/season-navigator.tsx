@@ -13,9 +13,9 @@ export const SeasonNavigator = ({ series }: { series: SeriesDetails }) => {
     useEpisodeHandler(series?.id)
 
   return (
-    <aside className="max-w-(--breakpoint-2xl)">
+    <aside className="w-full lg:w-72 lg:shrink-0">
       <SeasonsSelector series={series} setSelectedSeason={setSelectedSeason} />
-      <ScrollArea className="h-96 w-full rounded-md border lg:w-60">
+      <ScrollArea className="bg-card/40 h-[26rem] w-full rounded-xl border shadow-sm lg:h-[34rem]">
         <Episodes
           episodes={episodes}
           selectedSeason={selectedSeason}

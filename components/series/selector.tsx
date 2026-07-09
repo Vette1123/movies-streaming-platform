@@ -4,7 +4,6 @@ import { SeriesDetails } from '@/types/series-details'
 import { trackSeasonSelected } from '@/lib/analytics'
 import { seasonsFormatter } from '@/lib/utils'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
-import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 import {
   Select,
   SelectContent,
@@ -15,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 
 interface SeasonsSelectorProps {
   series: SeriesDetails
@@ -37,7 +37,7 @@ export function SeasonsSelector({
       defaultValue={seasonQuerySTR || '1'}
       disabled={!formattedSeasons?.length}
     >
-      <SelectTrigger className="mb-4 w-full disabled:cursor-not-allowed lg:w-60">
+      <SelectTrigger className="mb-3 h-11 w-full font-medium disabled:cursor-not-allowed">
         <SelectValue placeholder="Select a season" />
       </SelectTrigger>
       <SelectContent>
@@ -57,7 +57,7 @@ export function SeasonsSelector({
                         : `Season ${season?.season_number}`}
                       <NewBadgeWhenRecent
                         date={season?.air_date}
-                        className="relative left-0 top-0"
+                        className="relative top-0 left-0"
                       />
                     </span>
                   </SelectItem>
