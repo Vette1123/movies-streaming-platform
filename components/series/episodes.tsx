@@ -3,8 +3,13 @@ import { useRouter } from 'next/navigation'
 import { Loader } from 'lucide-react'
 
 import { EpisodeDetails } from '@/types/episode'
+import {
+  trackWatchHistoryAdded,
+  trackWatchHistoryUpdated,
+} from '@/lib/analytics'
+import { syncWatchStats } from '@/lib/person'
 import { cn } from '@/lib/utils'
-import { useLocalStorage } from '@/hooks/use-local-storage'
+import { useLocalStorage, type WatchedItem } from '@/hooks/use-local-storage'
 import { useScrollToTop } from '@/hooks/use-scroll-to-top'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
@@ -41,8 +46,9 @@ export const Episodes = ({
     const existingItemIndex = watchedItems.findIndex(
       (item) => item.id === episode?.show_id
     )
+    let nextItems: WatchedItem[]
     if (existingItemIndex === -1) {
-      setWatchedItems([
+      nextItems = [
         ...watchedItems,
         {
           id: episode?.show_id,
@@ -56,19 +62,33 @@ export const Episodes = ({
           added_at: new Date().toISOString(),
           modified_at: new Date().toISOString(),
         },
-      ])
+      ]
+      trackWatchHistoryAdded({
+        media_id: episode?.show_id,
+        media_type: 'tv',
+        title: series_name,
+      })
     } else {
       const existingItem = watchedItems[existingItemIndex]
 
-      const updatedItems = [...watchedItems]
-      updatedItems[existingItemIndex] = {
+      nextItems = [...watchedItems]
+      nextItems[existingItemIndex] = {
         ...existingItem,
         season: Number(selectedSeason),
         episode: episode?.episode_number,
         modified_at: new Date().toISOString(),
       }
-      setWatchedItems(updatedItems)
+      trackWatchHistoryUpdated({
+        media_id: episode?.show_id,
+        media_type: 'tv',
+        season: Number(selectedSeason),
+        episode: episode?.episode_number,
+      })
     }
+    setWatchedItems(nextItems)
+    // episodes.tsx writes localStorage directly (not via useWatchedMedia), so
+    // sync the PostHog person profile's watch stats here too.
+    syncWatchStats(nextItems)
 
     router.push(
       `?season=${selectedSeason}&episode=${episode?.episode_number}`,

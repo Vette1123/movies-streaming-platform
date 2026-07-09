@@ -34,6 +34,9 @@ export const EVENTS = {
   WATCH_HISTORY_UPDATED: 'watch_history_updated',
   WATCH_HISTORY_ITEM_CLICKED: 'watch_history_item_clicked',
   WATCH_HISTORY_CLEARED: 'watch_history_cleared',
+  // PWA install lifecycle
+  PWA_INSTALLABLE: 'pwa_installable',
+  PWA_INSTALLED: 'pwa_installed',
 } as const
 
 export type MediaKind = 'movie' | 'tv'
@@ -191,4 +194,16 @@ export function trackWatchHistoryItemClicked(props: {
 
 export function trackWatchHistoryCleared(props: { item_count: number }): void {
   track(EVENTS.WATCH_HISTORY_CLEARED, props)
+}
+
+// ---- PWA install lifecycle --------------------------------------------------
+
+/** Browser reports the app is installable (`beforeinstallprompt` fired). */
+export function trackPwaInstallable(): void {
+  track(EVENTS.PWA_INSTALLABLE)
+}
+
+/** App was installed to the home screen / desktop (`appinstalled` fired). */
+export function trackPwaInstalled(): void {
+  track(EVENTS.PWA_INSTALLED)
 }
