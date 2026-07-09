@@ -17,7 +17,7 @@ export const HeroSectionInfo = ({ movie }: { movie: Movie }) => {
               date={movie.release_date || movie.first_air_date}
               className="relative top-0 left-0 mb-3 px-2.5 py-1 text-[11px] lg:text-xs"
             />
-            <h2 className="text-3xl font-bold tracking-tight text-white drop-shadow-md sm:text-4xl lg:text-6xl">
+            <h2 className="text-3xl font-bold tracking-tight whitespace-nowrap text-white drop-shadow-md sm:text-4xl lg:text-6xl">
               {movie.title || movie.name}
             </h2>
             <HeroRatesInfos movie={movie} />
