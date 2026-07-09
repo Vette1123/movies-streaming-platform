@@ -48,15 +48,15 @@ const CHANGE_COLOR_VARIANT: Variants = {
 }
 
 const CARD_VARIANT: Variants = {
-  rest: { opacity: 0.8, scale: 1, y: 0 },
+  rest: { scale: 1, y: 0 },
   hover: {
-    opacity: 1,
-    scale: 1.1,
-    y: -10,
+    scale: 1.03,
+    y: -6,
     transition: {
-      duration: 0.8,
-      ease: 'easeIn',
       type: 'spring',
+      stiffness: 300,
+      damping: 22,
+      mass: 0.6,
     },
   },
 }
