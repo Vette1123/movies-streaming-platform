@@ -45,6 +45,9 @@
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-border: border 4s ease infinite;
   --animate-equalize: equalize 1s ease-in-out infinite;
+  /* Slow cinematic push-in for hero artwork; longer than the 5s autoplay so
+     each slide keeps drifting and never settles. Reduced-motion opts out. */
+  --animate-hero-kenburns: hero-kenburns 14s ease-out both;
 
   @keyframes accordion-down {
     from {
@@ -84,6 +87,14 @@
     }
     50% {
       transform: scaleY(1);
+    }
+  }
+  @keyframes hero-kenburns {
+    from {
+      transform: scale(1.05);
+    }
+    to {
+      transform: scale(1.16) translate3d(-1.2%, -1.4%, 0);
     }
   }
 }
