@@ -15,6 +15,9 @@
 # production
 /build
 
+# generated at build by scripts/build-imdb-ratings.mjs (IMDb dataset shards)
+/public/imdb-ratings/
+
 # misc
 .DS_Store
 *.pem

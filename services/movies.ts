@@ -16,7 +16,7 @@ import {
   MultiRequestProps,
   Param,
 } from '@/types/movie-result'
-import { getImdbRating } from '@/services/omdb'
+import { getImdbRating } from '@/services/imdb'
 
 import { fetchClient } from '@/lib/fetch-client'
 import { movieType } from '@/lib/tmdbConfig'

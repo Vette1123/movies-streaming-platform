@@ -7,7 +7,7 @@ import {
   SeriesDetailsWithExtras,
 } from '@/types/series-details'
 import { SeriesResponse } from '@/types/series-result'
-import { getImdbRating } from '@/services/omdb'
+import { getImdbRating } from '@/services/imdb'
 
 import { fetchClient } from '@/lib/fetch-client'
 import { tvType } from '@/lib/tmdbConfig'
