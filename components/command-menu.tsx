@@ -570,7 +570,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
           <CommandSeparator />
         </CommandList>
         <div
-          className="text-muted-foreground bg-muted/30 flex items-center justify-between gap-2 border-t px-3 py-2 text-[11px]"
+          className="text-muted-foreground bg-muted/30 hidden items-center justify-between gap-2 border-t px-3 py-2 text-[11px] sm:flex"
           aria-hidden
         >
           <div className="flex items-center gap-3">

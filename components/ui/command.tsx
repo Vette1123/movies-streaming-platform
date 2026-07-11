@@ -64,12 +64,11 @@ const CommandDialog = ({
 
   // On mobile, pin the dialog to the top of the *visible* viewport and cap its
   // height to what's above the on-screen keyboard, so the input is never hidden
-  // and the results scroll within reach. When the keyboard is up we hug the top
-  // (push it up as far as possible); otherwise we keep the original ~7vh drop.
+  // and the results scroll within reach. We hug the top with the same small gap
+  // in both keyboard states — a percentage drop wasted a visible band above the
+  // dialog and cost the results list height it could otherwise use.
   const keyboardAware = isMobile && viewport.ready
-  const topPx = viewport.keyboardOpen
-    ? VIEWPORT_GAP
-    : Math.round(viewport.height * 0.07)
+  const topPx = VIEWPORT_GAP
   const contentStyle: React.CSSProperties | undefined = keyboardAware
     ? {
         top: viewport.offsetTop + topPx,
