@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { MovieDetails } from '@/types/movie-details'
-import { Movie } from '@/types/movie-result'
+import { ItemType, Movie } from '@/types/movie-result'
 import { SeriesDetails } from '@/types/series-details'
 import { dateFormatter, getGenres, numberRounder } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -23,9 +23,16 @@ export const HeroRatesInfos = ({
     | Movie
   ) &
     SeriesDetails
+  // The homepage hero is fed by `trending/all/week` (mixed movies + TV), so a
+  // TV item arrives in the `movie` slot carrying TV genre ids. Resolve the
+  // media type — prefer the explicit `media_type`, fall back to the TV-only
+  // `first_air_date` field — so `getGenres` reads the correct genre table.
+  const mediaType: ItemType =
+    movie?.media_type ?? (movie?.first_air_date ? 'tv' : 'movie')
   const movieGenres = getGenres(
     movie?.genre_ids,
-    movieDetails?.genres || seriesDetails?.genres
+    movieDetails?.genres || seriesDetails?.genres,
+    mediaType
   )
 
   const displayRating = () => {

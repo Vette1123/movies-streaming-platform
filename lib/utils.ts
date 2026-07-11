@@ -4,7 +4,7 @@ import { twMerge } from 'tailwind-merge'
 import { MovieGenre } from '@/types/movie-genre'
 import { ItemType } from '@/types/movie-result'
 import { Season } from '@/types/series-details'
-import { MOVIES_GENRE } from '@/lib/genres'
+import { MOVIES_GENRE, TV_GENRE } from '@/lib/genres'
 import { apiConfig } from '@/lib/tmdbConfig'
 
 function cn(...inputs: ClassValue[]) {
@@ -68,9 +68,19 @@ function isRecentlyReleased(
   return diffDays <= withinDays
 }
 
-function getGenres(genres: number[] = [], defaultGenres: MovieGenre[] = []) {
+// Movies and TV use DIFFERENT TMDB genre-id tables (e.g. 10759 "Action &
+// Adventure", 10765 "Sci-Fi & Fantasy", 10768 "War & Politics" are TV-only and
+// don't exist for movies). Mapping raw `genre_ids` against the wrong table
+// silently drops those genres, so the media type must pick the right table.
+// Detail pages pass full `{id,name}` objects (defaultGenres) and skip this.
+function getGenres(
+  genres: number[] = [],
+  defaultGenres: MovieGenre[] = [],
+  mediaType: ItemType = 'movie'
+) {
   if (defaultGenres.length) return defaultGenres
-  return MOVIES_GENRE.filter((genre) => genres.includes(genre.id))
+  const table = mediaType === 'tv' ? TV_GENRE : MOVIES_GENRE
+  return table.filter((genre) => genres.includes(genre.id))
 }
 
 function itemRedirect(itemType: ItemType) {
