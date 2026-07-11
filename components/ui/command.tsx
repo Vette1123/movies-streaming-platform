@@ -36,8 +36,11 @@ interface CommandDialogProps
 // Matches Tailwind's `sm` breakpoint — below it we treat the dialog as the
 // mobile, keyboard-aware variant.
 const MOBILE_QUERY = '(max-width: 639px)'
-// Gap kept between the dialog edges and the visible viewport / keyboard.
+// Gap kept between the dialog's top edge and the visible viewport.
 const VIEWPORT_GAP = 12
+// Only a hairline is kept above the keyboard — that space sits right where the
+// keyboard already is, so it's better spent on the results list.
+const KEYBOARD_GAP = 4
 
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = React.useState(false)
@@ -72,7 +75,7 @@ const CommandDialog = ({
   const contentStyle: React.CSSProperties | undefined = keyboardAware
     ? {
         top: viewport.offsetTop + topPx,
-        maxHeight: viewport.height - topPx - VIEWPORT_GAP,
+        maxHeight: viewport.height - topPx - KEYBOARD_GAP,
       }
     : undefined
 
