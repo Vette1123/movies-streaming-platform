@@ -76,10 +76,17 @@ function isRecentlyReleased(
 function getGenres(
   genres: number[] = [],
   defaultGenres: MovieGenre[] = [],
-  mediaType: ItemType = 'movie'
+  mediaType: ItemType = 'movie',
+  genreTable?: MovieGenre[]
 ) {
   if (defaultGenres.length) return defaultGenres
-  const table = mediaType === 'tv' ? TV_GENRE : MOVIES_GENRE
+  // Prefer a live table passed by the caller (fetched from TMDB); otherwise
+  // fall back to the bundled static list for the media type.
+  const table = genreTable?.length
+    ? genreTable
+    : mediaType === 'tv'
+      ? TV_GENRE
+      : MOVIES_GENRE
   return table.filter((genre) => genres.includes(genre.id))
 }
 

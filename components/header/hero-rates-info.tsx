@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { MovieDetails } from '@/types/movie-details'
+import { MovieGenre } from '@/types/movie-genre'
 import { ItemType, Movie } from '@/types/movie-result'
 import { SeriesDetails } from '@/types/series-details'
 import { dateFormatter, getGenres, numberRounder } from '@/lib/utils'
@@ -11,12 +12,14 @@ interface HeroRatesInfosProps {
   movie?: Movie
   movieDetails?: MovieDetails
   seriesDetails?: SeriesDetails
+  genreTable?: MovieGenre[]
 }
 
 export const HeroRatesInfos = ({
   movie,
   movieDetails,
   seriesDetails,
+  genreTable,
 }: HeroRatesInfosProps) => {
   const item = (movieDetails || movie || seriesDetails) as (
     | MovieDetails
@@ -32,7 +35,8 @@ export const HeroRatesInfos = ({
   const movieGenres = getGenres(
     movie?.genre_ids,
     movieDetails?.genres || seriesDetails?.genres,
-    mediaType
+    mediaType,
+    genreTable
   )
 
   const displayRating = () => {

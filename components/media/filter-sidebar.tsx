@@ -4,8 +4,8 @@ import React from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 
 import { MediaFilter, SortOption } from '@/types/filter'
-import { MOVIES_GENRE, TV_GENRE } from '@/lib/genres'
 import { cn } from '@/lib/utils'
+import { useGenres } from '@/hooks/use-genres'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -222,7 +222,7 @@ export const FilterSidebar = ({
   }
 
   const currentSortOptions = mediaType === 'movie' ? sortOptions : tvSortOptions
-  const currentGenres = mediaType === 'movie' ? MOVIES_GENRE : TV_GENRE
+  const currentGenres = useGenres(mediaType)
 
   return (
     <div className={cn('w-full max-w-sm space-y-4 lg:space-y-6', className)}>

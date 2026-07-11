@@ -44,7 +44,8 @@ export const fetchClient = {
   get: async <T>(
     url: string,
     params?: Record<string, string | number>,
-    isHeaderAuth = false
+    isHeaderAuth = false,
+    revalidate = 28800
   ): Promise<T> => {
     const query = {
       ...params,
@@ -65,8 +66,9 @@ export const fetchClient = {
         const res = await fetch(fullUrl, {
           method: 'GET',
           headers,
-          // data will revalidate every 8 hours
-          next: { revalidate: 28800 },
+          // Default 8h ISR; callers can override (e.g. genre lists cache far
+          // longer since they're canonical and rarely change).
+          next: { revalidate },
         })
 
         // Retry a throttle rather than throwing. Keep holding the semaphore slot
