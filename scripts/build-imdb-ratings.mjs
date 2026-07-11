@@ -3,9 +3,10 @@
 // lookup by tconst. No API key, no rate limit. The data is licensed for
 // personal/non-commercial use (https://developer.imdb.com/non-commercial-datasets).
 //
-// Runs before the build (see package.json). Fails SOFT: if the download or
-// parse fails, it logs a warning and exits 0 so the build still succeeds — the
-// app just falls back to TMDB ratings until the next successful ingest.
+// Run via `pnpm imdb:ratings`. In CI it runs once per UTC day (the result is
+// cached across the day's deploys — see .github/workflows/deploy.yml). Fails
+// SOFT: on any download/parse error it logs a warning and exits 0 so the build
+// still succeeds — the app just falls back to TMDB ratings until next ingest.
 //
 // NUM_SHARDS MUST stay in sync with services/imdb.ts.
 import { mkdir, rm, writeFile } from 'node:fs/promises'

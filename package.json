@@ -11,7 +11,7 @@
     "prettier:format": "prettier --write .",
     "prettier:check": "prettier --check .",
     "imdb:ratings": "node scripts/build-imdb-ratings.mjs",
-    "build:worker": "pnpm imdb:ratings && pnpm opennextjs-cloudflare build",
+    "build:worker": "pnpm opennextjs-cloudflare build",
     "preview:worker": "pnpm opennextjs-cloudflare preview",
     "preview": "pnpm build:worker && pnpm preview:worker",
     "deploy": "node scripts/cf-deploy.mjs",

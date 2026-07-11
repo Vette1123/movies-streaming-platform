@@ -52,6 +52,27 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
 
+      # IMDb's Non-Commercial dataset refreshes once a day, but this workflow
+      # deploys up to 4x/day. Cache the generated rating shards keyed by UTC
+      # date so only the FIRST deploy each day downloads + shards the ~10MB
+      # dataset (~3s); the other three restore it instantly. Cache miss (incl.
+      # the first run of a new day) regenerates. Fails soft — a download hiccup
+      # just leaves the app on TMDB ratings for that build.
+      - name: Compute UTC date
+        id: today
+        run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache IMDb rating shards (daily)
+        id: imdb-cache
+        uses: actions/cache@v4
+        with:
+          path: public/imdb-ratings
+          key: imdb-ratings-${{ steps.today.outputs.day }}
+
+      - name: Build IMDb rating shards
+        if: steps.imdb-cache.outputs.cache-hit != 'true'
+        run: pnpm imdb:ratings
+
       - name: Upload Worker secrets
         run: |
           echo "${{ secrets.TMDB_API_KEY }}" | pnpm wrangler secret put TMDB_API_KEY
