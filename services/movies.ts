@@ -16,6 +16,8 @@ import {
   MultiRequestProps,
   Param,
 } from '@/types/movie-result'
+import { getImdbRating } from '@/services/omdb'
+
 import { fetchClient } from '@/lib/fetch-client'
 import { movieType } from '@/lib/tmdbConfig'
 import { pickTrailerKey } from '@/lib/videos'
@@ -123,7 +125,7 @@ const getMovieDetailsById = cache(async (id: string, params: Param = {}) => {
   const movie = await getMovieWithExtras(id, params)
   return {
     ...movie,
-    imdbRating: null,
+    imdbRating: await getImdbRating(movie.imdb_id),
   }
 })
 
@@ -138,7 +140,7 @@ const populateMovieDetailsPage = async (
     const data = await getMovieWithExtras(id)
     if (!data?.id) throw new Error('Movie not found')
     return {
-      movieDetails: { ...data, imdbRating: null },
+      movieDetails: { ...data, imdbRating: await getImdbRating(data.imdb_id) },
       movieCredits: data.credits ?? { id: data.id, cast: [], crew: [] },
       similarMovies: (data.similar?.results ?? []).slice(0, RELATED_LIMIT),
       recommendedMovies: (data.recommendations?.results ?? []).slice(

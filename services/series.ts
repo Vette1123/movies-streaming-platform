@@ -7,6 +7,8 @@ import {
   SeriesDetailsWithExtras,
 } from '@/types/series-details'
 import { SeriesResponse } from '@/types/series-result'
+import { getImdbRating } from '@/services/omdb'
+
 import { fetchClient } from '@/lib/fetch-client'
 import { tvType } from '@/lib/tmdbConfig'
 import { pickTrailerKey } from '@/lib/videos'
@@ -40,7 +42,7 @@ const getAllTimeTopRatedSeries = async (params: Param = {}) => {
 const getSeriesWithExtras = cache(async (id: string, params: Param = {}) => {
   // `videos` rides along on the same append_to_response — still ONE TMDB
   // request / one KV write — and powers the "Watch Trailer" CTA.
-  const url = `tv/${id}?language=en-US&append_to_response=credits,similar,recommendations,videos`
+  const url = `tv/${id}?language=en-US&append_to_response=credits,similar,recommendations,videos,external_ids`
   return fetchClient.get<SeriesDetailsWithExtras>(url, params, true)
 })
 
@@ -50,7 +52,7 @@ const getSeriesDetailsById = cache(async (id: string, params: Param = {}) => {
   const series = await getSeriesWithExtras(id, params)
   return {
     ...series,
-    imdbRating: null,
+    imdbRating: await getImdbRating(series.external_ids?.imdb_id),
   }
 })
 
@@ -65,7 +67,10 @@ const populateSeriesDetailsPageData = async (
     const data = await getSeriesWithExtras(id)
     if (!data?.id) throw new Error('Series not found')
     return {
-      seriesDetails: { ...data, imdbRating: null },
+      seriesDetails: {
+        ...data,
+        imdbRating: await getImdbRating(data.external_ids?.imdb_id),
+      },
       seriesCredits: data.credits ?? { id: data.id, cast: [], crew: [] },
       similarSeries: (data.similar
         ? seriesDTO(data.similar).results

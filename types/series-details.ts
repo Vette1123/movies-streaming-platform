@@ -81,6 +81,9 @@ interface SeriesDetailsWithExtras extends SeriesDetails {
   similar?: SeriesResponse
   recommendations?: SeriesResponse
   videos?: VideosResponse
+  // TV details don't include imdb_id at the top level — it rides along on
+  // external_ids (appended to the same request). See services/series.ts.
+  external_ids?: { imdb_id?: string | null }
 }
 
 export type {
