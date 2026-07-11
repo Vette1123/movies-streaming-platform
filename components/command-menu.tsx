@@ -4,7 +4,7 @@ import * as React from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { searchMovieAction } from '@/actions/search'
-import { Film, Home, Search, Tv } from 'lucide-react'
+import { Clock, Film, Home, Search, Tv, X } from 'lucide-react'
 import { useDebouncedCallback } from 'use-debounce'
 
 import { MediaType } from '@/types/media'
@@ -19,6 +19,7 @@ import {
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
 import { cn, getThumbBackdropURL, getThumbPosterURL } from '@/lib/utils'
 import { useCMDKListener } from '@/hooks/use-cmdk-listener'
+import { useRecentSearches } from '@/hooks/use-recent-searches'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -36,6 +37,7 @@ import { Icons } from '@/components/icons'
 import { Badge } from './ui/badge'
 
 type SearchStatus = 'idle' | 'loading' | 'empty' | 'results'
+type MediaFilter = 'all' | 'movie' | 'tv'
 
 const compactNumber = new Intl.NumberFormat('en', {
   notation: 'compact',
@@ -85,6 +87,8 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
   const [data, setData] = React.useState<MediaType[]>([])
   const [query, setQuery] = React.useState('')
   const [hasSearched, setHasSearched] = React.useState(false)
+  const [mediaFilter, setMediaFilter] = React.useState<MediaFilter>('all')
+  const { recent, add: addRecent, remove: removeRecent } = useRecentSearches()
   const router = useRouter()
 
   // Sequence id to drop stale responses when the user types quickly.
@@ -119,6 +123,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
         }
         if (renderable > 0) {
           setSkeletonCount(Math.max(3, Math.min(6, renderable)))
+          addRecent(trimmed)
         }
       } catch {
         if (seq !== requestSeqRef.current) return
@@ -130,10 +135,21 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
         }
       }
     },
-    [setIsLoading]
+    [setIsLoading, addRecent]
   )
 
   const debouncedRunSearch = useDebouncedCallback(runSearch, SEARCH_DEBOUNCE)
+
+  // Run a term immediately (used by recent-search chips), bypassing the debounce.
+  const submitSearch = React.useCallback(
+    (term: string) => {
+      setQuery(term)
+      if (!term.trim()) return
+      setIsLoading(true)
+      runSearch(term)
+    },
+    [runSearch, setIsLoading]
+  )
 
   const handleValueChange = (value: string) => {
     setQuery(value)
@@ -159,6 +175,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
       setData([])
       setHasSearched(false)
       setIsLoading(false)
+      setMediaFilter('all')
     }
   }
 
@@ -172,6 +189,31 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
     [data]
   )
 
+  // Counts per media type drive the filter chips; results respect the active
+  // filter. `search/multi` already returns both movies and TV, so this is a
+  // pure client-side narrowing with no extra request.
+  const counts = React.useMemo(
+    () => ({
+      all: visibleResults.length,
+      movie: visibleResults.filter((m) => m.media_type === 'movie').length,
+      tv: visibleResults.filter((m) => m.media_type === 'tv').length,
+    }),
+    [visibleResults]
+  )
+
+  // If the chosen type has nothing in the current results, transparently show
+  // All (derived, so no state churn when a new query changes the mix).
+  const effectiveFilter: MediaFilter =
+    mediaFilter !== 'all' && counts[mediaFilter] === 0 ? 'all' : mediaFilter
+
+  const filteredResults = React.useMemo(
+    () =>
+      effectiveFilter === 'all'
+        ? visibleResults
+        : visibleResults.filter((m) => m.media_type === effectiveFilter),
+    [visibleResults, effectiveFilter]
+  )
+
   const status: SearchStatus = !trimmedQuery
     ? 'idle'
     : isLoading
@@ -181,11 +223,13 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
         : 'results'
 
   const resultsHeading =
-    status === 'results' && visibleResults.length > 0
-      ? `Search Movies & Series · ${visibleResults.length} ${
-          visibleResults.length === 1 ? 'result' : 'results'
-        }`
-      : 'Search Movies & Series...'
+    status === 'idle' && recent.length > 0
+      ? 'Recent searches'
+      : status === 'results' && filteredResults.length > 0
+        ? `Search Movies & Series · ${filteredResults.length} ${
+            filteredResults.length === 1 ? 'result' : 'results'
+          }`
+        : 'Search Movies & Series...'
 
   return (
     <>
@@ -217,17 +261,82 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
           onValueChange={handleValueChange}
           isLoading={isLoading}
         />
+        {status === 'results' && visibleResults.length > 0 && (
+          <div className="flex items-center gap-1.5 border-b px-3 py-2">
+            {(
+              [
+                ['all', 'All', counts.all],
+                ['movie', 'Movies', counts.movie],
+                ['tv', 'TV', counts.tv],
+              ] as const
+            ).map(([key, label, count]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setMediaFilter(key)}
+                disabled={key !== 'all' && count === 0}
+                aria-pressed={effectiveFilter === key}
+                className={cn(
+                  'inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+                  effectiveFilter === key
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-muted'
+                )}
+              >
+                {label}
+                <span
+                  className={cn(
+                    'rounded-full px-1.5 text-[10px] tabular-nums',
+                    effectiveFilter === key
+                      ? 'bg-primary-foreground/20'
+                      : 'bg-muted-foreground/15'
+                  )}
+                >
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
         <CommandList className="max-h-[65vh] min-h-0 flex-1 sm:max-h-[460px] sm:flex-none">
           <CommandGroup heading={resultsHeading}>
-            {status === 'idle' && (
-              <div
-                role="status"
-                className="text-muted-foreground flex items-center justify-center gap-2 py-6 text-sm"
-              >
-                <Search className="size-4" aria-hidden />
-                <p>Start typing to search movies & series…</p>
-              </div>
-            )}
+            {status === 'idle' &&
+              (recent.length > 0 ? (
+                recent.map((term) => (
+                  <CommandItem
+                    key={term}
+                    value={`recent:${term}`}
+                    onSelect={() => submitSearch(term)}
+                    className="group/recent hover:bg-primary-foreground/50 cursor-pointer"
+                  >
+                    <Clock
+                      className="text-muted-foreground mr-2 size-4 shrink-0"
+                      aria-hidden
+                    />
+                    <span className="flex-1 truncate">{term}</span>
+                    <button
+                      type="button"
+                      aria-label={`Remove “${term}” from recent searches`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        removeRecent(term)
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className="text-muted-foreground/60 hover:text-foreground ml-2 shrink-0 cursor-pointer rounded p-0.5 opacity-0 transition group-hover/recent:opacity-100 focus-visible:opacity-100"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </CommandItem>
+                ))
+              ) : (
+                <div
+                  role="status"
+                  className="text-muted-foreground flex items-center justify-center gap-2 py-6 text-sm"
+                >
+                  <Search className="size-4" aria-hidden />
+                  <p>Start typing to search movies & series…</p>
+                </div>
+              ))}
 
             {status === 'loading' && (
               <div
@@ -269,7 +378,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
             )}
 
             {status === 'results' &&
-              visibleResults.map((movie, index) => {
+              filteredResults.map((movie, index) => {
                 const href = mediaHref(movie)
                 const year = movie?.release_date
                   ? movie.release_date.split('-')[0]
