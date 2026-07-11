@@ -1,6 +1,7 @@
 export const revalidate = 86400
 
 import { siteConfig } from '@/config/site'
+import { MOVIE_GENRES_WITH_SLUG, TV_GENRES_WITH_SLUG } from '@/lib/genres'
 import {
   getPopularMovies,
   getAllTimeTopRatedMovies,
@@ -122,6 +123,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'yearly',
       priority: 0.3,
     },
+    ...MOVIE_GENRES_WITH_SLUG.map((genre) => ({
+      url: `${baseUrl}/movies/genre/${genre.slug}`,
+      lastModified: SITE_LAUNCH_DATE,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    })),
+    ...TV_GENRES_WITH_SLUG.map((genre) => ({
+      url: `${baseUrl}/tv-shows/genre/${genre.slug}`,
+      lastModified: SITE_LAUNCH_DATE,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    })),
   ]
 
   try {

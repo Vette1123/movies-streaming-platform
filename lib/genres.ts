@@ -144,4 +144,37 @@ const TV_GENRE = [
   },
 ]
 
-export { MOVIES_GENRE, TV_GENRE }
+// URL-safe slug for a genre name, e.g. "Sci-Fi & Fantasy" → "sci-fi-and-fantasy".
+const genreToSlug = (name: string): string =>
+  name
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+type GenreWithSlug = { id: number; name: string; slug: string }
+
+const withSlug = (g: { id: number; name: string }): GenreWithSlug => ({
+  ...g,
+  slug: genreToSlug(g.name),
+})
+
+const MOVIE_GENRES_WITH_SLUG: GenreWithSlug[] = MOVIES_GENRE.map(withSlug)
+const TV_GENRES_WITH_SLUG: GenreWithSlug[] = TV_GENRE.map(withSlug)
+
+const findMovieGenreBySlug = (slug: string): GenreWithSlug | undefined =>
+  MOVIE_GENRES_WITH_SLUG.find((g) => g.slug === slug)
+
+const findTvGenreBySlug = (slug: string): GenreWithSlug | undefined =>
+  TV_GENRES_WITH_SLUG.find((g) => g.slug === slug)
+
+export {
+  MOVIES_GENRE,
+  TV_GENRE,
+  MOVIE_GENRES_WITH_SLUG,
+  TV_GENRES_WITH_SLUG,
+  genreToSlug,
+  findMovieGenreBySlug,
+  findTvGenreBySlug,
+  type GenreWithSlug,
+}

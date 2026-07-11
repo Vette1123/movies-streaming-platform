@@ -1,9 +1,11 @@
 import React from 'react'
+import Link from 'next/link'
 
 import { MovieDetails } from '@/types/movie-details'
 import { MovieGenre } from '@/types/movie-genre'
 import { ItemType, Movie } from '@/types/movie-result'
 import { SeriesDetails } from '@/types/series-details'
+import { genreToSlug } from '@/lib/genres'
 import { dateFormatter, getGenres, numberRounder } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Icons } from '@/components/icons'
@@ -26,12 +28,16 @@ export const HeroRatesInfos = ({
     | Movie
   ) &
     SeriesDetails
-  // The homepage hero is fed by `trending/all/week` (mixed movies + TV), so a
-  // TV item arrives in the `movie` slot carrying TV genre ids. Resolve the
-  // media type — prefer the explicit `media_type`, fall back to the TV-only
-  // `first_air_date` field — so `getGenres` reads the correct genre table.
-  const mediaType: ItemType =
-    movie?.media_type ?? (movie?.first_air_date ? 'tv' : 'movie')
+  // Resolve media type: detail pages pass movieDetails/seriesDetails directly;
+  // the homepage hero (mixed trending/all) passes a `movie` whose type comes
+  // from media_type (or the TV-only first_air_date). Drives both the genre
+  // table and where each genre badge links.
+  const mediaType: ItemType = movieDetails
+    ? 'movie'
+    : seriesDetails
+      ? 'tv'
+      : (movie?.media_type ?? (movie?.first_air_date ? 'tv' : 'movie'))
+  const genreBasePath = mediaType === 'tv' ? '/tv-shows' : '/movies'
   const movieGenres = getGenres(
     movie?.genre_ids,
     movieDetails?.genres || seriesDetails?.genres,
@@ -66,9 +72,14 @@ export const HeroRatesInfos = ({
         {dateFormatter(item?.release_date || item?.first_air_date)}
       </p>
       {movieGenres.map((genre) => (
-        <Badge key={genre.id} className="font-medium">
-          {genre.name}
-        </Badge>
+        <Link
+          key={genre.id}
+          href={`${genreBasePath}/genre/${genreToSlug(genre.name)}`}
+        >
+          <Badge className="hover:bg-primary/80 font-medium transition-colors">
+            {genre.name}
+          </Badge>
+        </Link>
       ))}
     </div>
   )
