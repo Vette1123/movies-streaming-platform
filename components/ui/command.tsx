@@ -7,6 +7,7 @@ import { Command as CommandPrimitive } from 'cmdk'
 import { Loader, Search } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { useVisualViewport } from '@/hooks/use-visual-viewport'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 
 const Command = React.forwardRef<
@@ -32,6 +33,24 @@ interface CommandDialogProps
       keyof DialogProps
     > {}
 
+// Matches Tailwind's `sm` breakpoint — below it we treat the dialog as the
+// mobile, keyboard-aware variant.
+const MOBILE_QUERY = '(max-width: 639px)'
+// Gap kept between the dialog edges and the visible viewport / keyboard.
+const VIEWPORT_GAP = 12
+
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = React.useState(false)
+  React.useEffect(() => {
+    const mql = window.matchMedia(MOBILE_QUERY)
+    const update = () => setIsMobile(mql.matches)
+    update()
+    mql.addEventListener('change', update)
+    return () => mql.removeEventListener('change', update)
+  }, [])
+  return isMobile
+}
+
 const CommandDialog = ({
   children,
   open,
@@ -40,6 +59,24 @@ const CommandDialog = ({
   modal,
   ...commandProps
 }: CommandDialogProps) => {
+  const isMobile = useIsMobile()
+  const viewport = useVisualViewport(!!open && isMobile)
+
+  // On mobile, pin the dialog to the top of the *visible* viewport and cap its
+  // height to what's above the on-screen keyboard, so the input is never hidden
+  // and the results scroll within reach. When the keyboard is up we hug the top
+  // (push it up as far as possible); otherwise we keep the original ~7vh drop.
+  const keyboardAware = isMobile && viewport.ready
+  const topPx = viewport.keyboardOpen
+    ? VIEWPORT_GAP
+    : Math.round(viewport.height * 0.07)
+  const contentStyle: React.CSSProperties | undefined = keyboardAware
+    ? {
+        top: viewport.offsetTop + topPx,
+        maxHeight: viewport.height - topPx - VIEWPORT_GAP,
+      }
+    : undefined
+
   return (
     <Dialog
       open={open}
@@ -47,12 +84,20 @@ const CommandDialog = ({
       defaultOpen={defaultOpen}
       modal={modal}
     >
-      <DialogContent className="top-[7vh] w-[calc(100%-1.5rem)] max-w-xl translate-y-0 overflow-hidden rounded-xl p-0 shadow-2xl sm:w-full sm:max-w-xl sm:rounded-xl lg:top-[9vh]">
+      <DialogContent
+        style={contentStyle}
+        className={cn(
+          'top-[7vh] w-[calc(100%-1.5rem)] max-w-xl translate-y-0 overflow-hidden rounded-xl p-0 shadow-2xl sm:w-full sm:max-w-xl sm:rounded-xl lg:top-[9vh]',
+          // A flex column lets the list grow into the remaining height and
+          // scroll, keeping the input pinned at the top above the keyboard.
+          keyboardAware && 'flex flex-col'
+        )}
+      >
         <VisuallyHidden.Root>
           <DialogTitle>Search</DialogTitle>
         </VisuallyHidden.Root>
         <Command
-          className="[&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5"
+          className="min-h-0 flex-1 [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5"
           {...commandProps}
         >
           {children}

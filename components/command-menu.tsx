@@ -217,7 +217,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
           onValueChange={handleValueChange}
           isLoading={isLoading}
         />
-        <CommandList className="max-h-[65vh] sm:max-h-[460px]">
+        <CommandList className="max-h-[65vh] min-h-0 flex-1 sm:max-h-[460px] sm:flex-none">
           <CommandGroup heading={resultsHeading}>
             {status === 'idle' && (
               <div
