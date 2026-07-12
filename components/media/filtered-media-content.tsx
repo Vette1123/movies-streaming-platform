@@ -1,11 +1,12 @@
 'use client'
 
 import React, { useCallback, useState } from 'react'
+import { FilterX, SearchX } from 'lucide-react'
 import { useInView } from 'react-intersection-observer'
 
 import { MediaResponse, MediaType } from '@/types/media'
 import { useMediaFilter } from '@/hooks/use-media-filter'
-import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Card } from '@/components/card'
 import { MediaGridSkeleton } from '@/components/loaders/media-grid-skeleton'
 
@@ -141,9 +142,7 @@ export const FilteredMediaContent = ({
         {/* Sidebar Layout - Always visible on desktop to prevent layout shift */}
         {layout === 'sidebar' && (
           <aside className="hidden w-80 flex-shrink-0 lg:block xl:w-96">
-            <div className="sticky top-6">
-              {renderFilter()}
-            </div>
+            <div className="sticky top-6">{renderFilter()}</div>
           </aside>
         )}
 
@@ -217,15 +216,17 @@ export const FilteredMediaContent = ({
             {!isLoading &&
               pages.length > 0 &&
               (pages[0]?.results?.length ?? 0) === 0 && (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <div className="text-muted-foreground mb-4">
-                    No {mediaType === 'movie' ? 'movies' : 'TV series'} found
-                    with the current filters
-                  </div>
-                  <Button variant="outline" onClick={clearFilters}>
-                    Clear Filters
-                  </Button>
-                </div>
+                <EmptyState
+                  icon={SearchX}
+                  title={`No ${mediaType === 'movie' ? 'movies' : 'series'} match these filters`}
+                  description="Nothing lined up with the filters you picked. Loosen a few and we'll surface more titles."
+                  primaryAction={{
+                    label: 'Clear filters',
+                    onClick: clearFilters,
+                    icon: FilterX,
+                  }}
+                  className="min-h-[50vh]"
+                />
               )}
           </div>
         </main>

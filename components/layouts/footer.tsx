@@ -9,13 +9,13 @@ import { buttonVariants } from '../ui/button'
 
 export function Footer() {
   return (
-    <footer className="container space-y-4 pb-16 text-sm text-slate-500">
+    <footer className="text-muted-foreground container space-y-4 pb-16 text-sm">
       <div className="flex items-center justify-center">
         <p>
           Coded in{' '}
           <Link
             href="https://code.visualstudio.com/"
-            className="font-medium text-slate-300/75"
+            className="text-foreground/75 hover:text-foreground font-medium transition-colors"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -24,7 +24,7 @@ export function Footer() {
           by{' '}
           <Link
             href={siteConfig.author.website}
-            className="font-medium text-slate-300/75"
+            className="text-foreground/75 hover:text-foreground font-medium transition-colors"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -33,7 +33,7 @@ export function Footer() {
           truly. Built with{' '}
           <Link
             href="https://nextjs.org/"
-            className="font-medium text-slate-300/75"
+            className="text-foreground/75 hover:text-foreground font-medium transition-colors"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -42,7 +42,7 @@ export function Footer() {
           and{' '}
           <Link
             href="https://tailwindcss.com/"
-            className="font-medium text-slate-300/75"
+            className="text-foreground/75 hover:text-foreground font-medium transition-colors"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -51,7 +51,7 @@ export function Footer() {
           , deployed with{' '}
           <Link
             href="https://vercel.com/"
-            className="font-medium text-slate-300/75"
+            className="text-foreground/75 hover:text-foreground font-medium transition-colors"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -60,7 +60,7 @@ export function Footer() {
           , Using{' '}
           <Link
             href="https://vidsrc.to/"
-            className="font-medium text-slate-300/75"
+            className="text-foreground/75 hover:text-foreground font-medium transition-colors"
             target="_blank"
             rel="noopener noreferrer"
           >

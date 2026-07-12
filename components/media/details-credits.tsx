@@ -31,7 +31,7 @@ export const DetailsCredits = ({ movieCredits }: { movieCredits: Credit }) => {
                 />
               </div>
             ) : (
-              <div className="relative aspect-2/3 w-full rounded-lg bg-gray-800 shadow-md"></div>
+              <div className="bg-muted relative aspect-2/3 w-full rounded-lg shadow-md"></div>
             )}
             <p className="mt-1 truncate text-sm sm:text-base">{cast.name}</p>
             {cast.character && (

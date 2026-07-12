@@ -6,6 +6,7 @@ import React from 'react'
 import Link from 'next/link'
 import { Splide, SplideSlide } from '@splidejs/react-splide'
 import { motion } from 'framer-motion'
+import { Clapperboard } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
@@ -61,7 +62,13 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
         </Link>
       </motion.div>
       {items.length === 0 && (
-        <p className="text-lg text-gray-400">No items to show</p>
+        <div
+          role="status"
+          className="text-muted-foreground border-border/60 flex items-center gap-2 rounded-lg border border-dashed px-4 py-6 text-sm"
+        >
+          <Clapperboard className="size-4 shrink-0 opacity-70" />
+          Nothing to show here yet — check back soon.
+        </div>
       )}
       {items.length > 0 && (
         <Splide

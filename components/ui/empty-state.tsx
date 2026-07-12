@@ -9,9 +9,12 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
 interface EmptyStateAction {
-  href: string
   label: string
   icon?: LucideIcon
+  // Provide `href` for navigation or `onClick` for in-place actions (e.g.
+  // clearing filters, resetting an error boundary) — one of the two.
+  href?: string
+  onClick?: () => void
 }
 
 interface EmptyStateProps {
@@ -34,6 +37,47 @@ const PosterGhost = ({ className }: { className?: string }) => (
     )}
   />
 )
+
+// One button that renders as a Link (when `href` is set) or a real <button>
+// (when `onClick` is set), so callers can navigate or act in place with the
+// same styling.
+function ActionButton({
+  action,
+  variant = 'default',
+  className,
+}: {
+  action: EmptyStateAction
+  variant?: 'default' | 'ghost'
+  className?: string
+}) {
+  const Icon = action.icon
+  const inner = (
+    <>
+      {Icon && <Icon className="size-4" aria-hidden />}
+      {action.label}
+    </>
+  )
+
+  if (action.href) {
+    return (
+      <Button asChild size="lg" variant={variant} className={className}>
+        <Link href={action.href}>{inner}</Link>
+      </Button>
+    )
+  }
+
+  return (
+    <Button
+      type="button"
+      size="lg"
+      variant={variant}
+      onClick={action.onClick}
+      className={className}
+    >
+      {inner}
+    </Button>
+  )
+}
 
 export function EmptyState({
   icon: Icon,
@@ -65,6 +109,8 @@ export function EmptyState({
       variants={container}
       initial="hidden"
       animate="show"
+      role="status"
+      aria-live="polite"
       className={cn(
         'flex min-h-[60vh] flex-col items-center justify-center px-6 text-center',
         className
@@ -106,33 +152,17 @@ export function EmptyState({
           className="mt-7 flex flex-wrap items-center justify-center gap-3"
         >
           {primaryAction && (
-            <Button
-              asChild
-              size="lg"
+            <ActionButton
+              action={primaryAction}
               className="gap-2 rounded-full transition hover:scale-105 active:scale-95"
-            >
-              <Link href={primaryAction.href}>
-                {primaryAction.icon && (
-                  <primaryAction.icon className="size-4" aria-hidden />
-                )}
-                {primaryAction.label}
-              </Link>
-            </Button>
+            />
           )}
           {secondaryAction && (
-            <Button
-              asChild
-              size="lg"
+            <ActionButton
+              action={secondaryAction}
               variant="ghost"
               className="text-muted-foreground hover:text-foreground gap-2 rounded-full"
-            >
-              <Link href={secondaryAction.href}>
-                {secondaryAction.icon && (
-                  <secondaryAction.icon className="size-4" aria-hidden />
-                )}
-                {secondaryAction.label}
-              </Link>
-            </Button>
+            />
           )}
         </motion.div>
       )}

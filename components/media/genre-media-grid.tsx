@@ -1,10 +1,9 @@
 'use client'
 
 import React from 'react'
+import { discoverMoviesAction, discoverSeriesAction } from '@/actions/filter'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useInView } from 'react-intersection-observer'
-
-import { discoverMoviesAction, discoverSeriesAction } from '@/actions/filter'
 
 import { MediaResponse, MediaType } from '@/types/media'
 import { Card } from '@/components/card'
@@ -26,7 +25,7 @@ export const GenreMediaGrid = ({
     rootMargin: '0px 0px 200px 0px',
   })
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
     useInfiniteQuery({
       // Genre-scoped key so each genre keeps its own cache (the shared browse
       // hook keys only on media type and would collide across genres).
@@ -55,6 +54,13 @@ export const GenreMediaGrid = ({
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const items = (data?.pages ?? []).flatMap((page) => page?.results ?? [])
+
+  // The page ships with empty initialData when TMDB hiccups at build time, then
+  // refetches on mount. Show the skeleton during that refetch instead of the
+  // "empty genre" message, which would otherwise flash for a loaded genre.
+  if (items.length === 0 && isFetching) {
+    return <MediaGridSkeleton count={10} />
+  }
 
   if (items.length === 0) {
     return (

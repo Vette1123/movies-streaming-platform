@@ -1,6 +1,6 @@
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader, Play } from 'lucide-react'
+import { Loader, Play, Tv } from 'lucide-react'
 
 import { EpisodeDetails } from '@/types/episode'
 import {
@@ -119,9 +119,13 @@ export const Episodes = ({
         </div>
       )}
       {!episodes?.length && !isEpisodesLoading && (
-        <p className="text-muted-foreground py-10 text-center text-sm">
-          No episodes found
-        </p>
+        <div
+          role="status"
+          className="text-muted-foreground flex flex-col items-center gap-2 py-10 text-center text-sm"
+        >
+          <Tv className="size-6 opacity-60" aria-hidden />
+          No episodes found for this season yet.
+        </div>
       )}
       {episodes?.length
         ? episodes.map((episode) => {

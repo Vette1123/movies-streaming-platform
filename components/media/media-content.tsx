@@ -1,12 +1,14 @@
 'use client'
 
 import React from 'react'
+import { Clapperboard } from 'lucide-react'
 import { useInView } from 'react-intersection-observer'
 
 import { MediaResponse, MediaType } from '@/types/media'
 import { PopularMediaAction } from '@/types/movie-result'
 import { QUERY_KEYS } from '@/lib/queryKeys'
 import { useInfiniteScroll } from '@/hooks/use-infinite-scroll'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Card } from '@/components/card'
 
 import { FilteredMediaContent } from './filtered-media-content'
@@ -56,7 +58,15 @@ export const MediaContent = ({
     )
   }
 
-  if (!data) return <div className="text-muted-foreground">No data found</div>
+  if (!data)
+    return (
+      <EmptyState
+        icon={Clapperboard}
+        title="Nothing to show right now"
+        description="We couldn't load any titles here. Refresh the page or head back home and try again."
+        primaryAction={{ href: '/', label: 'Back to home' }}
+      />
+    )
   const { pages } = data
 
   return (
