@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { HeroRatesInfos } from '@/components/header/hero-rates-info'
 import { Icons } from '@/components/icons'
 import { movieExtraInfoFormatter } from '@/components/media/extra-info'
+import { GenreChips } from '@/components/media/genre-chips'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 
 export const DetailsExtraInfo = ({
@@ -33,6 +34,7 @@ export const DetailsExtraInfo = ({
       <p className="prose-invert text-xs font-semibold lg:text-lg">
         {movie.overview}
       </p>
+      <GenreChips genres={movie.genres} mediaType="movie" className="mt-4" />
       <div className="my-4 flex max-w-lg flex-col space-y-1">
         {extraInfo.map((info) => (
           <div

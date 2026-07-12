@@ -168,6 +168,15 @@ const findMovieGenreBySlug = (slug: string): GenreWithSlug | undefined =>
 const findTvGenreBySlug = (slug: string): GenreWithSlug | undefined =>
   TV_GENRES_WITH_SLUG.find((g) => g.slug === slug)
 
+// Match a TMDB genre id to one that has a landing page. Detail payloads carry
+// genre ids, so this lets us link only the genres we actually route for and
+// leave any stray one as plain text (no dead link to a notFound() page).
+const findMovieGenreById = (id: number): GenreWithSlug | undefined =>
+  MOVIE_GENRES_WITH_SLUG.find((g) => g.id === id)
+
+const findTvGenreById = (id: number): GenreWithSlug | undefined =>
+  TV_GENRES_WITH_SLUG.find((g) => g.id === id)
+
 export {
   MOVIES_GENRE,
   TV_GENRE,
@@ -176,5 +185,7 @@ export {
   genreToSlug,
   findMovieGenreBySlug,
   findTvGenreBySlug,
+  findMovieGenreById,
+  findTvGenreById,
   type GenreWithSlug,
 }
