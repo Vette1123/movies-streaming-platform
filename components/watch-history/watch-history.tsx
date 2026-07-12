@@ -1,10 +1,12 @@
 'use client'
 
 import React from 'react'
+import { Film, History, Tv } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { useMounted } from '@/hooks/use-mounted'
 import { useWatchedMedia } from '@/hooks/use-watched-media'
+import { EmptyState } from '@/components/ui/empty-state'
 
 import { DeleteHistoryAlert } from './delete-alert'
 import { WatchedItemCard } from './watch-history-card'
@@ -33,12 +35,17 @@ export const WatchHistoryContainer = () => {
 
   if (!watchedItems.length) {
     return (
-      <div className="flex min-h-screen flex-1 flex-col items-center">
-        <p className="text-lg text-gray-500">No watched items yet</p>
-        <p className="text-sm text-gray-400">
-          Start watching your favorite movies and TV shows to see them here
-        </p>
-      </div>
+      <EmptyState
+        icon={History}
+        title="No watch history yet"
+        description="Titles you play show up here, so you can always pick up right where you left off."
+        primaryAction={{ href: '/movies', label: 'Browse movies', icon: Film }}
+        secondaryAction={{
+          href: '/tv-shows',
+          label: 'Explore series',
+          icon: Tv,
+        }}
+      />
     )
   }
 

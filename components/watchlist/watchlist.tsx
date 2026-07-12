@@ -1,10 +1,12 @@
 'use client'
 
 import React from 'react'
+import { Bookmark, Film, Tv } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { useMounted } from '@/hooks/use-mounted'
 import { useWatchlist } from '@/hooks/use-watchlist'
+import { EmptyState } from '@/components/ui/empty-state'
 import { WatchedItemCard } from '@/components/watch-history/watch-history-card'
 import { WatchedItemCardSkeleton } from '@/components/watch-history/watch-history-skeleton'
 
@@ -32,12 +34,17 @@ export const WatchlistContainer = () => {
 
   if (!watchlist.length) {
     return (
-      <div className="flex min-h-screen flex-1 flex-col items-center">
-        <p className="text-lg text-gray-500">Your watchlist is empty</p>
-        <p className="text-sm text-gray-400">
-          Tap “Save” on any movie or show to keep it here for later
-        </p>
-      </div>
+      <EmptyState
+        icon={Bookmark}
+        title="Your watchlist is empty"
+        description="Save any movie or show and it’ll wait for you right here — ready whenever you are."
+        primaryAction={{ href: '/movies', label: 'Browse movies', icon: Film }}
+        secondaryAction={{
+          href: '/tv-shows',
+          label: 'Explore series',
+          icon: Tv,
+        }}
+      />
     )
   }
 
