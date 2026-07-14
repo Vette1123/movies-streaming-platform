@@ -30,7 +30,7 @@ export function SiteHeader() {
           <div className="w-full flex-1 md:w-auto md:flex-none">
             <CommandMenu />
           </div>
-          <nav className="flex items-center space-x-1">
+          <nav className="hidden items-center space-x-1 md:flex">
             <button
               type="button"
               onClick={openRafiqOnPlayStore}
