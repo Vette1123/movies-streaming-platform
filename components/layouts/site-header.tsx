@@ -3,6 +3,7 @@
 import Link from 'next/link'
 
 import { siteConfig } from '@/config/site'
+import { openRafiqOnPlayStore } from '@/lib/rafiq'
 import { cn } from '@/lib/utils'
 import { useNavbarScrollOverlay } from '@/hooks/use-scroll-overlay'
 import { buttonVariants } from '@/components/ui/button'
@@ -30,6 +31,18 @@ export function SiteHeader() {
             <CommandMenu />
           </div>
           <nav className="flex items-center space-x-1">
+            <button
+              type="button"
+              onClick={openRafiqOnPlayStore}
+              aria-label="Rafiq — our app on Google Play"
+              className={buttonVariants({
+                size: 'icon',
+                variant: 'ghost',
+              })}
+            >
+              <Icons.googlePlay className="size-5" />
+              <span className="sr-only">Rafiq on Google Play</span>
+            </button>
             <Link
               href={siteConfig.links.github}
               target="_blank"

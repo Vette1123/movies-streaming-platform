@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 
 import { NavItem } from '@/types/navbar'
 import { siteConfig } from '@/config/site'
+import { openRafiqOnPlayStore } from '@/lib/rafiq'
 import { cn } from '@/lib/utils'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -61,6 +62,24 @@ export function MobileNav({ items }: MobileNavProps) {
           ))}
         </div>
         <div className="space-y-6 px-9 pb-10">
+          <button
+            type="button"
+            onClick={() => {
+              setIsOpen(false)
+              openRafiqOnPlayStore()
+            }}
+            className={cn(
+              buttonVariants({
+                variant: 'default',
+                size: 'default',
+                className: 'w-full',
+              }),
+              'from-primary bg-gradient-to-r to-emerald-500 text-white'
+            )}
+          >
+            <Icons.googlePlay className="mr-2 size-5" />
+            Get Rafiq on Google Play
+          </button>
           <Link
             href="https://www.profitableratecpm.com/hwxt5zz7i?key=a5dba98951e6803fa620281826ca66d3"
             target="_blank"

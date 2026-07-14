@@ -5,6 +5,7 @@ import { siteConfig } from '@/config/site'
 import { cn } from '@/lib/utils'
 
 import { Icons } from '../icons'
+import { RafiqLink } from '../rafiq-link'
 import { buttonVariants } from '../ui/button'
 
 export function Footer() {
@@ -67,6 +68,12 @@ export function Footer() {
             VidSrc
           </Link>
           .
+        </p>
+      </div>
+      <div className="flex items-center justify-center">
+        <p>
+          Also check out <RafiqLink>Rafiq on Google Play</RafiqLink>, an app
+          made by us.
         </p>
       </div>
       <div className="flex items-center justify-center">

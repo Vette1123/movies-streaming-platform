@@ -17,6 +17,7 @@ import {
   trackSearchResultClicked,
 } from '@/lib/analytics'
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
+import { openRafiqOnPlayStore } from '@/lib/rafiq'
 import { cn, getThumbBackdropURL, getThumbPosterURL } from '@/lib/utils'
 import { useCMDKListener } from '@/hooks/use-cmdk-listener'
 import { useRecentSearches } from '@/hooks/use-recent-searches'
@@ -550,6 +551,23 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                   <AvatarFallback>G</AvatarFallback>
                 </Avatar>
                 Portfolio
+              </div>
+            </CommandItem>
+            <CommandItem
+              className="cursor-pointer"
+              onSelect={() => {
+                trackCommandShortcutUsed({ shortcut: 'rafiq' })
+                runCommand(() => openRafiqOnPlayStore())
+              }}
+            >
+              <div className="flex items-center gap-4">
+                <Icons.googlePlay className="size-5" />
+                <div className="flex flex-col">
+                  <span>Rafiq</span>
+                  <span className="text-muted-foreground text-xs">
+                    An app made by us · Google Play
+                  </span>
+                </div>
               </div>
             </CommandItem>
             <CommandItem
