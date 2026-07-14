@@ -128,6 +128,30 @@ export function MobileNav({ items }: MobileNavProps) {
             <Icons.portfolio className="mr-2 size-5" />
             Visit my portfolio
           </Link>
+          <div className="flex items-center justify-center gap-2 pt-2">
+            <Link
+              href={siteConfig.links.github}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="GitHub"
+              onClick={() => setIsOpen(false)}
+              className={buttonVariants({ size: 'icon', variant: 'ghost' })}
+            >
+              <Icons.gitHub className="size-5" />
+              <span className="sr-only">GitHub</span>
+            </Link>
+            <Link
+              href={siteConfig.links.twitter}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="X (Twitter)"
+              onClick={() => setIsOpen(false)}
+              className={buttonVariants({ size: 'icon', variant: 'ghost' })}
+            >
+              <Icons.twitter className="size-5 fill-current" />
+              <span className="sr-only">X (Twitter)</span>
+            </Link>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
