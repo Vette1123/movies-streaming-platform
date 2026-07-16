@@ -3,7 +3,7 @@
 import React from 'react'
 import Image, { ImageProps } from 'next/image'
 
-import { getTMDBOriginFallback } from '@/lib/tmdbConfig'
+import { getNextImageFallback } from '@/lib/tmdbConfig'
 import { cn } from '@/lib/utils'
 
 interface BlurImageProps extends ImageProps {
@@ -19,9 +19,10 @@ export function BlurredImage({
   ...props
 }: BlurImageProps) {
   const [isLoading, setLoading] = React.useState(true)
-  // Render from this src so we can hot-swap to the TMDB origin if the CDN
-  // (ImageKit) URL fails — e.g. the plan lapses. Kept in sync when `src`
-  // changes so recycled instances in lists don't show a stale fallback.
+  // Render from this src so we can walk the fallback chain if a URL fails:
+  // ImageKit -> wsrv.nl -> TMDB origin. Each onError advances one stage. Kept in
+  // sync when `src` changes so recycled instances in lists don't show a stale
+  // fallback.
   const [imgSrc, setImgSrc] = React.useState(src)
 
   React.useEffect(() => {
@@ -29,7 +30,7 @@ export function BlurredImage({
   }, [src])
 
   const handleError = React.useCallback(() => {
-    const fallback = getTMDBOriginFallback(imgSrc)
+    const fallback = getNextImageFallback(imgSrc)
     if (fallback && fallback !== imgSrc) setImgSrc(fallback)
   }, [imgSrc])
 

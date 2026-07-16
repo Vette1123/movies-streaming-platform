@@ -11,20 +11,59 @@ const apiConfig = {
   w300Image: (imgPath: string) => `${IMAGE_CACHE_HOST_URL}/w300${imgPath}`,
 }
 
-// TMDB's own image origin — free, keyless, unmetered, never expires. We proxy
-// through IMAGE_CACHE_HOST_URL (ImageKit) for speed/caching, but keep this as a
-// safety net so a lapsed/dead CDN never leaves the site with broken images.
+// TMDB's own image origin — free, keyless, unmetered, never expires. The last
+// resort in the fallback chain so images can never all break at once.
 const TMDB_ORIGIN_IMAGE_BASE = 'https://image.tmdb.org/t/p'
+// wsrv.nl — free, keyless Cloudflare-backed image proxy/optimizer. Second in the
+// chain: still optimizes (WebP) when ImageKit is down, before we drop to origin.
+const WSRV_BASE = 'https://wsrv.nl/?url='
 
-// Given a CDN (ImageKit) image URL, return the equivalent TMDB-origin URL to use
-// as an onError fallback. The proxy path mirrors TMDB exactly
-// (`${HOST}/original/x.jpg` <-> `${TMDB}/original/x.jpg`), so a prefix swap is
-// enough. Returns null when `src` isn't one of our CDN URLs (external hosts,
-// already-origin URLs) so callers leave those untouched.
-function getTMDBOriginFallback(src: unknown): string | null {
-  if (!IMAGE_CACHE_HOST_URL || typeof src !== 'string') return null
-  if (!src.startsWith(IMAGE_CACHE_HOST_URL)) return null
-  return src.replace(IMAGE_CACHE_HOST_URL, TMDB_ORIGIN_IMAGE_BASE)
+// Image source fallback chain, tried in order on each onError:
+//   0. ImageKit (IMAGE_CACHE_HOST_URL) — primary, our paid/managed CDN
+//   1. wsrv.nl proxying the TMDB origin — free optimizer if ImageKit is down
+//   2. TMDB origin direct — free/keyless final safety net
+// Every stage's URL embeds the same TMDB path (e.g. "/w500/abc.jpg"), so we can
+// recover it from any stage and rebuild the next one.
+
+// Pull the TMDB path out of any stage's URL (ImageKit prefix, wsrv `?url=`, or
+// origin). null when `src` isn't one of ours, so callers leave it untouched.
+function extractTMDBPath(src: string): string | null {
+  if (IMAGE_CACHE_HOST_URL && src.startsWith(IMAGE_CACHE_HOST_URL)) {
+    return src.slice(IMAGE_CACHE_HOST_URL.length)
+  }
+  const marker = 'image.tmdb.org/t/p'
+  const idx = src.indexOf(marker)
+  if (idx === -1) return null
+  let rest = src.slice(idx + marker.length)
+  // Strip any trailing wsrv params (e.g. "&output=webp") after the path.
+  const amp = rest.indexOf('&')
+  if (amp !== -1) rest = rest.slice(0, amp)
+  return rest
+}
+
+// Which stage a URL is currently at (-1 = not one of ours).
+function imageStage(src: string): number {
+  if (IMAGE_CACHE_HOST_URL && src.startsWith(IMAGE_CACHE_HOST_URL)) return 0
+  if (src.startsWith(WSRV_BASE)) return 1
+  if (src.startsWith(TMDB_ORIGIN_IMAGE_BASE)) return 2
+  return -1
+}
+
+// Given the current (failed) image URL, return the next fallback in the chain,
+// or null when exhausted (already at TMDB origin, or not one of our URLs).
+function getNextImageFallback(src: unknown): string | null {
+  if (typeof src !== 'string') return null
+  const path = extractTMDBPath(src)
+  if (!path) return null
+  const tmdbOrigin = `${TMDB_ORIGIN_IMAGE_BASE}${path}`
+  switch (imageStage(src)) {
+    case 0: // ImageKit -> wsrv.nl (optimized)
+      return `${WSRV_BASE}${tmdbOrigin}&output=webp`
+    case 1: // wsrv.nl -> TMDB origin direct
+      return tmdbOrigin
+    default: // origin (2) is the last resort, or unknown host
+      return null
+  }
 }
 
 // old
@@ -47,4 +86,4 @@ const tvType = {
   trending: 'trending',
 }
 
-export { apiConfig, movieType, tvType, getTMDBOriginFallback }
+export { apiConfig, movieType, tvType, getNextImageFallback }
