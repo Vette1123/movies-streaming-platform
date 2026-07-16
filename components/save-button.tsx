@@ -40,21 +40,23 @@ export function SaveButton({ media, className }: SaveButtonProps) {
   return (
     <Button
       type="button"
-      variant={saved ? 'secondary' : 'outline'}
+      variant="ghost"
       size="lg"
       aria-pressed={saved}
       aria-label={saved ? 'Remove from watchlist' : 'Save to watchlist'}
       onClick={handleClick}
       className={cn(
-        'gap-2 rounded-full backdrop-blur-sm transition hover:scale-105 active:scale-95',
-        !saved && 'bg-background/40 hover:bg-background/60',
+        'gap-2 rounded-full border text-white shadow-none backdrop-blur-[2px] transition duration-200 [text-shadow:0_1px_3px_rgba(0,0,0,0.7)] active:scale-95',
+        saved
+          ? 'border-cyan-300/60 bg-cyan-400/10 hover:bg-cyan-400/20'
+          : 'border-white/30 bg-white/5 hover:border-white/50 hover:bg-white/10',
         className
       )}
     >
       {saved ? (
-        <BookmarkCheck className="size-5 text-cyan-300" />
+        <BookmarkCheck className="size-5 text-cyan-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
       ) : (
-        <Bookmark className="size-5" />
+        <Bookmark className="size-5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
       )}
       <span>{saved ? 'Saved' : 'Save'}</span>
     </Button>

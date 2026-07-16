@@ -129,6 +129,18 @@ export function MobileNav({ items }: MobileNavProps) {
             Visit my portfolio
           </Link>
           <div className="flex items-center justify-center gap-2 pt-2">
+            <button
+              type="button"
+              aria-label="Rafiq on Google Play"
+              onClick={() => {
+                setIsOpen(false)
+                openRafiqOnPlayStore()
+              }}
+              className={buttonVariants({ size: 'icon', variant: 'ghost' })}
+            >
+              <Icons.googlePlay className="size-5" />
+              <span className="sr-only">Rafiq on Google Play</span>
+            </button>
             <Link
               href={siteConfig.links.github}
               target="_blank"
@@ -150,6 +162,28 @@ export function MobileNav({ items }: MobileNavProps) {
             >
               <Icons.twitter className="size-5 fill-current" />
               <span className="sr-only">X (Twitter)</span>
+            </Link>
+            <Link
+              href={siteConfig.links.website}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Portfolio"
+              onClick={() => setIsOpen(false)}
+              className={buttonVariants({ size: 'icon', variant: 'ghost' })}
+            >
+              <Icons.portfolio className="size-5" />
+              <span className="sr-only">Portfolio</span>
+            </Link>
+            <Link
+              href={siteConfig.links.buyMeACoffee}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Buy me a coffee"
+              onClick={() => setIsOpen(false)}
+              className={buttonVariants({ size: 'icon', variant: 'ghost' })}
+            >
+              <Icons.buyMeACoffee className="size-5" />
+              <span className="sr-only">Buy me a coffee</span>
             </Link>
           </div>
         </div>
