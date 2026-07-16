@@ -31,9 +31,9 @@ export function MobileNav({ items }: MobileNavProps) {
       </SheetTrigger>
       <SheetContent
         side="left"
-        className="inset-y-0 flex h-auto w-[350px] flex-col p-0"
+        className="inset-y-0 flex h-full w-[350px] flex-col p-0"
       >
-        <div className="px-7 py-4">
+        <div className="shrink-0 px-7 py-4">
           <Link
             aria-label="Home"
             href="/"
@@ -45,101 +45,41 @@ export function MobileNav({ items }: MobileNavProps) {
             <span className="text-lg font-bold">{siteConfig.name}</span>
           </Link>
         </div>
-        <div className="my-4 flex flex-1 flex-col gap-4 px-9 pb-2">
-          {items?.map((item, index) => (
-            <div className="border-b-2 last:border-b-0" key={item.title}>
-              <MobileLink
-                key={index}
-                href={item.href!}
-                pathname={pathname}
-                setIsOpen={setIsOpen}
-                disabled={item.disabled}
-                scroll={item.scroll}
-              >
-                {item.title}
-              </MobileLink>
-            </div>
-          ))}
-        </div>
-        <div className="space-y-6 px-9 pb-10">
-          <button
-            type="button"
-            onClick={() => {
-              setIsOpen(false)
-              openRafiqOnPlayStore()
-            }}
-            className={cn(
-              buttonVariants({
-                variant: 'default',
-                size: 'default',
-                className: 'w-full',
-              }),
-              'from-primary bg-gradient-to-r to-emerald-500 text-white'
-            )}
-          >
-            <Icons.googlePlay className="mr-2 size-5" />
-            Get Rafiq on Google Play
-          </button>
-          <Link
-            href="https://www.profitableratecpm.com/hwxt5zz7i?key=a5dba98951e6803fa620281826ca66d3"
-            target="_blank"
-            rel="noreferrer"
-            className={cn(
-              buttonVariants({
-                variant: 'default',
-                size: 'default',
-                className: 'w-full',
-              }),
-              'text-white'
-            )}
-          >
-            <Icons.buyMeACoffee className="mr-2 size-5" />
-            Support
-          </Link>
-          <Link
-            href={siteConfig.links.buyMeACoffee}
-            target="_blank"
-            rel="noreferrer"
-            className={cn(
-              buttonVariants({
-                variant: 'default',
-                size: 'default',
-                className: 'w-full',
-              }),
-              'text-white'
-            )}
-          >
-            <Icons.buyMeACoffee className="mr-2 size-5" />
-            Buy me a coffee
-          </Link>
-          <Link
-            href={siteConfig.links.website}
-            target="_blank"
-            rel="noreferrer"
-            className={cn(
-              buttonVariants({
-                variant: 'default',
-                size: 'default',
-                className: 'w-full',
-              }),
-              'text-white'
-            )}
-          >
-            <Icons.portfolio className="mr-2 size-5" />
-            Visit my portfolio
-          </Link>
-          <div className="flex items-center justify-center gap-2 pt-2">
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          <div className="flex flex-col gap-4 px-9 py-4">
+            {items?.map((item, index) => (
+              <div className="border-b-2 last:border-b-0" key={item.title}>
+                <MobileLink
+                  key={index}
+                  href={item.href!}
+                  pathname={pathname}
+                  setIsOpen={setIsOpen}
+                  disabled={item.disabled}
+                  scroll={item.scroll}
+                >
+                  {item.title}
+                </MobileLink>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-3 px-9 pb-10">
             <button
               type="button"
-              aria-label="Rafiq on Google Play"
               onClick={() => {
                 setIsOpen(false)
                 openRafiqOnPlayStore()
               }}
-              className={buttonVariants({ size: 'icon', variant: 'ghost' })}
+              className={cn(
+                buttonVariants({
+                  variant: 'default',
+                  size: 'default',
+                  className: 'w-full',
+                }),
+                'from-primary bg-gradient-to-r to-emerald-500 text-white'
+              )}
             >
-              <Icons.googlePlay className="size-5" />
-              <span className="sr-only">Rafiq on Google Play</span>
+              <Icons.googlePlay className="mr-2 size-5" />
+              Get Rafiq on Google Play
             </button>
             <Link
               href={siteConfig.links.github}
@@ -147,10 +87,17 @@ export function MobileNav({ items }: MobileNavProps) {
               rel="noreferrer"
               aria-label="GitHub"
               onClick={() => setIsOpen(false)}
-              className={buttonVariants({ size: 'icon', variant: 'ghost' })}
+              className={cn(
+                buttonVariants({
+                  variant: 'default',
+                  size: 'default',
+                  className: 'w-full',
+                }),
+                'text-white'
+              )}
             >
-              <Icons.gitHub className="size-5" />
-              <span className="sr-only">GitHub</span>
+              <Icons.gitHub className="mr-2 size-5" />
+              GitHub
             </Link>
             <Link
               href={siteConfig.links.twitter}
@@ -158,32 +105,65 @@ export function MobileNav({ items }: MobileNavProps) {
               rel="noreferrer"
               aria-label="X (Twitter)"
               onClick={() => setIsOpen(false)}
-              className={buttonVariants({ size: 'icon', variant: 'ghost' })}
+              className={cn(
+                buttonVariants({
+                  variant: 'default',
+                  size: 'default',
+                  className: 'w-full',
+                }),
+                'text-white'
+              )}
             >
-              <Icons.twitter className="size-5 fill-current" />
-              <span className="sr-only">X (Twitter)</span>
+              <Icons.twitter className="mr-2 size-5 fill-current" />
+              X (Twitter)
             </Link>
             <Link
-              href={siteConfig.links.website}
+              href="https://www.profitableratecpm.com/hwxt5zz7i?key=a5dba98951e6803fa620281826ca66d3"
               target="_blank"
               rel="noreferrer"
-              aria-label="Portfolio"
-              onClick={() => setIsOpen(false)}
-              className={buttonVariants({ size: 'icon', variant: 'ghost' })}
+              className={cn(
+                buttonVariants({
+                  variant: 'default',
+                  size: 'default',
+                  className: 'w-full',
+                }),
+                'text-white'
+              )}
             >
-              <Icons.portfolio className="size-5" />
-              <span className="sr-only">Portfolio</span>
+              <Icons.buyMeACoffee className="mr-2 size-5" />
+              Support
             </Link>
             <Link
               href={siteConfig.links.buyMeACoffee}
               target="_blank"
               rel="noreferrer"
-              aria-label="Buy me a coffee"
-              onClick={() => setIsOpen(false)}
-              className={buttonVariants({ size: 'icon', variant: 'ghost' })}
+              className={cn(
+                buttonVariants({
+                  variant: 'default',
+                  size: 'default',
+                  className: 'w-full',
+                }),
+                'text-white'
+              )}
             >
-              <Icons.buyMeACoffee className="size-5" />
-              <span className="sr-only">Buy me a coffee</span>
+              <Icons.buyMeACoffee className="mr-2 size-5" />
+              Buy me a coffee
+            </Link>
+            <Link
+              href={siteConfig.links.website}
+              target="_blank"
+              rel="noreferrer"
+              className={cn(
+                buttonVariants({
+                  variant: 'default',
+                  size: 'default',
+                  className: 'w-full',
+                }),
+                'text-white'
+              )}
+            >
+              <Icons.portfolio className="mr-2 size-5" />
+              Visit my portfolio
             </Link>
           </div>
         </div>

@@ -18,6 +18,7 @@ import {
 } from '@/lib/analytics'
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
 import { openRafiqOnPlayStore } from '@/lib/rafiq'
+import { getTMDBOriginFallback } from '@/lib/tmdbConfig'
 import { cn, getThumbBackdropURL, getThumbPosterURL } from '@/lib/utils'
 import { useCMDKListener } from '@/hooks/use-cmdk-listener'
 import { useRecentSearches } from '@/hooks/use-recent-searches'
@@ -423,6 +424,13 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                             sizes="96px"
                             className="object-cover"
                             unoptimized
+                            onError={(e) => {
+                              const fb = getTMDBOriginFallback(
+                                e.currentTarget.src
+                              )
+                              if (fb && e.currentTarget.src !== fb)
+                                e.currentTarget.src = fb
+                            }}
                           />
                         </div>
                       ) : movie?.poster_path ? (
@@ -434,6 +442,13 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                             sizes="96px"
                             className="object-cover object-top"
                             unoptimized
+                            onError={(e) => {
+                              const fb = getTMDBOriginFallback(
+                                e.currentTarget.src
+                              )
+                              if (fb && e.currentTarget.src !== fb)
+                                e.currentTarget.src = fb
+                            }}
                           />
                         </div>
                       ) : (
