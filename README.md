@@ -1,3 +1,7 @@
+<a href="https://www.reely.space">
+  <img src="./public/opengraph-image.png" alt="Reely — discover, track, and stream movies and TV shows" width="100%" />
+</a>
+
 # 🎬 Reely
 
 > Discover, track, and stream movies and TV shows — a fast, modern, TMDB-powered viewing experience.
