@@ -18,6 +18,9 @@ interface TrailerDialogProps {
   mediaId: number
   mediaType: MediaKind
   title?: string
+  // Notified whenever the dialog opens/closes (e.g. so a host carousel can
+  // pause autoplay while the trailer is open).
+  onOpenChange?: (open: boolean) => void
 }
 
 export function TrailerDialog({
@@ -25,11 +28,13 @@ export function TrailerDialog({
   mediaId,
   mediaType,
   title,
+  onOpenChange,
 }: TrailerDialogProps) {
   const [open, setOpen] = React.useState(false)
 
   const handleOpenChange = (next: boolean) => {
     setOpen(next)
+    onOpenChange?.(next)
     if (next) {
       trackTrailerPlayed({ media_id: mediaId, media_type: mediaType, title })
     }

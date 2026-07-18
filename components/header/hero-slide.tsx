@@ -13,6 +13,7 @@ import { trackHeroWatchClicked } from '@/lib/analytics'
 import { getImageURL, getPosterImageURL } from '@/lib/utils'
 import { useHeroExtras } from '@/hooks/use-hero-extras'
 import { buttonVariants } from '@/components/ui/button'
+import { CarouselPauseContext } from '@/components/carousel'
 import { BlurredImage } from '@/components/blurred-image'
 import { HeroRatesInfos } from '@/components/header/hero-rates-info'
 import { HeroTrailerPreview } from '@/components/header/hero-trailer-preview'
@@ -29,7 +30,7 @@ interface HeroSlideProps {
   priority?: boolean
 }
 
-const HOVER_PREVIEW_DELAY = 900
+const HOVER_PREVIEW_DELAY = 500
 
 export function HeroSlide({ movie, genreTable, priority = false }: HeroSlideProps) {
   const media = movie as HeroSlideMedia
@@ -51,23 +52,35 @@ export function HeroSlide({ movie, genreTable, priority = false }: HeroSlideProp
       typeof window !== 'undefined' &&
       window.matchMedia('(hover: hover) and (pointer: fine)').matches
   )
+  const [hovering, setHovering] = React.useState(false)
   const [previewActive, setPreviewActive] = React.useState(false)
-  const hoverTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [dialogOpen, setDialogOpen] = React.useState(false)
 
+  // Freeze carousel autoplay while a trailer is engaged (hover preview loading/
+  // playing, or the trailer dialog open) so rotation never interrupts it. Keyed
+  // by slide id — idempotent, so it can't leave autoplay stuck paused.
+  const { setSlidePaused } = React.useContext(CarouselPauseContext)
+  const trailerEngaged = previewActive || dialogOpen
   React.useEffect(() => {
-    return () => {
-      if (hoverTimer.current) clearTimeout(hoverTimer.current)
-    }
-  }, [])
+    setSlidePaused(movie.id, trailerEngaged)
+    return () => setSlidePaused(movie.id, false)
+  }, [movie.id, trailerEngaged, setSlidePaused])
+
+  // Arm the preview whenever the pointer is over the slide AND a trailer key is
+  // available. Keying the timer off both means a key that arrives *after* the
+  // hover started still triggers (the earlier bug: hovering before the lazy
+  // fetch resolved showed nothing and never retried).
+  React.useEffect(() => {
+    if (!hovering || !canPreview || reduce || !trailerKey) return
+    const t = setTimeout(() => setPreviewActive(true), HOVER_PREVIEW_DELAY)
+    return () => clearTimeout(t)
+  }, [hovering, canPreview, reduce, trailerKey])
 
   const href = mediaType === 'tv' ? `/tv-shows/${movie.id}` : `/movies/${movie.id}`
 
-  const handleEnter = () => {
-    if (!canPreview || reduce || !trailerKey) return
-    hoverTimer.current = setTimeout(() => setPreviewActive(true), HOVER_PREVIEW_DELAY)
-  }
+  const handleEnter = () => setHovering(true)
   const handleLeave = () => {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    setHovering(false)
     setPreviewActive(false)
   }
 
@@ -183,6 +196,7 @@ export function HeroSlide({ movie, genreTable, priority = false }: HeroSlideProp
                   mediaId={movie.id}
                   mediaType={mediaType}
                   title={title}
+                  onOpenChange={setDialogOpen}
                 />
               )}
 

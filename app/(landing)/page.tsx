@@ -62,14 +62,21 @@ async function IndexPage() {
       <Suspense fallback={<FullScreenLoader />}>
         <HeroSlider movies={trendingMediaForHero} />
       </Suspense>
-      <MoviesIntroSection
-        latestTrendingMovies={latestTrendingMovies}
-        allTimeTopRatedMovies={allTimeTopRatedMovies}
-        popularMovies={popularMovies}
-        latestTrendingSeries={latestTrendingSeries}
-        popularSeries={popularSeries}
-        allTimeTopRatedSeries={allTimeTopRatedSeries}
-      />
+      {/* Smooth handoff: the hero fades to near-black at its base, and this
+          strip continues that dark and dissolves into the animated aurora over
+          ~200px, so the background eases in under the first poster row instead
+          of appearing as a hard seam. */}
+      <div className="relative">
+        <div className="from-background pointer-events-none absolute inset-x-0 top-0 z-[-1] h-52 bg-gradient-to-b to-transparent" />
+        <MoviesIntroSection
+          latestTrendingMovies={latestTrendingMovies}
+          allTimeTopRatedMovies={allTimeTopRatedMovies}
+          popularMovies={popularMovies}
+          latestTrendingSeries={latestTrendingSeries}
+          popularSeries={popularSeries}
+          allTimeTopRatedSeries={allTimeTopRatedSeries}
+        />
+      </div>
     </section>
   )
 }

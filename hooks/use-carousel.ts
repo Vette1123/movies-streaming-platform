@@ -8,12 +8,17 @@ interface UseCarouselProps {
   childrenCount: number
   autoPlay?: boolean
   autoPlayInterval?: number
+  // Hard pause requested by a slide (e.g. a trailer is playing/loading). Takes
+  // precedence over autoplay regardless of hover state, so rotation can never
+  // yank a slide out from under an open trailer.
+  externalPaused?: boolean
 }
 
 export const useCarousel = ({
   childrenCount,
   autoPlay = true,
   autoPlayInterval = 5000,
+  externalPaused = false,
 }: UseCarouselProps) => {
   // Always start at slide 0 on load. The server renders slide 0 (the priority /
   // LCP image), so the first frame is correct and decoded fast — no restore
@@ -58,7 +63,13 @@ export const useCarousel = ({
 
   // Enhanced auto-play with user interaction handling
   const startAutoPlay = useCallback(() => {
-    if (!autoPlay || childrenCount <= 1 || isUserInteracting || isTabHidden)
+    if (
+      !autoPlay ||
+      childrenCount <= 1 ||
+      isUserInteracting ||
+      isTabHidden ||
+      externalPaused
+    )
       return
 
     if (autoPlayRef.current) {
@@ -78,6 +89,7 @@ export const useCarousel = ({
     isUserInteracting,
     isDragging,
     isTabHidden,
+    externalPaused,
   ])
 
   const stopAutoPlay = useCallback(() => {
@@ -204,7 +216,7 @@ export const useCarousel = ({
     isDragging,
     isMounted,
     // For the autoplay progress bar: freeze it whenever the timer isn't running.
-    isPaused: isUserInteracting || isDragging || isTabHidden,
+    isPaused: isUserInteracting || isDragging || isTabHidden || externalPaused,
     hasMultipleSlides,
     showAllDots,
     paginate,

@@ -21,6 +21,14 @@ const WINDOW = 1
 
 const DRAG_CONSTRAINTS = { left: 0, right: 0 }
 
+// Lets any slide freeze the carousel's autoplay while it's showing something
+// that shouldn't be interrupted (a hover trailer preview, an open trailer
+// dialog). Keyed by slide id and stored in a Set, so calls are idempotent and
+// can never leave the pause "stuck on" the way a +1/-1 counter can.
+export const CarouselPauseContext = React.createContext<{
+  setSlidePaused: (id: string | number, paused: boolean) => void
+}>({ setSlidePaused: () => {} })
+
 interface CarouselProps {
   children: React.ReactNode
   autoPlay?: boolean
@@ -48,6 +56,23 @@ export function Carousel({
   const childrenCount = childrenArray.length
   const reduce = useReducedMotion()
 
+  // External pause registry: the set of slide ids currently requesting a pause.
+  const pausedIdsRef = React.useRef<Set<string | number>>(new Set())
+  const [externalPaused, setExternalPaused] = React.useState(false)
+  const setSlidePaused = React.useCallback(
+    (id: string | number, paused: boolean) => {
+      const set = pausedIdsRef.current
+      if (paused) set.add(id)
+      else set.delete(id)
+      setExternalPaused(set.size > 0)
+    },
+    []
+  )
+  const pauseControls = React.useMemo(
+    () => ({ setSlidePaused }),
+    [setSlidePaused]
+  )
+
   const {
     currentIndex,
     isMounted,
@@ -64,6 +89,7 @@ export function Carousel({
     childrenCount,
     autoPlay,
     autoPlayInterval,
+    externalPaused,
   })
 
   // Keyboard control when the carousel (or anything inside it) has focus.
@@ -144,6 +170,7 @@ export function Carousel({
   }
 
   return (
+    <CarouselPauseContext.Provider value={pauseControls}>
     <div
       className={`group relative overflow-hidden ${stageClassName}`}
       onMouseEnter={handleHoverStart}
@@ -315,7 +342,7 @@ export function Carousel({
           </motion.button>
         </>
       )}
-
     </div>
+    </CarouselPauseContext.Provider>
   )
 }
