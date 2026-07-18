@@ -16,13 +16,13 @@ export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
 
   return (
     <div className="relative overflow-hidden">
-      <Carousel storageKey="hero-carousel">
-        {movies?.map((movie) => (
+      <Carousel stageClassName="min-h-[500px] lg:min-h-screen">
+        {movies?.map((movie, index) => (
           <div
             key={movie.id}
-            className="relative min-h-[500px] overflow-hidden lg:min-h-screen"
+            className="relative size-full overflow-hidden"
           >
-            <HeroImage movie={movie as HeroImageMedia} />
+            <HeroImage movie={movie as HeroImageMedia} priority={index === 0} />
             {/* Cinematic legibility scrim — dark behind the copy on the left,
                 clearing toward the poster on the right so the artwork breathes. */}
             <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-black/90 via-black/55 to-black/20 lg:to-transparent" />
@@ -30,6 +30,7 @@ export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
             <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/10 to-black/30" />
             <HeroSectionInfo
               movie={movie}
+              priority={index === 0}
               genreTable={
                 (movie.media_type ?? (movie.first_air_date ? 'tv' : 'movie')) ===
                 'tv'

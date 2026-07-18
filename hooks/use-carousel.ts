@@ -8,49 +8,24 @@ interface UseCarouselProps {
   childrenCount: number
   autoPlay?: boolean
   autoPlayInterval?: number
-  storageKey?: string
 }
-
 
 export const useCarousel = ({
   childrenCount,
   autoPlay = true,
   autoPlayInterval = 5000,
-  storageKey,
 }: UseCarouselProps) => {
+  // Always start at slide 0 on load. The server renders slide 0 (the priority /
+  // LCP image), so the first frame is correct and decoded fast — no restore
+  // jump, no flash. Slide 0 is also the freshest trending title.
   const [currentIndex, setCurrentIndex] = useState(0)
   const [direction, setDirection] = useState(0)
   const [isUserInteracting, setIsUserInteracting] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
-  const [isRestoring, setIsRestoring] = useState(false)
   const isMounted = useMounted()
 
-  // Restore saved position after hydration to avoid server/client mismatch
-  useEffect(() => {
-    if (!storageKey) return
-    const stored = sessionStorage.getItem(storageKey)
-    if (stored === null) return
-    const parsed = parseInt(stored, 10)
-    if (parsed > 0 && parsed < childrenCount) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsRestoring(true)
-       
-      setCurrentIndex(parsed)
-      // Two rAF frames: first commits the silent jump, second re-enables animations
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => setIsRestoring(false))
-      })
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null)
   const userInteractionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
-  useEffect(() => {
-    if (storageKey) {
-      sessionStorage.setItem(storageKey, String(currentIndex))
-    }
-  }, [currentIndex, storageKey])
 
   // Memoized values for performance
   const hasMultipleSlides = useMemo(() => childrenCount > 1, [childrenCount])
@@ -207,7 +182,6 @@ export const useCarousel = ({
     direction,
     isUserInteracting,
     isDragging,
-    isRestoring,
     isMounted,
     hasMultipleSlides,
     showAllDots,

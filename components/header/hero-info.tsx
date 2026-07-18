@@ -11,9 +11,14 @@ import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 interface HeroSectionInfoProps {
   movie: Movie
   genreTable?: MovieGenre[]
+  priority?: boolean
 }
 
-export const HeroSectionInfo = ({ movie, genreTable }: HeroSectionInfoProps) => {
+export const HeroSectionInfo = ({
+  movie,
+  genreTable,
+  priority = false,
+}: HeroSectionInfoProps) => {
   return (
     <div className="absolute inset-0 z-50 pb-36 lg:pb-0">
       <div className="relative container flex h-full items-center justify-center gap-x-8 pt-20 lg:pt-28">
@@ -45,7 +50,8 @@ export const HeroSectionInfo = ({ movie, genreTable }: HeroSectionInfoProps) => 
               fill
               sizes="(min-width: 1024px) 1024px, 30vw"
               intro
-              priority
+              priority={priority}
+              loading={priority ? undefined : 'lazy'}
             />
           </div>
         </div>

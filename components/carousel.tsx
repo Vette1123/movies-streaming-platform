@@ -1,56 +1,57 @@
 'use client'
 
 import React, { useMemo } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import {
   CAROUSEL_ARROW_ICON_VARIANTS,
   CAROUSEL_ARROW_VARIANTS,
-  CAROUSEL_BACKGROUND_TRANSITION,
-  CAROUSEL_BACKGROUND_VARIANTS,
-  CAROUSEL_CONTENT_VARIANTS,
   CAROUSEL_DOT_VARIANTS,
-  CAROUSEL_DRAG_CONSTRAINTS,
-  CAROUSEL_DRAG_TRANSITION,
   CAROUSEL_ELLIPSIS_VARIANTS,
   CAROUSEL_NAVIGATION_VARIANTS,
-  CAROUSEL_PLACEHOLDER_VARIANTS,
   CAROUSEL_POSITION_INDICATOR_VARIANTS,
   CAROUSEL_POSITION_TEXT_VARIANTS,
   CAROUSEL_SINGLE_SLIDE_VARIANTS,
-  CAROUSEL_SLIDE_TRANSITION,
-  CAROUSEL_SLIDE_VARIANTS,
-  CAROUSEL_WHILE_DRAG,
-  CAROUSEL_WHILE_HOVER,
-  CAROUSEL_WHILE_TAP,
 } from '@/lib/motion-variants'
 import { useCarousel } from '@/hooks/use-carousel'
+
+// How many neighbours to keep mounted on each side. A mounted neighbour has its
+// image already decoded, so when it becomes active there is no network round-trip
+// and no blur-in — the flash of the previous/blank slide disappears entirely.
+const WINDOW = 1
+
+const DRAG_CONSTRAINTS = { left: 0, right: 0 }
 
 interface CarouselProps {
   children: React.ReactNode
   autoPlay?: boolean
   autoPlayInterval?: number
-  storageKey?: string
+  /** min-height / sizing for the stage; slides are absolute layers inside it. */
+  stageClassName?: string
+}
+
+// Signed shortest distance from `current` to `i` on a ring of `count` slides,
+// so slide 0 counts as the right-neighbour of the last slide (and vice versa).
+function wrappedOffset(i: number, current: number, count: number) {
+  let d = i - current
+  if (d > count / 2) d -= count
+  if (d < -count / 2) d += count
+  return d
 }
 
 export function Carousel({
   children,
   autoPlay = true,
   autoPlayInterval = 5000,
-  storageKey,
+  stageClassName = '',
 }: CarouselProps) {
   const childrenArray = React.Children.toArray(children)
-  const childrenCount = useMemo(
-    () => childrenArray.length,
-    [childrenArray.length]
-  )
+  const childrenCount = childrenArray.length
+  const reduce = useReducedMotion()
 
   const {
     currentIndex,
-    direction,
-    isDragging,
-    isRestoring,
     isMounted,
     hasMultipleSlides,
     showAllDots,
@@ -64,14 +65,17 @@ export function Carousel({
     childrenCount,
     autoPlay,
     autoPlayInterval,
-    storageKey,
   })
 
-  // Memoized slide transition for performance
-  const slideTransition = useMemo(
-    () => CAROUSEL_SLIDE_TRANSITION(isDragging),
-    [isDragging]
-  )
+  // Compositor-only transition: opacity crossfade + a small transform slide.
+  const layerTransition = useMemo(() => {
+    if (reduce) return { duration: 0 }
+    return {
+      opacity: { duration: 0.6, ease: [0.4, 0, 0.2, 1] as const },
+      x: { type: 'spring' as const, stiffness: 220, damping: 32, mass: 0.9 },
+      scale: { duration: 0.8, ease: [0.4, 0, 0.2, 1] as const },
+    }
+  }, [reduce])
 
   if (childrenCount === 0) {
     return null
@@ -80,7 +84,7 @@ export function Carousel({
   if (childrenCount === 1) {
     return (
       <motion.div
-        className="relative overflow-hidden"
+        className={`relative overflow-hidden ${stageClassName}`}
         {...CAROUSEL_SINGLE_SLIDE_VARIANTS}
       >
         {childrenArray[0]}
@@ -90,77 +94,56 @@ export function Carousel({
 
   return (
     <div
-      className="group relative overflow-hidden transition-opacity duration-300"
+      className={`group relative overflow-hidden ${stageClassName}`}
       onMouseEnter={handleHoverStart}
       onMouseLeave={handleHoverEnd}
-      style={{
-        minHeight: 'var(--carousel-height, auto)',
-      }}
     >
-      {/* Instant placeholder background to prevent blank screen */}
-      <motion.div
-        className="absolute inset-0 z-0 bg-gradient-to-br from-gray-800/80 via-gray-900/90 to-black/95"
-        variants={CAROUSEL_PLACEHOLDER_VARIANTS}
-        initial="initial"
-        animate={isMounted ? 'loaded' : 'initial'}
-      />
+      {/* Static dark base — guarantees no white flash even on a far dot-jump
+          whose target image is outside the mounted window. */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-br from-neutral-900 via-neutral-950 to-black" />
 
-      {/* Multi-layered background for seamless transitions */}
-      <div className="absolute inset-0 z-10">
-        <AnimatePresence mode="wait">
+      {/* Stacked slide layers. Every layer inside the window stays mounted, so
+          the next slide's artwork is already decoded before it fades in. */}
+      {childrenArray.map((child, i) => {
+        const offset = wrappedOffset(i, currentIndex, childrenCount)
+        if (Math.abs(offset) > WINDOW) return null
+        const active = offset === 0
+        return (
           <motion.div
-            key={`bg-${currentIndex}`}
-            variants={CAROUSEL_BACKGROUND_VARIANTS}
-            initial={isRestoring ? 'center' : 'enter'}
-            animate="center"
-            exit="exit"
-            transition={CAROUSEL_BACKGROUND_TRANSITION}
-            className="absolute inset-0"
+            key={i}
+            className={`absolute inset-0 will-change-transform ${
+              active ? 'cursor-grab active:cursor-grabbing' : ''
+            }`}
+            style={{
+              zIndex: active ? 20 : 10,
+              pointerEvents: active ? 'auto' : 'none',
+              touchAction: 'pan-y pinch-zoom',
+              WebkitUserSelect: 'none',
+              userSelect: 'none',
+              backfaceVisibility: 'hidden',
+            }}
+            initial={false}
+            animate={{
+              opacity: active ? 1 : 0,
+              // Gentle parallax: the incoming slide drifts in from ~6%, the
+              // outgoing one drifts out the other way while it fades.
+              x: `${offset * 6}%`,
+              scale: active ? 1 : 1.04,
+            }}
+            transition={layerTransition}
+            aria-hidden={!active}
+            drag={active ? 'x' : false}
+            dragConstraints={DRAG_CONSTRAINTS}
+            dragElastic={0.08}
+            dragMomentum={false}
+            whileDrag={{ scale: 0.99 }}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
           >
-            {childrenArray[currentIndex]}
+            {child}
           </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* Main animated slide container with enhanced effects */}
-      <AnimatePresence mode="popLayout" custom={direction}>
-        <motion.div
-          key={currentIndex}
-          custom={direction}
-          variants={CAROUSEL_SLIDE_VARIANTS}
-          initial={isMounted && !isRestoring ? 'enter' : 'center'}
-          animate="center"
-          exit="exit"
-          transition={slideTransition}
-          drag="x"
-          dragConstraints={CAROUSEL_DRAG_CONSTRAINTS}
-          dragElastic={0.06}
-          dragMomentum={false}
-          dragTransition={CAROUSEL_DRAG_TRANSITION}
-          whileDrag={CAROUSEL_WHILE_DRAG(direction)}
-          whileHover={CAROUSEL_WHILE_HOVER}
-          whileTap={CAROUSEL_WHILE_TAP}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          className="relative z-20 cursor-grab will-change-transform select-none active:cursor-grabbing"
-          style={{
-            touchAction: 'pan-y pinch-zoom',
-            WebkitUserSelect: 'none',
-            userSelect: 'none',
-            backfaceVisibility: 'hidden',
-            perspective: '1200px',
-            transform: 'translateZ(0)', // Force hardware acceleration
-            WebkitTransform: 'translateZ(0)',
-          }}
-        >
-          <motion.div
-            className="pointer-events-auto transform-gpu will-change-transform"
-            {...CAROUSEL_CONTENT_VARIANTS}
-          >
-            {childrenArray[currentIndex]}
-          </motion.div>
-        </motion.div>
-      </AnimatePresence>
+        )
+      })}
 
       {/* Enhanced Navigation Dots with smooth animations */}
       {hasMultipleSlides && (

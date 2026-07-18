@@ -9,9 +9,12 @@ import { BlurredImage } from '@/components/blurred-image'
 export type HeroImageMedia = (Movie | MovieDetails) & SeriesDetails
 interface HeroImageProps {
   movie?: HeroImageMedia
+  // Only the first slide preloads (LCP); the rest load lazily as they enter the
+  // mounted window so we don't fire N full-width backdrop preloads at once.
+  priority?: boolean
 }
 
-export const HeroImage = ({ movie }: HeroImageProps) => {
+export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
   const media = movie
   const alt = media?.title || media?.name || 'ALT TEXT'
   // The landscape backdrop fills the hero edge-to-edge on every breakpoint
@@ -38,7 +41,8 @@ export const HeroImage = ({ movie }: HeroImageProps) => {
             fill
             sizes="100vw"
             intro
-            priority
+            priority={priority}
+            loading={priority ? undefined : 'lazy'}
           />
         )
       )}
