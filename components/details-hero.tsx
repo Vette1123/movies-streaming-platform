@@ -34,7 +34,7 @@ export const DetailsHero = forwardRef<
 
   return (
     <section className="relative isolate h-[500px] overflow-hidden lg:h-[80dvh]">
-      <HeroImage movie={media} />
+      <HeroImage movie={media} priority />
       <div className="relative z-50 container h-full max-w-(--breakpoint-2xl)">
         <div className="flex h-full items-center justify-center">
           <AnimatePresence>

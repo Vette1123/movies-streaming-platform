@@ -97,6 +97,16 @@
       transform: scale(1.16) translate3d(-1.2%, -1.4%, 0);
     }
   }
+  /* Autoplay progress fill — transform-only (GPU) so the bar is cheap to run
+     every slide. Duration is set inline to match the autoplay interval. */
+  @keyframes hero-progress {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
 }
 
 @utility container {
@@ -131,6 +141,148 @@
 @layer utilities {
   .splide__track.splide__track--slide {
     overflow: visible !important;
+  }
+}
+
+/* Fixed animated aurora backdrop behind ALL content (mounted once in the root
+   layout, so it's on every page). A deep static base keeps corners from going
+   flat-black, and two big soft glow-blobs roam slowly across the viewport for a
+   living, cinematic feel. Fixed position = content scrolls over it (parallax).
+   Only `transform` animates (compositor-only, no scroll repaint since it's
+   fixed) so it stays cheap; reduced-motion freezes both blobs. */
+.site-aurora {
+  background-color: hsl(222.2 84% 4.9%);
+  background-image:
+    radial-gradient(
+      50% 45% at 8% -5%,
+      hsl(221 83% 53% / 0.16),
+      transparent 62%
+    ),
+    radial-gradient(
+      55% 50% at 50% 112%,
+      hsl(262 83% 58% / 0.16),
+      transparent 62%
+    );
+}
+.site-aurora::before,
+.site-aurora::after {
+  content: '';
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  will-change: transform;
+}
+.site-aurora::before {
+  top: -18vw;
+  left: -12vw;
+  width: 58vw;
+  height: 58vw;
+  background: radial-gradient(
+    circle,
+    hsl(221 83% 53% / 0.38),
+    hsl(199 89% 48% / 0.2) 45%,
+    transparent 70%
+  );
+  animation: aurora-a 24s ease-in-out infinite alternate;
+}
+.site-aurora::after {
+  right: -14vw;
+  bottom: -20vw;
+  width: 52vw;
+  height: 52vw;
+  background: radial-gradient(
+    circle,
+    hsl(262 83% 58% / 0.34),
+    hsl(221 83% 53% / 0.18) 45%,
+    transparent 70%
+  );
+  animation: aurora-b 31s ease-in-out infinite alternate;
+}
+@keyframes aurora-a {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(32vw, 20vh, 0) scale(1.25);
+  }
+}
+@keyframes aurora-b {
+  from {
+    transform: translate3d(0, 0, 0) scale(1.12);
+  }
+  to {
+    transform: translate3d(-28vw, -22vh, 0) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-aurora::before,
+  .site-aurora::after {
+    animation: none;
+  }
+}
+
+/* Moving sparkles. Two tiled star fields, each a single repeating background so
+   there's no per-star DOM. They drift by exactly one tile (seamless loop) and
+   twinkle via opacity — both compositor-only, so hundreds of "stars" cost about
+   as much as one moving box. Different speeds/sizes give depth (parallax). */
+.aurora-stars {
+  position: absolute;
+  inset: -35%;
+  background-repeat: repeat;
+}
+.aurora-stars--1 {
+  background-image:
+    radial-gradient(1.5px 1.5px at 40px 60px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 130px 20px, rgba(191, 219, 254, 0.8), transparent),
+    radial-gradient(1.5px 1.5px at 220px 140px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 300px 90px, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 90px 220px, rgba(147, 197, 253, 0.7), transparent),
+    radial-gradient(1.5px 1.5px at 250px 280px, rgba(255, 255, 255, 0.55), transparent);
+  background-size: 340px 340px;
+  animation:
+    stars-drift-1 90s linear infinite,
+    stars-twinkle 6s ease-in-out infinite alternate;
+}
+.aurora-stars--2 {
+  opacity: 0.7;
+  background-image:
+    radial-gradient(2px 2px at 60px 90px, rgba(255, 255, 255, 0.95), transparent),
+    radial-gradient(1.5px 1.5px at 180px 40px, rgba(196, 181, 253, 0.8), transparent),
+    radial-gradient(1.5px 1.5px at 110px 190px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(2px 2px at 230px 150px, rgba(191, 219, 254, 0.75), transparent);
+  background-size: 260px 260px;
+  animation:
+    stars-drift-2 62s linear infinite,
+    stars-twinkle 4.5s ease-in-out infinite alternate;
+}
+@keyframes stars-drift-1 {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-340px, -340px, 0);
+  }
+}
+@keyframes stars-drift-2 {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(260px, -260px, 0);
+  }
+}
+@keyframes stars-twinkle {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora-stars--1,
+  .aurora-stars--2 {
+    animation: none;
   }
 }
 

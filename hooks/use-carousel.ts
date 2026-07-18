@@ -22,10 +22,21 @@ export const useCarousel = ({
   const [direction, setDirection] = useState(0)
   const [isUserInteracting, setIsUserInteracting] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [isTabHidden, setIsTabHidden] = useState(false)
   const isMounted = useMounted()
 
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null)
   const userInteractionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Pause autoplay while the tab is backgrounded. No point rotating (and firing
+  // slide-view work) when nobody's looking, and it stops a flurry of catch-up
+  // advances the moment the tab regains focus.
+  useEffect(() => {
+    const onVisibility = () => setIsTabHidden(document.hidden)
+    onVisibility()
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [])
 
   // Memoized values for performance
   const hasMultipleSlides = useMemo(() => childrenCount > 1, [childrenCount])
@@ -47,18 +58,27 @@ export const useCarousel = ({
 
   // Enhanced auto-play with user interaction handling
   const startAutoPlay = useCallback(() => {
-    if (!autoPlay || childrenCount <= 1 || isUserInteracting) return
+    if (!autoPlay || childrenCount <= 1 || isUserInteracting || isTabHidden)
+      return
 
     if (autoPlayRef.current) {
       clearInterval(autoPlayRef.current)
     }
 
     autoPlayRef.current = setInterval(() => {
-      if (!isUserInteracting && !isDragging) {
+      if (!isUserInteracting && !isDragging && !document.hidden) {
         paginate(1)
       }
     }, autoPlayInterval)
-  }, [autoPlay, autoPlayInterval, paginate, childrenCount, isUserInteracting, isDragging])
+  }, [
+    autoPlay,
+    autoPlayInterval,
+    paginate,
+    childrenCount,
+    isUserInteracting,
+    isDragging,
+    isTabHidden,
+  ])
 
   const stopAutoPlay = useCallback(() => {
     if (autoPlayRef.current) {
@@ -183,6 +203,8 @@ export const useCarousel = ({
     isUserInteracting,
     isDragging,
     isMounted,
+    // For the autoplay progress bar: freeze it whenever the timer isn't running.
+    isPaused: isUserInteracting || isDragging || isTabHidden,
     hasMultipleSlides,
     showAllDots,
     paginate,

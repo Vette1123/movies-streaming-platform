@@ -7,8 +7,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   CAROUSEL_ARROW_ICON_VARIANTS,
   CAROUSEL_ARROW_VARIANTS,
-  CAROUSEL_DOT_VARIANTS,
-  CAROUSEL_ELLIPSIS_VARIANTS,
   CAROUSEL_NAVIGATION_VARIANTS,
   CAROUSEL_POSITION_INDICATOR_VARIANTS,
   CAROUSEL_POSITION_TEXT_VARIANTS,
@@ -53,6 +51,7 @@ export function Carousel({
   const {
     currentIndex,
     isMounted,
+    isPaused,
     hasMultipleSlides,
     showAllDots,
     handleDragStart,
@@ -66,6 +65,58 @@ export function Carousel({
     autoPlay,
     autoPlayInterval,
   })
+
+  // Keyboard control when the carousel (or anything inside it) has focus.
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault()
+      handleButtonClick(-1)
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault()
+      handleButtonClick(1)
+    }
+  }
+
+  const showProgress = autoPlay && hasMultipleSlides && !reduce
+
+  // The active dot stretches into a pill that fills over the autoplay interval
+  // (keyed by index so it restarts each slide, frozen while paused). Inactive
+  // dots stay plain. This carries the autoplay progress without a full-width
+  // edge line. Transform-only fill = GPU-cheap.
+  const renderDot = (index: number, ariaLabel: string) => {
+    if (index === currentIndex) {
+      return (
+        <button
+          key={index}
+          onClick={() => handleDotClick(index)}
+          aria-label={ariaLabel}
+          aria-current="true"
+          className="relative h-2.5 w-7 cursor-pointer overflow-hidden rounded-full bg-white/25 ring-1 ring-white/40 sm:h-3 sm:w-8"
+        >
+          {showProgress ? (
+            <span
+              key={currentIndex}
+              className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-white"
+              style={{
+                animation: `hero-progress ${autoPlayInterval}ms linear forwards`,
+                animationPlayState: isPaused ? 'paused' : 'running',
+              }}
+            />
+          ) : (
+            <span className="absolute inset-0 rounded-full bg-white" />
+          )}
+        </button>
+      )
+    }
+    return (
+      <button
+        key={index}
+        onClick={() => handleDotClick(index)}
+        aria-label={ariaLabel}
+        className="size-2.5 cursor-pointer rounded-full bg-white/40 transition-all duration-300 hover:scale-110 hover:bg-white/70 sm:size-3"
+      />
+    )
+  }
 
   // Compositor-only transition: opacity crossfade + a small transform slide.
   const layerTransition = useMemo(() => {
@@ -97,10 +148,20 @@ export function Carousel({
       className={`group relative overflow-hidden ${stageClassName}`}
       onMouseEnter={handleHoverStart}
       onMouseLeave={handleHoverEnd}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Featured titles"
     >
       {/* Static dark base — guarantees no white flash even on a far dot-jump
           whose target image is outside the mounted window. */}
       <div className="absolute inset-0 z-0 bg-gradient-to-br from-neutral-900 via-neutral-950 to-black" />
+
+      {/* Screen-reader announcement of the current position. */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {`Slide ${currentIndex + 1} of ${childrenCount}`}
+      </div>
 
       {/* Stacked slide layers. Every layer inside the window stays mounted, so
           the next slide's artwork is already decoded before it fades in. */}
@@ -155,24 +216,10 @@ export function Carousel({
         >
           {/* For small number of slides - show all dots */}
           {showAllDots && (
-            <div className="flex max-w-[90vw] flex-wrap justify-center gap-1.5 sm:max-w-none sm:gap-2">
-              {childrenArray.map((_, index) => (
-                <motion.button
-                  key={index}
-                  onClick={() => handleDotClick(index)}
-                  className={`size-2.5 cursor-pointer rounded-full transition-all duration-300 hover:scale-110 sm:size-3 ${
-                    index === currentIndex
-                      ? 'scale-110 bg-white shadow-lg ring-2 ring-white/30 sm:scale-125'
-                      : 'bg-white/40 hover:bg-white/70'
-                  }`}
-                  aria-label={`Go to slide ${index + 1}`}
-                  initial={CAROUSEL_DOT_VARIANTS.initial}
-                  animate={CAROUSEL_DOT_VARIANTS.animate(isMounted)}
-                  whileHover={CAROUSEL_DOT_VARIANTS.hover}
-                  whileTap={CAROUSEL_DOT_VARIANTS.tap}
-                  transition={CAROUSEL_DOT_VARIANTS.transition(index)}
-                />
-              ))}
+            <div className="flex max-w-[90vw] flex-wrap items-center justify-center gap-1.5 sm:max-w-none sm:gap-2">
+              {childrenArray.map((_, index) =>
+                renderDot(index, `Go to slide ${index + 1}`)
+              )}
             </div>
           )}
 
@@ -180,28 +227,11 @@ export function Carousel({
           {!showAllDots && (
             <div className="flex items-center justify-center gap-1 sm:gap-1.5">
               {/* First page */}
-              <motion.button
-                onClick={() => handleDotClick(0)}
-                className={`size-2.5 cursor-pointer rounded-full transition-all duration-300 hover:scale-110 sm:size-3 ${
-                  0 === currentIndex
-                    ? 'scale-110 bg-white shadow-lg ring-2 ring-white/30 sm:scale-125'
-                    : 'bg-white/40 hover:bg-white/70'
-                }`}
-                aria-label="Go to first slide"
-                whileHover={{ scale: 1.2 }}
-                whileTap={{ scale: 0.9 }}
-              />
+              {renderDot(0, 'Go to first slide')}
 
               {/* Show dots around current position */}
               {currentIndex > 3 && (
-                <motion.span
-                  className="px-1 text-xs text-white/60"
-                  initial={CAROUSEL_ELLIPSIS_VARIANTS.initial}
-                  animate={CAROUSEL_ELLIPSIS_VARIANTS.animate(isMounted)}
-                  transition={CAROUSEL_ELLIPSIS_VARIANTS.transition}
-                >
-                  ...
-                </motion.span>
+                <span className="px-1 text-xs text-white/60">...</span>
               )}
 
               {/* Show 5 dots around current position */}
@@ -214,46 +244,16 @@ export function Carousel({
 
                 if (index >= childrenCount - 1 || index <= 0) return null
 
-                return (
-                  <motion.button
-                    key={index}
-                    onClick={() => handleDotClick(index)}
-                    className={`size-2.5 cursor-pointer rounded-full transition-all duration-300 hover:scale-110 sm:size-3 ${
-                      index === currentIndex
-                        ? 'scale-110 bg-white shadow-lg ring-2 ring-white/30 sm:scale-125'
-                        : 'bg-white/40 hover:bg-white/70'
-                    }`}
-                    aria-label={`Go to slide ${index + 1}`}
-                    whileHover={{ scale: 1.2 }}
-                    whileTap={{ scale: 0.9 }}
-                  />
-                )
+                return renderDot(index, `Go to slide ${index + 1}`)
               })}
 
               {/* Show ellipsis if there are more slides */}
               {currentIndex < childrenCount - 4 && (
-                <motion.span
-                  className="px-1 text-xs text-white/60"
-                  initial={CAROUSEL_ELLIPSIS_VARIANTS.initial}
-                  animate={CAROUSEL_ELLIPSIS_VARIANTS.animate(isMounted)}
-                  transition={CAROUSEL_ELLIPSIS_VARIANTS.transition}
-                >
-                  ...
-                </motion.span>
+                <span className="px-1 text-xs text-white/60">...</span>
               )}
 
               {/* Last page */}
-              <motion.button
-                onClick={() => handleDotClick(childrenCount - 1)}
-                className={`size-2.5 cursor-pointer rounded-full transition-all duration-300 hover:scale-110 sm:size-3 ${
-                  childrenCount - 1 === currentIndex
-                    ? 'scale-110 bg-white shadow-lg ring-2 ring-white/30 sm:scale-125'
-                    : 'bg-white/40 hover:bg-white/70'
-                }`}
-                aria-label="Go to last slide"
-                whileHover={{ scale: 1.2 }}
-                whileTap={{ scale: 0.9 }}
-              />
+              {renderDot(childrenCount - 1, 'Go to last slide')}
             </div>
           )}
 
@@ -315,6 +315,7 @@ export function Carousel({
           </motion.button>
         </>
       )}
+
     </div>
   )
 }

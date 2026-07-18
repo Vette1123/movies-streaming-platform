@@ -174,6 +174,15 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
           fontSans.variable
         )}
       >
+        {/* Fancy animated aurora backdrop; sits behind everything, content
+            above. Two drifting star layers add moving sparkle over the glow. */}
+        <div
+          aria-hidden="true"
+          className="site-aurora pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+        >
+          <span className="aurora-stars aurora-stars--1" />
+          <span className="aurora-stars aurora-stars--2" />
+        </div>
         <div className="flex flex-col">
           <SiteHeader />
           <div className="h-full flex-1 overflow-x-hidden">
