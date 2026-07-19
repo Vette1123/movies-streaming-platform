@@ -26,6 +26,7 @@ export const EVENTS = {
   // Hero / CTAs
   HERO_WATCH_CLICKED: 'hero_watch_clicked',
   TRAILER_PLAYED: 'trailer_played',
+  HERO_AUTOPLAY_TOGGLED: 'hero_autoplay_toggled',
   MEDIA_SHARED: 'media_shared',
   // Watchlist (save for later — distinct from watch history)
   WATCHLIST_ADDED: 'watchlist_added',
@@ -162,6 +163,15 @@ export function trackTrailerPlayed(props: {
   title?: string
 }): void {
   track(EVENTS.TRAILER_PLAYED, props)
+}
+
+export function trackHeroAutoplayToggled(props: {
+  // The state the user switched TO.
+  enabled: boolean
+  media_id: number
+  media_type: MediaKind
+}): void {
+  track(EVENTS.HERO_AUTOPLAY_TOGGLED, props)
 }
 
 export function trackMediaShared(props: {

@@ -71,7 +71,9 @@ function PreviewFrame({
         // Re-enable clicks just for the mute toggle.
         onClick={() => setMuted((m) => !m)}
         aria-label={muted ? 'Unmute trailer' : 'Mute trailer'}
-        className="pointer-events-auto absolute right-4 bottom-24 z-10 flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:bottom-16"
+        // Mobile: sits left of the autoplay toggle (right-4) so they don't
+        // overlap; desktop has no toggle, so it takes the corner.
+        className="pointer-events-auto absolute right-[4.25rem] bottom-24 z-10 flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:right-4 lg:bottom-16"
       >
         {muted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
       </button>

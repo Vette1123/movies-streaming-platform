@@ -4,13 +4,15 @@ import React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useReducedMotion } from 'framer-motion'
+import { Video, VideoOff } from 'lucide-react'
 
 import { MovieDetails } from '@/types/movie-details'
 import { MovieGenre } from '@/types/movie-genre'
 import { ItemType, Movie } from '@/types/movie-result'
 import { SeriesDetails } from '@/types/series-details'
-import { trackHeroWatchClicked } from '@/lib/analytics'
+import { trackHeroAutoplayToggled, trackHeroWatchClicked } from '@/lib/analytics'
 import { getImageURL, getPosterImageURL } from '@/lib/utils'
+import { useHeroAutoplay } from '@/hooks/use-hero-autoplay'
 import { useHeroExtras } from '@/hooks/use-hero-extras'
 import { buttonVariants } from '@/components/ui/button'
 import { CarouselPauseContext } from '@/components/carousel'
@@ -65,6 +67,9 @@ export function HeroSlide({
   const [previewActive, setPreviewActive] = React.useState(false)
   const [dialogOpen, setDialogOpen] = React.useState(false)
 
+  // Touch-device autoplay is opt-out: on by default, persisted per user.
+  const { enabled: autoplayEnabled, toggle: toggleAutoplay } = useHeroAutoplay()
+
   // Freeze carousel autoplay while a trailer is engaged (hover preview loading/
   // playing, or the trailer dialog open) so rotation never interrupts it. Keyed
   // by slide id — idempotent, so it can't leave autoplay stuck paused.
@@ -90,13 +95,13 @@ export function HeroSlide({
   // (above) freezes autoplay while it plays so the carousel doesn't rotate away
   // mid-trailer; a swipe still advances manually. Deactivating unmounts it.
   React.useEffect(() => {
-    if (hasHover || reduce || !trailerKey || !active) return
+    if (hasHover || reduce || !trailerKey || !active || !autoplayEnabled) return
     const t = setTimeout(() => setPreviewActive(true), TOUCH_PREVIEW_DELAY)
     return () => {
       clearTimeout(t)
       setPreviewActive(false)
     }
-  }, [hasHover, reduce, trailerKey, active])
+  }, [hasHover, reduce, trailerKey, active, autoplayEnabled])
 
   const href = mediaType === 'tv' ? `/tv-shows/${movie.id}` : `/movies/${movie.id}`
 
@@ -251,6 +256,35 @@ export function HeroSlide({
           </div>
         </div>
       </div>
+
+      {/* Autoplay opt-out (touch only — desktop previews on hover). Lets the user
+          turn the muted trailer autoplay off/on; the choice persists. */}
+      {trailerKey && !reduce && (
+        <button
+          type="button"
+          onClick={() => {
+            trackHeroAutoplayToggled({
+              enabled: !autoplayEnabled,
+              media_id: movie.id,
+              media_type: mediaType,
+            })
+            toggleAutoplay()
+          }}
+          aria-label={
+            autoplayEnabled
+              ? 'Turn off trailer autoplay'
+              : 'Turn on trailer autoplay'
+          }
+          aria-pressed={autoplayEnabled}
+          className="pointer-events-auto absolute right-4 bottom-24 z-[60] flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:hidden"
+        >
+          {autoplayEnabled ? (
+            <Video className="size-5" />
+          ) : (
+            <VideoOff className="size-5" />
+          )}
+        </button>
+      )}
     </div>
   )
 }
