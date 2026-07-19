@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { CalendarDays, Film, Play, Star, Tv } from 'lucide-react'
+import { CalendarDays, Check, Film, Play, Star, Tv } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
@@ -15,6 +15,8 @@ import {
   itemRedirect,
   numberRounder,
 } from '@/lib/utils'
+import { useCompletedMedia } from '@/hooks/use-completed-media'
+import { useMounted } from '@/hooks/use-mounted'
 import { Badge } from '@/components/ui/badge'
 import {
   HoverCard,
@@ -39,6 +41,13 @@ export const Card = ({
   const releaseDate = item?.release_date || item?.first_air_date
   const year = releaseDate?.slice(0, 4)
   const overview = item?.overview ?? ''
+
+  // Read-only "watched" indicator. localStorage is client-only, so gate on mount
+  // to stay hydration-safe (matches NewBadgeWhenRecent). Only movies carry a
+  // title-level completed flag; series completion is tracked per-episode.
+  const isMounted = useMounted()
+  const { isMovieCompleted } = useCompletedMedia()
+  const watched = isMounted && itemType === 'movie' && isMovieCompleted(item.id)
 
   return (
     <HoverCard>
@@ -70,6 +79,15 @@ export const Card = ({
               variants={CARD_VARIANT}
             >
               <NewBadgeWhenRecent date={releaseDate} />
+              {watched && (
+                <span
+                  className="pointer-events-none absolute top-2 right-2 z-10 grid size-6 place-items-center rounded-full border border-white/20 bg-emerald-500/90 text-white shadow-lg ring-1 ring-emerald-300/30 backdrop-blur-md"
+                  aria-label="Watched"
+                  title="Watched"
+                >
+                  <Check className="size-3.5" strokeWidth={3} aria-hidden />
+                </span>
+              )}
               {item?.poster_path ? (
                 <BlurredImage
                   src={`${getPosterImageURL(item.poster_path)}`}

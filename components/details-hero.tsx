@@ -10,6 +10,7 @@ import { PlayButton } from '@/components/play-button'
 import { SaveButton } from '@/components/save-button'
 import { ShareButton } from '@/components/share-button'
 import { TrailerDialog } from '@/components/trailer-dialog'
+import { WatchedButton } from '@/components/watched-button'
 
 export const DetailsHero = forwardRef<
   HTMLIFrameElement,
@@ -59,6 +60,10 @@ export const DetailsHero = forwardRef<
                     />
                   )}
                   <SaveButton media={media} />
+                  {/* Whole-series "watched" is ambiguous (many episodes), so the
+                      movie-level toggle only shows for movies; series completion
+                      is tracked per-episode in the episode list. */}
+                  {isMovie && movie && <WatchedButton movie={movie} />}
                   <ShareButton
                     title={title}
                     mediaId={media?.id}

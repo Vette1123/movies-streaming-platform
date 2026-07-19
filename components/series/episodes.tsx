@@ -1,6 +1,6 @@
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader, Play, Tv } from 'lucide-react'
+import { Check, Loader, Play, Tv } from 'lucide-react'
 
 import { EpisodeDetails } from '@/types/episode'
 import {
@@ -9,7 +9,9 @@ import {
 } from '@/lib/analytics'
 import { syncWatchStats } from '@/lib/person'
 import { cn, dateFormatter } from '@/lib/utils'
+import { useCompletedMedia } from '@/hooks/use-completed-media'
 import { useLocalStorage, type WatchedItem } from '@/hooks/use-local-storage'
+import { useMounted } from '@/hooks/use-mounted'
 import { useScrollToTop } from '@/hooks/use-scroll-to-top'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
@@ -55,6 +57,21 @@ export const Episodes = ({
   const [watchedItems, setWatchedItems] = useLocalStorage('watchedItems', [])
   const { episodeQueryINT, seasonQueryINT } = useSearchQueryParams()
   const { scrollToTop } = useScrollToTop()
+  const { isEpisodeCompleted, toggleEpisodeCompleted, markEpisodesCompleted } =
+    useCompletedMedia()
+  // localStorage is client-only — gate the completed ticks on mount to stay
+  // hydration-safe (same rule as NewBadgeWhenRecent).
+  const isMounted = useMounted()
+
+  const buildCompletionMeta = (episode: EpisodeDetails) => ({
+    showId: episode.show_id,
+    season: Number(selectedSeason),
+    episode: episode.episode_number,
+    seriesName: series_name,
+    overview: episode.overview ?? '',
+    backdrop_path: backdrop_path,
+    poster_path: poster_path,
+  })
 
   const handleWatchEpisode = (episode: EpisodeDetails) => {
     const existingItemIndex = watchedItems.findIndex(
@@ -104,6 +121,16 @@ export const Episodes = ({
     // sync the PostHog person profile's watch stats here too.
     syncWatchStats(nextItems)
 
+    // Completion is unobservable (the player is a cross-origin embed), so infer
+    // it linearly: starting an episode means the earlier ones in this season are
+    // done. The episode being started is NOT marked — only what came before it.
+    const earlier = (episodes ?? []).filter(
+      (candidate) => candidate.episode_number < episode.episode_number
+    )
+    if (earlier.length) {
+      markEpisodesCompleted(earlier.map(buildCompletionMeta))
+    }
+
     router.push(
       `?season=${selectedSeason}&episode=${episode?.episode_number}`,
       { scroll: false }
@@ -132,6 +159,13 @@ export const Episodes = ({
             const isActive =
               episodeQueryINT === episode?.episode_number &&
               seasonQueryINT === Number(selectedSeason)
+            const completed =
+              isMounted &&
+              isEpisodeCompleted(
+                episode.show_id,
+                Number(selectedSeason),
+                episode.episode_number
+              )
 
             return (
               <button
@@ -151,7 +185,9 @@ export const Episodes = ({
                     'mt-px grid size-6 shrink-0 place-items-center rounded-md text-xs font-semibold tabular-nums transition-colors',
                     isActive
                       ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground group-hover/ep:bg-background'
+                      : completed
+                        ? 'bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/30'
+                        : 'bg-muted text-muted-foreground group-hover/ep:bg-background'
                   )}
                 >
                   {episode.episode_number}
@@ -188,12 +224,51 @@ export const Episodes = ({
                   )}
                 </span>
 
-                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center">
-                  {isActive ? (
-                    <NowPlayingBars />
-                  ) : (
-                    <Play className="text-muted-foreground size-4 fill-current opacity-0 transition-opacity group-hover/ep:opacity-100" />
-                  )}
+                <span className="mt-0.5 flex shrink-0 items-center gap-1.5">
+                  {/* Manual watched toggle. Rendered as role="button", not a
+                      real <button>: this whole row is already a <button>, and
+                      nesting native buttons is invalid HTML. stopPropagation
+                      keeps a toggle-tap from also triggering playback. */}
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={completed}
+                    aria-label={
+                      completed
+                        ? 'Mark episode as not watched'
+                        : 'Mark episode as watched'
+                    }
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      toggleEpisodeCompleted(buildCompletionMeta(episode))
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        toggleEpisodeCompleted(buildCompletionMeta(episode))
+                      }
+                    }}
+                    className={cn(
+                      'grid size-5 cursor-pointer place-items-center rounded-full transition',
+                      completed
+                        ? 'text-emerald-500 hover:text-emerald-400'
+                        : 'text-muted-foreground hover:text-foreground opacity-0 group-hover/ep:opacity-100 focus-visible:opacity-100'
+                    )}
+                  >
+                    <Check
+                      className="size-4"
+                      strokeWidth={completed ? 3 : 2}
+                      aria-hidden
+                    />
+                  </span>
+                  <span className="flex size-5 items-center justify-center">
+                    {isActive ? (
+                      <NowPlayingBars />
+                    ) : (
+                      <Play className="text-muted-foreground size-4 fill-current opacity-0 transition-opacity group-hover/ep:opacity-100" />
+                    )}
+                  </span>
                 </span>
               </button>
             )
