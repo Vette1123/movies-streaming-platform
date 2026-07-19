@@ -4,7 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useReducedMotion } from 'framer-motion'
-import { Video, VideoOff } from 'lucide-react'
+import { Video, VideoOff, Volume2, VolumeX } from 'lucide-react'
 
 import { MovieDetails } from '@/types/movie-details'
 import { MovieGenre } from '@/types/movie-genre'
@@ -67,6 +67,22 @@ export function HeroSlide({
   const [previewActive, setPreviewActive] = React.useState(false)
   const [dialogOpen, setDialogOpen] = React.useState(false)
 
+  // Mute state lives here (not in the trailer preview) so its toggle button can
+  // render at the top-level z layer alongside the autoplay toggle. Nested in the
+  // preview's `z-[5]` cover it sat beneath the scrims (z-10) and content (z-50)
+  // and was effectively invisible/unclickable. Reset to muted whenever the
+  // preview closes so audio never lingers into the next open.
+  const [trailerMuted, setTrailerMuted] = React.useState(true)
+  // Reset to muted when a preview session ends. Done by adjusting state during
+  // render (tracking the previous value) rather than in an effect, so it never
+  // triggers a cascading setState-in-effect. Reopening the same slide's preview
+  // always starts muted — audio never lingers across opens.
+  const [prevPreviewActive, setPrevPreviewActive] = React.useState(previewActive)
+  if (previewActive !== prevPreviewActive) {
+    setPrevPreviewActive(previewActive)
+    if (!previewActive) setTrailerMuted(true)
+  }
+
   // Touch-device autoplay is opt-out: on by default, persisted per user.
   const { enabled: autoplayEnabled, toggle: toggleAutoplay } = useHeroAutoplay()
 
@@ -113,6 +129,13 @@ export function HeroSlide({
 
   const showLogo = !!logoPath && !logoError
 
+  // "Cinematic takeover": while the trailer actually plays, the editorial copy
+  // recedes and the text-scrim softens so the video owns the frame. Purely a
+  // state-transition motion (trailer engaged → media mode). previewActive is
+  // never true under reduced motion (both preview effects bail on `reduce`), so
+  // this never animates there — the hero stays fully static.
+  const cinematic = previewActive
+
   return (
     <div
       className="relative size-full overflow-hidden"
@@ -152,12 +175,23 @@ export function HeroSlide({
           trailerKey={trailerKey}
           active={previewActive}
           title={title}
+          muted={trailerMuted}
         />
       )}
 
-      {/* Cinematic legibility scrims. */}
-      <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-black/90 via-black/55 to-black/20 lg:to-transparent" />
-      <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/10 to-black/30" />
+      {/* Cinematic legibility scrims. Both soften during takeover so the playing
+          trailer becomes the dominant layer; they retain just enough to keep the
+          title and actions row (Watch Now) legible over the brighter video. */}
+      <div
+        className={`pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-black/90 via-black/55 to-black/20 transition-opacity duration-500 ease-out lg:to-transparent ${
+          cinematic ? 'opacity-40' : 'opacity-100'
+        }`}
+      />
+      <div
+        className={`pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/10 to-black/30 transition-opacity duration-500 ease-out ${
+          cinematic ? 'opacity-70' : 'opacity-100'
+        }`}
+      />
 
       <div className="absolute inset-0 z-50 pb-28 sm:pb-32 lg:pb-0">
         {/* Mobile: anchor copy to the lower third so the artwork breathes up top
@@ -166,6 +200,9 @@ export function HeroSlide({
             slides). Desktop keeps the centered editorial layout. */}
         <div className="relative container flex h-full items-end justify-center gap-x-8 pt-24 lg:items-center lg:pt-28">
           <div className="flex w-full grow flex-col">
+            {/* Title, badge and rating stay put during the takeover so the movie
+                is always identifiable; only the long overview recedes (below) to
+                give the trailer more of the frame. */}
             <div className="max-w-2xl">
               <NewBadgeWhenRecent
                 date={movie.release_date || movie.first_air_date}
@@ -191,7 +228,11 @@ export function HeroSlide({
                 </h2>
               )}
               <HeroRatesInfos movie={movie} genreTable={genreTable} />
-              <p className="mt-2 line-clamp-2 max-w-xl text-sm leading-relaxed text-white/85 drop-shadow-sm sm:line-clamp-3 lg:mt-3 lg:max-w-2xl lg:text-lg">
+              <p
+                className={`mt-2 line-clamp-2 max-w-xl text-sm leading-relaxed text-white/85 drop-shadow-sm transition-opacity duration-500 ease-out sm:line-clamp-3 lg:mt-3 lg:max-w-2xl lg:text-lg ${
+                  cinematic ? 'opacity-65' : 'opacity-100'
+                }`}
+              >
                 {movie.overview}
               </p>
             </div>
@@ -240,7 +281,11 @@ export function HeroSlide({
             </div>
           </div>
 
-          <div className="hidden lg:flex">
+          <div
+            className={`hidden transition-all duration-500 ease-out lg:flex ${
+              cinematic ? 'opacity-0 blur-sm' : 'blur-0 opacity-100'
+            }`}
+          >
             <div className="relative min-h-[700px] w-[400px]">
               <BlurredImage
                 src={getPosterImageURL(movie.poster_path)}
@@ -256,6 +301,27 @@ export function HeroSlide({
           </div>
         </div>
       </div>
+
+      {/* Mute toggle — top-level (not nested in the preview's z-[5] cover) so it
+          clears the scrims/content and stays visible + clickable. Only while the
+          trailer is actually playing. Mobile: sits left of the autoplay toggle
+          (right-4) so they don't overlap; desktop has no autoplay toggle, so it
+          takes the corner. */}
+      {trailerKey && !reduce && previewActive && (
+        <button
+          type="button"
+          onClick={() => setTrailerMuted((m) => !m)}
+          aria-label={trailerMuted ? 'Unmute trailer' : 'Mute trailer'}
+          aria-pressed={!trailerMuted}
+          className="pointer-events-auto absolute right-[4.25rem] bottom-24 z-[60] flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:right-4 lg:bottom-16"
+        >
+          {trailerMuted ? (
+            <VolumeX className="size-5" />
+          ) : (
+            <Volume2 className="size-5" />
+          )}
+        </button>
+      )}
 
       {/* Autoplay opt-out (touch only — desktop previews on hover). Lets the user
           turn the muted trailer autoplay off/on; the choice persists. */}
