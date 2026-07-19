@@ -27,7 +27,7 @@ interface ListProps {
 
 export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
   return (
-    <nav className="py-10">
+    <nav className="py-6 sm:py-8 lg:py-10">
       <motion.div
         initial="rest"
         whileHover="hover"

@@ -111,9 +111,12 @@
 
 @utility container {
   margin-inline: auto;
-  padding-inline: 2rem;
+  /* Phones get a tighter gutter so hero copy and rows aren't cramped into the
+     middle third; the roomy 2rem gutter kicks in from `sm` up. */
+  padding-inline: 1.25rem;
   @media (width >= --theme(--breakpoint-sm)) {
     max-width: none;
+    padding-inline: 2rem;
   }
   @media (width >= 1400px) {
     max-width: 1400px;
@@ -142,6 +145,37 @@
   .splide__track.splide__track--slide {
     overflow: visible !important;
   }
+}
+
+/* Content rows are swipeable — the prev/next arrows overlap the poster art on
+   touch and read as clutter. Hide them below `lg`; drag/swipe carries nav. */
+@media (width < 1024px) {
+  .splide__arrow {
+    display: none !important;
+  }
+}
+
+/* Hero trailer preview: object-cover a 16:9 YouTube iframe over the hero at any
+   aspect. The wrapper is a size container; the iframe takes the larger of the
+   container's own dimension and the dimension a full-bleed 16:9 frame needs, so
+   the excess axis overflows and is clipped — full-bleed video, never letterboxed
+   (the old vw/vh hack left black bars on the shorter mobile hero). */
+.hero-trailer-cover {
+  container-type: size;
+}
+.hero-trailer-cover > iframe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  height: max(100cqh, 56.25cqw);
+  width: max(100cqw, 177.78cqh);
+  border: 0;
+  /* Most trailers are a 2.39:1 image letterboxed inside a 16:9 upload, so a
+     perfect 16:9 cover still shows the source's baked-in black bars. Overscale
+     to push those bars past the edges (2.39:1 needs ~1.34×) — an ambient,
+     cinematic crop; the title/meta overlay is the focus, not the frame edges. */
+  scale: 1.35;
 }
 
 /* Fixed animated aurora backdrop behind ALL content (mounted once in the root

@@ -15,7 +15,7 @@ export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
 
   return (
     <div className="relative overflow-hidden">
-      <Carousel stageClassName="min-h-[500px] lg:min-h-screen">
+      <Carousel stageClassName="min-h-[86svh] sm:min-h-[70svh] lg:min-h-screen">
         {movies?.map((movie, index) => {
           const isTv =
             (movie.media_type ?? (movie.first_air_date ? 'tv' : 'movie')) ===

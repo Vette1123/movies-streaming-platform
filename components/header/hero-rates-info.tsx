@@ -50,7 +50,7 @@ export const HeroRatesInfos = ({
   const imdbRating = movieDetails?.imdbRating ?? seriesDetails?.imdbRating
 
   return (
-    <div className="my-4 flex flex-wrap items-center gap-2 lg:gap-3">
+    <div className="my-3 flex flex-wrap items-center gap-2 lg:my-4 lg:gap-3">
       <Badge className="uppercase">{item?.original_language}</Badge>
       <Badge className="uppercase">{item?.adult ? 'NC-17' : 'PG-13'}</Badge>
       {imdbRating ? (

@@ -25,7 +25,10 @@ export function HeroTrailerPreview({
     <AnimatePresence>
       {active && (
         <motion.div
-          className="pointer-events-none absolute inset-0 z-[5] overflow-hidden"
+          // `.hero-trailer-cover` (globals.css) sets container-type + sizes the
+          // iframe in cqw/cqh so the 16:9 video covers the hero at any height —
+          // mobile (86svh) or desktop (100vh) — with no letterbox bars.
+          className="hero-trailer-cover pointer-events-none absolute inset-0 z-[5] overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -56,14 +59,12 @@ function PreviewFrame({
 
   return (
     <>
-      {/* Oversize + center the iframe so a 16:9 video covers the frame with no
-          letterbox bars, mimicking object-cover. */}
+      {/* Sized to object-cover the hero via .hero-trailer-cover (globals.css). */}
       <iframe
         key={muted ? 'muted' : 'unmuted'}
         src={src}
         title={title ? `${title} trailer preview` : 'Trailer preview'}
         allow="autoplay; encrypted-media"
-        className="absolute top-1/2 left-1/2 h-[135vw] max-h-[none] w-[240vh] max-w-[none] -translate-x-1/2 -translate-y-1/2 border-0"
       />
       <button
         type="button"

@@ -28,11 +28,20 @@ interface HeroSlideProps {
   movie: Movie
   genreTable?: MovieGenre[]
   priority?: boolean
+  /** True when this slide is the one on screen — injected by the Carousel.
+      Drives the touch-device autoplay preview (no hover to key off). */
+  active?: boolean
 }
 
 const HOVER_PREVIEW_DELAY = 500
+const TOUCH_PREVIEW_DELAY = 1200
 
-export function HeroSlide({ movie, genreTable, priority = false }: HeroSlideProps) {
+export function HeroSlide({
+  movie,
+  genreTable,
+  priority = false,
+  active = false,
+}: HeroSlideProps) {
   const media = movie as HeroSlideMedia
   const title = movie.title || movie.name || 'Untitled'
   const mediaType: ItemType =
@@ -44,10 +53,10 @@ export function HeroSlide({ movie, genreTable, priority = false }: HeroSlideProp
   const reduce = useReducedMotion()
   const [logoError, setLogoError] = React.useState(false)
 
-  // Hover-to-preview only makes sense on a real pointer (no phantom taps on
-  // touch, no autoplay video on reduced-motion setups). Read once at init;
-  // canPreview isn't rendered, so the SSR(false)/client(true) split is harmless.
-  const [canPreview] = React.useState(
+  // Real pointers (desktop) preview on hover; touch devices have no hover, so
+  // they autoplay the active slide's preview instead (effect below). Read once
+  // at init; not rendered, so the SSR(false)/client(true) split is harmless.
+  const [hasHover] = React.useState(
     () =>
       typeof window !== 'undefined' &&
       window.matchMedia('(hover: hover) and (pointer: fine)').matches
@@ -71,10 +80,23 @@ export function HeroSlide({ movie, genreTable, priority = false }: HeroSlideProp
   // hover started still triggers (the earlier bug: hovering before the lazy
   // fetch resolved showed nothing and never retried).
   React.useEffect(() => {
-    if (!hovering || !canPreview || reduce || !trailerKey) return
+    if (!hovering || !hasHover || reduce || !trailerKey) return
     const t = setTimeout(() => setPreviewActive(true), HOVER_PREVIEW_DELAY)
     return () => clearTimeout(t)
-  }, [hovering, canPreview, reduce, trailerKey])
+  }, [hovering, hasHover, reduce, trailerKey])
+
+  // Touch devices: autoplay the muted trailer once this slide is the on-screen
+  // one — the mobile counterpart to the desktop hover preview. `trailerEngaged`
+  // (above) freezes autoplay while it plays so the carousel doesn't rotate away
+  // mid-trailer; a swipe still advances manually. Deactivating unmounts it.
+  React.useEffect(() => {
+    if (hasHover || reduce || !trailerKey || !active) return
+    const t = setTimeout(() => setPreviewActive(true), TOUCH_PREVIEW_DELAY)
+    return () => {
+      clearTimeout(t)
+      setPreviewActive(false)
+    }
+  }, [hasHover, reduce, trailerKey, active])
 
   const href = mediaType === 'tv' ? `/tv-shows/${movie.id}` : `/movies/${movie.id}`
 
@@ -132,8 +154,12 @@ export function HeroSlide({ movie, genreTable, priority = false }: HeroSlideProp
       <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-black/90 via-black/55 to-black/20 lg:to-transparent" />
       <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/10 to-black/30" />
 
-      <div className="absolute inset-0 z-50 pb-36 lg:pb-0">
-        <div className="relative container flex h-full items-center justify-center gap-x-8 pt-20 lg:pt-28">
+      <div className="absolute inset-0 z-50 pb-28 sm:pb-32 lg:pb-0">
+        {/* Mobile: anchor copy to the lower third so the artwork breathes up top
+            and the content can never overflow upward into the fixed header (the
+            old vertical-centering pushed the NEW badge behind the header on tall
+            slides). Desktop keeps the centered editorial layout. */}
+        <div className="relative container flex h-full items-end justify-center gap-x-8 pt-24 lg:items-center lg:pt-28">
           <div className="flex w-full grow flex-col">
             <div className="max-w-2xl">
               <NewBadgeWhenRecent
@@ -150,23 +176,24 @@ export function HeroSlide({ movie, genreTable, priority = false }: HeroSlideProp
                     src={getImageURL(logoPath!)}
                     alt={title}
                     onError={() => setLogoError(true)}
-                    className="mb-3 max-h-20 w-auto max-w-[85%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] lg:mb-4 lg:max-h-32"
+                    className="mb-3 max-h-16 w-auto max-w-[80%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] sm:max-h-20 lg:mb-4 lg:max-h-32"
                   />
                   <h2 className="sr-only">{title}</h2>
                 </>
               ) : (
-                <h2 className="text-3xl font-bold tracking-tight whitespace-nowrap text-white drop-shadow-md sm:text-4xl lg:text-6xl">
+                <h2 className="text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md sm:text-4xl lg:text-6xl">
                   {title}
                 </h2>
               )}
               <HeroRatesInfos movie={movie} genreTable={genreTable} />
-              <p className="mt-2 line-clamp-3 max-w-xl text-sm leading-relaxed text-white/85 drop-shadow-sm lg:mt-3 lg:max-w-2xl lg:text-lg">
+              <p className="mt-2 line-clamp-2 max-w-xl text-sm leading-relaxed text-white/85 drop-shadow-sm sm:line-clamp-3 lg:mt-3 lg:max-w-2xl lg:text-lg">
                 {movie.overview}
               </p>
             </div>
 
-            {/* Actions: primary Watch + Trailer + Save. */}
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+            {/* Actions: primary Watch + Trailer + Save. Left-aligned to match the
+                copy column on every breakpoint. */}
+            <div className="mt-5 flex flex-wrap items-center justify-start gap-2.5 sm:mt-6 sm:gap-3">
               <Link
                 href={href}
                 // Skip viewport auto-prefetch (the heavy watch route), but warm

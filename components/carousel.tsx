@@ -164,7 +164,12 @@ export function Carousel({
         className={`relative overflow-hidden ${stageClassName}`}
         {...CAROUSEL_SINGLE_SLIDE_VARIANTS}
       >
-        {childrenArray[0]}
+        {React.isValidElement(childrenArray[0])
+          ? React.cloneElement(
+              childrenArray[0] as React.ReactElement<{ active?: boolean }>,
+              { active: true }
+            )
+          : childrenArray[0]}
       </motion.div>
     )
   }
@@ -228,7 +233,14 @@ export function Carousel({
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
-            {child}
+            {/* Tell the slide whether it's the one on screen, so touch devices
+                can autoplay the active slide's trailer preview (no hover). */}
+            {React.isValidElement(child)
+              ? React.cloneElement(
+                  child as React.ReactElement<{ active?: boolean }>,
+                  { active }
+                )
+              : child}
           </motion.div>
         )
       })}
