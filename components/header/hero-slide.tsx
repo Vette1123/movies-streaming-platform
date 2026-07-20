@@ -49,7 +49,10 @@ export function HeroSlide({
   const mediaType: ItemType =
     movie.media_type ?? (movie.first_air_date ? 'tv' : 'movie')
 
-  const { trailerKey, logoPath } = useHeroExtras(movie.id, mediaType)
+  const { trailerKey, logoPath, ready: extrasReady } = useHeroExtras(
+    movie.id,
+    mediaType
+  )
 
   const router = useRouter()
   const reduce = useReducedMotion()
@@ -57,6 +60,17 @@ export function HeroSlide({
   // Gates the title-logo crossfade: the text title holds the frame until the
   // logo image has actually decoded, then they crossfade — no hard text→logo pop.
   const [logoLoaded, setLogoLoaded] = React.useState(false)
+  // First (uncached) paint: hold the fallback-font text back until we know the
+  // logo's fate — resolves to no-logo, or the logo decodes and crossfades in —
+  // so the styled logo is never pre-empted by a flash of the plain title. A
+  // grace cap still reveals the text if the logo is genuinely slow, so the title
+  // never stays hidden. Refresh is a cache hit: extras are ready synchronously
+  // and the logo decodes fast, so the text never shows at all.
+  const [titleGraceElapsed, setTitleGraceElapsed] = React.useState(false)
+  React.useEffect(() => {
+    const t = setTimeout(() => setTitleGraceElapsed(true), 2200)
+    return () => clearTimeout(t)
+  }, [])
 
   // Desktop pointers get a slightly longer arm delay than touch (they can flick
   // across slides), but autoplay drives the preview on BOTH — hover no longer
@@ -178,6 +192,11 @@ export function HeroSlide({
   const href = mediaType === 'tv' ? `/tv-shows/${movie.id}` : `/movies/${movie.id}`
 
   const showLogo = !!logoPath && !logoError
+  // Keep the plain title hidden while the logo's outcome is still pending
+  // (extras in flight, or a known logo not yet decoded) — unless the grace cap
+  // has passed, at which point the text is revealed as the fallback.
+  const holdTitleText =
+    !titleGraceElapsed && (!extrasReady || (showLogo && !logoLoaded))
 
   // "Cinematic takeover": while the trailer actually plays, the editorial copy
   // recedes and the text-scrim softens so the video owns the frame. Purely a
@@ -275,7 +294,7 @@ export function HeroSlide({
                     <h2
                       aria-hidden={logoLoaded}
                       className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md transition-opacity duration-500 ease-out sm:text-4xl lg:text-6xl ${
-                        logoLoaded ? 'opacity-0' : 'opacity-100'
+                        logoLoaded || holdTitleText ? 'opacity-0' : 'opacity-100'
                       }`}
                     >
                       {title}
@@ -300,7 +319,11 @@ export function HeroSlide({
                     date={movie.release_date || movie.first_air_date}
                     className="relative top-0 left-0 mb-2 px-2.5 py-1 text-[11px] lg:text-xs"
                   />
-                  <h2 className="text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md sm:text-4xl lg:text-6xl">
+                  <h2
+                    className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md transition-opacity duration-500 ease-out sm:text-4xl lg:text-6xl ${
+                      holdTitleText ? 'opacity-0' : 'opacity-100'
+                    }`}
+                  >
                     {title}
                   </h2>
                 </div>

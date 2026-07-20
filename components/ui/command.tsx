@@ -75,7 +75,6 @@ const CommandDialog = ({
   const contentStyle: React.CSSProperties | undefined = keyboardAware
     ? {
         top: viewport.offsetTop + topPx,
-        height: viewport.height - topPx - KEYBOARD_GAP,
         maxHeight: viewport.height - topPx - KEYBOARD_GAP,
       }
     : undefined

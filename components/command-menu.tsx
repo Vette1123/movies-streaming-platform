@@ -300,7 +300,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
             ))}
           </div>
         )}
-        <CommandList className="max-h-[75vh] min-h-0 flex-1 sm:max-h-[min(72vh,620px)] sm:min-h-[460px] sm:flex-none">
+        <CommandList className="max-h-[75vh] min-h-0 flex-1 sm:max-h-[74vh] sm:min-h-[460px] sm:flex-none">
           <CommandGroup heading={resultsHeading}>
             {status === 'idle' &&
               (recent.length > 0 ? (

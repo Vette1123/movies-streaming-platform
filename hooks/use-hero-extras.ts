@@ -7,6 +7,10 @@ import { ItemType } from '@/types/movie-result'
 export interface HeroExtras {
   trailerKey: string | null
   logoPath: string | null
+  // False until the extras request resolves. Lets a slide distinguish "still
+  // fetching the logo" from "resolved, no logo" — both leave logoPath null — so
+  // the title can hold its fallback text back until the logo's fate is known.
+  ready: boolean
 }
 
 // Module-level cache + in-flight map, shared across every slide instance. A
@@ -17,7 +21,8 @@ export interface HeroExtras {
 const cache = new Map<string, HeroExtras>()
 const inFlight = new Map<string, Promise<HeroExtras>>()
 
-const EMPTY: HeroExtras = { trailerKey: null, logoPath: null }
+const EMPTY: HeroExtras = { trailerKey: null, logoPath: null, ready: false }
+const READY_EMPTY: HeroExtras = { ...EMPTY, ready: true }
 
 function load(key: string, type: ItemType, id: number): Promise<HeroExtras> {
   const cached = cache.get(key)
@@ -27,11 +32,12 @@ function load(key: string, type: ItemType, id: number): Promise<HeroExtras> {
   if (existing) return existing
 
   const promise = fetch(`/api/hero-extras?type=${type}&id=${id}`)
-    .then((res) => (res.ok ? res.json() : EMPTY))
+    .then((res) => (res.ok ? res.json() : READY_EMPTY))
     .then((data: HeroExtras) => {
       const value: HeroExtras = {
         trailerKey: data?.trailerKey ?? null,
         logoPath: data?.logoPath ?? null,
+        ready: true,
       }
       cache.set(key, value)
       inFlight.delete(key)
@@ -39,7 +45,7 @@ function load(key: string, type: ItemType, id: number): Promise<HeroExtras> {
     })
     .catch(() => {
       inFlight.delete(key)
-      return EMPTY
+      return READY_EMPTY
     })
 
   inFlight.set(key, promise)
