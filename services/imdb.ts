@@ -1,4 +1,5 @@
 import { cache } from 'react'
+import { getCloudflareContext } from '@opennextjs/cloudflare'
 
 import { fetchClient } from '@/lib/fetch-client'
 
@@ -45,20 +46,58 @@ const loadShard = async (shard: number): Promise<Record<string, string>> => {
       )
       data = JSON.parse(await readFile(file, 'utf8'))
     } else {
-      // Runtime (edge): fetch the static asset, edge- and fetch-cached.
-      const base = process.env.NEXT_PUBLIC_BASE_URL
-      if (base) {
-        const res = await fetch(`${base}/imdb-ratings/${shard}.json`, {
-          next: { revalidate: SHARD_REVALIDATE },
-          // Bound the self-fetch: a stalled edge asset request must not hang the
-          // render. On abort we fail soft to no ratings (catch below).
-          signal: AbortSignal.timeout(6000),
-        })
-        if (res.ok) data = (await res.json()) as Record<string, string>
-        // A missing shard 404s; drain the unread body so it doesn't strand an
-        // in-flight HTTP slot on the Worker isolate.
-        else await res.body?.cancel()
+      // Runtime. Read the shard from the Workers static-assets binding FIRST:
+      // it serves the file straight from the deployed assets INSIDE the isolate
+      // — no network, no WAF.
+      //
+      // A public self-fetch (`${base}/imdb-ratings/N.json`) is NOT usable in the
+      // prod Worker. The `global_fetch_strictly_public` compat flag forces that
+      // subrequest back out through the Cloudflare edge, where the WAF's
+      // scraper-challenge rule (empty / non-browser User-Agent → managed
+      // challenge) answers with a "Just a moment" 403 HTML page instead of JSON.
+      // `res.ok` was then false, `data` stayed `{}`, and EVERY runtime IMDb
+      // lookup failed soft to null — so the whole site showed TMDB ratings while
+      // local/prebuilt (disk-read) pages looked fine. The assets binding never
+      // touches the edge, so it can't be challenged.
+      let res: Response | null = null
+      try {
+        const env = getCloudflareContext().env as unknown as {
+          ASSETS?: { fetch: (input: URL) => Promise<Response> }
+        }
+        if (env.ASSETS) {
+          res = await env.ASSETS.fetch(
+            new URL(`/imdb-ratings/${shard}.json`, 'https://assets.local')
+          )
+        }
+      } catch {
+        // No binding available (non-Worker runtime) — fall through to self-fetch.
       }
+
+      // Fallback self-fetch. Used by `next dev` locally (where there's no WAF)
+      // and as a prod safety net. Crucially it sends a browser User-Agent so it
+      // CLEARS the WAF scraper challenge if it ever runs against the edge — the
+      // missing UA is exactly what broke the old path.
+      if (!res || !res.ok) {
+        await res?.body?.cancel()
+        const base = process.env.NEXT_PUBLIC_BASE_URL
+        if (base) {
+          res = await fetch(`${base}/imdb-ratings/${shard}.json`, {
+            next: { revalidate: SHARD_REVALIDATE },
+            headers: {
+              'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            },
+            // Bound the self-fetch: a stalled edge asset request must not hang the
+            // render. On abort we fail soft to no ratings (catch below).
+            signal: AbortSignal.timeout(6000),
+          })
+        }
+      }
+
+      if (res && res.ok) data = (await res.json()) as Record<string, string>
+      // A missing shard 404s; drain the unread body so it doesn't strand an
+      // in-flight HTTP slot on the Worker isolate.
+      else await res?.body?.cancel()
     }
   } catch {
     data = {}
