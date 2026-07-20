@@ -6,11 +6,12 @@ import { fetchClient } from '@/lib/fetch-client'
 import { MOVIES_GENRE, TV_GENRE } from '@/lib/genres'
 
 // TMDB's genre lists are canonical and change at most once or twice a year, so
-// cache them for 30 days — the fetch is essentially free and never pressures
-// the Cloudflare free-plan KV write cap. The bundled static lists in
-// `lib/genres.ts` remain the fail-soft fallback so a TMDB hiccup (or missing
-// credentials) never blanks out genres.
-const GENRE_REVALIDATE = 60 * 60 * 24 * 30
+// cache them indefinitely (revalidate:false) — refreshed by the 4x/day redeploy,
+// never on the Worker. This also stops the genre fetch from flooring the fully
+// static homepage's revalidate (it was the lone 30d fetch keeping the route off
+// build-only ∞). The bundled static lists in `lib/genres.ts` remain the fail-soft
+// fallback so a TMDB hiccup (or missing credentials) never blanks out genres.
+const GENRE_REVALIDATE = false
 
 interface GenreListResponse {
   genres: MovieGenre[]
