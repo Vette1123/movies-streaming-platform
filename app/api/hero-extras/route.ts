@@ -43,9 +43,16 @@ export async function GET(request: NextRequest) {
     ?.default
   const cacheKey = new Request(`https://cache/hero-extras?type=${type}&id=${id}`)
 
+  // A cache READ must never take the route down. Under subrequest pressure
+  // `cache.match` itself can throw ("Too many subrequests by single Worker
+  // invocation"); swallow it and fall through to compute rather than 500.
   if (cache) {
-    const hit = await cache.match(cacheKey)
-    if (hit) return hit
+    try {
+      const hit = await cache.match(cacheKey)
+      if (hit) return hit
+    } catch {
+      // ignore — treat as a miss
+    }
   }
 
   try {
@@ -66,9 +73,16 @@ export async function GET(request: NextRequest) {
     })
 
     // Populate the regional cache without blocking the response. clone() because
-    // the body returned to the client can only be read once.
+    // the body returned to the client can only be read once. A cache-WRITE failure
+    // must not discard the good response we just computed — guard it separately.
     if (cache) {
-      getCloudflareContext().ctx.waitUntil(cache.put(cacheKey, response.clone()))
+      try {
+        getCloudflareContext().ctx.waitUntil(
+          cache.put(cacheKey, response.clone())
+        )
+      } catch {
+        // ignore — serving uncached is fine
+      }
     }
 
     return response

@@ -11,6 +11,16 @@ import { fetchClient } from '@/lib/fetch-client'
 // missing (shard absent, obscure title, ingest not run) fails soft to null so
 // the UI falls back to the TMDB rating.
 //
+// Feature flag — IMDb ratings are OFF by default. Enriching every list row cost
+// one TMDB `external_ids` subrequest per item; a full homepage render fanned out
+// ~120+ subrequests and blew the Cloudflare free-plan 50-subrequests/invocation
+// cap ("Too many subrequests by single Worker invocation"), which cascaded into
+// the hero fetch failing and the whole page 500ing. Gated off so ALL IMDb calls
+// (external_ids lookups AND shard reads) are skipped and the UI falls back to the
+// TMDB rating. Flip on only with `NEXT_PUBLIC_IMDB_RATINGS=true` — do NOT enable
+// on the free plan while list rows enrich per-item, or the subrequest cap returns.
+const IMDB_ENABLED = process.env.NEXT_PUBLIC_IMDB_RATINGS === 'true'
+
 // NUM_SHARDS MUST stay in sync with scripts/build-imdb-ratings.mjs.
 const NUM_SHARDS = 256
 const SHARD_REVALIDATE = 60 * 60 * 24 // 1 day — matches the dataset's cadence
@@ -113,7 +123,7 @@ const loadShard = async (shard: number): Promise<Record<string, string>> => {
  */
 const getImdbRating = cache(
   async (imdbId?: string | null): Promise<string | null> => {
-    if (!imdbId) return null
+    if (!IMDB_ENABLED || !imdbId) return null
     const shard = await loadShard(shardFor(imdbId))
     return shard[imdbId] ?? null
   }
@@ -128,7 +138,7 @@ const IMDB_ID_REVALIDATE = 60 * 60 * 24 * 30 // 30 days
 
 const getImdbRatingByTmdbId = cache(
   async (id: number, mediaType: 'movie' | 'tv'): Promise<string | null> => {
-    if (!id) return null
+    if (!IMDB_ENABLED || !id) return null
     try {
       const { imdb_id } = await fetchClient.get<{ imdb_id?: string | null }>(
         `${mediaType}/${id}/external_ids`,
@@ -152,12 +162,18 @@ const getImdbRatingByTmdbId = cache(
 const attachImdbRatings = async <T extends { id: number }>(
   items: T[],
   mediaType: 'movie' | 'tv'
-): Promise<(T & { imdbRating: string | null })[]> =>
-  Promise.all(
+): Promise<(T & { imdbRating: string | null })[]> => {
+  // Flag off: skip the per-item external_ids fan-out entirely (this is the fetch
+  // storm that tripped the subrequest cap). Cards fall back to the TMDB rating.
+  if (!IMDB_ENABLED) {
+    return items.map((item) => ({ ...item, imdbRating: null }))
+  }
+  return Promise.all(
     items.map(async (item) => ({
       ...item,
       imdbRating: await getImdbRatingByTmdbId(item.id, mediaType),
     }))
   )
+}
 
 export { getImdbRating, getImdbRatingByTmdbId, attachImdbRatings }

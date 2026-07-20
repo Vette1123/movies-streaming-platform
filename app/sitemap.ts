@@ -19,47 +19,38 @@ const baseUrl = siteConfig.websiteURL
 
 const buildDate = (): string => new Date().toISOString()
 
-// Dedup a set of TMDB list responses into id→item, keeping the first-seen item
-// (so `popularity` survives for the priority calc). allSettled: one 429 drops
-// just that page, never the whole sitemap.
-const dedupeResults = async <T extends { id: number; popularity?: number }>(
-  requests: Promise<{ results?: T[] } | undefined>[]
-): Promise<T[]> => {
-  const responses = await Promise.allSettled(requests)
-  const byId = new Map<number, T>()
-  for (const res of responses) {
-    if (res.status !== 'fulfilled') continue
-    for (const item of res.value?.results ?? []) {
-      if (!byId.has(item.id)) byId.set(item.id, item)
-    }
-  }
-  return Array.from(byId.values())
-}
-
-// Kept in step with generateStaticParams on the detail pages: the sitemap should
-// advertise the same head of titles we prebuild as static assets, so every URL
-// Google discovers here resolves to a fast, no-Worker-CPU page (no 5xx).
 const generateMovieUrls = async (): Promise<MetadataRoute.Sitemap> => {
   try {
-    const movies = await dedupeResults([
-      ...Array.from({ length: 60 }, (_, i) => getPopularMovies({ page: i + 1 })),
-      ...Array.from({ length: 40 }, (_, i) =>
-        getAllTimeTopRatedMovies({ page: i + 1 })
-      ),
-      ...Array.from({ length: 15 }, (_, i) =>
-        getNowPlayingMovies({ page: i + 1 })
-      ),
-      ...Array.from({ length: 10 }, (_, i) =>
-        getLatestTrendingMovies({ page: i + 1 })
-      ),
+    const [p1, p2, tr1, tr2, tp1, tp2, np] = await Promise.all([
+      getPopularMovies({ page: 1 }),
+      getPopularMovies({ page: 2 }),
+      getLatestTrendingMovies({ page: 1 }),
+      getLatestTrendingMovies({ page: 2 }),
+      getAllTimeTopRatedMovies({ page: 1 }),
+      getAllTimeTopRatedMovies({ page: 2 }),
+      getNowPlayingMovies({ page: 1 }),
     ])
 
+    const all = [
+      ...(p1?.results || []),
+      ...(p2?.results || []),
+      ...(tr1?.results || []),
+      ...(tr2?.results || []),
+      ...(tp1?.results || []),
+      ...(tp2?.results || []),
+      ...(np?.results || []),
+    ]
+
+    const unique = all.filter(
+      (m, i, self) => i === self.findIndex((x) => x.id === m.id)
+    )
+
     const lastModified = buildDate()
-    return movies.map((movie) => ({
+    return unique.map((movie) => ({
       url: `${baseUrl}/movies/${movie.id}`,
       lastModified,
       changeFrequency: 'monthly' as const,
-      priority: (movie.popularity ?? 0) > 50 ? 0.8 : 0.6,
+      priority: (movie as any).popularity > 50 ? 0.8 : 0.6,
     }))
   } catch (error) {
     console.error('Error generating movie URLs for sitemap:', error)
@@ -69,22 +60,34 @@ const generateMovieUrls = async (): Promise<MetadataRoute.Sitemap> => {
 
 const generateTVShowUrls = async (): Promise<MetadataRoute.Sitemap> => {
   try {
-    const series = await dedupeResults([
-      ...Array.from({ length: 60 }, (_, i) => getPopularSeries({ page: i + 1 })),
-      ...Array.from({ length: 40 }, (_, i) =>
-        getAllTimeTopRatedSeries({ page: i + 1 })
-      ),
-      ...Array.from({ length: 10 }, (_, i) =>
-        getLatestTrendingSeries({ page: i + 1 })
-      ),
+    const [p1, p2, tr1, tr2, tp1, tp2] = await Promise.all([
+      getPopularSeries({ page: 1 }),
+      getPopularSeries({ page: 2 }),
+      getLatestTrendingSeries({ page: 1 }),
+      getLatestTrendingSeries({ page: 2 }),
+      getAllTimeTopRatedSeries({ page: 1 }),
+      getAllTimeTopRatedSeries({ page: 2 }),
     ])
 
+    const all = [
+      ...(p1?.results || []),
+      ...(p2?.results || []),
+      ...(tr1?.results || []),
+      ...(tr2?.results || []),
+      ...(tp1?.results || []),
+      ...(tp2?.results || []),
+    ]
+
+    const unique = all.filter(
+      (s, i, self) => i === self.findIndex((x) => x.id === s.id)
+    )
+
     const lastModified = buildDate()
-    return series.map((show) => ({
-      url: `${baseUrl}/tv-shows/${show.id}`,
+    return unique.map((series) => ({
+      url: `${baseUrl}/tv-shows/${series.id}`,
       lastModified,
       changeFrequency: 'monthly' as const,
-      priority: (show.popularity ?? 0) > 50 ? 0.8 : 0.6,
+      priority: (series as any).popularity > 50 ? 0.8 : 0.6,
     }))
   } catch (error) {
     console.error('Error generating TV show URLs for sitemap:', error)

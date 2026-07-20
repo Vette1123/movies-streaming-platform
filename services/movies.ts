@@ -74,39 +74,45 @@ const getTrendingMediaForHeroSlider = async (
 }
 
 const populateHomePageData = async (): Promise<MultiRequestProps> => {
-  try {
-    const [
-      trendingMediaHeroResponse, // Replaced nowPlayingResponse
-      latestTrendingResponse,
-      popularMoviesResponse,
-      allTimeTopRatedResponse,
-      latestTrendingSeries,
-      popularSeriesResponse,
-      allTimeTopRatedSeries,
-    ] = await Promise.all([
-      getTrendingMediaForHeroSlider(), // Replaced getNowPlayingMovies()
-      getLatestTrendingMovies(),
-      getPopularMovies(),
-      getAllTimeTopRatedMovies(),
-      getLatestTrendingSeries(),
-      getPopularSeries(),
-      getAllTimeTopRatedSeries(),
-    ])
+  // allSettled, NOT all: the homepage is statically built (see
+  // app/(landing)/page.tsx), so a single flaky TMDB list must NOT throw and fail
+  // the whole deploy — it degrades to an empty row and the page still ships. The
+  // old `Promise.all` + `throw` turned one transient TMDB hiccup into a failed
+  // build (or, back when this rendered live, a 500).
+  const [
+    trendingMediaHeroResult,
+    latestTrendingResult,
+    popularMoviesResult,
+    allTimeTopRatedResult,
+    latestTrendingSeriesResult,
+    popularSeriesResult,
+    allTimeTopRatedSeriesResult,
+  ] = await Promise.allSettled([
+    getTrendingMediaForHeroSlider(),
+    getLatestTrendingMovies(),
+    getPopularMovies(),
+    getAllTimeTopRatedMovies(),
+    getLatestTrendingSeries(),
+    getPopularSeries(),
+    getAllTimeTopRatedSeries(),
+  ])
 
-    // Rows arrive already IMDb-enriched from the source list fetches below, so
-    // the homepage just forwards them. The hero keeps its own IMDb-or-star path.
-    return {
-      trendingMediaForHero: trendingMediaHeroResponse || [], // Changed from nowPlayingMovies
-      latestTrendingMovies: latestTrendingResponse?.results || [],
-      popularMovies: popularMoviesResponse?.results || [],
-      allTimeTopRatedMovies: allTimeTopRatedResponse?.results || [],
-      latestTrendingSeries: latestTrendingSeries?.results || [],
-      popularSeries: popularSeriesResponse?.results || [],
-      allTimeTopRatedSeries: allTimeTopRatedSeries?.results || [],
-    }
-  } catch (error: any) {
-    console.error(error, 'error')
-    throw new Error(error)
+  const value = <T>(r: PromiseSettledResult<T>): T | undefined => {
+    if (r.status === 'fulfilled') return r.value
+    console.error('populateHomePageData: a list failed', r.reason)
+    return undefined
+  }
+
+  // Rows arrive already IMDb-enriched from the source list fetches, so the
+  // homepage just forwards them. The hero keeps its own IMDb-or-star path.
+  return {
+    trendingMediaForHero: value(trendingMediaHeroResult) || [],
+    latestTrendingMovies: value(latestTrendingResult)?.results || [],
+    popularMovies: value(popularMoviesResult)?.results || [],
+    allTimeTopRatedMovies: value(allTimeTopRatedResult)?.results || [],
+    latestTrendingSeries: value(latestTrendingSeriesResult)?.results || [],
+    popularSeries: value(popularSeriesResult)?.results || [],
+    allTimeTopRatedSeries: value(allTimeTopRatedSeriesResult)?.results || [],
   }
 }
 

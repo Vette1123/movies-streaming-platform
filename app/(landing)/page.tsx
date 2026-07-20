@@ -12,7 +12,12 @@ import { HeroSlider } from '@/components/header/hero-slider'
 import { FullScreenLoader } from '@/components/loaders/intro-pages-loader'
 import { MoviesIntroSection } from '@/components/main-page/intro-section'
 
-export const revalidate = 28800
+// Fully static: rendered ONLY at build, served from static assets, never on the
+// Worker. Freshness comes from the 4x/day CI redeploy — not on-demand ISR. This
+// is deliberate: an on-demand render fans out enough TMDB subrequests to trip the
+// Cloudflare free-plan 50-subrequests/invocation cap (and the 10ms CPU ceiling),
+// which is what 500'd / 1102'd this page. Static build has no such caps.
+export const revalidate = false
 
 const HOME_DESCRIPTION =
   'Discover trending movies and TV shows, track what you watch, and never miss a release. Reely brings the latest, top-rated, and popular titles into one seamless experience.'

@@ -11,7 +11,10 @@ import {
 } from '@/lib/structured-data'
 import { MediaContent } from '@/components/media/media-content'
 
-export const revalidate = 28800
+// Fully static (see app/(landing)/page.tsx): built once per deploy, served from
+// assets, never rendered on the Worker — so no free-plan subrequest/CPU caps.
+// Filters + pagination are client-side (MediaContent), so nothing here is dynamic.
+export const revalidate = false
 
 const MOVIES_TITLE = `Movies — Browse Popular, Trending & Top Rated`
 const MOVIES_DESCRIPTION =
