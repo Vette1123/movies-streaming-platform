@@ -75,54 +75,161 @@ export const HeroTrailerPreview = React.forwardRef<
 
           {/* Full-view controls — only in fullscreen. Inside the fullscreen
               element so they actually render there (siblings on the page are
-              hidden while this subtree owns the screen). pointer-events-auto
-              re-enables clicks on top of the cover's pointer-events-none. No
-              YouTube chrome — just our own exit + play/pause. */}
+              hidden while this subtree owns the screen). They auto-hide during
+              playback (see FullscreenControls) so full view stays a clean,
+              chrome-free "focus on the play". No YouTube chrome either. */}
           {fullscreen && (
-            <>
-              {/* Centered play/pause. */}
-              <button
-                type="button"
-                onClick={onTogglePlay}
-                aria-label={paused ? 'Play' : 'Pause'}
-                className="pointer-events-auto absolute top-1/2 left-1/2 z-[70] flex size-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white opacity-80 backdrop-blur-md transition hover:bg-black/60 hover:opacity-100"
-              >
-                {paused ? (
-                  <Play className="size-9 translate-x-0.5 fill-current" />
-                ) : (
-                  <Pause className="size-9 fill-current" />
-                )}
-              </button>
-
-              {/* Top-right: mute/unmute + exit, side by side. */}
-              <button
-                type="button"
-                onClick={onToggleMute}
-                aria-label={muted ? 'Unmute' : 'Mute'}
-                aria-pressed={!muted}
-                className="pointer-events-auto absolute top-5 right-[4.75rem] z-[70] flex size-11 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white backdrop-blur-md transition hover:bg-black/70"
-              >
-                {muted ? (
-                  <VolumeX className="size-5" />
-                ) : (
-                  <Volume2 className="size-5" />
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={onExitFullscreen}
-                aria-label="Exit full view"
-                className="pointer-events-auto absolute top-5 right-5 z-[70] flex size-11 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white backdrop-blur-md transition hover:bg-black/70"
-              >
-                <Minimize className="size-5" />
-              </button>
-            </>
+            <FullscreenControls
+              paused={!!paused}
+              muted={muted}
+              onTogglePlay={onTogglePlay}
+              onToggleMute={onToggleMute}
+              onExitFullscreen={onExitFullscreen}
+            />
           )}
         </motion.div>
       )}
     </AnimatePresence>
   )
 })
+
+// Auto-hiding full-view controls. In full view the trailer is the whole point,
+// so the chrome shouldn't sit on top of it. Behaviour, like a real player:
+//   • enter full view → controls flash in, then fade out after a short idle
+//   • move the mouse / touch the screen → they come back
+//   • tap the backdrop → toggle them (summon or dismiss on demand)
+//   • while PAUSED they stay pinned — the Play button must always be reachable
+// The cursor hides with the controls on desktop so nothing floats over the film.
+const IDLE_MS = 2600
+
+function FullscreenControls({
+  paused,
+  muted,
+  onTogglePlay,
+  onToggleMute,
+  onExitFullscreen,
+}: {
+  paused: boolean
+  muted: boolean
+  onTogglePlay?: () => void
+  onToggleMute?: () => void
+  onExitFullscreen?: () => void
+}) {
+  const [visible, setVisible] = React.useState(true)
+  const hideTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const clearTimer = React.useCallback(() => {
+    if (hideTimer.current) clearTimeout(hideTimer.current)
+    hideTimer.current = null
+  }, [])
+
+  // Arm the fade-out — but never while paused (you'd hide the only way to
+  // resume). Every call restarts the countdown, so activity keeps them alive.
+  const scheduleHide = React.useCallback(() => {
+    clearTimer()
+    if (paused) return
+    hideTimer.current = setTimeout(() => setVisible(false), IDLE_MS)
+  }, [paused, clearTimer])
+
+  const reveal = React.useCallback(() => {
+    setVisible(true)
+    scheduleHide()
+  }, [scheduleHide])
+
+  // While paused the controls are always shown (derived, not stored) so the
+  // Play button is never hidden behind an idle timeout — no setState needed.
+  const shown = paused || visible
+
+  // Playing → start the fade countdown; paused → cancel it. Fires on mount too,
+  // so controls greet you on entering full view and then settle away.
+  React.useEffect(() => {
+    if (paused) clearTimer()
+    else scheduleHide()
+    return clearTimer
+  }, [paused, scheduleHide, clearTimer])
+
+  // A bare tap on the film toggles the controls; dragging a mouse / finger
+  // always summons them.
+  const onBackdropClick = React.useCallback(() => {
+    setVisible((v) => {
+      if (v) {
+        clearTimer()
+        return false
+      }
+      scheduleHide()
+      return true
+    })
+  }, [scheduleHide, clearTimer])
+
+  return (
+    <div
+      // pointer-events-auto: the cover itself is pointer-events-none, so this
+      // layer is what actually catches taps/moves to summon the controls.
+      className={`pointer-events-auto absolute inset-0 z-[65] ${shown ? '' : 'cursor-none'}`}
+      onPointerMove={reveal}
+      onClick={onBackdropClick}
+    >
+      <AnimatePresence>
+        {shown && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+          >
+            {/* Centered play/pause. */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onTogglePlay?.()
+                reveal()
+              }}
+              aria-label={paused ? 'Play' : 'Pause'}
+              className="pointer-events-auto absolute top-1/2 left-1/2 z-[70] flex size-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white opacity-80 backdrop-blur-md transition hover:bg-black/60 hover:opacity-100"
+            >
+              {paused ? (
+                <Play className="size-9 translate-x-0.5 fill-current" />
+              ) : (
+                <Pause className="size-9 fill-current" />
+              )}
+            </button>
+
+            {/* Top-right: mute/unmute + exit, side by side. */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleMute?.()
+                reveal()
+              }}
+              aria-label={muted ? 'Unmute' : 'Mute'}
+              aria-pressed={!muted}
+              className="pointer-events-auto absolute top-5 right-[4.75rem] z-[70] flex size-11 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white backdrop-blur-md transition hover:bg-black/70"
+            >
+              {muted ? (
+                <VolumeX className="size-5" />
+              ) : (
+                <Volume2 className="size-5" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onExitFullscreen?.()
+              }}
+              aria-label="Exit full view"
+              className="pointer-events-auto absolute top-5 right-5 z-[70] flex size-11 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white backdrop-blur-md transition hover:bg-black/70"
+            >
+              <Minimize className="size-5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
 
 function PreviewFrame({
   trailerKey,
@@ -150,10 +257,7 @@ function PreviewFrame({
   const command = React.useCallback((func: string) => {
     const win = iframeRef.current?.contentWindow
     if (!win) return
-    win.postMessage(
-      JSON.stringify({ event: 'command', func, args: [] }),
-      '*'
-    )
+    win.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*')
   }, [])
 
   // Sync mute state to the running player without reloading it. The toggle is
