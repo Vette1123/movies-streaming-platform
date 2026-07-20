@@ -54,6 +54,9 @@ export function HeroSlide({
   const router = useRouter()
   const reduce = useReducedMotion()
   const [logoError, setLogoError] = React.useState(false)
+  // Gates the title-logo crossfade: the text title holds the frame until the
+  // logo image has actually decoded, then they crossfade — no hard text→logo pop.
+  const [logoLoaded, setLogoLoaded] = React.useState(false)
 
   // Desktop pointers get a slightly longer arm delay than touch (they can flick
   // across slides), but autoplay drives the preview on BOTH — hover no longer
@@ -258,19 +261,34 @@ export function HeroSlide({
                 className="relative top-0 left-0 mb-3 px-2.5 py-1 text-[11px] lg:text-xs"
               />
               {showLogo ? (
-                <>
-                  {/* Official title-logo treatment. Plain <img> so we don't
-                      fight next/image over the logo's arbitrary aspect ratio;
-                      falls back to the text title if it fails to load. */}
+                // Stack the text title and the official logo in one bottom-
+                // aligned box that reserves the logo's height, so there's no
+                // layout jump and no hard swap: the text shows immediately and
+                // holds the frame, then crossfades out as the decoded logo rises
+                // in. Plain <img> so we don't fight next/image over the logo's
+                // arbitrary aspect ratio; it falls back to the text on error.
+                <div className="relative mb-3 flex min-h-16 items-end sm:min-h-20 lg:mb-4 lg:min-h-32">
+                  <h2
+                    aria-hidden={logoLoaded}
+                    className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md transition-opacity duration-500 ease-out sm:text-4xl lg:text-6xl ${
+                      logoLoaded ? 'opacity-0' : 'opacity-100'
+                    }`}
+                  >
+                    {title}
+                  </h2>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={getImageURL(logoPath!)}
                     alt={title}
                     onError={() => setLogoError(true)}
-                    className="mb-3 max-h-16 w-auto max-w-[80%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] sm:max-h-20 lg:mb-4 lg:max-h-32"
+                    onLoad={() => setLogoLoaded(true)}
+                    className={`absolute bottom-0 left-0 max-h-16 w-auto max-w-[80%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] transition-all duration-700 ease-out sm:max-h-20 lg:max-h-32 ${
+                      logoLoaded
+                        ? 'translate-y-0 opacity-100 blur-0'
+                        : 'pointer-events-none translate-y-2 opacity-0 blur-[2px]'
+                    }`}
                   />
-                  <h2 className="sr-only">{title}</h2>
-                </>
+                </div>
               ) : (
                 <h2 className="text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md sm:text-4xl lg:text-6xl">
                   {title}
