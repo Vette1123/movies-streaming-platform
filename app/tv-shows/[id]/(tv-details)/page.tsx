@@ -30,22 +30,25 @@ export const dynamicParams = true
 
 export async function generateStaticParams() {
   try {
-    // Prerender the head of the traffic distribution: popular (20 pages),
-    // all-time top rated (10), and today's trending (3). Deduped → ~500 hottest
-    // titles baked into static assets at build so they never cold-render at
+    // Prerender the head of the traffic distribution so it never cold-renders at
     // runtime — the more we prebuild, the smaller the long tail that has to
-    // render on the Worker (10ms CPU) and write to KV on demand. TMDB returns 20
-    // ids/page; the head captures the vast majority of real human traffic.
+    // render on the Worker (10ms CPU → 5xx under crawl load) and write to KV on
+    // demand. Build-time SSG ships to static assets (ASSETS binding), NOT KV, so
+    // widening this is free of the 1k/day KV-write cap and actually *reduces*
+    // runtime KV writes. Freshness is fine — CI rebuilds 4×/day. TMDB returns 20
+    // ids/page; each prebuilt page is ~1 governed TMDB call at build.
+    //   popular 60 + top-rated 40 + trending 10 pages
+    //   → ~2200 raw, deduped to the ~1800 hottest titles.
     // allSettled (not all): a single TMDB 429/hiccup drops just that page, not
-    // the whole prebuild set — important now that we fan out more requests.
+    // the whole prebuild set — important now that we fan out this many requests.
     const requests = [
-      ...Array.from({ length: 20 }, (_, i) =>
+      ...Array.from({ length: 60 }, (_, i) =>
         getPopularSeries({ page: i + 1 })
       ),
-      ...Array.from({ length: 10 }, (_, i) =>
+      ...Array.from({ length: 40 }, (_, i) =>
         getAllTimeTopRatedSeries({ page: i + 1 })
       ),
-      ...Array.from({ length: 3 }, (_, i) =>
+      ...Array.from({ length: 10 }, (_, i) =>
         getLatestTrendingSeries({ page: i + 1 })
       ),
     ]
