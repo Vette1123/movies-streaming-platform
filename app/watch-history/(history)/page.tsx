@@ -24,6 +24,7 @@ export const metadata: Metadata = {
 function WatchHistory() {
   return (
     <section className="container h-full py-20 lg:py-36">
+      <h1 className="mb-6 text-2xl font-bold lg:text-3xl">Watch History</h1>
       <WatchHistoryContainer />
     </section>
   )

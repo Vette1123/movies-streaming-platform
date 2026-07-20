@@ -49,6 +49,12 @@ async function IndexPage() {
   } = await populateHomePageData()
   return (
     <section className="h-full">
+      {/* Single page-level h1 for SEO. Visually hidden (sr-only) so it doesn't
+          disrupt the cinematic hero, but present in the DOM/SSR HTML — the hero
+          slide titles are h2s, so the page had no h1 before. */}
+      <h1 className="sr-only">
+        {siteConfig.name} — Discover, track & stream movies and TV shows
+      </h1>
       <JsonLd
         data={collectionPageJsonLd({
           name: `${siteConfig.name} — Home`,

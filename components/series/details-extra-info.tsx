@@ -26,7 +26,7 @@ export const SeriesDetailsExtraInfo = ({
         date={series.first_air_date}
         className="relative left-0 top-0 mb-2 px-2.5 py-1 text-[11px] lg:text-xs"
       />
-      <p className="text-sm font-bold lg:text-3xl">{series.name}</p>
+      <h1 className="text-sm font-bold lg:text-3xl">{series.name}</h1>
       {series.tagline && (
         <p className="text-muted-foreground mt-1 text-xs italic lg:text-base">
           {series.tagline}

@@ -14,9 +14,9 @@ export const DisclaimerContent = ({
       {isHideHeader ? null : (
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h2 className="text-2xl font-semibold tracking-tight">
+            <h1 className="text-2xl font-semibold tracking-tight">
               Disclaimer
-            </h2>
+            </h1>
             <p className="text-muted-foreground text-sm">
               Please read this disclaimer carefully before using the service
               operated by us.

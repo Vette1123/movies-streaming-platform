@@ -24,7 +24,7 @@ export const DetailsExtraInfo = ({
         date={movie.release_date}
         className="relative left-0 top-0 mb-2 px-2.5 py-1 text-[11px] lg:text-xs"
       />
-      <p className="text-sm font-bold lg:text-3xl">{movie.title}</p>
+      <h1 className="text-sm font-bold lg:text-3xl">{movie.title}</h1>
       {movie.tagline && (
         <p className="text-muted-foreground mt-1 text-xs italic lg:text-base">
           {movie.tagline}
