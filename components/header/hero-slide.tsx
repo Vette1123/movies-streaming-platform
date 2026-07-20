@@ -4,7 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useReducedMotion } from 'framer-motion'
-import { Video, VideoOff, Volume2, VolumeX } from 'lucide-react'
+import { Maximize, Video, VideoOff, Volume2, VolumeX } from 'lucide-react'
 
 import { MovieDetails } from '@/types/movie-details'
 import { MovieGenre } from '@/types/movie-genre'
@@ -55,15 +55,14 @@ export function HeroSlide({
   const reduce = useReducedMotion()
   const [logoError, setLogoError] = React.useState(false)
 
-  // Real pointers (desktop) preview on hover; touch devices have no hover, so
-  // they autoplay the active slide's preview instead (effect below). Read once
-  // at init; not rendered, so the SSR(false)/client(true) split is harmless.
+  // Desktop pointers get a slightly longer arm delay than touch (they can flick
+  // across slides), but autoplay drives the preview on BOTH — hover no longer
+  // gates it. Read once at init; not rendered, so the SSR/client split is fine.
   const [hasHover] = React.useState(
     () =>
       typeof window !== 'undefined' &&
       window.matchMedia('(hover: hover) and (pointer: fine)').matches
   )
-  const [hovering, setHovering] = React.useState(false)
   const [previewActive, setPreviewActive] = React.useState(false)
   const [dialogOpen, setDialogOpen] = React.useState(false)
 
@@ -77,14 +76,72 @@ export function HeroSlide({
   // render (tracking the previous value) rather than in an effect, so it never
   // triggers a cascading setState-in-effect. Reopening the same slide's preview
   // always starts muted — audio never lingers across opens.
+  // Paused state for full view (custom play/pause + spacebar). Ambient preview
+  // always plays; pause only exists inside full view.
+  const [paused, setPaused] = React.useState(false)
   const [prevPreviewActive, setPrevPreviewActive] = React.useState(previewActive)
   if (previewActive !== prevPreviewActive) {
     setPrevPreviewActive(previewActive)
-    if (!previewActive) setTrailerMuted(true)
+    if (!previewActive) {
+      setTrailerMuted(true)
+      setPaused(false)
+    }
   }
 
-  // Touch-device autoplay is opt-out: on by default, persisted per user.
+  // Trailer autoplay is opt-out: on by default, persisted per user. Governs both
+  // the touch active-slide autoplay AND the desktop hover/active preview, so the
+  // one toggle fully turns trailer previews off everywhere.
   const { enabled: autoplayEnabled, toggle: toggleAutoplay } = useHeroAutoplay()
+
+  // Full-view (native browser fullscreen) of the playing trailer. Ref points at
+  // the trailer cover element; fullscreen it directly so the video owns the
+  // screen. Entering unmutes for a focused watch; exiting LEAVES the sound on
+  // (re-muting on exit felt broken). Driven off `fullscreenchange` so the state
+  // stays in sync with Esc too.
+  const trailerContainerRef = React.useRef<HTMLDivElement>(null)
+  const [isFullscreen, setIsFullscreen] = React.useState(false)
+  React.useEffect(() => {
+    const onChange = () => {
+      // Guard the null case: with no fullscreen element AND the cover unmounted
+      // both sides are null, so a bare `===` would latch true. Require an actual
+      // fullscreen element that IS our cover.
+      const active =
+        document.fullscreenElement != null &&
+        document.fullscreenElement === trailerContainerRef.current
+      setIsFullscreen(active)
+    }
+    document.addEventListener('fullscreenchange', onChange)
+    return () => document.removeEventListener('fullscreenchange', onChange)
+  }, [])
+  // Leave fullscreen if the preview ends (e.g. autoplay turned off) while active.
+  React.useEffect(() => {
+    if (!previewActive && document.fullscreenElement) void document.exitFullscreen?.()
+  }, [previewActive])
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen?.()
+    } else {
+      // Focus mode starts playing + with sound. The gesture (this click) carries
+      // into unMute so the browser allows audio; it stays unmuted after exiting.
+      setPaused(false)
+      setTrailerMuted(false)
+      void trailerContainerRef.current?.requestFullscreen?.()
+    }
+  }
+
+  // Spacebar toggles play/pause while in full view (matches the on-screen
+  // button). Ignored outside fullscreen so it never hijacks the page's scroll.
+  React.useEffect(() => {
+    if (!isFullscreen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault()
+        setPaused((p) => !p)
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [isFullscreen])
 
   // Freeze carousel autoplay while a trailer is engaged (hover preview loading/
   // playing, or the trailer dialog open) so rotation never interrupts it. Keyed
@@ -96,23 +153,19 @@ export function HeroSlide({
     return () => setSlidePaused(movie.id, false)
   }, [movie.id, trailerEngaged, setSlidePaused])
 
-  // Arm the preview whenever the pointer is over the slide AND a trailer key is
-  // available. Keying the timer off both means a key that arrives *after* the
-  // hover started still triggers (the earlier bug: hovering before the lazy
-  // fetch resolved showed nothing and never retried).
+  // Autoplay the muted trailer for the whole time this slide is the on-screen
+  // one — same opt-out behaviour on every device. The preview is tied ONLY to
+  // the slide being active (+ autoplay enabled + a key), never to hover, so the
+  // trailer keeps playing when the pointer wanders off the stage or up to the
+  // header. `trailerEngaged` freezes carousel rotation while it plays so it
+  // never rotates away mid-trailer; a swipe still advances manually. When the
+  // slide goes inactive the cleanup unmounts it.
   React.useEffect(() => {
-    if (!hovering || !hasHover || reduce || !trailerKey) return
-    const t = setTimeout(() => setPreviewActive(true), HOVER_PREVIEW_DELAY)
-    return () => clearTimeout(t)
-  }, [hovering, hasHover, reduce, trailerKey])
-
-  // Touch devices: autoplay the muted trailer once this slide is the on-screen
-  // one — the mobile counterpart to the desktop hover preview. `trailerEngaged`
-  // (above) freezes autoplay while it plays so the carousel doesn't rotate away
-  // mid-trailer; a swipe still advances manually. Deactivating unmounts it.
-  React.useEffect(() => {
-    if (hasHover || reduce || !trailerKey || !active || !autoplayEnabled) return
-    const t = setTimeout(() => setPreviewActive(true), TOUCH_PREVIEW_DELAY)
+    if (reduce || !trailerKey || !active || !autoplayEnabled) return
+    const t = setTimeout(
+      () => setPreviewActive(true),
+      hasHover ? HOVER_PREVIEW_DELAY : TOUCH_PREVIEW_DELAY
+    )
     return () => {
       clearTimeout(t)
       setPreviewActive(false)
@@ -120,12 +173,6 @@ export function HeroSlide({
   }, [hasHover, reduce, trailerKey, active, autoplayEnabled])
 
   const href = mediaType === 'tv' ? `/tv-shows/${movie.id}` : `/movies/${movie.id}`
-
-  const handleEnter = () => setHovering(true)
-  const handleLeave = () => {
-    setHovering(false)
-    setPreviewActive(false)
-  }
 
   const showLogo = !!logoPath && !logoError
 
@@ -137,11 +184,7 @@ export function HeroSlide({
   const cinematic = previewActive
 
   return (
-    <div
-      className="relative size-full overflow-hidden"
-      onMouseEnter={handleEnter}
-      onMouseLeave={handleLeave}
-    >
+    <div className="relative size-full overflow-hidden">
       {/* Backdrop — full-bleed landscape, falling back to the poster. */}
       {media.backdrop_path ? (
         <BlurredImage
@@ -172,10 +215,16 @@ export function HeroSlide({
       {/* Muted trailer that fades in on hover. */}
       {trailerKey && (
         <HeroTrailerPreview
+          ref={trailerContainerRef}
           trailerKey={trailerKey}
           active={previewActive}
           title={title}
           muted={trailerMuted}
+          fullscreen={isFullscreen}
+          paused={paused}
+          onExitFullscreen={toggleFullscreen}
+          onTogglePlay={() => setPaused((p) => !p)}
+          onToggleMute={() => setTrailerMuted((m) => !m)}
         />
       )}
 
@@ -302,18 +351,36 @@ export function HeroSlide({
         </div>
       </div>
 
-      {/* Mute toggle — top-level (not nested in the preview's z-[5] cover) so it
-          clears the scrims/content and stays visible + clickable. Only while the
-          trailer is actually playing. Mobile: sits left of the autoplay toggle
-          (right-4) so they don't overlap; desktop has no autoplay toggle, so it
-          takes the corner. */}
-      {trailerKey && !reduce && previewActive && (
+      {/* Control cluster — all top-level (not nested in the preview's z-[5]
+          cover) so they clear the scrims/content and stay visible + clickable.
+          Same corner stack on every breakpoint, right → left: autoplay toggle
+          (always, when a trailer exists), then mute + full-view (only while the
+          trailer is actually playing). Fixed right offsets keep them from ever
+          overlapping. */}
+
+      {/* Full view (enter) — native browser fullscreen, "focus on the play".
+          Only while the trailer plays; the EXIT control lives inside the cover
+          (HeroTrailerPreview) since these page-level buttons vanish in
+          fullscreen. */}
+      {!reduce && previewActive && !isFullscreen && (
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          aria-label="Full view"
+          className="pointer-events-auto absolute right-[7.5rem] bottom-24 z-[60] flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:bottom-16"
+        >
+          <Maximize className="size-5" />
+        </button>
+      )}
+
+      {/* Mute toggle — only while the trailer is actually playing. */}
+      {!reduce && previewActive && !isFullscreen && (
         <button
           type="button"
           onClick={() => setTrailerMuted((m) => !m)}
           aria-label={trailerMuted ? 'Unmute trailer' : 'Mute trailer'}
           aria-pressed={!trailerMuted}
-          className="pointer-events-auto absolute right-[4.25rem] bottom-24 z-[60] flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:right-4 lg:bottom-16"
+          className="pointer-events-auto absolute right-[4.25rem] bottom-24 z-[60] flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:bottom-16"
         >
           {trailerMuted ? (
             <VolumeX className="size-5" />
@@ -323,9 +390,11 @@ export function HeroSlide({
         </button>
       )}
 
-      {/* Autoplay opt-out (touch only — desktop previews on hover). Lets the user
-          turn the muted trailer autoplay off/on; the choice persists. */}
-      {trailerKey && !reduce && (
+      {/* Autoplay opt-out — every breakpoint (desktop autoplays too). Shown as
+          soon as this slide is on screen (not gated on the lazy trailer fetch)
+          so it doesn't pop in late; toggling persists the choice. Hidden in
+          fullscreen. */}
+      {!reduce && active && !isFullscreen && (
         <button
           type="button"
           onClick={() => {
@@ -342,7 +411,7 @@ export function HeroSlide({
               : 'Turn on trailer autoplay'
           }
           aria-pressed={autoplayEnabled}
-          className="pointer-events-auto absolute right-4 bottom-24 z-[60] flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:hidden"
+          className="pointer-events-auto absolute right-4 bottom-24 z-[60] flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:bottom-16"
         >
           {autoplayEnabled ? (
             <Video className="size-5" />

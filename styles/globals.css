@@ -177,6 +177,10 @@
      cinematic crop; the title/meta overlay is the focus, not the frame edges. */
   scale: 1.35;
 }
+/* Full view (native fullscreen): keep the full-bleed crop, just a black base. */
+.hero-trailer-cover:fullscreen {
+  background: #000;
+}
 
 /* Fixed animated aurora backdrop behind ALL content (mounted once in the root
    layout, so it's on every page). A deep static base keeps corners from going
