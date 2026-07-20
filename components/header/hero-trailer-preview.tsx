@@ -18,6 +18,11 @@ interface HeroTrailerPreviewProps {
   // + play/pause) have to live inside here — it's the only affordance out
   // besides Esc.
   fullscreen?: boolean
+  // Coarse-pointer (touch) device — no hover, no cursor. Full view uses a
+  // simpler gesture there: tap the film to play/pause directly, with exit + mute
+  // pinned. Desktop keeps the summon-a-center-button flow. Mirrors the slide's
+  // `hasHover`.
+  touch?: boolean
   // Paused state, owned by the parent so the spacebar shortcut can drive it too.
   paused?: boolean
   onExitFullscreen?: () => void
@@ -39,6 +44,7 @@ export const HeroTrailerPreview = React.forwardRef<
     title,
     muted,
     fullscreen,
+    touch,
     paused,
     onExitFullscreen,
     onTogglePlay,
@@ -82,6 +88,7 @@ export const HeroTrailerPreview = React.forwardRef<
             <FullscreenControls
               paused={!!paused}
               muted={muted}
+              touch={!!touch}
               onTogglePlay={onTogglePlay}
               onToggleMute={onToggleMute}
               onExitFullscreen={onExitFullscreen}
@@ -94,27 +101,94 @@ export const HeroTrailerPreview = React.forwardRef<
 })
 
 // Auto-hiding full-view controls. In full view the trailer is the whole point,
-// so the chrome shouldn't sit on top of it. Behaviour, like a real player:
+// so the chrome shouldn't sit on top of it.
+//
+// TOUCH (mobile): the whole film is the play/pause button — tap anywhere to
+// toggle, no center button, nothing to summon. Exit + mute stay pinned top-right
+// (dimmed) so they're always reachable. This is the entire mobile behaviour; the
+// desktop machinery below never runs.
+//
+// DESKTOP (hover + fine pointer), like a real player:
 //   • enter full view → controls flash in, then fade out after a short idle
-//   • move the mouse / touch the screen → they come back
-//   • tap the backdrop → toggle them (summon or dismiss on demand)
+//   • tap / click the film → toggle them (summon or dismiss on demand)
 //   • while PAUSED they stay pinned — the Play button must always be reachable
-// The cursor hides with the controls on desktop so nothing floats over the film.
+// Deliberately NOT wired to pointermove: on desktop a mouse jitters constantly,
+// which kept re-summoning the controls so they never actually hid ("I still see
+// the play/pause"). Click-to-toggle is the single gesture. The cursor hides with
+// the controls so nothing floats over the film.
 const IDLE_MS = 2600
 
-function FullscreenControls({
+type FullViewControlsProps = {
+  paused: boolean
+  muted: boolean
+  touch: boolean
+  onTogglePlay?: () => void
+  onToggleMute?: () => void
+  onExitFullscreen?: () => void
+}
+
+// Two distinct full-view behaviours; pick one. Kept as separate components (not
+// one body with an early return) so neither ends up calling hooks conditionally.
+function FullscreenControls(props: FullViewControlsProps) {
+  return props.touch ? (
+    <TouchFullscreenControls {...props} />
+  ) : (
+    <DesktopFullscreenControls {...props} />
+  )
+}
+
+// Touch: the whole film IS the play/pause button — tap anywhere to toggle. No
+// timers, no center button, no summon flow. Exit + mute stay pinned top-right.
+function TouchFullscreenControls({
+  muted,
+  onTogglePlay,
+  onToggleMute,
+  onExitFullscreen,
+}: FullViewControlsProps) {
+  return (
+    <div
+      // pointer-events-auto: the cover is pointer-events-none, so this layer
+      // catches the tap. A tap anywhere on the film toggles play/pause.
+      className="pointer-events-auto absolute inset-0 z-[65]"
+      onClick={() => onTogglePlay?.()}
+    >
+      {/* Pinned mute + exit, top-right. Dimmed so they sit quietly over the
+          film; stopPropagation so pressing them doesn't also toggle play. */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleMute?.()
+        }}
+        aria-label={muted ? 'Unmute' : 'Mute'}
+        aria-pressed={!muted}
+        className="pointer-events-auto absolute top-5 right-[4.75rem] z-[70] flex size-11 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white opacity-70 backdrop-blur-md transition active:opacity-100"
+      >
+        {muted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
+      </button>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          onExitFullscreen?.()
+        }}
+        aria-label="Exit full view"
+        className="pointer-events-auto absolute top-5 right-5 z-[70] flex size-11 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white opacity-70 backdrop-blur-md transition active:opacity-100"
+      >
+        <Minimize className="size-5" />
+      </button>
+    </div>
+  )
+}
+
+// Desktop: auto-hiding controls with a center play/pause button.
+function DesktopFullscreenControls({
   paused,
   muted,
   onTogglePlay,
   onToggleMute,
   onExitFullscreen,
-}: {
-  paused: boolean
-  muted: boolean
-  onTogglePlay?: () => void
-  onToggleMute?: () => void
-  onExitFullscreen?: () => void
-}) {
+}: FullViewControlsProps) {
   const [visible, setVisible] = React.useState(true)
   const hideTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -148,8 +222,8 @@ function FullscreenControls({
     return clearTimer
   }, [paused, scheduleHide, clearTimer])
 
-  // A bare tap on the film toggles the controls; dragging a mouse / finger
-  // always summons them.
+  // A tap/click on the film toggles the controls — the ONLY way to summon them
+  // (no pointermove reveal; see the note above).
   const onBackdropClick = React.useCallback(() => {
     setVisible((v) => {
       if (v) {
@@ -166,7 +240,6 @@ function FullscreenControls({
       // pointer-events-auto: the cover itself is pointer-events-none, so this
       // layer is what actually catches taps/moves to summon the controls.
       className={`pointer-events-auto absolute inset-0 z-[65] ${shown ? '' : 'cursor-none'}`}
-      onPointerMove={reveal}
       onClick={onBackdropClick}
     >
       <AnimatePresence>

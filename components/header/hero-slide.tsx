@@ -243,6 +243,7 @@ export function HeroSlide({
           title={title}
           muted={trailerMuted}
           fullscreen={isFullscreen}
+          touch={!hasHover}
           paused={paused}
           onExitFullscreen={toggleFullscreen}
           onTogglePlay={() => setPaused((p) => !p)}
