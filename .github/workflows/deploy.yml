@@ -35,23 +35,6 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Persist Next.js's webpack compiler cache between builds so `next build`
-      # (inside deploy:full) doesn't recompile every client bundle from scratch
-      # — this is the fix for Next's "No Cache Detected in Build" warning.
-      # Deliberately scoped to /webpack ONLY: caching all of .next/cache would
-      # also persist Next's fetch/data cache (fetchClient fetches with
-      # next.revalidate=28800 = 8h). These refresh builds run every 6h, so a
-      # persisted fetch cache would replay <8h-old TMDB responses and partially
-      # defeat the 4x/day refresh. Key rotates on lockfile/source changes;
-      # restore-keys gives a warm partial cache for incremental compiles.
-      - name: Cache Next.js build cache
-        uses: actions/cache@v5
-        with:
-          path: .next/cache/webpack
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**/*.{js,jsx,ts,tsx}') }}
-          restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
-
       # IMDb's Non-Commercial dataset refreshes once a day, but this workflow
       # deploys up to 4x/day. Cache the generated rating shards keyed by UTC
       # date so only the FIRST deploy each day downloads + shards the ~10MB
