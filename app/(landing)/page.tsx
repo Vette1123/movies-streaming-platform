@@ -17,6 +17,13 @@ import { MoviesIntroSection } from '@/components/main-page/intro-section'
 // is deliberate: an on-demand render fans out enough TMDB subrequests to trip the
 // Cloudflare free-plan 50-subrequests/invocation cap (and the 10ms CPU ceiling),
 // which is what 500'd / 1102'd this page. Static build has no such caps.
+//
+// force-static is REQUIRED, not just revalidate=false: the data fetches go through
+// fetchClient with next.revalidate=28800, and Next takes the MIN of the segment
+// revalidate and every fetch's revalidate — so revalidate=false alone still left
+// the route on an 8h ISR timer (re-rendering on the Worker). force-static forces
+// every fetch to force-cache, making the route genuinely build-only (revalidate ∞).
+export const dynamic = 'force-static'
 export const revalidate = false
 
 const HOME_DESCRIPTION =

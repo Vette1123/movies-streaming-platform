@@ -17,13 +17,18 @@ import {
 import { cn } from '@/lib/utils'
 import { GenreMediaGrid } from '@/components/media/genre-media-grid'
 
-// Fully static: the genre set is finite and fixed, so all slugs are prebuilt
-// below and served from static assets — never rendered on the Worker (no
-// free-plan subrequest/CPU caps). revalidate=false → refreshed by the 4x/day CI
-// deploy. dynamicParams=false → any non-genre slug 404s at the edge instead of
-// cold-rendering (findMovieGenreBySlug would notFound() it anyway).
+// Static: the genre set is finite and fixed, so all slugs are prebuilt below and
+// served from static assets — never rendered on the Worker (no free-plan
+// subrequest/CPU caps). revalidate=false → refreshed by the 4x/day CI deploy.
+// dynamicParams MUST stay true: under OpenNext/Cloudflare, dynamicParams=false
+// 404s even the prebuilt SSG pages (valid genres returned 404). With it true the
+// prebuilt genres serve static, and any non-genre slug falls through to one cheap
+// on-demand render that notFound()s → 404 (same result, no static regression).
+// force-static forces the fetches to cache (else fetchClient's revalidate=28800
+// floors the route back onto an 8h ISR timer instead of build-only).
+export const dynamic = 'force-static'
 export const revalidate = false
-export const dynamicParams = false
+export const dynamicParams = true
 
 export function generateStaticParams() {
   return MOVIE_GENRES_WITH_SLUG.map((genre) => ({ slug: genre.slug }))
