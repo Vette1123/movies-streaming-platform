@@ -15,14 +15,48 @@ import { apiConfig } from '@/lib/tmdbConfig'
 const MAX_CONCURRENT = 10
 const MAX_RETRIES = 4
 
-// MANDATORY per-request timeout. Without it a single stalled TMDB connection
-// never settles, so the `finally { release() }` below never runs and its
-// semaphore slot leaks forever. Leak MAX_CONCURRENT slots and every later
-// request blocks in `acquire()` for good — the Workers runtime then kills the
-// isolate with "your Worker's code had hung and would never generate a
-// response". A bounded fetch turns that hang into a normal rejection that
-// callers already handle (fail-soft to empty/null). Do NOT remove.
-const FETCH_TIMEOUT_MS = 8000
+// The concurrency governor exists ONLY for `next build`: generateStaticParams
+// prerenders ~1800 detail pages, each firing several TMDB calls — hundreds of
+// concurrent requests that make TMDB return 429 and break the build.
+//
+// In the PRODUCTION Worker runtime it is not just useless but harmful.
+// `active`/`waiters` are module-global, shared across EVERY request in an
+// isolate — yet at runtime there is no fan-out (reads are cache hits or a single
+// call per request). One stalled request can then park every other request in
+// `acquire()` until the Workers runtime kills them, which surfaces as blank
+// episode lists and hydration (#418) errors.
+//
+// So gate the gate: govern only where a fan-out actually happens — the
+// production build and the dev server (whose generateStaticParams also fans out
+// on a cold request). The production server runtime flows straight through.
+// Critically the DEFAULT (an unknown/undefined NEXT_PHASE) is "don't govern",
+// so if the Worker ever reports an unexpected phase we fail toward the safe,
+// non-blocking path rather than re-introducing the isolate hang.
+const GOVERN =
+  process.env.NEXT_PHASE === 'phase-production-build' ||
+  process.env.NEXT_PHASE === 'phase-development-server'
+
+// Hard ceiling on how long a caller will wait for a slot. A lost wake or a wave
+// of stalled holders must NEVER block a caller forever (on Workers that becomes
+// a hung request). Past this we proceed anyway — briefly overshooting
+// MAX_CONCURRENT is far cheaper than a hang. Only ever reached during build.
+const ACQUIRE_TIMEOUT_MS = 15000
+
+// Per-request timeout — a LAST-RESORT net against a genuinely hung TMDB
+// connection, nothing tighter. It must be generous, because the abort fires on
+// WALL-CLOCK time, which includes any stretch the event loop is blocked by
+// something else (Turbopack compiling in dev, a CPU-heavy render on a cold
+// Worker isolate in prod). The old 8s value counted that stall time and so
+// aborted perfectly healthy fetches — a single busy isolate turned every TMDB
+// call into a TimeoutError, blanking episode lists and driving the #418
+// hydration storm. A slow-but-fine fetch must never be killed; only a truly
+// dead connection should. The semaphore that this used to protect from leaked
+// slots no longer runs in the prod server runtime (see GOVERN), so there's
+// nothing left for a tight timeout to guard there — err long. 60s is pure
+// safety margin: a healthy TMDB call returns in well under a second, so this
+// ceiling only ever trips on a genuinely dead connection, never on a
+// slow-but-fine one on a cold isolate.
+const FETCH_TIMEOUT_MS = 60000
 
 let active = 0
 const waiters: Array<() => void> = []
@@ -42,8 +76,19 @@ const waiters: Array<() => void> = []
 // stranded behind an aborted one; only as many as have capacity proceed, the
 // rest re-queue on the next loop iteration.
 const acquire = async (): Promise<void> => {
+  const deadline = Date.now() + ACQUIRE_TIMEOUT_MS
   while (active >= MAX_CONCURRENT) {
-    await new Promise<void>((resolve) => waiters.push(resolve))
+    const remaining = deadline - Date.now()
+    if (remaining <= 0) break // fail-open: never hang forever on a lost wake
+    // Wake on release OR on a short self-timer, so a missed wake can only cost a
+    // brief re-poll, never an unbounded stall.
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, Math.min(remaining, 500))
+      waiters.push(() => {
+        clearTimeout(timer)
+        resolve()
+      })
+    })
   }
   active++
 }
@@ -77,7 +122,10 @@ export const fetchClient = {
       }),
     }
 
-    await acquire()
+    // Only serialize behind the governor where a fan-out happens (see GOVERN).
+    // In the prod server runtime this is a no-op, so no request can ever be
+    // blocked by another.
+    if (GOVERN) await acquire()
     try {
       for (let attempt = 0; ; attempt++) {
         const res = await fetch(fullUrl, {
@@ -119,7 +167,7 @@ export const fetchClient = {
       console.error(error)
       throw error
     } finally {
-      release()
+      if (GOVERN) release()
     }
   },
   post: async <T>(url: string, body = {}): Promise<T> => {
