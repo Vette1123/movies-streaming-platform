@@ -27,9 +27,14 @@
 //   CLOUDFLARE_API_TOKEN=<token> CF_ZONE_NAME=reely.space pnpm waf:apply
 //
 // Token needs these zone-level permissions on reely.space:
-//   - Zone.Zone Settings: Edit
-//   - Zone.Zone WAF: Edit
-//   - Zone.Bot Management: Edit  (optional, for Bot Fight Mode toggle)
+//   - Zone.Zone Settings: Edit    (Tiered Cache)
+//   - Zone.Zone WAF: Edit         (custom rules + rate limit)
+//   - Zone.Transform Rules: Edit  (apex→www redirect AND the Vary-strip that
+//                                  makes the edge cache actually cache — without
+//                                  this both silently ✗-skip and apex keeps
+//                                  getting indexed as a duplicate of www)
+//   - Zone.Cache Rules: Edit      (edge-cache rule — the 10ms-CPU defence)
+//   - Zone.Bot Management: Edit   (optional, for Bot Fight Mode toggle)
 
 import process from 'node:process'
 
