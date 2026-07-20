@@ -24,11 +24,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: pnpm
@@ -45,7 +45,7 @@ jobs:
       # defeat the 4x/day refresh. Key rotates on lockfile/source changes;
       # restore-keys gives a warm partial cache for incremental compiles.
       - name: Cache Next.js build cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .next/cache/webpack
           key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**/*.{js,jsx,ts,tsx}') }}
@@ -64,7 +64,7 @@ jobs:
 
       - name: Cache IMDb rating shards (daily)
         id: imdb-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: public/imdb-ratings
           key: imdb-ratings-${{ steps.today.outputs.day }}
@@ -108,3 +108,32 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ZONE_NAME: reely.space
+
+      # Post-deploy smoke test = our 5xx alert. Curl the critical routes and FAIL
+      # the job (→ GitHub emails on the red run) if any returns a 5xx. This is what
+      # catches a regression like the homepage 500 ("Too many subrequests by single
+      # Worker invocation") seconds after rollout instead of from user reports.
+      # Browser UA clears the WAF scraper challenge (empty-UA → managed challenge).
+      # A short retry absorbs the first-hit cold render / edge-cache warm-up.
+      - name: Smoke test (fail on 5xx)
+        run: |
+          UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          BASE='https://www.reely.space'
+          PATHS='/ /movies /tv-shows /movies/550 /imdb-ratings/0.json'
+          fail=0
+          for p in $PATHS; do
+            code=0
+            for attempt in 1 2 3; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' -A "$UA" --max-time 20 "$BASE$p")
+              # 2xx/3xx/4xx are fine here; only a 5xx (or curl failure = 000) is a deploy failure.
+              if [ "$code" -lt 500 ] && [ "$code" != "000" ]; then break; fi
+              echo "  $p -> $code (attempt $attempt), retrying…"; sleep 5
+            done
+            if [ "$code" -ge 500 ] || [ "$code" = "000" ]; then
+              echo "::error::Smoke test FAILED: $BASE$p returned $code"
+              fail=1
+            else
+              echo "OK  $p -> $code"
+            fi
+          done
+          exit $fail
