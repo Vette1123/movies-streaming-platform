@@ -7,7 +7,7 @@ import {
   SeriesDetailsWithExtras,
 } from '@/types/series-details'
 import { SeriesResponse } from '@/types/series-result'
-import { getImdbRating } from '@/services/imdb'
+import { attachImdbRatings, getImdbRating } from '@/services/imdb'
 
 import { fetchClient } from '@/lib/fetch-client'
 import { tvType } from '@/lib/tmdbConfig'
@@ -16,20 +16,23 @@ import { pickTrailerKey } from '@/lib/videos'
 const getLatestTrendingSeries = async (params: Param = {}) => {
   const url = `${tvType.trending}/tv/day?language=en-US`
   const rawData = await fetchClient.get<SeriesResponse>(url, params, true)
-  return seriesDTO(rawData)
+  const dto = seriesDTO(rawData)
+  return { ...dto, results: await attachImdbRatings(dto.results, 'tv') }
 }
 
 const getPopularSeries = async (params: Param = {}) => {
   'use server'
   const url = `tv/${tvType.popular}?language=en-US`
   const rawData = await fetchClient.get<SeriesResponse>(url, params, true)
-  return seriesDTO(rawData)
+  const dto = seriesDTO(rawData)
+  return { ...dto, results: await attachImdbRatings(dto.results, 'tv') }
 }
 
 const getAllTimeTopRatedSeries = async (params: Param = {}) => {
   const url = `tv/${tvType.top_rated}?language=en-US`
   const rawData = await fetchClient.get<SeriesResponse>(url, params, true)
-  return seriesDTO(rawData)
+  const dto = seriesDTO(rawData)
+  return { ...dto, results: await attachImdbRatings(dto.results, 'tv') }
 }
 
 // Single TMDB request that returns details + credits + similar +

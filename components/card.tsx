@@ -41,6 +41,9 @@ export const Card = ({
   const releaseDate = item?.release_date || item?.first_air_date
   const year = releaseDate?.slice(0, 4)
   const overview = item?.overview ?? ''
+  // Prefer the real IMDb score (attached to list items server-side) and mark it
+  // with the IMDb wordmark; the TMDB average is the labelled-star fallback.
+  const imdbRating = item?.imdbRating
 
   // Read-only "watched" indicator. localStorage is client-only, so gate on mount
   // to stay hydration-safe (matches NewBadgeWhenRecent). Only movies carry a
@@ -121,10 +124,19 @@ export const Card = ({
 
               {/* Bottom gradient with rating + year for at-a-glance context */}
               <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-2 rounded-b-lg bg-gradient-to-t from-black/85 to-transparent px-3 pt-8 pb-2.5 text-[11px] font-medium text-white opacity-0 transition-opacity duration-300 group-hover/card:opacity-100">
-                <span className="flex items-center gap-1">
-                  <Star className="size-3.5 fill-amber-400 text-amber-400" />
-                  {numberRounder(item.vote_average) ?? 'NR'}
-                </span>
+                {imdbRating ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="rounded-[3px] bg-[#f5c518] px-1 py-px text-[9px] leading-none font-bold tracking-wide text-black">
+                      IMDb
+                    </span>
+                    {imdbRating}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <Star className="size-3.5 fill-amber-400 text-amber-400" />
+                    {numberRounder(item.vote_average) ?? 'NR'}
+                  </span>
+                )}
                 {year && <span className="text-white/60">· {year}</span>}
               </div>
             </motion.div>
@@ -138,10 +150,17 @@ export const Card = ({
               {title}
               {year ? ` (${year})` : ''}
             </h4>
-            <Badge className="shrink-0 gap-1">
-              <Star className="size-3 fill-current" />
-              {numberRounder(item.vote_average) ?? 'NR'}
-            </Badge>
+            {imdbRating ? (
+              <Badge className="shrink-0 gap-1 bg-[#f5c518] text-black hover:bg-[#f5c518]">
+                <span className="text-[10px] font-bold tracking-wide">IMDb</span>
+                {imdbRating}
+              </Badge>
+            ) : (
+              <Badge className="shrink-0 gap-1">
+                <Star className="size-3 fill-current" />
+                {numberRounder(item.vote_average) ?? 'NR'}
+              </Badge>
+            )}
           </div>
           {overview && (
             <p className="text-muted-foreground text-sm">

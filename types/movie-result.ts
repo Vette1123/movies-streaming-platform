@@ -18,6 +18,10 @@ type Movie = {
   media_type?: ItemType
   name?: string
   first_air_date?: string
+  // Real IMDb score (e.g. "8.6"), attached to list items by attachImdbRatings in
+  // services/imdb.ts. List endpoints don't return imdb_id, so this is resolved via
+  // a cached external_ids lookup; null when unavailable (card falls back to TMDB).
+  imdbRating?: string | null
 }
 
 interface MovieResponse {

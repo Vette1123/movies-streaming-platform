@@ -11,6 +11,7 @@ import { Clapperboard } from 'lucide-react'
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
 import {
+  ACCENT_BAR_VARIANT,
   CHANGE_COLOR_VARIANT,
   HIDDEN_TEXT_ARROW_VARIANT,
   HIDDEN_TEXT_VARIANT,
@@ -42,9 +43,14 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
           className="mb-4 flex w-fit items-center gap-2"
         >
           <motion.h2
-            className="text-2xl font-bold transition"
+            className="flex items-center gap-2.5 text-2xl font-bold tracking-tight transition"
             variants={CHANGE_COLOR_VARIANT}
           >
+            <motion.span
+              aria-hidden
+              variants={ACCENT_BAR_VARIANT}
+              className="h-5 w-[3px] origin-center rounded-full bg-gradient-to-b from-cyan-300 to-cyan-500 shadow-[0_0_8px_rgba(103,232,249,0.5)]"
+            />
             {title}
           </motion.h2>
           <motion.div

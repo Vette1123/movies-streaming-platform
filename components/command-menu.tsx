@@ -300,7 +300,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
             ))}
           </div>
         )}
-        <CommandList className="max-h-[65vh] min-h-0 flex-1 sm:max-h-[460px] sm:flex-none">
+        <CommandList className="max-h-[75vh] min-h-0 flex-1 sm:max-h-[min(72vh,620px)] sm:min-h-[460px] sm:flex-none">
           <CommandGroup heading={resultsHeading}>
             {status === 'idle' &&
               (recent.length > 0 ? (
@@ -388,6 +388,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                 const rating = movie?.vote_average
                   ? movie.vote_average.toFixed(1)
                   : null
+                const imdbRating = movie?.imdbRating
                 const votes = movie?.vote_count
                   ? compactNumber.format(movie.vote_count)
                   : null
@@ -467,26 +468,37 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                             query={trimmedQuery}
                           />
                         </p>
-                        {(year || rating || showOriginal) && (
+                        {(year || imdbRating || rating || showOriginal) && (
                           <p className="text-muted-foreground truncate text-xs">
                             {showOriginal && (
                               <span className="italic">
                                 {movie.original_title}
                               </span>
                             )}
-                            {showOriginal && (year || rating) && ' • '}
+                            {showOriginal &&
+                              (year || imdbRating || rating) &&
+                              ' • '}
                             {year}
-                            {year && rating && ' • '}
-                            {rating && (
+                            {year && (imdbRating || rating) && ' • '}
+                            {imdbRating ? (
                               <>
-                                {rating}★
-                                {votes && (
-                                  <span className="text-muted-foreground/80">
-                                    {' '}
-                                    · {votes}
-                                  </span>
-                                )}
+                                <span className="rounded-[2px] bg-[#f5c518] px-1 align-middle text-[9px] font-bold text-black">
+                                  IMDb
+                                </span>{' '}
+                                {imdbRating}
                               </>
+                            ) : (
+                              rating && (
+                                <>
+                                  {rating}★
+                                  {votes && (
+                                    <span className="text-muted-foreground/80">
+                                      {' '}
+                                      · {votes}
+                                    </span>
+                                  )}
+                                </>
+                              )
                             )}
                           </p>
                         )}

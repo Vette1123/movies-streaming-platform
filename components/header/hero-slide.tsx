@@ -256,10 +256,6 @@ export function HeroSlide({
                 is always identifiable; only the long overview recedes (below) to
                 give the trailer more of the frame. */}
             <div className="max-w-2xl">
-              <NewBadgeWhenRecent
-                date={movie.release_date || movie.first_air_date}
-                className="relative top-0 left-0 mb-3 px-2.5 py-1 text-[11px] lg:text-xs"
-              />
               {showLogo ? (
                 // Stack the text title and the official logo in one bottom-
                 // aligned box that reserves the logo's height, so there's no
@@ -268,14 +264,23 @@ export function HeroSlide({
                 // in. Plain <img> so we don't fight next/image over the logo's
                 // arbitrary aspect ratio; it falls back to the text on error.
                 <div className="relative mb-3 flex min-h-16 items-end sm:min-h-20 lg:mb-4 lg:min-h-32">
-                  <h2
-                    aria-hidden={logoLoaded}
-                    className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md transition-opacity duration-500 ease-out sm:text-4xl lg:text-6xl ${
-                      logoLoaded ? 'opacity-0' : 'opacity-100'
-                    }`}
-                  >
-                    {title}
-                  </h2>
+                  {/* NEW badge + title share one bottom-aligned column so the tag
+                      hugs the title instead of floating at the top of the reserved
+                      logo space. z-10 keeps it above the rising logo. */}
+                  <div className="relative z-10 flex flex-col items-start">
+                    <NewBadgeWhenRecent
+                      date={movie.release_date || movie.first_air_date}
+                      className="relative top-0 left-0 mb-2 px-2.5 py-1 text-[11px] lg:text-xs"
+                    />
+                    <h2
+                      aria-hidden={logoLoaded}
+                      className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md transition-opacity duration-500 ease-out sm:text-4xl lg:text-6xl ${
+                        logoLoaded ? 'opacity-0' : 'opacity-100'
+                      }`}
+                    >
+                      {title}
+                    </h2>
+                  </div>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={getImageURL(logoPath!)}
@@ -290,9 +295,15 @@ export function HeroSlide({
                   />
                 </div>
               ) : (
-                <h2 className="text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md sm:text-4xl lg:text-6xl">
-                  {title}
-                </h2>
+                <div className="mb-3 flex flex-col items-start lg:mb-4">
+                  <NewBadgeWhenRecent
+                    date={movie.release_date || movie.first_air_date}
+                    className="relative top-0 left-0 mb-2 px-2.5 py-1 text-[11px] lg:text-xs"
+                  />
+                  <h2 className="text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md sm:text-4xl lg:text-6xl">
+                    {title}
+                  </h2>
+                </div>
               )}
               <HeroRatesInfos movie={movie} genreTable={genreTable} />
               <p

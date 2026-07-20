@@ -3,6 +3,8 @@
 import { FilterParams } from '@/types/filter'
 import { MediaResponse } from '@/types/media'
 import { Param } from '@/types/movie-result'
+import { attachImdbRatings } from '@/services/imdb'
+
 import { fetchClient } from '@/lib/fetch-client'
 
 // Discover movies with filters
@@ -33,7 +35,8 @@ export const discoverMoviesAction = async (
     ...params,
   }
 
-  return fetchClient.get<MediaResponse>(url, queryParams, true)
+  const data = await fetchClient.get<MediaResponse>(url, queryParams, true)
+  return { ...data, results: await attachImdbRatings(data.results || [], 'movie') }
 }
 
 // Discover TV series with filters
@@ -73,6 +76,7 @@ export const discoverSeriesAction = async (
     ...params,
   }
 
-  return fetchClient.get<MediaResponse>(url, queryParams, true)
+  const data = await fetchClient.get<MediaResponse>(url, queryParams, true)
+  return { ...data, results: await attachImdbRatings(data.results || [], 'tv') }
 }
 

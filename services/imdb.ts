@@ -1,5 +1,7 @@
 import { cache } from 'react'
 
+import { fetchClient } from '@/lib/fetch-client'
+
 // IMDb ratings come from IMDb's free Non-Commercial dataset (title.ratings),
 // pre-sharded into small static JSON files by `scripts/build-imdb-ratings.mjs`.
 // There is NO API and NO rate limit — we just read the shard that holds a given
@@ -72,4 +74,45 @@ const getImdbRating = cache(
   }
 )
 
-export { getImdbRating }
+// TMDB list endpoints (trending/popular/top-rated/search) omit imdb_id, so to
+// score a list item we first resolve its IMDb id via the lightweight external_ids
+// endpoint. That TMDB↔IMDb mapping is immutable, so cache it for 30 days: repeat
+// renders re-read the shard (free) without re-writing the fetch cache, keeping us
+// well under the free-plan KV write budget even across many rows.
+const IMDB_ID_REVALIDATE = 60 * 60 * 24 * 30 // 30 days
+
+const getImdbRatingByTmdbId = cache(
+  async (id: number, mediaType: 'movie' | 'tv'): Promise<string | null> => {
+    if (!id) return null
+    try {
+      const { imdb_id } = await fetchClient.get<{ imdb_id?: string | null }>(
+        `${mediaType}/${id}/external_ids`,
+        {},
+        true,
+        IMDB_ID_REVALIDATE
+      )
+      return await getImdbRating(imdb_id)
+    } catch {
+      return null
+    }
+  }
+)
+
+/**
+ * Attach a real IMDb rating to each TMDB list item. Lookups run through the
+ * fetch-client's concurrency governor (so a full page of rows can't stampede
+ * TMDB) and fail soft to null per item — the card then falls back to the TMDB
+ * average. Returns a new array; inputs are not mutated.
+ */
+const attachImdbRatings = async <T extends { id: number }>(
+  items: T[],
+  mediaType: 'movie' | 'tv'
+): Promise<(T & { imdbRating: string | null })[]> =>
+  Promise.all(
+    items.map(async (item) => ({
+      ...item,
+      imdbRating: await getImdbRatingByTmdbId(item.id, mediaType),
+    }))
+  )
+
+export { getImdbRating, getImdbRatingByTmdbId, attachImdbRatings }

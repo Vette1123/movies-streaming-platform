@@ -16,7 +16,7 @@ import {
   MultiRequestProps,
   Param,
 } from '@/types/movie-result'
-import { getImdbRating } from '@/services/imdb'
+import { attachImdbRatings, getImdbRating } from '@/services/imdb'
 
 import { fetchClient } from '@/lib/fetch-client'
 import { movieType } from '@/lib/tmdbConfig'
@@ -29,17 +29,20 @@ const getNowPlayingMovies = async (params: Param = {}) => {
 
 const getLatestTrendingMovies = async (params: Param = {}) => {
   const url = `${movieType.trending}/movie/day?language=en-US`
-  return fetchClient.get<MovieResponse>(url, params, true)
+  const data = await fetchClient.get<MovieResponse>(url, params, true)
+  return { ...data, results: await attachImdbRatings(data.results || [], 'movie') }
 }
 
 const getAllTimeTopRatedMovies = async (params: Param = {}) => {
   const url = `movie/${movieType.top_rated}?language=en-US`
-  return fetchClient.get<MovieResponse>(url, params, true)
+  const data = await fetchClient.get<MovieResponse>(url, params, true)
+  return { ...data, results: await attachImdbRatings(data.results || [], 'movie') }
 }
 const getPopularMovies = async (params: Param = {}) => {
   'use server'
   const url = `movie/${movieType.popular}?language=en-US`
-  return fetchClient.get<MediaResponse>(url, params, true)
+  const data = await fetchClient.get<MediaResponse>(url, params, true)
+  return { ...data, results: await attachImdbRatings(data.results || [], 'movie') }
 }
 
 // New function to get trending media (movies and TV shows) for the week
@@ -90,6 +93,8 @@ const populateHomePageData = async (): Promise<MultiRequestProps> => {
       getAllTimeTopRatedSeries(),
     ])
 
+    // Rows arrive already IMDb-enriched from the source list fetches below, so
+    // the homepage just forwards them. The hero keeps its own IMDb-or-star path.
     return {
       trendingMediaForHero: trendingMediaHeroResponse || [], // Changed from nowPlayingMovies
       latestTrendingMovies: latestTrendingResponse?.results || [],

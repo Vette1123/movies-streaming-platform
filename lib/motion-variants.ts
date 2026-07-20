@@ -47,6 +47,18 @@ const CHANGE_COLOR_VARIANT: Variants = {
   },
 }
 
+// The cyan accent bar beside each row heading. Grows taller and brightens when
+// the (whole) heading link is hovered, so the label feels alive without color-
+// shifting the title text (that's CHANGE_COLOR_VARIANT's job).
+const ACCENT_BAR_VARIANT: Variants = {
+  rest: { scaleY: 1, opacity: 0.85 },
+  hover: {
+    scaleY: 1.35,
+    opacity: 1,
+    transition: { type: 'spring', stiffness: 400, damping: 20 },
+  },
+}
+
 const CARD_VARIANT: Variants = {
   rest: { scale: 1, y: 0 },
   hover: {
@@ -329,6 +341,7 @@ export {
   HIDDEN_TEXT_VARIANT,
   CHANGE_COLOR_VARIANT,
   HIDDEN_TEXT_ARROW_VARIANT,
+  ACCENT_BAR_VARIANT,
   CARD_VARIANT,
   // Carousel variants
   CAROUSEL_SLIDE_VARIANTS,
