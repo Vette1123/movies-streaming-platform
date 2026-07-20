@@ -33,6 +33,10 @@ export const EVENTS = {
   WATCHLIST_REMOVED: 'watchlist_removed',
   // Navigation health
   PAGE_NOT_FOUND: 'page_not_found',
+  // Reliability — any caught API / data-fetch failure (server actions, TMDB,
+  // react-query). Handled errors don't surface as unhandled $exceptions, so we
+  // record them explicitly to catch regressions like a flaky episode list.
+  API_ERROR: 'api_error',
   // Series navigation
   SEASON_SELECTED: 'season_selected',
   // Watch history
@@ -206,6 +210,40 @@ export function trackWatchlistRemoved(props: {
 
 export function trackPageNotFound(props: { path?: string }): void {
   track(EVENTS.PAGE_NOT_FOUND, props)
+}
+
+// ---- Reliability / error tracking -------------------------------------------
+
+/**
+ * Records a caught API / data-fetch failure. Fires two things:
+ *   1. an `api_error` product event (for funnels, alerts, breakdowns), and
+ *   2. a first-class `$exception` via captureException, so the failure lands in
+ *      PostHog Error Tracking with the same route/device enrichment as
+ *      unhandled errors (see providers/posthog-provider.tsx → before_send).
+ * Handled errors never surface on their own, so without this a broken episode
+ * list or a flaky TMDB call is invisible — which is exactly what bit us.
+ */
+export function trackApiError(props: {
+  // Where it happened, e.g. 'season_episodes' or 'react_query'.
+  source: string
+  message: string
+  status?: number
+  media_id?: number
+  media_type?: MediaKind
+  season?: number
+  url?: string
+  query_key?: string
+}): void {
+  if (!isClient()) return
+  posthog.capture(EVENTS.API_ERROR, props)
+  try {
+    posthog.captureException(new Error(`[${props.source}] ${props.message}`), {
+      $exception_source: 'api',
+      ...props,
+    })
+  } catch {
+    // captureException must never itself throw and mask the original failure.
+  }
 }
 
 // ---- Series navigation ------------------------------------------------------
