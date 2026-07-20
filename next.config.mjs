@@ -42,17 +42,6 @@ const nextConfig = {
   },
   async redirects() {
     return [
-      // Canonical host is www.reely.space (see config/site.ts + robots.ts), but
-      // the apex reely.space is also served and was getting indexed as a full
-      // duplicate of every page — the bulk of GSC's "Duplicate without
-      // user-selected canonical". 308 the apex to www so there's one host only;
-      // the self-referencing per-page canonicals then all agree.
-      {
-        source: '/:path*',
-        has: [{ type: 'host', value: 'reely.space' }],
-        destination: 'https://www.reely.space/:path*',
-        permanent: true,
-      },
       {
         source: '/sitemap-movies.xml',
         destination: '/sitemap.xml',
