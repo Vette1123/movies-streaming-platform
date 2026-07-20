@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getCloudflareContext } from '@opennextjs/cloudflare'
 
 import { Video } from '@/types/video'
 import { fetchClient } from '@/lib/fetch-client'
@@ -10,11 +11,22 @@ interface HeroExtrasResponse {
   images?: { logos: TMDBLogo[] }
 }
 
-// Per-slide enrichment for the hero carousel: the best YouTube trailer key and
-// the official title-logo path for one title. Fetched lazily on the client only
-// for slides that actually mount (the active slide + its neighbours), so we
-// never enrich all ~40 trending items up front. Rides on a single TMDB call via
-// append_to_response, and fetchClient's 8h ISR cache makes repeat views free.
+// s-maxage drives the Cache API TTL below (8h), matching the TMDB ISR window.
+const CACHE_CONTROL = 'public, s-maxage=28800, max-age=3600'
+
+// This route is an API route, NOT an ISR page, so OpenNext's incremental-cache
+// interception never touches it — without help it re-runs the TMDB fetch + a
+// full res.json() of the big append_to_response=videos,images payload on EVERY
+// request. On the free Workers plan that parse alone can blow the 10ms CPU
+// budget → the runtime kills the invocation ("exceededCpu") → 503.
+//
+// Fix: serve repeats from the L1 regional Cache API (caches.default) — the same
+// FREE, no-quota, per-datacenter cache OpenNext already leans on for pages (see
+// open-next.config.ts). A hit returns the stored Response directly, skipping the
+// fetch AND the parse, so CPU is near-zero. Only the first miss per colo/8h pays
+// the parse. NOTE: a Worker Response's Cache-Control header is NOT honored by
+// CF's edge automatically — you have to put it in the Cache API yourself, which
+// is exactly what this does.
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl
   const id = searchParams.get('id')
@@ -22,6 +34,18 @@ export async function GET(request: NextRequest) {
 
   if (!id || !/^\d+$/.test(id)) {
     return NextResponse.json({ error: 'invalid id' }, { status: 400 })
+  }
+
+  // `caches.default` is a Workers-runtime extension (not in the DOM CacheStorage
+  // type, hence the cast) and is undefined under `next dev` (Node), so caching is
+  // a prod-only fast path and dev just always computes.
+  const cache = (globalThis.caches as unknown as { default?: Cache } | undefined)
+    ?.default
+  const cacheKey = new Request(`https://cache/hero-extras?type=${type}&id=${id}`)
+
+  if (cache) {
+    const hit = await cache.match(cacheKey)
+    if (hit) return hit
   }
 
   try {
@@ -37,14 +61,21 @@ export async function GET(request: NextRequest) {
       logoPath: pickLogoPath(data.images?.logos) ?? null,
     }
 
-    return NextResponse.json(body, {
-      // Let the CDN hold the tiny JSON at the edge too; the underlying TMDB
-      // fetch is already ISR-cached for the same window.
-      headers: { 'Cache-Control': 'public, s-maxage=28800, max-age=3600' },
+    const response = NextResponse.json(body, {
+      headers: { 'Cache-Control': CACHE_CONTROL },
     })
+
+    // Populate the regional cache without blocking the response. clone() because
+    // the body returned to the client can only be read once.
+    if (cache) {
+      getCloudflareContext().ctx.waitUntil(cache.put(cacheKey, response.clone()))
+    }
+
+    return response
   } catch {
     // Enrichment is non-critical — the slide still works without a trailer or
-    // logo, so degrade quietly rather than surfacing an error.
+    // logo, so degrade quietly rather than surfacing an error. Not cached: a
+    // transient miss shouldn't pin an empty result for 8h.
     return NextResponse.json({ trailerKey: null, logoPath: null })
   }
 }
