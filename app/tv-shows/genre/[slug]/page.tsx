@@ -18,9 +18,9 @@ import { GenreMediaGrid } from '@/components/media/genre-media-grid'
 // served from static assets — never rendered on the Worker (no free-plan
 // subrequest/CPU caps). revalidate=false → refreshed by the 4x/day CI deploy.
 // dynamicParams MUST stay true: under OpenNext/Cloudflare, dynamicParams=false
-// 404s even the prebuilt SSG pages. force-static forces the fetches to cache (else
-// fetchClient's revalidate=28800 floors the route back onto an 8h ISR timer).
-export const dynamic = 'force-static'
+// 404s even the prebuilt SSG pages. discoverSeriesAction fetches with
+// revalidate:false (actions/filter.ts), which is what makes the route build-only —
+// revalidate=false alone would be floored to 8h by the fetch's own revalidate.
 export const revalidate = false
 export const dynamicParams = true
 

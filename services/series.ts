@@ -15,7 +15,8 @@ import { pickTrailerKey } from '@/lib/videos'
 
 const getLatestTrendingSeries = async (params: Param = {}) => {
   const url = `${tvType.trending}/tv/day?language=en-US`
-  const rawData = await fetchClient.get<SeriesResponse>(url, params, true)
+  // revalidate:false → build-only; consumed by the fully static homepage.
+  const rawData = await fetchClient.get<SeriesResponse>(url, params, true, false)
   const dto = seriesDTO(rawData)
   return { ...dto, results: await attachImdbRatings(dto.results, 'tv') }
 }
@@ -23,14 +24,14 @@ const getLatestTrendingSeries = async (params: Param = {}) => {
 const getPopularSeries = async (params: Param = {}) => {
   'use server'
   const url = `tv/${tvType.popular}?language=en-US`
-  const rawData = await fetchClient.get<SeriesResponse>(url, params, true)
+  const rawData = await fetchClient.get<SeriesResponse>(url, params, true, false)
   const dto = seriesDTO(rawData)
   return { ...dto, results: await attachImdbRatings(dto.results, 'tv') }
 }
 
 const getAllTimeTopRatedSeries = async (params: Param = {}) => {
   const url = `tv/${tvType.top_rated}?language=en-US`
-  const rawData = await fetchClient.get<SeriesResponse>(url, params, true)
+  const rawData = await fetchClient.get<SeriesResponse>(url, params, true, false)
   const dto = seriesDTO(rawData)
   return { ...dto, results: await attachImdbRatings(dto.results, 'tv') }
 }

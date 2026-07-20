@@ -35,7 +35,9 @@ export const discoverMoviesAction = async (
     ...params,
   }
 
-  const data = await fetchClient.get<MediaResponse>(url, queryParams, true)
+  // revalidate:false → build-only for the static genre pages; runtime filtering
+  // then reuses the deploy-cached results (fewer TMDB/KV hits), refreshed 4x/day.
+  const data = await fetchClient.get<MediaResponse>(url, queryParams, true, false)
   return { ...data, results: await attachImdbRatings(data.results || [], 'movie') }
 }
 
@@ -76,7 +78,7 @@ export const discoverSeriesAction = async (
     ...params,
   }
 
-  const data = await fetchClient.get<MediaResponse>(url, queryParams, true)
+  const data = await fetchClient.get<MediaResponse>(url, queryParams, true, false)
   return { ...data, results: await attachImdbRatings(data.results || [], 'tv') }
 }
 

@@ -18,12 +18,13 @@ import { MoviesIntroSection } from '@/components/main-page/intro-section'
 // Cloudflare free-plan 50-subrequests/invocation cap (and the 10ms CPU ceiling),
 // which is what 500'd / 1102'd this page. Static build has no such caps.
 //
-// force-static is REQUIRED, not just revalidate=false: the data fetches go through
-// fetchClient with next.revalidate=28800, and Next takes the MIN of the segment
-// revalidate and every fetch's revalidate — so revalidate=false alone still left
-// the route on an 8h ISR timer (re-rendering on the Worker). force-static forces
-// every fetch to force-cache, making the route genuinely build-only (revalidate ∞).
-export const dynamic = 'force-static'
+// revalidate=false here is NOT enough on its own: Next takes the MIN of the
+// segment revalidate and every fetch's revalidate, and fetchClient defaults to
+// next.revalidate=28800 — which would floor the route back onto an 8h ISR timer.
+// The actual lever is that populateHomePageData's fetches pass revalidate:false
+// (see services/movies.ts, services/series.ts) → every fetch is ∞ → the route is
+// genuinely build-only. (force-static does NOT override an explicit fetch
+// revalidate, so it wouldn't have helped — the fetch-level change is what counts.)
 export const revalidate = false
 
 const HOME_DESCRIPTION =

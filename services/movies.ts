@@ -29,26 +29,29 @@ const getNowPlayingMovies = async (params: Param = {}) => {
 
 const getLatestTrendingMovies = async (params: Param = {}) => {
   const url = `${movieType.trending}/movie/day?language=en-US`
-  const data = await fetchClient.get<MovieResponse>(url, params, true)
+  // revalidate:false → build-only; the homepage/list pages that use this are
+  // fully static and refresh on the 4x/day deploy (see fetch-client.ts).
+  const data = await fetchClient.get<MovieResponse>(url, params, true, false)
   return { ...data, results: await attachImdbRatings(data.results || [], 'movie') }
 }
 
 const getAllTimeTopRatedMovies = async (params: Param = {}) => {
   const url = `movie/${movieType.top_rated}?language=en-US`
-  const data = await fetchClient.get<MovieResponse>(url, params, true)
+  const data = await fetchClient.get<MovieResponse>(url, params, true, false)
   return { ...data, results: await attachImdbRatings(data.results || [], 'movie') }
 }
 const getPopularMovies = async (params: Param = {}) => {
   'use server'
   const url = `movie/${movieType.popular}?language=en-US`
-  const data = await fetchClient.get<MediaResponse>(url, params, true)
+  const data = await fetchClient.get<MediaResponse>(url, params, true, false)
   return { ...data, results: await attachImdbRatings(data.results || [], 'movie') }
 }
 
 // New function to get trending media (movies and TV shows) for the week
 const getTrendingAllWeek = async (page: number = 1, params: Param = {}) => {
   const url = `trending/all/week?language=en-US&page=${page}`
-  return fetchClient.get<MovieResponse>(url, params, true) // Assuming MovieResponse can handle mixed media types if structured similarly
+  // revalidate:false → build-only (hero slider is on the fully static homepage).
+  return fetchClient.get<MovieResponse>(url, params, true, false)
 }
 
 // New function to get 40 trending items (2 pages)

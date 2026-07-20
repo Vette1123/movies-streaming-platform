@@ -107,7 +107,10 @@ export const fetchClient = {
     url: string,
     params?: Record<string, string | number>,
     isHeaderAuth = false,
-    revalidate = 28800
+    // `false` caches the fetch indefinitely (revalidate ∞) — used by the fully
+    // static browse pages so their data refreshes only on the 4x/day rebuild, not
+    // on an 8h ISR timer. A number sets a time-based revalidate (default 8h).
+    revalidate: number | false = 28800
   ): Promise<T> => {
     const query = {
       ...params,

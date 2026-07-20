@@ -14,9 +14,9 @@ import { MediaContent } from '@/components/media/media-content'
 // Fully static (see app/(landing)/page.tsx): built once per deploy, served from
 // assets, never rendered on the Worker — so no free-plan subrequest/CPU caps.
 // Filters + pagination are client-side (MediaContent), so nothing here is dynamic.
-// force-static (not just revalidate=false) is required so the fetchClient's
-// next.revalidate=28800 doesn't floor the route back onto an 8h ISR timer.
-export const dynamic = 'force-static'
+// getPopularSeries fetches with revalidate:false (services/series.ts), which is
+// what makes the route build-only — revalidate=false alone would be floored to 8h
+// by the fetch's own revalidate.
 export const revalidate = false
 
 const TV_TITLE = `TV Shows — Browse Popular, Trending & Top Rated`

@@ -24,9 +24,9 @@ import { GenreMediaGrid } from '@/components/media/genre-media-grid'
 // 404s even the prebuilt SSG pages (valid genres returned 404). With it true the
 // prebuilt genres serve static, and any non-genre slug falls through to one cheap
 // on-demand render that notFound()s → 404 (same result, no static regression).
-// force-static forces the fetches to cache (else fetchClient's revalidate=28800
-// floors the route back onto an 8h ISR timer instead of build-only).
-export const dynamic = 'force-static'
+// discoverMoviesAction fetches with revalidate:false (actions/filter.ts), which is
+// what makes the route build-only — revalidate=false alone would be floored to 8h
+// by the fetch's own revalidate.
 export const revalidate = false
 export const dynamicParams = true
 
