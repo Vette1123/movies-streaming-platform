@@ -15,26 +15,43 @@ import { apiConfig } from '@/lib/tmdbConfig'
 const MAX_CONCURRENT = 10
 const MAX_RETRIES = 4
 
+// MANDATORY per-request timeout. Without it a single stalled TMDB connection
+// never settles, so the `finally { release() }` below never runs and its
+// semaphore slot leaks forever. Leak MAX_CONCURRENT slots and every later
+// request blocks in `acquire()` for good — the Workers runtime then kills the
+// isolate with "your Worker's code had hung and would never generate a
+// response". A bounded fetch turns that hang into a normal rejection that
+// callers already handle (fail-soft to empty/null). Do NOT remove.
+const FETCH_TIMEOUT_MS = 8000
+
 let active = 0
 const waiters: Array<() => void> = []
 
+// `active` is the SINGLE source of truth for in-flight GETs. release() always
+// decrements it and then wakes waiters to re-check.
+//
+// The old design instead "handed" a freed slot to one waiter without
+// decrementing. That strands slots: an RSC prefetch (the `_rsc` requests) is
+// routinely aborted mid-wait when the user navigates away, and a slot handed to
+// such a dead waiter's continuation — which never reaches its `finally {
+// release() }` — is never returned. Enough of those and every later request
+// blocks in acquire() forever and the isolate is killed. Waking-and-rechecking
+// can't strand a slot: a wake delivered to a dead waiter is simply lost, and the
+// decrement already reflects the free slot for the next live caller. We wake
+// ALL waiters (not just one) so a lost wake can never leave a live waiter
+// stranded behind an aborted one; only as many as have capacity proceed, the
+// rest re-queue on the next loop iteration.
 const acquire = async (): Promise<void> => {
-  if (active < MAX_CONCURRENT) {
-    active++
-    return
+  while (active >= MAX_CONCURRENT) {
+    await new Promise<void>((resolve) => waiters.push(resolve))
   }
-  // Wait for a holder to hand us its slot (see release); `active` is unchanged
-  // by that handoff, so it always equals the number of live holders.
-  await new Promise<void>((resolve) => waiters.push(resolve))
+  active++
 }
 
 const release = (): void => {
-  const next = waiters.shift()
-  if (next) {
-    next() // hand the slot straight to the next waiter — no decrement
-  } else {
-    active-- // no one waiting: free the slot
-  }
+  active--
+  const woken = waiters.splice(0)
+  woken.forEach((wake) => wake())
 }
 
 const sleep = (ms: number): Promise<void> =>
@@ -66,6 +83,9 @@ export const fetchClient = {
         const res = await fetch(fullUrl, {
           method: 'GET',
           headers,
+          // A fresh timeout per attempt so a stalled connection aborts instead
+          // of hanging (and leaking its semaphore slot). See FETCH_TIMEOUT_MS.
+          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
           // Default 8h ISR; callers can override (e.g. genre lists cache far
           // longer since they're canonical and rarely change).
           next: { revalidate },
@@ -104,6 +124,7 @@ export const fetchClient = {
           Authorization: `Bearer ${apiConfig.apiKey}`,
         },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       })
       if (!res.ok) {
         throw new Error(`TMDB API error: ${res.status}`)

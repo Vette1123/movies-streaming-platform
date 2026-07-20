@@ -50,6 +50,9 @@ const loadShard = async (shard: number): Promise<Record<string, string>> => {
       if (base) {
         const res = await fetch(`${base}/imdb-ratings/${shard}.json`, {
           next: { revalidate: SHARD_REVALIDATE },
+          // Bound the self-fetch: a stalled edge asset request must not hang the
+          // render. On abort we fail soft to no ratings (catch below).
+          signal: AbortSignal.timeout(6000),
         })
         if (res.ok) data = (await res.json()) as Record<string, string>
       }
