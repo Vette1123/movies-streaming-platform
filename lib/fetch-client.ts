@@ -99,11 +99,18 @@ export const fetchClient = {
             Number.isFinite(retryAfter) && retryAfter > 0
               ? retryAfter * 1000
               : Math.min(500 * 2 ** attempt, 8000)
+          // Drain the throttle response before looping. An unread body keeps its
+          // HTTP request "in flight"; enough stranded (retries × concurrency) hit
+          // the Workers in-flight cap and the runtime cancels responses to break
+          // the deadlock ("a stalled HTTP response was canceled"). See docs above.
+          await res.body?.cancel()
           await sleep(wait)
           continue
         }
 
         if (!res.ok) {
+          // Same reason: release the error response's body before bailing out.
+          await res.body?.cancel()
           throw new Error(`TMDB API error: ${res.status}`)
         }
         return (await res.json()) as T
@@ -127,6 +134,8 @@ export const fetchClient = {
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       })
       if (!res.ok) {
+        // Cancel the unread body so the response can't strand an in-flight slot.
+        await res.body?.cancel()
         throw new Error(`TMDB API error: ${res.status}`)
       }
       return await res.json()

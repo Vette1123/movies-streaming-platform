@@ -55,6 +55,9 @@ const loadShard = async (shard: number): Promise<Record<string, string>> => {
           signal: AbortSignal.timeout(6000),
         })
         if (res.ok) data = (await res.json()) as Record<string, string>
+        // A missing shard 404s; drain the unread body so it doesn't strand an
+        // in-flight HTTP slot on the Worker isolate.
+        else await res.body?.cancel()
       }
     }
   } catch {
