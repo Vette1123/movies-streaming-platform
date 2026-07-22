@@ -1,3 +1,5 @@
+import { useCallback } from 'react'
+
 import { MovieDetails } from '@/types/movie-details'
 import { SeriesDetails } from '@/types/series-details'
 import { trackWatchlistAdded, trackWatchlistRemoved } from '@/lib/analytics'
@@ -37,33 +39,42 @@ const toWatchedItem = (media: MediaItem): WatchedItem => {
 export function useWatchlist(): WatchlistHookResult {
   const [watchlist, setWatchlist] = useLocalStorage(WATCHLIST_KEY, [])
 
-  const isSaved = (id: number) => watchlist.some((item) => item.id === id)
+  const isSaved = useCallback(
+    (id: number) => watchlist.some((item) => item.id === id),
+    [watchlist]
+  )
 
-  const remove = (id: number) => {
-    const existing = watchlist.find((item) => item.id === id)
-    setWatchlist(watchlist.filter((item) => item.id !== id))
-    if (existing) {
-      trackWatchlistRemoved({
-        media_id: id,
-        media_type: existing.type === 'movie' ? 'movie' : 'tv',
-        title: existing.title,
+  const remove = useCallback(
+    (id: number) => {
+      const existing = watchlist.find((item) => item.id === id)
+      setWatchlist(watchlist.filter((item) => item.id !== id))
+      if (existing) {
+        trackWatchlistRemoved({
+          media_id: id,
+          media_type: existing.type === 'movie' ? 'movie' : 'tv',
+          title: existing.title,
+        })
+      }
+    },
+    [watchlist, setWatchlist]
+  )
+
+  const toggle = useCallback(
+    (media: MediaItem) => {
+      if (isSaved(media.id)) {
+        remove(media.id)
+        return
+      }
+      const item = toWatchedItem(media)
+      setWatchlist([...watchlist, item])
+      trackWatchlistAdded({
+        media_id: item.id,
+        media_type: item.type === 'movie' ? 'movie' : 'tv',
+        title: item.title,
       })
-    }
-  }
-
-  const toggle = (media: MediaItem) => {
-    if (isSaved(media.id)) {
-      remove(media.id)
-      return
-    }
-    const item = toWatchedItem(media)
-    setWatchlist([...watchlist, item])
-    trackWatchlistAdded({
-      media_id: item.id,
-      media_type: item.type === 'movie' ? 'movie' : 'tv',
-      title: item.title,
-    })
-  }
+    },
+    [watchlist, setWatchlist, isSaved, remove]
+  )
 
   return { watchlist, isSaved, toggle, remove }
 }

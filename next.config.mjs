@@ -24,7 +24,10 @@ const nextConfig = {
   },
   typescript: { ignoreBuildErrors: false },
   experimental: {
-    optimizePackageImports: ['framer-motion', 'date-fns'],
+    // Tree-shake barrel-imported libs so only the symbols actually used ship.
+    // lucide-react is the big one: icons are imported per-name across ~40 files,
+    // and without this the whole icon set bloats the client bundle.
+    optimizePackageImports: ['framer-motion', 'lucide-react'],
   },
   // Override Next's default `Cache-Control: private, no-store` on public pages
   // so the Cloudflare edge cache (CDN — no KV, no quota cost) keeps a rendered

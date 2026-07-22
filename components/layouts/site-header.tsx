@@ -1,5 +1,6 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 
 import { siteConfig } from '@/config/site'
@@ -7,10 +8,27 @@ import { openRafiqOnPlayStore } from '@/lib/rafiq'
 import { cn } from '@/lib/utils'
 import { useNavbarScrollOverlay } from '@/hooks/use-scroll-overlay'
 import { buttonVariants } from '@/components/ui/button'
-import { CommandMenu } from '@/components/command-menu'
 import { Icons } from '@/components/icons'
 import { MainNav } from '@/components/layouts/main-nav'
 import { MobileNav } from '@/components/layouts/mobile-nav'
+
+// The command palette (cmdk + avatar + debounce + the search server-action, ~645
+// lines) sits in the root layout, so it used to ship in the first-load JS of
+// every page even though it's closed until the user hits ⌘K or the search box.
+// Load it on the client only, as its own chunk. The loading placeholder matches
+// the trigger button's footprint so there's no layout shift while it resolves.
+const CommandMenu = dynamic(
+  () => import('@/components/command-menu').then((m) => m.CommandMenu),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        aria-hidden
+        className="bg-muted/40 h-9 w-full animate-pulse rounded-md border md:w-44 lg:w-64"
+      />
+    ),
+  }
+)
 
 export function SiteHeader() {
   const { isShowNavBackground } = useNavbarScrollOverlay()

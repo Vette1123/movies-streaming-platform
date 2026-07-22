@@ -8,7 +8,7 @@ import { GoogleTagManager } from '@next/third-parties/google'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 
 import { siteConfig } from '@/config/site'
-import { GOOGLE_GTM_ID } from '@/lib/constants'
+import { GOOGLE_GTM_ID, IMAGE_CACHE_HOST_URL } from '@/lib/constants'
 import { fontSans } from '@/lib/fonts'
 import {
   JsonLd,
@@ -156,7 +156,18 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="" />
+        {/*
+          Preconnect to the host that actually serves the LCP hero image. With
+          on-the-fly optimization that's the image cache (ImageKit), not TMDB
+          origin — warming the TLS+DNS handshake to it is what lets the backdrop
+          download on the very first network tick. TMDB origin stays as a cheap
+          dns-prefetch since it's only the last-resort fallback in the chain.
+        */}
+        {IMAGE_CACHE_HOST_URL ? (
+          <link rel="preconnect" href={IMAGE_CACHE_HOST_URL} crossOrigin="" />
+        ) : (
+          <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="" />
+        )}
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link

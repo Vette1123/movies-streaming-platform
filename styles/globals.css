@@ -141,81 +141,16 @@
   }
 }
 
+/* Poster rails (components/list.tsx) scroll natively. Hide the scrollbar so the
+   row reads as a clean carousel — nav is swipe/trackpad on touch, hover-revealed
+   glass arrows on lg+. Scroll position is still fully accessible. */
 @layer utilities {
-  .splide__track.splide__track--slide {
-    overflow: visible !important;
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE / old Edge */
+    scrollbar-width: none; /* Firefox */
   }
-}
-
-/* Content rows are swipeable — the prev/next arrows overlap the poster art on
-   touch and read as clutter. Hide them below `lg`; drag/swipe carries nav. */
-@media (width < 1024px) {
-  .splide__arrow {
-    display: none !important;
-  }
-}
-
-/* Glass row-nav arrows (lg+). Default Splide chrome is a flat grey disc; restyle
-   to match the hero carousel's frosted buttons. They stay hidden until the row is
-   hovered/focused (Netflix-style), then fade in at the row's edges. */
-@media (width >= 1024px) {
-  .splide__arrow {
-    width: 3rem;
-    height: 3rem;
-    border-radius: 9999px;
-    background: rgba(10, 12, 20, 0.62);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    box-shadow:
-      0 10px 30px rgba(0, 0, 0, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
-    backdrop-filter: blur(12px) saturate(140%);
-    opacity: 0;
-    z-index: 20;
-    transition:
-      opacity 0.3s ease,
-      transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-      background 0.3s ease,
-      border-color 0.3s ease;
-  }
-  .splide:hover .splide__arrow,
-  .splide:focus-within .splide__arrow {
-    opacity: 1;
-  }
-  .splide__arrow--prev {
-    left: 0.5rem;
-  }
-  .splide__arrow--next {
-    right: 0.5rem;
-  }
-  .splide__arrow:hover {
-    background: rgba(20, 24, 36, 0.82);
-    border-color: rgba(103, 232, 249, 0.55);
-    transform: scale(1.08);
-  }
-  .splide__arrow:focus-visible {
-    opacity: 1;
-    outline: none;
-    border-color: rgba(103, 232, 249, 0.7);
-    box-shadow:
-      0 0 0 2px rgba(103, 232, 249, 0.35),
-      0 10px 30px rgba(0, 0, 0, 0.45);
-  }
-  .splide__arrow:disabled {
-    opacity: 0 !important;
-  }
-  .splide__arrow svg {
-    width: 1.1rem;
-    height: 1.1rem;
-    fill: #fff;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .splide__arrow--prev:hover svg {
-    transform: translateX(-2px);
-  }
-  .splide__arrow--next:hover svg {
-    transform: translateX(2px);
+  .no-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome / Safari / WebKit */
   }
 }
 

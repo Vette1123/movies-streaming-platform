@@ -32,7 +32,7 @@ interface CardProps {
   isTruncateOverview?: boolean
 }
 
-export const Card = ({
+const CardComponent = ({
   item,
   itemType = 'movie',
   isTruncateOverview = true,
@@ -178,3 +178,8 @@ export const Card = ({
     </HoverCard>
   )
 }
+
+// Homepage and browse/genre grids mount 100+ Cards. Memoize so a parent
+// re-render (infinite-scroll fetch, a completion-store update, filter change)
+// only re-renders the cards whose props actually changed, not the whole grid.
+export const Card = React.memo(CardComponent)

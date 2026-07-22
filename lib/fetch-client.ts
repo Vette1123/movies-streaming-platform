@@ -1,6 +1,21 @@
-import queryString from 'query-string'
-
 import { apiConfig } from '@/lib/tmdbConfig'
+
+// Merge any querystring already on `url` with the `query` object (query wins on
+// conflict) and re-serialize, skipping null/undefined — matching how
+// query-string's stringifyUrl behaved before we dropped that dependency.
+const buildUrl = (
+  url: string,
+  query: Record<string, unknown>
+): string => {
+  const [base, existing] = url.split('?')
+  const params = new URLSearchParams(existing ?? '')
+  for (const [key, value] of Object.entries(query)) {
+    if (value === null || value === undefined) continue
+    params.set(key, String(value))
+  }
+  const qs = params.toString()
+  return qs ? `${base}?${qs}` : base
+}
 
 // TMDB returns 429 when too many requests arrive at once. During `next build`
 // we prerender ~1100 detail pages across 11 workers, each firing several TMDB
@@ -117,7 +132,7 @@ export const fetchClient = {
       ...(!isHeaderAuth && { api_key: apiConfig.apiKey! }),
     }
 
-    const fullUrl = `${apiConfig.baseUrl}${queryString.stringifyUrl({ url, query })}`
+    const fullUrl = `${apiConfig.baseUrl}${buildUrl(url, query)}`
     const headers = {
       'Content-Type': 'application/json',
       ...(isHeaderAuth && {

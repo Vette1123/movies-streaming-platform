@@ -1,3 +1,5 @@
+import { useCallback } from 'react'
+
 import { MovieDetails } from '@/types/movie-details'
 import { useLocalStorage, WatchedItem } from '@/hooks/use-local-storage'
 
@@ -55,75 +57,86 @@ const episodeToItem = (meta: EpisodeCompletionMeta): WatchedItem => {
 export function useCompletedMedia(): CompletedMediaHookResult {
   const [completedItems, setCompletedItems] = useLocalStorage(COMPLETED_KEY, [])
 
-  const isMovieCompleted = (id: number) =>
-    completedItems.some((item) => item.type === 'movie' && item.id === id)
+  const isMovieCompleted = useCallback(
+    (id: number) =>
+      completedItems.some((item) => item.type === 'movie' && item.id === id),
+    [completedItems]
+  )
 
-  const isEpisodeCompleted = (
-    showId: number,
-    season: number,
-    episode: number
-  ) =>
-    completedItems.some(
-      (item) =>
-        item.type === 'series' &&
-        item.id === showId &&
-        item.season === season &&
-        item.episode === episode
-    )
+  const isEpisodeCompleted = useCallback(
+    (showId: number, season: number, episode: number) =>
+      completedItems.some(
+        (item) =>
+          item.type === 'series' &&
+          item.id === showId &&
+          item.season === season &&
+          item.episode === episode
+      ),
+    [completedItems]
+  )
 
-  const toggleMovieCompleted = (movie: MovieDetails) => {
-    if (isMovieCompleted(movie.id)) {
-      setCompletedItems(
-        completedItems.filter(
-          (item) => !(item.type === 'movie' && item.id === movie.id)
+  const toggleMovieCompleted = useCallback(
+    (movie: MovieDetails) => {
+      if (isMovieCompleted(movie.id)) {
+        setCompletedItems(
+          completedItems.filter(
+            (item) => !(item.type === 'movie' && item.id === movie.id)
+          )
         )
-      )
-      return
-    }
-    const now = new Date().toISOString()
-    setCompletedItems([
-      ...completedItems,
-      {
-        id: movie.id,
-        type: 'movie',
-        title: movie.title,
-        overview: movie.overview,
-        backdrop_path: movie.backdrop_path,
-        poster_path: movie.poster_path,
-        added_at: now,
-        modified_at: now,
-      },
-    ])
-  }
+        return
+      }
+      const now = new Date().toISOString()
+      setCompletedItems([
+        ...completedItems,
+        {
+          id: movie.id,
+          type: 'movie',
+          title: movie.title,
+          overview: movie.overview,
+          backdrop_path: movie.backdrop_path,
+          poster_path: movie.poster_path,
+          added_at: now,
+          modified_at: now,
+        },
+      ])
+    },
+    [completedItems, isMovieCompleted, setCompletedItems]
+  )
 
-  const toggleEpisodeCompleted = (meta: EpisodeCompletionMeta) => {
-    if (isEpisodeCompleted(meta.showId, meta.season, meta.episode)) {
-      setCompletedItems(
-        completedItems.filter(
-          (item) =>
-            !(
-              item.type === 'series' &&
-              item.id === meta.showId &&
-              item.season === meta.season &&
-              item.episode === meta.episode
-            )
+  const toggleEpisodeCompleted = useCallback(
+    (meta: EpisodeCompletionMeta) => {
+      if (isEpisodeCompleted(meta.showId, meta.season, meta.episode)) {
+        setCompletedItems(
+          completedItems.filter(
+            (item) =>
+              !(
+                item.type === 'series' &&
+                item.id === meta.showId &&
+                item.season === meta.season &&
+                item.episode === meta.episode
+              )
+          )
         )
-      )
-      return
-    }
-    setCompletedItems([...completedItems, episodeToItem(meta)])
-  }
+        return
+      }
+      setCompletedItems([...completedItems, episodeToItem(meta)])
+    },
+    [completedItems, isEpisodeCompleted, setCompletedItems]
+  )
 
   // Bulk-add without duplicating existing entries. Used to auto-mark the episodes
   // that came before the one a user just started — the practical stand-in for
   // real completion tracking, which the opaque streaming iframe can't provide.
-  const markEpisodesCompleted = (metas: EpisodeCompletionMeta[]) => {
-    const additions = metas.filter(
-      (meta) => !isEpisodeCompleted(meta.showId, meta.season, meta.episode)
-    )
-    if (!additions.length) return
-    setCompletedItems([...completedItems, ...additions.map(episodeToItem)])
-  }
+  const markEpisodesCompleted = useCallback(
+    (metas: EpisodeCompletionMeta[]) => {
+      const additions = metas.filter(
+        (meta) => !isEpisodeCompleted(meta.showId, meta.season, meta.episode)
+      )
+      if (!additions.length) return
+      setCompletedItems([...completedItems, ...additions.map(episodeToItem)])
+    },
+    [completedItems, isEpisodeCompleted, setCompletedItems]
+  )
 
   return {
     completedItems,

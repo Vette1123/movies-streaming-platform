@@ -419,7 +419,6 @@ export const FilterSidebar = ({
                 onStringValueChange={(value) =>
                   setLocalDates((prev) => ({ ...prev, from: value }))
                 }
-                mode="calendar"
                 placeholder="From date"
                 buttonClassName="h-8 text-sm"
               />
@@ -430,7 +429,6 @@ export const FilterSidebar = ({
                 onStringValueChange={(value) =>
                   setLocalDates((prev) => ({ ...prev, to: value }))
                 }
-                mode="calendar"
                 placeholder="To date"
                 buttonClassName="h-8 text-sm"
               />
