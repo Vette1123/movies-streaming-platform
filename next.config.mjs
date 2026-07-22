@@ -1,4 +1,5 @@
 import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare'
+import { withPostHogConfig } from '@posthog/nextjs-config'
 
 initOpenNextCloudflareForDev()
 
@@ -71,4 +72,28 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+// Production stack traces are minified, and PostHog's symbolicator can't fetch
+// our chunks to source-map them (the public assets 403 the empty-UA fetcher —
+// see providers/posthog-provider.tsx). So we generate + upload source maps to
+// PostHog at build time instead: withPostHogConfig injects a `//# chunkId=` into
+// each emitted chunk, uploads the matching maps, then deletes them so they're
+// never shipped as public Cloudflare assets. This is what makes errors like
+// React #418 and the "reading 'document'" null show real file:line stacks.
+//
+// Gated on POSTHOG_API_KEY: without it (contributor / CI without the secret) the
+// build proceeds untouched instead of failing. The host is the PostHog APP host
+// (eu.posthog.com), NOT the ingestion host in NEXT_PUBLIC_POSTHOG_HOST.
+const posthogApiKey = process.env.POSTHOG_API_KEY
+
+export default posthogApiKey
+  ? withPostHogConfig(nextConfig, {
+      personalApiKey: posthogApiKey,
+      projectId: process.env.POSTHOG_PROJECT_ID ?? '216915',
+      host: process.env.POSTHOG_API_HOST ?? 'https://eu.posthog.com',
+      sourcemaps: {
+        // Strip the .map files after upload — the served .js keeps its chunkId
+        // comment, which is all PostHog needs to symbolicate.
+        deleteAfterUpload: true,
+      },
+    })
+  : nextConfig

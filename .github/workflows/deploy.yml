@@ -77,6 +77,12 @@ jobs:
           NEXT_PUBLIC_IMAGE_CACHE_HOST_URL: ${{ secrets.NEXT_PUBLIC_IMAGE_CACHE_HOST_URL }}
           NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
           NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
+          # Personal API key → build-time sourcemap upload (withPostHogConfig in
+          # next.config.mjs). The ONLY new secret to add. projectId (216915) and
+          # API host (https://eu.posthog.com) default in next.config.mjs; if the
+          # build ever skips upload, this secret is missing/empty (upload is gated
+          # on it, so the deploy still succeeds without it).
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
 
       # Re-apply the edge-cache + WAF rules on every deploy so they can't silently
       # drift off (they were never wired in before, so prod ran with NO edge cache

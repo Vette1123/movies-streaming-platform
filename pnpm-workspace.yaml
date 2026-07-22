@@ -1,3 +1,10 @@
 overrides:
   "@types/react": 19.2.17
   "@types/react-dom": 19.2.3
+
+# Allow the PostHog CLI to run its postinstall (downloads the native binary the
+# webpack sourcemap plugin shells out to at build time). workerd is OpenNext's
+# Cloudflare runtime and also needs its postinstall.
+onlyBuiltDependencies:
+  - "@posthog/cli"
+  - workerd
