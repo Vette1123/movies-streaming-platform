@@ -38,8 +38,16 @@ export const DetailsHero = forwardRef<
     if (isIframeShown) setIframeLoaded(false)
   }, [isIframeShown])
 
+  // Hero fills exactly one viewport (100dvh) and never exceeds it — the whole
+  // hero is visible on load with no scroll to see the buttons, and no oversized
+  // band pushing content down. Inline height (not a Tailwind class) so it can't
+  // be dropped from the CSS bundle; object-cover fills the box edge-to-edge (a
+  // little crop on the 16:9 backdrop is the trade for fitting the viewport).
   return (
-    <section className="relative isolate h-[440px] overflow-hidden sm:h-[500px] lg:h-[80dvh]">
+    <section
+      className="relative isolate w-full overflow-hidden"
+      style={{ height: '100dvh' }}
+    >
       <HeroImage movie={media} priority />
       <div className="relative z-50 container h-full max-w-(--breakpoint-2xl)">
         <div className="flex h-full items-center justify-center">

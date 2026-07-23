@@ -8,10 +8,11 @@ const apiConfig = {
   // every ImageKit account and produce the *same image* (resized + WebP) rather
   // than a different one — so the <img>/<Image> is byte-for-byte identical in
   // content, just dramatically smaller. A full-width TMDB backdrop is typically
-  // 1–3 MB; tr:w-2000,q-82,f-webp brings the LCP hero to ~200–280 KB. The hero
-  // is full-bleed object-cover and Ken-Burns-scaled to 1.16×, so on a 1440p/4K
-  // or retina panel it paints well past 1600px — w-2000 keeps it crisp there
-  // (1600 visibly upscaled/pixelated). Quality is q-82 (posters) / q-80 (thumbs):
+  // 1–3 MB; tr:w-2560,q-82,f-auto brings the LCP hero to ~300–420 KB (AVIF). The
+  // details hero is full-bleed object-cover at 100dvh, so on a 2560px monitor or
+  // a 1440p/retina panel the backdrop paints edge-to-edge at up to ~2560 CSS px —
+  // w-2000 was visibly upscaled/soft there, w-2560 renders it crisp at native
+  // width. Quality is q-82 (posters) / q-80 (thumbs):
   // WebP at q-82 is effectively visually lossless on poster faces/text while
   // still ~40% smaller than the JPEG origin — q-70/72 was over-soft. If a
   // transform ever 404s, the onError chain in BlurredImage walks to wsrv.nl
@@ -23,7 +24,7 @@ const apiConfig = {
   // ~20-30% smaller than WebP at the SAME quality, so this only shrinks bytes,
   // never resolution (q/width unchanged). The wsrv.nl fallback stays webp.
   originalImage: (imgPath: string) =>
-    `${IMAGE_CACHE_HOST_URL}/tr:w-2000,q-82,f-auto,pr-true/original${imgPath}`,
+    `${IMAGE_CACHE_HOST_URL}/tr:w-2560,q-82,f-auto,pr-true/original${imgPath}`,
   w500Image: (imgPath: string) =>
     `${IMAGE_CACHE_HOST_URL}/tr:q-82,f-auto/w500${imgPath}`,
   w185Image: (imgPath: string) =>
@@ -83,8 +84,8 @@ function imageStage(src: string): number {
 
 // Pull the pixel width the source image was requested at, from its TMDB size
 // segment ("/original", "/w500", "/w300", "/w185"). `original` has no fixed
-// width, so cap it at 2000 (matches the ImageKit hero width above — the largest
-// the full-bleed hero renders at 1.16× scale on hi-dpi panels). Used so the
+// width, so cap it at 2560 (matches the ImageKit hero width above — the largest
+// the full-bleed 100dvh hero paints at on a 2560px/retina panel). Used so the
 // wsrv.nl fallback can re-apply the SAME optimization instead of either
 // upscaling thumbnails (w=2000 on a /w185 path) or serving the full multi-MB
 // original.
@@ -92,7 +93,7 @@ function widthFromPath(path: string): number | undefined {
   const m = path.match(/^\/(?:original|w(\d+))/)
   if (!m) return undefined
   if (m[1]) return Number(m[1])
-  return 2000 // /original
+  return 2560 // /original — matches the ImageKit hero width above
 }
 
 // Given the current (failed) image URL, return the next fallback in the chain,

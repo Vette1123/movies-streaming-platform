@@ -23,10 +23,13 @@ export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
   return (
     <>
       {media?.backdrop_path ? (
+        // No ken-burns zoom here: the hero box is aspect-video (16:9) to match the
+        // backdrop, so object-cover fills it with zero crop. A zoom animation
+        // (scale >1) would re-introduce the truncation we just removed.
         <BlurredImage
           src={getImageURL(media?.backdrop_path)}
           alt={alt}
-          className="animate-hero-kenburns block size-full object-cover object-center will-change-transform motion-reduce:animate-none"
+          className="block size-full object-cover object-center"
           fill
           sizes="(min-width: 1024px) 1024px, 100vw"
           intro
