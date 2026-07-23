@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <title>Offline — Reely</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: grid;
+        place-items: center;
+        padding: 2rem;
+        background: radial-gradient(circle at 50% 20%, #0b1020 0%, #000 70%);
+        color: #e5e7eb;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        text-align: center;
+      }
+      .card {
+        max-width: 26rem;
+        width: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 1rem;
+        padding: 2.25rem 1.75rem;
+        background: rgba(10, 12, 20, 0.6);
+        backdrop-filter: blur(8px);
+      }
+      .logo {
+        width: 56px; height: 56px; margin: 0 auto 1rem;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #67e8f9, #06b6d4);
+        display: grid; place-items: center;
+        font-weight: 800; font-size: 1.6rem; color: #04121a;
+      }
+      h1 { font-size: 1.35rem; margin: 0 0 0.5rem; letter-spacing: -0.01em; }
+      p { margin: 0 0 1.5rem; color: #9ca3af; line-height: 1.55; font-size: 0.95rem; }
+      button {
+        appearance: none; border: 0; cursor: pointer;
+        font: inherit; font-weight: 600;
+        padding: 0.7rem 1.4rem; border-radius: 0.7rem;
+        color: #04121a; background: linear-gradient(135deg, #67e8f9, #06b6d4);
+        transition: transform 0.15s ease, filter 0.15s ease;
+      }
+      button:hover { filter: brightness(1.05); transform: translateY(-1px); }
+      button:active { transform: translateY(0) scale(0.98); }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="logo">R</div>
+      <h1>You're offline</h1>
+      <p>
+        Reely needs a connection to load titles and stream — movies play live and
+        can't be watched offline. Reconnect and try again.
+      </p>
+      <button onclick="location.reload()">Retry</button>
+    </div>
+  </body>
+</html>

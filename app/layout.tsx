@@ -18,6 +18,7 @@ import {
 import { cn } from '@/lib/utils'
 import { Footer } from '@/components/layouts/footer'
 import { SiteHeader } from '@/components/layouts/site-header'
+import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register'
 
 export const viewport: Viewport = {
   themeColor: [
@@ -206,6 +207,7 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
             <Footer />
             {GOOGLE_GTM_ID && <GoogleTagManager gtmId={GOOGLE_GTM_ID} />}
             {modal && modal}
+            <ServiceWorkerRegister />
           </div>
         </div>
       </body>
