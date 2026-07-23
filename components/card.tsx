@@ -2,20 +2,14 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { CalendarDays, Check, Film, Play, Star, Tv } from 'lucide-react'
+import { CalendarDays, Check, Film, Play, Tv } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
 import { trackMediaCardClicked } from '@/lib/analytics'
-import {
-  dateFormatter,
-  getPosterImageURL,
-  itemRedirect,
-  numberRounder,
-} from '@/lib/utils'
+import { dateFormatter, getPosterImageURL, itemRedirect } from '@/lib/utils'
 import { useCompletedMedia } from '@/hooks/use-completed-media'
 import { useMounted } from '@/hooks/use-mounted'
-import { Badge } from '@/components/ui/badge'
 import {
   HoverCard,
   HoverCardContent,
@@ -23,6 +17,7 @@ import {
 } from '@/components/ui/hover-card'
 import { BlurredImage } from '@/components/blurred-image'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
+import { ScoreChip } from '@/components/media/score-chip'
 
 interface CardProps {
   item: MediaType
@@ -121,19 +116,11 @@ const CardComponent = ({
 
               {/* Bottom gradient with rating + year for at-a-glance context */}
               <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-2 rounded-b-lg bg-gradient-to-t from-black/85 to-transparent px-3 pt-8 pb-2.5 text-[11px] font-medium text-white opacity-0 transition-opacity duration-300 group-hover/card:opacity-100">
-                {imdbRating ? (
-                  <span className="flex items-center gap-1.5">
-                    <span className="rounded-[3px] bg-[#f5c518] px-1 py-px text-[9px] leading-none font-bold tracking-wide text-black">
-                      IMDb
-                    </span>
-                    {imdbRating}
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1">
-                    <Star className="size-3.5 fill-amber-400 text-amber-400" />
-                    {numberRounder(item.vote_average) ?? 'NR'}
-                  </span>
-                )}
+                <ScoreChip
+                  imdbRating={imdbRating}
+                  voteAverage={item.vote_average}
+                  size="sm"
+                />
                 {year && <span className="text-white/60">· {year}</span>}
               </div>
             </div>
@@ -147,17 +134,11 @@ const CardComponent = ({
               {title}
               {year ? ` (${year})` : ''}
             </h4>
-            {imdbRating ? (
-              <Badge className="shrink-0 gap-1 bg-[#f5c518] text-black hover:bg-[#f5c518]">
-                <span className="text-[10px] font-bold tracking-wide">IMDb</span>
-                {imdbRating}
-              </Badge>
-            ) : (
-              <Badge className="shrink-0 gap-1">
-                <Star className="size-3 fill-current" />
-                {numberRounder(item.vote_average) ?? 'NR'}
-              </Badge>
-            )}
+            <ScoreChip
+              imdbRating={imdbRating}
+              voteAverage={item.vote_average}
+              size="md"
+            />
           </div>
           {overview && (
             <p className="text-muted-foreground text-sm">

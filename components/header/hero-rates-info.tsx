@@ -6,9 +6,9 @@ import { MovieGenre } from '@/types/movie-genre'
 import { ItemType, Movie } from '@/types/movie-result'
 import { SeriesDetails } from '@/types/series-details'
 import { genreToSlug } from '@/lib/genres'
-import { dateFormatter, getGenres, numberRounder } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
-import { Icons } from '@/components/icons'
+import { dateFormatter, getGenres } from '@/lib/utils'
+import { Chip, chipVariants } from '@/components/ui/chip'
+import { ScoreChip } from '@/components/media/score-chip'
 
 interface HeroRatesInfosProps {
   movie?: Movie
@@ -51,34 +51,27 @@ export const HeroRatesInfos = ({
 
   return (
     <div className="my-3 flex flex-wrap items-center gap-2 lg:my-4 lg:gap-3">
-      <Badge className="uppercase">{item?.original_language}</Badge>
-      <Badge className="uppercase">{item?.adult ? 'NC-17' : 'PG-13'}</Badge>
-      {imdbRating ? (
-        <div className="flex items-center gap-1.5 text-xs text-white drop-shadow-sm lg:text-base">
-          <span className="rounded-[3px] bg-[#f5c518] px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-black lg:text-xs">
-            IMDb
-          </span>
-          <span className="font-semibold">{imdbRating}</span>
-        </div>
-      ) : (
-        <div className="flex items-center text-xs text-white drop-shadow-sm lg:text-base">
-          <Icons.fullStar className="mr-1 h-6 w-6" />
-          <span className="font-semibold">
-            {numberRounder(item?.vote_average)}
-          </span>
-        </div>
-      )}
-      <p className="text-xs text-white/90 drop-shadow-sm lg:text-base">
+      <Chip variant="outline" uppercase>
+        {item?.original_language}
+      </Chip>
+      <Chip variant={item?.adult ? 'danger' : 'outline'} uppercase>
+        {item?.adult ? 'NC-17' : 'PG-13'}
+      </Chip>
+      <ScoreChip
+        imdbRating={imdbRating}
+        voteAverage={item?.vote_average}
+        size="md"
+      />
+      <p className="text-xs text-white/90 drop-shadow-sm lg:text-sm">
         {dateFormatter(item?.release_date || item?.first_air_date)}
       </p>
       {movieGenres.map((genre) => (
         <Link
           key={genre.id}
           href={`${genreBasePath}/genre/${genreToSlug(genre.name)}`}
+          className={chipVariants({ variant: 'neutral', interactive: true })}
         >
-          <Badge className="hover:bg-primary/80 font-medium transition-colors">
-            {genre.name}
-          </Badge>
+          {genre.name}
         </Link>
       ))}
     </div>

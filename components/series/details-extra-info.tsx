@@ -28,7 +28,7 @@ export const SeriesDetailsExtraInfo = ({
       <div className="mb-2 min-h-[1.75rem]">
         <NewBadgeWhenRecent
           date={series.first_air_date}
-          className="static px-2.5 py-1 text-[11px] lg:text-xs"
+          className="static"
         />
       </div>
       <h1 className="text-sm font-bold lg:text-3xl">{series.name}</h1>

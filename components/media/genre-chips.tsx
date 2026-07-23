@@ -5,6 +5,7 @@ import { ChevronRight, Tag } from 'lucide-react'
 import { MovieGenre } from '@/types/movie-genre'
 import { findMovieGenreById, findTvGenreById } from '@/lib/genres'
 import { cn } from '@/lib/utils'
+import { chipVariants } from '@/components/ui/chip'
 
 interface GenreChipsProps {
   genres?: MovieGenre[]
@@ -36,7 +37,7 @@ export function GenreChips({ genres, mediaType, className }: GenreChipsProps) {
             return (
               <li
                 key={genre.id}
-                className="border-border/60 bg-background/40 text-foreground/70 rounded-full border px-2.5 py-1 text-xs font-medium backdrop-blur-sm lg:text-sm"
+                className={cn(chipVariants({ variant: 'neutral' }), 'lg:text-sm')}
               >
                 {genre.name}
               </li>
@@ -48,7 +49,10 @@ export function GenreChips({ genres, mediaType, className }: GenreChipsProps) {
               <Link
                 href={`${basePath}/${match.slug}`}
                 aria-label={`Browse ${genre.name} ${noun}`}
-                className="group border-border/70 bg-background/40 text-foreground/75 hover:border-primary/50 hover:bg-primary/10 hover:text-foreground focus-visible:ring-primary/50 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:outline-none lg:text-sm"
+                className={cn(
+                  chipVariants({ variant: 'neutral', interactive: true }),
+                  'group lg:text-sm'
+                )}
               >
                 <Tag className="text-primary size-3 opacity-70 transition-opacity group-hover:opacity-100" />
                 {genre.name}

@@ -290,7 +290,7 @@ export function HeroSlide({
                   <div className="relative z-10 flex flex-col items-start">
                     <NewBadgeWhenRecent
                       date={movie.release_date || movie.first_air_date}
-                      className="relative top-0 left-0 mb-2 px-2.5 py-1 text-[11px] lg:text-xs"
+                      className="relative top-0 left-0 mb-2"
                     />
                     <h2
                       aria-hidden={logoLoaded}

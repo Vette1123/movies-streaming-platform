@@ -33,10 +33,9 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command'
+import { Chip, chipVariants } from '@/components/ui/chip'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Icons } from '@/components/icons'
-
-import { Badge } from './ui/badge'
 
 type SearchStatus = 'idle' | 'loading' | 'empty' | 'results'
 type MediaFilter = 'all' | 'movie' | 'tv'
@@ -279,10 +278,12 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                 disabled={key !== 'all' && count === 0}
                 aria-pressed={effectiveFilter === key}
                 className={cn(
-                  'inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40',
-                  effectiveFilter === key
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted'
+                  chipVariants({
+                    variant: effectiveFilter === key ? 'primary' : 'neutral',
+                  }),
+                  'cursor-pointer disabled:cursor-not-allowed disabled:opacity-40',
+                  effectiveFilter !== key &&
+                    'hover:border-primary/50 hover:bg-primary/10 hover:text-foreground'
                 )}
               >
                 {label}
@@ -510,20 +511,18 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-1">
                         {movie?.media_type && (
-                          <Badge
-                            variant="outline"
-                            className="bg-primary-foreground/70 text-xs capitalize"
+                          <Chip
+                            variant="neutral"
+                            size="sm"
+                            className="capitalize"
                           >
                             {movie.media_type}
-                          </Badge>
+                          </Chip>
                         )}
                         {movie?.adult && (
-                          <Badge
-                            variant="outline"
-                            className="border-destructive/40 text-destructive text-[10px]"
-                          >
+                          <Chip variant="danger" size="sm">
                             18+
-                          </Badge>
+                          </Chip>
                         )}
                       </div>
                     </div>

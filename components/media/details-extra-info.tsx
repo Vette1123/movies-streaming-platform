@@ -26,7 +26,7 @@ export const DetailsExtraInfo = ({
       <div className="mb-2 min-h-[1.75rem]">
         <NewBadgeWhenRecent
           date={movie.release_date}
-          className="static px-2.5 py-1 text-[11px] lg:text-xs"
+          className="static"
         />
       </div>
       <h1 className="text-sm font-bold lg:text-3xl">{movie.title}</h1>

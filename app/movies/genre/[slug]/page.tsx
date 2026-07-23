@@ -15,6 +15,7 @@ import {
   JsonLd,
 } from '@/lib/structured-data'
 import { cn } from '@/lib/utils'
+import { chipVariants } from '@/components/ui/chip'
 import { GenreMediaGrid } from '@/components/media/genre-media-grid'
 
 // Static: the genre set is finite and fixed, so all slugs are prebuilt below and
@@ -118,10 +119,12 @@ export default async function MovieGenrePage({ params }: GenrePageProps) {
             href={`/movies/genre/${g.slug}`}
             aria-current={g.slug === slug ? 'page' : undefined}
             className={cn(
-              'rounded-full border px-3 py-1 text-sm transition-colors',
-              g.slug === slug
-                ? 'bg-primary text-primary-foreground border-transparent'
-                : 'text-muted-foreground hover:border-primary/40 hover:text-foreground'
+              chipVariants({
+                variant: g.slug === slug ? 'primary' : 'neutral',
+              }),
+              'text-sm',
+              g.slug !== slug &&
+                'hover:border-primary/50 hover:bg-primary/10 hover:text-foreground'
             )}
           >
             {g.name}
