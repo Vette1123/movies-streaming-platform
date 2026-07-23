@@ -67,7 +67,13 @@ const CardComponent = ({
             })
           }
         >
-          <div className="group/card pointer-events-none lg:pointer-events-auto">
+          {/* Enable hover interactions on any device that actually has a hover
+              pointer (mouse/trackpad) — NOT gated on width. The old `lg:` gate
+              killed the hover lift + details HoverCard on desktop windows under
+              1024px (small laptops, non-maximized windows). `hover:hover` keeps
+              touch clean (no sticky-hover overlay; the tap still navigates via
+              the parent Link). */}
+          <div className="group/card pointer-events-none [@media(hover:hover)]:pointer-events-auto">
             {/* Hover lift+scale in pure CSS (was framer CARD_VARIANT: scale 1.03,
                 y -6, spring). Tailwind v4 drives translate/scale independently;
                 the back-ease approximates the spring's slight overshoot. Dropping
