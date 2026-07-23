@@ -18,6 +18,7 @@ import {
 import { cn } from '@/lib/utils'
 import { Footer } from '@/components/layouts/footer'
 import { SiteHeader } from '@/components/layouts/site-header'
+import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register'
 
 export const viewport: Viewport = {
@@ -208,6 +209,7 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
             {GOOGLE_GTM_ID && <GoogleTagManager gtmId={GOOGLE_GTM_ID} />}
             {modal && modal}
             <ServiceWorkerRegister />
+            <InstallPrompt />
           </div>
         </div>
       </body>

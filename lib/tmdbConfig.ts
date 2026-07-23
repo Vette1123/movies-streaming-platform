@@ -17,14 +17,19 @@ const apiConfig = {
   // transform ever 404s, the onError chain in BlurredImage walks to wsrv.nl
   // (also optimized) then TMDB origin — so this can never break an image, only
   // fail back to the (still-working) unoptimized.
+  //
+  // `f-auto` (not a hard f-webp) lets ImageKit serve AVIF to browsers that
+  // advertise it (Chrome/Android/modern Safari) and WebP to the rest — AVIF is
+  // ~20-30% smaller than WebP at the SAME quality, so this only shrinks bytes,
+  // never resolution (q/width unchanged). The wsrv.nl fallback stays webp.
   originalImage: (imgPath: string) =>
-    `${IMAGE_CACHE_HOST_URL}/tr:w-2000,q-82,f-webp,pr-true/original${imgPath}`,
+    `${IMAGE_CACHE_HOST_URL}/tr:w-2000,q-82,f-auto,pr-true/original${imgPath}`,
   w500Image: (imgPath: string) =>
-    `${IMAGE_CACHE_HOST_URL}/tr:q-82,f-webp/w500${imgPath}`,
+    `${IMAGE_CACHE_HOST_URL}/tr:q-82,f-auto/w500${imgPath}`,
   w185Image: (imgPath: string) =>
-    `${IMAGE_CACHE_HOST_URL}/tr:q-80,f-webp/w185${imgPath}`,
+    `${IMAGE_CACHE_HOST_URL}/tr:q-80,f-auto/w185${imgPath}`,
   w300Image: (imgPath: string) =>
-    `${IMAGE_CACHE_HOST_URL}/tr:q-80,f-webp/w300${imgPath}`,
+    `${IMAGE_CACHE_HOST_URL}/tr:q-80,f-auto/w300${imgPath}`,
 }
 
 // TMDB's own image origin — free, keyless, unmetered, never expires. The last

@@ -2,13 +2,11 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
 import { CalendarDays, Check, Film, Play, Star, Tv } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
 import { trackMediaCardClicked } from '@/lib/analytics'
-import { CARD_VARIANT } from '@/lib/motion-variants'
 import {
   dateFormatter,
   getPosterImageURL,
@@ -74,16 +72,12 @@ const CardComponent = ({
             })
           }
         >
-          <motion.div
-            initial="rest"
-            whileHover="hover"
-            animate="rest"
-            className="group/card pointer-events-none lg:pointer-events-auto"
-          >
-            <motion.div
-              className="group-hover/card:ring-primary/60 relative cursor-pointer rounded-lg shadow-lg ring-1 ring-transparent transition-shadow duration-300 group-hover/card:shadow-2xl"
-              variants={CARD_VARIANT}
-            >
+          <div className="group/card pointer-events-none lg:pointer-events-auto">
+            {/* Hover lift+scale in pure CSS (was framer CARD_VARIANT: scale 1.03,
+                y -6, spring). Tailwind v4 drives translate/scale independently;
+                the back-ease approximates the spring's slight overshoot. Dropping
+                framer here removes a motion component from 120+ grid instances. */}
+            <div className="group-hover/card:ring-primary/60 relative cursor-pointer rounded-lg shadow-lg ring-1 ring-transparent transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] will-change-transform group-hover/card:-translate-y-1.5 group-hover/card:scale-[1.03] group-hover/card:shadow-2xl">
               <NewBadgeWhenRecent date={releaseDate} />
               {watched && (
                 <span
@@ -142,8 +136,8 @@ const CardComponent = ({
                 )}
                 {year && <span className="text-white/60">· {year}</span>}
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </Link>
       </HoverCardTrigger>
       <HoverCardContent className="hidden w-80 md:block" side="right">
