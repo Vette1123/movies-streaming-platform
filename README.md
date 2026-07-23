@@ -22,36 +22,60 @@ Reely is a production-grade movie and TV show tracker built on the TMDB API. It 
 
 ## ✨ Features
 
-- **TMDB-powered catalog** — trending, popular, top-rated, and now-playing movies and TV shows pulled live from the TMDB API.
-- **Hero slider** — auto-rotating, animated showcase of trending media on the landing page.
-- **Movies & TV shows browsing** — dedicated, filterable listing pages with infinite-scroll style pagination.
-- **Rich detail pages** — synopses, credits, ratings, related media, and extra metadata for every title.
-- **Season & episode navigator** — drill into TV shows by season and episode with a dedicated selector UI.
-- **Command palette search (⌘K)** — debounced, instant search across movies and TV shows via a `cmdk`-powered dialog.
-- **Persistent watch history** — track what you've watched, revisit it on the dedicated history page, and clear entries you no longer want.
-- **Filter sidebar & sheet** — genre, rating, and date filters powered by `nuqs` for shareable, URL-synced state.
-- **SEO & structured data** — full JSON-LD (Website, Organization, CollectionPage, Breadcrumb), Open Graph, Twitter Cards, and dynamic OG image generation.
-- **PWA-ready** — manifest, Apple touch icons, theme colors, and viewport tuned for mobile installs.
-- **Analytics built in** — PostHog for product analytics plus Google Tag Manager support.
-- **Deployed on the edge** — ships to Cloudflare Workers via OpenNext, with a Cloudflare WAF setup script included.
+- **TMDB-powered catalog** — trending, popular, top-rated, now-playing, and on-the-air movies and TV shows, pulled live from the TMDB API.
+- **Animated hero slider** — auto-rotating showcase of trending media on the landing page, with an inline trailer preview.
+- **Browse movies & TV** — dedicated listing pages with genre / year / rating filters and infinite scroll (TanStack `useInfiniteQuery` + intersection observer).
+- **Rich detail pages** — synopsis, cast, similar titles, recommendations, trailer, and both IMDb and TMDB ratings — fetched in a single TMDB `append_to_response` call.
+- **In-page streaming player** — watch movies and individual TV episodes via a configurable external source (see the in-app disclaimer).
+- **Season & episode navigator** — drill into any TV show by season and episode with a dedicated selector.
+- **Trailers** — YouTube trailer dialog plus a hero trailer preview.
+- **Collections** — franchise / collection pages that group a series of films.
+- **Command-palette search (⌘K)** — instant, debounced search across movies and TV via a `cmdk` dialog, with All / Movies / TV chips, inline IMDb ratings, and remembered recent searches. No page reload.
+- **Genre pages & chips** — jump straight into any genre for movies or TV.
+- **Real IMDb ratings** — genuine IMDb scores layered over TMDB (prebuilt dataset via the `imdb:ratings` script), with a TMDB fallback.
+- **Watchlist** — save titles you want to watch, kept on your device (no account required).
+- **Watch history** — track watched movies and episodes, remove single items, or clear everything, on a dedicated page.
+- **URL-synced filters** — genre / year / rating state lives in the URL via `nuqs`, so filtered views are shareable and back-button friendly.
+- **Web Share** — share any title through the native share sheet.
+- **Privacy-first** — watchlist, history, and recent searches live entirely in your browser; there's no login and nothing is stored on a server.
+- **SEO & structured data** — full JSON-LD (Website, Organization, CollectionPage, Breadcrumb), Open Graph, Twitter Cards, dynamic OG image generation, sitemap, and robots.
+- **Accessible & responsive** — skip-to-content, aria roles, a dedicated mobile nav, and a dark aurora UI that scales cleanly to phones.
+- **Optimized imagery** — ImageKit CDN with an automatic `wsrv.nl` → TMDB origin fallback chain.
+- **Installable PWA** — see the [Progressive Web App](#-progressive-web-app) section below.
+- **Analytics built in** — PostHog product analytics, on both client and server.
+- **Deployed on the edge** — ships to Cloudflare Workers via OpenNext, with custom edge-cache headers, a TMDB fetch governor tuned for Workers limits, and a Cloudflare WAF setup script.
+
+## 📲 Progressive Web App
+
+Reely is a fully installable PWA — not just a manifest, but a working offline-resilient app shell.
+
+- **Installable** — "Add to Home Screen" on Android/Chromium (native `beforeinstallprompt` nudge) and iOS (Share → Add to Home Screen hint). Runs standalone, portrait, with a black theme.
+- **App shortcuts** — long-press the icon for **Browse Movies** and **Browse TV Shows** jump links.
+- **Offline-resilient** — a hand-written service worker (`public/sw.js`, no `next-pwa`/serwist/Workbox) with a per-request caching strategy:
+  - immutable `/_next/static/*` assets → **cache-first**
+  - page navigations → **network-first**, falling back to the last cached page, then a custom `/offline.html`
+  - icons, manifest, and images → **stale-while-revalidate**
+  - never cached: the streaming player, `/api/*`, RSC payloads, and any cross-origin request
+- **Native touches** — maskable icons (192 / 512), Apple touch icon, theme colors, `browserconfig.xml` / mstile, and a Safari pinned-tab icon.
+
+> Streamed video is live third-party content and is intentionally never cached for offline playback.
 
 ## 🛠️ Tech Stack
 
 | Layer | Technology |
 | --- | --- |
-| Framework | Next.js 16 (App Router, Turbopack) + React 19 |
+| Framework | Next.js 16 (App Router, Turbopack, RSC + Server Actions) + React 19 |
 | Language | TypeScript 6 |
 | Styling | Tailwind CSS 4 + `tailwindcss-animate` + `@tailwindcss/typography` |
-| UI primitives | Radix UI + custom components (shadcn-style) |
+| UI | shadcn/ui + Radix UI, `lucide-react` icons, Framer Motion, `sonner` toasts |
 | Data fetching | TanStack Query 5 + React Server Components |
 | URL state | `nuqs` |
-| Animation | Framer Motion 12 |
-| Carousels | Splide |
-| Search | `cmdk` command palette |
-| Forms / dates | `react-day-picker`, `date-fns` |
-| Notifications | `sonner` |
-| Data source | [TMDB API](https://www.themoviedb.org/documentation/api) |
-| Analytics | PostHog + Google Tag Manager |
+| Search | `cmdk` command palette + `use-debounce` |
+| Infinite scroll | `react-intersection-observer` |
+| PWA | Web App Manifest + hand-written service worker (no `next-pwa`/serwist) |
+| Data source | [TMDB API](https://www.themoviedb.org/documentation/api) + IMDb ratings + ImageKit imagery |
+| Streaming | External, configurable video source |
+| Analytics | PostHog (client + server) |
 | Deployment | Cloudflare Workers via [OpenNext](https://opennext.js.org/cloudflare) |
 | Tooling | ESLint, Prettier, Husky, Commitlint, Renovate |
 
