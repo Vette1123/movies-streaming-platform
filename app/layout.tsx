@@ -180,6 +180,12 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
         <JsonLd data={organizationJsonLd} />
       </head>
       <body
+        // Browser extensions (Grammarly, password managers, translators) inject
+        // attributes/nodes into <body> BEFORE React hydrates, which otherwise
+        // trips a hydration mismatch (React #418) on the body element. This is
+        // the single biggest source of unactionable #418 noise in our error
+        // tracking — the mismatch is caused by the extension, not our markup.
+        suppressHydrationWarning
         className={cn(
           'bg-background min-h-screen scroll-smooth font-sans antialiased',
           fontSans.variable

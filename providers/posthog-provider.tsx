@@ -49,6 +49,54 @@ function errorContext(): Record<string, unknown> {
 }
 
 /**
+ * Unactionable $exception classes that flood error tracking with noise we can
+ * never fix in app code. Dropped in before_send so real errors aren't buried:
+ *
+ * - React #418: a hydration mismatch. Overwhelmingly caused by browser
+ *   extensions (Grammarly, translators, password managers) mutating the DOM
+ *   before hydration — our components are all mount-gated / hydration-safe.
+ * - "Script error.": a cross-origin script threw with no CORS header, so the
+ *   browser gives us zero detail. Always third-party / extension code.
+ * - removeChild on Node: an extension removed a node out from under React's
+ *   reconciler. Not our tree.
+ * - null 'document': fired from an injected `HTMLDocument.c` frame (not our
+ *   source) — extension/bookmarklet code, never our bundle.
+ */
+const NOISE_EXCEPTION_PATTERNS = [
+  /Minified React error #418\b/i,
+  /react\.dev\/errors\/418\b/i,
+  /^\s*Script error\.?\s*$/i,
+  /Failed to execute 'removeChild' on 'Node'/i,
+  /Cannot read properties of null \(reading 'document'\)/i,
+]
+
+/** Collect every exception type/value string carried on a $exception event. */
+function exceptionStrings(event: CaptureResult): string[] {
+  const props = (event.properties ?? {}) as Record<string, unknown>
+  const out: string[] = []
+  const list = props.$exception_list
+  if (Array.isArray(list)) {
+    for (const ex of list) {
+      if (ex && typeof ex.value === 'string') out.push(ex.value)
+      if (ex && typeof ex.type === 'string') out.push(ex.type)
+    }
+  }
+  const values = props.$exception_values
+  if (Array.isArray(values)) {
+    for (const v of values) if (typeof v === 'string') out.push(v)
+  }
+  return out
+}
+
+/** True when an exception is a known-unactionable extension / cross-origin noise. */
+function isNoiseException(event: CaptureResult): boolean {
+  const messages = exceptionStrings(event)
+  return messages.some((m) =>
+    NOISE_EXCEPTION_PATTERNS.some((re) => re.test(m))
+  )
+}
+
+/**
  * The full PostHog config — autocapture, dead-clicks, rageclick, web vitals,
  * heatmaps, exception tracking, session recording, person profiles. Every
  * feature is kept ON; nothing is dropped. This is just the config object,
@@ -80,6 +128,9 @@ const POSTHOG_CONFIG = {
   // Wrapped defensively so enrichment can never drop an exception event.
   before_send: (event: CaptureResult | null) => {
     if (event && event.event === '$exception') {
+      // Drop unactionable extension / cross-origin noise (React #418 &c.) so it
+      // stops burying real, fixable errors in the dashboard.
+      if (isNoiseException(event)) return null
       event.properties = { ...event.properties, ...errorContext() }
     }
     return event
