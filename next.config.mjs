@@ -39,10 +39,22 @@ const nextConfig = {
   async headers() {
     const edgeCache = 'public, max-age=0, s-maxage=28800, stale-while-revalidate=86400'
     const cachedPaths = ['/', '/movies', '/tv-shows', '/movies/:id', '/tv-shows/:id']
-    return cachedPaths.map((source) => ({
-      source,
-      headers: [{ key: 'Cache-Control', value: edgeCache }],
-    }))
+    // Baseline security/SEO headers on every route. Deliberately conservative:
+    // NO Permissions-Policy / CSP / COEP — those would risk the cross-origin
+    // VidSrc player (fullscreen, autoplay) and the hero trailer embed. These
+    // three are safe and lift the Lighthouse "Best Practices" score.
+    const securityHeaders = [
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+    ]
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      ...cachedPaths.map((source) => ({
+        source,
+        headers: [{ key: 'Cache-Control', value: edgeCache }],
+      })),
+    ]
   },
   async redirects() {
     return [
