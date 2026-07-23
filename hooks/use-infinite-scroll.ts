@@ -15,7 +15,8 @@ export const useInfiniteScroll = ({
   popularMediaAction,
   queryKey,
 }: Props) => {
-  const { data, fetchNextPage } = useInfiniteQuery({
+  const { data, fetchNextPage, isFetchingNextPage, hasNextPage } =
+    useInfiniteQuery({
     queryKey: [queryKey],
     initialPageParam: 0,
     queryFn: async ({ pageParam = 1 }) => {
@@ -32,5 +33,7 @@ export const useInfiniteScroll = ({
   return {
     data,
     fetchNextPage,
+    isFetchingNextPage,
+    hasNextPage,
   }
 }

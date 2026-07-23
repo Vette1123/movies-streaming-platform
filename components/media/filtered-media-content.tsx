@@ -174,7 +174,12 @@ export const FilteredMediaContent = ({
               <MediaGridSkeleton count={20} />
             ) : (
               <>
-                {/* Results Grid */}
+                {/* Results Grid. The "load more" skeletons live INSIDE this same
+                    grid (not a detached grid below), so they continue the exact
+                    row layout — filling the last partial row first — and the real
+                    cards then replace them cell-for-cell. That's what keeps the
+                    footer from lurching when a page lands: the reserved height
+                    never changes across skeleton → real. */}
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                   {pages.map((page, index) => (
                     <React.Fragment key={index}>
@@ -188,14 +193,14 @@ export const FilteredMediaContent = ({
                       ))}
                     </React.Fragment>
                   ))}
+                  {isFetchingNextPage &&
+                    Array.from({ length: 10 }).map((_, i) => (
+                      <div
+                        key={`skeleton-${i}`}
+                        className="bg-muted/70 aspect-[2/3] w-full animate-pulse rounded-lg"
+                      />
+                    ))}
                 </div>
-
-                {/* Loading More Skeleton */}
-                {isFetchingNextPage && (
-                  <div className="mt-8">
-                    <MediaGridSkeleton count={10} />
-                  </div>
-                )}
               </>
             )}
 

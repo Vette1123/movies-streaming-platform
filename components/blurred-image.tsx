@@ -98,24 +98,27 @@ export function BlurredImage({
         className="relative w-full overflow-hidden rounded-lg bg-slate-900"
         style={{ aspectRatio: `${width} / ${height}` }}
       >
+        {/* Blur-up "glow" reveal: the poster blooms in from a soft blur + slight
+            zoom as it decodes, then settles. The transition names BOTH `transform`
+            and `filter`, so the blur EASES off instead of snapping — that snap
+            (transition-property was transform-only) is why the blur-up was dropped
+            in 9c94d1d. Same 500ms/ease-out as the hover zoom, so hover feel is
+            unchanged. The wrapper's bg-slate-900 backs the reserved box, so there's
+            no blank before the first pixels paint, and the aspect-ratio box means
+            zero CLS. */}
         <Image
           {...rest}
           ref={imgRef}
           alt={alt}
           src={imgSrc}
           fill
-          className={cn(className, 'object-cover')}
+          className={cn(
+            className,
+            'object-cover transition-[transform,filter] duration-500 ease-out',
+            isLoading ? 'scale-[1.03] blur-lg' : 'scale-100 blur-0'
+          )}
           onLoad={() => setLoading(false)}
           onError={handleError}
-        />
-        {/* Dark placeholder that fades out once the image paints. Smooth reveal,
-            no blur-snap, and independent of the image's hover transform. */}
-        <span
-          aria-hidden
-          className={cn(
-            'pointer-events-none absolute inset-0 bg-slate-900 transition-opacity duration-500 ease-out',
-            isLoading ? 'opacity-100' : 'opacity-0'
-          )}
         />
       </div>
     )

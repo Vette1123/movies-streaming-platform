@@ -34,17 +34,20 @@ export const MediaContent = ({
     threshold: 0,
     rootMargin: '0px 0px 200px 0px',
   })
-  const { data, fetchNextPage } = useInfiniteScroll({
-    media,
-    popularMediaAction: getPopularMediaAction,
-    queryKey,
-  })
+  const { data, fetchNextPage, isFetchingNextPage, hasNextPage } =
+    useInfiniteScroll({
+      media,
+      popularMediaAction: getPopularMediaAction,
+      queryKey,
+    })
 
   React.useEffect(() => {
-    if (!enableFilters && inView) {
+    // Gate on hasNextPage so the sentinel doesn't refetch the last page in a loop
+    // once the list is exhausted (only then is it valid for the footer to show).
+    if (!enableFilters && inView && hasNextPage && !isFetchingNextPage) {
       fetchNextPage()
     }
-  }, [enableFilters, inView, fetchNextPage])
+  }, [enableFilters, inView, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   if (enableFilters) {
     const mediaType = queryKey === QUERY_KEYS.MOVIES_KEY ? 'movie' : 'tv'
@@ -85,6 +88,20 @@ export const MediaContent = ({
               ))}
           </React.Fragment>
         ))}
+      {/* While the next page is in flight, fill the grid with reserved skeleton
+          cells (same 2/3 aspect as a poster). This keeps the footer from
+          surfacing into the gap and getting shoved back down when the page lands —
+          the user scrolls straight from real cards into placeholders into real
+          cards, no jump. */}
+      {isFetchingNextPage &&
+        Array.from({ length: 10 }).map((_, i) => (
+          <div
+            key={`skeleton-${i}`}
+            className="bg-muted/70 aspect-[2/3] w-full animate-pulse rounded-lg"
+          />
+        ))}
+      {/* Sentinel sits AFTER the skeletons so it's only re-observed once the new
+          real cards have replaced them — prevents a double-fire at the seam. */}
       <div ref={myRef} />
     </div>
   )
