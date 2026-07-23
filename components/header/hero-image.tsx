@@ -26,7 +26,7 @@ export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
         <BlurredImage
           src={getImageURL(media?.backdrop_path)}
           alt={alt}
-          className="animate-hero-kenburns block size-full object-cover object-top will-change-transform motion-reduce:animate-none"
+          className="animate-hero-kenburns block size-full object-cover object-center will-change-transform motion-reduce:animate-none"
           fill
           sizes="(min-width: 1024px) 1024px, 100vw"
           intro

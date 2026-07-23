@@ -63,15 +63,27 @@ export function BlurredImage({
       'blur-0': !isLoading,
     })
     return (
-      <Image
-        {...props}
-        ref={imgRef}
-        alt={alt}
-        src={imgSrc}
-        className={blurClassName}
-        onLoad={() => setLoading(false)}
-        onError={handleError}
-      />
+      <>
+        {/* Dark backing so the hero isn't blank before the image has any pixels.
+            The backdrop is an opaque photo that covers this the instant it paints,
+            so no opacity/transition is needed here — a static fill is enough and
+            costs nothing at runtime (no state coupling, no compositor work). It
+            fills the same `relative` parent the `fill` image positions against and
+            sits behind it by DOM order. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-slate-900"
+        />
+        <Image
+          {...props}
+          ref={imgRef}
+          alt={alt}
+          src={imgSrc}
+          className={blurClassName}
+          onLoad={() => setLoading(false)}
+          onError={handleError}
+        />
+      </>
     )
   }
 

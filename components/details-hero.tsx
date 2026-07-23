@@ -12,6 +12,11 @@ import { ShareButton } from '@/components/share-button'
 import { TrailerDialog } from '@/components/trailer-dialog'
 import { WatchedButton } from '@/components/watched-button'
 
+// Muted caption under each action button; mobile-only (buttons show their own
+// text label at sm+). Fixed width so two-word captions wrap under the pill.
+const captionClass =
+  'w-14 text-center text-[10px] leading-tight text-white/55 sm:hidden'
+
 export const DetailsHero = forwardRef<
   HTMLIFrameElement,
   {
@@ -50,25 +55,41 @@ export const DetailsHero = forwardRef<
                 })}
               >
                 <PlayButton onClick={playVideo} media={media} />
-                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+                {/* Buttons are icon-only < sm, so pair each with a muted caption
+                    (mobile only) that names what it does. */}
+                <div className="flex flex-wrap items-start justify-center gap-2 sm:items-center sm:gap-3">
                   {trailerKey && (
-                    <TrailerDialog
-                      trailerKey={trailerKey}
-                      mediaId={media?.id}
-                      mediaType={isMovie ? 'movie' : 'tv'}
-                      title={title}
-                    />
+                    <div className="flex flex-col items-center gap-1.5">
+                      <TrailerDialog
+                        trailerKey={trailerKey}
+                        mediaId={media?.id}
+                        mediaType={isMovie ? 'movie' : 'tv'}
+                        title={title}
+                      />
+                      <span className={captionClass}>Play trailer</span>
+                    </div>
                   )}
-                  <SaveButton media={media} />
+                  <div className="flex flex-col items-center gap-1.5">
+                    <SaveButton media={media} />
+                    <span className={captionClass}>Add to list</span>
+                  </div>
                   {/* Whole-series "watched" is ambiguous (many episodes), so the
                       movie-level toggle only shows for movies; series completion
                       is tracked per-episode in the episode list. */}
-                  {isMovie && movie && <WatchedButton movie={movie} />}
-                  <ShareButton
-                    title={title}
-                    mediaId={media?.id}
-                    mediaType={isMovie ? 'movie' : 'tv'}
-                  />
+                  {isMovie && movie && (
+                    <div className="flex flex-col items-center gap-1.5">
+                      <WatchedButton movie={movie} />
+                      <span className={captionClass}>Mark watched</span>
+                    </div>
+                  )}
+                  <div className="flex flex-col items-center gap-1.5">
+                    <ShareButton
+                      title={title}
+                      mediaId={media?.id}
+                      mediaType={isMovie ? 'movie' : 'tv'}
+                    />
+                    <span className={captionClass}>Share</span>
+                  </div>
                 </div>
               </motion.div>
             )}
