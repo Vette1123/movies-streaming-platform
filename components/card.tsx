@@ -74,11 +74,13 @@ const CardComponent = ({
               touch clean (no sticky-hover overlay; the tap still navigates via
               the parent Link). */}
           <div className="group/card pointer-events-none [@media(hover:hover)]:pointer-events-auto">
-            {/* Hover lift+scale in pure CSS (was framer CARD_VARIANT: scale 1.03,
-                y -6, spring). Tailwind v4 drives translate/scale independently;
-                the back-ease approximates the spring's slight overshoot. Dropping
-                framer here removes a motion component from 120+ grid instances. */}
-            <div className="group-hover/card:ring-primary/60 relative cursor-pointer rounded-lg shadow-lg ring-1 ring-transparent transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] will-change-transform group-hover/card:-translate-y-1.5 group-hover/card:scale-[1.03] group-hover/card:shadow-2xl">
+            {/* Hover lift+scale in pure CSS — faithfully the old framer
+                CARD_VARIANT (scale 1.03, y -6, spring stiffness 300 / damping 22
+                / mass 0.6), no motion component across 120+ grid instances. The
+                earlier 300ms cubic-bezier back-ease felt snappy/"auto-focus"; a
+                CSS `linear()` easing sampled from that exact underdamped spring
+                (ζ≈0.82, ~1% overshoot) at 450ms restores the organic settle. */}
+            <div className="group-hover/card:ring-primary/60 relative cursor-pointer rounded-lg shadow-lg ring-1 ring-transparent transition-[transform,box-shadow] duration-[450ms] ease-[linear(0,0.157,0.433,0.674,0.841,0.938,0.987,1.006,1.011,1.01,1.007,1.004,1.002,1.001,1)] will-change-transform group-hover/card:-translate-y-1.5 group-hover/card:scale-[1.03] group-hover/card:shadow-2xl">
               <NewBadgeWhenRecent date={releaseDate} />
               {watched && (
                 <span
