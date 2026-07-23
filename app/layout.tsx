@@ -194,12 +194,24 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
           <span className="aurora-stars aurora-stars--1" />
           <span className="aurora-stars aurora-stars--2" />
         </div>
+        {/* Keyboard/screen-reader skip link — first focusable element, visually
+            hidden until focused, jumps past the header nav straight to content. */}
+        <a
+          href="#main-content"
+          className="focus:bg-primary focus:text-primary-foreground sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:px-4 focus:py-2 focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-white/70"
+        >
+          Skip to content
+        </a>
         <div className="flex flex-col">
           <SiteHeader />
           <div className="h-full flex-1 overflow-x-hidden">
             <NuqsAdapter>
               <QueryProvider>
-                <CSPostHogProvider>{children}</CSPostHogProvider>
+                {/* Single page-level <main> landmark. Inner error/not-found/filter
+                    subtrees render inside this, so they use <div>, not <main>. */}
+                <CSPostHogProvider>
+                  <main id="main-content">{children}</main>
+                </CSPostHogProvider>
               </QueryProvider>
             </NuqsAdapter>
             <ToastProvider />

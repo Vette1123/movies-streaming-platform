@@ -29,7 +29,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
   }, [error, pathname])
 
   return (
-    <main className="flex min-h-[60vh] flex-col items-center justify-center px-4">
+    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4">
       <EmptyState
         icon={TriangleAlert}
         title="Something went wrong"
@@ -37,6 +37,6 @@ export default function GlobalError({ error, reset }: ErrorProps) {
         primaryAction={{ label: 'Try again', onClick: reset, icon: RotateCcw }}
         secondaryAction={{ href: '/', label: 'Go home', icon: Home }}
       />
-    </main>
+    </div>
   )
 }

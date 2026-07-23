@@ -36,7 +36,7 @@ const chipVariants = cva(
         // TMDB star rating and similar amber-accented scores.
         rating: 'border border-amber-400/25 bg-amber-400/10 text-amber-200',
         // Freshness — glassy emerald, always uppercase.
-        new: 'border border-white/20 bg-emerald-500/90 uppercase tracking-wide text-white shadow-lg ring-1 ring-emerald-300/30 backdrop-blur-md',
+        new: 'border border-white/20 bg-emerald-400 font-bold uppercase tracking-wide text-emerald-950 shadow-lg ring-1 ring-emerald-300/40 backdrop-blur-md',
         // Positive status (watched, completed) without the uppercase.
         success:
           'border border-white/20 bg-emerald-500/90 text-white shadow-lg ring-1 ring-emerald-300/30 backdrop-blur-md',

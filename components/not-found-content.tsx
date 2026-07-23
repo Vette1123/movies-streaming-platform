@@ -11,7 +11,7 @@ import { NotFoundTracker } from '@/components/analytics/not-found-tracker'
 // export `metadata`, so the icon-passing render lives here in the client.
 export function NotFoundContent() {
   return (
-    <main className="flex min-h-[60vh] flex-col items-center justify-center px-4">
+    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4">
       <NotFoundTracker />
       <EmptyState
         icon={Compass}
@@ -24,6 +24,6 @@ export function NotFoundContent() {
           icon: Clapperboard,
         }}
       />
-    </main>
+    </div>
   )
 }

@@ -146,8 +146,9 @@ export const FilteredMediaContent = ({
           </aside>
         )}
 
-        {/* Content - Always takes remaining space */}
-        <main className="min-w-0 flex-1">
+        {/* Content - Always takes remaining space. <div>, not <main>: the root
+            layout already owns the single page <main> landmark. */}
+        <div className="min-w-0 flex-1">
           {/* Mobile Filter for Sidebar Layout */}
           {layout === 'sidebar' && (
             <div className="mb-6 lg:hidden">
@@ -229,7 +230,7 @@ export const FilteredMediaContent = ({
                 />
               )}
           </div>
-        </main>
+        </div>
       </div>
 
       {/* Debug Component - Only in development */}

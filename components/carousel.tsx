@@ -109,38 +109,38 @@ export function Carousel({
   // (keyed by index so it restarts each slide, frozen while paused). Inactive
   // dots stay plain. This carries the autoplay progress without a full-width
   // edge line. Transform-only fill = GPU-cheap.
+  // Each dot is a 24px-min hit target (WCAG 2.2 target-size) with the small
+  // visual mark centered inside — the dots look identical, they're just properly
+  // tappable on touch instead of a 10px pinpoint.
   const renderDot = (index: number, ariaLabel: string) => {
-    if (index === currentIndex) {
-      return (
-        <button
-          key={index}
-          onClick={() => handleDotClick(index)}
-          aria-label={ariaLabel}
-          aria-current="true"
-          className="relative h-2.5 w-7 cursor-pointer overflow-hidden rounded-full bg-white/25 ring-1 ring-white/40 sm:h-3 sm:w-8"
-        >
-          {showProgress ? (
-            <span
-              key={currentIndex}
-              className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-white"
-              style={{
-                animation: `hero-progress ${autoPlayInterval}ms linear forwards`,
-                animationPlayState: isPaused ? 'paused' : 'running',
-              }}
-            />
-          ) : (
-            <span className="absolute inset-0 rounded-full bg-white" />
-          )}
-        </button>
-      )
-    }
+    const isActive = index === currentIndex
     return (
       <button
         key={index}
         onClick={() => handleDotClick(index)}
         aria-label={ariaLabel}
-        className="size-2.5 cursor-pointer rounded-full bg-white/40 transition-all duration-300 hover:scale-110 hover:bg-white/70 sm:size-3"
-      />
+        aria-current={isActive ? 'true' : undefined}
+        className="group/dot grid h-6 min-w-6 cursor-pointer place-items-center"
+      >
+        {isActive ? (
+          <span className="relative flex h-2.5 w-7 overflow-hidden rounded-full bg-white/25 ring-1 ring-white/40 sm:h-3 sm:w-8">
+            {showProgress ? (
+              <span
+                key={currentIndex}
+                className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-white"
+                style={{
+                  animation: `hero-progress ${autoPlayInterval}ms linear forwards`,
+                  animationPlayState: isPaused ? 'paused' : 'running',
+                }}
+              />
+            ) : (
+              <span className="absolute inset-0 rounded-full bg-white" />
+            )}
+          </span>
+        ) : (
+          <span className="size-2.5 rounded-full bg-white/40 transition-all duration-300 group-hover/dot:scale-110 group-hover/dot:bg-white/70 sm:size-3" />
+        )}
+      </button>
     )
   }
 
@@ -225,6 +225,11 @@ export function Carousel({
             }}
             transition={layerTransition}
             aria-hidden={!active}
+            // Pair with aria-hidden: also pull the off-screen slide's links out of
+            // the focus order + a11y tree (aria-hidden alone still leaves focusable
+            // descendants → axe "aria-hidden-focus"). undefined (not false) so the
+            // attribute is simply absent on the active slide.
+            inert={!active || undefined}
             drag={active ? 'x' : false}
             dragConstraints={DRAG_CONSTRAINTS}
             // Tracks the finger ~18% of the drag distance and rubber-bands back
