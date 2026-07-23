@@ -171,10 +171,14 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
 
       {items.length > 0 && (
         <div className="group/rail relative">
-          {/* Scroll track: native, GPU-driven, snap-aligned. `-my-4 py-4` gives
-              the hover-scaled posters vertical breathing room without clipping
-              (overflow-x forces overflow-y to clip), while keeping the visual
-              row flush with siblings. Scrollbar hidden via .no-scrollbar. */}
+          {/* Scroll track: native, GPU-driven, snap-aligned. `overflow-x-auto`
+              forces `overflow-y: clip`, so the hover lift (translateY -10 + scale
+              1.05, ~19px of top growth on the largest poster) needs vertical
+              breathing room or it gets cut at the track's top edge. `-my-6 py-6`
+              gives 24px of clip-room; the equal negative margin cancels the
+              padding so the row's layout position is unchanged (stays flush with
+              siblings, no jump when StaticRail swaps to this List). Scrollbar
+              hidden via .no-scrollbar. */}
           <div
             ref={railRef}
             onScroll={syncArrows}
@@ -187,7 +191,7 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
             // pointer-drag animate toward its target, so rapid drag updates fight
             // the smoothing and the rail feels stuck / unswipeable on desktop.
             // Arrow paging still animates via scrollBy({ behavior: 'smooth' }).
-            className="no-scrollbar -my-4 flex snap-x snap-mandatory gap-6 overflow-x-auto py-4"
+            className="no-scrollbar -my-6 flex snap-x snap-mandatory gap-6 overflow-x-auto py-6"
           >
             {items.map((item) => (
               // Responsive width matching SliderHorizontalListLoader so the

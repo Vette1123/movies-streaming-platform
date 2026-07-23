@@ -2,6 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { CalendarDays, Check, Film, Play, Tv } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
@@ -74,13 +75,28 @@ const CardComponent = ({
               touch clean (no sticky-hover overlay; the tap still navigates via
               the parent Link). */}
           <div className="group/card pointer-events-none [@media(hover:hover)]:pointer-events-auto">
-            {/* Hover lift+scale in pure CSS — faithfully the old framer
-                CARD_VARIANT (scale 1.03, y -6, spring stiffness 300 / damping 22
-                / mass 0.6), no motion component across 120+ grid instances. The
-                earlier 300ms cubic-bezier back-ease felt snappy/"auto-focus"; a
-                CSS `linear()` easing sampled from that exact underdamped spring
-                (ζ≈0.82, ~1% overshoot) at 450ms restores the organic settle. */}
-            <div className="group-hover/card:ring-primary/60 relative cursor-pointer rounded-lg shadow-lg ring-1 ring-transparent transition-[transform,box-shadow] duration-[450ms] ease-[linear(0,0.157,0.433,0.674,0.841,0.938,0.987,1.006,1.011,1.01,1.007,1.004,1.002,1.001,1)] will-change-transform group-hover/card:-translate-y-1.5 group-hover/card:scale-[1.03] group-hover/card:shadow-2xl">
+            {/* Hover lift+scale via a warm, gently-underdamped framer spring (scale
+                1.05, y -10; stiffness 200 / damping 21 / mass 1 → ζ≈0.74, ~0.45s
+                period). The earlier stiffness-300/mass-0.6 spring was fast and tight,
+                so a small 1.03/-6 move read as "instant and subtle"; a near-critical
+                spring fixed the snap but felt lifeless. Softer stiffness + full mass
+                slows the onset, and a sub-critical damping lets the card ease up,
+                kiss just past the target, and settle soft — the small overshoot is
+                what reads as "warm and alive" rather than mechanical.
+                A real spring is velocity-aware and interruptible — hovering out
+                mid-animation settles from current velocity instead of replaying a
+                fixed CSS curve backward, the smoothness the pure-CSS `linear()`
+                approximation lost. framer is already on these pages (carousel/hero/
+                nav) so it adds no bundle. ONE motion component per card (whileHover
+                on this node, not a parent orchestrator) — halves the motion
+                instances across a 100+ card grid vs a variant-propagating wrapper.
+                Shadow+ring stay CSS group-hover (500ms ease-out to match the spring's
+                unhurried feel); framer owns only the transform. */}
+            <motion.div
+              whileHover={{ scale: 1.05, y: -10 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 26, mass: 0.9 }}
+              className="group-hover/card:ring-primary/60 relative cursor-pointer rounded-lg shadow-lg ring-1 ring-transparent transition-shadow duration-500 ease-out will-change-transform group-hover/card:shadow-2xl"
+            >
               <NewBadgeWhenRecent date={releaseDate} />
               {watched && (
                 <span
@@ -113,7 +129,7 @@ const CardComponent = ({
               )}
 
               {/* Hover scrim + play affordance (desktop only — mobile navigates on tap) */}
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-black/35 opacity-0 transition-opacity duration-300 group-hover/card:opacity-100">
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-black/35 opacity-0 transition-opacity duration-500 ease-out group-hover/card:opacity-100">
                 <span className="bg-primary/90 text-primary-foreground grid size-12 translate-y-1 place-items-center rounded-full shadow-lg backdrop-blur-sm transition-transform duration-300 group-hover/card:translate-y-0">
                   <Play
                     className="size-5 translate-x-0.5 fill-current"
@@ -123,7 +139,7 @@ const CardComponent = ({
               </div>
 
               {/* Bottom gradient with rating + year for at-a-glance context */}
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-2 rounded-b-lg bg-gradient-to-t from-black/85 to-transparent px-3 pt-8 pb-2.5 text-[11px] font-medium text-white opacity-0 transition-opacity duration-300 group-hover/card:opacity-100">
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-2 rounded-b-lg bg-gradient-to-t from-black/85 to-transparent px-3 pt-8 pb-2.5 text-[11px] font-medium text-white opacity-0 transition-opacity duration-500 ease-out group-hover/card:opacity-100">
                 <ScoreChip
                   imdbRating={imdbRating}
                   voteAverage={item.vote_average}
@@ -131,7 +147,7 @@ const CardComponent = ({
                 />
                 {year && <span className="text-white/60">· {year}</span>}
               </div>
-            </div>
+            </motion.div>
           </div>
         </Link>
       </HoverCardTrigger>
