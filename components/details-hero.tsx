@@ -34,7 +34,7 @@ export const DetailsHero = forwardRef<
   }, [isIframeShown])
 
   return (
-    <section className="relative isolate h-[500px] overflow-hidden lg:h-[80dvh]">
+    <section className="relative isolate h-[440px] overflow-hidden sm:h-[500px] lg:h-[80dvh]">
       <HeroImage movie={media} priority />
       <div className="relative z-50 container h-full max-w-(--breakpoint-2xl)">
         <div className="flex h-full items-center justify-center">
@@ -45,12 +45,12 @@ export const DetailsHero = forwardRef<
                 initial={{ opacity: 0, y: 80 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -150 }}
-                className={cn('flex flex-col items-center gap-5', {
+                className={cn('flex flex-col items-center gap-4 sm:gap-5', {
                   hidden: isIframeShown,
                 })}
               >
                 <PlayButton onClick={playVideo} media={media} />
-                <div className="flex flex-wrap items-center justify-center gap-3">
+                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
                   {trailerKey && (
                     <TrailerDialog
                       trailerKey={trailerKey}

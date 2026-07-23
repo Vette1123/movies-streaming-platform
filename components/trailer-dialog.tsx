@@ -47,10 +47,10 @@ export function TrailerDialog({
           type="button"
           variant="ghost"
           size="lg"
-          className="gap-2 rounded-full border border-white/30 bg-white/5 text-white shadow-none backdrop-blur-[2px] transition duration-200 [text-shadow:0_1px_3px_rgba(0,0,0,0.7)] hover:border-white/50 hover:bg-white/10 active:scale-95"
+          className="w-11 gap-0 rounded-full border border-white/30 bg-white/5 px-0 text-white shadow-none backdrop-blur-[2px] transition duration-200 [text-shadow:0_1px_3px_rgba(0,0,0,0.7)] hover:border-white/50 hover:bg-white/10 active:scale-95 sm:w-auto sm:gap-2 sm:px-8"
         >
           <Play className="text-primary size-5 fill-current drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
-          <span>Trailer</span>
+          <span className="hidden sm:inline">Trailer</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl overflow-hidden border-white/10 p-0">

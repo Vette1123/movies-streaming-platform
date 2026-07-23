@@ -46,7 +46,7 @@ export function SaveButton({ media, className }: SaveButtonProps) {
       aria-label={saved ? 'Remove from watchlist' : 'Save to watchlist'}
       onClick={handleClick}
       className={cn(
-        'gap-2 rounded-full border text-white shadow-none backdrop-blur-[2px] transition duration-200 [text-shadow:0_1px_3px_rgba(0,0,0,0.7)] active:scale-95',
+        'w-11 gap-0 rounded-full border px-0 text-white shadow-none backdrop-blur-[2px] transition duration-200 [text-shadow:0_1px_3px_rgba(0,0,0,0.7)] active:scale-95 sm:w-auto sm:gap-2 sm:px-8',
         saved
           ? 'border-cyan-300/60 bg-cyan-400/10 hover:bg-cyan-400/20'
           : 'border-white/30 bg-white/5 hover:border-white/50 hover:bg-white/10',
@@ -58,7 +58,7 @@ export function SaveButton({ media, className }: SaveButtonProps) {
       ) : (
         <Bookmark className="size-5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
       )}
-      <span>{saved ? 'Saved' : 'Save'}</span>
+      <span className="hidden sm:inline">{saved ? 'Saved' : 'Save'}</span>
     </Button>
   )
 }
