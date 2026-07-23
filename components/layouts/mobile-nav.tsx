@@ -2,10 +2,13 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+import { Download } from 'lucide-react'
+
 import { NavItem } from '@/types/navbar'
 import { siteConfig } from '@/config/site'
 import { openRafiqOnPlayStore } from '@/lib/rafiq'
 import { cn } from '@/lib/utils'
+import { usePwaInstall } from '@/hooks/use-pwa-install'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Icons } from '@/components/icons'
@@ -17,6 +20,7 @@ interface MobileNavProps {
 export function MobileNav({ items }: MobileNavProps) {
   const [isOpen, setIsOpen] = React.useState(false)
   const pathname = usePathname()
+  const { canPrompt, promptInstall } = usePwaInstall()
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -63,6 +67,26 @@ export function MobileNav({ items }: MobileNavProps) {
             ))}
           </div>
           <div className="space-y-3 px-9 pb-10">
+            {canPrompt && (
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsOpen(false)
+                  await promptInstall()
+                }}
+                className={cn(
+                  buttonVariants({
+                    variant: 'default',
+                    size: 'default',
+                    className: 'w-full',
+                  }),
+                  'bg-gradient-to-br from-cyan-300 to-cyan-500 text-[#04121a]'
+                )}
+              >
+                <Download className="mr-2 size-5" strokeWidth={2.5} />
+                Install app
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {
