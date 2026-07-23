@@ -49,7 +49,10 @@ export const FilteredMediaContent = ({
 
   const [myRef, inView] = useInView({
     threshold: 0,
-    rootMargin: '0px 0px 200px 0px',
+    // Prefetch a full viewport early so the next page is already in flight before
+    // a fling-scroll reaches the bottom — otherwise the user overruns the 10
+    // reserved skeleton rows and lands on the site footer during the network gap.
+    rootMargin: '0px 0px 900px 0px',
   })
 
   // Optimized infinite scroll with debounce to prevent multiple rapid calls
@@ -62,6 +65,19 @@ export const FilteredMediaContent = ({
       return () => clearTimeout(timeoutId)
     }
   }, [inView, hasNextPage, isFetchingNextPage, isLoading, fetchNextPage])
+
+  // Suppress the global site footer while more pages exist. The footer is the
+  // last element in the root layout and shorter than the viewport, so a
+  // fling-scroll to the absolute bottom ALWAYS reveals it during the network gap
+  // between pages — no amount of skeleton reserve fixes that (scroll-max follows
+  // document height). Hiding it until the list is exhausted is the deterministic
+  // fix and standard for infinite feeds; it reappears once hasNextPage is false.
+  React.useEffect(() => {
+    document.body.dataset.listHasMore = hasNextPage ? 'true' : 'false'
+    return () => {
+      delete document.body.dataset.listHasMore
+    }
+  }, [hasNextPage])
 
   // Handle filter close on mobile to prevent issues
   const handleFilterOpenChange = useCallback((open: boolean) => {

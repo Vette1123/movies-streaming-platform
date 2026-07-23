@@ -32,7 +32,9 @@ export const MediaContent = ({
 }: MediaContentProps) => {
   const [myRef, inView] = useInView({
     threshold: 0,
-    rootMargin: '0px 0px 200px 0px',
+    // Prefetch a full viewport early so the next page is in flight before a
+    // fling-scroll reaches the bottom (pairs with the footer-hide below).
+    rootMargin: '0px 0px 900px 0px',
   })
   const { data, fetchNextPage, isFetchingNextPage, hasNextPage } =
     useInfiniteScroll({
@@ -48,6 +50,17 @@ export const MediaContent = ({
       fetchNextPage()
     }
   }, [enableFilters, inView, hasNextPage, isFetchingNextPage, fetchNextPage])
+
+  // Hide the global footer while more pages exist so a fling to the bottom can't
+  // flash it during the network gap. Only meaningful on the non-filter path;
+  // the filter path owns the same flag. See FilteredMediaContent for the why.
+  React.useEffect(() => {
+    if (enableFilters) return
+    document.body.dataset.listHasMore = hasNextPage ? 'true' : 'false'
+    return () => {
+      delete document.body.dataset.listHasMore
+    }
+  }, [enableFilters, hasNextPage])
 
   if (enableFilters) {
     const mediaType = queryKey === QUERY_KEYS.MOVIES_KEY ? 'movie' : 'tv'

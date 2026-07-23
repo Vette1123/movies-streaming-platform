@@ -441,3 +441,12 @@
 ::-webkit-scrollbar-thumb:hover {
   background-color: #555; /* Set the background color of the thumb on hover */
 }
+
+/* Hide the global site footer while an infinite-scroll list still has more pages.
+   The footer sits at the document bottom and is shorter than the viewport, so a
+   fling to scroll-max would otherwise flash it during the gap between pages. The
+   list components set body[data-list-has-more] from their query's hasNextPage;
+   the footer returns once the list is exhausted. */
+body[data-list-has-more='true'] footer {
+  display: none;
+}
