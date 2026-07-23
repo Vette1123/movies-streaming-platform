@@ -119,7 +119,7 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
     // Callers must NOT add their own horizontal padding (the detail pages used to
     // wrap this in a narrow `container`, which made the row a different width than
     // home and clipped the scroll region).
-    <nav className="px-5 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10 xl:px-16 2xl:px-20">
+    <nav className="cv-auto px-5 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10 xl:px-16 2xl:px-20">
       <motion.div
         initial="rest"
         whileHover="hover"

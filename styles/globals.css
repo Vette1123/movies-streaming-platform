@@ -152,6 +152,16 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none; /* Chrome / Safari / WebKit */
   }
+
+  /* Skip layout+paint for offscreen content until it scrolls near the viewport.
+     The homepage stacks many poster rails; only the first couple are above the
+     fold, so the rest cost nothing to render initially. `contain-intrinsic-size`
+     reserves an estimated height so the scrollbar and page height stay stable
+     (no jump as rows realize). ~420px ≈ heading + one poster row. */
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 420px;
+  }
 }
 
 /* Hero trailer preview: object-cover a 16:9 YouTube iframe over the hero at any
