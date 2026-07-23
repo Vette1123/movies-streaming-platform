@@ -227,9 +227,13 @@ export function Carousel({
             aria-hidden={!active}
             drag={active ? 'x' : false}
             dragConstraints={DRAG_CONSTRAINTS}
-            dragElastic={0.08}
+            // Tracks the finger ~18% of the drag distance and rubber-bands back
+            // on release. 0.08 felt dead (slide barely moved under the pointer);
+            // 0.18 gives tactile "the slide is following me" feedback while the
+            // constraints still snap it home so it never drifts off-axis.
+            dragElastic={0.18}
             dragMomentum={false}
-            whileDrag={{ scale: 0.99 }}
+            whileDrag={{ scale: 0.985 }}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >

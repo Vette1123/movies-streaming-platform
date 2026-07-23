@@ -22,10 +22,15 @@ export const SeriesDetailsExtraInfo = ({
   const extraInfo = seriesExtraInfoFormatter(series, director)
   return (
     <section>
-      <NewBadgeWhenRecent
-        date={series.first_air_date}
-        className="relative left-0 top-0 mb-2 px-2.5 py-1 text-[11px] lg:text-xs"
-      />
+      {/* Reserve the badge row so the mount-gated "New" chip doesn't shove the
+          title down post-hydration (CLS). `static` keeps it in normal flow
+          inside the reserved box instead of the base `absolute`. */}
+      <div className="mb-2 min-h-[1.75rem]">
+        <NewBadgeWhenRecent
+          date={series.first_air_date}
+          className="static px-2.5 py-1 text-[11px] lg:text-xs"
+        />
+      </div>
       <h1 className="text-sm font-bold lg:text-3xl">{series.name}</h1>
       {series.tagline && (
         <p className="text-muted-foreground mt-1 text-xs italic lg:text-base">

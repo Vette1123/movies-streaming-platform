@@ -183,8 +183,14 @@ const RATELIMIT_RULE = {
   // Free plan doesn't allow `matches` (regex) in rate-limit expressions;
   // starts_with is the closest. `/movies` and `/tv-shows` (list pages) don't
   // have a trailing slash, so they're not caught — only detail pages match.
+  // BUT `/movies/genre/<slug>` and `/tv-shows/genre/<slug>` also start with
+  // `/movies/`/`/tv-shows/`, so without the `and not (...genre)` exclusion the
+  // genre browse pages share this detail bucket — and their infinite-scroll
+  // pagination fires server-action POSTs to the SAME path, which can trip the
+  // limit and silently kill "load more" on scroll. Exclude genre paths (still
+  // just starts_with, so free-plan compatible).
   expression:
-    'starts_with(http.request.uri.path, "/movies/") or starts_with(http.request.uri.path, "/tv-shows/")',
+    '(starts_with(http.request.uri.path, "/movies/") or starts_with(http.request.uri.path, "/tv-shows/")) and not (starts_with(http.request.uri.path, "/movies/genre") or starts_with(http.request.uri.path, "/tv-shows/genre"))',
   // Free plan only allows `block` for rate limits (no managed_challenge).
   action: 'block',
   // Free plan caps period to 10s and only lets the expression match on Path /

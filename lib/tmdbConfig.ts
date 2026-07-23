@@ -8,20 +8,23 @@ const apiConfig = {
   // every ImageKit account and produce the *same image* (resized + WebP) rather
   // than a different one — so the <img>/<Image> is byte-for-byte identical in
   // content, just dramatically smaller. A full-width TMDB backdrop is typically
-  // 1–3 MB; tr:w-1600,q-72,f-webp brings the LCP hero to ~120–180 KB with no
-  // perceptible quality drop (the hero never renders wider than ~1600px, and the
-  // Ken Burns scale caps at 1.16×). Posters/logos already have a sized path and
-  // get a quality+format pass only. If a transform ever 404s, the onError chain
-  // in BlurredImage walks to wsrv.nl (also optimized) then TMDB origin — so this
-  // can never break an image, only fail back to the (still-working) unoptimized.
+  // 1–3 MB; tr:w-2000,q-82,f-webp brings the LCP hero to ~200–280 KB. The hero
+  // is full-bleed object-cover and Ken-Burns-scaled to 1.16×, so on a 1440p/4K
+  // or retina panel it paints well past 1600px — w-2000 keeps it crisp there
+  // (1600 visibly upscaled/pixelated). Quality is q-82 (posters) / q-80 (thumbs):
+  // WebP at q-82 is effectively visually lossless on poster faces/text while
+  // still ~40% smaller than the JPEG origin — q-70/72 was over-soft. If a
+  // transform ever 404s, the onError chain in BlurredImage walks to wsrv.nl
+  // (also optimized) then TMDB origin — so this can never break an image, only
+  // fail back to the (still-working) unoptimized.
   originalImage: (imgPath: string) =>
-    `${IMAGE_CACHE_HOST_URL}/tr:w-1600,q-72,f-webp,pr-true/original${imgPath}`,
+    `${IMAGE_CACHE_HOST_URL}/tr:w-2000,q-82,f-webp,pr-true/original${imgPath}`,
   w500Image: (imgPath: string) =>
-    `${IMAGE_CACHE_HOST_URL}/tr:q-72,f-webp/w500${imgPath}`,
+    `${IMAGE_CACHE_HOST_URL}/tr:q-82,f-webp/w500${imgPath}`,
   w185Image: (imgPath: string) =>
-    `${IMAGE_CACHE_HOST_URL}/tr:q-70,f-webp/w185${imgPath}`,
+    `${IMAGE_CACHE_HOST_URL}/tr:q-80,f-webp/w185${imgPath}`,
   w300Image: (imgPath: string) =>
-    `${IMAGE_CACHE_HOST_URL}/tr:q-70,f-webp/w300${imgPath}`,
+    `${IMAGE_CACHE_HOST_URL}/tr:q-80,f-webp/w300${imgPath}`,
 }
 
 // TMDB's own image origin — free, keyless, unmetered, never expires. The last
@@ -75,15 +78,16 @@ function imageStage(src: string): number {
 
 // Pull the pixel width the source image was requested at, from its TMDB size
 // segment ("/original", "/w500", "/w300", "/w185"). `original` has no fixed
-// width, so cap it at 1600 (the largest the hero ever renders at 1.16× scale).
-// Used so the wsrv.nl fallback can re-apply the SAME optimization instead of
-// either upscaling thumbnails (w=1600 on a /w185 path) or serving the full
-// multi-MB original.
+// width, so cap it at 2000 (matches the ImageKit hero width above — the largest
+// the full-bleed hero renders at 1.16× scale on hi-dpi panels). Used so the
+// wsrv.nl fallback can re-apply the SAME optimization instead of either
+// upscaling thumbnails (w=2000 on a /w185 path) or serving the full multi-MB
+// original.
 function widthFromPath(path: string): number | undefined {
   const m = path.match(/^\/(?:original|w(\d+))/)
   if (!m) return undefined
   if (m[1]) return Number(m[1])
-  return 1600 // /original
+  return 2000 // /original
 }
 
 // Given the current (failed) image URL, return the next fallback in the chain,
@@ -103,7 +107,7 @@ function getNextImageFallback(src: unknown): string | null {
       // literal so the NEXT stage's extractTMDBPath can still find it.
       const w = widthFromPath(path)
       const widthParam = w ? `&w=${w}` : ''
-      return `${WSRV_BASE}${tmdbOrigin}${widthParam}&q=72&output=webp`
+      return `${WSRV_BASE}${tmdbOrigin}${widthParam}&q=82&output=webp`
     }
     case 1: // wsrv.nl -> TMDB origin direct (last resort, unoptimizable)
       return tmdbOrigin

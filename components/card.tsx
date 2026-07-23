@@ -57,6 +57,9 @@ const CardComponent = ({
       <HoverCardTrigger asChild>
         <Link
           href={`${itemRedirect(itemType)}/${item.id}`}
+          // Block-level so the poster's `w-full` resolves against the grid track
+          // / rail item width instead of an inline <a>'s shrink-to-fit box.
+          className="block w-full"
           // Viewport auto-prefetch fires one RSC request per card; a homepage
           // of carousels mounts 100+ cards at once and trips the CF rate-limit
           // (100 req/10s on detail paths) → 1015 on our own page load. Prefetch

@@ -28,36 +28,41 @@ export const SeriesDetailsContent = ({
     (crew) => crew.job === 'Director'
   )?.name
   return (
-    <section className="container max-w-(--breakpoint-2xl) pt-12 pb-10 lg:pb-20">
-      <div className="flex flex-col-reverse gap-8 lg:flex-row">
-        <div className="mx-auto w-full max-w-[220px] shrink-0 sm:max-w-[260px] lg:mx-0 lg:w-[400px] lg:max-w-none">
-          <div className="relative aspect-2/3 w-full lg:aspect-auto lg:min-h-[600px]">
-            <BlurredImage
-              src={getPosterImageURL(series.poster_path)}
-              alt={series.name}
-              className="h-full w-full rounded-lg object-cover shadow-lg"
-              fill
-              sizes="(min-width: 1024px) 400px, 260px"
-              intro
-            />
+    <>
+      <section className="container max-w-(--breakpoint-2xl) pt-12 pb-6 lg:pb-10">
+        <div className="flex flex-col-reverse gap-8 lg:flex-row">
+          <div className="mx-auto w-full max-w-[220px] shrink-0 sm:max-w-[260px] lg:mx-0 lg:w-[400px] lg:max-w-none">
+            <div className="relative aspect-2/3 w-full lg:aspect-auto lg:min-h-[600px]">
+              <BlurredImage
+                src={getPosterImageURL(series.poster_path)}
+                alt={series.name}
+                className="h-full w-full rounded-lg object-cover shadow-lg"
+                fill
+                sizes="(min-width: 1024px) 400px, 260px"
+                intro
+              />
+            </div>
           </div>
+          <section className="flex flex-1 flex-col gap-4">
+            <SeriesDetailsExtraInfo series={series} director={director} />
+            <DetailsCredits movieCredits={seriesCredits} />
+          </section>
+          <SeasonNavigator series={series} />
         </div>
-        <section className="flex flex-1 flex-col gap-4">
-          <SeriesDetailsExtraInfo series={series} director={director} />
-          <DetailsCredits movieCredits={seriesCredits} />
-        </section>
-        <SeasonNavigator series={series} />
+      </section>
+      {/* Full-bleed rails — same width/gutter as the homepage rows. */}
+      <div className="pb-10 lg:pb-20">
+        <Suspense fallback={<SliderHorizontalListLoader />}>
+          <List
+            title="Recommended Series"
+            items={recommendedSeries}
+            itemType="tv"
+          />
+        </Suspense>
+        <Suspense fallback={<SliderHorizontalListLoader />}>
+          <List title="Similar Series" items={similarSeries} itemType="tv" />
+        </Suspense>
       </div>
-      <Suspense fallback={<SliderHorizontalListLoader />}>
-        <List
-          title="Recommended Series"
-          items={recommendedSeries}
-          itemType="tv"
-        />
-      </Suspense>
-      <Suspense fallback={<SliderHorizontalListLoader />}>
-        <List title="Similar Series" items={similarSeries} itemType="tv" />
-      </Suspense>
-    </section>
+    </>
   )
 }

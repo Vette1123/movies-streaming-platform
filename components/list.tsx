@@ -114,7 +114,12 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
   }, [])
 
   return (
-    <nav className="py-6 sm:py-8 lg:py-10">
+    // Self-contained horizontal gutter so the rail renders IDENTICALLY wherever
+    // it's used — homepage rows, movie/series detail "Similar"/"Recommended".
+    // Callers must NOT add their own horizontal padding (the detail pages used to
+    // wrap this in a narrow `container`, which made the row a different width than
+    // home and clipped the scroll region).
+    <nav className="px-5 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10 xl:px-16 2xl:px-20">
       <motion.div
         initial="rest"
         whileHover="hover"
@@ -178,10 +183,20 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
             onPointerUp={endDrag}
             onPointerLeave={endDrag}
             onClickCapture={onClickCapture}
-            className="no-scrollbar -my-4 flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth py-4"
+            // No `scroll-smooth` here: it makes every `scrollLeft` write during a
+            // pointer-drag animate toward its target, so rapid drag updates fight
+            // the smoothing and the rail feels stuck / unswipeable on desktop.
+            // Arrow paging still animates via scrollBy({ behavior: 'smooth' }).
+            className="no-scrollbar -my-4 flex snap-x snap-mandatory gap-6 overflow-x-auto py-4"
           >
             {items.map((item) => (
-              <div key={item.id} className="shrink-0 snap-start">
+              // Responsive width matching SliderHorizontalListLoader so the
+              // Suspense skeleton → real card swap doesn't jump the rail (the
+              // card poster is now w-full of this box, not a fixed 250px).
+              <div
+                key={item.id}
+                className="w-[160px] shrink-0 snap-start sm:w-[190px] lg:w-[230px] 2xl:w-[250px]"
+              >
                 <Card item={item} itemType={itemType} />
               </div>
             ))}

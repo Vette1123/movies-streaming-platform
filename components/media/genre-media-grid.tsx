@@ -40,9 +40,15 @@ export const GenreMediaGrid = ({
         )
       },
       getNextPageParam: (lastPage, pages) => {
-        const totalPages = lastPage?.total_pages ?? 0
-        const next = pages.length + 1
-        return next <= totalPages ? next : undefined
+        // Don't gate on `total_pages`: the runtime discover response (server
+        // action, Cloudflare) can come back without it — or `initialData` can
+        // ship empty from a build-time TMDB hiccup — which pins total_pages at 0
+        // and freezes pagination at page 1. Instead paginate until a page returns
+        // no results, matching the resilient browse hook. TMDB caps discover at
+        // 500 pages, so an empty page is the natural stop.
+        if (!lastPage?.results?.length) return undefined
+        if (pages.length >= 500) return undefined
+        return pages.length + 1
       },
       initialData: { pages: [initialData], pageParams: [1] },
     })
