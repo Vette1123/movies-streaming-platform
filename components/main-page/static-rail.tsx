@@ -1,11 +1,11 @@
 import React from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { Clapperboard, Film, Tv } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
 import { getPosterImageURL, itemRedirect } from '@/lib/utils'
+import { BlurredImage } from '@/components/blurred-image'
 
 interface StaticRailProps {
   title: string
@@ -68,13 +68,16 @@ export function StaticRail({ title, items, itemType = 'movie' }: StaticRailProps
                   className="block w-full"
                 >
                   {item?.poster_path ? (
-                    <div className="relative overflow-hidden rounded-lg shadow-lg">
-                      <Image
+                    // Same BlurredImage as Card, so below-fold posters get the
+                    // identical reserved box + dark-crossfade reveal (and the swap
+                    // to the interactive List is a same-URL cache hit, no reflash).
+                    <div className="rounded-lg shadow-lg">
+                      <BlurredImage
                         src={getPosterImageURL(item.poster_path)}
                         alt={posterTitle}
                         width={250}
                         height={375}
-                        className="aspect-2/3 w-full rounded-lg object-cover"
+                        className="rounded-lg object-cover"
                       />
                     </div>
                   ) : (
