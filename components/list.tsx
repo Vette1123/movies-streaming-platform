@@ -172,13 +172,18 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
       {items.length > 0 && (
         <div className="group/rail relative">
           {/* Scroll track: native, GPU-driven, snap-aligned. `overflow-x-auto`
-              forces `overflow-y: clip`, so the hover lift (translateY -10 + scale
-              1.05, ~19px of top growth on the largest poster) needs vertical
-              breathing room or it gets cut at the track's top edge. `-my-6 py-6`
-              gives 24px of clip-room; the equal negative margin cancels the
-              padding so the row's layout position is unchanged (stays flush with
-              siblings, no jump when StaticRail swaps to this List). Scrollbar
-              hidden via .no-scrollbar. */}
+              forces `overflow-y: clip` AND clips horizontally at the scroll
+              extremes, so the hover lift (translateY -10 + scale 1.05) needs
+              breathing room on ALL four sides or the edge cards get cut — the
+              first card's left grows ~6px past scrollLeft:0 and the top grows
+              ~19px above the track. `-my-6 py-6` gives 24px vertical clip-room;
+              `-mx-4 px-4` gives 16px horizontal room the same way (equal negative
+              margin bleeds the track into the nav gutter — 16px < the 20px
+              min gutter so it never causes page overflow — while the padding
+              holds the content in place, so the row's layout position is
+              unchanged: no jump when StaticRail swaps to this List). `scroll-pl-4`
+              keeps snap-start aligning the first card to the heading, not to the
+              bled-out padding edge. Scrollbar hidden via .no-scrollbar. */}
           <div
             ref={railRef}
             onScroll={syncArrows}
@@ -191,7 +196,7 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
             // pointer-drag animate toward its target, so rapid drag updates fight
             // the smoothing and the rail feels stuck / unswipeable on desktop.
             // Arrow paging still animates via scrollBy({ behavior: 'smooth' }).
-            className="no-scrollbar -my-6 flex snap-x snap-mandatory gap-6 overflow-x-auto py-6"
+            className="no-scrollbar -mx-4 -my-6 flex snap-x snap-mandatory gap-6 overflow-x-auto px-4 py-6 scroll-pl-4"
           >
             {items.map((item) => (
               // Responsive width matching SliderHorizontalListLoader so the

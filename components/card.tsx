@@ -94,7 +94,7 @@ const CardComponent = ({
                 unhurried feel); framer owns only the transform. */}
             <motion.div
               whileHover={{ scale: 1.05, y: -10 }}
-              transition={{ type: 'spring', stiffness: 220, damping: 26, mass: 0.9 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 21, mass: 1 }}
               className="group-hover/card:ring-primary/60 relative cursor-pointer rounded-lg shadow-lg ring-1 ring-transparent transition-shadow duration-500 ease-out will-change-transform group-hover/card:shadow-2xl"
             >
               <NewBadgeWhenRecent date={releaseDate} />
