@@ -5,6 +5,7 @@ import {
   getPopularSeries,
 } from '@/services/series'
 
+import { CollectionDetails } from '@/types/collection'
 import { MediaResponse } from '@/types/media'
 import {
   MovieDetailsWithExtras,
@@ -143,6 +144,15 @@ const getMovieDetailsById = cache(async (id: string, params: Param = {}) => {
   }
 })
 
+// Franchise/collection page (e.g. "Lilo & Stitch Collection"). TMDB ships the
+// full movie list in one `collection/{id}` call, so this is a single cached
+// request — cheap to render and to prebuild. cache() dedupes it across the
+// page's generateMetadata + body.
+const getCollectionById = cache(async (id: string, params: Param = {}) => {
+  const url = `collection/${id}?language=en-US`
+  return fetchClient.get<CollectionDetails>(url, params, true)
+})
+
 // Carousels are horizontal scrollers — 12 items is plenty and trims server-side
 // render work vs. TMDB's full 20-item page.
 const RELATED_LIMIT = 12
@@ -176,5 +186,6 @@ export {
   getPopularMovies,
   populateHomePageData,
   getMovieDetailsById,
+  getCollectionById,
   populateMovieDetailsPage,
 }
