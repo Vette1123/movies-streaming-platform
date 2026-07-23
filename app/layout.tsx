@@ -4,11 +4,10 @@ import type { Metadata, Viewport } from 'next'
 import { CSPostHogProvider } from '@/providers/posthog-provider'
 import { QueryProvider } from '@/providers/query-provider'
 import { ToastProvider } from '@/providers/toast-provider'
-import { GoogleTagManager } from '@next/third-parties/google'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 
 import { siteConfig } from '@/config/site'
-import { GOOGLE_GTM_ID, IMAGE_CACHE_HOST_URL } from '@/lib/constants'
+import { IMAGE_CACHE_HOST_URL } from '@/lib/constants'
 import { fontSans } from '@/lib/fonts'
 import {
   JsonLd,
@@ -171,7 +170,6 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
           <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="" />
         )}
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
-        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link
           rel="mask-icon"
           href="/safari-pinned-tab.svg"
@@ -206,7 +204,6 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
             </NuqsAdapter>
             <ToastProvider />
             <Footer />
-            {GOOGLE_GTM_ID && <GoogleTagManager gtmId={GOOGLE_GTM_ID} />}
             {modal && modal}
             <ServiceWorkerRegister />
             <InstallPrompt />
