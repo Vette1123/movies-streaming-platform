@@ -98,9 +98,20 @@ const nextConfig = {
 // Gated on POSTHOG_API_KEY: without it (contributor / CI without the secret) the
 // build proceeds untouched instead of failing. The host is the PostHog APP host
 // (eu.posthog.com), NOT the ingestion host in NEXT_PUBLIC_POSTHOG_HOST.
+//
+// ALSO gated on CI: source-map upload is a production concern (it symbolicates
+// prod errors), it's slow (~2min), talks to the network, and would push
+// throwaway maps for every local `pnpm build`. GitHub Actions sets CI=true, so
+// the deploy uploads while local builds stay fast and offline. Force it locally
+// when you actually need it with POSTHOG_UPLOAD_SOURCEMAPS=1.
 const posthogApiKey = process.env.POSTHOG_API_KEY
+const isCI =
+  !!process.env.CI && process.env.CI !== 'false' && process.env.CI !== '0'
+const shouldUploadSourcemaps =
+  !!posthogApiKey &&
+  (isCI || process.env.POSTHOG_UPLOAD_SOURCEMAPS === '1')
 
-export default posthogApiKey
+export default shouldUploadSourcemaps
   ? withPostHogConfig(nextConfig, {
       personalApiKey: posthogApiKey,
       projectId: process.env.POSTHOG_PROJECT_ID ?? '216915',
