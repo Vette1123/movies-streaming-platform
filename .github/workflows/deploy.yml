@@ -60,8 +60,6 @@ jobs:
         run: |
           echo "${{ secrets.TMDB_API_KEY }}" | pnpm wrangler secret put TMDB_API_KEY
           echo "${{ secrets.TMDB_HEADER_KEY }}" | pnpm wrangler secret put TMDB_HEADER_KEY
-          echo "${{ secrets.GOOGLE_GTM_ID }}" | pnpm wrangler secret put GOOGLE_GTM_ID
-          echo "${{ secrets.GOOGLE_MEASUREMENT_ID }}" | pnpm wrangler secret put GOOGLE_MEASUREMENT_ID
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 

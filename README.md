@@ -99,7 +99,6 @@ Copy `.env.sample` to `.env.local` and fill in the values you need. Only TMDB-re
 | `NEXT_PUBLIC_STREAMING_MOVIES_API_URL` | Streaming source base URL used by the player |
 | `NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE` | Google search URL template for actor lookups |
 | `NEXT_PUBLIC_IMAGE_CACHE_HOST_URL` | Optional image cache/CDN host |
-| `GOOGLE_GTM_ID` / `GOOGLE_MEASUREMENT_ID` | Google Tag Manager & GA4 IDs (optional) |
 | `NEXT_PUBLIC_POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_HOST` | PostHog project credentials (optional) |
 | `CLOUDFLARE_API_TOKEN` | Required only for `pnpm deploy` to Cloudflare Workers |
 
