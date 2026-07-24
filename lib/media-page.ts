@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 
 import { MediaResponse } from '@/types/media'
 import { siteConfig } from '@/config/site'
+import { genreNames } from '@/lib/media'
 import { getImageURL, getPosterImageURL } from '@/lib/utils'
 
 // Shared plumbing for the near-identical movies vs tv-shows routes. The two
@@ -117,6 +118,66 @@ export interface OgImage {
   width: number
   height: number
   alt: string
+}
+
+// Shared generateMetadata body for the movie + series detail pages. They were
+// ~92% identical; only the media type, canonical base path, OG type, keyword
+// tail, and whether an OG releaseDate is emitted differ. The route resolves its
+// typed details object and passes the normalized fields in.
+export interface DetailsMetadataInput {
+  id: string
+  title: string
+  releaseDate?: string | null
+  overview?: string | null
+  backdropPath?: string | null
+  posterPath?: string | null
+  genres?: { name: string }[]
+  basePath: string // '/movies' | '/tv-shows'
+  ogType: 'video.movie' | 'video.tv_show'
+  keywordsTail: string[] // e.g. ['watch online', 'movie details']
+  ogReleaseDate?: string // emitted only when provided (movies)
+}
+
+export function buildDetailsMetadata(input: DetailsMetadataInput): Metadata {
+  const year = input.releaseDate?.slice(0, 4)
+  const title = year ? `${input.title} (${year})` : input.title
+  const description =
+    input.overview?.slice(0, 200) ||
+    `Details, cast, and streaming info for ${input.title} on ${siteConfig.name}.`
+  const canonicalPath = `${input.basePath}/${input.id}`
+  const images = buildDetailsOgImages(
+    input.backdropPath,
+    input.posterPath,
+    input.title
+  )
+
+  return {
+    title,
+    description,
+    keywords: [
+      input.title,
+      ...(genreNames(input.genres) ?? []),
+      ...input.keywordsTail,
+      'cast',
+      'streaming',
+      siteConfig.name,
+    ],
+    alternates: { canonical: canonicalPath },
+    openGraph: {
+      type: input.ogType,
+      title,
+      description,
+      url: `${siteConfig.websiteURL}${canonicalPath}`,
+      images,
+      ...(input.ogReleaseDate ? { releaseDate: input.ogReleaseDate } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: images.map((i) => i.url),
+    },
+  }
 }
 
 // The backdrop (16:9) + poster (2:3) OpenGraph image pair used by both detail

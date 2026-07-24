@@ -10,9 +10,8 @@ import {
 } from '@/services/series'
 
 import { PageDetailsProps } from '@/types/page-details'
-import { siteConfig } from '@/config/site'
 import { getMediaHeroImageUrl } from '@/lib/media'
-import { buildDetailsOgImages, buildMediaStaticParams } from '@/lib/media-page'
+import { buildDetailsMetadata, buildMediaStaticParams } from '@/lib/media-page'
 import { breadcrumbJsonLd, JsonLd, tvSeriesJsonLd } from '@/lib/structured-data'
 import { SeriesDetailsContent } from '@/components/series/details-content'
 import { SeriesDetailsHero } from '@/components/series/details-hero'
@@ -51,47 +50,18 @@ export async function generateMetadata(
   }
   if (!seriesDetails?.id) notFound()
 
-  const year = seriesDetails.first_air_date?.slice(0, 4)
-  const title = year ? `${seriesDetails.name} (${year})` : seriesDetails.name
-  const description =
-    seriesDetails.overview?.slice(0, 200) ||
-    `Details, cast, and streaming info for ${seriesDetails.name} on ${siteConfig.name}.`
-  const canonicalPath = `/tv-shows/${id}`
-  const images = buildDetailsOgImages(
-    seriesDetails.backdrop_path,
-    seriesDetails.poster_path,
-    seriesDetails.name
-  )
-
-  return {
-    title,
-    description,
-    keywords: [
-      seriesDetails.name,
-      ...(seriesDetails.genres?.map((g) => g.name) ?? []),
-      'tv series',
-      'episodes',
-      'cast',
-      'streaming',
-      siteConfig.name,
-    ],
-    alternates: {
-      canonical: canonicalPath,
-    },
-    openGraph: {
-      type: 'video.tv_show',
-      title,
-      description,
-      url: `${siteConfig.websiteURL}${canonicalPath}`,
-      images,
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: images.map((i) => i.url),
-    },
-  }
+  return buildDetailsMetadata({
+    id,
+    title: seriesDetails.name,
+    releaseDate: seriesDetails.first_air_date,
+    overview: seriesDetails.overview,
+    backdropPath: seriesDetails.backdrop_path,
+    posterPath: seriesDetails.poster_path,
+    genres: seriesDetails.genres,
+    basePath: '/tv-shows',
+    ogType: 'video.tv_show',
+    keywordsTail: ['tv series', 'episodes'],
+  })
 }
 
 const TVSeries = async (props: PageDetailsProps) => {

@@ -10,9 +10,8 @@ import {
 } from '@/services/movies'
 
 import { PageDetailsProps } from '@/types/page-details'
-import { siteConfig } from '@/config/site'
 import { getMediaHeroImageUrl } from '@/lib/media'
-import { buildDetailsOgImages, buildMediaStaticParams } from '@/lib/media-page'
+import { buildDetailsMetadata, buildMediaStaticParams } from '@/lib/media-page'
 import { breadcrumbJsonLd, JsonLd, movieJsonLd } from '@/lib/structured-data'
 import { MoviesDetailsContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
@@ -51,48 +50,19 @@ export async function generateMetadata(
   }
   if (!movieDetails?.id) notFound()
 
-  const year = movieDetails.release_date?.slice(0, 4)
-  const title = year ? `${movieDetails.title} (${year})` : movieDetails.title
-  const description =
-    movieDetails.overview?.slice(0, 200) ||
-    `Details, cast, and streaming info for ${movieDetails.title} on ${siteConfig.name}.`
-  const canonicalPath = `/movies/${id}`
-  const images = buildDetailsOgImages(
-    movieDetails.backdrop_path,
-    movieDetails.poster_path,
-    movieDetails.title
-  )
-
-  return {
-    title,
-    description,
-    keywords: [
-      movieDetails.title,
-      ...(movieDetails.genres?.map((g) => g.name) ?? []),
-      'watch online',
-      'movie details',
-      'cast',
-      'streaming',
-      siteConfig.name,
-    ],
-    alternates: {
-      canonical: canonicalPath,
-    },
-    openGraph: {
-      type: 'video.movie',
-      title,
-      description,
-      url: `${siteConfig.websiteURL}${canonicalPath}`,
-      images,
-      releaseDate: movieDetails.release_date || undefined,
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: images.map((i) => i.url),
-    },
-  }
+  return buildDetailsMetadata({
+    id,
+    title: movieDetails.title,
+    releaseDate: movieDetails.release_date,
+    overview: movieDetails.overview,
+    backdropPath: movieDetails.backdrop_path,
+    posterPath: movieDetails.poster_path,
+    genres: movieDetails.genres,
+    basePath: '/movies',
+    ogType: 'video.movie',
+    keywordsTail: ['watch online', 'movie details'],
+    ogReleaseDate: movieDetails.release_date || undefined,
+  })
 }
 
 const MoviePage = async (props: PageDetailsProps) => {
