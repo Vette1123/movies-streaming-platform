@@ -23,6 +23,13 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Single toggle for the IMDb ratings feature. 'false' (default) skips the
+    # shard build + upload entirely — no ~10MB dataset download, no 256 dead
+    # /imdb-ratings/*.json assets shipped to the Worker — and leaves the app on
+    # TMDB ratings. Flip to 'true' to re-enable end to end (build, ship, and the
+    # runtime read in services/imdb.ts). Must match NEXT_PUBLIC_IMDB_RATINGS there.
+    env:
+      NEXT_PUBLIC_IMDB_RATINGS: 'false'
     steps:
       - uses: actions/checkout@v5
 
@@ -47,13 +54,14 @@ jobs:
 
       - name: Cache IMDb rating shards (daily)
         id: imdb-cache
+        if: env.NEXT_PUBLIC_IMDB_RATINGS == 'true'
         uses: actions/cache@v5
         with:
           path: public/imdb-ratings
           key: imdb-ratings-${{ steps.today.outputs.day }}
 
       - name: Build IMDb rating shards
-        if: steps.imdb-cache.outputs.cache-hit != 'true'
+        if: env.NEXT_PUBLIC_IMDB_RATINGS == 'true' && steps.imdb-cache.outputs.cache-hit != 'true'
         run: pnpm imdb:ratings
 
       - name: Upload Worker secrets
@@ -75,6 +83,7 @@ jobs:
           NEXT_PUBLIC_IMAGE_CACHE_HOST_URL: ${{ secrets.NEXT_PUBLIC_IMAGE_CACHE_HOST_URL }}
           NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
           NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
+          NEXT_PUBLIC_IMDB_RATINGS: ${{ env.NEXT_PUBLIC_IMDB_RATINGS }}
           # Personal API key → build-time sourcemap upload (withPostHogConfig in
           # next.config.mjs). The ONLY new secret to add. projectId (216915) and
           # API host (https://eu.posthog.com) default in next.config.mjs; if the
@@ -106,7 +115,9 @@ jobs:
         run: |
           UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
           BASE='https://www.reely.space'
-          PATHS='/ /movies /tv-shows /movies/550 /imdb-ratings/0.json'
+          # /imdb-ratings/0.json intentionally omitted — the shards ship only when
+          # NEXT_PUBLIC_IMDB_RATINGS is 'true'; re-add it here if you flip that on.
+          PATHS='/ /movies /tv-shows /movies/550'
           fail=0
           for p in $PATHS; do
             code=0
