@@ -1,5 +1,6 @@
 export const revalidate = 86400
 
+import { MediaResponse } from '@/types/media'
 import { siteConfig } from '@/config/site'
 import { MOVIE_GENRES_WITH_SLUG, TV_GENRES_WITH_SLUG } from '@/lib/genres'
 import {
@@ -19,81 +20,53 @@ const baseUrl = siteConfig.websiteURL
 
 const buildDate = (): string => new Date().toISOString()
 
-const generateMovieUrls = async (): Promise<MetadataRoute.Sitemap> => {
+// Fan out the paged fetchers, flatten + dedupe by id, and map each item to a
+// sitemap entry under `pathPrefix`. Shared by movies and TV so the dedupe and
+// priority heuristic stay identical; a failed fetch degrades to no rows.
+const mediaSitemapUrls = async (
+  pathPrefix: string,
+  fetchers: Array<() => Promise<MediaResponse | undefined>>
+): Promise<MetadataRoute.Sitemap> => {
   try {
-    const [p1, p2, tr1, tr2, tp1, tp2, np] = await Promise.all([
-      getPopularMovies({ page: 1 }),
-      getPopularMovies({ page: 2 }),
-      getLatestTrendingMovies({ page: 1 }),
-      getLatestTrendingMovies({ page: 2 }),
-      getAllTimeTopRatedMovies({ page: 1 }),
-      getAllTimeTopRatedMovies({ page: 2 }),
-      getNowPlayingMovies({ page: 1 }),
-    ])
-
-    const all = [
-      ...(p1?.results || []),
-      ...(p2?.results || []),
-      ...(tr1?.results || []),
-      ...(tr2?.results || []),
-      ...(tp1?.results || []),
-      ...(tp2?.results || []),
-      ...(np?.results || []),
-    ]
-
+    const pages = await Promise.all(fetchers.map((fetch) => fetch()))
+    const all = pages.flatMap((page) => page?.results || [])
     const unique = all.filter(
-      (m, i, self) => i === self.findIndex((x) => x.id === m.id)
+      (item, i, self) => i === self.findIndex((x) => x.id === item.id)
     )
 
     const lastModified = buildDate()
-    return unique.map((movie) => ({
-      url: `${baseUrl}/movies/${movie.id}`,
+    return unique.map((item) => ({
+      url: `${baseUrl}${pathPrefix}/${item.id}`,
       lastModified,
       changeFrequency: 'monthly' as const,
-      priority: (movie as any).popularity > 50 ? 0.8 : 0.6,
+      priority: (item as any).popularity > 50 ? 0.8 : 0.6,
     }))
   } catch (error) {
-    console.error('Error generating movie URLs for sitemap:', error)
+    console.error(`Error generating ${pathPrefix} URLs for sitemap:`, error)
     return []
   }
 }
 
-const generateTVShowUrls = async (): Promise<MetadataRoute.Sitemap> => {
-  try {
-    const [p1, p2, tr1, tr2, tp1, tp2] = await Promise.all([
-      getPopularSeries({ page: 1 }),
-      getPopularSeries({ page: 2 }),
-      getLatestTrendingSeries({ page: 1 }),
-      getLatestTrendingSeries({ page: 2 }),
-      getAllTimeTopRatedSeries({ page: 1 }),
-      getAllTimeTopRatedSeries({ page: 2 }),
-    ])
+const generateMovieUrls = (): Promise<MetadataRoute.Sitemap> =>
+  mediaSitemapUrls('/movies', [
+    () => getPopularMovies({ page: 1 }),
+    () => getPopularMovies({ page: 2 }),
+    () => getLatestTrendingMovies({ page: 1 }),
+    () => getLatestTrendingMovies({ page: 2 }),
+    () => getAllTimeTopRatedMovies({ page: 1 }),
+    () => getAllTimeTopRatedMovies({ page: 2 }),
+    () => getNowPlayingMovies({ page: 1 }),
+  ])
 
-    const all = [
-      ...(p1?.results || []),
-      ...(p2?.results || []),
-      ...(tr1?.results || []),
-      ...(tr2?.results || []),
-      ...(tp1?.results || []),
-      ...(tp2?.results || []),
-    ]
-
-    const unique = all.filter(
-      (s, i, self) => i === self.findIndex((x) => x.id === s.id)
-    )
-
-    const lastModified = buildDate()
-    return unique.map((series) => ({
-      url: `${baseUrl}/tv-shows/${series.id}`,
-      lastModified,
-      changeFrequency: 'monthly' as const,
-      priority: (series as any).popularity > 50 ? 0.8 : 0.6,
-    }))
-  } catch (error) {
-    console.error('Error generating TV show URLs for sitemap:', error)
-    return []
-  }
-}
+const generateTVShowUrls = (): Promise<MetadataRoute.Sitemap> =>
+  mediaSitemapUrls('/tv-shows', [
+    () => getPopularSeries({ page: 1 }),
+    () => getPopularSeries({ page: 2 }),
+    () => getLatestTrendingSeries({ page: 1 }),
+    () => getLatestTrendingSeries({ page: 2 }),
+    () => getAllTimeTopRatedSeries({ page: 1 }),
+    () => getAllTimeTopRatedSeries({ page: 2 }),
+  ])
 
 const SITE_LAUNCH_DATE = '2024-01-01T00:00:00.000Z'
 
