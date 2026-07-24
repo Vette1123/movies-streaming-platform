@@ -33,7 +33,11 @@ const ZONE_NAME = 'reely.space'
 const INDEXNOW_KEY = 'fd71a860ed122d006df9ba7c2c529b88'
 
 function run(args) {
-  const result = spawnSync('pnpm', ['opennextjs-cloudflare', ...args], {
+  // Pass a single command string (not command + args array) so `shell: true`
+  // doesn't trip Node 24's DEP0190 (args-array-with-shell deprecation). `shell`
+  // stays true because Windows dev needs it to resolve `pnpm` → `pnpm.cmd`; all
+  // args here are internal constants, so there is no injection surface.
+  const result = spawnSync(`pnpm opennextjs-cloudflare ${args.join(' ')}`, {
     stdio: 'inherit',
     shell: true,
   })
