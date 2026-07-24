@@ -7,6 +7,7 @@ import {
   toAnalyticsMediaType,
   trackWatchHistoryItemClicked,
 } from '@/lib/analytics'
+import { mediaDetailHref } from '@/lib/media'
 import { dateFormatter, getPosterImageURL } from '@/lib/utils'
 import { WatchedItem } from '@/hooks/use-local-storage'
 import { Badge } from '@/components/ui/badge'
@@ -28,15 +29,13 @@ const CARD_VARIANT = {
 
 export function WatchedItemCard({ item, onRemove }: WatchedItemCardProps) {
   const handleRedirect = () => {
-    if (item.type === 'movie') {
-      return `/movies/${item.id}`
-    }
+    const href = mediaDetailHref(toAnalyticsMediaType(item.type), item.id)
     // Watchlist items are saved without a season/episode; only deep-link to a
     // specific episode when we actually have one (watch-history items do).
-    if (item.season && item.episode) {
-      return `/tv-shows/${item.id}?season=${item.season}&episode=${item.episode}`
+    if (item.type !== 'movie' && item.season && item.episode) {
+      return `${href}?season=${item.season}&episode=${item.episode}`
     }
-    return `/tv-shows/${item.id}`
+    return href
   }
 
   return (

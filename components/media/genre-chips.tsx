@@ -2,6 +2,7 @@ import React from 'react'
 
 import { MovieGenre } from '@/types/movie-genre'
 import { findMovieGenreById, findTvGenreById } from '@/lib/genres'
+import { mediaGenreBasePath } from '@/lib/media'
 import { cn } from '@/lib/utils'
 import { chipVariants } from '@/components/ui/chip'
 import { GenreLink } from '@/components/media/genre-link'
@@ -20,7 +21,7 @@ export function GenreChips({ genres, mediaType, className }: GenreChipsProps) {
   if (!genres?.length) return null
 
   const resolve = mediaType === 'movie' ? findMovieGenreById : findTvGenreById
-  const basePath = mediaType === 'movie' ? '/movies/genre' : '/tv-shows/genre'
+  const basePath = mediaGenreBasePath(mediaType)
   const noun = mediaType === 'movie' ? 'movies' : 'series'
 
   return (
