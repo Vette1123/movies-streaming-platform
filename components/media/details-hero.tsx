@@ -3,7 +3,7 @@
 import React from 'react'
 
 import { MovieDetails } from '@/types/movie-details'
-import { trackMediaDetailViewed } from '@/lib/analytics'
+import { buildMediaEventBase, trackMediaDetailViewed } from '@/lib/analytics'
 import { STREAMING_MOVIES_API_URL } from '@/lib/constants'
 import { DetailsHero } from '@/components/details-hero'
 
@@ -19,16 +19,7 @@ export const MovieDetailsHero = ({
 
   React.useEffect(() => {
     if (!movie?.id) return
-    trackMediaDetailViewed({
-      media_id: movie.id,
-      media_type: 'movie',
-      title: movie.title,
-      vote_average: movie.vote_average,
-      release_year: movie.release_date
-        ? Number(movie.release_date.slice(0, 4))
-        : null,
-      genres: movie.genres?.map((g) => g.name),
-    })
+    trackMediaDetailViewed(buildMediaEventBase(movie, 'movie'))
   }, [movie?.id])
 
   const playVideo = () => {

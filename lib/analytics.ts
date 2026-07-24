@@ -7,6 +7,13 @@
 
 import posthog from 'posthog-js'
 
+import {
+  genreNames,
+  getMediaReleaseDate,
+  getMediaTitle,
+  getReleaseYear,
+} from '@/lib/media'
+
 export const EVENTS = {
   // Playback (primary conversion)
   MEDIA_PLAYED: 'media_played',
@@ -56,6 +63,31 @@ export type MediaKind = 'movie' | 'tv'
 // One place maps between them so the mapping can't drift across call sites.
 export const toAnalyticsMediaType = (type: 'movie' | 'series'): MediaKind =>
   type === 'movie' ? 'movie' : 'tv'
+
+interface MediaEventMedia {
+  id: number
+  title?: string
+  name?: string
+  vote_average?: number
+  release_date?: string
+  first_air_date?: string
+  genres?: { name: string }[]
+}
+
+// Shared shape for media_played / media_detail_viewed payloads so the property
+// set (and its title/release_year/genres derivation) stays identical across
+// every call site — PostHog dashboards depend on that consistency. Callers
+// spread the result and add event-specific extras (season/episode).
+export function buildMediaEventBase(media: MediaEventMedia, type: MediaKind) {
+  return {
+    media_id: media.id,
+    media_type: type,
+    title: getMediaTitle(media),
+    vote_average: media.vote_average,
+    release_year: getReleaseYear(getMediaReleaseDate(media)),
+    genres: genreNames(media.genres),
+  }
+}
 
 const isClient = () => typeof window !== 'undefined'
 

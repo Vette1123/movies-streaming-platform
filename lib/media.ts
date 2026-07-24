@@ -34,6 +34,14 @@ export function getReleaseYear(date?: string): number | null {
   return date ? Number(date.slice(0, 4)) : null
 }
 
+// Flatten TMDB genre objects to their names (undefined passthrough) — used by
+// analytics payloads and JSON-LD `genre` arrays alike.
+export function genreNames(
+  genres?: { name: string }[]
+): string[] | undefined {
+  return genres?.map((genre) => genre.name)
+}
+
 // Some TMDB payloads omit `media_type` (e.g. a /discover row); fall back to the
 // presence of `first_air_date`, which only series carry.
 export function resolveMediaType(media: TypedMedia): ItemType {
