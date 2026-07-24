@@ -73,10 +73,15 @@ jobs:
         if: env.NEXT_PUBLIC_IMDB_RATINGS == 'true' && steps.imdb-cache.outputs.cache-hit != 'true'
         run: pnpm imdb:ratings
 
+      # Manual-only: Cloudflare secrets persist across deploys, so re-putting them
+      # on every push/cron is redundant and bumps an extra Worker version each run.
+      # Run this once via "Run workflow" after rotating a key or recreating the
+      # Worker; normal push/scheduled deploys reuse the already-stored secrets.
       # `printf %s` (not `echo`) so no trailing newline is baked into the secret
       # value — a stray \n in TMDB_HEADER_KEY would corrupt the Authorization
       # header. Secrets come in via env, never interpolated into the shell body.
       - name: Upload Worker secrets
+        if: github.event_name == 'workflow_dispatch'
         run: |
           printf '%s' "$TMDB_API_KEY" | pnpm wrangler secret put TMDB_API_KEY
           printf '%s' "$TMDB_HEADER_KEY" | pnpm wrangler secret put TMDB_HEADER_KEY
@@ -88,6 +93,11 @@ jobs:
       - run: pnpm run deploy:full
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # Purge the CF edge only when code may have changed (push / manual).
+          # Scheduled rebuilds ship identical hash-named assets, so a purge would
+          # just evict live-and-still-valid entries for zero freshness gain
+          # (KV/regional already serve the new build via its build id).
+          CF_PURGE: ${{ github.event_name != 'schedule' }}
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           TMDB_HEADER_KEY: ${{ secrets.TMDB_HEADER_KEY }}
           NEXT_PUBLIC_TMDB_BASEURL: ${{ secrets.NEXT_PUBLIC_TMDB_BASEURL }}

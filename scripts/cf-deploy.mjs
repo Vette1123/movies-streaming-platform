@@ -9,8 +9,9 @@
 //   2. Move `.open-next/cache` aside so the deploy step's built-in populate
 //      finds no assets and short-circuits.
 //   3. Run deploy. The worker ships even when KV is rate-limited.
-//   4. After deploy: purge the entire CF edge cache, then ping IndexNow with
-//      the top-level URLs so Bing/Yandex/DDG pick up changes.
+//   4. After deploy: purge the entire CF edge cache (unless CF_PURGE=false, set
+//      on scheduled rebuilds where the hash-named assets are unchanged), then
+//      ping IndexNow with the top-level URLs so Bing/Yandex/DDG pick up changes.
 //
 // Why purge everything: the edge-cache rule (scripts/cf-waf-setup.mjs) caches
 // public document pages — /, /movies, /tv-shows, /movies/:id, /tv-shows/:id —
@@ -70,7 +71,11 @@ process.exit(deployCode)
 
 async function postDeploy() {
   const token = process.env.CLOUDFLARE_API_TOKEN
-  if (token) {
+  // Skip the edge purge only when the caller explicitly opts out (CF_PURGE=false,
+  // set by the deploy workflow on scheduled rebuilds). Defaults to purging so a
+  // local `pnpm deploy` and every push/manual run still clears the edge.
+  const shouldPurge = process.env.CF_PURGE !== 'false'
+  if (token && shouldPurge) {
     try {
       const zoneRes = await fetch(
         `https://api.cloudflare.com/client/v4/zones?name=${encodeURIComponent(ZONE_NAME)}`,
@@ -99,6 +104,8 @@ async function postDeploy() {
     } catch (err) {
       console.warn(`[cf-deploy] cache purge skipped: ${err.message}`)
     }
+  } else if (!shouldPurge) {
+    console.log('• CF_PURGE=false — skipping edge purge (scheduled rebuild)')
   } else {
     console.warn('[cf-deploy] CLOUDFLARE_API_TOKEN not set — skipping cache purge')
   }
