@@ -11,9 +11,9 @@ import {
 
 import { PageDetailsProps } from '@/types/page-details'
 import { siteConfig } from '@/config/site'
+import { getMediaHeroImageUrl } from '@/lib/media'
 import { buildDetailsOgImages, buildMediaStaticParams } from '@/lib/media-page'
 import { breadcrumbJsonLd, JsonLd, tvSeriesJsonLd } from '@/lib/structured-data'
-import { getImageURL, getPosterImageURL } from '@/lib/utils'
 import { SeriesDetailsContent } from '@/components/series/details-content'
 import { SeriesDetailsHero } from '@/components/series/details-hero'
 
@@ -120,11 +120,10 @@ const TVSeries = async (props: PageDetailsProps) => {
     numberOfSeasons: seriesDetails.number_of_seasons,
     numberOfEpisodes: seriesDetails.number_of_episodes,
     genres: seriesDetails.genres?.map((g) => g.name),
-    imageUrl: seriesDetails.backdrop_path
-      ? getImageURL(seriesDetails.backdrop_path)
-      : seriesDetails.poster_path
-        ? getPosterImageURL(seriesDetails.poster_path)
-        : null,
+    imageUrl: getMediaHeroImageUrl(
+      seriesDetails.backdrop_path,
+      seriesDetails.poster_path
+    ),
     voteAverage: seriesDetails.vote_average,
     voteCount: seriesDetails.vote_count,
     tagline: seriesDetails.tagline,

@@ -11,9 +11,9 @@ import {
 
 import { PageDetailsProps } from '@/types/page-details'
 import { siteConfig } from '@/config/site'
+import { getMediaHeroImageUrl } from '@/lib/media'
 import { buildDetailsOgImages, buildMediaStaticParams } from '@/lib/media-page'
 import { breadcrumbJsonLd, JsonLd, movieJsonLd } from '@/lib/structured-data'
-import { getImageURL, getPosterImageURL } from '@/lib/utils'
 import { MoviesDetailsContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
 
@@ -119,11 +119,10 @@ const MoviePage = async (props: PageDetailsProps) => {
     releaseDate: movieDetails.release_date,
     runtime: movieDetails.runtime,
     genres: movieDetails.genres?.map((g) => g.name),
-    imageUrl: movieDetails.backdrop_path
-      ? getImageURL(movieDetails.backdrop_path)
-      : movieDetails.poster_path
-        ? getPosterImageURL(movieDetails.poster_path)
-        : null,
+    imageUrl: getMediaHeroImageUrl(
+      movieDetails.backdrop_path,
+      movieDetails.poster_path
+    ),
     voteAverage: movieDetails.vote_average,
     voteCount: movieDetails.vote_count,
     tagline: movieDetails.tagline,
