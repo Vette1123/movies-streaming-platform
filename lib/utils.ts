@@ -47,6 +47,13 @@ function numberRounder(number: number | undefined) {
   if (number) return Math.round(number * 10) / 10
 }
 
+// Pick singular/plural for a count. Defaults the plural to `${singular}s`; pass
+// an explicit plural for irregular nouns. Returns the WORD only (no count), so
+// callers control the surrounding text.
+function pluralize(count: number, singular: string, plural?: string) {
+  return count === 1 ? singular : (plural ?? `${singular}s`)
+}
+
 const RECENTLY_RELEASED_DAYS = 30
 
 /**
@@ -111,8 +118,8 @@ function convertMinutesToHours(minutes: number): string {
   const hours = Math.floor(minutes / 60)
   const min = minutes % 60
 
-  let hoursString = hours > 0 ? `${hours} hour${hours > 1 ? 's' : ''}` : ''
-  let minString = min > 0 ? `${min} minute${min > 1 ? 's' : ''}` : ''
+  let hoursString = hours > 0 ? `${hours} ${pluralize(hours, 'hour')}` : ''
+  let minString = min > 0 ? `${min} ${pluralize(min, 'minute')}` : ''
 
   return `${hoursString} ${minString}`
 }
@@ -139,6 +146,7 @@ export {
   dateFormatter,
   getGenres,
   numberRounder,
+  pluralize,
   isRecentlyReleased,
   itemRedirect,
   moneyFormatter,

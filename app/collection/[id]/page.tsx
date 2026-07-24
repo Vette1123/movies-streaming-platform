@@ -9,7 +9,7 @@ import { Movie } from '@/types/movie-result'
 import { PageDetailsProps } from '@/types/page-details'
 import { siteConfig } from '@/config/site'
 import { breadcrumbJsonLd, JsonLd } from '@/lib/structured-data'
-import { getImageURL } from '@/lib/utils'
+import { getImageURL, pluralize } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
 import { Card } from '@/components/card'
 
@@ -122,7 +122,7 @@ const CollectionPage = async (props: PageDetailsProps) => {
             </p>
           )}
           <p className="mt-3 text-xs font-medium text-white/50">
-            {parts.length} {parts.length === 1 ? 'title' : 'titles'}
+            {parts.length} {pluralize(parts.length, 'title')}
           </p>
         </div>
       </section>
