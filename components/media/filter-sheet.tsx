@@ -3,7 +3,6 @@
 import React, { useCallback } from 'react'
 
 import { MediaFilter } from '@/types/filter'
-import { Button } from '@/components/ui/button'
 import {
   Sheet,
   SheetContent,
@@ -13,6 +12,7 @@ import {
 } from '@/components/ui/sheet'
 import { Icons } from '@/components/icons'
 
+import { FilterTriggerButton } from './filter-controls'
 import { FilterSidebar } from './filter-sidebar'
 
 interface FilterSheetProps {
@@ -58,21 +58,10 @@ export const FilterSheet = ({
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2"
+        <FilterTriggerButton
+          activeFilterCount={activeFilterCount}
           onClick={handleTriggerClick}
-          type="button"
-        >
-          <Icons.filter className="h-4 w-4" />
-          Filters
-          {activeFilterCount > 0 && (
-            <span className="bg-primary text-primary-foreground ml-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-semibold tabular-nums">
-              {activeFilterCount}
-            </span>
-          )}
-        </Button>
+        />
       </SheetTrigger>
       <SheetContent
         side="right"

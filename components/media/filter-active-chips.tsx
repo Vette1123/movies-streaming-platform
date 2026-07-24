@@ -163,7 +163,7 @@ export const FilterActiveChips = ({
           key={chip.key}
           type="button"
           onClick={chip.onRemove}
-          className="group border-border/60 bg-muted/40 text-foreground hover:border-foreground/40 flex items-center gap-1.5 rounded-full border py-1 pr-2 pl-3 text-xs font-medium transition-colors motion-reduce:transition-none"
+          className="group border-white/12 bg-secondary text-secondary-foreground hover:border-destructive/60 hover:bg-destructive/15 hover:text-destructive flex items-center gap-1.5 rounded-full border py-1 pr-2 pl-3 text-xs font-medium shadow-sm transition duration-200 motion-reduce:transition-none"
         >
           {chip.label}
           <span className="text-muted-foreground group-hover:bg-foreground/10 group-hover:text-foreground flex h-4 w-4 items-center justify-center rounded-full transition-colors">

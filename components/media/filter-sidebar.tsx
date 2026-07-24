@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { cva } from 'class-variance-authority'
 import {
   ArrowUpDown,
   CalendarRange,
@@ -38,6 +39,7 @@ import {
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 import { Icons } from '@/components/icons'
+import { CountBadge } from '@/components/media/filter-controls'
 
 interface FilterSidebarProps {
   mediaType: 'movie' | 'tv'
@@ -78,6 +80,41 @@ const PROVIDER_LOGO_BASE = 'https://image.tmdb.org/t/p/w92'
 // services people actually filter by, without firing 100+ logo requests.
 const MAX_PROVIDERS = 32
 
+// One source of truth for the three toggle groups (genres / decades / age
+// ratings) that all shared the same idle+hover surface and primary "active"
+// fill via hand-copied class strings. `pill` is the rounded genre/decade chip;
+// `square` is the rounded-md certification chip. `excluded` is genre-only.
+const filterToggleVariants = cva(
+  'border px-3 py-1.5 motion-reduce:transition-none',
+  {
+    variants: {
+      shape: {
+        pill: 'rounded-full text-xs font-medium transition duration-200',
+        square: 'rounded-md text-xs font-semibold transition-colors',
+      },
+      state: {
+        idle: 'border-white/12 bg-secondary text-secondary-foreground shadow-sm hover:-translate-y-0.5 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.6)]',
+        active:
+          'border-primary bg-primary text-primary-foreground hover:border-primary hover:text-primary-foreground',
+        excluded:
+          'border-destructive/50 bg-destructive/10 text-destructive hover:text-destructive line-through',
+      },
+    },
+    defaultVariants: { shape: 'pill', state: 'idle' },
+  }
+)
+
+// Tri-state genre toggle: included → excluded → off. Kept as a helper so the
+// call site stays a single expression (no nested ternary).
+const genreToggleState = (
+  included: boolean,
+  excluded: boolean
+): 'active' | 'excluded' | 'idle' => {
+  if (included) return 'active'
+  if (excluded) return 'excluded'
+  return 'idle'
+}
+
 interface SectionProps {
   title: string
   icon: React.ComponentType<{ className?: string }>
@@ -105,11 +142,7 @@ const Section = ({
       <span className="flex items-center gap-2.5">
         <SectionIcon className="text-muted-foreground group-hover:text-foreground h-4 w-4 transition-colors" />
         {title}
-        {count ? (
-          <span className="bg-primary/15 text-primary flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums">
-            {count}
-          </span>
-        ) : null}
+        <CountBadge count={count} tone="soft" />
       </span>
       <ChevronDown
         className={cn(
@@ -310,12 +343,10 @@ export const FilterSidebar = ({
                     type="button"
                     onClick={() => cycleGenre(genre.id)}
                     className={cn(
-                      'flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors motion-reduce:transition-none',
-                      'border-border/60 text-muted-foreground hover:border-foreground/40 hover:text-foreground',
-                      included &&
-                        'border-primary bg-primary text-primary-foreground hover:border-primary hover:text-primary-foreground',
-                      excluded &&
-                        'border-destructive/50 bg-destructive/10 text-destructive hover:text-destructive line-through'
+                      filterToggleVariants({
+                        state: genreToggleState(included, excluded),
+                      }),
+                      'flex items-center gap-1'
                     )}
                     aria-pressed={included || excluded}
                   >
@@ -354,12 +385,9 @@ export const FilterSidebar = ({
                           })
                         : applyDecade(d.from, d.to)
                     }
-                    className={cn(
-                      'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors motion-reduce:transition-none',
-                      active
-                        ? 'border-primary bg-primary text-primary-foreground'
-                        : 'border-border/60 text-muted-foreground hover:border-foreground/40 hover:text-foreground'
-                    )}
+                    className={filterToggleVariants({
+                      state: active ? 'active' : 'idle',
+                    })}
                   >
                     {d.label}
                   </button>
@@ -514,12 +542,10 @@ export const FilterSidebar = ({
                           certification: active ? undefined : c.value,
                         })
                       }
-                      className={cn(
-                        'rounded-md border px-3 py-1.5 text-xs font-semibold transition-colors motion-reduce:transition-none',
-                        active
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-border/60 text-muted-foreground hover:border-foreground/40 hover:text-foreground'
-                      )}
+                      className={filterToggleVariants({
+                        shape: 'square',
+                        state: active ? 'active' : 'idle',
+                      })}
                     >
                       {c.label}
                     </button>

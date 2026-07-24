@@ -3,7 +3,6 @@
 import React, { useCallback } from 'react'
 
 import { MediaFilter } from '@/types/filter'
-import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -13,6 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { Icons } from '@/components/icons'
 
+import { FilterTriggerButton } from './filter-controls'
 import { FilterSidebar } from './filter-sidebar'
 
 interface FilterDialogProps {
@@ -58,21 +58,10 @@ export const FilterDialog = ({
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2"
+        <FilterTriggerButton
+          activeFilterCount={activeFilterCount}
           onClick={handleTriggerClick}
-          type="button"
-        >
-          <Icons.filter className="h-4 w-4" />
-          Filters
-          {activeFilterCount > 0 && (
-            <span className="bg-primary text-primary-foreground ml-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-semibold tabular-nums">
-              {activeFilterCount}
-            </span>
-          )}
-        </Button>
+        />
       </DialogTrigger>
       <DialogContent
         className="max-h-[80vh] max-w-md overflow-hidden"
