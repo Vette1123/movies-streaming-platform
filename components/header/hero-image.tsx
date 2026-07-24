@@ -3,6 +3,7 @@ import React from 'react'
 import { MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
 import { SeriesDetails } from '@/types/series-details'
+import { getMediaTitle } from '@/lib/media'
 import { getImageURL, getPosterImageURL } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
 
@@ -16,7 +17,7 @@ interface HeroImageProps {
 
 export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
   const media = movie
-  const alt = media?.title || media?.name || 'ALT TEXT'
+  const alt = (media && getMediaTitle(media)) || 'ALT TEXT'
   // The landscape backdrop fills the hero edge-to-edge on every breakpoint
   // (no side bars). Only when there's no backdrop do we fall back to the
   // portrait poster, cover-cropped so it still fills the frame full width.

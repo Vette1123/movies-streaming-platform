@@ -8,6 +8,7 @@ import { CalendarDays, Check, Film, Play, Tv } from 'lucide-react'
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
 import { trackMediaCardClicked } from '@/lib/analytics'
+import { getMediaReleaseDate, getMediaTitle } from '@/lib/media'
 import { cn, dateFormatter, getPosterImageURL, itemRedirect } from '@/lib/utils'
 import { useCompletedMedia } from '@/hooks/use-completed-media'
 import { useMounted } from '@/hooks/use-mounted'
@@ -32,8 +33,8 @@ const CardComponent = ({
   itemType = 'movie',
   isTruncateOverview = true,
 }: CardProps) => {
-  const title = item?.title || item?.name
-  const releaseDate = item?.release_date || item?.first_air_date
+  const title = getMediaTitle(item)
+  const releaseDate = getMediaReleaseDate(item)
   const year = releaseDate?.slice(0, 4)
   const overview = item?.overview ?? ''
   // Prefer the real IMDb score (attached to list items server-side) and mark it

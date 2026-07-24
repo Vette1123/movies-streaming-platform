@@ -4,6 +4,7 @@ import { Clapperboard, Film, Tv } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
+import { getMediaTitle } from '@/lib/media'
 import { getPosterImageURL, itemRedirect } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
 
@@ -56,7 +57,7 @@ export function StaticRail({ title, items, itemType = 'movie' }: StaticRailProps
       {items.length > 0 && (
         <div className="no-scrollbar -my-4 flex snap-x snap-mandatory gap-6 overflow-x-auto py-4">
           {items.map((item) => {
-            const posterTitle = item?.title || item?.name || 'Poster'
+            const posterTitle = getMediaTitle(item) || 'Poster'
             return (
               <div
                 key={item.id}

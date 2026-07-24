@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react'
 
 import { MovieDetails } from '@/types/movie-details'
 import { SeriesDetails } from '@/types/series-details'
+import { getMediaTitle } from '@/lib/media'
 import { cn } from '@/lib/utils'
 import { HeroImage } from '@/components/header/hero-image'
 import { PlayButton } from '@/components/play-button'
@@ -28,7 +29,7 @@ export const DetailsHero = forwardRef<
   }
 >(({ movie, isIframeShown, playVideo, series, trailerKey }, ref) => {
   const media = (movie || series) as MovieDetails & SeriesDetails
-  const title = media?.title || media?.name
+  const title = getMediaTitle(media)
   const isMovie = !!movie
 
   // Bridge the blank gap between "Watch" click and the streaming iframe painting

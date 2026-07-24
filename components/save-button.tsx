@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { MovieDetails } from '@/types/movie-details'
 import { SeriesDetails } from '@/types/series-details'
+import { getMediaTitle } from '@/lib/media'
 import { cn } from '@/lib/utils'
 import { useMounted } from '@/hooks/use-mounted'
 import { useWatchlist } from '@/hooks/use-watchlist'
@@ -31,7 +32,7 @@ export function SaveButton({ media, className }: SaveButtonProps) {
   const saved = isMounted && isSaved(media.id)
 
   const handleClick = () => {
-    const title = media?.title || media?.name
+    const title = getMediaTitle(media)
     // `saved` is the pre-toggle state, so it tells us which way we're flipping.
     if (saved) {
       toggle(media)
