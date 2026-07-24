@@ -26,7 +26,8 @@ Reely is a production-grade movie and TV show tracker built on the TMDB API. It 
 
 - **TMDB-powered catalog** — trending, popular, top-rated, now-playing, and on-the-air movies and TV shows, pulled live from the TMDB API.
 - **Animated hero slider** — auto-rotating showcase of trending media on the landing page, with an inline trailer preview.
-- **Browse movies & TV** — dedicated listing pages with genre / year / rating filters and infinite scroll (TanStack `useInfiniteQuery` + intersection observer).
+- **Browse movies & TV** — dedicated listing pages with a deep, live-applying filter system and infinite scroll (TanStack `useInfiniteQuery` + intersection observer).
+- **Advanced filters** — sort, tri-state genre pills (include / exclude / off), TMDB rating, vote count, runtime, release year (decade chips + range slider), original language, age rating (certification), and *where to watch* (streaming-provider logo grid + region picker). All filters live-apply on a 300ms debounce — no "Save" button — with an active-filter chips bar (tap to remove, or clear all) above the grid.
 - **Rich detail pages** — synopsis, cast, similar titles, recommendations, trailer, and both IMDb and TMDB ratings — fetched in a single TMDB `append_to_response` call.
 - **In-page streaming player** — watch movies and individual TV episodes via a configurable external source (see the in-app disclaimer).
 - **Season & episode navigator** — drill into any TV show by season and episode with a dedicated selector.
@@ -37,7 +38,7 @@ Reely is a production-grade movie and TV show tracker built on the TMDB API. It 
 - **Real IMDb ratings** — genuine IMDb scores layered over TMDB (prebuilt dataset via the `imdb:ratings` script), with a TMDB fallback.
 - **Watchlist** — save titles you want to watch, kept on your device (no account required).
 - **Watch history** — track watched movies and episodes, remove single items, or clear everything, on a dedicated page.
-- **URL-synced filters** — genre / year / rating state lives in the URL via `nuqs`, so filtered views are shareable and back-button friendly.
+- **URL-synced filters** — every active filter lives in the URL via `nuqs`, so filtered views are shareable and back-button friendly (transient UI chrome like open accordions stays out of the URL, keeping shared links clean).
 - **Web Share** — share any title through the native share sheet.
 - **Privacy-first** — watchlist, history, and recent searches live entirely in your browser; there's no login and nothing is stored on a server.
 - **SEO & structured data** — full JSON-LD (Website, Organization, CollectionPage, Breadcrumb), Open Graph, Twitter Cards, dynamic OG image generation, sitemap, and robots.
