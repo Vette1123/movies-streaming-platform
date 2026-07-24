@@ -7,78 +7,77 @@ import { attachImdbRatings } from '@/services/imdb'
 
 import { fetchClient } from '@/lib/fetch-client'
 
-// Discover movies with filters
-export const discoverMoviesAction = async (
-  filterParams: FilterParams = {},
-  params: Param = {}
-): Promise<MediaResponse> => {
-  const url = 'discover/movie'
-
-  // Convert FilterParams to Record<string, string | number>
-  const convertedParams: Record<string, string | number> = {}
+// Drop undefined/null filters and coerce booleans to strings for the TMDB query
+// string. Shared by both discover actions so the normalization can't diverge.
+function normalizeFilterParams(
+  filterParams: FilterParams
+): Record<string, string | number> {
+  const converted: Record<string, string | number> = {}
   Object.entries(filterParams).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
-      if (typeof value === 'boolean') {
-        convertedParams[key] = value.toString()
-      } else {
-        convertedParams[key] = value
-      }
+      converted[key] = typeof value === 'boolean' ? value.toString() : value
     }
   })
-
-  const queryParams = {
-    language: 'en-US',
-    include_adult: 'false',
-    include_video: 'false',
-    page: 1,
-    ...convertedParams,
-    ...params,
-  }
-
-  // revalidate:false → build-only for the static genre pages; runtime filtering
-  // then reuses the deploy-cached results (fewer TMDB/KV hits), refreshed 4x/day.
-  const data = await fetchClient.get<MediaResponse>(url, queryParams, true, false)
-  return { ...data, results: await attachImdbRatings(data.results || [], 'movie') }
+  return converted
 }
 
-// Discover TV series with filters
-export const discoverSeriesAction = async (
-  filterParams: FilterParams = {},
-  params: Param = {}
-): Promise<MediaResponse> => {
-  const url = 'discover/tv'
-
-  // Convert FilterParams to Record<string, string | number>
-  const convertedParams: Record<string, string | number> = {}
-  Object.entries(filterParams).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      if (typeof value === 'boolean') {
-        convertedParams[key] = value.toString()
-      } else {
-        convertedParams[key] = value
-      }
-    }
-  })
-
-  // Map movie-specific params to TV-specific params
-  if (convertedParams['release_date.gte']) {
-    convertedParams['first_air_date.gte'] = convertedParams['release_date.gte']
-    delete convertedParams['release_date.gte']
+// TMDB /discover/movie uses `release_date.*`; /discover/tv uses `first_air_date.*`.
+// The filter UI only speaks the movie keys, so remap them for TV.
+function remapDateKey(
+  params: Record<string, string | number>,
+  from: string,
+  to: string
+) {
+  if (params[from]) {
+    params[to] = params[from]
+    delete params[from]
   }
-  if (convertedParams['release_date.lte']) {
-    convertedParams['first_air_date.lte'] = convertedParams['release_date.lte']
-    delete convertedParams['release_date.lte']
+}
+
+async function discover(
+  mediaType: 'movie' | 'tv',
+  filterParams: FilterParams,
+  params: Param
+): Promise<MediaResponse> {
+  const converted = normalizeFilterParams(filterParams)
+  if (mediaType === 'tv') {
+    remapDateKey(converted, 'release_date.gte', 'first_air_date.gte')
+    remapDateKey(converted, 'release_date.lte', 'first_air_date.lte')
   }
 
   const queryParams: Record<string, string | number> = {
     language: 'en-US',
     include_adult: 'false',
+    // Movies filter out trailers/extras from /discover; TV has no such flag.
+    ...(mediaType === 'movie' ? { include_video: 'false' } : {}),
     page: 1,
-    ...convertedParams,
+    ...converted,
     ...params,
   }
 
-  const data = await fetchClient.get<MediaResponse>(url, queryParams, true, false)
-  return { ...data, results: await attachImdbRatings(data.results || [], 'tv') }
+  // revalidate:false → build-only for the static genre pages; runtime filtering
+  // then reuses the deploy-cached results (fewer TMDB/KV hits), refreshed 4x/day.
+  const data = await fetchClient.get<MediaResponse>(
+    `discover/${mediaType}`,
+    queryParams,
+    true,
+    false
+  )
+  return {
+    ...data,
+    results: await attachImdbRatings(data.results || [], mediaType),
+  }
 }
+
+// Discover movies with filters
+export const discoverMoviesAction = async (
+  filterParams: FilterParams = {},
+  params: Param = {}
+): Promise<MediaResponse> => discover('movie', filterParams, params)
+
+// Discover TV series with filters
+export const discoverSeriesAction = async (
+  filterParams: FilterParams = {},
+  params: Param = {}
+): Promise<MediaResponse> => discover('tv', filterParams, params)
 
