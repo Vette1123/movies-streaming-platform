@@ -76,6 +76,23 @@ interface MovieSchemaInput {
   tagline?: string | null
 }
 
+// schema.org AggregateRating from a TMDB vote average/count, or undefined when
+// there aren't enough votes to publish one. Identical between Movie and TVSeries
+// so it lives in one place.
+function aggregateRating(
+  voteAverage?: number | null,
+  voteCount?: number | null
+) {
+  if (typeof voteAverage !== 'number' || !voteCount) return undefined
+  return {
+    '@type': 'AggregateRating',
+    ratingValue: voteAverage.toFixed(1),
+    bestRating: '10',
+    worstRating: '0',
+    ratingCount: voteCount,
+  }
+}
+
 export const movieJsonLd = (movie: MovieSchemaInput) => {
   const url = `${SITE_URL}/movies/${movie.id}`
   const schema: Record<string, unknown> = {
@@ -97,15 +114,8 @@ export const movieJsonLd = (movie: MovieSchemaInput) => {
     const minutes = movie.runtime % 60
     schema.duration = `PT${hours}H${minutes}M`
   }
-  if (typeof movie.voteAverage === 'number' && movie.voteCount) {
-    schema.aggregateRating = {
-      '@type': 'AggregateRating',
-      ratingValue: movie.voteAverage.toFixed(1),
-      bestRating: '10',
-      worstRating: '0',
-      ratingCount: movie.voteCount,
-    }
-  }
+  const rating = aggregateRating(movie.voteAverage, movie.voteCount)
+  if (rating) schema.aggregateRating = rating
 
   return schema
 }
@@ -144,15 +154,8 @@ export const tvSeriesJsonLd = (series: SeriesSchemaInput) => {
   if (series.genres?.length) schema.genre = series.genres
   if (series.numberOfSeasons) schema.numberOfSeasons = series.numberOfSeasons
   if (series.numberOfEpisodes) schema.numberOfEpisodes = series.numberOfEpisodes
-  if (typeof series.voteAverage === 'number' && series.voteCount) {
-    schema.aggregateRating = {
-      '@type': 'AggregateRating',
-      ratingValue: series.voteAverage.toFixed(1),
-      bestRating: '10',
-      worstRating: '0',
-      ratingCount: series.voteCount,
-    }
-  }
+  const rating = aggregateRating(series.voteAverage, series.voteCount)
+  if (rating) schema.aggregateRating = rating
 
   return schema
 }
