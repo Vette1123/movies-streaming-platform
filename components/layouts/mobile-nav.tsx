@@ -1,7 +1,6 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-
 import { Download } from 'lucide-react'
 
 import { NavItem } from '@/types/navbar'
@@ -16,6 +15,48 @@ import { Icons } from '@/components/icons'
 interface MobileNavProps {
   items?: NavItem[]
 }
+
+// External links in the drawer footer — all render as the same full-width
+// button, so keep them as data and map one <Link> template instead of five
+// hand-copied blocks that drifted apart (missing aria-labels, stray classes).
+interface SocialLink {
+  href: string
+  label: string
+  Icon: React.ComponentType<{ className?: string }>
+  ariaLabel?: string
+  iconClassName?: string
+}
+
+const SOCIAL_LINKS: SocialLink[] = [
+  {
+    href: siteConfig.links.github,
+    label: 'GitHub',
+    Icon: Icons.gitHub,
+    ariaLabel: 'GitHub',
+  },
+  {
+    href: siteConfig.links.twitter,
+    label: 'X (Twitter)',
+    Icon: Icons.twitter,
+    ariaLabel: 'X (Twitter)',
+    iconClassName: 'fill-current',
+  },
+  {
+    href: 'https://www.profitableratecpm.com/hwxt5zz7i?key=a5dba98951e6803fa620281826ca66d3',
+    label: 'Support',
+    Icon: Icons.buyMeACoffee,
+  },
+  {
+    href: siteConfig.links.buyMeACoffee,
+    label: 'Buy me a coffee',
+    Icon: Icons.buyMeACoffee,
+  },
+  {
+    href: siteConfig.links.website,
+    label: 'Visit my portfolio',
+    Icon: Icons.portfolio,
+  },
+]
 
 export function MobileNav({ items }: MobileNavProps) {
   const [isOpen, setIsOpen] = React.useState(false)
@@ -105,90 +146,29 @@ export function MobileNav({ items }: MobileNavProps) {
               <Icons.googlePlay className="mr-2 size-5" />
               Get Rafiq on Google Play
             </button>
-            <Link
-              href={siteConfig.links.github}
-              target="_blank"
-              rel="noreferrer"
-              aria-label="GitHub"
-              onClick={() => setIsOpen(false)}
-              className={cn(
-                buttonVariants({
-                  variant: 'default',
-                  size: 'default',
-                  className: 'w-full',
-                }),
-                'text-white'
-              )}
-            >
-              <Icons.gitHub className="mr-2 size-5" />
-              GitHub
-            </Link>
-            <Link
-              href={siteConfig.links.twitter}
-              target="_blank"
-              rel="noreferrer"
-              aria-label="X (Twitter)"
-              onClick={() => setIsOpen(false)}
-              className={cn(
-                buttonVariants({
-                  variant: 'default',
-                  size: 'default',
-                  className: 'w-full',
-                }),
-                'text-white'
-              )}
-            >
-              <Icons.twitter className="mr-2 size-5 fill-current" />
-              X (Twitter)
-            </Link>
-            <Link
-              href="https://www.profitableratecpm.com/hwxt5zz7i?key=a5dba98951e6803fa620281826ca66d3"
-              target="_blank"
-              rel="noreferrer"
-              className={cn(
-                buttonVariants({
-                  variant: 'default',
-                  size: 'default',
-                  className: 'w-full',
-                }),
-                'text-white'
-              )}
-            >
-              <Icons.buyMeACoffee className="mr-2 size-5" />
-              Support
-            </Link>
-            <Link
-              href={siteConfig.links.buyMeACoffee}
-              target="_blank"
-              rel="noreferrer"
-              className={cn(
-                buttonVariants({
-                  variant: 'default',
-                  size: 'default',
-                  className: 'w-full',
-                }),
-                'text-white'
-              )}
-            >
-              <Icons.buyMeACoffee className="mr-2 size-5" />
-              Buy me a coffee
-            </Link>
-            <Link
-              href={siteConfig.links.website}
-              target="_blank"
-              rel="noreferrer"
-              className={cn(
-                buttonVariants({
-                  variant: 'default',
-                  size: 'default',
-                  className: 'w-full',
-                }),
-                'text-white'
-              )}
-            >
-              <Icons.portfolio className="mr-2 size-5" />
-              Visit my portfolio
-            </Link>
+            {SOCIAL_LINKS.map(
+              ({ href, label, Icon, ariaLabel, iconClassName }) => (
+                <Link
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={ariaLabel}
+                  onClick={() => setIsOpen(false)}
+                  className={cn(
+                    buttonVariants({
+                      variant: 'default',
+                      size: 'default',
+                      className: 'w-full',
+                    }),
+                    'text-white'
+                  )}
+                >
+                  <Icon className={cn('mr-2 size-5', iconClassName)} />
+                  {label}
+                </Link>
+              )
+            )}
           </div>
         </div>
       </SheetContent>
