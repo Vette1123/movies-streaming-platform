@@ -8,6 +8,7 @@ import { useInView } from 'react-intersection-observer'
 import { MediaResponse, MediaType } from '@/types/media'
 import { Card } from '@/components/card'
 import { MediaGridSkeleton } from '@/components/loaders/media-grid-skeleton'
+import { Button } from '@/components/ui/button'
 
 interface GenreMediaGridProps {
   mediaType: 'movie' | 'tv'
@@ -25,8 +26,14 @@ export const GenreMediaGrid = ({
     rootMargin: '0px 0px 200px 0px',
   })
 
-  const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
-    useInfiniteQuery({
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isFetchingNextPage,
+    isError,
+  } = useInfiniteQuery({
       // Genre-scoped key so each genre keeps its own cache (the shared browse
       // hook keys only on media type and would collide across genres).
       queryKey: ['genre-discover', mediaType, genreId],
@@ -53,11 +60,16 @@ export const GenreMediaGrid = ({
       initialData: { pages: [initialData], pageParams: [1] },
     })
 
+  // Auto-load the next page when the sentinel scrolls into view. Skip while a
+  // fetch is in flight and — crucially — while in an error state: otherwise a
+  // failed page (e.g. a Cloudflare challenge blocking the server-action POST on
+  // privacy browsers) would keep the sentinel in view and hammer fetchNextPage
+  // in a tight retry loop. On error we stop and surface a manual retry instead.
   React.useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
+    if (inView && hasNextPage && !isFetchingNextPage && !isError) {
       fetchNextPage()
     }
-  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
+  }, [inView, hasNextPage, isFetchingNextPage, isError, fetchNextPage])
 
   const items = (data?.pages ?? []).flatMap((page) => page?.results ?? [])
 
@@ -90,7 +102,23 @@ export const GenreMediaGrid = ({
       </div>
 
       {isFetchingNextPage && <MediaGridSkeleton count={10} />}
-      <div ref={sentinelRef} className="h-10" />
+
+      {/* Auto-load failed (network, or a CF challenge blocking the server action
+          on privacy browsers). Don't dead-end the list — let the user retry. */}
+      {isError && !isFetchingNextPage && (
+        <div className="flex flex-col items-center gap-3 py-8">
+          <p className="text-muted-foreground text-sm">
+            Couldn&apos;t load more titles.
+          </p>
+          <Button variant="outline" onClick={() => fetchNextPage()}>
+            Try again
+          </Button>
+        </div>
+      )}
+
+      {/* Sentinel drives infinite scroll; hidden on error so it can't retrigger
+          the auto-fetch loop (the retry button takes over there). */}
+      {hasNextPage && !isError && <div ref={sentinelRef} className="h-10" />}
     </div>
   )
 }
