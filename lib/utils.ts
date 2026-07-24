@@ -130,23 +130,6 @@ function seasonsFormatter(seasons: Season[]) {
   })
 }
 
-function formatDate(
-  date: Date,
-  format: 'short' | 'long' | 'medium' = 'medium'
-): string {
-  const options: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month:
-      format === 'short' ? '2-digit' : format === 'long' ? 'long' : 'short',
-    day: '2-digit',
-    // Same UTC pinning as dateFormatter — keep server/client render identical
-    // and avoid timezone-driven hydration mismatches (React #418).
-    timeZone: 'UTC',
-  }
-
-  return date.toLocaleDateString('en-US', options)
-}
-
 export {
   cn,
   getImageURL,
@@ -161,5 +144,4 @@ export {
   moneyFormatter,
   convertMinutesToHours,
   seasonsFormatter,
-  formatDate,
 }
