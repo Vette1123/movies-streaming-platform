@@ -36,9 +36,7 @@ export function getReleaseYear(date?: string): number | null {
 
 // Flatten TMDB genre objects to their names (undefined passthrough) — used by
 // analytics payloads and JSON-LD `genre` arrays alike.
-export function genreNames(
-  genres?: { name: string }[]
-): string[] | undefined {
+export function genreNames(genres?: { name: string }[]): string[] | undefined {
   return genres?.map((genre) => genre.name)
 }
 

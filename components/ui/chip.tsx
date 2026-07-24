@@ -68,7 +68,8 @@ const chipVariants = cva(
 )
 
 export interface ChipProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
+  extends
+    React.HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof chipVariants> {}
 
 const Chip = React.forwardRef<HTMLSpanElement, ChipProps>(function Chip(

@@ -126,7 +126,9 @@ export async function GenrePage({
 
   return (
     <section className="container h-full py-20 lg:py-36">
-      <JsonLd data={collectionPageJsonLd({ name: heading, description, url })} />
+      <JsonLd
+        data={collectionPageJsonLd({ name: heading, description, url })}
+      />
       <JsonLd
         data={breadcrumbJsonLd([
           { name: 'Home', url: '/' },

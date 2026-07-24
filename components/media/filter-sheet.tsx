@@ -13,8 +13,8 @@ import { Icons } from '@/components/icons'
 
 import {
   FilterOverlayProps,
-  FilterTriggerButton,
   filterOverlayTitle,
+  FilterTriggerButton,
   useFilterOverlay,
 } from './filter-controls'
 import { FilterSidebar } from './filter-sidebar'
@@ -30,7 +30,8 @@ export const FilterSheet = ({
   hasActiveFilters,
   activeFilterCount,
 }: FilterOverlayProps) => {
-  const { handleOpenChange, handleTriggerClick } = useFilterOverlay(onOpenChange)
+  const { handleOpenChange, handleTriggerClick } =
+    useFilterOverlay(onOpenChange)
 
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>

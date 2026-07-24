@@ -1,8 +1,8 @@
 import { Metadata } from 'next'
 
 import {
-  GenrePage,
   genreMetadata,
+  GenrePage,
   genreStaticParams,
   TV_GENRE_PAGE_CONFIG,
 } from '@/components/media/genre-page'

@@ -28,7 +28,11 @@ interface StaticRailProps {
  * so the swap is a cache hit with no reflash. Kept visually identical to List's
  * resting state (accent bar + title, "Explore All" is hover-only there anyway).
  */
-export function StaticRail({ title, items, itemType = 'movie' }: StaticRailProps) {
+export function StaticRail({
+  title,
+  items,
+  itemType = 'movie',
+}: StaticRailProps) {
   return (
     <nav className="cv-auto px-5 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10 xl:px-16 2xl:px-20">
       <Link

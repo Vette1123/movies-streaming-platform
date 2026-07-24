@@ -59,7 +59,9 @@ export function WatchedButton({ movie, className }: WatchedButtonProps) {
       ) : (
         <Eye className="size-5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
       )}
-      <span className="hidden sm:inline">{watched ? 'Watched' : 'Mark watched'}</span>
+      <span className="hidden sm:inline">
+        {watched ? 'Watched' : 'Mark watched'}
+      </span>
     </Button>
   )
 }

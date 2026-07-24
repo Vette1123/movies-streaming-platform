@@ -10,14 +10,17 @@ import { MovieDetails } from '@/types/movie-details'
 import { MovieGenre } from '@/types/movie-genre'
 import { ItemType, Movie } from '@/types/movie-result'
 import { SeriesDetails } from '@/types/series-details'
-import { trackHeroAutoplayToggled, trackHeroWatchClicked } from '@/lib/analytics'
+import {
+  trackHeroAutoplayToggled,
+  trackHeroWatchClicked,
+} from '@/lib/analytics'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
 import { getImageURL, getPosterImageURL } from '@/lib/utils'
 import { useHeroAutoplay } from '@/hooks/use-hero-autoplay'
 import { useHeroExtras } from '@/hooks/use-hero-extras'
 import { buttonVariants } from '@/components/ui/button'
-import { CarouselPauseContext } from '@/components/carousel'
 import { BlurredImage } from '@/components/blurred-image'
+import { CarouselPauseContext } from '@/components/carousel'
 import { HeroRatesInfos } from '@/components/header/hero-rates-info'
 import { HeroTrailerPreview } from '@/components/header/hero-trailer-preview'
 import { Icons } from '@/components/icons'
@@ -49,10 +52,11 @@ export function HeroSlide({
   const title = movie.title || movie.name || 'Untitled'
   const mediaType: ItemType = resolveMediaType(movie)
 
-  const { trailerKey, logoPath, ready: extrasReady } = useHeroExtras(
-    movie.id,
-    mediaType
-  )
+  const {
+    trailerKey,
+    logoPath,
+    ready: extrasReady,
+  } = useHeroExtras(movie.id, mediaType)
 
   const router = useRouter()
   const reduce = useReducedMotion()
@@ -96,7 +100,8 @@ export function HeroSlide({
   // Paused state for full view (custom play/pause + spacebar). Ambient preview
   // always plays; pause only exists inside full view.
   const [paused, setPaused] = React.useState(false)
-  const [prevPreviewActive, setPrevPreviewActive] = React.useState(previewActive)
+  const [prevPreviewActive, setPrevPreviewActive] =
+    React.useState(previewActive)
   if (previewActive !== prevPreviewActive) {
     setPrevPreviewActive(previewActive)
     if (!previewActive) {
@@ -132,7 +137,8 @@ export function HeroSlide({
   }, [])
   // Leave fullscreen if the preview ends (e.g. autoplay turned off) while active.
   React.useEffect(() => {
-    if (!previewActive && document.fullscreenElement) void document.exitFullscreen?.()
+    if (!previewActive && document.fullscreenElement)
+      void document.exitFullscreen?.()
   }, [previewActive])
   const toggleFullscreen = () => {
     if (document.fullscreenElement) {
@@ -295,7 +301,9 @@ export function HeroSlide({
                     <h2
                       aria-hidden={logoLoaded}
                       className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md transition-opacity duration-500 ease-out sm:text-4xl lg:text-6xl ${
-                        logoLoaded || holdTitleText ? 'opacity-0' : 'opacity-100'
+                        logoLoaded || holdTitleText
+                          ? 'opacity-0'
+                          : 'opacity-100'
                       }`}
                     >
                       {title}

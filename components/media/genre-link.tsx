@@ -17,7 +17,12 @@ interface GenreLinkProps {
 // brand-blue fill + soft glow). Anywhere a genre renders as a navigable chip —
 // the detail meta row, the GENRES section, the hero — renders this, so the
 // treatment stays identical everywhere. Don't inline genre links; use this.
-export function GenreLink({ href, name, ariaLabel, className }: GenreLinkProps) {
+export function GenreLink({
+  href,
+  name,
+  ariaLabel,
+  className,
+}: GenreLinkProps) {
   return (
     <Link
       href={href}

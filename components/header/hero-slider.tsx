@@ -1,9 +1,8 @@
 import React from 'react'
 import { getGenreList } from '@/services/genres'
 
-import { resolveMediaType } from '@/lib/media'
-
 import { Movie } from '@/types/movie-result'
+import { resolveMediaType } from '@/lib/media'
 import { Carousel } from '@/components/carousel'
 import { HeroSlide } from '@/components/header/hero-slide'
 

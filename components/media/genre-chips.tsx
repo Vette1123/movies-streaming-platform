@@ -37,7 +37,10 @@ export function GenreChips({ genres, mediaType, className }: GenreChipsProps) {
             return (
               <li
                 key={genre.id}
-                className={cn(chipVariants({ variant: 'neutral' }), 'lg:text-sm')}
+                className={cn(
+                  chipVariants({ variant: 'neutral' }),
+                  'lg:text-sm'
+                )}
               >
                 {genre.name}
               </li>

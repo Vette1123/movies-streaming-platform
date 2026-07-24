@@ -1,20 +1,21 @@
-export const revalidate = 86400
+import type { MetadataRoute } from 'next'
+import {
+  getAllTimeTopRatedMovies,
+  getLatestTrendingMovies,
+  getNowPlayingMovies,
+  getPopularMovies,
+} from '@/services/movies'
+import {
+  getAllTimeTopRatedSeries,
+  getLatestTrendingSeries,
+  getPopularSeries,
+} from '@/services/series'
 
 import { MediaResponse } from '@/types/media'
 import { siteConfig } from '@/config/site'
 import { MOVIE_GENRES_WITH_SLUG, TV_GENRES_WITH_SLUG } from '@/lib/genres'
-import {
-  getPopularMovies,
-  getAllTimeTopRatedMovies,
-  getLatestTrendingMovies,
-  getNowPlayingMovies,
-} from '@/services/movies'
-import {
-  getPopularSeries,
-  getAllTimeTopRatedSeries,
-  getLatestTrendingSeries,
-} from '@/services/series'
-import type { MetadataRoute } from 'next'
+
+export const revalidate = 86400
 
 const baseUrl = siteConfig.websiteURL
 

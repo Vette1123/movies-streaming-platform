@@ -1,10 +1,10 @@
 'use server'
 
+import { attachImdbRatings } from '@/services/imdb'
+
 import { FilterParams } from '@/types/filter'
 import { MediaResponse } from '@/types/media'
 import { Param } from '@/types/movie-result'
-import { attachImdbRatings } from '@/services/imdb'
-
 import { fetchClient } from '@/lib/fetch-client'
 
 // Drop undefined/null filters and coerce booleans to strings for the TMDB query
@@ -80,4 +80,3 @@ export const discoverSeriesAction = async (
   filterParams: FilterParams = {},
   params: Param = {}
 ): Promise<MediaResponse> => discover('tv', filterParams, params)
-

@@ -30,6 +30,7 @@ import { useCMDKListener } from '@/hooks/use-cmdk-listener'
 import { useRecentSearches } from '@/hooks/use-recent-searches'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { Chip, chipVariants } from '@/components/ui/chip'
 import {
   CommandDialog,
   CommandDialogProps,
@@ -39,7 +40,6 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command'
-import { Chip, chipVariants } from '@/components/ui/chip'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Icons } from '@/components/icons'
 
