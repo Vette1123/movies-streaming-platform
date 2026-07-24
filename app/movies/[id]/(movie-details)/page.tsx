@@ -11,6 +11,7 @@ import {
 
 import { PageDetailsProps } from '@/types/page-details'
 import { siteConfig } from '@/config/site'
+import { buildDetailsOgImages, buildMediaStaticParams } from '@/lib/media-page'
 import { breadcrumbJsonLd, JsonLd, movieJsonLd } from '@/lib/structured-data'
 import { getImageURL, getPosterImageURL } from '@/lib/utils'
 import { MoviesDetailsContent } from '@/components/media/details-content'
@@ -28,37 +29,12 @@ export const revalidate = 86400
 // breaks the deploy (empty list = current all-dynamic behaviour, no regression).
 export const dynamicParams = true
 
-export async function generateStaticParams() {
-  try {
-    // Prerender the head of the traffic distribution: popular (20 pages),
-    // all-time top rated (10), and today's trending (3). Deduped → ~500 hottest
-    // titles baked into static assets at build so they never cold-render at
-    // runtime — the more we prebuild, the smaller the long tail that has to
-    // render on the Worker (10ms CPU) and write to KV on demand. TMDB returns 20
-    // ids/page; the head captures the vast majority of real human traffic.
-    // allSettled (not all): a single TMDB 429/hiccup drops just that page, not
-    // the whole prebuild set — important now that we fan out more requests.
-    const requests = [
-      ...Array.from({ length: 20 }, (_, i) =>
-        getPopularMovies({ page: i + 1 })
-      ),
-      ...Array.from({ length: 10 }, (_, i) =>
-        getAllTimeTopRatedMovies({ page: i + 1 })
-      ),
-      ...Array.from({ length: 3 }, (_, i) =>
-        getLatestTrendingMovies({ page: i + 1 })
-      ),
-    ]
-    const responses = await Promise.allSettled(requests)
-    const ids = new Set<string>()
-    for (const res of responses) {
-      if (res.status !== 'fulfilled') continue
-      for (const movie of res.value?.results ?? []) ids.add(String(movie.id))
-    }
-    return Array.from(ids, (id) => ({ id }))
-  } catch {
-    return []
-  }
+export function generateStaticParams() {
+  return buildMediaStaticParams({
+    popular: getPopularMovies,
+    topRated: getAllTimeTopRatedMovies,
+    trending: getLatestTrendingMovies,
+  })
 }
 
 export async function generateMetadata(
@@ -81,32 +57,11 @@ export async function generateMetadata(
     movieDetails.overview?.slice(0, 200) ||
     `Details, cast, and streaming info for ${movieDetails.title} on ${siteConfig.name}.`
   const canonicalPath = `/movies/${id}`
-  const backdrop = movieDetails.backdrop_path
-    ? getImageURL(movieDetails.backdrop_path)
-    : undefined
-  const poster = movieDetails.poster_path
-    ? getPosterImageURL(movieDetails.poster_path)
-    : undefined
-
-  const images = [
-    backdrop && {
-      url: backdrop,
-      width: 1280,
-      height: 720,
-      alt: movieDetails.title,
-    },
-    poster && {
-      url: poster,
-      width: 500,
-      height: 750,
-      alt: movieDetails.title,
-    },
-  ].filter(Boolean) as Array<{
-    url: string
-    width: number
-    height: number
-    alt: string
-  }>
+  const images = buildDetailsOgImages(
+    movieDetails.backdrop_path,
+    movieDetails.poster_path,
+    movieDetails.title
+  )
 
   return {
     title,
