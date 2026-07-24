@@ -41,6 +41,10 @@ jobs:
       NEXT_PUBLIC_IMDB_RATINGS: 'false'
     steps:
       - uses: actions/checkout@v7
+        # This job never pushes to git — everything mutates Cloudflare/PostHog
+        # with its own token. Don't leave the GITHUB_TOKEN in .git/config.
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v6
 
