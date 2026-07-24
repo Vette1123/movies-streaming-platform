@@ -19,7 +19,12 @@ import {
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
 import { openRafiqOnPlayStore } from '@/lib/rafiq'
 import { getNextImageFallback } from '@/lib/tmdbConfig'
-import { cn, getThumbBackdropURL, getThumbPosterURL } from '@/lib/utils'
+import {
+  cn,
+  getThumbBackdropURL,
+  getThumbPosterURL,
+  pluralize,
+} from '@/lib/utils'
 import { useCMDKListener } from '@/hooks/use-cmdk-listener'
 import { useRecentSearches } from '@/hooks/use-recent-searches'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -47,6 +52,33 @@ const compactNumber = new Intl.NumberFormat('en', {
 
 const escapeRegExp = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+// Derive the search panel's status from its inputs. Kept as a flat guard chain
+// (no nested ternaries) so the precedence idle→loading→empty→results is obvious.
+function computeSearchStatus(
+  trimmedQuery: string,
+  isLoading: boolean,
+  hasSearched: boolean,
+  visibleCount: number
+): SearchStatus {
+  if (!trimmedQuery) return 'idle'
+  if (isLoading) return 'loading'
+  if (hasSearched && visibleCount === 0) return 'empty'
+  return 'results'
+}
+
+// Heading shown above the command-menu list, per status.
+function buildResultsHeading(
+  status: SearchStatus,
+  recentCount: number,
+  resultCount: number
+) {
+  if (status === 'idle' && recentCount > 0) return 'Recent searches'
+  if (status === 'results' && resultCount > 0) {
+    return `Search Movies & Series · ${resultCount} ${pluralize(resultCount, 'result')}`
+  }
+  return 'Search Movies & Series...'
+}
 
 const HighlightedText = React.memo(function HighlightedText({
   text,
@@ -215,22 +247,18 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
     [visibleResults, effectiveFilter]
   )
 
-  const status: SearchStatus = !trimmedQuery
-    ? 'idle'
-    : isLoading
-      ? 'loading'
-      : hasSearched && visibleResults.length === 0
-        ? 'empty'
-        : 'results'
+  const status: SearchStatus = computeSearchStatus(
+    trimmedQuery,
+    isLoading,
+    hasSearched,
+    visibleResults.length
+  )
 
-  const resultsHeading =
-    status === 'idle' && recent.length > 0
-      ? 'Recent searches'
-      : status === 'results' && filteredResults.length > 0
-        ? `Search Movies & Series · ${filteredResults.length} ${
-            filteredResults.length === 1 ? 'result' : 'results'
-          }`
-        : 'Search Movies & Series...'
+  const resultsHeading = buildResultsHeading(
+    status,
+    recent.length,
+    filteredResults.length
+  )
 
   return (
     <>
