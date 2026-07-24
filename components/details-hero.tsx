@@ -38,15 +38,19 @@ export const DetailsHero = forwardRef<
     if (isIframeShown) setIframeLoaded(false)
   }, [isIframeShown])
 
-  // Hero fills exactly one viewport (100dvh) and never exceeds it — the whole
-  // hero is visible on load with no scroll to see the buttons, and no oversized
-  // band pushing content down. Inline height (not a Tailwind class) so it can't
-  // be dropped from the CSS bundle; object-cover fills the box edge-to-edge (a
-  // little crop on the 16:9 backdrop is the trade for fitting the viewport).
+  // Hero fills exactly one viewport and never exceeds it — the whole hero is
+  // visible on load with no scroll to see the buttons, and no oversized band
+  // pushing content down. Uses 100svh (small viewport height), NOT dvh: dvh is
+  // dynamic and re-resolves as the mobile URL bar hides/shows on scroll, which
+  // resizes the hero and reflows the page (visible jitter). svh is fixed to the
+  // URL-bar-visible height, so the hero never recalculates while scrolling.
+  // Inline height (not a Tailwind class) so it can't be dropped from the CSS
+  // bundle; object-cover fills the box edge-to-edge (a little crop on the 16:9
+  // backdrop is the trade for fitting the viewport).
   return (
     <section
       className="relative isolate w-full overflow-hidden"
-      style={{ height: '100dvh' }}
+      style={{ height: '100svh' }}
     >
       <HeroImage movie={media} priority />
       <div className="relative z-50 container h-full max-w-(--breakpoint-2xl)">
@@ -87,7 +91,7 @@ export const DetailsHero = forwardRef<
                   {isMovie && movie && (
                     <div className="flex flex-col items-center gap-1.5">
                       <WatchedButton movie={movie} />
-                      <span className={captionClass}>Mark watched</span>
+                      <span className={captionClass}>Watched</span>
                     </div>
                   )}
                   <div className="flex flex-col items-center gap-1.5">
