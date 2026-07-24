@@ -1,6 +1,8 @@
 import React from 'react'
 import { getGenreList } from '@/services/genres'
 
+import { resolveMediaType } from '@/lib/media'
+
 import { Movie } from '@/types/movie-result'
 import { Carousel } from '@/components/carousel'
 import { HeroSlide } from '@/components/header/hero-slide'
@@ -17,9 +19,7 @@ export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
     <div className="relative overflow-hidden">
       <Carousel stageClassName="min-h-[86svh] sm:min-h-[70svh] lg:min-h-screen">
         {movies?.map((movie, index) => {
-          const isTv =
-            (movie.media_type ?? (movie.first_air_date ? 'tv' : 'movie')) ===
-            'tv'
+          const isTv = resolveMediaType(movie) === 'tv'
           return (
             <HeroSlide
               key={movie.id}

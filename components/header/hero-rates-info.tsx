@@ -5,6 +5,7 @@ import { MovieGenre } from '@/types/movie-genre'
 import { ItemType, Movie } from '@/types/movie-result'
 import { SeriesDetails } from '@/types/series-details'
 import { genreToSlug } from '@/lib/genres'
+import { mediaGenreBasePath, resolveMediaType } from '@/lib/media'
 import { dateFormatter, getGenres } from '@/lib/utils'
 import { Chip } from '@/components/ui/chip'
 import { GenreLink } from '@/components/media/genre-link'
@@ -15,6 +16,19 @@ interface HeroRatesInfosProps {
   movieDetails?: MovieDetails
   seriesDetails?: SeriesDetails
   genreTable?: MovieGenre[]
+}
+
+// Detail pages know their type up front (movieDetails/seriesDetails); the mixed
+// homepage hero only has a `movie` whose type is inferred. Flat guard chain so
+// the precedence stays readable (no nested ternary).
+function resolveHeroMediaType(
+  movieDetails?: MovieDetails,
+  seriesDetails?: SeriesDetails,
+  movie?: Movie
+): ItemType {
+  if (movieDetails) return 'movie'
+  if (seriesDetails) return 'tv'
+  return movie ? resolveMediaType(movie) : 'movie'
 }
 
 export const HeroRatesInfos = ({
@@ -32,12 +46,8 @@ export const HeroRatesInfos = ({
   // the homepage hero (mixed trending/all) passes a `movie` whose type comes
   // from media_type (or the TV-only first_air_date). Drives both the genre
   // table and where each genre badge links.
-  const mediaType: ItemType = movieDetails
-    ? 'movie'
-    : seriesDetails
-      ? 'tv'
-      : (movie?.media_type ?? (movie?.first_air_date ? 'tv' : 'movie'))
-  const genreBasePath = mediaType === 'tv' ? '/tv-shows' : '/movies'
+  const mediaType = resolveHeroMediaType(movieDetails, seriesDetails, movie)
+  const genreBasePath = mediaGenreBasePath(mediaType)
   const movieGenres = getGenres(
     movie?.genre_ids,
     movieDetails?.genres || seriesDetails?.genres,
@@ -68,7 +78,7 @@ export const HeroRatesInfos = ({
       {movieGenres.map((genre) => (
         <GenreLink
           key={genre.id}
-          href={`${genreBasePath}/genre/${genreToSlug(genre.name)}`}
+          href={`${genreBasePath}/${genreToSlug(genre.name)}`}
           name={genre.name}
         />
       ))}

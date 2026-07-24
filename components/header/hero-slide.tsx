@@ -11,6 +11,7 @@ import { MovieGenre } from '@/types/movie-genre'
 import { ItemType, Movie } from '@/types/movie-result'
 import { SeriesDetails } from '@/types/series-details'
 import { trackHeroAutoplayToggled, trackHeroWatchClicked } from '@/lib/analytics'
+import { mediaDetailHref, resolveMediaType } from '@/lib/media'
 import { getImageURL, getPosterImageURL } from '@/lib/utils'
 import { useHeroAutoplay } from '@/hooks/use-hero-autoplay'
 import { useHeroExtras } from '@/hooks/use-hero-extras'
@@ -46,8 +47,7 @@ export function HeroSlide({
 }: HeroSlideProps) {
   const media = movie as HeroSlideMedia
   const title = movie.title || movie.name || 'Untitled'
-  const mediaType: ItemType =
-    movie.media_type ?? (movie.first_air_date ? 'tv' : 'movie')
+  const mediaType: ItemType = resolveMediaType(movie)
 
   const { trailerKey, logoPath, ready: extrasReady } = useHeroExtras(
     movie.id,
@@ -189,7 +189,7 @@ export function HeroSlide({
     }
   }, [hasHover, reduce, trailerKey, active, autoplayEnabled])
 
-  const href = mediaType === 'tv' ? `/tv-shows/${movie.id}` : `/movies/${movie.id}`
+  const href = mediaDetailHref(mediaType, movie.id)
 
   const showLogo = !!logoPath && !logoError
   // Keep the plain title hidden while the logo's outcome is still pending
