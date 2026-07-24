@@ -388,11 +388,11 @@ export function HeroSlide({
               cinematic ? 'opacity-0 blur-sm' : 'blur-0 opacity-100'
             }`}
           >
-            <div className="relative min-h-[700px] w-[400px]">
+            <div className="relative min-h-[700px] w-[400px] overflow-hidden rounded-xl shadow-2xl">
               <BlurredImage
                 src={getPosterImageURL(movie.poster_path)}
                 alt={title}
-                className="pointer-events-none size-full rounded-xl object-fill shadow-2xl ring-1 ring-white/10 lg:object-cover"
+                className="pointer-events-none size-full object-fill lg:object-cover"
                 fill
                 sizes="(min-width: 1024px) 1024px, 30vw"
                 intro

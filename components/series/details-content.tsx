@@ -32,11 +32,11 @@ export const SeriesDetailsContent = ({
       <section className="container max-w-(--breakpoint-2xl) pt-12 pb-6 lg:pb-10">
         <div className="flex flex-col-reverse gap-8 lg:flex-row">
           <div className="mx-auto w-full max-w-[220px] shrink-0 sm:max-w-[260px] lg:mx-0 lg:w-[400px] lg:max-w-none">
-            <div className="relative aspect-2/3 w-full lg:aspect-auto lg:min-h-[600px]">
+            <div className="relative aspect-2/3 w-full overflow-hidden rounded-xl shadow-xl lg:aspect-auto lg:min-h-[600px]">
               <BlurredImage
                 src={getPosterImageURL(series.poster_path)}
                 alt={series.name}
-                className="h-full w-full rounded-lg object-cover shadow-lg"
+                className="h-full w-full object-cover"
                 fill
                 sizes="(min-width: 1024px) 400px, 260px"
                 intro
