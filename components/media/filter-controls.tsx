@@ -1,10 +1,48 @@
 'use client'
 
-import React from 'react'
+import React, { useCallback } from 'react'
 
+import { MediaFilter } from '@/types/filter'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Icons } from '@/components/icons'
+
+// FilterDialog (desktop) and FilterSheet (mobile) render the same filter UI in
+// two different Radix primitives. They share this prop contract, the open/
+// trigger callbacks, and the header title — only the Dialog vs Sheet wrapper and
+// its sizing differ.
+export interface FilterOverlayProps {
+  mediaType: 'movie' | 'tv'
+  isOpen: boolean
+  onOpenChange: (open: boolean) => void
+  filter: MediaFilter
+  updateFilter: (updates: Partial<MediaFilter>) => void
+  cycleGenre: (genreId: number) => void
+  clearFilters: () => void
+  hasActiveFilters: boolean
+  activeFilterCount: number
+}
+
+export function useFilterOverlay(onOpenChange: (open: boolean) => void) {
+  // Prevent event bubbling that can cause mobile refresh issues.
+  const handleOpenChange = useCallback(
+    (open: boolean) => onOpenChange(open),
+    [onOpenChange]
+  )
+  const handleTriggerClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      onOpenChange(true)
+    },
+    [onOpenChange]
+  )
+  return { handleOpenChange, handleTriggerClick }
+}
+
+export function filterOverlayTitle(mediaType: 'movie' | 'tv') {
+  return `Filter ${mediaType === 'movie' ? 'Movies' : 'TV Series'}`
+}
 
 interface CountBadgeProps {
   count?: number

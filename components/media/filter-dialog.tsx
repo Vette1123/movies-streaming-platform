@@ -1,8 +1,7 @@
 'use client'
 
-import React, { useCallback } from 'react'
+import React from 'react'
 
-import { MediaFilter } from '@/types/filter'
 import {
   Dialog,
   DialogContent,
@@ -12,20 +11,13 @@ import {
 } from '@/components/ui/dialog'
 import { Icons } from '@/components/icons'
 
-import { FilterTriggerButton } from './filter-controls'
+import {
+  FilterOverlayProps,
+  FilterTriggerButton,
+  filterOverlayTitle,
+  useFilterOverlay,
+} from './filter-controls'
 import { FilterSidebar } from './filter-sidebar'
-
-interface FilterDialogProps {
-  mediaType: 'movie' | 'tv'
-  isOpen: boolean
-  onOpenChange: (open: boolean) => void
-  filter: MediaFilter
-  updateFilter: (updates: Partial<MediaFilter>) => void
-  cycleGenre: (genreId: number) => void
-  clearFilters: () => void
-  hasActiveFilters: boolean
-  activeFilterCount: number
-}
 
 export const FilterDialog = ({
   mediaType,
@@ -37,23 +29,8 @@ export const FilterDialog = ({
   clearFilters,
   hasActiveFilters,
   activeFilterCount,
-}: FilterDialogProps) => {
-  // Prevent event bubbling that can cause mobile refresh issues
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      onOpenChange(open)
-    },
-    [onOpenChange]
-  )
-
-  const handleTriggerClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      onOpenChange(true)
-    },
-    [onOpenChange]
-  )
+}: FilterOverlayProps) => {
+  const { handleOpenChange, handleTriggerClick } = useFilterOverlay(onOpenChange)
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -71,7 +48,7 @@ export const FilterDialog = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Icons.sliders className="size-5" />
-            Filter {mediaType === 'movie' ? 'Movies' : 'TV Series'}
+            {filterOverlayTitle(mediaType)}
           </DialogTitle>
         </DialogHeader>
         <div className="overflow-y-auto">
