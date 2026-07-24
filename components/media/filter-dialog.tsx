@@ -15,26 +15,16 @@ import { Icons } from '@/components/icons'
 
 import { FilterSidebar } from './filter-sidebar'
 
-// Type for filter sections state
-interface FilterSections {
-  sort: boolean
-  genres: boolean
-  rating: boolean
-  date: boolean
-  runtime: boolean
-}
-
 interface FilterDialogProps {
   mediaType: 'movie' | 'tv'
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   filter: MediaFilter
   updateFilter: (updates: Partial<MediaFilter>) => void
-  toggleGenre: (genreId: number, isExclude?: boolean) => void
+  cycleGenre: (genreId: number) => void
   clearFilters: () => void
   hasActiveFilters: boolean
-  sections: FilterSections
-  toggleSection: (section: string) => void
+  activeFilterCount: number
 }
 
 export const FilterDialog = ({
@@ -43,11 +33,10 @@ export const FilterDialog = ({
   onOpenChange,
   filter,
   updateFilter,
-  toggleGenre,
+  cycleGenre,
   clearFilters,
   hasActiveFilters,
-  sections,
-  toggleSection,
+  activeFilterCount,
 }: FilterDialogProps) => {
   // Prevent event bubbling that can cause mobile refresh issues
   const handleOpenChange = useCallback(
@@ -78,9 +67,9 @@ export const FilterDialog = ({
         >
           <Icons.filter className="h-4 w-4" />
           Filters
-          {hasActiveFilters && (
-            <span className="bg-primary text-primary-foreground ml-1 flex h-5 w-5 items-center justify-center rounded-full text-xs">
-              !
+          {activeFilterCount > 0 && (
+            <span className="bg-primary text-primary-foreground ml-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-semibold tabular-nums">
+              {activeFilterCount}
             </span>
           )}
         </Button>
@@ -102,11 +91,9 @@ export const FilterDialog = ({
             className="max-w-none"
             filter={filter}
             updateFilter={updateFilter}
-            toggleGenre={toggleGenre}
+            cycleGenre={cycleGenre}
             clearFilters={clearFilters}
             hasActiveFilters={hasActiveFilters}
-            sections={sections}
-            toggleSection={toggleSection}
           />
         </div>
       </DialogContent>

@@ -5,7 +5,6 @@ import { discoverMoviesAction, discoverSeriesAction } from '@/actions/filter'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import {
   parseAsArrayOf,
-  parseAsBoolean,
   parseAsFloat,
   parseAsInteger,
   parseAsString,
@@ -19,6 +18,10 @@ import {
   trackFiltersCleared,
   trackLoadMore,
 } from '@/lib/analytics'
+import {
+  CERTIFICATION_COUNTRY,
+  DEFAULT_WATCH_REGION,
+} from '@/lib/filter-options'
 import { QUERY_KEYS } from '@/lib/queryKeys'
 
 interface UseMediaFilterProps {
@@ -26,12 +29,13 @@ interface UseMediaFilterProps {
   initialData?: MediaResponse
 }
 
-// Default values for filters
+// Default values for filters. NOTE: accordion open/closed state used to live here
+// (and in the URL) — it's now local component state in the sidebar, so a shared
+// filter URL carries only real filters, not UI chrome.
 const defaultValues = {
-  selectedGenres: [],
-  excludedGenres: [],
+  selectedGenres: [] as number[],
+  excludedGenres: [] as number[],
   sortBy: 'popularity.desc' as SortOption,
-  includeAdult: false,
   minRating: 0,
   maxRating: 10,
   minVotes: 0,
@@ -40,12 +44,9 @@ const defaultValues = {
   minRuntime: 0,
   maxRuntime: 300,
   originalLanguage: '',
-  // Section states
-  sortSection: true,
-  genresSection: true,
-  ratingSection: false,
-  dateSection: false,
-  runtimeSection: false,
+  certification: '',
+  watchProviders: [] as number[],
+  watchRegion: DEFAULT_WATCH_REGION,
 }
 
 // URL state parsers
@@ -57,7 +58,6 @@ const filterParsers = {
     defaultValues.excludedGenres
   ),
   sortBy: parseAsString.withDefault(defaultValues.sortBy),
-  includeAdult: parseAsBoolean.withDefault(defaultValues.includeAdult),
   minRating: parseAsFloat.withDefault(defaultValues.minRating),
   maxRating: parseAsFloat.withDefault(defaultValues.maxRating),
   minVotes: parseAsInteger.withDefault(defaultValues.minVotes),
@@ -66,12 +66,11 @@ const filterParsers = {
   minRuntime: parseAsInteger.withDefault(defaultValues.minRuntime),
   maxRuntime: parseAsInteger.withDefault(defaultValues.maxRuntime),
   originalLanguage: parseAsString.withDefault(defaultValues.originalLanguage),
-  // Section states
-  sortSection: parseAsBoolean.withDefault(defaultValues.sortSection),
-  genresSection: parseAsBoolean.withDefault(defaultValues.genresSection),
-  ratingSection: parseAsBoolean.withDefault(defaultValues.ratingSection),
-  dateSection: parseAsBoolean.withDefault(defaultValues.dateSection),
-  runtimeSection: parseAsBoolean.withDefault(defaultValues.runtimeSection),
+  certification: parseAsString.withDefault(defaultValues.certification),
+  watchProviders: parseAsArrayOf(parseAsInteger).withDefault(
+    defaultValues.watchProviders
+  ),
+  watchRegion: parseAsString.withDefault(defaultValues.watchRegion),
 }
 
 export const useMediaFilter = ({
@@ -89,7 +88,6 @@ export const useMediaFilter = ({
       selectedGenres: urlState.selectedGenres,
       excludedGenres: urlState.excludedGenres,
       sortBy: urlState.sortBy as SortOption,
-      includeAdult: urlState.includeAdult,
       minRating: urlState.minRating,
       maxRating: urlState.maxRating,
       minVotes: urlState.minVotes,
@@ -98,6 +96,9 @@ export const useMediaFilter = ({
       minRuntime: urlState.minRuntime > 0 ? urlState.minRuntime : undefined,
       maxRuntime: urlState.maxRuntime > 0 ? urlState.maxRuntime : undefined,
       originalLanguage: urlState.originalLanguage || undefined,
+      certification: urlState.certification || undefined,
+      watchProviders: urlState.watchProviders,
+      watchRegion: urlState.watchRegion || DEFAULT_WATCH_REGION,
     }),
     [urlState]
   )
@@ -106,7 +107,6 @@ export const useMediaFilter = ({
   const filterParams = useMemo((): FilterParams => {
     const params: FilterParams = {
       sort_by: filter.sortBy,
-      include_adult: filter.includeAdult,
     }
 
     // Genre filters
@@ -117,9 +117,7 @@ export const useMediaFilter = ({
       params.without_genres = filter.excludedGenres.join(',')
     }
 
-    // Debug logging can be enabled in the FilterDebug component
-
-    // Date filters
+    // Date filters (mediaType-aware; the action also remaps as a safety net)
     if (filter.fromDate) {
       if (mediaType === 'movie') {
         params['release_date.gte'] = filter.fromDate
@@ -139,7 +137,7 @@ export const useMediaFilter = ({
     if (filter.minRating && filter.minRating > 0) {
       params['vote_average.gte'] = filter.minRating
     }
-    if (filter.maxRating && filter.maxRating <= 10) {
+    if (filter.maxRating && filter.maxRating < 10) {
       params['vote_average.lte'] = filter.maxRating
     }
     if (filter.minVotes && filter.minVotes > 0) {
@@ -161,24 +159,59 @@ export const useMediaFilter = ({
       params.with_original_language = filter.originalLanguage
     }
 
+    // Age rating (movies only — TV discover has no certification param)
+    if (mediaType === 'movie' && filter.certification) {
+      params.certification = filter.certification
+      params.certification_country = CERTIFICATION_COUNTRY
+    }
+
+    // Where to watch. `|` = OR (available on ANY picked provider); pairs with
+    // watch_region so ids resolve against the right regional catalog.
+    if (filter.watchProviders.length > 0) {
+      params.with_watch_providers = filter.watchProviders.join('|')
+      params.watch_region = filter.watchRegion
+    }
+
     return params
   }, [filter, mediaType])
 
-  // Check if any filters are active (not default values)
+  // Check if any filters are active (not default values). Region alone is not a
+  // filter — it only bites when providers are picked, so it's excluded here.
   const hasActiveFilters = useMemo(() => {
     return (
       urlState.selectedGenres.length > 0 ||
       urlState.excludedGenres.length > 0 ||
-      (urlState.fromDate && urlState.fromDate !== '') ||
-      (urlState.toDate && urlState.toDate !== '') ||
+      urlState.watchProviders.length > 0 ||
+      Boolean(urlState.fromDate) ||
+      Boolean(urlState.toDate) ||
+      Boolean(urlState.originalLanguage) ||
+      Boolean(urlState.certification) ||
       urlState.minRating > 0 ||
       urlState.maxRating < 10 ||
       urlState.minVotes > 0 ||
       urlState.minRuntime > 0 ||
       urlState.maxRuntime < 300 ||
-      (urlState.originalLanguage && urlState.originalLanguage !== '') ||
       urlState.sortBy !== 'popularity.desc'
     )
+  }, [urlState])
+
+  // Count of distinct active filter groups — drives the numeric badge on the
+  // mobile "Filters" trigger. Sort is intentionally NOT counted (it's always set).
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (urlState.selectedGenres.length > 0)
+      count += urlState.selectedGenres.length
+    if (urlState.excludedGenres.length > 0)
+      count += urlState.excludedGenres.length
+    if (urlState.watchProviders.length > 0)
+      count += urlState.watchProviders.length
+    if (urlState.fromDate || urlState.toDate) count += 1
+    if (urlState.minRating > 0 || urlState.maxRating < 10) count += 1
+    if (urlState.minVotes > 0) count += 1
+    if (urlState.minRuntime > 0 || urlState.maxRuntime < 300) count += 1
+    if (urlState.originalLanguage) count += 1
+    if (urlState.certification) count += 1
+    return count
   }, [urlState])
 
   // React Query for filtered data
@@ -228,14 +261,11 @@ export const useMediaFilter = ({
       })
       const urlUpdates: Partial<typeof urlState> = {}
 
-      // Map MediaFilter properties to URL state
       if (updates.selectedGenres !== undefined)
         urlUpdates.selectedGenres = updates.selectedGenres
       if (updates.excludedGenres !== undefined)
         urlUpdates.excludedGenres = updates.excludedGenres
       if (updates.sortBy !== undefined) urlUpdates.sortBy = updates.sortBy
-      if (updates.includeAdult !== undefined)
-        urlUpdates.includeAdult = updates.includeAdult
       if (updates.minRating !== undefined)
         urlUpdates.minRating = updates.minRating
       if (updates.maxRating !== undefined)
@@ -250,37 +280,44 @@ export const useMediaFilter = ({
         urlUpdates.maxRuntime = updates.maxRuntime || 0
       if (updates.originalLanguage !== undefined)
         urlUpdates.originalLanguage = updates.originalLanguage || ''
+      if (updates.certification !== undefined)
+        urlUpdates.certification = updates.certification || ''
+      if (updates.watchProviders !== undefined)
+        urlUpdates.watchProviders = updates.watchProviders
+      if (updates.watchRegion !== undefined)
+        urlUpdates.watchRegion = updates.watchRegion || DEFAULT_WATCH_REGION
 
       setUrlState(urlUpdates)
     },
     [setUrlState, mediaType]
   )
 
-  const toggleGenre = useCallback(
-    (genreId: number, exclude = false) => {
-      const targetArray = exclude ? 'excludedGenres' : 'selectedGenres'
-      const otherArray = exclude ? 'selectedGenres' : 'excludedGenres'
+  // Tri-state genre cycle in a SINGLE url write (off → include → exclude → off).
+  // One write, not two, so include→exclude can't race two nuqs updates. Exposing
+  // exclusion this way finally wires the long-plumbed `without_genres`.
+  const cycleGenre = useCallback(
+    (genreId: number) => {
+      const inInclude = urlState.selectedGenres.includes(genreId)
+      const inExclude = urlState.excludedGenres.includes(genreId)
 
-      const currentTargetGenres = urlState[targetArray]
-      const currentOtherGenres = urlState[otherArray]
+      let selected = urlState.selectedGenres.filter((id) => id !== genreId)
+      let excluded = urlState.excludedGenres.filter((id) => id !== genreId)
 
-      const isAdding = !currentTargetGenres.includes(genreId)
+      let nextState: 'include' | 'exclude' | 'off' = 'off'
+      if (!inInclude && !inExclude) {
+        selected = [...selected, genreId]
+        nextState = 'include'
+      } else if (inInclude) {
+        excluded = [...excluded, genreId]
+        nextState = 'exclude'
+      }
+
       trackFilterChanged({
         media_type: mediaType,
-        filter_type: exclude ? 'excludeGenre' : 'genre',
-        value: { genreId, active: isAdding },
+        filter_type: 'genre',
+        value: { genreId, state: nextState },
       })
-      const newTargetGenres = currentTargetGenres.includes(genreId)
-        ? currentTargetGenres.filter((id) => id !== genreId)
-        : [...currentTargetGenres, genreId]
-
-      // Remove from the other array if it exists there
-      const newOtherGenres = currentOtherGenres.filter((id) => id !== genreId)
-
-      setUrlState({
-        [targetArray]: newTargetGenres,
-        [otherArray]: newOtherGenres,
-      })
+      setUrlState({ selectedGenres: selected, excludedGenres: excluded })
     },
     [urlState, setUrlState, mediaType]
   )
@@ -305,38 +342,12 @@ export const useMediaFilter = ({
     return fetchNextPage()
   }, [fetchNextPage, data?.pages?.length, mediaType])
 
-  const toggleSection = useCallback(
-    (sectionKey: string) => {
-      const validSectionKeys = [
-        'sortSection',
-        'genresSection',
-        'ratingSection',
-        'dateSection',
-        'runtimeSection',
-      ]
-      if (validSectionKeys.includes(sectionKey)) {
-        setUrlState({
-          [sectionKey]: !urlState[sectionKey as keyof typeof urlState],
-        })
-      }
-    },
-    [urlState, setUrlState]
-  )
-
   return {
     // Filter state
     filter,
     filterParams,
     hasActiveFilters,
-
-    // Section states
-    sections: {
-      sort: urlState.sortSection,
-      genres: urlState.genresSection,
-      rating: urlState.ratingSection,
-      date: urlState.dateSection,
-      runtime: urlState.runtimeSection,
-    },
+    activeFilterCount,
 
     // Data
     data,
@@ -347,10 +358,9 @@ export const useMediaFilter = ({
 
     // Actions
     updateFilter,
-    toggleGenre,
+    cycleGenre,
     setSortBy,
     clearFilters,
-    toggleSection,
     fetchNextPage: trackedFetchNextPage,
     refetch,
   }

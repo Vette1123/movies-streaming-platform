@@ -1,13 +1,33 @@
 'use client'
 
 import React from 'react'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import {
+  ArrowUpDown,
+  CalendarRange,
+  Check,
+  ChevronDown,
+  Clock,
+  Languages as LanguagesIcon,
+  Minus,
+  MonitorPlay,
+  ShieldCheck,
+  Star,
+  Tags,
+} from 'lucide-react'
+import { useDebouncedCallback } from 'use-debounce'
 
 import { MediaFilter, SortOption } from '@/types/filter'
+import {
+  DECADES,
+  LANGUAGES,
+  MIN_YEAR,
+  MOVIE_CERTIFICATIONS,
+  WATCH_REGIONS,
+} from '@/lib/filter-options'
 import { cn } from '@/lib/utils'
 import { useGenres } from '@/hooks/use-genres'
+import { useWatchProviders } from '@/hooks/use-watch-providers'
 import { Button } from '@/components/ui/button'
-import { DatePicker } from '@/components/ui/date-picker'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Select,
@@ -19,471 +39,573 @@ import {
 import { Slider } from '@/components/ui/slider'
 import { Icons } from '@/components/icons'
 
-// Type for filter sections state
-interface FilterSections {
-  sort: boolean
-  genres: boolean
-  rating: boolean
-  date: boolean
-  runtime: boolean
-}
-
 interface FilterSidebarProps {
   mediaType: 'movie' | 'tv'
   className?: string
   filter: MediaFilter
   updateFilter: (updates: Partial<MediaFilter>) => void
-  toggleGenre: (genreId: number, isExclude?: boolean) => void
+  cycleGenre: (genreId: number) => void
   clearFilters: () => void
   hasActiveFilters: boolean
-  sections: FilterSections
-  toggleSection: (section: string) => void
-}
-
-interface FilterSectionProps {
-  title: string
-  children: React.ReactNode
-  defaultOpen?: boolean
-  className?: string
-  sectionKey?: string
-  onToggle?: (isOpen: boolean) => void
-  isOpen?: boolean
-}
-
-const FilterSection = ({
-  title,
-  children,
-  defaultOpen = false,
-  className,
-  sectionKey,
-  onToggle,
-  isOpen: controlledIsOpen,
-}: FilterSectionProps) => {
-  const [localIsOpen, setLocalIsOpen] = React.useState(defaultOpen)
-
-  // Use controlled state if provided, otherwise use local state
-  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : localIsOpen
-
-  const handleToggle = () => {
-    const newState = !isOpen
-    if (onToggle) {
-      onToggle(newState)
-    } else {
-      setLocalIsOpen(newState)
-    }
-  }
-
-  return (
-    <div className={cn('border-border/40 border-b pb-4', className)}>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleToggle}
-        className="text-foreground h-auto w-full justify-between p-0 text-sm font-medium hover:bg-transparent"
-        aria-expanded={isOpen}
-      >
-        {title}
-        {isOpen ? (
-          <ChevronUp className="h-4 w-4" />
-        ) : (
-          <ChevronDown className="h-4 w-4" />
-        )}
-      </Button>
-      {isOpen && <div className="mt-3 space-y-3">{children}</div>}
-    </div>
-  )
 }
 
 const sortOptions: { value: SortOption; label: string }[] = [
-  { value: 'popularity.desc', label: 'Popularity (High to Low)' },
-  { value: 'popularity.asc', label: 'Popularity (Low to High)' },
-  { value: 'vote_average.desc', label: 'Rating (High to Low)' },
-  { value: 'vote_average.asc', label: 'Rating (Low to High)' },
-  { value: 'release_date.desc', label: 'Release Date (Newest)' },
-  { value: 'release_date.asc', label: 'Release Date (Oldest)' },
+  { value: 'popularity.desc', label: 'Most popular' },
+  { value: 'popularity.asc', label: 'Least popular' },
+  { value: 'vote_average.desc', label: 'Highest rated' },
+  { value: 'vote_average.asc', label: 'Lowest rated' },
+  { value: 'vote_count.desc', label: 'Most voted' },
+  { value: 'revenue.desc', label: 'Highest grossing' },
+  { value: 'release_date.desc', label: 'Newest first' },
+  { value: 'release_date.asc', label: 'Oldest first' },
   { value: 'original_title.asc', label: 'Title (A-Z)' },
-  { value: 'original_title.desc', label: 'Title (Z-A)' },
 ]
 
 const tvSortOptions: { value: SortOption; label: string }[] = [
-  { value: 'popularity.desc', label: 'Popularity (High to Low)' },
-  { value: 'popularity.asc', label: 'Popularity (Low to High)' },
-  { value: 'vote_average.desc', label: 'Rating (High to Low)' },
-  { value: 'vote_average.asc', label: 'Rating (Low to High)' },
-  { value: 'first_air_date.desc', label: 'Air Date (Newest)' },
-  { value: 'first_air_date.asc', label: 'Air Date (Oldest)' },
+  { value: 'popularity.desc', label: 'Most popular' },
+  { value: 'popularity.asc', label: 'Least popular' },
+  { value: 'vote_average.desc', label: 'Highest rated' },
+  { value: 'vote_average.asc', label: 'Lowest rated' },
+  { value: 'vote_count.desc', label: 'Most voted' },
+  { value: 'first_air_date.desc', label: 'Newest first' },
+  { value: 'first_air_date.asc', label: 'Oldest first' },
   { value: 'name.asc', label: 'Name (A-Z)' },
-  { value: 'name.desc', label: 'Name (Z-A)' },
 ]
+
+const ANY_LANGUAGE = 'any'
+const PROVIDER_LOGO_BASE = 'https://image.tmdb.org/t/p/w92'
+// Cap the provider grid to the top of TMDB's priority-ordered roster: the big
+// services people actually filter by, without firing 100+ logo requests.
+const MAX_PROVIDERS = 32
+
+interface SectionProps {
+  title: string
+  icon: React.ComponentType<{ className?: string }>
+  isOpen: boolean
+  onToggle: () => void
+  count?: number
+  children: React.ReactNode
+}
+
+const Section = ({
+  title,
+  icon: SectionIcon,
+  isOpen,
+  onToggle,
+  count,
+  children,
+}: SectionProps) => (
+  <div className="border-border/40 border-b pb-4 last:border-b-0">
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={isOpen}
+      className="text-foreground group flex w-full items-center justify-between py-1 text-sm font-medium"
+    >
+      <span className="flex items-center gap-2.5">
+        <SectionIcon className="text-muted-foreground group-hover:text-foreground h-4 w-4 transition-colors" />
+        {title}
+        {count ? (
+          <span className="bg-primary/15 text-primary flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums">
+            {count}
+          </span>
+        ) : null}
+      </span>
+      <ChevronDown
+        className={cn(
+          'text-muted-foreground h-4 w-4 transition-transform duration-200 motion-reduce:transition-none',
+          isOpen && 'rotate-180'
+        )}
+      />
+    </button>
+    {isOpen && <div className="mt-4 space-y-4">{children}</div>}
+  </div>
+)
 
 export const FilterSidebar = ({
   mediaType,
   className,
   filter,
   updateFilter,
-  toggleGenre,
+  cycleGenre,
   clearFilters,
   hasActiveFilters,
-  sections,
-  toggleSection,
 }: FilterSidebarProps) => {
-  // Local state for filters that need save buttons
+  const isMovie = mediaType === 'movie'
+  const currentYear = new Date().getFullYear()
+  const genres = useGenres(mediaType)
+  const providers = useWatchProviders(mediaType, filter.watchRegion)
+
+  // Accordion state is LOCAL now (was URL-synced) so shareable filter links carry
+  // only real filters. Genres open by default — the most-used control.
+  const [open, setOpen] = React.useState<Record<string, boolean>>({
+    sort: true,
+    genres: true,
+    year: false,
+    rating: false,
+    runtime: false,
+    language: false,
+    certification: false,
+    providers: false,
+  })
+  const toggle = (key: string) =>
+    setOpen((prev) => ({ ...prev, [key]: !prev[key] }))
+
+  // Local mirror of the sliders for smooth dragging; the committed value is
+  // pushed to the URL on a debounce (live-apply — no more "Save" buttons).
   const [localRating, setLocalRating] = React.useState<[number, number]>([
     filter.minRating || 0,
     filter.maxRating || 10,
   ])
-  const [localVotes, setLocalVotes] = React.useState<number>(
-    filter.minVotes || 0
-  )
-  const [localDates, setLocalDates] = React.useState<{
-    from: string
-    to: string
-  }>({
-    from: filter.fromDate || '',
-    to: filter.toDate || '',
-  })
+  const [localVotes, setLocalVotes] = React.useState(filter.minVotes || 0)
   const [localRuntime, setLocalRuntime] = React.useState<[number, number]>([
     filter.minRuntime || 0,
     filter.maxRuntime || 300,
   ])
+  const yearFrom = filter.fromDate
+    ? Number(filter.fromDate.slice(0, 4))
+    : MIN_YEAR
+  const yearTo = filter.toDate ? Number(filter.toDate.slice(0, 4)) : currentYear
+  const [localYears, setLocalYears] = React.useState<[number, number]>([
+    yearFrom,
+    yearTo,
+  ])
 
-  // Sync local state when filter changes externally (e.g., clear filters)
+  // Re-sync local mirrors when the committed filter changes from the outside
+  // (Clear all, an active-chip removal, back/forward). Without this the sliders
+  // would keep showing a stale dragged value after a reset.
   /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     setLocalRating([filter.minRating || 0, filter.maxRating || 10])
     setLocalVotes(filter.minVotes || 0)
-    setLocalDates({
-      from: filter.fromDate || '',
-      to: filter.toDate || '',
-    })
     setLocalRuntime([filter.minRuntime || 0, filter.maxRuntime || 300])
-  /* eslint-enable react-hooks/set-state-in-effect */
+    setLocalYears([
+      filter.fromDate ? Number(filter.fromDate.slice(0, 4)) : MIN_YEAR,
+      filter.toDate ? Number(filter.toDate.slice(0, 4)) : currentYear,
+    ])
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [
     filter.minRating,
     filter.maxRating,
     filter.minVotes,
-    filter.fromDate,
-    filter.toDate,
     filter.minRuntime,
     filter.maxRuntime,
+    filter.fromDate,
+    filter.toDate,
+    currentYear,
   ])
 
-  // Check if local changes differ from current filter
-  const hasRatingChanges =
-    localRating[0] !== (filter.minRating || 0) ||
-    localRating[1] !== (filter.maxRating || 10)
-
-  const hasVotesChanges = localVotes !== (filter.minVotes || 0)
-
-  const hasDateChanges =
-    localDates.from !== (filter.fromDate || '') ||
-    localDates.to !== (filter.toDate || '')
-
-  const hasRuntimeChanges =
-    localRuntime[0] !== (filter.minRuntime || 0) ||
-    localRuntime[1] !== (filter.maxRuntime || 300)
-
-  // Direct handlers - immediate changes
-  const handleSortChange = (value: SortOption) => {
-    updateFilter({ sortBy: value })
-  }
-
-  // Save handlers for filters with save buttons
-  const handleRatingSave = () => {
-    const [min, max] = localRating
+  const pushRating = useDebouncedCallback((v: [number, number]) => {
     updateFilter({
-      minRating: min === 0 ? undefined : min,
-      maxRating: max === 10 ? undefined : max,
+      minRating: v[0] === 0 ? undefined : v[0],
+      maxRating: v[1] === 10 ? undefined : v[1],
+    })
+  }, 300)
+
+  const pushVotes = useDebouncedCallback((v: number) => {
+    updateFilter({ minVotes: v === 0 ? undefined : v })
+  }, 300)
+
+  const pushRuntime = useDebouncedCallback((v: [number, number]) => {
+    updateFilter({
+      minRuntime: v[0] === 0 ? undefined : v[0],
+      maxRuntime: v[1] === 300 ? undefined : v[1],
+    })
+  }, 300)
+
+  const pushYears = useDebouncedCallback((v: [number, number]) => {
+    const [from, to] = v
+    updateFilter({
+      fromDate: from <= MIN_YEAR ? undefined : `${from}-01-01`,
+      toDate: to >= currentYear ? undefined : `${to}-12-31`,
+    })
+  }, 350)
+
+  const applyDecade = (from: number, to: number) => {
+    const resolvedTo = to >= 9999 ? currentYear : to
+    setLocalYears([from, resolvedTo])
+    updateFilter({
+      fromDate: from <= MIN_YEAR ? undefined : `${from}-01-01`,
+      toDate: resolvedTo >= currentYear ? undefined : `${resolvedTo}-12-31`,
     })
   }
 
-  const handleVotesSave = () => {
-    updateFilter({ minVotes: localVotes === 0 ? undefined : localVotes })
+  const isDecadeActive = (from: number, to: number) => {
+    const resolvedTo = to >= 9999 ? currentYear : to
+    return yearFrom === from && yearTo === resolvedTo
   }
 
-  const handleDatesSave = () => {
-    updateFilter({
-      fromDate: localDates.from || undefined,
-      toDate: localDates.to || undefined,
-    })
-  }
+  const currentSortOptions = isMovie ? sortOptions : tvSortOptions
 
-  const handleRuntimeSave = () => {
-    const [min, max] = localRuntime
-    updateFilter({
-      minRuntime: min === 0 ? undefined : min,
-      maxRuntime: max === 300 ? undefined : max,
-    })
-  }
-
-  // Section toggle handlers
-  const handleSectionToggle = (sectionName: string) => {
-    toggleSection(`${sectionName}Section`)
-  }
-
-  const currentSortOptions = mediaType === 'movie' ? sortOptions : tvSortOptions
-  const currentGenres = useGenres(mediaType)
+  // Per-section active counts driving the little header badges.
+  const genreCount = filter.selectedGenres.length + filter.excludedGenres.length
+  const ratingCount =
+    (filter.minRating || 0) > 0 || (filter.maxRating ?? 10) < 10 ? 1 : 0
+  const votesCount = (filter.minVotes || 0) > 0 ? 1 : 0
+  const yearCount = filter.fromDate || filter.toDate ? 1 : 0
+  const runtimeCount =
+    (filter.minRuntime || 0) > 0 || (filter.maxRuntime ?? 300) < 300 ? 1 : 0
 
   return (
-    <div className={cn('w-full max-w-sm space-y-4 lg:space-y-6', className)}>
+    <div className={cn('w-full max-w-sm', className)}>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icons.sliders className="h-5 w-5" />
           <h2 className="text-lg font-semibold">Filters</h2>
         </div>
-        {hasActiveFilters ? (
+        {hasActiveFilters && (
           <Button
             variant="ghost"
             size="sm"
             onClick={clearFilters}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
           >
-            Clear All
+            Clear all
           </Button>
-        ) : (
-          <Button variant="ghost" size="sm" className="invisible" />
         )}
       </div>
 
-      <ScrollArea className="max-h-[80vh] overflow-y-auto pb-8 lg:max-h-full lg:pb-0">
-        <div className="space-y-4 pr-4 lg:space-y-6">
+      <ScrollArea className="max-h-[78vh] overflow-y-auto pb-8 lg:max-h-[calc(100vh-8rem)] lg:pb-0">
+        <div className="space-y-4 pr-3">
           {/* Sort */}
-          <FilterSection
-            title="Sort By"
-            isOpen={sections.sort}
-            onToggle={() => handleSectionToggle('sort')}
+          <Section
+            title="Sort by"
+            icon={ArrowUpDown}
+            isOpen={open.sort}
+            onToggle={() => toggle('sort')}
           >
-            <Select value={filter.sortBy} onValueChange={handleSortChange}>
+            <Select
+              value={filter.sortBy}
+              onValueChange={(v) => updateFilter({ sortBy: v as SortOption })}
+            >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select sorting option" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {currentSortOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                {currentSortOptions.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </FilterSection>
+          </Section>
 
-          {/* Genres */}
-          <FilterSection
+          {/* Genres — tri-state */}
+          <Section
             title="Genres"
-            isOpen={sections.genres}
-            onToggle={() => handleSectionToggle('genres')}
+            icon={Tags}
+            isOpen={open.genres}
+            onToggle={() => toggle('genres')}
+            count={genreCount}
           >
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {currentGenres.map((genre) => {
-                const isSelected = filter.selectedGenres.includes(genre.id)
-                const isExcluded = filter.excludedGenres.includes(genre.id)
-
+            <div className="flex flex-wrap gap-2">
+              {genres.map((genre) => {
+                const included = filter.selectedGenres.includes(genre.id)
+                const excluded = filter.excludedGenres.includes(genre.id)
                 return (
-                  <div key={genre.id} className="space-y-1">
-                    <Button
-                      variant={isSelected ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => toggleGenre(genre.id, false)}
-                      className={cn(
-                        'h-8 w-full cursor-pointer justify-start text-xs',
-                        isSelected && 'bg-primary text-primary-foreground',
-                        isExcluded && 'opacity-50'
-                      )}
-                    >
-                      {genre.name}
-                    </Button>
-                  </div>
+                  <button
+                    key={genre.id}
+                    type="button"
+                    onClick={() => cycleGenre(genre.id)}
+                    className={cn(
+                      'flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors motion-reduce:transition-none',
+                      'border-border/60 text-muted-foreground hover:border-foreground/40 hover:text-foreground',
+                      included &&
+                        'border-primary bg-primary text-primary-foreground hover:border-primary hover:text-primary-foreground',
+                      excluded &&
+                        'border-destructive/50 bg-destructive/10 text-destructive hover:text-destructive line-through'
+                    )}
+                    aria-pressed={included || excluded}
+                  >
+                    {included && <Check className="h-3 w-3" />}
+                    {excluded && <Minus className="h-3 w-3" />}
+                    {genre.name}
+                  </button>
                 )
               })}
             </div>
-            {/* {(filter.selectedGenres.length > 0 ||
-              filter.excludedGenres.length > 0) && (
-              <div className="mt-3">
-                <Separator />
-                <div className="mt-3 space-y-2">
-                  {filter.selectedGenres.length > 0 && (
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Include:
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        {filter.selectedGenres.map((genreId) => {
-                          const genre = currentGenres.find(
-                            (g) => g.id === genreId
-                          )
-                          return (
-                            <Badge
-                              key={genreId}
-                              variant="default"
-                              className="text-xs"
-                            >
-                              {genre?.name}
-                              <button
-                                onClick={() => onToggleGenre(genreId, false)}
-                                className="ml-1 hover:bg-primary/20 rounded-full"
-                              >
-                                <Icons.close className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
+            <p className="text-muted-foreground/70 text-[11px] leading-relaxed">
+              Tap to include, tap again to exclude.
+            </p>
+          </Section>
+
+          {/* Year */}
+          <Section
+            title="Year"
+            icon={CalendarRange}
+            isOpen={open.year}
+            onToggle={() => toggle('year')}
+            count={yearCount}
+          >
+            <div className="flex flex-wrap gap-2">
+              {DECADES.map((d) => {
+                const active = isDecadeActive(d.from, d.to)
+                return (
+                  <button
+                    key={d.label}
+                    type="button"
+                    onClick={() =>
+                      active
+                        ? updateFilter({
+                            fromDate: undefined,
+                            toDate: undefined,
+                          })
+                        : applyDecade(d.from, d.to)
+                    }
+                    className={cn(
+                      'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors motion-reduce:transition-none',
+                      active
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border/60 text-muted-foreground hover:border-foreground/40 hover:text-foreground'
+                    )}
+                  >
+                    {d.label}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="space-y-3 pt-1">
+              <div className="text-muted-foreground flex justify-between text-xs tabular-nums">
+                <span>From {localYears[0]}</span>
+                <span>To {localYears[1]}</span>
               </div>
-            )} */}
-          </FilterSection>
+              <Slider
+                value={localYears}
+                onValueChange={(v) => {
+                  setLocalYears(v as [number, number])
+                  pushYears(v as [number, number])
+                }}
+                min={MIN_YEAR}
+                max={currentYear}
+                step={1}
+                className="w-full"
+              />
+            </div>
+          </Section>
 
           {/* Rating */}
-          <FilterSection
+          <Section
             title="Rating"
-            isOpen={sections.rating}
-            onToggle={() => handleSectionToggle('rating')}
-          >
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <div className="text-muted-foreground flex justify-between text-xs">
-                  <span>Rating Range</span>
-                  <span>
-                    {localRating[0].toFixed(1)} - {localRating[1].toFixed(1)}
-                  </span>
-                </div>
-                <Slider
-                  value={localRating}
-                  onValueChange={(values) =>
-                    setLocalRating(values as [number, number])
-                  }
-                  min={0}
-                  max={10}
-                  step={0.1}
-                  className="w-full"
-                />
-                <div className="text-muted-foreground flex justify-between text-xs">
-                  <span>0</span>
-                  <span>10</span>
-                </div>
-                {hasRatingChanges && (
-                  <Button
-                    size="sm"
-                    onClick={handleRatingSave}
-                    className="h-7 w-full text-xs"
-                  >
-                    Save Rating
-                  </Button>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <div className="text-muted-foreground flex justify-between text-xs">
-                  <span>Minimum Votes</span>
-                  <span>{localVotes}</span>
-                </div>
-                <Slider
-                  value={[localVotes]}
-                  onValueChange={(values) => setLocalVotes(values[0])}
-                  min={0}
-                  max={1000}
-                  step={10}
-                  className="w-full"
-                />
-                <div className="text-muted-foreground flex justify-between text-xs">
-                  <span>0</span>
-                  <span>1000+</span>
-                </div>
-                {hasVotesChanges && (
-                  <Button
-                    size="sm"
-                    onClick={handleVotesSave}
-                    className="h-7 w-full text-xs"
-                  >
-                    Save Votes
-                  </Button>
-                )}
-              </div>
-            </div>
-          </FilterSection>
-
-          {/* Date Range */}
-          <FilterSection
-            title={mediaType === 'movie' ? 'Release Date' : 'Air Date'}
-            isOpen={sections.date}
-            onToggle={() => handleSectionToggle('date')}
+            icon={Star}
+            isOpen={open.rating}
+            onToggle={() => toggle('rating')}
+            count={ratingCount + votesCount}
           >
             <div className="space-y-3">
-              <DatePicker
-                id="from-date"
-                label="From"
-                value={localDates.from}
-                onStringValueChange={(value) =>
-                  setLocalDates((prev) => ({ ...prev, from: value }))
-                }
-                placeholder="From date"
-                buttonClassName="h-8 text-sm"
+              <div className="text-muted-foreground flex justify-between text-xs tabular-nums">
+                <span>Score</span>
+                <span>
+                  {localRating[0].toFixed(1)} - {localRating[1].toFixed(1)}
+                </span>
+              </div>
+              <Slider
+                value={localRating}
+                onValueChange={(v) => {
+                  setLocalRating(v as [number, number])
+                  pushRating(v as [number, number])
+                }}
+                min={0}
+                max={10}
+                step={0.5}
+                className="w-full"
               />
-              <DatePicker
-                id="to-date"
-                label="To"
-                value={localDates.to}
-                onStringValueChange={(value) =>
-                  setLocalDates((prev) => ({ ...prev, to: value }))
-                }
-                placeholder="To date"
-                buttonClassName="h-8 text-sm"
-              />
-              {hasDateChanges && (
-                <Button
-                  size="sm"
-                  onClick={handleDatesSave}
-                  className="h-7 w-full text-xs"
-                >
-                  Save Dates
-                </Button>
-              )}
             </div>
-          </FilterSection>
+            <div className="space-y-3">
+              <div className="text-muted-foreground flex justify-between text-xs tabular-nums">
+                <span>Min votes</span>
+                <span>{localVotes >= 1000 ? '1000+' : localVotes}</span>
+              </div>
+              <Slider
+                value={[localVotes]}
+                onValueChange={(v) => {
+                  setLocalVotes(v[0])
+                  pushVotes(v[0])
+                }}
+                min={0}
+                max={1000}
+                step={50}
+                className="w-full"
+              />
+            </div>
+          </Section>
 
-          {/* Runtime (Movies only) */}
-          {mediaType === 'movie' && (
-            <FilterSection
-              title="Runtime (minutes)"
-              isOpen={sections.runtime}
-              onToggle={() => handleSectionToggle('runtime')}
+          {/* Runtime (movies only) */}
+          {isMovie && (
+            <Section
+              title="Runtime"
+              icon={Clock}
+              isOpen={open.runtime}
+              onToggle={() => toggle('runtime')}
+              count={runtimeCount}
             >
               <div className="space-y-3">
-                <div className="text-muted-foreground flex justify-between text-xs">
-                  <span>Runtime Range</span>
+                <div className="text-muted-foreground flex justify-between text-xs tabular-nums">
+                  <span>Length</span>
                   <span>
-                    {localRuntime[0]} - {localRuntime[1]} min
+                    {localRuntime[0]} -{' '}
+                    {localRuntime[1] >= 300 ? '300+' : localRuntime[1]} min
                   </span>
                 </div>
                 <Slider
                   value={localRuntime}
-                  onValueChange={(values) =>
-                    setLocalRuntime(values as [number, number])
-                  }
+                  onValueChange={(v) => {
+                    setLocalRuntime(v as [number, number])
+                    pushRuntime(v as [number, number])
+                  }}
                   min={0}
                   max={300}
                   step={5}
                   className="w-full"
                 />
-                <div className="text-muted-foreground flex justify-between text-xs">
-                  <span>0 min</span>
-                  <span>300+ min</span>
-                </div>
-                {hasRuntimeChanges && (
-                  <Button
-                    size="sm"
-                    onClick={handleRuntimeSave}
-                    className="h-7 w-full text-xs"
-                  >
-                    Save Runtime
-                  </Button>
-                )}
               </div>
-            </FilterSection>
+            </Section>
           )}
+
+          {/* Language */}
+          <Section
+            title="Language"
+            icon={LanguagesIcon}
+            isOpen={open.language}
+            onToggle={() => toggle('language')}
+            count={filter.originalLanguage ? 1 : 0}
+          >
+            <Select
+              value={filter.originalLanguage || ANY_LANGUAGE}
+              onValueChange={(v) =>
+                updateFilter({
+                  originalLanguage: v === ANY_LANGUAGE ? undefined : v,
+                })
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ANY_LANGUAGE}>Any language</SelectItem>
+                {LANGUAGES.map((l) => (
+                  <SelectItem key={l.code} value={l.code}>
+                    {l.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Section>
+
+          {/* Age rating (movies only) */}
+          {isMovie && (
+            <Section
+              title="Age rating"
+              icon={ShieldCheck}
+              isOpen={open.certification}
+              onToggle={() => toggle('certification')}
+              count={filter.certification ? 1 : 0}
+            >
+              <div className="flex flex-wrap gap-2">
+                {MOVIE_CERTIFICATIONS.map((c) => {
+                  const active = filter.certification === c.value
+                  return (
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() =>
+                        updateFilter({
+                          certification: active ? undefined : c.value,
+                        })
+                      }
+                      className={cn(
+                        'rounded-md border px-3 py-1.5 text-xs font-semibold transition-colors motion-reduce:transition-none',
+                        active
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-border/60 text-muted-foreground hover:border-foreground/40 hover:text-foreground'
+                      )}
+                    >
+                      {c.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </Section>
+          )}
+
+          {/* Where to watch */}
+          <Section
+            title="Where to watch"
+            icon={MonitorPlay}
+            isOpen={open.providers}
+            onToggle={() => toggle('providers')}
+            count={filter.watchProviders.length}
+          >
+            <Select
+              value={filter.watchRegion}
+              onValueChange={(v) =>
+                // Roster differs per region — reset picks so a stale id can't
+                // silently filter against the wrong regional catalog.
+                updateFilter({ watchRegion: v, watchProviders: [] })
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {WATCH_REGIONS.map((r) => (
+                  <SelectItem key={r.code} value={r.code}>
+                    {r.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {providers.length === 0 ? (
+              <p className="text-muted-foreground/70 text-[11px]">
+                No providers listed for this region.
+              </p>
+            ) : (
+              <div className="grid grid-cols-4 gap-2">
+                {providers.slice(0, MAX_PROVIDERS).map((p) => {
+                  const active = filter.watchProviders.includes(p.provider_id)
+                  return (
+                    <button
+                      key={p.provider_id}
+                      type="button"
+                      title={p.provider_name}
+                      onClick={() =>
+                        updateFilter({
+                          watchProviders: active
+                            ? filter.watchProviders.filter(
+                                (id) => id !== p.provider_id
+                              )
+                            : [...filter.watchProviders, p.provider_id],
+                        })
+                      }
+                      className={cn(
+                        'relative aspect-square overflow-hidden rounded-lg border-2 bg-white/95 transition motion-reduce:transition-none',
+                        active
+                          ? 'border-primary ring-primary/30 ring-2'
+                          : 'border-transparent opacity-70 hover:opacity-100'
+                      )}
+                    >
+                      {/* Plain <img>, not next/image: keyless TMDB origin, no
+                          domain config, and these are tiny cached logos. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`${PROVIDER_LOGO_BASE}${p.logo_path}`}
+                        alt={p.provider_name}
+                        loading="lazy"
+                        className="h-full w-full object-contain"
+                      />
+                      {active && (
+                        <span className="bg-primary text-primary-foreground absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full">
+                          <Check className="h-2.5 w-2.5" />
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </Section>
         </div>
       </ScrollArea>
     </div>

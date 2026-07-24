@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Card } from '@/components/card'
 import { MediaGridSkeleton } from '@/components/loaders/media-grid-skeleton'
 
+import { FilterActiveChips } from './filter-active-chips'
 import { FilterDebug } from './filter-debug'
 import { FilterDialog } from './filter-dialog'
 import { FilterSheet } from './filter-sheet'
@@ -37,14 +38,13 @@ export const FilteredMediaContent = ({
     data,
     isLoading,
     hasActiveFilters,
+    activeFilterCount,
     updateFilter,
-    toggleGenre,
+    cycleGenre,
     clearFilters,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    sections,
-    toggleSection,
   } = useMediaFilter({ mediaType, initialData })
 
   const [myRef, inView] = useInView({
@@ -94,11 +94,9 @@ export const FilteredMediaContent = ({
             mediaType={mediaType}
             filter={filter}
             updateFilter={updateFilter}
-            toggleGenre={toggleGenre}
+            cycleGenre={cycleGenre}
             clearFilters={clearFilters}
             hasActiveFilters={hasActiveFilters}
-            sections={sections}
-            toggleSection={toggleSection}
           />
         )
       case 'sheet':
@@ -109,11 +107,10 @@ export const FilteredMediaContent = ({
             onOpenChange={handleFilterOpenChange}
             filter={filter}
             updateFilter={updateFilter}
-            toggleGenre={toggleGenre}
+            cycleGenre={cycleGenre}
             clearFilters={clearFilters}
             hasActiveFilters={hasActiveFilters}
-            sections={sections}
-            toggleSection={toggleSection}
+            activeFilterCount={activeFilterCount}
           />
         )
       default:
@@ -124,11 +121,10 @@ export const FilteredMediaContent = ({
             onOpenChange={handleFilterOpenChange}
             filter={filter}
             updateFilter={updateFilter}
-            toggleGenre={toggleGenre}
+            cycleGenre={cycleGenre}
             clearFilters={clearFilters}
             hasActiveFilters={hasActiveFilters}
-            sections={sections}
-            toggleSection={toggleSection}
+            activeFilterCount={activeFilterCount}
           />
         )
     }
@@ -174,13 +170,25 @@ export const FilteredMediaContent = ({
                 onOpenChange={handleFilterOpenChange}
                 filter={filter}
                 updateFilter={updateFilter}
-                toggleGenre={toggleGenre}
+                cycleGenre={cycleGenre}
                 clearFilters={clearFilters}
                 hasActiveFilters={hasActiveFilters}
-                sections={sections}
-                toggleSection={toggleSection}
+                activeFilterCount={activeFilterCount}
               />
             </div>
+          )}
+
+          {/* Active filter chips — at-a-glance summary of what's applied, each
+              removable in one tap, plus Clear all. The single biggest legibility
+              win over the old "!" badge. */}
+          {hasActiveFilters && (
+            <FilterActiveChips
+              mediaType={mediaType}
+              filter={filter}
+              updateFilter={updateFilter}
+              clearFilters={clearFilters}
+              className="mb-6"
+            />
           )}
 
           {/* Content Grid - Always rendered to prevent layout shift */}

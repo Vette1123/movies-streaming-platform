@@ -24,6 +24,15 @@ interface FilterParams {
   include_video?: boolean
   with_original_language?: string
 
+  // Age rating (movies only — TV discover has no certification param)
+  certification?: string
+  certification_country?: string
+
+  // Where to watch (TMDB JustWatch integration)
+  with_watch_providers?: string
+  watch_region?: string
+  with_watch_monetization_types?: string
+
   // Common params
   page?: number
   language?: string
@@ -51,8 +60,12 @@ interface MediaFilter {
   sortBy: SortOption
 
   // Content filters
-  includeAdult: boolean
   originalLanguage?: string
+  certification?: string
+
+  // Where to watch
+  watchProviders: number[]
+  watchRegion: string
 }
 
 type SortOption =
