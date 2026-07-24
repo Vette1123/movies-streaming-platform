@@ -17,6 +17,7 @@ import {
   trackSearchResultClicked,
 } from '@/lib/analytics'
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
+import { mediaDetailHref, resolveMediaType } from '@/lib/media'
 import { openRafiqOnPlayStore } from '@/lib/rafiq'
 import { getNextImageFallback } from '@/lib/tmdbConfig'
 import {
@@ -112,7 +113,7 @@ const HighlightedText = React.memo(function HighlightedText({
 })
 
 const mediaHref = (movie: MediaType) =>
-  movie?.media_type === 'tv' ? `/tv-shows/${movie.id}` : `/movies/${movie.id}`
+  mediaDetailHref(resolveMediaType(movie), movie.id)
 
 export function CommandMenu({ ...props }: CommandDialogProps) {
   const { open, setOpen, runCommand, isLoading, setIsLoading } =
@@ -435,7 +436,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                       trackSearchResultClicked({
                         query: trimmedQuery,
                         media_id: movie.id,
-                        media_type: movie.media_type === 'tv' ? 'tv' : 'movie',
+                        media_type: resolveMediaType(movie),
                         title: movie.title,
                         position: index,
                       })
