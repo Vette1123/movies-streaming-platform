@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { CalendarDays, Check, Film, Play, Tv } from 'lucide-react'
+import { CalendarDays, Check, Play } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
@@ -19,6 +19,7 @@ import {
   HoverCardTrigger,
 } from '@/components/ui/hover-card'
 import { BlurredImage } from '@/components/blurred-image'
+import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
 import { ScoreChip } from '@/components/media/score-chip'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 
@@ -126,16 +127,11 @@ const CardComponent = ({
                   className="rounded-lg object-cover transition-transform duration-500 ease-out group-hover/card:scale-105"
                 />
               ) : (
-                <div className="bg-muted text-muted-foreground flex aspect-2/3 w-[250px] max-w-full flex-col items-center justify-center gap-2 rounded-lg p-4 text-center">
-                  {itemType === 'tv' ? (
-                    <Tv className="size-8 opacity-60" aria-hidden />
-                  ) : (
-                    <Film className="size-8 opacity-60" aria-hidden />
-                  )}
-                  <span className="line-clamp-3 text-xs font-medium">
-                    {title}
-                  </span>
-                </div>
+                <MediaPosterFallback
+                  itemType={itemType}
+                  title={title}
+                  className="w-[250px] max-w-full"
+                />
               )}
 
               {/* Hover scrim + play affordance (desktop only — mobile navigates on tap) */}

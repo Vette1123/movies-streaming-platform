@@ -1,7 +1,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { CalendarDays, Film, Tv, X } from 'lucide-react'
+import { CalendarDays, X } from 'lucide-react'
 
 import {
   toAnalyticsMediaType,
@@ -12,6 +12,7 @@ import { dateFormatter, getPosterImageURL } from '@/lib/utils'
 import { WatchedItem } from '@/hooks/use-local-storage'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { MediaTypeIcon } from '@/components/media/media-type-icon'
 
 import { BlurredImage } from '../blurred-image'
 
@@ -67,11 +68,10 @@ export function WatchedItemCard({ item, onRemove }: WatchedItemCardProps) {
               />
               <div className="absolute top-2 right-2">
                 <Badge variant="secondary">
-                  {item.type === 'movie' ? (
-                    <Film className="size-4" />
-                  ) : (
-                    <Tv className="size-4" />
-                  )}
+                  <MediaTypeIcon
+                    type={toAnalyticsMediaType(item.type)}
+                    className="size-4"
+                  />
                 </Badge>
               </div>
               {onRemove && (

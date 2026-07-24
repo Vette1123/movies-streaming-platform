@@ -1,12 +1,13 @@
 import React from 'react'
 import Link from 'next/link'
-import { Clapperboard, Film, Tv } from 'lucide-react'
+import { Clapperboard } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
 import { getMediaTitle } from '@/lib/media'
 import { getPosterImageURL, itemRedirect } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
+import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
 
 interface StaticRailProps {
   title: string
@@ -82,16 +83,11 @@ export function StaticRail({ title, items, itemType = 'movie' }: StaticRailProps
                       />
                     </div>
                   ) : (
-                    <div className="bg-muted text-muted-foreground flex aspect-2/3 w-full flex-col items-center justify-center gap-2 rounded-lg p-4 text-center shadow-lg">
-                      {itemType === 'tv' ? (
-                        <Tv className="size-8 opacity-60" aria-hidden />
-                      ) : (
-                        <Film className="size-8 opacity-60" aria-hidden />
-                      )}
-                      <span className="line-clamp-3 text-xs font-medium">
-                        {posterTitle}
-                      </span>
-                    </div>
+                    <MediaPosterFallback
+                      itemType={itemType}
+                      title={posterTitle}
+                      className="shadow-lg"
+                    />
                   )}
                 </Link>
               </div>
