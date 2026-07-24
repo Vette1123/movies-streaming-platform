@@ -9,8 +9,17 @@
 //   2. Move `.open-next/cache` aside so the deploy step's built-in populate
 //      finds no assets and short-circuits.
 //   3. Run deploy. The worker ships even when KV is rate-limited.
-//   4. After deploy: purge edge cache for sitemap.xml + robots.txt, then ping
-//      IndexNow with the top-level URLs so Bing/Yandex/DDG pick up changes.
+//   4. After deploy: purge the entire CF edge cache, then ping IndexNow with
+//      the top-level URLs so Bing/Yandex/DDG pick up changes.
+//
+// Why purge everything: the edge-cache rule (scripts/cf-waf-setup.mjs) caches
+// public document pages — /, /movies, /tv-shows, /movies/:id, /tv-shows/:id —
+// with an 8h edge TTL that is NOT keyed by build id. So a fresh worker deploy
+// (KV + regional caches auto-invalidate via OPEN_NEXT_BUILD_ID) would still be
+// masked at the edge for up to 8h. The detail routes are unbounded, and free
+// tier has no prefix/wildcard/tag purge, so a full purge is the only way to
+// guarantee every page reflects the new build. Static assets are content-hashed
+// so the re-fill after a purge is free.
 
 import { spawnSync } from 'node:child_process'
 import { existsSync, renameSync, rmSync } from 'node:fs'
@@ -70,12 +79,9 @@ async function postDeploy() {
       const zoneJson = await zoneRes.json()
       const zoneId = zoneJson?.result?.[0]?.id
       if (zoneId) {
-        const purgeUrls = [
-          `https://${SITE_HOST}/sitemap.xml`,
-          `https://${SITE_HOST}/robots.txt`,
-          `https://${ZONE_NAME}/sitemap.xml`,
-          `https://${ZONE_NAME}/robots.txt`,
-        ]
+        // Full purge — the only free-tier way to cover the unbounded detail
+        // routes (/movies/:id, /tv-shows/:id) whose 8h edge TTL is not build-id
+        // keyed. Guarantees the new deploy is served fresh everywhere.
         const purgeRes = await fetch(
           `https://api.cloudflare.com/client/v4/zones/${zoneId}/purge_cache`,
           {
@@ -84,10 +90,10 @@ async function postDeploy() {
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ files: purgeUrls }),
+            body: JSON.stringify({ purge_everything: true }),
           },
         )
-        if (purgeRes.ok) console.log('✓ Purged sitemap.xml + robots.txt from CF edge')
+        if (purgeRes.ok) console.log('✓ Purged entire CF edge cache')
         else console.warn(`[cf-deploy] cache purge HTTP ${purgeRes.status}`)
       }
     } catch (err) {
