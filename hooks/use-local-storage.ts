@@ -2,6 +2,9 @@
 
 import { useCallback, useSyncExternalStore } from 'react'
 
+import { MovieDetails } from '@/types/movie-details'
+import { SeriesDetails } from '@/types/series-details'
+
 export interface WatchedItem {
   id: number
   type: 'movie' | 'series'
@@ -15,6 +18,31 @@ export interface WatchedItem {
   modified_at: string
 }
 
+// Single builder for the WatchedItem persisted by watchlist / watch-history /
+// completed. All three stored the same shape via near-identical inline objects;
+// centralizing keeps the field set and the movie-vs-series discrimination in one
+// place. `extra` carries series-only season/episode when the caller has it.
+export function buildWatchedItem(
+  media: MovieDetails | SeriesDetails,
+  extra?: Pick<WatchedItem, 'season' | 'episode'>
+): WatchedItem {
+  const isMovie = 'title' in media && !!(media as MovieDetails).title
+  const now = new Date().toISOString()
+  return {
+    id: media.id,
+    type: isMovie ? 'movie' : 'series',
+    title: isMovie
+      ? (media as MovieDetails).title
+      : (media as SeriesDetails).name,
+    overview: media.overview,
+    backdrop_path: media.backdrop_path,
+    poster_path: media.poster_path,
+    added_at: now,
+    modified_at: now,
+    ...extra,
+  }
+}
+
 // ONE shared store per localStorage key, read through useSyncExternalStore.
 //
 // The old implementation gave every caller its own useState copy: each of the
@@ -25,7 +53,9 @@ export interface WatchedItem {
 // module-level store means the array is parsed ONCE per key (lazily, on first
 // subscribe), never written unless it actually changes, and every card reads
 // the same reference. Mirrors hooks/use-recent-searches.ts.
-type Setter = (next: WatchedItem[] | ((prev: WatchedItem[]) => WatchedItem[])) => void
+type Setter = (
+  next: WatchedItem[] | ((prev: WatchedItem[]) => WatchedItem[])
+) => void
 
 const EMPTY: WatchedItem[] = []
 

@@ -3,13 +3,14 @@ import { useCallback, useEffect } from 'react'
 import { MovieDetails } from '@/types/movie-details'
 import { SeriesDetails } from '@/types/series-details'
 import {
+  toAnalyticsMediaType,
   trackWatchHistoryAdded,
   trackWatchHistoryCleared,
   trackWatchHistoryItemRemoved,
   trackWatchHistoryUpdated,
 } from '@/lib/analytics'
 import { syncWatchStats } from '@/lib/person'
-import { useLocalStorage } from '@/hooks/use-local-storage'
+import { buildWatchedItem, useLocalStorage } from '@/hooks/use-local-storage'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 
 type MediaItem = MovieDetails | SeriesDetails
@@ -43,7 +44,7 @@ export function useWatchedMedia(): WatchedMediaHookResult {
       if (existing) {
         trackWatchHistoryItemRemoved({
           media_id: id,
-          media_type: existing.type === 'movie' ? 'movie' : 'tv',
+          media_type: toAnalyticsMediaType(existing.type),
           title: existing.title,
         })
       }
@@ -67,39 +68,13 @@ export function useWatchedMedia(): WatchedMediaHookResult {
             : (media as SeriesDetails).name,
         })
         // Item not in localStorage, add it
-        if (isMovie) {
-          // Handle movie
-          setWatchedItems([
-            ...watchedItems,
-            {
-              id: media.id,
-              type: 'movie',
-              title: media.title,
-              overview: media.overview,
-              backdrop_path: media.backdrop_path,
-              poster_path: media.poster_path,
-              added_at: new Date().toISOString(),
-              modified_at: new Date().toISOString(),
-            },
-          ])
-        } else {
-          // Handle series
-          setWatchedItems([
-            ...watchedItems,
-            {
-              id: media.id,
-              type: 'series',
-              title: media.name,
-              overview: media.overview,
-              backdrop_path: media.backdrop_path,
-              poster_path: media.poster_path,
-              added_at: new Date().toISOString(),
-              modified_at: new Date().toISOString(),
-              season: seasonQueryINT || 1,
-              episode: episodeQueryINT || 1,
-            },
-          ])
-        }
+        const newItem = buildWatchedItem(
+          media,
+          isMovie
+            ? undefined
+            : { season: seasonQueryINT || 1, episode: episodeQueryINT || 1 }
+        )
+        setWatchedItems([...watchedItems, newItem])
       } else {
         // Item already exists in localStorage
         const existingItem = watchedItems[existingItemIndex]

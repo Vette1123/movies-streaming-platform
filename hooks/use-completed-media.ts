@@ -1,7 +1,11 @@
 import { useCallback } from 'react'
 
 import { MovieDetails } from '@/types/movie-details'
-import { useLocalStorage, WatchedItem } from '@/hooks/use-local-storage'
+import {
+  buildWatchedItem,
+  useLocalStorage,
+  WatchedItem,
+} from '@/hooks/use-local-storage'
 
 // Deliberately a SEPARATE localStorage key from `watchedItems` and `watchlist`.
 // "completed" means the user has actually FINISHED a movie/episode — the green
@@ -85,20 +89,7 @@ export function useCompletedMedia(): CompletedMediaHookResult {
         )
         return
       }
-      const now = new Date().toISOString()
-      setCompletedItems([
-        ...completedItems,
-        {
-          id: movie.id,
-          type: 'movie',
-          title: movie.title,
-          overview: movie.overview,
-          backdrop_path: movie.backdrop_path,
-          poster_path: movie.poster_path,
-          added_at: now,
-          modified_at: now,
-        },
-      ])
+      setCompletedItems([...completedItems, buildWatchedItem(movie)])
     },
     [completedItems, isMovieCompleted, setCompletedItems]
   )

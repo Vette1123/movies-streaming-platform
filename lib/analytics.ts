@@ -52,6 +52,11 @@ export const EVENTS = {
 
 export type MediaKind = 'movie' | 'tv'
 
+// Stored/domain items use `'movie' | 'series'`; analytics uses `'movie' | 'tv'`.
+// One place maps between them so the mapping can't drift across call sites.
+export const toAnalyticsMediaType = (type: 'movie' | 'series'): MediaKind =>
+  type === 'movie' ? 'movie' : 'tv'
+
 const isClient = () => typeof window !== 'undefined'
 
 /** Thin wrapper so every call is guarded and centrally typed. */

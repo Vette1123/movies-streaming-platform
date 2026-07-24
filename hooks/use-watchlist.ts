@@ -2,8 +2,16 @@ import { useCallback } from 'react'
 
 import { MovieDetails } from '@/types/movie-details'
 import { SeriesDetails } from '@/types/series-details'
-import { trackWatchlistAdded, trackWatchlistRemoved } from '@/lib/analytics'
-import { useLocalStorage, WatchedItem } from '@/hooks/use-local-storage'
+import {
+  toAnalyticsMediaType,
+  trackWatchlistAdded,
+  trackWatchlistRemoved,
+} from '@/lib/analytics'
+import {
+  buildWatchedItem,
+  useLocalStorage,
+  WatchedItem,
+} from '@/hooks/use-local-storage'
 
 type MediaItem = MovieDetails | SeriesDetails
 
@@ -18,22 +26,6 @@ interface WatchlistHookResult {
   isSaved: (id: number) => boolean
   toggle: (media: MediaItem) => void
   remove: (id: number) => void
-}
-
-const toWatchedItem = (media: MediaItem): WatchedItem => {
-  const isMovie = 'title' in media && !!(media as MovieDetails).title
-  return {
-    id: media.id,
-    type: isMovie ? 'movie' : 'series',
-    title: isMovie
-      ? (media as MovieDetails).title
-      : (media as SeriesDetails).name,
-    overview: media.overview,
-    backdrop_path: media.backdrop_path,
-    poster_path: media.poster_path,
-    added_at: new Date().toISOString(),
-    modified_at: new Date().toISOString(),
-  }
 }
 
 export function useWatchlist(): WatchlistHookResult {
@@ -51,7 +43,7 @@ export function useWatchlist(): WatchlistHookResult {
       if (existing) {
         trackWatchlistRemoved({
           media_id: id,
-          media_type: existing.type === 'movie' ? 'movie' : 'tv',
+          media_type: toAnalyticsMediaType(existing.type),
           title: existing.title,
         })
       }
@@ -65,11 +57,11 @@ export function useWatchlist(): WatchlistHookResult {
         remove(media.id)
         return
       }
-      const item = toWatchedItem(media)
+      const item = buildWatchedItem(media)
       setWatchlist([...watchlist, item])
       trackWatchlistAdded({
         media_id: item.id,
-        media_type: item.type === 'movie' ? 'movie' : 'tv',
+        media_type: toAnalyticsMediaType(item.type),
         title: item.title,
       })
     },

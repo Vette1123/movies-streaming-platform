@@ -3,7 +3,10 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { CalendarDays, Film, Tv, X } from 'lucide-react'
 
-import { trackWatchHistoryItemClicked } from '@/lib/analytics'
+import {
+  toAnalyticsMediaType,
+  trackWatchHistoryItemClicked,
+} from '@/lib/analytics'
 import { dateFormatter, getPosterImageURL } from '@/lib/utils'
 import { WatchedItem } from '@/hooks/use-local-storage'
 import { Badge } from '@/components/ui/badge'
@@ -47,7 +50,7 @@ export function WatchedItemCard({ item, onRemove }: WatchedItemCardProps) {
       onClick={() =>
         trackWatchHistoryItemClicked({
           media_id: item.id,
-          media_type: item.type === 'movie' ? 'movie' : 'tv',
+          media_type: toAnalyticsMediaType(item.type),
           title: item.title,
         })
       }
