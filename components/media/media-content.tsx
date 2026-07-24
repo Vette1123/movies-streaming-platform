@@ -10,6 +10,7 @@ import { QUERY_KEYS } from '@/lib/queryKeys'
 import { useInfiniteScroll } from '@/hooks/use-infinite-scroll'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Card } from '@/components/card'
+import { GridSkeletonCells } from '@/components/loaders/grid-skeleton-cells'
 
 import { FilteredMediaContent } from './filtered-media-content'
 
@@ -106,13 +107,7 @@ export const MediaContent = ({
           surfacing into the gap and getting shoved back down when the page lands —
           the user scrolls straight from real cards into placeholders into real
           cards, no jump. */}
-      {isFetchingNextPage &&
-        Array.from({ length: 10 }).map((_, i) => (
-          <div
-            key={`skeleton-${i}`}
-            className="bg-muted/70 aspect-[2/3] w-full animate-pulse rounded-lg"
-          />
-        ))}
+      {isFetchingNextPage && <GridSkeletonCells count={10} />}
       {/* Sentinel sits AFTER the skeletons so it's only re-observed once the new
           real cards have replaced them — prevents a double-fire at the seam. */}
       <div ref={myRef} />
