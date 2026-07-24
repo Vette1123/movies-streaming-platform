@@ -10,6 +10,11 @@ import { cn } from '@/lib/utils'
 import { useMounted } from '@/hooks/use-mounted'
 import { useWatchlist } from '@/hooks/use-watchlist'
 import { Button } from '@/components/ui/button'
+import {
+  heroActionButtonBase,
+  heroActionButtonIdle,
+  heroActionButtonSaved,
+} from '@/components/ui/hero-action-button'
 
 interface SaveButtonProps {
   media: MovieDetails & SeriesDetails
@@ -46,10 +51,8 @@ export function SaveButton({ media, className }: SaveButtonProps) {
       aria-label={saved ? 'Remove from watchlist' : 'Save to watchlist'}
       onClick={handleClick}
       className={cn(
-        'w-11 gap-0 rounded-full border px-0 text-white shadow-none backdrop-blur-[2px] transition duration-200 [text-shadow:0_1px_3px_rgba(0,0,0,0.7)] active:scale-95 sm:w-auto sm:gap-2 sm:px-8',
-        saved
-          ? 'border-cyan-300/60 bg-cyan-400/10 hover:bg-cyan-400/20'
-          : 'border-white/30 bg-white/5 hover:border-white/50 hover:bg-white/10',
+        heroActionButtonBase,
+        saved ? heroActionButtonSaved : heroActionButtonIdle,
         className
       )}
     >

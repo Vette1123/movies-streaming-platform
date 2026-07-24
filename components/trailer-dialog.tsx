@@ -4,7 +4,12 @@ import React from 'react'
 import { Play } from 'lucide-react'
 
 import { MediaKind, trackTrailerPlayed } from '@/lib/analytics'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import {
+  heroActionButtonBase,
+  heroActionButtonIdle,
+} from '@/components/ui/hero-action-button'
 import {
   Dialog,
   DialogContent,
@@ -50,7 +55,7 @@ export function TrailerDialog({
           // Label is hidden < sm (icon-only), so name the button for screen
           // readers at every width.
           aria-label="Watch trailer"
-          className="w-11 gap-0 rounded-full border border-white/30 bg-white/5 px-0 text-white shadow-none backdrop-blur-[2px] transition duration-200 [text-shadow:0_1px_3px_rgba(0,0,0,0.7)] hover:border-white/50 hover:bg-white/10 active:scale-95 sm:w-auto sm:gap-2 sm:px-8"
+          className={cn(heroActionButtonBase, heroActionButtonIdle)}
         >
           <Play className="text-primary size-5 fill-current drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
           <span className="hidden sm:inline">Trailer</span>

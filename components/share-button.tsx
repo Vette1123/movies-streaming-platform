@@ -7,6 +7,10 @@ import { toast } from 'sonner'
 import { MediaKind, trackMediaShared } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import {
+  heroActionButtonBase,
+  heroActionButtonIdle,
+} from '@/components/ui/hero-action-button'
 
 interface ShareButtonProps {
   title?: string
@@ -69,10 +73,7 @@ export function ShareButton({
       size="lg"
       aria-label="Share"
       onClick={handleShare}
-      className={cn(
-        'w-11 gap-0 rounded-full border border-white/30 bg-white/5 px-0 text-white shadow-none backdrop-blur-[2px] transition duration-200 [text-shadow:0_1px_3px_rgba(0,0,0,0.7)] hover:border-white/50 hover:bg-white/10 active:scale-95 sm:w-auto sm:gap-2 sm:px-8',
-        className
-      )}
+      className={cn(heroActionButtonBase, heroActionButtonIdle, className)}
     >
       <Share2 className="size-5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
       <span className="hidden sm:inline">Share</span>
