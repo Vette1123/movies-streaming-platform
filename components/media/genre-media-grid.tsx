@@ -23,7 +23,11 @@ export const GenreMediaGrid = ({
 }: GenreMediaGridProps) => {
   const [sentinelRef, inView] = useInView({
     threshold: 0,
-    rootMargin: '0px 0px 200px 0px',
+    // Prefetch a full viewport early (matches the browse list) so the next page
+    // is already in flight before a mobile fling-scroll reaches the bottom. A
+    // small 200px margin gets overshot by momentum scrolling on phones and the
+    // sentinel never trips — which read as "pagination doesn't work on mobile".
+    rootMargin: '0px 0px 900px 0px',
   })
 
   const {
@@ -67,7 +71,10 @@ export const GenreMediaGrid = ({
   // in a tight retry loop. On error we stop and surface a manual retry instead.
   React.useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage && !isError) {
-      fetchNextPage()
+      // Small debounce (matches the browse list) so a fling-scroll that flickers
+      // the sentinel in/out doesn't fire a burst of duplicate fetchNextPage calls.
+      const timeoutId = setTimeout(() => fetchNextPage(), 100)
+      return () => clearTimeout(timeoutId)
     }
   }, [inView, hasNextPage, isFetchingNextPage, isError, fetchNextPage])
 
