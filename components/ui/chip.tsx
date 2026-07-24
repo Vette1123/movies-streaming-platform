@@ -24,11 +24,15 @@ const chipVariants = cva(
         md: 'h-6 gap-1.5 px-2.5 text-xs',
       },
       variant: {
-        // Glassy neutral — genres, meta labels. Adapts to light/dark via tokens.
+        // Genres, meta labels. A solid `secondary` slate surface reads as a
+        // distinct pill against the near-black page bg — alpha-of-foreground
+        // fills sat too close to the background to be legible.
         neutral:
-          'border border-border/60 bg-muted/50 text-foreground/80 backdrop-blur-sm',
-        // Hollow — certifications, language codes.
-        outline: 'border border-border/70 text-foreground/80',
+          'border border-white/12 bg-secondary text-secondary-foreground shadow-sm backdrop-blur-sm',
+        // Certifications, language codes. Same visible surface, lighter edge so
+        // it still reads as the "hollow" sibling of neutral.
+        outline:
+          'border border-white/15 bg-secondary/85 text-secondary-foreground',
         // Filled brand — active facets, primary emphasis.
         primary: 'border border-transparent bg-primary text-primary-foreground',
         // IMDb wordmark. Colour is brand-locked, do not theme it.
@@ -48,7 +52,9 @@ const chipVariants = cva(
         false: '',
       },
       interactive: {
-        true: 'cursor-pointer hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10 hover:text-foreground',
+        // Fancy hover: lift, fill with brand blue, and cast a soft blue glow so
+        // the pill clearly "pops" off the page on interaction.
+        true: 'cursor-pointer hover:-translate-y-0.5 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.6)]',
         false: '',
       },
     },

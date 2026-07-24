@@ -1,5 +1,4 @@
 import React from 'react'
-import Link from 'next/link'
 
 import { MovieDetails } from '@/types/movie-details'
 import { MovieGenre } from '@/types/movie-genre'
@@ -7,7 +6,8 @@ import { ItemType, Movie } from '@/types/movie-result'
 import { SeriesDetails } from '@/types/series-details'
 import { genreToSlug } from '@/lib/genres'
 import { dateFormatter, getGenres } from '@/lib/utils'
-import { Chip, chipVariants } from '@/components/ui/chip'
+import { Chip } from '@/components/ui/chip'
+import { GenreLink } from '@/components/media/genre-link'
 import { ScoreChip } from '@/components/media/score-chip'
 
 interface HeroRatesInfosProps {
@@ -66,13 +66,11 @@ export const HeroRatesInfos = ({
         {dateFormatter(item?.release_date || item?.first_air_date)}
       </p>
       {movieGenres.map((genre) => (
-        <Link
+        <GenreLink
           key={genre.id}
           href={`${genreBasePath}/genre/${genreToSlug(genre.name)}`}
-          className={chipVariants({ variant: 'neutral', interactive: true })}
-        >
-          {genre.name}
-        </Link>
+          name={genre.name}
+        />
       ))}
     </div>
   )

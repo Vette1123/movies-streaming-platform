@@ -1,11 +1,10 @@
 import React from 'react'
-import Link from 'next/link'
-import { ChevronRight, Tag } from 'lucide-react'
 
 import { MovieGenre } from '@/types/movie-genre'
 import { findMovieGenreById, findTvGenreById } from '@/lib/genres'
 import { cn } from '@/lib/utils'
 import { chipVariants } from '@/components/ui/chip'
+import { GenreLink } from '@/components/media/genre-link'
 
 interface GenreChipsProps {
   genres?: MovieGenre[]
@@ -46,18 +45,12 @@ export function GenreChips({ genres, mediaType, className }: GenreChipsProps) {
 
           return (
             <li key={genre.id}>
-              <Link
+              <GenreLink
                 href={`${basePath}/${match.slug}`}
-                aria-label={`Browse ${genre.name} ${noun}`}
-                className={cn(
-                  chipVariants({ variant: 'neutral', interactive: true }),
-                  'group lg:text-sm'
-                )}
-              >
-                <Tag className="text-primary size-3 opacity-70 transition-opacity group-hover:opacity-100" />
-                {genre.name}
-                <ChevronRight className="text-primary -ml-1.5 h-3.5 w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover:ml-0 group-hover:w-3.5 group-hover:opacity-100" />
-              </Link>
+                name={genre.name}
+                ariaLabel={`Browse ${genre.name} ${noun}`}
+                className="lg:text-sm"
+              />
             </li>
           )
         })}
