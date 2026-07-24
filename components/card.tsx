@@ -8,17 +8,18 @@ import { CalendarDays, Check, Film, Play, Tv } from 'lucide-react'
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
 import { trackMediaCardClicked } from '@/lib/analytics'
-import { dateFormatter, getPosterImageURL, itemRedirect } from '@/lib/utils'
+import { cn, dateFormatter, getPosterImageURL, itemRedirect } from '@/lib/utils'
 import { useCompletedMedia } from '@/hooks/use-completed-media'
 import { useMounted } from '@/hooks/use-mounted'
+import { chipVariants } from '@/components/ui/chip'
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card'
 import { BlurredImage } from '@/components/blurred-image'
-import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 import { ScoreChip } from '@/components/media/score-chip'
+import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 
 interface CardProps {
   item: MediaType
@@ -94,13 +95,21 @@ const CardComponent = ({
                 unhurried feel); framer owns only the transform. */}
             <motion.div
               whileHover={{ scale: 1.05, y: -10 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 21, mass: 1 }}
+              transition={{
+                type: 'spring',
+                stiffness: 200,
+                damping: 21,
+                mass: 1,
+              }}
               className="group-hover/card:ring-primary/60 relative cursor-pointer rounded-lg shadow-lg ring-1 ring-transparent transition-shadow duration-500 ease-out will-change-transform group-hover/card:shadow-2xl"
             >
               <NewBadgeWhenRecent date={releaseDate} />
               {watched && (
                 <span
-                  className="pointer-events-none absolute top-2 right-2 z-10 grid size-6 place-items-center rounded-full border border-white/20 bg-emerald-500/90 text-white shadow-lg ring-1 ring-emerald-300/30 backdrop-blur-md"
+                  className={cn(
+                    chipVariants({ variant: 'success' }),
+                    'pointer-events-none absolute top-2 right-2 z-10 grid size-6 place-items-center p-0'
+                  )}
                   aria-label="Watched"
                   title="Watched"
                 >
