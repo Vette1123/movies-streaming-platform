@@ -259,6 +259,12 @@ export function trackPageNotFound(props: { path?: string }): void {
  *      unhandled errors (see providers/posthog-provider.tsx → before_send).
  * Handled errors never surface on their own, so without this a broken episode
  * list or a flaky TMDB call is invisible — which is exactly what bit us.
+ *
+ * Pass `expected: true` for failures with no code fault behind them (a dropped
+ * connection, an offline tab, a bundle retired by a deploy — see
+ * lib/client-errors.ts). Those still emit the product event, so the rate stays
+ * measurable, but skip step 2: filed as exceptions they outnumbered the real
+ * regressions and buried them.
  */
 export function trackApiError(props: {
   // Where it happened, e.g. 'season_episodes' or 'react_query'.
@@ -270,9 +276,11 @@ export function trackApiError(props: {
   season?: number
   url?: string
   query_key?: string
+  expected?: boolean
 }): void {
   if (!isClient()) return
   posthog.capture(EVENTS.API_ERROR, props)
+  if (props.expected) return
   try {
     posthog.captureException(new Error(`[${props.source}] ${props.message}`), {
       $exception_source: 'api',

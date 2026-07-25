@@ -1,48 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   QueryCache,
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { trackApiError } from '@/lib/analytics'
-
-// A stale open tab whose client bundle references a Server Action ID that no
-// longer exists after a redeploy (we ship ~4x/day). The action call comes back
-// as a non-RSC response, so TanStack surfaces one of these two messages. It is
-// not a code fault — the fix is to reload onto the fresh bundle.
-const STALE_DEPLOY_SIGNATURES = [
-  'An unexpected response was received from the server',
-  'was not found on the server',
-  'Failed to find Server Action',
-]
-
-const isStaleDeployError = (message: string) =>
-  STALE_DEPLOY_SIGNATURES.some((sig) => message.includes(sig))
-
-// Reload at most once per window so a genuinely persistent failure can't trap
-// the user in a refresh loop (the fresh bundle has matching action IDs, so a
-// real stale-deploy hit never recurs after the first reload).
-const RELOAD_GUARD_KEY = 'reely:stale-deploy-reload'
-const RELOAD_GUARD_MS = 15_000
-
-const handleStaleDeploy = () => {
-  if (typeof window === 'undefined') return
-
-  const last = Number(sessionStorage.getItem(RELOAD_GUARD_KEY) ?? 0)
-  // performance.now() avoids clock-skew issues and needs no wall-clock import.
-  const now = performance.now()
-  if (last && now - last < RELOAD_GUARD_MS) return
-
-  sessionStorage.setItem(RELOAD_GUARD_KEY, String(now))
-  toast('A new version is available — refreshing…', {
-    action: { label: 'Refresh now', onClick: () => window.location.reload() },
-  })
-  window.setTimeout(() => window.location.reload(), 2500)
-}
+import {
+  errorMessage,
+  isStaleChunkError,
+  isStaleDeployError,
+  isTransportError,
+  reloadForStaleDeploy,
+} from '@/lib/client-errors'
 
 export const QueryProvider = ({ children }: { children: React.ReactNode }) => {
   const [queryClient] = useState(
@@ -53,14 +25,19 @@ export const QueryProvider = ({ children }: { children: React.ReactNode }) => {
         // silently again — no per-hook wiring needed.
         queryCache: new QueryCache({
           onError: (error, query) => {
-            const message =
-              error instanceof Error ? error.message : String(error)
+            const message = errorMessage(error)
+            const stale = isStaleDeployError(message)
             trackApiError({
               source: 'react_query',
               query_key: JSON.stringify(query.queryKey),
               message,
+              // A dropped connection, an offline tab, or a bundle left behind by
+              // a deploy is not a code fault. Keep the api_error event so the
+              // failure rate stays measurable, but don't file it as an
+              // $exception — that noise buried the real regressions.
+              expected: stale || isTransportError(message),
             })
-            if (isStaleDeployError(message)) handleStaleDeploy()
+            if (stale) reloadForStaleDeploy()
           },
         }),
         defaultOptions: {
@@ -75,6 +52,30 @@ export const QueryProvider = ({ children }: { children: React.ReactNode }) => {
         },
       })
   )
+
+  // The other half of stale-deploy recovery. A Server Action call surfaces
+  // through the query cache above, but a lazy chunk from the retired build
+  // fails outside React entirely — as a window `error` (script/module load) or
+  // an unhandled rejection from a dynamic import. Both leave the UI wedged
+  // until the tab reloads, so route them to the same guarded reload. Mounted
+  // here because QueryProvider already wraps the whole app.
+  useEffect(() => {
+    const handle = (message: string) => {
+      if (isStaleChunkError(message)) reloadForStaleDeploy()
+    }
+    const onError = (event: ErrorEvent) =>
+      handle(`${event.message} ${errorMessage(event.error)}`)
+    const onRejection = (event: PromiseRejectionEvent) =>
+      handle(errorMessage(event.reason))
+
+    window.addEventListener('error', onError)
+    window.addEventListener('unhandledrejection', onRejection)
+    return () => {
+      window.removeEventListener('error', onError)
+      window.removeEventListener('unhandledrejection', onRejection)
+    }
+  }, [])
+
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )

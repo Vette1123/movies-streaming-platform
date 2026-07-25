@@ -61,6 +61,11 @@ function errorContext(): Record<string, unknown> {
  *   reconciler. Not our tree.
  * - null 'document': fired from an injected `HTMLDocument.c` frame (not our
  *   source) — extension/bookmarklet code, never our bundle.
+ * - ResizeObserver loop: the spec says a browser MAY report an undelivered
+ *   resize notification; it's a benign frame-budget warning, not a failure —
+ *   nothing observable breaks and no app code can prevent it.
+ * - _internal_videoInjector*: a video-downloader extension's page script poking
+ *   at a <video> it thinks exists. Not a symbol our bundle ever defines.
  */
 const NOISE_EXCEPTION_PATTERNS = [
   /Minified React error #418\b/i,
@@ -68,6 +73,8 @@ const NOISE_EXCEPTION_PATTERNS = [
   /^\s*Script error\.?\s*$/i,
   /Failed to execute 'removeChild' on 'Node'/i,
   /Cannot read properties of null \(reading 'document'\)/i,
+  /ResizeObserver loop/i,
+  /_internal_videoInjector/i,
 ]
 
 /** Collect every exception type/value string carried on a $exception event. */
@@ -91,9 +98,7 @@ function exceptionStrings(event: CaptureResult): string[] {
 /** True when an exception is a known-unactionable extension / cross-origin noise. */
 function isNoiseException(event: CaptureResult): boolean {
   const messages = exceptionStrings(event)
-  return messages.some((m) =>
-    NOISE_EXCEPTION_PATTERNS.some((re) => re.test(m))
-  )
+  return messages.some((m) => NOISE_EXCEPTION_PATTERNS.some((re) => re.test(m)))
 }
 
 /**

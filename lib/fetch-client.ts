@@ -3,10 +3,7 @@ import { apiConfig } from '@/lib/tmdbConfig'
 // Merge any querystring already on `url` with the `query` object (query wins on
 // conflict) and re-serialize, skipping null/undefined — matching how
 // query-string's stringifyUrl behaved before we dropped that dependency.
-const buildUrl = (
-  url: string,
-  query: Record<string, unknown>
-): string => {
+const buildUrl = (url: string, query: Record<string, unknown>): string => {
   const [base, existing] = url.split('?')
   const params = new URLSearchParams(existing ?? '')
   for (const [key, value] of Object.entries(query)) {
@@ -117,6 +114,23 @@ const release = (): void => {
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms))
 
+// A `fetch()` that rejects (rather than resolving with a bad status) never
+// reached TMDB: the Worker's connection dropped, DNS blipped, or the socket was
+// reset. Nothing about the request is wrong, so a first failure shouldn't
+// become a 500 for the user — one quick retry recovers it. Deliberately small
+// and separate from MAX_RETRIES: a rate limit is worth waiting seconds for, a
+// dead socket is not.
+const MAX_TRANSPORT_RETRIES = 2
+const TRANSPORT_RETRY_MS = 250
+
+// A timeout is excluded: the request already burned FETCH_TIMEOUT_MS of the
+// invocation's wall clock, and retrying would spend it again. Same for an
+// explicit abort — the caller is gone.
+const isRetriableTransportError = (error: unknown): boolean =>
+  error instanceof Error &&
+  error.name !== 'TimeoutError' &&
+  error.name !== 'AbortError'
+
 export const fetchClient = {
   get: async <T>(
     url: string,
@@ -144,18 +158,32 @@ export const fetchClient = {
     // In the prod server runtime this is a no-op, so no request can ever be
     // blocked by another.
     if (GOVERN) await acquire()
+    let transportRetries = 0
     try {
       for (let attempt = 0; ; attempt++) {
-        const res = await fetch(fullUrl, {
-          method: 'GET',
-          headers,
-          // A fresh timeout per attempt so a stalled connection aborts instead
-          // of hanging (and leaking its semaphore slot). See FETCH_TIMEOUT_MS.
-          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-          // Default 8h ISR; callers can override (e.g. genre lists cache far
-          // longer since they're canonical and rarely change).
-          next: { revalidate },
-        })
+        let res: Response
+        try {
+          res = await fetch(fullUrl, {
+            method: 'GET',
+            headers,
+            // A fresh timeout per attempt so a stalled connection aborts instead
+            // of hanging (and leaking its semaphore slot). See FETCH_TIMEOUT_MS.
+            signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+            // Default 8h ISR; callers can override (e.g. genre lists cache far
+            // longer since they're canonical and rarely change).
+            next: { revalidate },
+          })
+        } catch (error) {
+          if (
+            transportRetries >= MAX_TRANSPORT_RETRIES ||
+            !isRetriableTransportError(error)
+          ) {
+            throw error
+          }
+          transportRetries++
+          await sleep(TRANSPORT_RETRY_MS * transportRetries)
+          continue
+        }
 
         // Retry a throttle rather than throwing. Keep holding the semaphore slot
         // across the backoff so we stop feeding new requests while rate-limited.
