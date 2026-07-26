@@ -21,7 +21,6 @@
 // tier has no prefix/wildcard/tag purge, so a full purge is the only way to
 // guarantee every page reflects the new build. Static assets are content-hashed
 // so the re-fill after a purge is free.
-
 import { spawnSync } from 'node:child_process'
 import { existsSync, renameSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -47,7 +46,7 @@ function run(args) {
 const popCode = run(['populateCache', 'remote'])
 if (popCode !== 0) {
   console.warn(
-    `\n[cf-deploy] populateCache exited ${popCode} — continuing with worker deploy (cache may be stale).\n`,
+    `\n[cf-deploy] populateCache exited ${popCode} — continuing with worker deploy (cache may be stale).\n`
   )
 }
 
@@ -83,7 +82,7 @@ async function postDeploy() {
     try {
       const zoneRes = await fetch(
         `https://api.cloudflare.com/client/v4/zones?name=${encodeURIComponent(ZONE_NAME)}`,
-        { headers: { Authorization: `Bearer ${token}` } },
+        { headers: { Authorization: `Bearer ${token}` } }
       )
       const zoneJson = await zoneRes.json()
       const zoneId = zoneJson?.result?.[0]?.id
@@ -100,7 +99,7 @@ async function postDeploy() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({ purge_everything: true }),
-          },
+          }
         )
         if (purgeRes.ok) console.log('✓ Purged entire CF edge cache')
         else console.warn(`[cf-deploy] cache purge HTTP ${purgeRes.status}`)
@@ -111,31 +110,82 @@ async function postDeploy() {
   } else if (!shouldPurge) {
     console.log('• CF_PURGE=false — skipping edge purge (scheduled rebuild)')
   } else {
-    console.warn('[cf-deploy] CLOUDFLARE_API_TOKEN not set — skipping cache purge')
+    console.warn(
+      '[cf-deploy] CLOUDFLARE_API_TOKEN not set — skipping cache purge'
+    )
   }
 
   // IndexNow: notify Bing, Yandex, Seznam (and DDG via Bing) of changed URLs.
-  // We submit the top-level routes — the sitemap itself surfaces the rest.
-  const urlList = [
+  //
+  // Submitting only the top-level routes was not enough — Bing's SEO report
+  // flagged important pages as never submitted, because "the sitemap surfaces
+  // the rest" only holds once Bing chooses to re-read the sitemap. Every deploy
+  // re-renders every page, so every sitemap URL is a changed URL: pull the live
+  // sitemap and submit the lot. Falls back to the top-level routes if the
+  // sitemap can't be read, and never fails the deploy.
+  const TOP_LEVEL_URLS = [
     `https://${SITE_HOST}/`,
     `https://${SITE_HOST}/movies`,
     `https://${SITE_HOST}/tv-shows`,
     `https://${SITE_HOST}/sitemap.xml`,
   ]
-  try {
-    const res = await fetch('https://api.indexnow.org/indexnow', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        host: SITE_HOST,
-        key: INDEXNOW_KEY,
-        keyLocation: `https://${SITE_HOST}/${INDEXNOW_KEY}.txt`,
-        urlList,
-      }),
-    })
-    if (res.ok || res.status === 202) console.log(`✓ IndexNow pinged (${urlList.length} URLs)`)
-    else console.warn(`[cf-deploy] IndexNow HTTP ${res.status}`)
-  } catch (err) {
-    console.warn(`[cf-deploy] IndexNow skipped: ${err.message}`)
+
+  async function sitemapUrls() {
+    try {
+      const res = await fetch(`https://${SITE_HOST}/sitemap.xml`, {
+        headers: { 'User-Agent': 'reely-deploy/1.0' },
+      })
+      if (!res.ok) {
+        console.warn(
+          `[cf-deploy] sitemap fetch HTTP ${res.status} — submitting top-level URLs only`
+        )
+        return TOP_LEVEL_URLS
+      }
+      const xml = await res.text()
+      const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) =>
+        m[1].trim()
+      )
+      // Same-host only: IndexNow rejects a payload containing any URL outside
+      // the declared host, so one stray entry would drop the whole submission.
+      const onHost = locs.filter((url) =>
+        url.startsWith(`https://${SITE_HOST}/`)
+      )
+      if (!onHost.length) return TOP_LEVEL_URLS
+      return [...new Set([...TOP_LEVEL_URLS, ...onHost])]
+    } catch (err) {
+      console.warn(
+        `[cf-deploy] sitemap fetch failed (${err.message}) — submitting top-level URLs only`
+      )
+      return TOP_LEVEL_URLS
+    }
   }
+
+  const urlList = await sitemapUrls()
+  // IndexNow caps a submission at 10,000 URLs.
+  const BATCH_SIZE = 10000
+  let submitted = 0
+  for (let i = 0; i < urlList.length; i += BATCH_SIZE) {
+    const batch = urlList.slice(i, i + BATCH_SIZE)
+    try {
+      const res = await fetch('https://api.indexnow.org/indexnow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          host: SITE_HOST,
+          key: INDEXNOW_KEY,
+          keyLocation: `https://${SITE_HOST}/${INDEXNOW_KEY}.txt`,
+          urlList: batch,
+        }),
+      })
+      if (res.ok || res.status === 202) submitted += batch.length
+      else
+        console.warn(
+          `[cf-deploy] IndexNow HTTP ${res.status} for ${batch.length} URLs`
+        )
+    } catch (err) {
+      console.warn(`[cf-deploy] IndexNow batch skipped: ${err.message}`)
+    }
+  }
+  if (submitted)
+    console.log(`✓ IndexNow pinged (${submitted}/${urlList.length} URLs)`)
 }

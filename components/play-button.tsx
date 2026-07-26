@@ -7,7 +7,7 @@ import { SeriesDetails } from '@/types/series-details'
 import { buildMediaEventBase, trackMediaPlayed } from '@/lib/analytics'
 import { getMediaTitle } from '@/lib/media'
 import { cn } from '@/lib/utils'
-import { useSearchQueryParams } from '@/hooks/use-search-params'
+import { readSeasonEpisodeParams } from '@/hooks/use-search-params'
 import { useWatchedMedia } from '@/hooks/use-watched-media'
 import { Icons } from '@/components/icons'
 
@@ -18,9 +18,11 @@ interface PlayButtonProps {
 
 export function PlayButton({ onClick, media }: PlayButtonProps) {
   const { handleWatchMedia } = useWatchedMedia()
-  const { seasonQueryINT, episodeQueryINT } = useSearchQueryParams()
 
   const handleClick = () => {
+    // Read at click time, not via useSearchParams during render — the hook
+    // would force this whole route to client-side render (see use-search-params).
+    const { seasonQueryINT, episodeQueryINT } = readSeasonEpisodeParams()
     const isMovie = 'title' in media && !!media.title
     trackMediaPlayed({
       ...buildMediaEventBase(media, isMovie ? 'movie' : 'tv'),

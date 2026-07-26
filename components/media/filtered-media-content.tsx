@@ -21,14 +21,15 @@ interface FilteredMediaContentProps {
   initialData: MediaResponse
   mediaType: 'movie' | 'tv'
   layout?: 'sidebar' | 'dialog' | 'sheet'
-  title?: string
 }
 
+// Reads filter state from the URL (nuqs), so this whole subtree bails to
+// client-side rendering under a static prerender. Nothing SEO-bearing may live
+// here — the page heading and copy are rendered by MediaListPage on the server.
 export const FilteredMediaContent = ({
   initialData,
   mediaType,
   layout = 'dialog',
-  title,
 }: FilteredMediaContentProps) => {
   // Local state for filter open/close to prevent URL pollution and mobile refresh issues
   const [isFilterOpen, setIsFilterOpen] = useState(false)
@@ -133,21 +134,13 @@ export const FilteredMediaContent = ({
 
   return (
     <div className="space-y-6">
-      {/* Header with Title and Filter Controls */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        {title && <h1 className="text-2xl font-bold">{title}</h1>}
-        <div className="flex items-center gap-4">
-          {layout !== 'sidebar' && renderFilter()}
+      {/* Filter controls for the non-sidebar layouts (sidebar renders its own
+          below, plus the mobile sheet). */}
+      {layout !== 'sidebar' && (
+        <div className="flex items-center justify-end gap-4">
+          {renderFilter()}
         </div>
-      </div>
-
-      {/* Filter Status */}
-      {/* {hasActiveFilters && (
-        <div className="text-sm text-muted-foreground">
-          Showing filtered results for{' '}
-          {mediaType === 'movie' ? 'movies' : 'TV series'}
-        </div>
-      )} */}
+      )}
 
       <div
         className={`flex flex-col gap-6 ${layout === 'sidebar' ? 'lg:flex-row lg:gap-8' : ''}`}

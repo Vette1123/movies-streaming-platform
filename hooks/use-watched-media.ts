@@ -11,7 +11,7 @@ import {
 } from '@/lib/analytics'
 import { syncWatchStats } from '@/lib/person'
 import { buildWatchedItem, useLocalStorage } from '@/hooks/use-local-storage'
-import { useSearchQueryParams } from '@/hooks/use-search-params'
+import { readSeasonEpisodeParams } from '@/hooks/use-search-params'
 
 type MediaItem = MovieDetails | SeriesDetails
 
@@ -24,7 +24,6 @@ interface WatchedMediaHookResult {
 
 export function useWatchedMedia(): WatchedMediaHookResult {
   const [watchedItems, setWatchedItems] = useLocalStorage('watchedItems', [])
-  const { seasonQueryINT, episodeQueryINT } = useSearchQueryParams()
 
   // Keep the PostHog person profile's behavioral stats in sync with the local
   // watch history (fires on mount and on every add / update / clear).
@@ -54,6 +53,10 @@ export function useWatchedMedia(): WatchedMediaHookResult {
 
   const handleWatchMedia = useCallback(
     (media: MediaItem) => {
+      // Read at call time rather than via useSearchParams during render: the
+      // hook bails the whole route to CSR under static prerender, which stripped
+      // every detail page's markup from the HTML (see use-search-params.ts).
+      const { seasonQueryINT, episodeQueryINT } = readSeasonEpisodeParams()
       const isMovie = 'title' in media
       const existingItemIndex = watchedItems.findIndex(
         (item) => item.id === media.id
@@ -111,7 +114,7 @@ export function useWatchedMedia(): WatchedMediaHookResult {
         }
       }
     },
-    [watchedItems, setWatchedItems, seasonQueryINT, episodeQueryINT]
+    [watchedItems, setWatchedItems]
   )
 
   return {

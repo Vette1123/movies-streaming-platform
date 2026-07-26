@@ -9,7 +9,10 @@ import { List } from '@/components/list'
 import { SliderHorizontalListLoader } from '@/components/loaders/slider-horizontal-list-loader'
 import { DetailsCredits } from '@/components/media/details-credits'
 import { SeriesDetailsExtraInfo } from '@/components/series/details-extra-info'
-import { SeasonNavigator } from '@/components/series/season-navigator'
+import {
+  SeasonNavigator,
+  SeasonNavigatorFallback,
+} from '@/components/series/season-navigator'
 
 interface SeriesDetailsContentProps {
   series: SeriesDetails
@@ -47,7 +50,11 @@ export const SeriesDetailsContent = ({
             <SeriesDetailsExtraInfo series={series} director={director} />
             <DetailsCredits movieCredits={seriesCredits} />
           </section>
-          <SeasonNavigator series={series} />
+          {/* Own boundary: the selector reads ?season during render, and without
+              this the bailout would take the entire page client-side. */}
+          <Suspense fallback={<SeasonNavigatorFallback />}>
+            <SeasonNavigator series={series} />
+          </Suspense>
         </div>
       </section>
       {/* Full-bleed rails — same width/gutter as the homepage rows. */}

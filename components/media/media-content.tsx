@@ -20,7 +20,6 @@ interface MediaContentProps {
   queryKey: typeof QUERY_KEYS.SERIES_KEY | typeof QUERY_KEYS.MOVIES_KEY
   enableFilters?: boolean
   filterLayout?: 'sidebar' | 'dialog' | 'sheet'
-  title?: string
 }
 
 export const MediaContent = ({
@@ -29,7 +28,6 @@ export const MediaContent = ({
   queryKey,
   enableFilters = false,
   filterLayout = 'dialog',
-  title,
 }: MediaContentProps) => {
   const [myRef, inView] = useInView({
     threshold: 0,
@@ -70,7 +68,6 @@ export const MediaContent = ({
         initialData={media}
         mediaType={mediaType}
         layout={filterLayout}
-        title={title}
       />
     )
   }

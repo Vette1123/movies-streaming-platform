@@ -8,6 +8,17 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Episodes } from '@/components/series/episodes'
 import { SeasonsSelector } from '@/components/series/selector'
 
+// Reserves the navigator's exact box while the subtree hydrates. The season
+// selector reads ?season during render, which under a static prerender bails
+// its Suspense boundary to CSR — this is what that boundary renders into the
+// HTML, so it has to match the real aside's dimensions or the page shifts.
+export const SeasonNavigatorFallback = () => (
+  <aside className="w-full lg:w-72 lg:shrink-0" aria-hidden>
+    <div className="bg-muted/50 mb-3 h-11 w-full rounded-md" />
+    <div className="bg-card/40 h-[26rem] w-full rounded-xl border shadow-sm lg:h-[34rem]" />
+  </aside>
+)
+
 export const SeasonNavigator = ({ series }: { series: SeriesDetails }) => {
   const { setSelectedSeason, episodes, selectedSeason, isEpisodesLoading } =
     useEpisodeHandler(series?.id)
