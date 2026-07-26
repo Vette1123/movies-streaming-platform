@@ -4,7 +4,20 @@ import tailwindPlugin from 'eslint-plugin-tailwindcss'
 
 export default [
   {
-    ignores: ['dist/**', '.cache/**', 'public/**', 'node_modules/**', '**/*.esm.js'],
+    // `.next` / `.open-next` / `.wrangler` are generated build output: linting
+    // them reports errors in code we never wrote (and pulls in rules the flat
+    // config doesn't even define). They only exist after a build, so a repo
+    // that has never run `build:worker` lints clean without this.
+    ignores: [
+      'dist/**',
+      '.cache/**',
+      'public/**',
+      'node_modules/**',
+      '.next/**',
+      '.open-next/**',
+      '.wrangler/**',
+      '**/*.esm.js',
+    ],
   },
   ...nextConfig,
   ...tailwindPlugin.configs['flat/recommended'],
