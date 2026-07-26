@@ -108,6 +108,8 @@ export function trackMediaPlayed(props: {
   title?: string
   season?: number
   episode?: number
+  // Series only: the play came from continue-watching rather than a plain start.
+  is_resume?: boolean
   vote_average?: number
   release_year?: number | null
   genres?: string[]

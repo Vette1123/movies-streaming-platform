@@ -15,8 +15,17 @@ import { readSeasonEpisodeParams } from '@/hooks/use-search-params'
 
 type MediaItem = MovieDetails | SeriesDetails
 
+// Explicit episode for the play that is about to start. Continue-watching
+// resumes an episode that is NOT in the URL yet (a fresh visit has no
+// ?season/?episode), so the caller passes it in rather than letting the empty
+// query params fall back to S1E1 and overwrite real progress.
+interface WatchTarget {
+  season: number
+  episode: number
+}
+
 interface WatchedMediaHookResult {
-  handleWatchMedia: (media: MediaItem) => void
+  handleWatchMedia: (media: MediaItem, target?: WatchTarget) => void
   watchedItems: ReturnType<typeof useLocalStorage>[0]
   deleteWatchedItems: () => void
   removeWatchedItem: (id: number) => void
@@ -52,11 +61,13 @@ export function useWatchedMedia(): WatchedMediaHookResult {
   )
 
   const handleWatchMedia = useCallback(
-    (media: MediaItem) => {
+    (media: MediaItem, target?: WatchTarget) => {
       // Read at call time rather than via useSearchParams during render: the
       // hook bails the whole route to CSR under static prerender, which stripped
       // every detail page's markup from the HTML (see use-search-params.ts).
-      const { seasonQueryINT, episodeQueryINT } = readSeasonEpisodeParams()
+      const params = readSeasonEpisodeParams()
+      const seasonQueryINT = target?.season || params.seasonQueryINT
+      const episodeQueryINT = target?.episode || params.episodeQueryINT
       const isMovie = 'title' in media
       const existingItemIndex = watchedItems.findIndex(
         (item) => item.id === media.id

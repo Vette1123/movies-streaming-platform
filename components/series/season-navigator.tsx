@@ -4,6 +4,7 @@ import React from 'react'
 
 import { SeriesDetails } from '@/types/series-details'
 import { useEpisodeHandler } from '@/hooks/use-episode-handler'
+import { useSeriesProgress } from '@/hooks/use-series-progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Episodes } from '@/components/series/episodes'
 import { SeasonsSelector } from '@/components/series/selector'
@@ -20,12 +21,19 @@ export const SeasonNavigatorFallback = () => (
 )
 
 export const SeasonNavigator = ({ series }: { series: SeriesDetails }) => {
-  const { setSelectedSeason, episodes, selectedSeason, isEpisodesLoading } =
-    useEpisodeHandler(series?.id)
+  const { resume } = useSeriesProgress(series)
+  // Opens on the season the user is actually part-way through instead of
+  // always season 1 (a ?season deep-link or a manual pick still wins).
+  const { selectSeason, episodes, selectedSeason, isEpisodesLoading } =
+    useEpisodeHandler(series?.id, resume?.season)
 
   return (
     <aside className="w-full lg:w-72 lg:shrink-0">
-      <SeasonsSelector series={series} setSelectedSeason={setSelectedSeason} />
+      <SeasonsSelector
+        series={series}
+        selectedSeason={selectedSeason}
+        onSeasonChange={selectSeason}
+      />
       <ScrollArea className="bg-card/40 h-[26rem] w-full rounded-xl border shadow-sm lg:h-[34rem]">
         <Episodes
           episodes={episodes}
@@ -34,6 +42,7 @@ export const SeasonNavigator = ({ series }: { series: SeriesDetails }) => {
           backdrop_path={series?.backdrop_path}
           poster_path={series?.poster_path}
           series_name={series?.name}
+          resume={resume}
         />
       </ScrollArea>
     </aside>

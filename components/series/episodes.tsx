@@ -14,6 +14,7 @@ import { useLocalStorage, type WatchedItem } from '@/hooks/use-local-storage'
 import { useMounted } from '@/hooks/use-mounted'
 import { useScrollToTop } from '@/hooks/use-scroll-to-top'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
+import { type ResumePoint } from '@/hooks/use-series-progress'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 
 // Weekly release cadence + a week's grace, mirroring the "New Episode" window
@@ -28,6 +29,39 @@ interface EpisodesProps {
   backdrop_path: string
   poster_path: string
   series_name: string
+  resume?: ResumePoint | null
+}
+
+// The episode this season's list should center on: whatever is playing, else
+// the continue-watching episode. Null when neither belongs to this season.
+const resolveFocusEpisode = (
+  activeEpisode: number | null,
+  resumeEpisode: number | null
+) => activeEpisode ?? resumeEpisode
+
+const inThisSeason = (
+  selectedSeason: string,
+  season?: number,
+  episode?: number
+) => (Number(selectedSeason) === season && episode ? episode : null)
+
+const getRowStateClass = (isActive: boolean, isUpNext: boolean) => {
+  if (isActive) return 'bg-primary/10 ring-primary/25 ring-1'
+  // Softer than the playing row: an offer, not a state.
+  if (isUpNext) return 'bg-primary/5 ring-primary/20 hover:bg-accent ring-1'
+  return 'hover:bg-accent'
+}
+
+const getEpisodeBadgeClass = (
+  isActive: boolean,
+  isUpNext: boolean,
+  completed: boolean
+) => {
+  if (isActive) return 'bg-primary text-primary-foreground'
+  if (completed)
+    return 'bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/30'
+  if (isUpNext) return 'bg-primary/15 text-primary'
+  return 'bg-muted text-muted-foreground group-hover/ep:bg-background'
 }
 
 // Animated three-bar equalizer marking the episode that's currently playing.
@@ -52,6 +86,7 @@ export const Episodes = ({
   backdrop_path,
   poster_path,
   series_name,
+  resume,
 }: EpisodesProps) => {
   const router = useRouter()
   const [watchedItems, setWatchedItems] = useLocalStorage('watchedItems', [])
@@ -62,6 +97,40 @@ export const Episodes = ({
   // localStorage is client-only — gate the completed ticks on mount to stay
   // hydration-safe (same rule as NewBadgeWhenRecent).
   const isMounted = useMounted()
+
+  const upNextEpisode = inThisSeason(
+    selectedSeason,
+    resume?.season,
+    resume?.episode
+  )
+  const activeEpisode = inThisSeason(
+    selectedSeason,
+    seasonQueryINT,
+    episodeQueryINT
+  )
+  const focusEpisode = resolveFocusEpisode(activeEpisode, upNextEpisode)
+  const focusRowRef = React.useRef<HTMLButtonElement | null>(null)
+  const centeredKeyRef = React.useRef<string | null>(null)
+
+  // Bring the resumed / playing episode into view inside the list. Scrolls the
+  // ScrollArea's own viewport by hand rather than calling scrollIntoView: that
+  // would also scroll the PAGE, yanking the visitor away from the hero on load.
+  // Runs once per (season, episode) so it can't fight manual scrolling.
+  React.useEffect(() => {
+    const row = focusRowRef.current
+    if (!row || !focusEpisode) return
+    const key = `${selectedSeason}:${focusEpisode}`
+    if (centeredKeyRef.current === key) return
+    const viewport = row.closest<HTMLElement>(
+      '[data-radix-scroll-area-viewport]'
+    )
+    if (!viewport) return
+    centeredKeyRef.current = key
+    const rowBox = row.getBoundingClientRect()
+    const viewportBox = viewport.getBoundingClientRect()
+    viewport.scrollTop +=
+      rowBox.top - viewportBox.top - (viewportBox.height - rowBox.height) / 2
+  }, [episodes, focusEpisode, selectedSeason])
 
   const buildCompletionMeta = (episode: EpisodeDetails) => ({
     showId: episode.show_id,
@@ -159,6 +228,9 @@ export const Episodes = ({
             const isActive =
               episodeQueryINT === episode?.episode_number &&
               seasonQueryINT === Number(selectedSeason)
+            const isUpNext =
+              isMounted && !isActive && upNextEpisode === episode.episode_number
+            const isFocused = focusEpisode === episode.episode_number
             const completed =
               isMounted &&
               isEpisodeCompleted(
@@ -171,23 +243,18 @@ export const Episodes = ({
               <button
                 key={episode.id}
                 type="button"
+                ref={isFocused ? focusRowRef : undefined}
                 aria-current={isActive ? 'true' : undefined}
                 onClick={() => handleWatchEpisode(episode)}
                 className={cn(
                   'group/ep flex w-full items-start gap-3 rounded-lg p-2.5 text-left transition-colors',
-                  isActive
-                    ? 'bg-primary/10 ring-primary/25 ring-1'
-                    : 'hover:bg-accent'
+                  getRowStateClass(isActive, isUpNext)
                 )}
               >
                 <span
                   className={cn(
                     'mt-px grid size-6 shrink-0 place-items-center rounded-md text-xs font-semibold tabular-nums transition-colors',
-                    isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : completed
-                        ? 'bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/30'
-                        : 'bg-muted text-muted-foreground group-hover/ep:bg-background'
+                    getEpisodeBadgeClass(isActive, isUpNext, completed)
                   )}
                 >
                   {episode.episode_number}
@@ -208,6 +275,11 @@ export const Episodes = ({
                       withinDays={NEW_EPISODE_DAYS}
                       className="relative top-0 left-0 shrink-0"
                     />
+                    {isUpNext && (
+                      <span className="bg-primary/15 text-primary shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
+                        {resume?.isNext ? 'Up next' : 'Continue'}
+                      </span>
+                    )}
                   </span>
                   {(episode?.air_date || episode?.runtime) && (
                     <span className="text-muted-foreground flex flex-wrap items-center gap-x-2 text-xs">

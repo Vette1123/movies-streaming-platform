@@ -26,114 +26,129 @@ export const DetailsHero = forwardRef<
     isIframeShown: boolean
     playVideo: () => void
     trailerKey?: string
+    // Series only: continue-watching. `resume` retargets the play button (event
+    // + watch-history write); `resumeSlot` renders the caption and progress bar
+    // under it. Both stay undefined for movies, which have no episode to resume.
+    resume?: { season: number; episode: number } | null
+    resumeSlot?: React.ReactNode
   }
->(({ movie, isIframeShown, playVideo, series, trailerKey }, ref) => {
-  const media = (movie || series) as MovieDetails & SeriesDetails
-  const title = getMediaTitle(media)
-  const isMovie = !!movie
+>(
+  (
+    { movie, isIframeShown, playVideo, series, trailerKey, resume, resumeSlot },
+    ref
+  ) => {
+    const media = (movie || series) as MovieDetails & SeriesDetails
+    const title = getMediaTitle(media)
+    const isMovie = !!movie
 
-  // Bridge the blank gap between "Watch" click and the streaming iframe painting
-  // its first frame: show a spinner while the iframe is shown but hasn't loaded.
-  const [iframeLoaded, setIframeLoaded] = React.useState(false)
-  React.useEffect(() => {
-    if (isIframeShown) setIframeLoaded(false)
-  }, [isIframeShown])
+    // Bridge the blank gap between "Watch" click and the streaming iframe painting
+    // its first frame: show a spinner while the iframe is shown but hasn't loaded.
+    const [iframeLoaded, setIframeLoaded] = React.useState(false)
+    React.useEffect(() => {
+      if (isIframeShown) setIframeLoaded(false)
+    }, [isIframeShown])
 
-  // Hero fills exactly one viewport and never exceeds it — the whole hero is
-  // visible on load with no scroll to see the buttons, and no oversized band
-  // pushing content down. Uses 100svh (small viewport height), NOT dvh: dvh is
-  // dynamic and re-resolves as the mobile URL bar hides/shows on scroll, which
-  // resizes the hero and reflows the page (visible jitter). svh is fixed to the
-  // URL-bar-visible height, so the hero never recalculates while scrolling.
-  // Inline height (not a Tailwind class) so it can't be dropped from the CSS
-  // bundle; object-cover fills the box edge-to-edge (a little crop on the 16:9
-  // backdrop is the trade for fitting the viewport).
-  return (
-    <section
-      className="relative isolate w-full overflow-hidden"
-      style={{ height: '100svh' }}
-    >
-      <HeroImage movie={media} priority />
-      <div className="relative z-50 container h-full max-w-(--breakpoint-2xl)">
-        <div className="flex h-full items-center justify-center">
-          <AnimatePresence>
-            {!isIframeShown && (
-              <motion.div
-                transition={{ type: 'spring', stiffness: 500 }}
-                initial={{ opacity: 0, y: 80 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -150 }}
-                className={cn('flex flex-col items-center gap-4 sm:gap-5', {
-                  hidden: isIframeShown,
-                })}
-              >
-                <PlayButton onClick={playVideo} media={media} />
-                {/* Buttons are icon-only < sm, so pair each with a muted caption
+    // Hero fills exactly one viewport and never exceeds it — the whole hero is
+    // visible on load with no scroll to see the buttons, and no oversized band
+    // pushing content down. Uses 100svh (small viewport height), NOT dvh: dvh is
+    // dynamic and re-resolves as the mobile URL bar hides/shows on scroll, which
+    // resizes the hero and reflows the page (visible jitter). svh is fixed to the
+    // URL-bar-visible height, so the hero never recalculates while scrolling.
+    // Inline height (not a Tailwind class) so it can't be dropped from the CSS
+    // bundle; object-cover fills the box edge-to-edge (a little crop on the 16:9
+    // backdrop is the trade for fitting the viewport).
+    return (
+      <section
+        className="relative isolate w-full overflow-hidden"
+        style={{ height: '100svh' }}
+      >
+        <HeroImage movie={media} priority />
+        <div className="relative z-50 container h-full max-w-(--breakpoint-2xl)">
+          <div className="flex h-full items-center justify-center">
+            <AnimatePresence>
+              {!isIframeShown && (
+                <motion.div
+                  transition={{ type: 'spring', stiffness: 500 }}
+                  initial={{ opacity: 0, y: 80 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -150 }}
+                  className={cn('flex flex-col items-center gap-4 sm:gap-5', {
+                    hidden: isIframeShown,
+                  })}
+                >
+                  <PlayButton
+                    onClick={playVideo}
+                    media={media}
+                    resume={resume}
+                  />
+                  {resumeSlot}
+                  {/* Buttons are icon-only < sm, so pair each with a muted caption
                     (mobile only) that names what it does. */}
-                <div className="flex flex-wrap items-start justify-center gap-2 sm:items-center sm:gap-3">
-                  {trailerKey && (
+                  <div className="flex flex-wrap items-start justify-center gap-2 sm:items-center sm:gap-3">
+                    {trailerKey && (
+                      <div className="flex flex-col items-center gap-1.5">
+                        <TrailerDialog
+                          trailerKey={trailerKey}
+                          mediaId={media?.id}
+                          mediaType={isMovie ? 'movie' : 'tv'}
+                          title={title}
+                        />
+                        <span className={captionClass}>Play trailer</span>
+                      </div>
+                    )}
                     <div className="flex flex-col items-center gap-1.5">
-                      <TrailerDialog
-                        trailerKey={trailerKey}
-                        mediaId={media?.id}
-                        mediaType={isMovie ? 'movie' : 'tv'}
-                        title={title}
-                      />
-                      <span className={captionClass}>Play trailer</span>
+                      <SaveButton media={media} />
+                      <span className={captionClass}>Add to list</span>
                     </div>
-                  )}
-                  <div className="flex flex-col items-center gap-1.5">
-                    <SaveButton media={media} />
-                    <span className={captionClass}>Add to list</span>
-                  </div>
-                  {/* Whole-series "watched" is ambiguous (many episodes), so the
+                    {/* Whole-series "watched" is ambiguous (many episodes), so the
                       movie-level toggle only shows for movies; series completion
                       is tracked per-episode in the episode list. */}
-                  {isMovie && movie && (
+                    {isMovie && movie && (
+                      <div className="flex flex-col items-center gap-1.5">
+                        <WatchedButton movie={movie} />
+                        <span className={captionClass}>Watched</span>
+                      </div>
+                    )}
                     <div className="flex flex-col items-center gap-1.5">
-                      <WatchedButton movie={movie} />
-                      <span className={captionClass}>Watched</span>
+                      <ShareButton
+                        title={title}
+                        mediaId={media?.id}
+                        mediaType={isMovie ? 'movie' : 'tv'}
+                      />
+                      <span className={captionClass}>Share</span>
                     </div>
-                  )}
-                  <div className="flex flex-col items-center gap-1.5">
-                    <ShareButton
-                      title={title}
-                      mediaId={media?.id}
-                      mediaType={isMovie ? 'movie' : 'tv'}
-                    />
-                    <span className={captionClass}>Share</span>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {isIframeShown && !iframeLoaded && (
+              <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
+                <Loader2 className="size-12 animate-spin text-white/80" />
+              </div>
             )}
-          </AnimatePresence>
-          {isIframeShown && !iframeLoaded && (
-            <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
-              <Loader2 className="size-12 animate-spin text-white/80" />
-            </div>
-          )}
-          <iframe
-            className={cn('size-full py-20', {
-              hidden: !isIframeShown,
-            })}
-            allowFullScreen
-            ref={ref}
-            autoFocus
-            onLoad={() => setIframeLoaded(true)}
-            content="noindex,nofollow"
-            autoSave={title?.toLowerCase().trim()}
-            id={title}
-            name={title}
-            title={title}
-            about={media?.overview}
-            key={media?.id}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          ></iframe>
+            <iframe
+              className={cn('size-full py-20', {
+                hidden: !isIframeShown,
+              })}
+              allowFullScreen
+              ref={ref}
+              autoFocus
+              onLoad={() => setIframeLoaded(true)}
+              content="noindex,nofollow"
+              autoSave={title?.toLowerCase().trim()}
+              id={title}
+              name={title}
+              title={title}
+              about={media?.overview}
+              key={media?.id}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            ></iframe>
+          </div>
         </div>
-      </div>
-      <div className="pointer-events-none absolute -inset-4 rounded-md bg-gradient-to-b from-slate-900/45 via-slate-900/10 to-slate-900/40 shadow-[inset_0_1px_0_0_rgba(148,163,184,0.1)] transition motion-reduce:transition-none lg:-inset-x-6 lg:block lg:drop-shadow-lg" />
-    </section>
-  )
-})
+        <div className="pointer-events-none absolute -inset-4 rounded-md bg-gradient-to-b from-slate-900/45 via-slate-900/10 to-slate-900/40 shadow-[inset_0_1px_0_0_rgba(148,163,184,0.1)] transition motion-reduce:transition-none lg:-inset-x-6 lg:block lg:drop-shadow-lg" />
+      </section>
+    )
+  }
+)
 
 DetailsHero.displayName = 'DetailsHero'

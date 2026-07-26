@@ -3,7 +3,6 @@ import * as React from 'react'
 import { SeriesDetails } from '@/types/series-details'
 import { trackSeasonSelected } from '@/lib/analytics'
 import { seasonsFormatter } from '@/lib/utils'
-import { useSearchQueryParams } from '@/hooks/use-search-params'
 import {
   Select,
   SelectContent,
@@ -18,23 +17,27 @@ import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 
 interface SeasonsSelectorProps {
   series: SeriesDetails
-  setSelectedSeason: React.Dispatch<React.SetStateAction<string>>
+  selectedSeason: string
+  onSeasonChange: (season: string) => void
 }
 
 export function SeasonsSelector({
   series,
-  setSelectedSeason,
+  selectedSeason,
+  onSeasonChange,
 }: SeasonsSelectorProps) {
-  const { seasonQuerySTR } = useSearchQueryParams()
   const formattedSeasons = seasonsFormatter(series?.seasons)
 
   return (
+    // Controlled, not defaultValue: continue-watching can move the selection to
+    // the resumed season after mount, and an uncontrolled Select would keep
+    // showing "Season 1" while the list underneath had already switched.
     <Select
       onValueChange={(value) => {
         trackSeasonSelected({ media_id: series?.id, season: Number(value) })
-        setSelectedSeason(value)
+        onSeasonChange(value)
       }}
-      defaultValue={seasonQuerySTR || '1'}
+      value={selectedSeason}
       disabled={!formattedSeasons?.length}
     >
       <SelectTrigger className="mb-3 h-11 w-full font-medium disabled:cursor-not-allowed">
