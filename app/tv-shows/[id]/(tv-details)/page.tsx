@@ -15,6 +15,7 @@ import { buildDetailsMetadata, buildMediaStaticParams } from '@/lib/media-page'
 import { breadcrumbJsonLd, JsonLd, tvSeriesJsonLd } from '@/lib/structured-data'
 import { SeriesDetailsContent } from '@/components/series/details-content'
 import { SeriesDetailsHero } from '@/components/series/details-hero'
+import { SeriesPlaybackProvider } from '@/components/series/playback-context'
 
 // 24h: series metadata is essentially static and CI redeploys twice daily
 // (repopulating the cache with fresh data), so a shorter window would only
@@ -109,13 +110,18 @@ const TVSeries = async (props: PageDetailsProps) => {
           { name: seriesDetails.name, url: `/tv-shows/${seriesDetails.id}` },
         ])}
       />
-      <SeriesDetailsHero series={seriesDetails} trailerKey={trailerKey} />
-      <SeriesDetailsContent
-        series={seriesDetails}
-        seriesCredits={seriesCredits}
-        similarSeries={similarSeries}
-        recommendedSeries={recommendedSeries}
-      />
+      {/* Client provider around both halves: the episode list asks for
+          playback, the hero owns the embed. Server children pass straight
+          through, so the page stays server-rendered. */}
+      <SeriesPlaybackProvider>
+        <SeriesDetailsHero series={seriesDetails} trailerKey={trailerKey} />
+        <SeriesDetailsContent
+          series={seriesDetails}
+          seriesCredits={seriesCredits}
+          similarSeries={similarSeries}
+          recommendedSeries={recommendedSeries}
+        />
+      </SeriesPlaybackProvider>
     </header>
   )
 }

@@ -16,6 +16,7 @@ import { useScrollToTop } from '@/hooks/use-scroll-to-top'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { type ResumePoint } from '@/hooks/use-series-progress'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
+import { useSeriesPlayback } from '@/components/series/playback-context'
 
 // Weekly release cadence + a week's grace, mirroring the "New Episode" window
 // streaming apps use. Keeps the badge cross-season: whichever season holds a
@@ -33,11 +34,13 @@ interface EpisodesProps {
 }
 
 // The episode this season's list should center on: whatever is playing, else
-// the continue-watching episode. Null when neither belongs to this season.
+// the one the URL points at, else the continue-watching episode. Null when none
+// of them belongs to this season.
 const resolveFocusEpisode = (
-  activeEpisode: number | null,
+  playingEpisode: number | null,
+  selectedEpisode: number | null,
   resumeEpisode: number | null
-) => activeEpisode ?? resumeEpisode
+) => playingEpisode ?? selectedEpisode ?? resumeEpisode
 
 const inThisSeason = (
   selectedSeason: string,
@@ -91,6 +94,7 @@ export const Episodes = ({
   const router = useRouter()
   const [watchedItems, setWatchedItems] = useLocalStorage('watchedItems', [])
   const { episodeQueryINT, seasonQueryINT } = useSearchQueryParams()
+  const { playing, requestPlay } = useSeriesPlayback()
   const { scrollToTop } = useScrollToTop()
   const { isEpisodeCompleted, toggleEpisodeCompleted, markEpisodesCompleted } =
     useCompletedMedia()
@@ -103,12 +107,24 @@ export const Episodes = ({
     resume?.season,
     resume?.episode
   )
-  const activeEpisode = inThisSeason(
+  // "Playing" is what the embed is actually loaded with, NOT what ?season/
+  // ?episode says: opening a continue-watching link points the page at an
+  // episode without starting it, and a row that isn't playing must not claim to.
+  const playingEpisode = inThisSeason(
+    selectedSeason,
+    playing?.season,
+    playing?.episode
+  )
+  const selectedEpisode = inThisSeason(
     selectedSeason,
     seasonQueryINT,
     episodeQueryINT
   )
-  const focusEpisode = resolveFocusEpisode(activeEpisode, upNextEpisode)
+  const focusEpisode = resolveFocusEpisode(
+    playingEpisode,
+    selectedEpisode,
+    upNextEpisode
+  )
   const focusRowRef = React.useRef<HTMLButtonElement | null>(null)
   const centeredKeyRef = React.useRef<string | null>(null)
 
@@ -200,6 +216,13 @@ export const Episodes = ({
       markEpisodesCompleted(earlier.map(buildCompletionMeta))
     }
 
+    // Clicking a row IS the play intent, so start the embed directly instead of
+    // letting the URL trigger it — the params can already point at this episode
+    // (arriving from continue-watching), and then nothing would change.
+    requestPlay({
+      season: Number(selectedSeason),
+      episode: episode?.episode_number,
+    })
     router.push(
       `?season=${selectedSeason}&episode=${episode?.episode_number}`,
       { scroll: false }
@@ -225,9 +248,7 @@ export const Episodes = ({
       )}
       {episodes?.length
         ? episodes.map((episode) => {
-            const isActive =
-              episodeQueryINT === episode?.episode_number &&
-              seasonQueryINT === Number(selectedSeason)
+            const isActive = playingEpisode === episode?.episode_number
             const isUpNext =
               isMounted && !isActive && upNextEpisode === episode.episode_number
             const isFocused = focusEpisode === episode.episode_number

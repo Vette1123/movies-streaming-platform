@@ -26,15 +26,28 @@ export const DetailsHero = forwardRef<
     isIframeShown: boolean
     playVideo: () => void
     trailerKey?: string
-    // Series only: continue-watching. `resume` retargets the play button (event
-    // + watch-history write); `resumeSlot` renders the caption and progress bar
-    // under it. Both stay undefined for movies, which have no episode to resume.
-    resume?: { season: number; episode: number } | null
+    // Series only. `playTarget` is the episode pressing play will start (a
+    // ?season/?episode deep-link, else continue-watching) and retargets the
+    // play button's event + watch-history write; `isResume` says that target
+    // came from stored progress rather than the URL; `resumeSlot` renders the
+    // caption and progress bar under the button. All undefined for movies,
+    // which have no episode to resume.
+    playTarget?: { season: number; episode: number } | null
+    isResume?: boolean
     resumeSlot?: React.ReactNode
   }
 >(
   (
-    { movie, isIframeShown, playVideo, series, trailerKey, resume, resumeSlot },
+    {
+      movie,
+      isIframeShown,
+      playVideo,
+      series,
+      trailerKey,
+      playTarget,
+      isResume,
+      resumeSlot,
+    },
     ref
   ) => {
     const media = (movie || series) as MovieDetails & SeriesDetails
@@ -79,7 +92,8 @@ export const DetailsHero = forwardRef<
                   <PlayButton
                     onClick={playVideo}
                     media={media}
-                    resume={resume}
+                    target={playTarget}
+                    isResume={isResume}
                   />
                   {resumeSlot}
                   {/* Buttons are icon-only < sm, so pair each with a muted caption

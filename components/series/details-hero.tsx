@@ -10,12 +10,12 @@ import {
   trackMediaPlayed,
 } from '@/lib/analytics'
 import { STREAMING_MOVIES_API_URL } from '@/lib/constants'
-import { useMounted } from '@/hooks/use-mounted'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { useSeasonEpisodes } from '@/hooks/use-season-episodes'
 import { useSeriesProgress } from '@/hooks/use-series-progress'
 import { DetailsHero } from '@/components/details-hero'
 import { ContinueWatching } from '@/components/series/continue-watching'
+import { useSeriesPlayback } from '@/components/series/playback-context'
 
 interface DeepLink {
   season: number
@@ -57,7 +57,7 @@ export const SeriesDetailsHero = ({
 }) => {
   const [isIframeShown, setIsIframeShown] = React.useState(false)
   const [deepLink, setDeepLink] = React.useState<DeepLink | null>(null)
-  const isMounted = useMounted()
+  const { registerPlayer, reportPlaying } = useSeriesPlayback()
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
   // Which episode the embed is currently loaded with (see startPlayback).
   const playedKeyRef = React.useRef<string | null>(null)
@@ -83,6 +83,9 @@ export const SeriesDetailsHero = ({
     () => (resume ? { season: resume.season, episode: resume.episode } : null),
     [resume]
   )
+  // What the hero play button will start: the episode named by the URL if the
+  // visitor arrived on one, else continue-watching, else the series default.
+  const playTarget = deepLink ?? resumeTarget
 
   // Stable identity, and a no-op when the values are unchanged, so the reader's
   // effect can't drive a setState → re-render loop.
@@ -103,14 +106,15 @@ export const SeriesDetailsHero = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [series?.id])
 
-  // Single entry point for starting the embed, keyed on the episode. A resume
-  // click and the ?season/?episode effect resolve to the SAME episode (the click
-  // pushes those params), so without this guard the iframe src would be rewritten
-  // — restarting playback from zero — and media_played would fire twice.
+  // Single entry point for starting the embed, keyed on the episode. Pressing
+  // play in the hero and clicking the same episode in the list resolve to the
+  // SAME target, so without this guard the iframe src would be rewritten —
+  // restarting playback from zero — and media_played would fire twice.
   const startPlayback = React.useCallback(
     (target: DeepLink | null, options?: { track?: boolean }) => {
       if (!iframeRef.current) return
       setIsIframeShown(true)
+      reportPlaying(target)
       const key = playbackKey(target)
       if (playedKeyRef.current === key) return
       playedKeyRef.current = key
@@ -123,12 +127,12 @@ export const SeriesDetailsHero = ({
         })
       }
     },
-    [series]
+    [reportPlaying, series]
   )
 
   const playDefaultSeries = () => {
     // A URL deep-link always wins; otherwise fall back to continue-watching.
-    const target = deepLink ?? resumeTarget
+    const target = playTarget
     // PlayButton already fired media_played for this click (with is_resume).
     startPlayback(target)
     if (target && !deepLink) {
@@ -141,13 +145,14 @@ export const SeriesDetailsHero = ({
     }
   }
 
-  React.useEffect(() => {
-    if (!deepLink || !isMounted) return
-    // Playback started via deep-link or episode selection (the manual
-    // PlayButton path is tracked separately in PlayButton). Without this,
-    // every episode play would be missing from media_played.
-    startPlayback(deepLink, { track: true })
-  }, [deepLink, isMounted, startPlayback])
+  // Arriving at ?season/?episode deliberately does NOT start the stream — it
+  // lands on the hero with that episode preselected (see playTarget) and lets
+  // the visitor press play. Playback is only ever started by an explicit click,
+  // here or in the episode list, which reaches the embed through this handler.
+  React.useEffect(
+    () => registerPlayer((target) => startPlayback(target, { track: true })),
+    [registerPlayer, startPlayback]
+  )
 
   return (
     <>
@@ -159,7 +164,8 @@ export const SeriesDetailsHero = ({
         isIframeShown={isIframeShown}
         playVideo={playDefaultSeries}
         trailerKey={trailerKey}
-        resume={resumeTarget}
+        playTarget={playTarget}
+        isResume={Boolean(resumeTarget)}
         resumeSlot={
           <ContinueWatching
             progress={progress}
