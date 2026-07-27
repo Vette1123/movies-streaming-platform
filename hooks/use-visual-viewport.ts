@@ -36,10 +36,7 @@ export function useVisualViewport(enabled: boolean): VisualViewportState {
   const [state, setState] = React.useState<VisualViewportState>(INITIAL)
 
   React.useEffect(() => {
-    if (!enabled) {
-      setState(INITIAL)
-      return
-    }
+    if (!enabled) return
 
     const vv = window.visualViewport
     if (!vv) return
@@ -68,5 +65,8 @@ export function useVisualViewport(enabled: boolean): VisualViewportState {
     }
   }, [enabled])
 
-  return state
+  // Derive the disabled case instead of resetting through the effect: the reset
+  // is now instant rather than one commit late, and a measurement from the last
+  // time the overlay was open can never be read back while it is closed.
+  return enabled ? state : INITIAL
 }

@@ -3,9 +3,20 @@
 import React from 'react'
 import { Download, Share, X } from 'lucide-react'
 
+import { useMounted } from '@/hooks/use-mounted'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
 
 const DISMISS_KEY = 'reely-pwa-install-dismissed'
+
+// Reads through a guard: localStorage throws in private mode / when storage is
+// blocked, and a nudge is never worth taking the page down over.
+const wasDismissed = () => {
+  try {
+    return Boolean(window.localStorage.getItem(DISMISS_KEY))
+  } catch {
+    return true
+  }
+}
 
 /**
  * Lightweight, one-time, dismissible install nudge. On Android/Chrome it fires
@@ -18,15 +29,20 @@ const DISMISS_KEY = 'reely-pwa-install-dismissed'
  */
 export function InstallPrompt() {
   const { canPrompt, needsIosHint, promptInstall } = usePwaInstall()
-  const [dismissed, setDismissed] = React.useState(true)
-
-  React.useEffect(() => {
-    setDismissed(Boolean(window.localStorage.getItem(DISMISS_KEY)))
-  }, [])
+  const [dismissedNow, setDismissedNow] = React.useState(false)
+  // localStorage is client-only, so the stored flag can't be read during the
+  // server render. Gating on mount keeps the server HTML and the first client
+  // render identical (both render nothing) without syncing storage into state
+  // through an effect, which cost an extra render pass on every page.
+  const isMounted = useMounted()
 
   const remember = React.useCallback(() => {
-    setDismissed(true)
-    window.localStorage.setItem(DISMISS_KEY, '1')
+    setDismissedNow(true)
+    try {
+      window.localStorage.setItem(DISMISS_KEY, '1')
+    } catch {
+      // storage blocked — the nudge still hides for this session
+    }
   }, [])
 
   const install = React.useCallback(async () => {
@@ -34,7 +50,8 @@ export function InstallPrompt() {
     remember()
   }, [promptInstall, remember])
 
-  if (dismissed) return null
+  if (!isMounted) return null
+  if (dismissedNow || wasDismissed()) return null
   if (!canPrompt && !needsIosHint) return null
 
   return (

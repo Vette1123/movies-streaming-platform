@@ -24,10 +24,17 @@ export function BlurredImage({
   // sync when `src` changes so recycled instances in lists don't show a stale
   // fallback.
   const [imgSrc, setImgSrc] = React.useState(src)
+  const [srcSnapshot, setSrcSnapshot] = React.useState(src)
 
-  React.useEffect(() => {
+  // Adjust during render, not in an effect. React re-runs this component before
+  // touching the DOM, so a recycled list instance never paints one frame of the
+  // PREVIOUS poster the way the old effect did (it fired after commit). This is
+  // React's documented "adjusting state when a prop changes" pattern — setting
+  // state during render of the same component, guarded so it can't loop.
+  if (src !== srcSnapshot) {
+    setSrcSnapshot(src)
     setImgSrc(src)
-  }, [src])
+  }
 
   const handleError = React.useCallback(() => {
     const fallback = getNextImageFallback(imgSrc)

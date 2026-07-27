@@ -38,11 +38,16 @@ export function LazyRail({ title, items, itemType = 'movie' }: LazyRailProps) {
     const el = ref.current
     if (!el) return
 
-    // No IntersectionObserver (very old browser) → hydrate immediately so the
-    // rail is never left non-interactive.
+    // No IntersectionObserver (very old browser) → hydrate anyway so the rail is
+    // never left non-interactive. Deferred by a frame rather than set straight
+    // from the effect body: a synchronous setState here would cascade an extra
+    // render pass, and it cannot be hoisted into the initial state because the
+    // server has no IntersectionObserver either — seeding from that check would
+    // render <List> on the server and break the SSR/first-paint match this
+    // component exists to preserve.
     if (typeof IntersectionObserver === 'undefined') {
-      setActive(true)
-      return
+      const frame = requestAnimationFrame(() => setActive(true))
+      return () => cancelAnimationFrame(frame)
     }
 
     const io = new IntersectionObserver(
