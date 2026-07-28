@@ -28,6 +28,9 @@ const STALE_CHUNK_SIGNATURES = [
   'Loading chunk',
   'error loading dynamically imported module',
   "Unexpected token '<'",
+  // Turbopack's wording for the same thing: a module the retired bundle still
+  // references has no factory in the chunk that actually loaded.
+  'module factory is not available',
 ]
 
 // Transport-level failures: the request never completed, so there is no app

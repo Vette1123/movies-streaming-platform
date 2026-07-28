@@ -6,6 +6,11 @@ import posthog, { CaptureResult, ConfigDefaults } from 'posthog-js'
 import { PostHogProvider, usePostHog } from 'posthog-js/react'
 
 import { trackPwaInstallable, trackPwaInstalled } from '@/lib/analytics'
+import {
+  isStaleChunkError,
+  isStaleDeployError,
+  isTransportError,
+} from '@/lib/client-errors'
 import { enrichPersonProfile } from '@/lib/person'
 
 /**
@@ -66,15 +71,22 @@ function errorContext(): Record<string, unknown> {
  *   nothing observable breaks and no app code can prevent it.
  * - _internal_videoInjector*: a video-downloader extension's page script poking
  *   at a <video> it thinks exists. Not a symbol our bundle ever defines.
+ * - "Hydration failed because…": the unminified twin of #418, same cause.
+ * - `<something>.data.split is not a function`: a `message` event handler that
+ *   assumed a string payload got an object instead. We register no message
+ *   listener anywhere (the YouTube embed is postMessage-out only), and these
+ *   arrive with zero stack frames from our bundle — it's injected page script.
  */
 const NOISE_EXCEPTION_PATTERNS = [
   /Minified React error #418\b/i,
   /react\.dev\/errors\/418\b/i,
+  /Hydration failed because the server rendered HTML didn't match/i,
   /^\s*Script error\.?\s*$/i,
   /Failed to execute 'removeChild' on 'Node'/i,
   /Cannot read properties of null \(reading 'document'\)/i,
   /ResizeObserver loop/i,
   /_internal_videoInjector/i,
+  /\bdata\.split is not a function/i,
 ]
 
 /** Collect every exception type/value string carried on a $exception event. */
@@ -96,9 +108,23 @@ function exceptionStrings(event: CaptureResult): string[] {
 }
 
 /** True when an exception is a known-unactionable extension / cross-origin noise. */
-function isNoiseException(event: CaptureResult): boolean {
-  const messages = exceptionStrings(event)
+function isNoiseException(messages: string[]): boolean {
   return messages.some((m) => NOISE_EXCEPTION_PATTERNS.some((re) => re.test(m)))
+}
+
+/**
+ * Stale-bundle and transport failures reach Error Tracking by a second route:
+ * PostHog autocaptures them as unhandled window errors / rejections, which never
+ * pass through the react-query reporter that already classifies them as expected
+ * (providers/query-provider.tsx). They aren't code faults — a tab that outlived
+ * one of our ~4x/day deploys, or a connection that dropped — and the same event
+ * already triggers reloadForStaleDeploy() to recover the user. Drop them so the
+ * dashboard keeps showing only errors we can actually fix.
+ */
+function isUnactionableFailure(messages: string[]): boolean {
+  return messages.some(
+    (m) => isStaleDeployError(m) || isStaleChunkError(m) || isTransportError(m)
+  )
 }
 
 /**
@@ -133,9 +159,12 @@ const POSTHOG_CONFIG = {
   // Wrapped defensively so enrichment can never drop an exception event.
   before_send: (event: CaptureResult | null) => {
     if (event && event.event === '$exception') {
-      // Drop unactionable extension / cross-origin noise (React #418 &c.) so it
-      // stops burying real, fixable errors in the dashboard.
-      if (isNoiseException(event)) return null
+      // Drop unactionable extension / cross-origin noise (React #418 &c.) and
+      // stale-bundle / transport failures, so neither buries the real, fixable
+      // errors in the dashboard.
+      const messages = exceptionStrings(event)
+      if (isNoiseException(messages) || isUnactionableFailure(messages))
+        return null
       event.properties = { ...event.properties, ...errorContext() }
     }
     return event
