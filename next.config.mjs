@@ -23,6 +23,9 @@ const nextConfig = {
     ],
   },
   typescript: { ignoreBuildErrors: false },
+  // Drop `X-Powered-By: Next.js` — free stack fingerprint for scanners, and it
+  // rides on every single response.
+  poweredByHeader: false,
   experimental: {
     // Tree-shake barrel-imported libs so only the symbols actually used ship.
     // lucide-react is the big one: icons are imported per-name across ~40 files,
@@ -36,6 +39,11 @@ const nextConfig = {
   // TMDB. The homepage is the heaviest render, so it matters most here. Paths
   // must stay in sync with the CDN cache rule in scripts/cf-waf-setup.mjs.
   // `/watch-history` is intentionally omitted — it's personal + noindex.
+  // Caveat (audited 2026-07-30): document routes still return no
+  // cf-cache-status in prod — on a Workers Custom Domain the Worker runs ahead
+  // of the zone cache, so the CDN never stores the HTML. Keep these headers
+  // (browsers honour them, and OpenNext's own cache reads them), but don't
+  // assume an edge HIT is absorbing the load. See scripts/cf-waf-setup.mjs.
   async headers() {
     const edgeCache = 'public, max-age=0, s-maxage=28800, stale-while-revalidate=86400'
     const cachedPaths = ['/', '/movies', '/tv-shows', '/movies/:id', '/tv-shows/:id']

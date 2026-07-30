@@ -386,8 +386,17 @@ async function main() {
     console.error('Add BOTH to the token for reely.space: Zone · Cache Rules · Edit AND Zone · Transform Rules · Edit.')
     process.exit(1)
   }
-  console.log('✓ Edge cache is LIVE (cache rule + Vary-strip applied).')
-  console.log('  Verify: curl -sI https://www.reely.space/movies/278 | grep cf-cache-status')
+  console.log('✓ Edge cache rules APPLIED (cache rule + Vary-strip).')
+  // "Applied" is not "working". Audited 2026-07-30: the Vary strip is confirmed
+  // live (no Vary on /, /movies/:id, /tv-shows, /disclaimer) yet those responses
+  // still carry NO cf-cache-status header at all, from two different colos. On a
+  // Workers Custom Domain the Worker *is* the origin and runs ahead of the zone
+  // cache, so the cache_settings phase never gets to store the HTML — static
+  // assets under /_next/static DO show cf-cache-status: HIT, document routes
+  // never do. Keep the rules (they cost nothing and become live if CF changes
+  // this), but the real HTML caching is OpenNext's regional + KV incremental
+  // cache, not the CDN. Do not treat this ✓ as proof of an edge HIT.
+  console.log('  Verify for real: curl -sI https://www.reely.space/movies/278 | grep -i cf-cache-status')
 }
 
 main().catch((err) => {

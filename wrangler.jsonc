@@ -13,6 +13,11 @@
     "enabled": true,
   },
   "preview_urls": false,
+  // Never expose movies-streaming-platform.<subdomain>.workers.dev. It would
+  // serve the whole site on a second, crawlable hostname (duplicate content vs
+  // www.reely.space) and it bypasses every WAF / cache / redirect rule, which
+  // are all bound to the reely.space zone.
+  "workers_dev": false,
   // "placement": {
   // 	"mode": "smart",
   // },
