@@ -1,19 +1,36 @@
-// DNS hardening for reely.space: CAA records + the DMARC policy ramp.
+// DNS hardening for reely.space: CAA records, plus the three records that say
+// "this domain never sends email".
 //
-// Split out from cf-waf-setup.mjs on purpose. That script runs on every CI
-// deploy; this one must not. Tightening DMARC is a deliberate multi-week ramp
-// (none → quarantine at 25% → quarantine at 100% → reject) where each step is
-// only safe after reading the aggregate reports from the previous one, and an
-// automatic re-apply on deploy would either freeze the ramp or silently undo a
-// manual change.
+// reely.space sends no mail and receives none. Audited 2026-07-30: no DKIM
+// selector exists for any common provider, SPF authorizes nothing but the
+// registrar's forwarder, and the app itself has no accounts and no mail
+// service. The MX records are Namecheap's default inbound forwarding, unused.
+//
+// That matters because it removes the usual reason to be careful here. A
+// domain that sends real mail has to walk DMARC up slowly (none → quarantine →
+// reject), watching aggregate reports at each step, or it starts bouncing its
+// own legitimate email. A domain that sends nothing has nothing to bounce, so
+// the strictest policy is correct immediately and every softer setting just
+// leaves room for someone to spoof the domain.
+//
+// So the three records below are the end state, not a step:
+//   SPF    v=spf1 … -all   — hard-fail anything not the registrar's forwarder
+//   DKIM   *._domainkey p= — "no valid signing key exists, for any selector"
+//   DMARC  p=reject        — "refuse mail that fails the two above"
+//
+// If reely.space ever DOES start sending mail (a transactional provider, or
+// "send mail as" from Gmail), all three must be updated BEFORE that mail goes
+// out or it will be rejected: add the sender to SPF, publish its DKIM key, and
+// drop DMARC to p=none until the reports come back clean.
 //
 // Usage:
 //   CLOUDFLARE_API_TOKEN=<token> pnpm dns:harden
-//   DMARC_POLICY=reject DMARC_PCT=100 CLOUDFLARE_API_TOKEN=<token> pnpm dns:harden
-//   DRY_RUN=1 CLOUDFLARE_API_TOKEN=<token> pnpm dns:harden
+//   DRY_RUN=1 CLOUDFLARE_API_TOKEN=<token> pnpm dns:harden      # print, change nothing
+//   DMARC_POLICY=none CLOUDFLARE_API_TOKEN=<token> pnpm dns:harden   # back off
 //
-// Token needs Zone.DNS: Edit on reely.space, which is NOT part of the set
-// cf-waf-setup.mjs needs — the deploy token deliberately has no DNS access.
+// Split out from cf-waf-setup.mjs on purpose: that script runs on every CI
+// deploy, and this one must not re-assert mail policy behind your back. It
+// also needs Zone.DNS: Edit, which the deploy token does not have.
 
 import process from 'node:process'
 
@@ -21,9 +38,12 @@ const TOKEN = process.env.CLOUDFLARE_API_TOKEN
 const ZONE_NAME = process.env.CF_ZONE_NAME || 'reely.space'
 const DRY_RUN = process.env.DRY_RUN === '1'
 
-// The ramp. Default to the first real step up from p=none.
-const DMARC_POLICY = process.env.DMARC_POLICY || 'quarantine'
-const DMARC_PCT = process.env.DMARC_PCT || '25'
+// Strictest by default — correct for a domain that sends nothing. Override
+// only while standing up a real sender.
+const DMARC_POLICY = process.env.DMARC_POLICY || 'reject'
+// Percentage of failing mail the policy applies to. Only useful as a dial when
+// ramping a sending domain; at reject/100 it is simply omitted from the record.
+const DMARC_PCT = process.env.DMARC_PCT || '100'
 
 if (!TOKEN) {
   console.error('Set CLOUDFLARE_API_TOKEN before running.')
@@ -120,6 +140,69 @@ async function main() {
     }
   }
 
+  // --- SPF ---
+  //
+  // Swap the trailing `~all` (softfail: "probably not us, but deliver anyway")
+  // for `-all` (hardfail: "not us, drop it"). Softfail is the polite default
+  // for a domain that might be sending from somewhere it forgot to list; this
+  // one isn't sending at all, so the polite version only helps a spoofer.
+  //
+  // The registrar's forwarder include stays. It costs nothing, and it means
+  // turning inbound forwarding back on later doesn't also require remembering
+  // to re-authorize it here.
+  console.log('')
+  const spfRecords = await cf(`/zones/${zoneId}/dns_records?type=TXT&per_page=100`)
+  const spf = spfRecords.find((r) => /^"?v=spf1/i.test(r.content))
+  if (!spf) {
+    console.warn('✗ No SPF record found — skipping')
+  } else {
+    const current = spf.content.replace(/^"|"$/g, '')
+    const next = current.replace(/[~?+]all\s*$/i, '-all')
+    console.log(`  SPF from: ${current}`)
+    console.log(`  SPF to:   ${next}`)
+    if (current === next) {
+      console.log('• SPF already hard-fails')
+    } else if (DRY_RUN) {
+      console.log('~ SPF — would update')
+    } else {
+      await cf(`/zones/${zoneId}/dns_records/${spf.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ content: next }),
+      })
+      console.log('✓ SPF now ends in -all')
+    }
+  }
+
+  // --- DKIM ---
+  //
+  // A wildcard "null" DKIM key. Publishing `p=` with an empty value at
+  // *._domainkey is the RFC 6376 way to state that no valid signing key exists
+  // for ANY selector on this domain, so a receiver can reject a forged
+  // signature immediately instead of failing open on a selector we never
+  // created. Delete this the moment a real sender publishes its key.
+  console.log('')
+  const dkimName = `*._domainkey.${ZONE_NAME}`
+  const dkimExisting = await cf(
+    `/zones/${zoneId}/dns_records?type=TXT&name=${encodeURIComponent(dkimName)}`
+  )
+  if (dkimExisting.length) {
+    console.log(`• DKIM null policy already present at ${dkimName}`)
+  } else if (DRY_RUN) {
+    console.log(`~ DKIM null policy at ${dkimName} — would create`)
+  } else {
+    await cf(`/zones/${zoneId}/dns_records`, {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'TXT',
+        name: dkimName,
+        content: 'v=DKIM1; p=',
+        ttl: 1,
+        comment: 'reely: no signing key exists for any selector',
+      }),
+    })
+    console.log(`✓ DKIM null policy at ${dkimName}`)
+  }
+
   // --- DMARC ---
   console.log('')
   const dmarcName = `_dmarc.${ZONE_NAME}`
@@ -150,11 +233,16 @@ async function main() {
   }
 
   console.log(`
-Next step in the ramp: read the aggregate reports in the Cloudflare DMARC
-Management dashboard for a couple of weeks, confirm nothing legitimate is
-failing, then re-run with DMARC_PCT=100, and later DMARC_POLICY=reject.
-Mail for this domain is forwarded via Namecheap, and forwarding breaks SPF
-alignment, so watch the forwarded paths specifically before going to reject.`)
+Done. Nothing further to do — this is the end state, not a step.
+
+In plain terms: reely.space now tells every mail server in the world that it
+sends no email, and that anything claiming to come from @reely.space should be
+refused. Since you don't send or receive mail on this domain, there is nothing
+of yours that this can break.
+
+The one thing to remember: if you ever DO set up email on reely.space, update
+SPF and DKIM for the new sender and set DMARC_POLICY=none here BEFORE sending
+anything, or every message will be rejected.`)
 }
 
 main().catch((err) => {
