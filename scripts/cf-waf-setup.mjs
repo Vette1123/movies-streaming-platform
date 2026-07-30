@@ -18,6 +18,9 @@
 //   7. Tiered Cache (free on all plans): edge misses consult an upper-tier data
 //      center before the origin Worker, so a cold render happens in a few tier
 //      colos instead of independently across all ~300 edge locations.
+//   8. TLS hardening: minimum TLS 1.2, SSL mode Full (Strict), and HSTS at 6
+//      months + includeSubDomains (no preload). See the step for the reasoning
+//      on each, especially why preload stays off.
 //
 // Idempotent — managed rules are identified by description prefix "[reely-waf]"
 // and replaced on each run. Any other custom rules in the zone are preserved.
@@ -27,7 +30,7 @@
 //   CLOUDFLARE_API_TOKEN=<token> CF_ZONE_NAME=reely.space pnpm waf:apply
 //
 // Token needs these zone-level permissions on reely.space:
-//   - Zone.Zone Settings: Edit    (Tiered Cache)
+//   - Zone.Zone Settings: Edit    (Tiered Cache, min TLS, SSL mode, HSTS)
 //   - Zone.Zone WAF: Edit         (custom rules + rate limit)
 //   - Zone.Transform Rules: Edit  (apex→www redirect AND the Vary-strip that
 //                                  makes the edge cache actually cache — without
@@ -355,6 +358,45 @@ async function main() {
       method: 'PATCH',
       body: JSON.stringify({ value: 'on' }),
     })
+  })
+
+  // TLS hardening. All three are free-plan zone settings and idempotent.
+  //
+  // min_tls_version 1.2 — the zone shipped on the CF default of 1.0, which
+  //   keeps TLS 1.0/1.1 handshakes alive for a site that has zero legacy
+  //   clients (it is a 2026 React app). Nothing we serve needs them.
+  // ssl 'strict' — Full, not Full (Strict), was in effect. The origin here is
+  //   the Worker itself on a Custom Domain, so strict cannot break the origin
+  //   leg; it just stops CF from ever accepting an unvalidated origin cert.
+  // HSTS — was off entirely. 6 months + includeSubDomains, deliberately WITHOUT
+  //   preload: max_age is the part browsers latch onto and cannot be revoked
+  //   server-side, and preload is the part that is genuinely hard to undo, so
+  //   it stays off until the policy has run clean for a while. nosniff is on
+  //   here too; it duplicates the X-Content-Type-Options in next.config.mjs but
+  //   also covers responses the Worker never renders (challenges, error pages).
+  await step('TLS: min 1.2, Full (Strict), HSTS 6mo (needs Zone Settings: Edit)', async () => {
+    const tlsSettings = [
+      ['min_tls_version', '1.2'],
+      ['ssl', 'strict'],
+      [
+        'security_header',
+        {
+          strict_transport_security: {
+            enabled: true,
+            max_age: 15552000,
+            include_subdomains: true,
+            preload: false,
+            nosniff: true,
+          },
+        },
+      ],
+    ]
+    for (const [id, value] of tlsSettings) {
+      await cf(`/zones/${zoneId}/settings/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ value }),
+      })
+    }
   })
 
   // Free plan allows only 1 rate-limit rule. We replace any existing rule
