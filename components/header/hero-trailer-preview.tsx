@@ -61,7 +61,7 @@ export const HeroTrailerPreview = React.forwardRef<
           // iframe in cqw/cqh so the 16:9 video covers the hero at any height —
           // mobile (86svh) or desktop (100vh) — with no letterbox bars.
           // z-20 sits ABOVE the scrims (z-10) so the playing trailer reads bright
-          // and clear (the "cinematic takeover"), but below the content (z-50)
+          // and clear (the "cinematic takeover"), but below the content (z-30)
           // and controls (z-60) so Watch/mute/autoplay stay on top and clickable.
           // pointer-events-none keeps clicks passing through to those controls.
           // This layer only mounts while the trailer is active, so the lift is
@@ -164,7 +164,11 @@ function TouchFullscreenControls({
         aria-pressed={!muted}
         className="pointer-events-auto absolute top-5 right-[4.75rem] z-[70] flex size-11 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white opacity-70 backdrop-blur-md transition active:opacity-100"
       >
-        {muted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
+        {muted ? (
+          <VolumeX className="size-5" />
+        ) : (
+          <Volume2 className="size-5" />
+        )}
       </button>
       <button
         type="button"

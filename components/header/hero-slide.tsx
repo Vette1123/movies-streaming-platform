@@ -89,7 +89,7 @@ export function HeroSlide({
 
   // Mute state lives here (not in the trailer preview) so its toggle button can
   // render at the top-level z layer alongside the autoplay toggle. Nested in the
-  // preview's `z-[5]` cover it sat beneath the scrims (z-10) and content (z-50)
+  // preview's `z-[5]` cover it sat beneath the scrims (z-10) and content (z-30)
   // and was effectively invisible/unclickable. Reset to muted whenever the
   // preview closes so audio never lingers into the next open.
   const [trailerMuted, setTrailerMuted] = React.useState(true)
@@ -271,17 +271,34 @@ export function HeroSlide({
         }`}
       />
 
-      <div className="absolute inset-0 z-50 pb-28 sm:pb-32 lg:pb-0">
+      {/* z-30, NOT z-50: above the scrims (z-10) and the trailer cover (z-20),
+          but strictly BELOW the fixed site header (z-40). This copy block is
+          bottom-anchored on mobile, so on a short viewport with a tall slide its
+          top edge can rise into the header band — at z-50 it painted OVER the
+          header and the NEW badge (the topmost element in the column) collided
+          with the nav. Ranking it under the header makes that impossible no
+          matter how tall the content gets. The takeover controls below keep
+          their z-[60]+ on purpose: those must stay reachable over the header. */}
+      <div className="absolute inset-0 z-30 pb-28 sm:pb-32 lg:pb-0">
         {/* Mobile: anchor copy to the lower third so the artwork breathes up top
             and the content can never overflow upward into the fixed header (the
             old vertical-centering pushed the NEW badge behind the header on tall
             slides). Desktop keeps the centered editorial layout. */}
         <div className="relative container flex h-full items-end justify-center gap-x-8 pt-24 lg:items-center lg:pt-28">
-          <div className="flex w-full grow flex-col">
+          {/* max-h-full is the second half of the no-collision guarantee: with
+              `items-end`, capping the column's height means it can never grow
+              taller than the padding box, so its top edge stays at or below
+              pt-24 (96px) — clear of the 64px header — instead of overflowing
+              upward. The squeeze is absorbed by the text block below. */}
+          <div className="flex max-h-full w-full grow flex-col">
             {/* Title, badge and rating stay put during the takeover so the movie
                 is always identifiable; only the long overview recedes (below) to
                 give the trailer more of the frame. */}
-            <div className="max-w-2xl">
+            {/* min-h-0 + overflow-hidden makes THIS block the one that gives way
+                when the column is height-capped, so a tight viewport trims the
+                end of the overview rather than clipping the actions row below or
+                pushing the badge up into the header. */}
+            <div className="min-h-0 max-w-2xl overflow-hidden">
               {showLogo ? (
                 // Stack the text title and the official logo in one bottom-
                 // aligned box that reserves the logo's height, so there's no
