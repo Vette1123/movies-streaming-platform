@@ -12,6 +12,7 @@ import {
 } from '@/lib/structured-data'
 import { MediaContent } from '@/components/media/media-content'
 import { MediaListFallback } from '@/components/media/media-list-fallback'
+import { SectionErrorBoundary } from '@/components/section-error-boundary'
 
 interface MediaListPageProps {
   media: MediaResponse
@@ -57,17 +58,27 @@ export const MediaListPage = ({
         </h1>
         <p className="text-muted-foreground max-w-2xl">{config.description}</p>
       </div>
-      <Suspense
-        fallback={<MediaListFallback media={media} mediaType={mediaType} />}
+      {/* The filter sidebar + infinite grid is the most failure-prone island in
+          the app: it hydrates on the client (nuqs), calls Server Actions on
+          every filter change, and lazy-loads chunks as you scroll. Keep those
+          failures here instead of replacing the whole browse page — the h1 and
+          the SEO markup above stay rendered. */}
+      <SectionErrorBoundary
+        section={`${mediaType}_list`}
+        title="The list didn't load"
       >
-        <MediaContent
-          media={media}
-          getPopularMediaAction={getPopularMediaAction}
-          queryKey={queryKey}
-          enableFilters={true}
-          filterLayout="sidebar"
-        />
-      </Suspense>
+        <Suspense
+          fallback={<MediaListFallback media={media} mediaType={mediaType} />}
+        >
+          <MediaContent
+            media={media}
+            getPopularMediaAction={getPopularMediaAction}
+            queryKey={queryKey}
+            enableFilters={true}
+            filterLayout="sidebar"
+          />
+        </Suspense>
+      </SectionErrorBoundary>
     </section>
   )
 }

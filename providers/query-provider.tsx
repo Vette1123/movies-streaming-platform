@@ -63,15 +63,30 @@ export const QueryProvider = ({ children }: { children: React.ReactNode }) => {
     const handle = (message: string) => {
       if (isStaleChunkError(message)) reloadForStaleDeploy()
     }
-    const onError = (event: ErrorEvent) =>
+    const onError = (event: ErrorEvent) => {
+      // A `<script>` whose src 404s fires an `error` event on the ELEMENT with
+      // no message and no `error` object, and it does not bubble — the capture
+      // phase below is the only way window sees it at all. That's the
+      // "Refused to execute script … MIME type ('text/html')" case: the Worker
+      // answered a retired chunk URL with its HTML 404 page. Identify it by
+      // target instead of by message.
+      const { target } = event
+      if (
+        target instanceof HTMLScriptElement &&
+        target.src.includes('/_next/static/')
+      ) {
+        reloadForStaleDeploy()
+        return
+      }
       handle(`${event.message} ${errorMessage(event.error)}`)
+    }
     const onRejection = (event: PromiseRejectionEvent) =>
       handle(errorMessage(event.reason))
 
-    window.addEventListener('error', onError)
+    window.addEventListener('error', onError, true)
     window.addEventListener('unhandledrejection', onRejection)
     return () => {
-      window.removeEventListener('error', onError)
+      window.removeEventListener('error', onError, true)
       window.removeEventListener('unhandledrejection', onRejection)
     }
   }, [])

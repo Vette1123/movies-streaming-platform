@@ -8,6 +8,7 @@ import { BlurredImage } from '@/components/blurred-image'
 import { List } from '@/components/list'
 import { SliderHorizontalListLoader } from '@/components/loaders/slider-horizontal-list-loader'
 import { DetailsCredits } from '@/components/media/details-credits'
+import { SectionErrorBoundary } from '@/components/section-error-boundary'
 import { SeriesDetailsExtraInfo } from '@/components/series/details-extra-info'
 import {
   SeasonNavigator,
@@ -50,11 +51,19 @@ export const SeriesDetailsContent = ({
             <SeriesDetailsExtraInfo series={series} director={director} />
             <DetailsCredits movieCredits={seriesCredits} />
           </section>
-          {/* Own boundary: the selector reads ?season during render, and without
-              this the bailout would take the entire page client-side. */}
-          <Suspense fallback={<SeasonNavigatorFallback />}>
-            <SeasonNavigator series={series} />
-          </Suspense>
+          {/* Own Suspense boundary: the selector reads ?season during render,
+              and without this the bailout would take the entire page
+              client-side. Own ERROR boundary too — episode lists load per
+              season through a Server Action, and a failure there should not
+              take the synopsis, cast, and rails down with it. */}
+          <SectionErrorBoundary
+            section="series_seasons"
+            title="Episodes didn't load"
+          >
+            <Suspense fallback={<SeasonNavigatorFallback />}>
+              <SeasonNavigator series={series} />
+            </Suspense>
+          </SectionErrorBoundary>
         </div>
       </section>
       {/* Full-bleed rails — same width/gutter as the homepage rows. */}

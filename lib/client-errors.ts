@@ -64,6 +64,12 @@ export const isTransportError = (message: string) =>
 export const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : String(error)
 
+// Some of these arrive as a bare `ChunkLoadError` whose class name carries the
+// only usable signal — Turbopack puts the chunk URL in the message but not
+// always the word "chunk". Match on both halves so neither is missed.
+const errorSignature = (error: unknown) =>
+  error instanceof Error ? `${error.name}: ${error.message}` : String(error)
+
 // sessionStorage is not always reachable — it is `null` inside a sandboxed
 // iframe and throws outright when cookies/storage are blocked. Reading it
 // unguarded threw its own TypeError in production, so every access goes through
@@ -111,8 +117,26 @@ export const reloadForStaleDeploy = (): void => {
 
   writeSession(RELOAD_AT_KEY, String(now))
   writeSession(RELOAD_COUNT_KEY, String(reloads + 1))
-  toast('A new version is available — refreshing…', {
-    action: { label: 'Refresh now', onClick: () => window.location.reload() },
-  })
+  try {
+    toast('A new version is available — refreshing…', {
+      action: { label: 'Refresh now', onClick: () => window.location.reload() },
+    })
+  } catch {
+    // app/global-error.tsx renders outside the app providers, so there is no
+    // <Toaster> to render into. The reload below is the part that matters.
+  }
   window.setTimeout(() => window.location.reload(), 2500)
+}
+
+/**
+ * Boundary-facing predicate: is this error just a bundle left behind by a
+ * deploy, rather than a code fault? React routes a render-time chunk failure to
+ * the nearest error boundary and it never reaches `window.onerror`, so the
+ * listeners in providers/query-provider.tsx cannot see it — the boundary is the
+ * only place that can tell the user apart from a real crash and reload them
+ * onto the fresh bundle. Pure, so boundaries can call it during render.
+ */
+export const isStaleBundleError = (error: unknown): boolean => {
+  const signature = errorSignature(error)
+  return isStaleDeployError(signature) || isStaleChunkError(signature)
 }

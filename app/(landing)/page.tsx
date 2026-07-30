@@ -11,6 +11,7 @@ import {
 import { HeroSlider } from '@/components/header/hero-slider'
 import { FullScreenLoader } from '@/components/loaders/intro-pages-loader'
 import { MoviesIntroSection } from '@/components/main-page/intro-section'
+import { SectionErrorBoundary } from '@/components/section-error-boundary'
 
 // Fully static: rendered ONLY at build, served from static assets, never on the
 // Worker. Freshness comes from the 4x/day CI redeploy — not on-demand ISR. This
@@ -75,26 +76,34 @@ async function IndexPage() {
           url: siteConfig.websiteURL,
         })}
       />
-      <JsonLd
-        data={breadcrumbJsonLd([{ name: 'Home', url: '/' }])}
-      />
-      <Suspense fallback={<FullScreenLoader />}>
-        <HeroSlider movies={trendingMediaForHero} />
-      </Suspense>
+      <JsonLd data={breadcrumbJsonLd([{ name: 'Home', url: '/' }])} />
+      {/* Hero and rails get their own boundaries: a failure in the carousel
+          (or in one of its lazily-loaded chunks) used to blank the entire
+          homepage, even though every poster row below had rendered fine. */}
+      <SectionErrorBoundary section="home_hero" title="The hero didn't load">
+        <Suspense fallback={<FullScreenLoader />}>
+          <HeroSlider movies={trendingMediaForHero} />
+        </Suspense>
+      </SectionErrorBoundary>
       {/* Smooth handoff: the hero fades to near-black at its base, and this
           strip continues that dark and dissolves into the animated aurora over
           ~200px, so the background eases in under the first poster row instead
           of appearing as a hard seam. */}
       <div className="relative">
         <div className="from-background pointer-events-none absolute inset-x-0 top-0 z-[-1] h-52 bg-gradient-to-b to-transparent" />
-        <MoviesIntroSection
-          latestTrendingMovies={latestTrendingMovies}
-          allTimeTopRatedMovies={allTimeTopRatedMovies}
-          popularMovies={popularMovies}
-          latestTrendingSeries={latestTrendingSeries}
-          popularSeries={popularSeries}
-          allTimeTopRatedSeries={allTimeTopRatedSeries}
-        />
+        <SectionErrorBoundary
+          section="home_rails"
+          title="These rows didn't load"
+        >
+          <MoviesIntroSection
+            latestTrendingMovies={latestTrendingMovies}
+            allTimeTopRatedMovies={allTimeTopRatedMovies}
+            popularMovies={popularMovies}
+            latestTrendingSeries={latestTrendingSeries}
+            popularSeries={popularSeries}
+            allTimeTopRatedSeries={allTimeTopRatedSeries}
+          />
+        </SectionErrorBoundary>
       </div>
     </section>
   )

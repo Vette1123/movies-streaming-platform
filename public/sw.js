@@ -14,7 +14,11 @@
  *
  * Bump CACHE to invalidate everything on the next visit.
  */
-const CACHE = 'reely-v1'
+// v2 also evicts every entry v1 poisoned: putInCache used to store non-OK
+// responses, so a chunk URL the Worker answered with its HTML 404 page was
+// cached as `text/html` forever, and the browser refused to execute it on every
+// later visit. The activate handler below deletes any cache that isn't CACHE.
+const CACHE = 'reely-v2'
 const OFFLINE_URL = '/offline.html'
 const PRECACHE = [OFFLINE_URL]
 
@@ -38,7 +42,15 @@ self.addEventListener('activate', (event) => {
   )
 })
 
+// Only ever store a complete success. Caching a failure is what turned a
+// transient post-deploy 404 into a permanent one: we deploy ~4x/day and each
+// build retires the previous build's hashed chunks, so a tab that outlived a
+// deploy asks for a chunk that is gone, the Worker answers 404 + HTML, and
+// storing that response meant every later load of that URL got HTML from the
+// cache instead of JS. A miss is always recoverable; a bad hit is not.
+// `status !== 200` also rejects 206 partials, which the Cache API can't replay.
 function putInCache(request, response) {
+  if (!response.ok || response.status !== 200) return
   const copy = response.clone()
   caches.open(CACHE).then((cache) => cache.put(request, copy))
 }

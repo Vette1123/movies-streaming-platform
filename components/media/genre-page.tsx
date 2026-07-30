@@ -22,6 +22,7 @@ import {
 import { cn } from '@/lib/utils'
 import { chipVariants } from '@/components/ui/chip'
 import { GenreMediaGrid } from '@/components/media/genre-media-grid'
+import { SectionErrorBoundary } from '@/components/section-error-boundary'
 
 // One config per media type drives the two genre landing routes. The routes
 // themselves keep only the load-bearing static-config exports (`revalidate`,
@@ -165,11 +166,18 @@ export async function GenrePage({
         ))}
       </nav>
 
-      <GenreMediaGrid
-        mediaType={config.mediaType}
-        genreId={genre.id}
-        initialData={initialData}
-      />
+      {/* Genre infinite-scroll paginates through Server Actions; a failure
+          there should leave the genre nav above it intact. */}
+      <SectionErrorBoundary
+        section={`${config.mediaType}_genre_grid`}
+        title="This genre didn't load"
+      >
+        <GenreMediaGrid
+          mediaType={config.mediaType}
+          genreId={genre.id}
+          initialData={initialData}
+        />
+      </SectionErrorBoundary>
     </section>
   )
 }
