@@ -58,6 +58,20 @@ export const metadata: Metadata = {
     address: false,
   },
 
+  // Static files, not the app/icon.tsx + app/apple-icon.tsx metadata routes
+  // those used to be. Rendering the mark through Satori on the Worker cost
+  // real CPU on every cold request for artwork that never changes — the same
+  // trade that already made the OG image static (see build-og-image.mjs).
+  // All of these come out of `pnpm icons:build`.
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '64x64', type: 'image/x-icon' },
+      { url: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
+
   openGraph: {
     type: siteConfig.openGraph.type as 'website',
     locale: siteConfig.openGraph.locale,

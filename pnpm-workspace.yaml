@@ -1,6 +1,15 @@
 overrides:
   "@types/react": 19.2.17
   "@types/react-dom": 19.2.3
+  # One sharp for the whole tree. The build scripts use sharp directly to
+  # squeeze the pre-rendered PNGs in public/, and adding it as a devDependency
+  # also made next's own optional sharp@0.34.5 resolvable for the first time —
+  # at which point next/og stopped using its bundled resvg encoder, picked up
+  # 0.34.5 instead, and every ImageResponse render died with
+  # "colourspace: parameter space not set" out of libvips. Pinning every copy
+  # to one version @vercel/og is happy with removes the ambiguity. Bump this
+  # together with the sharp devDependency.
+  sharp: 0.35.3
 
 # Allow the PostHog CLI to run its postinstall (downloads the native binary the
 # webpack sourcemap plugin shells out to at build time). workerd is OpenNext's
