@@ -59,8 +59,11 @@ export const HeroRatesInfos = ({
   // TMDB average is the fallback and keeps its star treatment.
   const imdbRating = movieDetails?.imdbRating ?? seriesDetails?.imdbRating
 
+  // my-2 on mobile: this row wraps to two lines on a phone (language, rating,
+  // score, date + up to three genres), so its own margins are the cheapest
+  // vertical space to give back to the hero copy. Full spacing from sm up.
   return (
-    <div className="my-3 flex flex-wrap items-center gap-2 lg:my-4 lg:gap-3">
+    <div className="my-2 flex flex-wrap items-center gap-2 sm:my-3 lg:my-4 lg:gap-3">
       <Chip variant="outline" uppercase>
         {item?.original_language}
       </Chip>

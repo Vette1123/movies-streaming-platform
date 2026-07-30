@@ -15,7 +15,7 @@ import {
   trackHeroWatchClicked,
 } from '@/lib/analytics'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
-import { getImageURL, getPosterImageURL } from '@/lib/utils'
+import { cn, getImageURL, getPosterImageURL } from '@/lib/utils'
 import { useHeroAutoplay } from '@/hooks/use-hero-autoplay'
 import { useHeroExtras } from '@/hooks/use-hero-extras'
 import { buttonVariants } from '@/components/ui/button'
@@ -279,26 +279,37 @@ export function HeroSlide({
           with the nav. Ranking it under the header makes that impossible no
           matter how tall the content gets. The takeover controls below keep
           their z-[60]+ on purpose: those must stay reachable over the header. */}
-      <div className="absolute inset-0 z-30 pb-28 sm:pb-32 lg:pb-0">
+      {/* pb-24 on mobile (not pb-28): the dots sit at bottom-3 and the counter
+          adds ~44px, so 96px clears them with room to spare — the extra 16px
+          goes back to the copy, which is what was running out of height. */}
+      <div className="absolute inset-0 z-30 pb-24 sm:pb-32 lg:pb-0">
         {/* Mobile: anchor copy to the lower third so the artwork breathes up top
             and the content can never overflow upward into the fixed header (the
             old vertical-centering pushed the NEW badge behind the header on tall
-            slides). Desktop keeps the centered editorial layout. */}
-        <div className="relative container flex h-full items-end justify-center gap-x-8 pt-24 lg:items-center lg:pt-28">
-          {/* max-h-full is the second half of the no-collision guarantee: with
-              `items-end`, capping the column's height means it can never grow
-              taller than the padding box, so its top edge stays at or below
-              pt-24 (96px) — clear of the 64px header — instead of overflowing
-              upward. The squeeze is absorbed by the text block below. */}
-          <div className="flex max-h-full w-full grow flex-col">
+            slides). Desktop keeps the centered editorial layout.
+            pt-20 = 64px header + 16px clearance; the old pt-24 spent 32px of
+            clearance the short-viewport layout could not afford. */}
+        {/* Mobile is a flex COLUMN with the copy pushed down by `mt-auto`, not
+            `items-end`. Both bottom-anchor the copy, but they fail differently
+            when the content is taller than the box: `items-end` overflows
+            UPWARD (the badge and logo disappear behind the opaque header),
+            while an auto top margin collapses to 0 and the overflow goes
+            DOWNWARD into the 96px bottom padding that only holds the dots — so
+            the copy stays fully readable. Desktop keeps the centered row. */}
+        <div className="relative container flex h-full flex-col gap-x-8 pt-20 sm:pt-24 lg:flex-row lg:items-center lg:justify-center lg:pt-28">
+          {/* No height cap here on purpose. Capping the column (max-h-full) and
+              clipping the text block was what sliced the overview through the
+              middle of a line on short viewports. The copy is sized to FIT
+              instead — trimmed paddings above/below, a single-row actions row,
+              and a line-clamp that steps down a whole line on very short
+              viewports — so nothing is ever cut mid-glyph. The header is still
+              safe regardless: this whole block is z-30, strictly below the
+              header's z-40, so it can never paint over the nav. */}
+          <div className="mt-auto flex w-full grow-0 flex-col lg:mt-0 lg:grow">
             {/* Title, badge and rating stay put during the takeover so the movie
                 is always identifiable; only the long overview recedes (below) to
                 give the trailer more of the frame. */}
-            {/* min-h-0 + overflow-hidden makes THIS block the one that gives way
-                when the column is height-capped, so a tight viewport trims the
-                end of the overview rather than clipping the actions row below or
-                pushing the badge up into the header. */}
-            <div className="min-h-0 max-w-2xl overflow-hidden">
+            <div className="max-w-2xl">
               {showLogo ? (
                 // Stack the text title and the official logo in one bottom-
                 // aligned box that reserves the logo's height, so there's no
@@ -334,7 +345,7 @@ export function HeroSlide({
                     onLoad={() => setLogoLoaded(true)}
                     className={`absolute bottom-0 left-0 max-h-16 w-auto max-w-[80%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] transition-all duration-700 ease-out sm:max-h-20 lg:max-h-32 ${
                       logoLoaded
-                        ? 'translate-y-0 opacity-100 blur-0'
+                        ? 'blur-0 translate-y-0 opacity-100'
                         : 'pointer-events-none translate-y-2 opacity-0 blur-[2px]'
                     }`}
                   />
@@ -355,8 +366,12 @@ export function HeroSlide({
                 </div>
               )}
               <HeroRatesInfos movie={movie} genreTable={genreTable} />
+              {/* The clamp steps down by a WHOLE line on very short viewports
+                  (~600px and under, e.g. a small phone with browser chrome)
+                  rather than letting the block get sliced through a line box.
+                  Clamped text always ends on an ellipsis, never a half-glyph. */}
               <p
-                className={`mt-2 line-clamp-2 max-w-xl text-sm leading-relaxed text-white/85 drop-shadow-sm transition-opacity duration-500 ease-out sm:line-clamp-3 lg:mt-3 lg:max-w-2xl lg:text-lg ${
+                className={`mt-2 line-clamp-2 max-w-xl text-sm leading-relaxed text-white/85 drop-shadow-sm transition-opacity duration-500 ease-out sm:line-clamp-3 lg:mt-3 lg:max-w-2xl lg:text-lg [@media(max-height:600px)]:line-clamp-1 ${
                   cinematic ? 'opacity-65' : 'opacity-100'
                 }`}
               >
@@ -366,7 +381,10 @@ export function HeroSlide({
 
             {/* Actions: primary Watch + Trailer + Save. Left-aligned to match the
                 copy column on every breakpoint. */}
-            <div className="mt-5 flex flex-wrap items-center justify-start gap-2.5 sm:mt-6 sm:gap-3">
+            {/* gap-2 below sm: at 320px the three controls plus 2.5-gaps came to
+                exactly the 280px content box and tipped Save onto its own row.
+                8px gaps leave the row 4px of slack on the narrowest phone. */}
+            <div className="mt-5 flex flex-wrap items-center justify-start gap-2 sm:mt-6 sm:gap-3">
               <Link
                 href={href}
                 // Skip viewport auto-prefetch (the heavy watch route), but warm
@@ -380,11 +398,17 @@ export function HeroSlide({
                     media_type: mediaType,
                   })
                 }
-                className={buttonVariants({
-                  variant: 'watchNow',
-                  size: '2xl',
-                  className: 'rounded-full',
-                })}
+                // cn(), not buttonVariants' own `className` slot: cva only
+                // concatenates, so the size's px-12 would still win over the
+                // mobile override. twMerge actually replaces it.
+                className={cn(
+                  buttonVariants({ variant: 'watchNow', size: '2xl' }),
+                  // Tighter pill below sm. At 367px wide the full-size pill made
+                  // the row 345px against a 327px container, so Save wrapped to a
+                  // second row and ate ~54px of vertical space the copy needed.
+                  // Narrower = one row, everything on screen; full size from sm up.
+                  'rounded-full px-5 text-lg sm:px-12 sm:text-xl'
+                )}
               >
                 <Icons.watch className="mr-2" />
                 Watch Now
@@ -431,10 +455,13 @@ export function HeroSlide({
 
       {/* Control cluster — all top-level (not nested in the preview's z-[5]
           cover) so they clear the scrims/content and stay visible + clickable.
-          Same corner stack on every breakpoint, right → left: autoplay toggle
-          (always, when a trailer exists), then mute + full-view (only while the
-          trailer is actually playing). Fixed right offsets keep them from ever
-          overlapping. */}
+          Right → left: autoplay toggle (always, when a trailer exists), then
+          mute + full-view (only while the trailer is actually playing). Fixed
+          right offsets keep them from ever overlapping each other.
+          Mobile parks the stack at top-20 (clear of the 64px header) instead of
+          bottom-24: at the bottom it sat in the exact same band as the actions
+          row and covered Trailer/Save on a narrow phone. Desktop has width to
+          spare, so it keeps the bottom-right corner. */}
 
       {/* Full view (enter) — native browser fullscreen, "focus on the play".
           Only while the trailer plays; the EXIT control lives inside the cover
@@ -445,7 +472,7 @@ export function HeroSlide({
           type="button"
           onClick={toggleFullscreen}
           aria-label="Full view"
-          className="pointer-events-auto absolute right-[7.5rem] bottom-24 z-[60] flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:bottom-16"
+          className="pointer-events-auto absolute top-20 right-[7.5rem] z-[60] flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:top-auto lg:bottom-16"
         >
           <Maximize className="size-5" />
         </button>
@@ -458,7 +485,7 @@ export function HeroSlide({
           onClick={() => setTrailerMuted((m) => !m)}
           aria-label={trailerMuted ? 'Unmute trailer' : 'Mute trailer'}
           aria-pressed={!trailerMuted}
-          className="pointer-events-auto absolute right-[4.25rem] bottom-24 z-[60] flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:bottom-16"
+          className="pointer-events-auto absolute top-20 right-[4.25rem] z-[60] flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:top-auto lg:bottom-16"
         >
           {trailerMuted ? (
             <VolumeX className="size-5" />
@@ -489,7 +516,7 @@ export function HeroSlide({
               : 'Turn on trailer autoplay'
           }
           aria-pressed={autoplayEnabled}
-          className="pointer-events-auto absolute right-4 bottom-24 z-[60] flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:bottom-16"
+          className="pointer-events-auto absolute top-20 right-4 z-[60] flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:top-auto lg:bottom-16"
         >
           {autoplayEnabled ? (
             <Video className="size-5" />
