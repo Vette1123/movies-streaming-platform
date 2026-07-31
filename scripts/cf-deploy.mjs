@@ -2,31 +2,35 @@
 // Deploy wrapper for OpenNext on Cloudflare.
 //
 // `opennextjs-cloudflare deploy` always runs `populate-cache` before pushing
-// the worker. On the free tier the KV bulk-put quota is easy to hit, and a
-// failed populate kills the whole deploy. Here we:
-//   1. Try populate-cache once and tolerate failure (partial uploads are fine
-//      — KV writes are idempotent).
-//   2. Move `.open-next/cache` aside so the deploy step's built-in populate
-//      finds no assets and short-circuits.
-//   3. Run deploy. The worker ships even when KV is rate-limited.
-//   4. After deploy: purge the entire CF edge cache (unless CF_PURGE=false, set
+// the worker. With the static-assets incremental cache (open-next.config.ts)
+// that step is a local `cpSync` of `.open-next/cache` into
+// `.open-next/assets/cdn-cgi/_next_cache`, so it is cheap, idempotent, and has
+// to run BEFORE the asset upload — which is exactly the order `deploy` uses.
+// We just run it. Here we:
+//   1. Run deploy (populates the cache assets, then pushes the worker).
+//   2. After deploy: purge the entire CF edge cache (unless CF_PURGE=false, set
 //      on scheduled rebuilds where the hash-named assets are unchanged), then
 //      ping IndexNow with the top-level URLs so Bing/Yandex/DDG pick up changes.
+//
+// This used to call populateCache separately and then move `.open-next/cache`
+// aside so the deploy's built-in populate would find nothing and short-circuit.
+// That existed for the KV store: a free-tier bulk-put can hit the write quota,
+// and a failed populate kills the whole deploy, so it was worth running once
+// and tolerating a partial upload. `cpSync` has no such failure mode — and on a
+// missing directory it throws ENOENT instead of no-oping, which failed the
+// deploy outright. Restore the dance if the incremental cache ever goes back to
+// KV or R2.
 //
 // Why purge everything: the edge-cache rule (scripts/cf-waf-setup.mjs) caches
 // public document pages — /, /movies, /tv-shows, /movies/:id, /tv-shows/:id —
 // with an 8h edge TTL that is NOT keyed by build id. So a fresh worker deploy
-// (KV + regional caches auto-invalidate via OPEN_NEXT_BUILD_ID) would still be
-// masked at the edge for up to 8h. The detail routes are unbounded, and free
+// (the incremental cache itself is keyed by OPEN_NEXT_BUILD_ID, so it turns
+// over on its own) would still be masked at the edge for up to 8h. The detail routes are unbounded, and free
 // tier has no prefix/wildcard/tag purge, so a full purge is the only way to
 // guarantee every page reflects the new build. Static assets are content-hashed
 // so the re-fill after a purge is free.
 import { spawnSync } from 'node:child_process'
-import { existsSync, renameSync, rmSync } from 'node:fs'
-import { resolve } from 'node:path'
 
-const CACHE_DIR = resolve('.open-next/cache')
-const CACHE_BAK = resolve('.open-next/cache.skip-populate')
 const SITE_HOST = 'www.reely.space'
 const ZONE_NAME = 'reely.space'
 const INDEXNOW_KEY = 'fd71a860ed122d006df9ba7c2c529b88'
@@ -43,26 +47,7 @@ function run(args) {
   return result.status ?? 1
 }
 
-const popCode = run(['populateCache', 'remote'])
-if (popCode !== 0) {
-  console.warn(
-    `\n[cf-deploy] populateCache exited ${popCode} — continuing with worker deploy (cache may be stale).\n`
-  )
-}
-
-let moved = false
-if (existsSync(CACHE_DIR)) {
-  if (existsSync(CACHE_BAK)) rmSync(CACHE_BAK, { recursive: true, force: true })
-  renameSync(CACHE_DIR, CACHE_BAK)
-  moved = true
-}
-
 const deployCode = run(['deploy'])
-
-if (moved && existsSync(CACHE_BAK)) {
-  if (existsSync(CACHE_DIR)) rmSync(CACHE_DIR, { recursive: true, force: true })
-  renameSync(CACHE_BAK, CACHE_DIR)
-}
 
 if (deployCode === 0) {
   await postDeploy().catch((err) => {
