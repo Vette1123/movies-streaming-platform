@@ -16,8 +16,16 @@ export function BlurredImage({
   alt,
   className,
   intro = false,
-  ...props
+  ...restProps
 }: BlurImageProps) {
+  // An <img> is draggable by default, so a press-and-drag anywhere on a poster
+  // starts a NATIVE HTML5 image drag: Chrome paints a bitmap ghost of the image
+  // with square corners and a pale 1px frame — ignoring the wrapper's rounded
+  // corners — and that drag loop swallows the pointer, so the hero carousel's
+  // own drag-to-advance dies mid-gesture. Nothing in this app ever wants an
+  // image dropped somewhere, so opt every one of them out at the source.
+  // Spread first: a caller can still pass draggable explicitly and win.
+  const props = { draggable: false, ...restProps }
   const [isLoading, setLoading] = React.useState(true)
   // Render from this src so we can walk the fallback chain if a URL fails:
   // ImageKit -> wsrv.nl -> TMDB origin. Each onError advances one stage. Kept in

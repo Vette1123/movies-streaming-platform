@@ -619,6 +619,7 @@ export const FilterSidebar = ({
                         src={`${PROVIDER_LOGO_BASE}${p.logo_path}`}
                         alt={p.provider_name}
                         loading="lazy"
+                        draggable={false}
                         className="h-full w-full object-contain"
                       />
                       {active && (

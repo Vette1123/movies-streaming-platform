@@ -341,6 +341,9 @@ export function HeroSlide({
                   <img
                     src={getImageURL(logoPath!)}
                     alt={title}
+                    // Same reason as every image in BlurredImage: a native image
+                    // drag would ghost the logo and eat the carousel's gesture.
+                    draggable={false}
                     onError={() => setLogoError(true)}
                     onLoad={() => setLogoLoaded(true)}
                     className={`absolute bottom-0 left-0 max-h-16 w-auto max-w-[80%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] transition-all duration-700 ease-out sm:max-h-20 lg:max-h-32 ${

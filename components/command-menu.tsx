@@ -454,6 +454,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                             fill
                             sizes="96px"
                             className="object-cover"
+                            draggable={false}
                             unoptimized
                             onError={(e) => {
                               const fb = getNextImageFallback(
@@ -472,6 +473,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                             fill
                             sizes="96px"
                             className="object-cover object-top"
+                            draggable={false}
                             unoptimized
                             onError={(e) => {
                               const fb = getNextImageFallback(
