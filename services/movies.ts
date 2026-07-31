@@ -1,4 +1,5 @@
 import { cache } from 'react'
+import { attachImdbRatings, getImdbRating } from '@/services/imdb'
 import {
   getAllTimeTopRatedSeries,
   getLatestTrendingSeries,
@@ -17,8 +18,7 @@ import {
   MultiRequestProps,
   Param,
 } from '@/types/movie-result'
-import { attachImdbRatings, getImdbRating } from '@/services/imdb'
-
+import { RAIL_LIMIT } from '@/lib/constants'
 import { fetchClient } from '@/lib/fetch-client'
 import { movieType } from '@/lib/tmdbConfig'
 import { pickTrailerKey } from '@/lib/videos'
@@ -33,19 +33,28 @@ const getLatestTrendingMovies = async (params: Param = {}) => {
   // revalidate:false → build-only; the homepage/list pages that use this are
   // fully static and refresh on the 4x/day deploy (see fetch-client.ts).
   const data = await fetchClient.get<MovieResponse>(url, params, true, false)
-  return { ...data, results: await attachImdbRatings(data.results || [], 'movie') }
+  return {
+    ...data,
+    results: await attachImdbRatings(data.results || [], 'movie'),
+  }
 }
 
 const getAllTimeTopRatedMovies = async (params: Param = {}) => {
   const url = `movie/${movieType.top_rated}?language=en-US`
   const data = await fetchClient.get<MovieResponse>(url, params, true, false)
-  return { ...data, results: await attachImdbRatings(data.results || [], 'movie') }
+  return {
+    ...data,
+    results: await attachImdbRatings(data.results || [], 'movie'),
+  }
 }
 const getPopularMovies = async (params: Param = {}) => {
   'use server'
   const url = `movie/${movieType.popular}?language=en-US`
   const data = await fetchClient.get<MediaResponse>(url, params, true, false)
-  return { ...data, results: await attachImdbRatings(data.results || [], 'movie') }
+  return {
+    ...data,
+    results: await attachImdbRatings(data.results || [], 'movie'),
+  }
 }
 
 // New function to get trending media (movies and TV shows) for the week
@@ -55,22 +64,18 @@ const getTrendingAllWeek = async (page: number = 1, params: Param = {}) => {
   return fetchClient.get<MovieResponse>(url, params, true, false)
 }
 
-// New function to get 40 trending items (2 pages)
+// One TMDB page — 20 slides. It used to pull two pages for 40, which nobody
+// swipes through: the carousel renders a 3-slide window, but EVERY slide's full
+// TMDB object is serialized into the RSC flight payload regardless, and each one
+// carries an overview, genre list and the rest. Halving the count is a straight
+// cut to homepage weight for slides a visitor was never going to reach, and it
+// drops a build-time TMDB request too.
 const getTrendingMediaForHeroSlider = async (
   params: Param = {}
 ): Promise<Movie[]> => {
   try {
-    const [page1Response, page2Response] = await Promise.all([
-      getTrendingAllWeek(1, params),
-      getTrendingAllWeek(2, params),
-    ])
-
-    const combinedResults = [
-      ...(page1Response?.results || []),
-      ...(page2Response?.results || []),
-    ]
-
-    return combinedResults // Ensure we only take up to 40 items
+    const response = await getTrendingAllWeek(1, params)
+    return response?.results || []
   } catch (error) {
     console.error('Error fetching trending media for hero slider:', error)
     return [] // Return empty array or throw error as per desired error handling
@@ -109,14 +114,22 @@ const populateHomePageData = async (): Promise<MultiRequestProps> => {
 
   // Rows arrive already IMDb-enriched from the source list fetches, so the
   // homepage just forwards them. The hero keeps its own IMDb-or-star path.
+  //
+  // Each row is capped at RAIL_LIMIT rather than shipping TMDB's full 20: the
+  // rails are horizontal scrollers that 12 items already fill, and the items
+  // past that cost markup plus a second copy of themselves in the RSC flight
+  // payload. Same cap the detail-page rails use.
+  const rail = (r: PromiseSettledResult<{ results?: Movie[] } | undefined>) =>
+    (value(r)?.results || []).slice(0, RAIL_LIMIT)
+
   return {
     trendingMediaForHero: value(trendingMediaHeroResult) || [],
-    latestTrendingMovies: value(latestTrendingResult)?.results || [],
-    popularMovies: value(popularMoviesResult)?.results || [],
-    allTimeTopRatedMovies: value(allTimeTopRatedResult)?.results || [],
-    latestTrendingSeries: value(latestTrendingSeriesResult)?.results || [],
-    popularSeries: value(popularSeriesResult)?.results || [],
-    allTimeTopRatedSeries: value(allTimeTopRatedSeriesResult)?.results || [],
+    latestTrendingMovies: rail(latestTrendingResult),
+    popularMovies: rail(popularMoviesResult),
+    allTimeTopRatedMovies: rail(allTimeTopRatedResult),
+    latestTrendingSeries: rail(latestTrendingSeriesResult),
+    popularSeries: rail(popularSeriesResult),
+    allTimeTopRatedSeries: rail(allTimeTopRatedSeriesResult),
   }
 }
 
@@ -153,10 +166,6 @@ const getCollectionById = cache(async (id: string, params: Param = {}) => {
   return fetchClient.get<CollectionDetails>(url, params, true)
 })
 
-// Carousels are horizontal scrollers — 12 items is plenty and trims server-side
-// render work vs. TMDB's full 20-item page.
-const RELATED_LIMIT = 12
-
 const populateMovieDetailsPage = async (
   id: string
 ): Promise<MultiMovieDetailsRequestProps> => {
@@ -166,10 +175,10 @@ const populateMovieDetailsPage = async (
     return {
       movieDetails: { ...data, imdbRating: await getImdbRating(data.imdb_id) },
       movieCredits: data.credits ?? { id: data.id, cast: [], crew: [] },
-      similarMovies: (data.similar?.results ?? []).slice(0, RELATED_LIMIT),
+      similarMovies: (data.similar?.results ?? []).slice(0, RAIL_LIMIT),
       recommendedMovies: (data.recommendations?.results ?? []).slice(
         0,
-        RELATED_LIMIT
+        RAIL_LIMIT
       ),
       trailerKey: pickTrailerKey(data.videos?.results),
     }

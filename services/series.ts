@@ -1,5 +1,6 @@
 import { cache } from 'react'
 import { seriesDTO } from '@/dtos/series'
+import { attachImdbRatings, getImdbRating } from '@/services/imdb'
 
 import { Param } from '@/types/movie-result'
 import {
@@ -7,8 +8,7 @@ import {
   SeriesDetailsWithExtras,
 } from '@/types/series-details'
 import { SeriesResponse } from '@/types/series-result'
-import { attachImdbRatings, getImdbRating } from '@/services/imdb'
-
+import { RAIL_LIMIT } from '@/lib/constants'
 import { fetchClient } from '@/lib/fetch-client'
 import { tvType } from '@/lib/tmdbConfig'
 import { pickTrailerKey } from '@/lib/videos'
@@ -16,7 +16,12 @@ import { pickTrailerKey } from '@/lib/videos'
 const getLatestTrendingSeries = async (params: Param = {}) => {
   const url = `${tvType.trending}/tv/day?language=en-US`
   // revalidate:false → build-only; consumed by the fully static homepage.
-  const rawData = await fetchClient.get<SeriesResponse>(url, params, true, false)
+  const rawData = await fetchClient.get<SeriesResponse>(
+    url,
+    params,
+    true,
+    false
+  )
   const dto = seriesDTO(rawData)
   return { ...dto, results: await attachImdbRatings(dto.results, 'tv') }
 }
@@ -24,14 +29,24 @@ const getLatestTrendingSeries = async (params: Param = {}) => {
 const getPopularSeries = async (params: Param = {}) => {
   'use server'
   const url = `tv/${tvType.popular}?language=en-US`
-  const rawData = await fetchClient.get<SeriesResponse>(url, params, true, false)
+  const rawData = await fetchClient.get<SeriesResponse>(
+    url,
+    params,
+    true,
+    false
+  )
   const dto = seriesDTO(rawData)
   return { ...dto, results: await attachImdbRatings(dto.results, 'tv') }
 }
 
 const getAllTimeTopRatedSeries = async (params: Param = {}) => {
   const url = `tv/${tvType.top_rated}?language=en-US`
-  const rawData = await fetchClient.get<SeriesResponse>(url, params, true, false)
+  const rawData = await fetchClient.get<SeriesResponse>(
+    url,
+    params,
+    true,
+    false
+  )
   const dto = seriesDTO(rawData)
   return { ...dto, results: await attachImdbRatings(dto.results, 'tv') }
 }
@@ -60,10 +75,6 @@ const getSeriesDetailsById = cache(async (id: string, params: Param = {}) => {
   }
 })
 
-// Carousels are horizontal scrollers — 12 items is plenty and trims server-side
-// render work vs. TMDB's full 20-item page.
-const RELATED_LIMIT = 12
-
 const populateSeriesDetailsPageData = async (
   id: string
 ): Promise<MultiSeriesDetailsRequestProps> => {
@@ -79,11 +90,11 @@ const populateSeriesDetailsPageData = async (
       similarSeries: (data.similar
         ? seriesDTO(data.similar).results
         : []
-      ).slice(0, RELATED_LIMIT),
+      ).slice(0, RAIL_LIMIT),
       recommendedSeries: (data.recommendations
         ? seriesDTO(data.recommendations).results
         : []
-      ).slice(0, RELATED_LIMIT),
+      ).slice(0, RAIL_LIMIT),
       trailerKey: pickTrailerKey(data.videos?.results),
     }
   } catch (error: any) {
