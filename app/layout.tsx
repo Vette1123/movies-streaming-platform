@@ -15,6 +15,7 @@ import {
   websiteJsonLd,
 } from '@/lib/structured-data'
 import { cn } from '@/lib/utils'
+import { IconSprite } from '@/components/icon-sprite'
 import { Footer } from '@/components/layouts/footer'
 import { SiteHeader } from '@/components/layouts/site-header'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
@@ -22,8 +23,14 @@ import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register'
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: siteConfig.theme.colors.light },
-    { media: '(prefers-color-scheme: dark)', color: siteConfig.theme.colors.dark },
+    {
+      media: '(prefers-color-scheme: light)',
+      color: siteConfig.theme.colors.light,
+    },
+    {
+      media: '(prefers-color-scheme: dark)',
+      color: siteConfig.theme.colors.dark,
+    },
   ],
   colorScheme: 'dark light',
   width: 'device-width',
@@ -66,10 +73,20 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '64x64', type: 'image/x-icon' },
-      { url: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
+      {
+        url: '/android-chrome-192x192.png',
+        sizes: '192x192',
+        type: 'image/png',
+      },
+      {
+        url: '/android-chrome-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
+      },
     ],
-    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
   },
 
   openGraph: {
@@ -189,7 +206,10 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
           href="/safari-pinned-tab.svg"
           color={siteConfig.theme.colors.dark}
         />
-        <meta name="google-adsense-account" content="ca-pub-3842960431278714"></meta>
+        <meta
+          name="google-adsense-account"
+          content="ca-pub-3842960431278714"
+        ></meta>
         <JsonLd data={websiteJsonLd} />
         <JsonLd data={organizationJsonLd} />
       </head>
@@ -222,6 +242,9 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
         >
           Skip to content
         </a>
+        {/* Defs for the icons that repeat per card — see components/icon-sprite.
+            Must be in the document for any <use href="#i-…"> on the page. */}
+        <IconSprite />
         <div className="flex flex-col">
           <SiteHeader />
           <div className="h-full flex-1 overflow-x-hidden">

@@ -1,7 +1,6 @@
-import { Star } from 'lucide-react'
-
 import { cn, numberRounder } from '@/lib/utils'
 import { Chip } from '@/components/ui/chip'
+import { SpriteIcon } from '@/components/icon-sprite'
 
 interface ScoreChipProps {
   /** Real IMDb score (preferred). Renders the IMDb wordmark chip. */
@@ -38,7 +37,9 @@ export function ScoreChip({
       size={size}
       className={cn('tabular-nums', className)}
     >
-      <Star className="size-3 fill-current" aria-hidden />
+      {/* Sprite, not lucide: this chip renders on every card, and the star's
+          path is the single heaviest repeated shape on a list page. */}
+      <SpriteIcon name="star" className="size-3" />
       {numberRounder(voteAverage ?? undefined) ?? 'NR'}
     </Chip>
   )

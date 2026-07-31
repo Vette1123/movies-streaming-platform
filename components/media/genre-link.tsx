@@ -1,9 +1,9 @@
 import React from 'react'
 import Link from 'next/link'
-import { ChevronRight, Tag } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { chipVariants } from '@/components/ui/chip'
+import { SpriteIcon } from '@/components/icon-sprite'
 
 interface GenreLinkProps {
   href: string
@@ -36,9 +36,16 @@ export function GenreLink({
         className
       )}
     >
-      <Tag className="text-primary size-3 opacity-70 transition-[opacity,color] duration-200 group-hover/genre:text-primary-foreground group-hover/genre:opacity-100" />
+      {/* Sprite icons — a genre chip renders many times per page. */}
+      <SpriteIcon
+        name="tag"
+        className="text-primary size-3 opacity-70 transition-[opacity,color] duration-200 group-hover/genre:text-primary-foreground group-hover/genre:opacity-100"
+      />
       {name}
-      <ChevronRight className="text-primary -ml-1.5 h-3.5 w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover/genre:ml-0 group-hover/genre:w-3.5 group-hover/genre:text-primary-foreground group-hover/genre:opacity-100" />
+      <SpriteIcon
+        name="chevron-right"
+        className="text-primary -ml-1.5 h-3.5 w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover/genre:ml-0 group-hover/genre:w-3.5 group-hover/genre:text-primary-foreground group-hover/genre:opacity-100"
+      />
     </Link>
   )
 }
