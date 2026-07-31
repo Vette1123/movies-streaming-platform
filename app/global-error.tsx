@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect } from 'react'
-import posthog from 'posthog-js'
 
 import { isStaleBundleError, reloadForStaleDeploy } from '@/lib/client-errors'
+import { loadPostHog } from '@/lib/posthog-client'
 
 // Last-resort boundary. app/error.tsx sits INSIDE the root layout, so it can't
 // catch an error thrown by the root layout itself (or its providers) — this can.
@@ -30,14 +30,18 @@ export default function GlobalError({
     // captureException is a no-op if posthog never initialized (the crash may
     // have happened before the provider mounted), so this is best-effort — but
     // when init did run, it gives us the root-level failure with its digest.
-    try {
-      posthog.captureException(error, {
-        error_boundary: 'app/global-error.tsx',
-        error_digest: error.digest,
+    // Forces the module in rather than queueing (see app/error.tsx); the whole
+    // document is gone here, so there may be no later flush.
+    void loadPostHog()
+      .then((posthog) =>
+        posthog.captureException(error, {
+          error_boundary: 'app/global-error.tsx',
+          error_digest: error.digest,
+        })
+      )
+      .catch(() => {
+        // never let reporting mask the render error
       })
-    } catch {
-      // never let reporting mask the render error
-    }
   }, [error, staleBundle])
 
   return (

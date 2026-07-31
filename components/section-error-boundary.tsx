@@ -2,9 +2,9 @@
 
 import React from 'react'
 import { RefreshCw, RotateCcw, TriangleAlert } from 'lucide-react'
-import posthog from 'posthog-js'
 
 import { isStaleBundleError, reloadForStaleDeploy } from '@/lib/client-errors'
+import { loadPostHog } from '@/lib/posthog-client'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
@@ -57,11 +57,15 @@ export class SectionErrorBoundary extends React.Component<
       return
     }
 
-    posthog.captureException(error, {
-      error_boundary: 'SectionErrorBoundary',
-      error_section: this.props.section,
-      component_stack: info.componentStack,
-    })
+    // Forces the posthog module in rather than queueing (see app/error.tsx) —
+    // a section that just blew up is exactly when the report matters most.
+    void loadPostHog().then((posthog) =>
+      posthog.captureException(error, {
+        error_boundary: 'SectionErrorBoundary',
+        error_section: this.props.section,
+        component_stack: info.componentStack,
+      })
+    )
   }
 
   private retry = () => this.setState({ error: null })

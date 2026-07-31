@@ -3,9 +3,9 @@
 import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { Home, RefreshCw, RotateCcw, TriangleAlert } from 'lucide-react'
-import posthog from 'posthog-js'
 
 import { isStaleBundleError, reloadForStaleDeploy } from '@/lib/client-errors'
+import { loadPostHog } from '@/lib/posthog-client'
 import { EmptyState } from '@/components/ui/empty-state'
 
 interface ErrorProps {
@@ -48,11 +48,16 @@ export default function GlobalError({ error, reset }: ErrorProps) {
     // catches render errors before they hit window.onerror, so this is what
     // gives PostHog the component context (Next's `digest` maps to the server
     // component stack) plus the exact screen it broke on.
-    posthog.captureException(error, {
-      error_boundary: 'app/error.tsx',
-      error_digest: error.digest,
-      error_pathname: pathname,
-    })
+    //
+    // Force the posthog module in rather than queueing: the user is looking at
+    // an error screen and may reload or leave before the idle scheduler fires.
+    void loadPostHog().then((posthog) =>
+      posthog.captureException(error, {
+        error_boundary: 'app/error.tsx',
+        error_digest: error.digest,
+        error_pathname: pathname,
+      })
+    )
   }, [error, pathname, staleBundle])
 
   const copy = staleBundle ? STALE_BUNDLE_COPY : FAULT_COPY

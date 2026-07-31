@@ -1,11 +1,11 @@
 // Centralized, typed PostHog event layer.
 //
 // All custom product events flow through the helpers below so event names and
-// property shapes stay consistent across the app. Uses the posthog-js singleton
-// (initialized in providers/posthog-provider.tsx) so it works from any client
+// property shapes stay consistent across the app. Reaches the posthog-js
+// singleton through the lazy `ph()` accessor (see lib/posthog-client) rather
+// than importing posthog-js directly — a static import here would drag the
+// 221KB module back onto the critical path — so it works from any client
 // component or hook without needing the React context.
-
-import posthog from 'posthog-js'
 
 import {
   genreNames,
@@ -13,6 +13,7 @@ import {
   getMediaTitle,
   getReleaseYear,
 } from '@/lib/media'
+import { ph } from '@/lib/posthog-client'
 
 export const EVENTS = {
   // Playback (primary conversion)
@@ -97,7 +98,7 @@ export function track(
   properties?: Record<string, unknown>
 ): void {
   if (!isClient()) return
-  posthog.capture(event, properties)
+  ph((posthog) => posthog.capture(event, properties))
 }
 
 // ---- Playback ---------------------------------------------------------------
@@ -281,16 +282,21 @@ export function trackApiError(props: {
   expected?: boolean
 }): void {
   if (!isClient()) return
-  posthog.capture(EVENTS.API_ERROR, props)
+  ph((posthog) => posthog.capture(EVENTS.API_ERROR, props))
   if (props.expected) return
-  try {
-    posthog.captureException(new Error(`[${props.source}] ${props.message}`), {
-      $exception_source: 'api',
-      ...props,
-    })
-  } catch {
-    // captureException must never itself throw and mask the original failure.
-  }
+  ph((posthog) => {
+    try {
+      posthog.captureException(
+        new Error(`[${props.source}] ${props.message}`),
+        {
+          $exception_source: 'api',
+          ...props,
+        }
+      )
+    } catch {
+      // captureException must never itself throw and mask the original failure.
+    }
+  })
 }
 
 // ---- Series navigation ------------------------------------------------------

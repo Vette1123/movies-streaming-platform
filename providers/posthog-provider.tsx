@@ -2,8 +2,7 @@
 
 import { PropsWithChildren, Suspense, useEffect, useRef } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
-import posthog, { CaptureResult, ConfigDefaults } from 'posthog-js'
-import { PostHogProvider, usePostHog } from 'posthog-js/react'
+import type { CaptureResult, ConfigDefaults } from 'posthog-js'
 
 import { trackPwaInstallable, trackPwaInstalled } from '@/lib/analytics'
 import {
@@ -12,6 +11,7 @@ import {
   isTransportError,
 } from '@/lib/client-errors'
 import { enrichPersonProfile } from '@/lib/person'
+import { loadPostHog, ph } from '@/lib/posthog-client'
 
 /**
  * Runtime context attached to every captured $exception. Our production stack
@@ -185,23 +185,28 @@ const POSTHOG_CONFIG = {
 let initialized = false
 
 /**
- * Lazily run posthog.init() exactly once. Init is the single most expensive
- * thing PostHog does on a cold load — it parses the DOM for autocapture,
- * attaches heatmaps, boots the session-recorder, sets up web-vitals + exception
- * listeners, and fires the identify + feature-flag requests. Doing all of that
- * synchronously during hydration blocks the main thread and is what tanks
- * Lighthouse's TBT. So we defer it until the browser is idle (or the user
- * interacts — whichever is first) via requestIdleCallback. LCP and INP no longer
- * pay for it; every event is still captured (posthog queues calls made before
- * init, and $pageview fires from <PostHogPageView> right after init resolves).
+ * Lazily load posthog-js and run posthog.init() exactly once.
+ *
+ * Two costs are being deferred here. Init itself is the expensive one at
+ * runtime — it parses the DOM for autocapture, attaches heatmaps, boots the
+ * session-recorder, sets up web-vitals + exception listeners, and fires the
+ * identify + feature-flag requests. The module is the expensive one on the
+ * network: 221KB raw / 73KB brotli, the largest chunk in the app. Doing either
+ * during hydration blocks the main thread and is what tanks Lighthouse's TBT,
+ * so both wait until the browser is idle (or the user interacts — whichever is
+ * first). LCP and INP no longer pay for PostHog at all.
+ *
+ * Nothing is lost by waiting: calls made before this resolves are queued by
+ * lib/posthog-client and replayed in order the moment the module lands.
  */
-function initPosthog() {
+async function initPosthog() {
   if (initialized || !process.env.NEXT_PUBLIC_POSTHOG_KEY) return
   initialized = true
+  const posthog = await loadPostHog()
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, POSTHOG_CONFIG)
-  // The deferred init means the first $pageview (which <PostHogPageView> gated
-  // on `ph` being truthy) was skipped during the pre-init window. Capture it
-  // now so the landing visit is attributed — equivalent to the eager path.
+  // The deferred init means the first $pageview (which <PostHogPageView> gates
+  // on `initialized`) was skipped during the pre-init window. Capture it now so
+  // the landing visit is attributed — equivalent to the eager path.
   posthog.capture('$pageview', { $current_url: window.location.href })
 }
 
@@ -242,16 +247,16 @@ function scheduleInit() {
     }
     if (typeof w.cancelIdleCallback === 'function') w.cancelIdleCallback(handle)
     else window.clearTimeout(handle)
-    initPosthog()
+    void initPosthog()
     for (const e of events) window.removeEventListener(e, onFirstGesture, true)
   }
   for (const e of events) window.addEventListener(e, onFirstGesture, true)
 }
 
 if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-  // Don't init eagerly — schedule it off the critical path (see scheduleInit).
-  // posthog (the singleton) is safe to reference now: calls like capture() made
-  // before init are queued and flushed once init() runs.
+  // Don't load or init eagerly — schedule both off the critical path (see
+  // scheduleInit). Call sites are safe in the meantime: ph() queues anything
+  // captured before the module lands and replays it in order afterwards.
   scheduleInit()
 }
 
@@ -268,18 +273,17 @@ if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
 function PostHogPageView() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const ph = usePostHog()
   const lastUrl = useRef<string | null>(null)
 
   useEffect(() => {
-    if (!pathname || !ph || !initialized) return
+    if (!pathname || !initialized) return
     let url = window.origin + pathname
     const qs = searchParams?.toString()
     if (qs) url += `?${qs}`
     if (lastUrl.current === url) return
     lastUrl.current = url
-    ph.capture('$pageview', { $current_url: url })
-  }, [pathname, searchParams, ph])
+    ph((posthog) => posthog.capture('$pageview', { $current_url: url }))
+  }, [pathname, searchParams])
 
   return null
 }
@@ -316,7 +320,7 @@ function PwaInstallTracker() {
     const onBeforeInstallPrompt = () => trackPwaInstallable()
     const onAppInstalled = () => {
       trackPwaInstalled()
-      posthog.setPersonProperties({ pwa_installed: true })
+      ph((posthog) => posthog.setPersonProperties({ pwa_installed: true }))
     }
 
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt)
@@ -330,13 +334,20 @@ function PwaInstallTracker() {
   return null
 }
 
+/**
+ * Mounts the PostHog side-effect components. There's no React context provider
+ * here on purpose: posthog-js/react's <PostHogProvider> takes the singleton as a
+ * prop, which would mean importing posthog-js statically and pulling all 221KB
+ * of it onto the critical path — the exact cost lib/posthog-client exists to
+ * avoid. The context was only ever read by one usePostHog() call, now a ph().
+ */
 export function CSPostHogProvider({ children }: PropsWithChildren) {
   return (
-    <PostHogProvider client={posthog}>
+    <>
       <SuspendedPageView />
       <PostHogIdentity />
       <PwaInstallTracker />
       {children}
-    </PostHogProvider>
+    </>
   )
 }

@@ -10,8 +10,7 @@
 // $set        — overwritten each time (current state).
 // $set_once   — written only if not already present (first-touch attribution).
 
-import posthog from 'posthog-js'
-
+import { ph } from '@/lib/posthog-client'
 import type { WatchedItem } from '@/hooks/use-local-storage'
 
 const isClient = () => typeof window !== 'undefined'
@@ -30,7 +29,8 @@ function isStandalone(): boolean {
   return (
     window.matchMedia?.('(display-mode: standalone)').matches ||
     // iOS Safari
-    (window.navigator as unknown as { standalone?: boolean }).standalone === true
+    (window.navigator as unknown as { standalone?: boolean }).standalone ===
+      true
   )
 }
 
@@ -58,32 +58,34 @@ export function enrichPersonProfile(): void {
   ).matches
   const standalone = isStandalone()
 
-  posthog.setPersonProperties(
-    // $set — current state, refreshed every visit.
-    {
-      locale,
-      timezone,
-      prefers_dark_mode: prefersDark,
-      screen_category: screenCategory(width),
-      viewport_width: width,
-      viewport_height: window.innerHeight,
-      pwa_installed: standalone,
-      app_version: APP_VERSION,
-    },
-    // $set_once — first-touch, never overwritten.
-    {
-      first_seen_at: new Date().toISOString(),
-      initial_locale: locale,
-      initial_timezone: timezone,
-      initial_referrer_domain: referrerDomain(),
-    }
-  )
+  ph((posthog) => {
+    posthog.setPersonProperties(
+      // $set — current state, refreshed every visit.
+      {
+        locale,
+        timezone,
+        prefers_dark_mode: prefersDark,
+        screen_category: screenCategory(width),
+        viewport_width: width,
+        viewport_height: window.innerHeight,
+        pwa_installed: standalone,
+        app_version: APP_VERSION,
+      },
+      // $set_once — first-touch, never overwritten.
+      {
+        first_seen_at: new Date().toISOString(),
+        initial_locale: locale,
+        initial_timezone: timezone,
+        initial_referrer_domain: referrerDomain(),
+      }
+    )
 
-  // Super properties: attached to every event captured afterwards.
-  posthog.register({
-    app_version: APP_VERSION,
-    locale,
-    display_mode: standalone ? 'standalone' : 'browser',
+    // Super properties: attached to every event captured afterwards.
+    posthog.register({
+      app_version: APP_VERSION,
+      locale,
+      display_mode: standalone ? 'standalone' : 'browser',
+    })
   })
 }
 
@@ -103,22 +105,24 @@ export function syncWatchStats(items: WatchedItem[]): void {
     return item.modified_at > newest.modified_at ? item : newest
   }, null)
 
-  posthog.setPersonProperties(
-    {
-      watch_history_count: items.length,
-      movies_watched: movies,
-      series_watched: series,
-      has_watched: items.length > 0,
-      last_watched_title: latest?.title ?? null,
-      last_watched_type: latest?.type ?? null,
-      last_watched_at: latest?.modified_at ?? null,
-    },
-    // First title ever added is first-touch.
-    items.length > 0
-      ? {
-          first_watched_title: items[0]?.title,
-          first_watched_at: items[0]?.added_at,
-        }
-      : undefined
+  ph((posthog) =>
+    posthog.setPersonProperties(
+      {
+        watch_history_count: items.length,
+        movies_watched: movies,
+        series_watched: series,
+        has_watched: items.length > 0,
+        last_watched_title: latest?.title ?? null,
+        last_watched_type: latest?.type ?? null,
+        last_watched_at: latest?.modified_at ?? null,
+      },
+      // First title ever added is first-touch.
+      items.length > 0
+        ? {
+            first_watched_title: items[0]?.title,
+            first_watched_at: items[0]?.added_at,
+          }
+        : undefined
+    )
   )
 }
