@@ -97,11 +97,6 @@ jobs:
       - run: pnpm run deploy:full
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          # Purge the CF edge only when code may have changed (push / manual).
-          # Scheduled rebuilds ship identical hash-named assets, so a purge would
-          # just evict live-and-still-valid entries for zero freshness gain
-          # (KV/regional already serve the new build via its build id).
-          CF_PURGE: ${{ github.event_name != 'schedule' }}
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           TMDB_HEADER_KEY: ${{ secrets.TMDB_HEADER_KEY }}
           NEXT_PUBLIC_TMDB_BASEURL: ${{ secrets.NEXT_PUBLIC_TMDB_BASEURL }}

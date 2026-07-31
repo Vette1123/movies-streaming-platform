@@ -20,6 +20,7 @@ import {
 } from '@/types/movie-result'
 import { RAIL_LIMIT } from '@/lib/constants'
 import { fetchClient } from '@/lib/fetch-client'
+import { capListOverviews } from '@/lib/media'
 import { movieType } from '@/lib/tmdbConfig'
 import { pickTrailerKey } from '@/lib/videos'
 
@@ -28,33 +29,35 @@ const getNowPlayingMovies = async (params: Param = {}) => {
   return fetchClient.get<MovieResponse>(url, params)
 }
 
+// Every movie list finishes the same two steps: attach IMDb ratings (a no-op
+// while the flag is off) and cap each overview to what a card can actually
+// render. Kept in one place so a new list can't ship TMDB's untrimmed 900-char
+// synopsis by omission.
+const listResponse = async <T extends { results?: Movie[] }>(data: T) => ({
+  ...data,
+  results: capListOverviews(
+    await attachImdbRatings(data.results || [], 'movie')
+  ),
+})
+
 const getLatestTrendingMovies = async (params: Param = {}) => {
   const url = `${movieType.trending}/movie/day?language=en-US`
   // revalidate:false → build-only; the homepage/list pages that use this are
   // fully static and refresh on the 4x/day deploy (see fetch-client.ts).
   const data = await fetchClient.get<MovieResponse>(url, params, true, false)
-  return {
-    ...data,
-    results: await attachImdbRatings(data.results || [], 'movie'),
-  }
+  return listResponse(data)
 }
 
 const getAllTimeTopRatedMovies = async (params: Param = {}) => {
   const url = `movie/${movieType.top_rated}?language=en-US`
   const data = await fetchClient.get<MovieResponse>(url, params, true, false)
-  return {
-    ...data,
-    results: await attachImdbRatings(data.results || [], 'movie'),
-  }
+  return listResponse(data)
 }
 const getPopularMovies = async (params: Param = {}) => {
   'use server'
   const url = `movie/${movieType.popular}?language=en-US`
   const data = await fetchClient.get<MediaResponse>(url, params, true, false)
-  return {
-    ...data,
-    results: await attachImdbRatings(data.results || [], 'movie'),
-  }
+  return listResponse(data)
 }
 
 // New function to get trending media (movies and TV shows) for the week
@@ -75,7 +78,9 @@ const getTrendingMediaForHeroSlider = async (
 ): Promise<Movie[]> => {
   try {
     const response = await getTrendingAllWeek(1, params)
-    return response?.results || []
+    // The hero line-clamps to 3 lines, so the rest of a TMDB synopsis is pure
+    // payload — and at 20 slides that adds up. Same cap the cards use.
+    return capListOverviews(response?.results || [])
   } catch (error) {
     console.error('Error fetching trending media for hero slider:', error)
     return [] // Return empty array or throw error as per desired error handling

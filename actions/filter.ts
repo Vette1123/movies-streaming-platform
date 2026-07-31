@@ -6,6 +6,7 @@ import { FilterParams } from '@/types/filter'
 import { MediaResponse } from '@/types/media'
 import { Param } from '@/types/movie-result'
 import { fetchClient } from '@/lib/fetch-client'
+import { capListOverviews } from '@/lib/media'
 
 // Drop undefined/null filters and coerce booleans to strings for the TMDB query
 // string. Shared by both discover actions so the normalization can't diverge.
@@ -65,7 +66,11 @@ async function discover(
   )
   return {
     ...data,
-    results: await attachImdbRatings(data.results || [], mediaType),
+    // Browse pages render the same cards as everywhere else, which slice the
+    // overview at 400 — so don't ship more than that over the wire.
+    results: capListOverviews(
+      await attachImdbRatings(data.results || [], mediaType)
+    ),
   }
 }
 

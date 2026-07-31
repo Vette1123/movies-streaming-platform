@@ -8,9 +8,9 @@
 // to run BEFORE the asset upload — which is exactly the order `deploy` uses.
 // We just run it. Here we:
 //   1. Run deploy (populates the cache assets, then pushes the worker).
-//   2. After deploy: purge the entire CF edge cache (unless CF_PURGE=false, set
-//      on scheduled rebuilds where the hash-named assets are unchanged), then
-//      ping IndexNow with the top-level URLs so Bing/Yandex/DDG pick up changes.
+//   2. After deploy: ping IndexNow with the sitemap URLs so Bing/Yandex/DDG pick
+//      up changes, and purge the CF edge cache ONLY if CF_PURGE=true (see below
+//      — no deploy asks for it any more).
 //
 // This used to call populateCache separately and then move `.open-next/cache`
 // aside so the deploy's built-in populate would find nothing and short-circuit.
@@ -21,14 +21,15 @@
 // deploy outright. Restore the dance if the incremental cache ever goes back to
 // KV or R2.
 //
-// Why purge everything: the edge-cache rule (scripts/cf-waf-setup.mjs) caches
-// public document pages — /, /movies, /tv-shows, /movies/:id, /tv-shows/:id —
-// with an 8h edge TTL that is NOT keyed by build id. So a fresh worker deploy
-// (the incremental cache itself is keyed by OPEN_NEXT_BUILD_ID, so it turns
-// over on its own) would still be masked at the edge for up to 8h. The detail routes are unbounded, and free
-// tier has no prefix/wildcard/tag purge, so a full purge is the only way to
-// guarantee every page reflects the new build. Static assets are content-hashed
-// so the re-fill after a purge is free.
+// Why the purge is off by default: the edge-cache rule (scripts/cf-waf-setup.mjs)
+// asks the CDN to hold public document pages for 8h with a TTL that is not keyed
+// by build id, which is what the purge was for. But that rule never takes effect
+// — on a Workers Custom Domain the Worker is the origin and runs ahead of the
+// zone cache, so document routes return no cf-cache-status at all (audited
+// 2026-07-30). The pages come from the incremental cache instead, which IS keyed
+// by OPEN_NEXT_BUILD_ID and turns over on every deploy. Meanwhile /_next/static
+// DOES get edge HITs and is content-hashed, so purging only threw away hot,
+// still-valid entries. Set CF_PURGE=true to force one if that ever changes.
 import { spawnSync } from 'node:child_process'
 
 const SITE_HOST = 'www.reely.space'
@@ -59,10 +60,18 @@ process.exit(deployCode)
 
 async function postDeploy() {
   const token = process.env.CLOUDFLARE_API_TOKEN
-  // Skip the edge purge only when the caller explicitly opts out (CF_PURGE=false,
-  // set by the deploy workflow on scheduled rebuilds). Defaults to purging so a
-  // local `pnpm deploy` and every push/manual run still clears the edge.
-  const shouldPurge = process.env.CF_PURGE !== 'false'
+  // Opt-IN, not opt-out: run `CF_PURGE=true pnpm deploy` to force one.
+  //
+  // This used to purge on every push. The purge existed to clear stale document
+  // pages, but on a Workers Custom Domain the Worker IS the origin and runs
+  // ahead of the zone cache, so the CDN never stored that HTML in the first
+  // place (audited 2026-07-30, see scripts/cf-waf-setup.mjs) — and the pages now
+  // come out of the incremental cache keyed by OPEN_NEXT_BUILD_ID, which turns
+  // over on its own with each deploy. What the zone DOES cache is
+  // `/_next/static/*`, which is content-hashed and never needs purging. So a
+  // full purge evicted the only genuinely cached thing and cleared nothing that
+  // was stale. Bring it back if Cloudflare ever starts edge-caching Worker HTML.
+  const shouldPurge = process.env.CF_PURGE === 'true'
   if (token && shouldPurge) {
     try {
       const zoneRes = await fetch(
@@ -93,7 +102,7 @@ async function postDeploy() {
       console.warn(`[cf-deploy] cache purge skipped: ${err.message}`)
     }
   } else if (!shouldPurge) {
-    console.log('• CF_PURGE=false — skipping edge purge (scheduled rebuild)')
+    console.log('• skipping edge purge (set CF_PURGE=true to force one)')
   } else {
     console.warn(
       '[cf-deploy] CLOUDFLARE_API_TOKEN not set — skipping cache purge'

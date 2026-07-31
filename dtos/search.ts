@@ -1,32 +1,37 @@
 import { MediaResponse } from '@/types/media'
 import { SearchResponse } from '@/types/search'
+import { capListOverviews } from '@/lib/media'
 
 export const searchDTO = (searchResponse: SearchResponse): MediaResponse => ({
   page: searchResponse.page,
-  results: searchResponse.results.map((search) => {
-    const {
-      name,
-      original_name,
-      first_air_date,
-      title,
-      original_title,
-      release_date,
-      ...rest
-    } = search
+  // Same cap as every other list: the command menu line-clamps the overview, so
+  // shipping TMDB's full synopsis for each of 20 results is pure payload.
+  results: capListOverviews(
+    searchResponse.results.map((search) => {
+      const {
+        name,
+        original_name,
+        first_air_date,
+        title,
+        original_title,
+        release_date,
+        ...rest
+      } = search
 
-    if (search.media_type === 'tv') {
+      if (search.media_type === 'tv') {
+        return {
+          ...rest,
+          title: name,
+          original_title: original_name,
+          release_date: first_air_date,
+        }
+      }
       return {
         ...rest,
-        title: name,
-        original_title: original_name,
-        release_date: first_air_date,
+        title,
+        original_title,
+        release_date,
       }
-    }
-    return {
-      ...rest,
-      title,
-      original_title,
-      release_date,
-    }
-  }),
+    })
+  ),
 })

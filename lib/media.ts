@@ -57,6 +57,23 @@ export function mediaGenreBasePath(type: ItemType): string {
   return `${itemRedirect(type)}/genre`
 }
 
+// The most any list surface renders of an overview: card.tsx hard-slices at 400
+// characters, and the hero + command menu line-clamp to far less. TMDB routinely
+// ships 600-900, so the tail is paid for twice on the wire — once as markup, once
+// in the RSC flight payload — and then thrown away in the browser. Detail pages
+// show the full text, so this is applied at the LIST boundaries only (the DTOs
+// and the list services), never to a details fetch.
+const LIST_OVERVIEW_MAX = 400
+
+export function capListOverviews<T extends { overview?: string }>(
+  items: T[]
+): T[] {
+  return items.map((item) => {
+    if (!item.overview || item.overview.length <= LIST_OVERVIEW_MAX) return item
+    return { ...item, overview: item.overview.slice(0, LIST_OVERVIEW_MAX) }
+  })
+}
+
 // Detail-hero art: prefer the wide backdrop, fall back to the poster, else null.
 export function getMediaHeroImageUrl(
   backdropPath?: string | null,
