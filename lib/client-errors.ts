@@ -9,7 +9,7 @@
 
 import { toast } from 'sonner'
 
-// A tab that outlived a deploy (we ship ~4x/day) holds a client bundle whose
+// A tab that outlived a deploy (we ship ~2x/day plus pushes) holds a client bundle whose
 // Server Action IDs no longer exist on the origin. The action call comes back
 // as a non-RSC response, so TanStack surfaces one of these. The only fix is to
 // reload onto the fresh bundle.

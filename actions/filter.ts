@@ -57,7 +57,7 @@ async function discover(
   }
 
   // revalidate:false → build-only for the static genre pages; runtime filtering
-  // then reuses the deploy-cached results (fewer TMDB/KV hits), refreshed 4x/day.
+  // then reuses the deploy-cached results (fewer TMDB/KV hits), refreshed 2x/day.
   const data = await fetchClient.get<MediaResponse>(
     `discover/${mediaType}`,
     queryParams,

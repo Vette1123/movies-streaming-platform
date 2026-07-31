@@ -21,7 +21,7 @@ import memoryQueue from '@opennextjs/cloudflare/overrides/queue/memory-queue'
 // The trade: this store is READ-ONLY. `set`/`delete` only log, so there is no
 // on-demand or time-based revalidation — a route's content changes when we
 // redeploy, nothing else. That already describes this site: freshness comes
-// from the 4x/day CI rebuild. `revalidate: 86400` on the detail pages still
+// from the 2x/day CI rebuild. `revalidate: 86400` on the detail pages still
 // holds because entries carry the BUILD timestamp, and we never go 24h between
 // deploys. Two things stay uncached and render live: routes outside
 // generateStaticParams (`dynamicParams: true` long-tail ids) and API routes —

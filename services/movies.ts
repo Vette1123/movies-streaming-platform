@@ -43,7 +43,7 @@ const listResponse = async <T extends { results?: Movie[] }>(data: T) => ({
 const getLatestTrendingMovies = async (params: Param = {}) => {
   const url = `${movieType.trending}/movie/day?language=en-US`
   // revalidate:false → build-only; the homepage/list pages that use this are
-  // fully static and refresh on the 4x/day deploy (see fetch-client.ts).
+  // fully static and refresh on the 2x/day deploy (see fetch-client.ts).
   const data = await fetchClient.get<MovieResponse>(url, params, true, false)
   return listResponse(data)
 }

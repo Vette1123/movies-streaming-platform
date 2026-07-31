@@ -4,14 +4,20 @@ on:
   push:
     branches: [main] # deploy on every push to main (single source of truth)
   schedule:
-    # 4x/day, spaced 6h apart to spread KV writes evenly across the day.
+    # 2x/day, 12h apart. Was 4x spaced to spread KV writes across the day — that
+    # rationale died when KV left the request path (see open-next.config.ts), and
+    # deploy frequency turned out not to affect the Worker CPU-kill rate at all:
+    # the kills are cold renders of detail pages outside the prerender set, which
+    # a redeploy doesn't add. What frequency actually buys is content freshness,
+    # and the static routes here are snapshots of TMDB popular/top-rated/trending
+    # — lists that barely move within a day. Halving it also halves the chunk-hash
+    # rotations that force a stale-bundle reload on tabs left open, and funds a
+    # 50% wider prerender set (lib/media-page.ts) at LOWER daily TMDB load.
     # NOTE: cron is UTC. Egypt = UTC+2 (winter) / UTC+3 (summer DST, late-Apr→late-Oct),
     # so local times below shift +1h in summer. GitHub also delays scheduled runs a
     # few min-to-30min under load (and rarely skips one) — exact-minute firing isn't guaranteed.
     - cron: '0 0 * * *' # 02:00 winter / 03:00 summer Egypt — overnight refresh
-    - cron: '0 6 * * *' # 08:00 winter / 09:00 summer Egypt — morning refresh
     - cron: '0 12 * * *' # 14:00 winter / 15:00 summer Egypt — midday refresh
-    - cron: '0 18 * * *' # 20:00 winter / 21:00 summer Egypt — evening refresh
   workflow_dispatch:
 
 # Least privilege: the job only reads the repo (checkout). Everything that
@@ -29,9 +35,12 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # A full build + deploy + waf + smoke is ~3-5 min; 15 is generous headroom.
-    # Caps a hung wrangler/curl at 15 min instead of the 6h default.
-    timeout-minutes: 15
+    # A full build + deploy + waf + smoke was ~3-5 min at ~1,100 prerendered
+    # detail pages; the wider prerender set (lib/media-page.ts) makes it ~1,700,
+    # so 20 keeps real headroom. Caps a hung wrangler/curl instead of the 6h
+    # default — raise this, don't shrink the prerender set, if a build ever
+    # brushes it.
+    timeout-minutes: 20
     # Single toggle for the IMDb ratings feature. 'false' (default) skips the
     # shard build + upload entirely — no ~10MB dataset download, no 256 dead
     # /imdb-ratings/*.json assets shipped to the Worker — and leaves the app on
@@ -56,11 +65,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # IMDb's Non-Commercial dataset refreshes once a day, but this workflow
-      # deploys up to 4x/day. Cache the generated rating shards keyed by UTC
-      # date so only the FIRST deploy each day downloads + shards the ~10MB
-      # dataset (~3s); the other three restore it instantly. Cache miss (incl.
-      # the first run of a new day) regenerates. Fails soft — a download hiccup
-      # just leaves the app on TMDB ratings for that build.
+      # deploys on every push plus twice on a schedule. Cache the generated
+      # rating shards keyed by UTC date so only the FIRST deploy each day
+      # downloads + shards the ~10MB dataset (~3s); the rest restore it
+      # instantly. Cache miss (incl. the first run of a new day) regenerates.
+      # Fails soft — a download hiccup just leaves the app on TMDB ratings.
       - name: Compute UTC date
         id: today
         run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"

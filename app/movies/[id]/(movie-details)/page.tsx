@@ -16,16 +16,23 @@ import { breadcrumbJsonLd, JsonLd, movieJsonLd } from '@/lib/structured-data'
 import { MoviesDetailsContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
 
-// 24h: movie metadata is essentially static and CI redeploys twice daily
-// (repopulating the cache with fresh data), so a shorter window would only
-// churn KV writes against the free-plan 1k/day cap for no freshness gain.
+// 24h: movie metadata is essentially static and CI redeploys twice daily,
+// repopulating the cache with fresh data. A shorter window buys no freshness —
+// the incremental cache is read-only (see open-next.config.ts), so an expired
+// entry can't be revalidated in place anyway; the redeploy is the refresh.
 export const revalidate = 86400
 
 // Pre-render the most popular movie pages at build time so they ship as static
-// assets (served by the ASSETS binding — zero Worker CPU, even on an edge-cache
-// miss). `dynamicParams` stays true, so any non-prebuilt id still renders on
-// demand and gets edge-cached. Fail-soft to [] so a TMDB hiccup at build never
-// breaks the deploy (empty list = current all-dynamic behaviour, no regression).
+// assets (served by the ASSETS binding — zero Worker CPU). `dynamicParams`
+// stays true so any other id still resolves, but that path is EXPENSIVE and does
+// not get cheaper on repeat: Cloudflare does not edge-cache Worker-generated
+// HTML (no cf-cache-status on these responses), and the read-only incremental
+// cache can't store the render, so every hit re-renders on the Worker. Measured
+// 0.7-5.4s per render, and crawlers walking TMDB ids this way are what drive the
+// free-plan CPU kills — which is why the prerender set is sized to swallow as
+// much of the real distribution as a build can afford (lib/media-page.ts).
+// Fail-soft to [] so a TMDB hiccup at build never breaks the deploy (empty list
+// = all-dynamic behaviour, no regression).
 export const dynamicParams = true
 
 export function generateStaticParams() {

@@ -9,7 +9,7 @@ import {
 
 // Static: the genre set is finite and fixed, so all slugs are prebuilt below and
 // served from static assets — never rendered on the Worker (no free-plan
-// subrequest/CPU caps). revalidate=false → refreshed by the 4x/day CI deploy.
+// subrequest/CPU caps). revalidate=false → refreshed by the 2x/day CI deploy.
 // dynamicParams MUST stay true: under OpenNext/Cloudflare, dynamicParams=false
 // 404s even the prebuilt SSG pages. discoverSeriesAction fetches with
 // revalidate:false (actions/filter.ts), which is what makes the route build-only —

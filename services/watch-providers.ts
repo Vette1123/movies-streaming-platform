@@ -16,7 +16,7 @@ interface WatchProvidersResponse {
 
 // The list of streaming providers TMDB knows about for a media type in a given
 // region, ordered by TMDB's own `display_priority` (Netflix/Prime/Disney+ first).
-// Long-cached (revalidate:false, refreshed by the 4x/day redeploy) like the genre
+// Long-cached (revalidate:false, refreshed by the 2x/day redeploy) like the genre
 // list — the provider roster is near-static. Fails soft to [] so the section just
 // renders empty rather than throwing. The region matters: availability AND the
 // roster differ per region, which is why the caller keys the query by region too.

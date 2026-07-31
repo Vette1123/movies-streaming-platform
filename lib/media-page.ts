@@ -79,11 +79,30 @@ type PagedFetcher = (args: {
   page: number
 }) => Promise<MediaResponse | undefined>
 
-// Prerender the head of the traffic distribution: popular (20 pages), all-time
-// top rated (10), and today's trending (3). Deduped → the ~500 hottest titles
-// baked into static assets so they never cold-render on the Worker. allSettled
-// (not all) so a single TMDB hiccup drops just that page, not the whole set;
-// fail-soft to [] so a build never breaks (empty = all-dynamic, no regression).
+// How deep to walk each TMDB list when picking what to prerender. Measured
+// against the live API: 20/10/3 yielded 542 movie + 592 tv ids (1,134 detail
+// pages); 30/15/5 yields 827 + 875 (1,702). Widened because everything OUTSIDE
+// this set is the expensive case — the incremental cache is read-only, so a
+// non-prerendered detail page re-renders on the Worker on EVERY hit and can
+// never be written back, which is what drives the CPU-kill rate. Deeper pages
+// hit a long tail of obscure titles nobody requests, so returns fall off fast;
+// this is the knee, not a ceiling to keep raising.
+//
+// Cost is paid at build, and the schedule went 4x/day → 2x at the same time
+// (.github/workflows/deploy.yml), so daily TMDB load DROPPED (~5,000 → ~3,600
+// requests/day) even with 50% more pages. Peak concurrency — the thing that
+// actually earns a 429 — is capped by the fetch governor and unchanged.
+const LIST_DEPTH = {
+  popular: 30,
+  topRated: 15,
+  trending: 5,
+} as const
+
+// Prerender the head of the traffic distribution: popular, all-time top rated,
+// and today's trending, deduped, baked into static assets so they never
+// cold-render on the Worker. allSettled (not all) so a single TMDB hiccup drops
+// just that page, not the whole set; fail-soft to [] so a build never breaks
+// (empty = all-dynamic, no regression).
 export async function buildMediaStaticParams(fetchers: {
   popular: PagedFetcher
   topRated: PagedFetcher
@@ -91,13 +110,13 @@ export async function buildMediaStaticParams(fetchers: {
 }): Promise<{ id: string }[]> {
   try {
     const requests = [
-      ...Array.from({ length: 20 }, (_, i) =>
+      ...Array.from({ length: LIST_DEPTH.popular }, (_, i) =>
         fetchers.popular({ page: i + 1 })
       ),
-      ...Array.from({ length: 10 }, (_, i) =>
+      ...Array.from({ length: LIST_DEPTH.topRated }, (_, i) =>
         fetchers.topRated({ page: i + 1 })
       ),
-      ...Array.from({ length: 3 }, (_, i) =>
+      ...Array.from({ length: LIST_DEPTH.trending }, (_, i) =>
         fetchers.trending({ page: i + 1 })
       ),
     ]
