@@ -3,6 +3,8 @@
 // What this configures (all free-plan features):
 //   1. Custom rule: allowlist social scrapers + search bots (skip later WAF/RL)
 //   2. Custom rule: challenge obvious scraper UAs (python-requests, curl, etc.)
+//   2b. Custom rule: challenge non-browser clients on detail pages — the one
+//      route that actually costs Worker CPU. See CHALLENGE_DETAIL_SCRAPERS_RULE.
 //   3. Rate limit: 100 req/10s per IP on /movies/[id] and /tv-shows/[id]
 //      (high on purpose — see RATELIMIT_RULE: must clear Next.js prefetch bursts)
 //   4. Bot Fight Mode: DISABLED — free-plan Bot Fight Mode runs outside the WAF
@@ -11,10 +13,10 @@
 //      defense is handled by the BLOCK_RULE + rate limit instead.
 //   5. Dynamic redirect: 301 apex (reely.space/*) → www.reely.space/*
 //      Needs Zone.Transform Rules: Edit on the API token.
-//   6. Cache rule: force /, /disclaimer, /movies and /tv-shows paths to be
-//      CDN-eligible (Worker responses bypass cache by default). This is what
-//      keeps the free-plan 10ms Worker CPU limit from being hit under traffic —
-//      an edge HIT never runs the Worker. Needs Zone.Cache Rules.
+//   6. Cache rule: marks /, /disclaimer, /movies and /tv-shows CDN-eligible.
+//      MEASURED NO-OP on this zone — CF does not edge-cache Worker responses,
+//      and every one of those paths is Worker-served. Kept and documented at
+//      CACHE_RULE; do not count on it as the CPU defence, because it isn't one.
 //   7. Tiered Cache (free on all plans): edge misses consult an upper-tier data
 //      center before the origin Worker, so a cold render happens in a few tier
 //      colos instead of independently across all ~300 edge locations.
@@ -61,8 +63,12 @@ async function cf(path, init = {}) {
   })
   const json = await res.json()
   if (!res.ok || json.success === false) {
-    const errs = (json.errors || []).map((e) => `${e.code}: ${e.message}`).join('; ')
-    throw new Error(`${init.method || 'GET'} ${path} → ${res.status} ${errs || JSON.stringify(json)}`)
+    const errs = (json.errors || [])
+      .map((e) => `${e.code}: ${e.message}`)
+      .join('; ')
+    throw new Error(
+      `${init.method || 'GET'} ${path} → ${res.status} ${errs || JSON.stringify(json)}`
+    )
   }
   return json.result
 }
@@ -74,7 +80,10 @@ async function getOrCreatePhaseEntrypoint(zoneId, phase) {
     // CF returns HTTP 200 + error code 10003 when the phase entrypoint hasn't
     // been created yet, so we match the error code/text rather than a status.
     const msg = String(err)
-    const missing = msg.includes('404') || msg.includes('10003') || msg.includes('could not find entrypoint')
+    const missing =
+      msg.includes('404') ||
+      msg.includes('10003') ||
+      msg.includes('could not find entrypoint')
     if (!missing) throw err
   }
   return cf(`/zones/${zoneId}/rulesets`, {
@@ -106,9 +115,7 @@ function cleanRule(r) {
 
 async function putRuleset(zoneId, ruleset, managedRules, opts = {}) {
   const { position = 'top', replaceAll = false } = opts
-  const others = replaceAll
-    ? []
-    : stripManaged(ruleset.rules).map(cleanRule)
+  const others = replaceAll ? [] : stripManaged(ruleset.rules).map(cleanRule)
   const ours = managedRules.map(cleanRule)
   const rules = position === 'top' ? [...ours, ...others] : [...others, ...ours]
   await cf(`/zones/${zoneId}/rulesets/${ruleset.id}`, {
@@ -171,13 +178,62 @@ const ALLOW_RULE = {
   action_parameters: {
     ruleset: 'current',
     phases: ['http_ratelimit', 'http_request_sbfm'],
-    products: ['bic', 'hot', 'rateLimit', 'securityLevel', 'uaBlock', 'waf', 'zoneLockdown'],
+    products: [
+      'bic',
+      'hot',
+      'rateLimit',
+      'securityLevel',
+      'uaBlock',
+      'waf',
+      'zoneLockdown',
+    ],
   },
 }
 
 const BLOCK_RULE = {
   description: `${TAG} challenge obvious scraper user-agents`,
   expression: `(${orExpr(BLOCK_UAS)}) or (http.user_agent eq "")`,
+  action: 'managed_challenge',
+}
+
+// Every token a real browser puts in its UA. Chrome sends "Chrome" AND "Safari";
+// Edge adds "Edg"; Opera "OPR"; Firefox "Firefox". Anything hitting a detail
+// page with none of these is not a person browsing the site.
+const BROWSER_UAS = ['Chrome', 'Firefox', 'Safari', 'Edg', 'OPR', 'Gecko/']
+
+// The detail pages are the only genuinely expensive route on this site, and only
+// for ids outside the prerender set: Cloudflare does not edge-cache Worker HTML
+// (CACHE_RULE below is a no-op for it — measured, no cf-cache-status on any HTML
+// response, homepage included), and the incremental cache is read-only, so a
+// non-prerendered id re-renders on the Worker on EVERY hit at 0.7-5.4s. That is
+// what drives the free-plan CPU kills.
+//
+// The traffic doing it is not human. Of 2,193 5xx responses sampled over 2h,
+// exactly 18 came from Chrome; the rest were unclassifiable user-agents walking
+// TMDB ids (1,109 US / 411 SG / 408 EG). Widening the prerender set helps the
+// head of the distribution but cannot bound an enumeration of the id space, so
+// challenge the enumerators instead.
+//
+// Deliberately narrow, because a false positive here costs a real page view:
+//   - detail paths only — the homepage, browse lists and genre pages are all
+//     prerendered and cheap, so they're left alone entirely;
+//   - genre paths excluded (they start with the same prefix, and their
+//     infinite-scroll fires server actions at these very paths);
+//   - anything with a browser UA passes untouched;
+//   - `not cf.client.bot` keeps verified crawlers out of it. ALLOW_RULE already
+//     skips the rest of this ruleset for them and for the social scrapers, so
+//     this is belt-and-braces — but it survives a future reorder, which the
+//     ordering alone would not.
+// managed_challenge, not block: a misclassified real client gets a puzzle and
+// still reaches the page, rather than a door in the face.
+const CHALLENGE_DETAIL_SCRAPERS_RULE = {
+  description: `${TAG} challenge non-browser clients on detail pages`,
+  expression: [
+    '(starts_with(http.request.uri.path, "/movies/") or starts_with(http.request.uri.path, "/tv-shows/"))',
+    'not (starts_with(http.request.uri.path, "/movies/genre") or starts_with(http.request.uri.path, "/tv-shows/genre"))',
+    'not cf.client.bot',
+    `not (${orExpr(BROWSER_UAS)})`,
+  ].join(' and '),
   action: 'managed_challenge',
 }
 
@@ -243,14 +299,29 @@ const NOT_RSC = '(not any(http.request.headers["rsc"][*] == "1"))'
 
 const CACHEABLE_EXPR = `${NOT_RSC} and (${CACHEABLE_PATHS})`
 
-// Worker responses skip CF's edge cache by default; this rule overrides that
-// for the routes we want CDN-cached and pins the TTL ourselves. An edge HIT
-// never runs the Worker, so it's the single biggest defence against the
-// free-plan 10ms CPU limit. Works together with VARY_STRIP_RULE below — CF
-// won't cache a response carrying Next.js's `Vary: rsc,...` header, so that
-// header is stripped (in the response phase, before the cache stores) for these
-// same requests. Without the strip, this rule is a no-op (proven in prod:
-// responses returned no cf-cache-status at all).
+// KNOWN NO-OP for this site's HTML — kept, documented, not trusted.
+//
+// The intent was: an edge HIT never runs the Worker, so CDN-caching the document
+// routes would be the biggest defence against the free-plan 10ms CPU limit. It
+// does not work, and the reason is structural rather than a misconfiguration:
+// Cache Rules govern what CF stores from an ORIGIN response, and on this zone
+// every one of these paths is served by the Worker itself. Cloudflare does not
+// edge-cache Worker-generated responses. Measured 2026-08-01 with GET (not HEAD,
+// which can hide it): no cf-cache-status header on /movies/<id>, and none on the
+// homepage either — the whole document surface is uncached at the edge.
+//
+// VARY_STRIP_RULE below was the earlier fix for the same symptom and DID land
+// (responses no longer carry Next's `Vary: rsc,...`), which is what makes the
+// remaining absence conclusive rather than ambiguous.
+//
+// Consequence, and the reason CHALLENGE_DETAIL_SCRAPERS_RULE exists: repeat hits
+// on the same URL are never free. Combined with a read-only incremental cache, a
+// detail page outside the prerender set re-renders on the Worker every single
+// time it is requested.
+//
+// Left in place because it costs nothing and becomes correct the moment any of
+// these paths is served by something other than the Worker. Caching Worker HTML
+// for real needs the Cache API inside the Worker, not a zone rule.
 const CACHE_RULE = {
   description: `${TAG} edge-cache public document pages, pin TTL + cache key`,
   expression: CACHEABLE_EXPR,
@@ -324,28 +395,56 @@ async function main() {
   const zoneId = zones[0].id
   console.log(`Zone: ${ZONE_NAME} (${zoneId})`)
 
-  await step('Custom rules: allowlist + block-scrapers (needs Zone WAF: Edit)', async () => {
-    const rs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_firewall_custom')
-    await putRuleset(zoneId, rs, [ALLOW_RULE, BLOCK_RULE], { position: 'top' })
-  })
+  // Order matters: ALLOW_RULE skips the REST of this ruleset (`ruleset:
+  // 'current'`) for verified bots and social scrapers, so it has to stay first —
+  // everything below only ever sees traffic that isn't already trusted.
+  await step(
+    'Custom rules: allowlist + block-scrapers (needs Zone WAF: Edit)',
+    async () => {
+      const rs = await getOrCreatePhaseEntrypoint(
+        zoneId,
+        'http_request_firewall_custom'
+      )
+      await putRuleset(
+        zoneId,
+        rs,
+        [ALLOW_RULE, BLOCK_RULE, CHALLENGE_DETAIL_SCRAPERS_RULE],
+        {
+          position: 'top',
+        }
+      )
+    }
+  )
 
-  await step(`Redirect ${ZONE_NAME} → www (needs Zone Transform Rules: Edit)`, async () => {
-    const rs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_dynamic_redirect')
-    await putRuleset(zoneId, rs, [REDIRECT_APEX_RULE], { position: 'top' })
-  })
+  await step(
+    `Redirect ${ZONE_NAME} → www (needs Zone Transform Rules: Edit)`,
+    async () => {
+      const rs = await getOrCreatePhaseEntrypoint(
+        zoneId,
+        'http_request_dynamic_redirect'
+      )
+      await putRuleset(zoneId, rs, [REDIRECT_APEX_RULE], { position: 'top' })
+    }
+  )
 
   // --- The edge cache: the actual CPU fix. Needs BOTH of the next two. ---
   const cacheOk = await step(
     'Cache rule: edge-cache /, /disclaimer, /movies, /tv-shows (needs Zone Cache Rules: Edit)',
     async () => {
-      const rs = await getOrCreatePhaseEntrypoint(zoneId, 'http_request_cache_settings')
+      const rs = await getOrCreatePhaseEntrypoint(
+        zoneId,
+        'http_request_cache_settings'
+      )
       await putRuleset(zoneId, rs, [CACHE_RULE], { position: 'top' })
     }
   )
   const varyOk = await step(
     'Vary-strip: lets CF actually cache the HTML (needs Zone Transform Rules: Edit)',
     async () => {
-      const rs = await getOrCreatePhaseEntrypoint(zoneId, 'http_response_headers_transform')
+      const rs = await getOrCreatePhaseEntrypoint(
+        zoneId,
+        'http_response_headers_transform'
+      )
       await putRuleset(zoneId, rs, [VARY_STRIP_RULE], { position: 'top' })
     }
   )
@@ -374,58 +473,73 @@ async function main() {
   //   it stays off until the policy has run clean for a while. nosniff is on
   //   here too; it duplicates the X-Content-Type-Options in next.config.mjs but
   //   also covers responses the Worker never renders (challenges, error pages).
-  await step('TLS: min 1.2, Full (Strict), HSTS 6mo (needs Zone Settings: Edit)', async () => {
-    const tlsSettings = [
-      ['min_tls_version', '1.2'],
-      ['ssl', 'strict'],
-      [
-        'security_header',
-        {
-          strict_transport_security: {
-            enabled: true,
-            max_age: 15552000,
-            include_subdomains: true,
-            preload: false,
-            nosniff: true,
+  await step(
+    'TLS: min 1.2, Full (Strict), HSTS 6mo (needs Zone Settings: Edit)',
+    async () => {
+      const tlsSettings = [
+        ['min_tls_version', '1.2'],
+        ['ssl', 'strict'],
+        [
+          'security_header',
+          {
+            strict_transport_security: {
+              enabled: true,
+              max_age: 15552000,
+              include_subdomains: true,
+              preload: false,
+              nosniff: true,
+            },
           },
-        },
-      ],
-    ]
-    for (const [id, value] of tlsSettings) {
-      await cf(`/zones/${zoneId}/settings/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ value }),
-      })
+        ],
+      ]
+      for (const [id, value] of tlsSettings) {
+        await cf(`/zones/${zoneId}/settings/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ value }),
+        })
+      }
     }
-  })
+  )
 
   // Free plan allows only 1 rate-limit rule. We replace any existing rule
   // (e.g. the default "Leaked credential check") since Reely has no auth.
-  await step('Rate limit: /movies/[id] and /tv-shows/[id] (needs Zone WAF: Edit)', async () => {
-    const rs = await getOrCreatePhaseEntrypoint(zoneId, 'http_ratelimit')
-    await putRuleset(zoneId, rs, [RATELIMIT_RULE], { replaceAll: true })
-  })
+  await step(
+    'Rate limit: /movies/[id] and /tv-shows/[id] (needs Zone WAF: Edit)',
+    async () => {
+      const rs = await getOrCreatePhaseEntrypoint(zoneId, 'http_ratelimit')
+      await putRuleset(zoneId, rs, [RATELIMIT_RULE], { replaceAll: true })
+    }
+  )
 
   // Free-plan Bot Fight Mode is intentionally OFF — it runs before the WAF
   // phases so ALLOW_RULE can't exempt Googlebot/GSC, and left on it serves the
   // "Just a moment..." challenge that breaks sitemap fetching + indexing.
-  await step('Bot Fight Mode off (needs Zone Bot Management: Edit)', async () => {
-    await cf(`/zones/${zoneId}/bot_management`, {
-      method: 'PUT',
-      body: JSON.stringify({ fight_mode: false }),
-    })
-  })
+  await step(
+    'Bot Fight Mode off (needs Zone Bot Management: Edit)',
+    async () => {
+      await cf(`/zones/${zoneId}/bot_management`, {
+        method: 'PUT',
+        body: JSON.stringify({ fight_mode: false }),
+      })
+    }
+  )
 
   // Green ONLY if edge caching is live (cache rule + Vary-strip both applied).
   // Secondary rules (WAF, rate limit, redirect, bot mode) can be skipped without
   // failing the run — they don't affect the CPU limit.
   console.log('')
   if (failures.length) {
-    console.warn(`Skipped ${failures.length} of the above (missing token perms) — see ✗ lines.\n`)
+    console.warn(
+      `Skipped ${failures.length} of the above (missing token perms) — see ✗ lines.\n`
+    )
   }
   if (!(cacheOk && varyOk)) {
-    console.error('FAILED: edge cache NOT applied — the cache rule and/or Vary-strip above failed.')
-    console.error('Add BOTH to the token for reely.space: Zone · Cache Rules · Edit AND Zone · Transform Rules · Edit.')
+    console.error(
+      'FAILED: edge cache NOT applied — the cache rule and/or Vary-strip above failed.'
+    )
+    console.error(
+      'Add BOTH to the token for reely.space: Zone · Cache Rules · Edit AND Zone · Transform Rules · Edit.'
+    )
     process.exit(1)
   }
   console.log('✓ Edge cache rules APPLIED (cache rule + Vary-strip).')
@@ -438,7 +552,9 @@ async function main() {
   // never do. Keep the rules (they cost nothing and become live if CF changes
   // this), but the real HTML caching is OpenNext's regional + KV incremental
   // cache, not the CDN. Do not treat this ✓ as proof of an edge HIT.
-  console.log('  Verify for real: curl -sI https://www.reely.space/movies/278 | grep -i cf-cache-status')
+  console.log(
+    '  Verify for real: curl -sI https://www.reely.space/movies/278 | grep -i cf-cache-status'
+  )
 }
 
 main().catch((err) => {
