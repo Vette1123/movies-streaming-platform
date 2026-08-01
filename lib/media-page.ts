@@ -132,6 +132,46 @@ export async function buildMediaStaticParams(fetchers: {
   }
 }
 
+// Collection (franchise) pages were the last dynamic route on the site, and the
+// only one with NO prerender set at all — so every /collection/<id> hit rendered
+// on the Worker, which put it top of the 503 list once the detail-page scrapers
+// were challenged away.
+//
+// TMDB has no "list all collections" endpoint; the id only appears as
+// `belongs_to_collection` inside a movie's details. That sounds expensive but is
+// nearly free here: the build already fetches details for every prerendered
+// movie, so passing the SAME service function (getMovieDetailsById → the
+// `append_to_response` URL the detail page itself uses) means Next's build-time
+// fetch cache serves the second read. One of the two callers pays; the other
+// dedupes.
+//
+// Measured on a 164-movie sample: 37% belong to a collection, ~45 distinct — so
+// the current ~827 prerendered movies yield roughly 227 collection pages.
+// Fetchers are injected rather than imported so this module stays free of
+// service imports, matching buildMediaStaticParams above.
+export async function buildCollectionStaticParams(
+  movieParams: () => Promise<{ id: string }[]>,
+  getMovieDetails: (
+    id: string
+  ) => Promise<{ belongs_to_collection?: { id: number } | null } | undefined>
+): Promise<{ id: string }[]> {
+  try {
+    const movies = await movieParams()
+    const settled = await Promise.allSettled(
+      movies.map((m) => getMovieDetails(m.id))
+    )
+    const ids = new Set<string>()
+    for (const res of settled) {
+      if (res.status !== 'fulfilled') continue
+      const collectionId = res.value?.belongs_to_collection?.id
+      if (collectionId) ids.add(String(collectionId))
+    }
+    return Array.from(ids, (id) => ({ id }))
+  } catch {
+    return []
+  }
+}
+
 export interface OgImage {
   url: string
   width: number

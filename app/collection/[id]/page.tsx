@@ -1,13 +1,23 @@
 import React from 'react'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getCollectionById } from '@/services/movies'
+import {
+  getAllTimeTopRatedMovies,
+  getCollectionById,
+  getLatestTrendingMovies,
+  getMovieDetailsById,
+  getPopularMovies,
+} from '@/services/movies'
 import { Layers } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
 import { Movie } from '@/types/movie-result'
 import { PageDetailsProps } from '@/types/page-details'
 import { siteConfig } from '@/config/site'
+import {
+  buildCollectionStaticParams,
+  buildMediaStaticParams,
+} from '@/lib/media-page'
 import { breadcrumbJsonLd, JsonLd } from '@/lib/structured-data'
 import { getImageURL, pluralize } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
@@ -17,6 +27,24 @@ import { Card } from '@/components/card'
 // repopulate. Mirrors the movie-details revalidate window.
 export const revalidate = 86400
 export const dynamicParams = true
+
+// Prerender the franchises reachable from the movies we already prebuild. This
+// route used to have no generateStaticParams at all, which made it the site's
+// last fully-dynamic page: every hit rendered on the Worker, and once the
+// detail-page scrapers were challenged away /collection/<id> went straight to
+// the top of the 503 list. The ids come from `belongs_to_collection` on movie
+// details — see buildCollectionStaticParams for why that costs almost nothing.
+export function generateStaticParams() {
+  return buildCollectionStaticParams(
+    () =>
+      buildMediaStaticParams({
+        popular: getPopularMovies,
+        topRated: getAllTimeTopRatedMovies,
+        trending: getLatestTrendingMovies,
+      }),
+    getMovieDetailsById
+  )
+}
 
 // Chronological franchise order (earliest first); undated entries sort last so a
 // not-yet-released sequel doesn't jump the row.

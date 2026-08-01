@@ -1,15 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getHeroExtras } from '@/services/hero-extras'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
-
-import { Video } from '@/types/video'
-import { fetchClient } from '@/lib/fetch-client'
-import { pickLogoPath, TMDBLogo } from '@/lib/logos'
-import { pickTrailerKey } from '@/lib/videos'
-
-interface HeroExtrasResponse {
-  videos?: { results: Video[] }
-  images?: { logos: TMDBLogo[] }
-}
 
 // s-maxage drives the Cache API TTL below (8h), matching the TMDB ISR window.
 const CACHE_CONTROL = 'public, s-maxage=28800, max-age=3600'
@@ -39,9 +30,12 @@ export async function GET(request: NextRequest) {
   // `caches.default` is a Workers-runtime extension (not in the DOM CacheStorage
   // type, hence the cast) and is undefined under `next dev` (Node), so caching is
   // a prod-only fast path and dev just always computes.
-  const cache = (globalThis.caches as unknown as { default?: Cache } | undefined)
-    ?.default
-  const cacheKey = new Request(`https://cache/hero-extras?type=${type}&id=${id}`)
+  const cache = (
+    globalThis.caches as unknown as { default?: Cache } | undefined
+  )?.default
+  const cacheKey = new Request(
+    `https://cache/hero-extras?type=${type}&id=${id}`
+  )
 
   // A cache READ must never take the route down. Under subrequest pressure
   // `cache.match` itself can throw ("Too many subrequests by single Worker
@@ -56,17 +50,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // include_image_language=en,null pulls English + language-neutral logos.
-    const data = await fetchClient.get<HeroExtrasResponse>(
-      `${type}/${id}?language=en-US&append_to_response=videos,images&include_image_language=en,null`,
-      {},
-      true
-    )
-
-    const body = {
-      trailerKey: pickTrailerKey(data.videos?.results) ?? null,
-      logoPath: pickLogoPath(data.images?.logos) ?? null,
-    }
+    // Same resolver the static homepage prebuilds with (services/hero-extras),
+    // so a slide enriched here and one enriched at build can't disagree.
+    const { trailerKey, logoPath } = await getHeroExtras(type, id)
+    const body = { trailerKey, logoPath }
 
     const response = NextResponse.json(body, {
       headers: { 'Cache-Control': CACHE_CONTROL },

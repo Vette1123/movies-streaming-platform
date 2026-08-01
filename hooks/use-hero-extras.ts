@@ -3,15 +3,9 @@
 import { useEffect, useState } from 'react'
 
 import { ItemType } from '@/types/movie-result'
+import { HeroExtras, heroExtrasKey, HeroExtrasSeed } from '@/lib/hero-extras'
 
-export interface HeroExtras {
-  trailerKey: string | null
-  logoPath: string | null
-  // False until the extras request resolves. Lets a slide distinguish "still
-  // fetching the logo" from "resolved, no logo" — both leave logoPath null — so
-  // the title can hold its fallback text back until the logo's fate is known.
-  ready: boolean
-}
+export type { HeroExtras }
 
 // Module-level cache + in-flight map, shared across every slide instance. A
 // single hero slide mounts several consumers of this hook (title logo, trailer
@@ -20,6 +14,18 @@ export interface HeroExtras {
 // cache hit with no fetch at all.
 const cache = new Map<string, HeroExtras>()
 const inFlight = new Map<string, Promise<HeroExtras>>()
+
+// Prime the cache with extras the server already resolved at build time (see
+// services/hero-extras). Every seeded slide then skips the network entirely —
+// `load()` returns the cached value before it ever reaches fetch — so the static
+// homepage makes no /api/hero-extras calls at all, and the hero paints with its
+// logo instead of fading one in. Idempotent and last-write-wins: re-seeding the
+// same map is a no-op, and anything already fetched stays as-is.
+export function seedHeroExtras(seed: HeroExtrasSeed): void {
+  for (const [key, value] of Object.entries(seed)) {
+    if (!cache.has(key)) cache.set(key, value)
+  }
+}
 
 const EMPTY: HeroExtras = { trailerKey: null, logoPath: null, ready: false }
 const READY_EMPTY: HeroExtras = { ...EMPTY, ready: true }
@@ -59,7 +65,7 @@ export function useHeroExtras(
   mediaType: ItemType,
   enabled = true
 ): HeroExtras {
-  const key = id ? `${mediaType}:${id}` : ''
+  const key = id ? heroExtrasKey(mediaType, id) : ''
   const [extras, setExtras] = useState<HeroExtras>(
     () => (key && cache.get(key)) || EMPTY
   )

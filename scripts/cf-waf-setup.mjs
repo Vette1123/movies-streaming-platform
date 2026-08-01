@@ -215,8 +215,8 @@ const BROWSER_UAS = ['Chrome', 'Firefox', 'Safari', 'Edg', 'OPR', 'Gecko/']
 // challenge the enumerators instead.
 //
 // Deliberately narrow, because a false positive here costs a real page view:
-//   - detail paths only — the homepage, browse lists and genre pages are all
-//     prerendered and cheap, so they're left alone entirely;
+//   - detail + collection paths only — the homepage, browse lists and genre
+//     pages are all prerendered and cheap, so they're left alone entirely;
 //   - genre paths excluded (they start with the same prefix, and their
 //     infinite-scroll fires server actions at these very paths);
 //   - anything with a browser UA passes untouched;
@@ -229,7 +229,7 @@ const BROWSER_UAS = ['Chrome', 'Firefox', 'Safari', 'Edg', 'OPR', 'Gecko/']
 const CHALLENGE_DETAIL_SCRAPERS_RULE = {
   description: `${TAG} challenge non-browser clients on detail pages`,
   expression: [
-    '(starts_with(http.request.uri.path, "/movies/") or starts_with(http.request.uri.path, "/tv-shows/"))',
+    '(starts_with(http.request.uri.path, "/movies/") or starts_with(http.request.uri.path, "/tv-shows/") or starts_with(http.request.uri.path, "/collection/"))',
     'not (starts_with(http.request.uri.path, "/movies/genre") or starts_with(http.request.uri.path, "/tv-shows/genre"))',
     'not cf.client.bot',
     `not (${orExpr(BROWSER_UAS)})`,
