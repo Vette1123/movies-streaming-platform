@@ -196,12 +196,27 @@ export function Carousel({
     return 1 - Math.min(Math.abs(value) / width, 1) * DRAG_SCALE_DEPTH
   })
 
+  // True whenever the track is off-rest: mid-drag, or springing back. Drives the
+  // slide edge fades below, which must not be visible when the hero is sitting
+  // still. The token guards against an interrupted settle (swipe again before
+  // the last one lands) resolving late and switching the fades off mid-motion.
+  const [moving, setMoving] = React.useState(false)
+  const settleTokenRef = React.useRef(0)
+
   const settle = React.useCallback(() => {
+    const token = ++settleTokenRef.current
+    setMoving(true)
     if (reduce) {
-      x.set(0)
+      x.jump(0)
+      setMoving(false)
       return undefined
     }
-    return animate(x, 0, SLIDE_SPRING)
+    const controls = animate(x, 0, SLIDE_SPRING)
+    const done = () => {
+      if (settleTokenRef.current === token) setMoving(false)
+    }
+    controls.then(done, done)
+    return controls
   }, [reduce, x])
 
   // Where the finger let go, frozen at pointerup. The effect below cannot just
@@ -245,6 +260,14 @@ export function Carousel({
       settle()
     },
     [handleDragEnd, settle, x]
+  )
+
+  const onDragStart = React.useCallback(
+    (event: PointerEvent, info: PanInfo) => {
+      setMoving(true)
+      handleDragStart(event, info)
+    },
+    [handleDragStart]
   )
 
   // Keyboard control when the carousel (or anything inside it) has focus.
@@ -375,7 +398,7 @@ export function Carousel({
           }}
           drag="x"
           dragMomentum={false}
-          onDragStart={handleDragStart}
+          onDragStart={onDragStart}
           onDragEnd={onDragEnd}
         >
           {/* Windowed slides, laid out side by side and placed INSTANTLY — plain
@@ -420,6 +443,27 @@ export function Carousel({
                       { active }
                     )
                   : child}
+
+                {/* Edge falloff, ONLY while the track is off-rest. The gutter
+                  alone didn't fix the seam: a slide's scrim runs from-black/90
+                  to-black/20, so its trailing edge is the BRIGHTEST part of the
+                  frame and ends on a hard vertical line against the gap — which
+                  is the border you can see mid-swipe. Dissolving both edges into
+                  the black base removes the line whatever the artwork is doing.
+                  Gated on `moving` so the hero is never vignetted sitting still,
+                  and the fade in/out happens under cover of the motion itself. */}
+                <div
+                  aria-hidden
+                  className={`pointer-events-none absolute inset-y-0 -left-px z-[70] w-10 bg-gradient-to-r from-black via-black/60 to-transparent transition-opacity duration-200 sm:w-20 ${
+                    moving ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
+                <div
+                  aria-hidden
+                  className={`pointer-events-none absolute inset-y-0 -right-px z-[70] w-10 bg-gradient-to-l from-black via-black/60 to-transparent transition-opacity duration-200 sm:w-20 ${
+                    moving ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
               </motion.div>
             )
           })}
