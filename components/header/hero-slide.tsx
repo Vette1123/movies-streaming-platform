@@ -42,6 +42,11 @@ interface HeroSlideProps {
 const HOVER_PREVIEW_DELAY = 500
 const TOUCH_PREVIEW_DELAY = 1200
 
+// Whether the hero has resolved its title treatment once for this page load.
+// Module-scoped on purpose: it must survive a slide unmounting, which is exactly
+// what the windowed carousel does every time you swipe. See titleGraceElapsed.
+let firstPaintSettled = false
+
 export function HeroSlide({
   movie,
   genreTable,
@@ -70,9 +75,20 @@ export function HeroSlide({
   // grace cap still reveals the text if the logo is genuinely slow, so the title
   // never stays hidden. Refresh is a cache hit: extras are ready synchronously
   // and the logo decodes fast, so the text never shows at all.
-  const [titleGraceElapsed, setTitleGraceElapsed] = React.useState(false)
+  // The grace only ever applied to the page's FIRST paint. Slides are windowed,
+  // so swiping unmounts and re-mounts them — each remount restarted a fresh
+  // 2.2s timer and the slide landed with NO title at all, which is the blank
+  // hero. After the first slide has resolved once, a brief flash of the plain
+  // title is strictly better than 2.2s of nothing, so skip the hold entirely.
+  const [titleGraceElapsed, setTitleGraceElapsed] = React.useState(
+    () => firstPaintSettled
+  )
   React.useEffect(() => {
-    const t = setTimeout(() => setTitleGraceElapsed(true), 2200)
+    if (firstPaintSettled) return
+    const t = setTimeout(() => {
+      firstPaintSettled = true
+      setTitleGraceElapsed(true)
+    }, 2200)
     return () => clearTimeout(t)
   }, [])
 
@@ -344,8 +360,14 @@ export function HeroSlide({
                     // Same reason as every image in BlurredImage: a native image
                     // drag would ghost the logo and eat the carousel's gesture.
                     draggable={false}
-                    onError={() => setLogoError(true)}
-                    onLoad={() => setLogoLoaded(true)}
+                    onError={() => {
+                      firstPaintSettled = true
+                      setLogoError(true)
+                    }}
+                    onLoad={() => {
+                      firstPaintSettled = true
+                      setLogoLoaded(true)
+                    }}
                     className={`absolute bottom-0 left-0 max-h-16 w-auto max-w-[80%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] transition-all duration-700 ease-out sm:max-h-20 lg:max-h-32 ${
                       logoLoaded
                         ? 'blur-0 translate-y-0 opacity-100'

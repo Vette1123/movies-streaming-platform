@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PanInfo } from 'framer-motion'
+
 import { useMounted } from '@/hooks/use-mounted'
 
 interface UseCarouselProps {
@@ -99,25 +100,27 @@ export const useCarousel = ({
     }
   }, [])
 
-  const handleUserInteraction = useCallback(
-    (interacting: boolean) => {
-      setIsUserInteracting(interacting)
+  // The interval is owned entirely by the effect below, which re-runs whenever
+  // isUserInteracting changes. This must NOT clear the interval imperatively:
+  // handleButtonClick/handleDotClick call this with true then false in the same
+  // tick, React batches that into no net state change, so the effect never
+  // re-ran — the imperative stop killed autoplay permanently the first time you
+  // touched an arrow or a dot. Only the flag moves here; the effect does the
+  // rest, so a batched true→false is simply a no-op instead of a one-way door.
+  const handleUserInteraction = useCallback((interacting: boolean) => {
+    if (userInteractionTimeoutRef.current) {
+      clearTimeout(userInteractionTimeoutRef.current)
+    }
 
-      if (userInteractionTimeoutRef.current) {
-        clearTimeout(userInteractionTimeoutRef.current)
-      }
-
-      if (interacting) {
-        stopAutoPlay()
-      } else {
-        // Resume auto-play after a delay when user stops interacting
-        userInteractionTimeoutRef.current = setTimeout(() => {
-          setIsUserInteracting(false)
-        }, 3000) // 3 seconds delay before resuming auto-play
-      }
-    },
-    [stopAutoPlay]
-  )
+    if (interacting) {
+      setIsUserInteracting(true)
+    } else {
+      // Resume auto-play after a delay when user stops interacting
+      userInteractionTimeoutRef.current = setTimeout(() => {
+        setIsUserInteracting(false)
+      }, 3000) // 3 seconds delay before resuming auto-play
+    }
+  }, [])
 
   // Auto-play effect
   useEffect(() => {
@@ -137,56 +140,74 @@ export const useCarousel = ({
   }, [])
 
   // Enhanced drag handling with much better UX
-  const handleDragStart = useCallback((event: any, info: PanInfo) => {
-    // Prevent drag if user is interacting with buttons or clickable elements
-    const target = event.target as HTMLElement
-    const isInteractiveElement = target.closest(
-      'button, a, input, select, textarea, [role="button"]'
-    )
+  const handleDragStart = useCallback(
+    (event: any, info: PanInfo) => {
+      // Prevent drag if user is interacting with buttons or clickable elements
+      const target = event.target as HTMLElement
+      const isInteractiveElement = target.closest(
+        'button, a, input, select, textarea, [role="button"]'
+      )
 
-    if (isInteractiveElement) {
-      return false // Prevent drag
-    }
-
-    setIsDragging(true)
-    handleUserInteraction(true)
-  }, [handleUserInteraction])
-
-  const handleDragEnd = useCallback((event: any, info: PanInfo) => {
-    setIsDragging(false)
-
-    // Much more intuitive thresholds
-    const isMobile = window.innerWidth < 768
-    const containerWidth = event.currentTarget?.offsetWidth || window.innerWidth
-
-    // Percentage-based thresholds for better UX
-    const distanceThreshold = containerWidth * (isMobile ? 0.12 : 0.15) // 12% on mobile, 15% on desktop
-    const velocityThreshold = isMobile ? 250 : 400
-
-    const velocity = Math.abs(info.velocity.x)
-    const offset = info.offset.x
-    const distance = Math.abs(offset)
-
-    // More intuitive logic: either significant distance OR high velocity
-    const hasSignificantDistance = distance > distanceThreshold
-    const hasHighVelocity = velocity > velocityThreshold
-
-    const shouldChangeSlide = hasSignificantDistance || hasHighVelocity
-
-    if (shouldChangeSlide) {
-      // Immediate transition for better responsiveness
-      if (offset > 0) {
-        paginate(-1) // Swipe right, go to previous
-      } else {
-        paginate(1) // Swipe left, go to next
+      if (isInteractiveElement) {
+        return false // Prevent drag
       }
-    }
 
-    // Resume auto-play after user interaction delay
-    setTimeout(() => {
-      handleUserInteraction(false)
-    }, 50)
-  }, [paginate, handleUserInteraction])
+      setIsDragging(true)
+      handleUserInteraction(true)
+    },
+    [handleUserInteraction]
+  )
+
+  const handleDragEnd = useCallback(
+    (event: any, info: PanInfo) => {
+      setIsDragging(false)
+
+      // Measure the stage, not the event target. This used to read
+      // `event.currentTarget.offsetWidth`, but on a pointerup React has already
+      // finished dispatch and currentTarget is null, so it always fell through to
+      // the window width — which is wider than the stage on desktop and made the
+      // distance threshold harder to reach than intended.
+      const stage = (event?.target as HTMLElement | null)?.closest?.(
+        '[data-carousel-stage]'
+      ) as HTMLElement | null
+      const containerWidth = stage?.offsetWidth || window.innerWidth
+      const isMobile = window.innerWidth < 768
+
+      // Percentage-based thresholds for better UX
+      const distanceThreshold = containerWidth * (isMobile ? 0.12 : 0.15) // 12% on mobile, 15% on desktop
+      const velocityThreshold = isMobile ? 250 : 400
+
+      const velocity = Math.abs(info.velocity.x)
+      const offset = info.offset.x
+      const distance = Math.abs(offset)
+
+      // Distance OR flick. Both are direction-checked against the SAME value
+      // below, so a fast flick that ends near where it started still goes the way
+      // the finger was moving.
+      const hasSignificantDistance = distance > distanceThreshold
+      const hasHighVelocity = velocity > velocityThreshold
+
+      const shouldChangeSlide = hasSignificantDistance || hasHighVelocity
+
+      if (shouldChangeSlide) {
+        // A flick can end with almost no offset, so let velocity decide the
+        // direction when the distance is too small to be meaningful — otherwise a
+        // quick flick left could paginate right off a couple of stray pixels.
+        const direction = hasSignificantDistance ? offset : -info.velocity.x
+        if (direction > 0) {
+          paginate(-1) // Swipe right, go to previous
+        } else {
+          paginate(1) // Swipe left, go to next
+        }
+      }
+
+      // Resume auto-play after user interaction delay
+      setTimeout(() => {
+        handleUserInteraction(false)
+      }, 50)
+    },
+    [paginate, handleUserInteraction]
+  )
 
   const handleHoverStart = useCallback(() => {
     handleUserInteraction(true)
@@ -196,18 +217,24 @@ export const useCarousel = ({
     handleUserInteraction(false)
   }, [handleUserInteraction])
 
-  const handleButtonClick = useCallback((newDirection: number) => {
-    handleUserInteraction(true)
-    paginate(newDirection)
-    handleUserInteraction(false)
-  }, [handleUserInteraction, paginate])
+  const handleButtonClick = useCallback(
+    (newDirection: number) => {
+      handleUserInteraction(true)
+      paginate(newDirection)
+      handleUserInteraction(false)
+    },
+    [handleUserInteraction, paginate]
+  )
 
-  const handleDotClick = useCallback((index: number) => {
-    handleUserInteraction(true)
-    setDirection(index > currentIndex ? 1 : -1)
-    setCurrentIndex(index)
-    handleUserInteraction(false)
-  }, [currentIndex, handleUserInteraction])
+  const handleDotClick = useCallback(
+    (index: number) => {
+      handleUserInteraction(true)
+      setDirection(index > currentIndex ? 1 : -1)
+      setCurrentIndex(index)
+      handleUserInteraction(false)
+    },
+    [currentIndex, handleUserInteraction]
+  )
 
   return {
     currentIndex,
@@ -227,4 +254,4 @@ export const useCarousel = ({
     handleButtonClick,
     handleDotClick,
   }
-} 
+}
