@@ -5,7 +5,7 @@ import { Download } from 'lucide-react'
 
 import { NavItem } from '@/types/navbar'
 import { siteConfig } from '@/config/site'
-import { openRafiqOnPlayStore } from '@/lib/rafiq'
+import { COMPANION_APPS, openOnPlayStore } from '@/lib/apps'
 import { cn } from '@/lib/utils'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -128,24 +128,27 @@ export function MobileNav({ items }: MobileNavProps) {
                 Install app
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => {
-                setIsOpen(false)
-                openRafiqOnPlayStore()
-              }}
-              className={cn(
-                buttonVariants({
-                  variant: 'default',
-                  size: 'default',
-                  className: 'w-full',
-                }),
-                'from-primary bg-gradient-to-r to-emerald-500 text-white'
-              )}
-            >
-              <Icons.googlePlay className="mr-2 size-5" />
-              Get Rafiq on Google Play
-            </button>
+            {COMPANION_APPS.map((app) => (
+              <button
+                key={app.slug}
+                type="button"
+                onClick={() => {
+                  setIsOpen(false)
+                  openOnPlayStore(app)
+                }}
+                className={cn(
+                  buttonVariants({
+                    variant: 'default',
+                    size: 'default',
+                    className: 'w-full',
+                  }),
+                  'from-primary bg-gradient-to-r to-emerald-500 text-white'
+                )}
+              >
+                <Icons.googlePlay className="mr-2 size-5" />
+                Get {app.name} on Google Play
+              </button>
+            ))}
             {SOCIAL_LINKS.map(
               ({ href, label, Icon, ariaLabel, iconClassName }) => (
                 <Link

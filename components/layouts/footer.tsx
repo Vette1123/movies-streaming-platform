@@ -2,11 +2,19 @@ import React from 'react'
 import Link from 'next/link'
 
 import { siteConfig } from '@/config/site'
+import { COMPANION_APPS } from '@/lib/apps'
 import { cn } from '@/lib/utils'
 
 import { Icons } from '../icons'
-import { RafiqLink } from '../rafiq-link'
+import { PlayStoreLink } from '../play-store-link'
 import { buttonVariants } from '../ui/button'
+
+// "A, B and C" — the separator that follows the item at `index`.
+function listSeparator(index: number, total: number): string {
+  if (index === total - 1) return ''
+  if (index === total - 2) return ' and '
+  return ', '
+}
 
 export function Footer() {
   return (
@@ -72,8 +80,14 @@ export function Footer() {
       </div>
       <div className="flex items-center justify-center">
         <p>
-          Also check out <RafiqLink>Rafiq on Google Play</RafiqLink>, an app
-          made by us.
+          Also check out{' '}
+          {COMPANION_APPS.map((app, index) => (
+            <React.Fragment key={app.slug}>
+              <PlayStoreLink app={app} />
+              {listSeparator(index, COMPANION_APPS.length)}
+            </React.Fragment>
+          ))}{' '}
+          on Google Play, apps made by us.
         </p>
       </div>
       <div className="flex items-center justify-center">

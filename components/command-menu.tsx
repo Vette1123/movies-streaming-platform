@@ -16,9 +16,9 @@ import {
   trackSearchPerformed,
   trackSearchResultClicked,
 } from '@/lib/analytics'
+import { COMPANION_APPS, openOnPlayStore } from '@/lib/apps'
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
-import { openRafiqOnPlayStore } from '@/lib/rafiq'
 import { getNextImageFallback } from '@/lib/tmdbConfig'
 import {
   cn,
@@ -610,23 +610,26 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                 Portfolio
               </div>
             </CommandItem>
-            <CommandItem
-              className="cursor-pointer"
-              onSelect={() => {
-                trackCommandShortcutUsed({ shortcut: 'rafiq' })
-                runCommand(() => openRafiqOnPlayStore())
-              }}
-            >
-              <div className="flex items-center gap-4">
-                <Icons.googlePlay className="size-5" />
-                <div className="flex flex-col">
-                  <span>Rafiq</span>
-                  <span className="text-muted-foreground text-xs">
-                    An app made by us · Google Play
-                  </span>
+            {COMPANION_APPS.map((app) => (
+              <CommandItem
+                key={app.slug}
+                className="cursor-pointer"
+                onSelect={() => {
+                  trackCommandShortcutUsed({ shortcut: app.slug })
+                  runCommand(() => openOnPlayStore(app))
+                }}
+              >
+                <div className="flex items-center gap-4">
+                  <Icons.googlePlay className="size-5" />
+                  <div className="flex flex-col">
+                    <span>{app.name}</span>
+                    <span className="text-muted-foreground text-xs">
+                      {app.tagline} · Google Play
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </CommandItem>
+              </CommandItem>
+            ))}
             <CommandItem
               className="cursor-pointer"
               onSelect={() => {

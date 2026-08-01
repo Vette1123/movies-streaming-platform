@@ -4,10 +4,15 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 
 import { siteConfig } from '@/config/site'
-import { openRafiqOnPlayStore } from '@/lib/rafiq'
+import { COMPANION_APPS, openOnPlayStore } from '@/lib/apps'
 import { cn } from '@/lib/utils'
 import { useNavbarScrollOverlay } from '@/hooks/use-scroll-overlay'
 import { buttonVariants } from '@/components/ui/button'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { Icons } from '@/components/icons'
 import { MainNav } from '@/components/layouts/main-nav'
 import { MobileNav } from '@/components/layouts/mobile-nav'
@@ -49,18 +54,39 @@ export function SiteHeader() {
             <CommandMenu />
           </div>
           <nav className="hidden items-center space-x-1 md:flex">
-            <button
-              type="button"
-              onClick={openRafiqOnPlayStore}
-              aria-label="Rafiq — our app on Google Play"
-              className={buttonVariants({
-                size: 'icon',
-                variant: 'ghost',
-              })}
-            >
-              <Icons.googlePlay className="size-5" />
-              <span className="sr-only">Rafiq on Google Play</span>
-            </button>
+            <Popover>
+              <PopoverTrigger
+                aria-label="Our apps on Google Play"
+                className={buttonVariants({
+                  size: 'icon',
+                  variant: 'ghost',
+                })}
+              >
+                <Icons.googlePlay className="size-5" />
+                <span className="sr-only">Our apps on Google Play</span>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-72 p-2">
+                <p className="text-muted-foreground px-2 pt-1 pb-2 text-xs font-medium">
+                  Our apps on Google Play
+                </p>
+                {COMPANION_APPS.map((app) => (
+                  <button
+                    key={app.slug}
+                    type="button"
+                    onClick={() => openOnPlayStore(app)}
+                    className="hover:bg-accent focus-visible:bg-accent flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left outline-none"
+                  >
+                    <Icons.googlePlay className="size-5 shrink-0" />
+                    <span className="flex flex-col">
+                      <span className="text-sm font-medium">{app.name}</span>
+                      <span className="text-muted-foreground text-xs">
+                        {app.tagline}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
             <Link
               href={siteConfig.links.github}
               target="_blank"
