@@ -279,12 +279,36 @@
 }
 .aurora-stars--1 {
   background-image:
-    radial-gradient(1.5px 1.5px at 40px 60px, rgba(255, 255, 255, 0.9), transparent),
-    radial-gradient(1px 1px at 130px 20px, rgba(191, 219, 254, 0.8), transparent),
-    radial-gradient(1.5px 1.5px at 220px 140px, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1px 1px at 300px 90px, rgba(255, 255, 255, 0.6), transparent),
-    radial-gradient(1px 1px at 90px 220px, rgba(147, 197, 253, 0.7), transparent),
-    radial-gradient(1.5px 1.5px at 250px 280px, rgba(255, 255, 255, 0.55), transparent);
+    radial-gradient(
+      1.5px 1.5px at 40px 60px,
+      rgba(255, 255, 255, 0.9),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 130px 20px,
+      rgba(191, 219, 254, 0.8),
+      transparent
+    ),
+    radial-gradient(
+      1.5px 1.5px at 220px 140px,
+      rgba(255, 255, 255, 0.7),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 300px 90px,
+      rgba(255, 255, 255, 0.6),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 90px 220px,
+      rgba(147, 197, 253, 0.7),
+      transparent
+    ),
+    radial-gradient(
+      1.5px 1.5px at 250px 280px,
+      rgba(255, 255, 255, 0.55),
+      transparent
+    );
   background-size: 340px 340px;
   animation:
     stars-drift-1 90s linear infinite,
@@ -293,10 +317,26 @@
 .aurora-stars--2 {
   opacity: 0.7;
   background-image:
-    radial-gradient(2px 2px at 60px 90px, rgba(255, 255, 255, 0.95), transparent),
-    radial-gradient(1.5px 1.5px at 180px 40px, rgba(196, 181, 253, 0.8), transparent),
-    radial-gradient(1.5px 1.5px at 110px 190px, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(2px 2px at 230px 150px, rgba(191, 219, 254, 0.75), transparent);
+    radial-gradient(
+      2px 2px at 60px 90px,
+      rgba(255, 255, 255, 0.95),
+      transparent
+    ),
+    radial-gradient(
+      1.5px 1.5px at 180px 40px,
+      rgba(196, 181, 253, 0.8),
+      transparent
+    ),
+    radial-gradient(
+      1.5px 1.5px at 110px 190px,
+      rgba(255, 255, 255, 0.7),
+      transparent
+    ),
+    radial-gradient(
+      2px 2px at 230px 150px,
+      rgba(191, 219, 254, 0.75),
+      transparent
+    );
   background-size: 260px 260px;
   animation:
     stars-drift-2 62s linear infinite,

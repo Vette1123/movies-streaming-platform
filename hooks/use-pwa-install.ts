@@ -47,8 +47,9 @@ export function isStandalone() {
     '(display-mode: standalone)'
   ).matches
   // iOS Safari exposes navigator.standalone instead of the display-mode query.
-  const iosStandalone = (window.navigator as Navigator & { standalone?: boolean })
-    .standalone
+  const iosStandalone = (
+    window.navigator as Navigator & { standalone?: boolean }
+  ).standalone
   return Boolean(displayStandalone || iosStandalone)
 }
 

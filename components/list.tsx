@@ -45,7 +45,12 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
 
   // Pointer drag-to-scroll (mouse only — touch already scrolls natively). Kept
   // in a ref so the listeners never need to re-bind and don't trigger renders.
-  const drag = React.useRef({ active: false, moved: false, startX: 0, startScroll: 0 })
+  const drag = React.useRef({
+    active: false,
+    moved: false,
+    startX: 0,
+    startScroll: 0,
+  })
 
   const syncArrows = React.useCallback(() => {
     const el = railRef.current
@@ -73,30 +78,36 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
     })
   }, [])
 
-  const onPointerDown = React.useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType !== 'mouse') return
-    const el = railRef.current
-    if (!el) return
-    drag.current = {
-      active: true,
-      moved: false,
-      startX: e.clientX,
-      startScroll: el.scrollLeft,
-    }
-  }, [])
+  const onPointerDown = React.useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (e.pointerType !== 'mouse') return
+      const el = railRef.current
+      if (!el) return
+      drag.current = {
+        active: true,
+        moved: false,
+        startX: e.clientX,
+        startScroll: el.scrollLeft,
+      }
+    },
+    []
+  )
 
-  const onPointerMove = React.useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    const state = drag.current
-    if (!state.active) return
-    const el = railRef.current
-    if (!el) return
-    const delta = e.clientX - state.startX
-    if (!state.moved && Math.abs(delta) > DRAG_THRESHOLD) {
-      state.moved = true
-      el.setPointerCapture(e.pointerId)
-    }
-    if (state.moved) el.scrollLeft = state.startScroll - delta
-  }, [])
+  const onPointerMove = React.useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      const state = drag.current
+      if (!state.active) return
+      const el = railRef.current
+      if (!el) return
+      const delta = e.clientX - state.startX
+      if (!state.moved && Math.abs(delta) > DRAG_THRESHOLD) {
+        state.moved = true
+        el.setPointerCapture(e.pointerId)
+      }
+      if (state.moved) el.scrollLeft = state.startScroll - delta
+    },
+    []
+  )
 
   const endDrag = React.useCallback(() => {
     drag.current.active = false
@@ -105,13 +116,16 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
   // If the press turned into a drag, swallow the click so the card link under
   // the cursor doesn't fire. Runs in the capture phase, before the link's own
   // handler. `moved` is reset here so the next genuine click passes through.
-  const onClickCapture = React.useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (drag.current.moved) {
-      e.preventDefault()
-      e.stopPropagation()
-      drag.current.moved = false
-    }
-  }, [])
+  const onClickCapture = React.useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (drag.current.moved) {
+        e.preventDefault()
+        e.stopPropagation()
+        drag.current.moved = false
+      }
+    },
+    []
+  )
 
   return (
     // Self-contained horizontal gutter so the rail renders IDENTICALLY wherever

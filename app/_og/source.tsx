@@ -213,8 +213,8 @@ export async function buildOpenGraphImageInput() {
                 maxWidth: 640,
               }}
             >
-              Discover, track, and stream thousands of trending titles
-              &mdash; no signup, no paywall.
+              Discover, track, and stream thousands of trending titles &mdash;
+              no signup, no paywall.
             </div>
           </div>
 
@@ -260,9 +260,30 @@ export async function buildOpenGraphImageInput() {
                 stroke="rgba(96,165,250,0.35)"
                 strokeWidth="1"
               />
-              <rect x="8" y="8" width="264" height="264" rx="42" fill="url(#card)" />
-              <rect x="8" y="8" width="264" height="264" rx="42" fill="url(#hl)" />
-              <rect x="8" y="8" width="264" height="264" rx="42" fill="url(#sh)" />
+              <rect
+                x="8"
+                y="8"
+                width="264"
+                height="264"
+                rx="42"
+                fill="url(#card)"
+              />
+              <rect
+                x="8"
+                y="8"
+                width="264"
+                height="264"
+                rx="42"
+                fill="url(#hl)"
+              />
+              <rect
+                x="8"
+                y="8"
+                width="264"
+                height="264"
+                rx="42"
+                fill="url(#sh)"
+              />
               <rect
                 x="8.5"
                 y="8.5"
@@ -382,8 +403,18 @@ export async function buildOpenGraphImageInput() {
     options: {
       ...OG_SIZE,
       fonts: [
-        { name: 'Inter', data: interBlack, weight: 900, style: 'normal' as const },
-        { name: 'Inter', data: interBold, weight: 700, style: 'normal' as const },
+        {
+          name: 'Inter',
+          data: interBlack,
+          weight: 900,
+          style: 'normal' as const,
+        },
+        {
+          name: 'Inter',
+          data: interBold,
+          weight: 700,
+          style: 'normal' as const,
+        },
       ],
     },
   }

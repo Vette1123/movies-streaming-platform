@@ -38,8 +38,7 @@ export const HeroRatesInfos = ({
   genreTable,
 }: HeroRatesInfosProps) => {
   const item = (movieDetails || movie || seriesDetails) as (
-    | MovieDetails
-    | Movie
+    MovieDetails | Movie
   ) &
     SeriesDetails
   // Resolve media type: detail pages pass movieDetails/seriesDetails directly;

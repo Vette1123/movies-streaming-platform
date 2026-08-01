@@ -53,9 +53,9 @@ const WSRV = 'https://wsrv.nl/?url=https://image.tmdb.org/t/p'
 const apiConfig = {
   // ...
   originalImage: (p: string) => `${WSRV}/original${p}&output=webp`,
-  w500Image:     (p: string) => `${WSRV}/w500${p}&output=webp`,
-  w185Image:     (p: string) => `${WSRV}/w185${p}&output=webp`,
-  w300Image:     (p: string) => `${WSRV}/w300${p}&output=webp`,
+  w500Image: (p: string) => `${WSRV}/w500${p}&output=webp`,
+  w185Image: (p: string) => `${WSRV}/w185${p}&output=webp`,
+  w300Image: (p: string) => `${WSRV}/w300${p}&output=webp`,
 }
 ```
 
@@ -88,13 +88,13 @@ host uses a different path shape, update `extractTMDBPath` / `imageStage` in
 
 ## Alternatives comparison
 
-| Option            | Free tier              | Optimize | Key? | Notes |
-|-------------------|------------------------|----------|------|-------|
-| TMDB origin       | unlimited              | no       | no   | never expires; JPEG only |
-| wsrv.nl           | free (donation-funded) | WebP/AVIF| no   | public, no SLA |
-| ImageKit          | 20 GB/mo (perpetual)   | yes      | yes  | current primary; "2-week" was trial credits, not the free plan |
-| Cloudinary        | ~25 GB/mo              | yes      | yes  | mature managed |
-| Bunny.net         | paid (~$1 min)         | yes      | yes  | cheap, reliable |
+| Option      | Free tier              | Optimize  | Key? | Notes                                                          |
+| ----------- | ---------------------- | --------- | ---- | -------------------------------------------------------------- |
+| TMDB origin | unlimited              | no        | no   | never expires; JPEG only                                       |
+| wsrv.nl     | free (donation-funded) | WebP/AVIF | no   | public, no SLA                                                 |
+| ImageKit    | 20 GB/mo (perpetual)   | yes       | yes  | current primary; "2-week" was trial credits, not the free plan |
+| Cloudinary  | ~25 GB/mo              | yes       | yes  | mature managed                                                 |
+| Bunny.net   | paid (~$1 min)         | yes       | yes  | cheap, reliable                                                |
 
 ## Verifying a change
 

@@ -15,11 +15,11 @@
 //
 // Run: pnpm icons:build  (after editing app/_icons/source.tsx)
 
-import esbuild from 'esbuild'
 import { mkdirSync, rmSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import esbuild from 'esbuild'
 
 import { optimizePng } from './optimize-png.mjs'
 
@@ -75,7 +75,11 @@ try {
   ]
 
   const renderPng = async ({ size, glyphScale }) => {
-    const { jsx, options } = await buildIconInput({ size, radius: 0, glyphScale })
+    const { jsx, options } = await buildIconInput({
+      size,
+      radius: 0,
+      glyphScale,
+    })
     const raw = Buffer.from(await new ImageResponse(jsx, options).arrayBuffer())
     return optimizePng(raw)
   }
@@ -83,7 +87,9 @@ try {
   for (const target of TARGETS) {
     const { buf, note } = await renderPng(target)
     await writeFile(join('public', target.file), buf)
-    console.log(`✓ public/${target.file} (${target.size}px, ${buf.length}B, ${note})`)
+    console.log(
+      `✓ public/${target.file} (${target.size}px, ${buf.length}B, ${note})`
+    )
   }
 
   // favicon.ico last, from a 64px render of the same mark.

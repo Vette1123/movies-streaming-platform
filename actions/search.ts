@@ -1,11 +1,10 @@
 'use server'
 
 import { searchDTO } from '@/dtos/search'
+import { getImdbRatingByTmdbId } from '@/services/imdb'
 
 import { Param } from '@/types/movie-result'
 import { SearchResponse } from '@/types/search'
-import { getImdbRatingByTmdbId } from '@/services/imdb'
-
 import { fetchClient } from '@/lib/fetch-client'
 
 export const searchMovieAction = async (params: Param = {}) => {

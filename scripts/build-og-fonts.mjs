@@ -31,15 +31,11 @@ function extractConstant(source, name) {
 
 async function fetchSubset(weight, text) {
   const cssUrl = `https://fonts.googleapis.com/css2?family=Inter:wght@${weight}&text=${encodeURIComponent(text)}`
-  const css = await fetch(cssUrl, {}).then((r) =>
-    r.text()
-  )
+  const css = await fetch(cssUrl, {}).then((r) => r.text())
   const match = css.match(/src:\s*url\((https:\/\/[^)]+)\)/)
   if (!match) throw new Error(`No font URL in CSS for weight ${weight}`)
   const buf = Buffer.from(
-    await fetch(match[1], {}).then((r) =>
-      r.arrayBuffer()
-    )
+    await fetch(match[1], {}).then((r) => r.arrayBuffer())
   )
   return buf
 }

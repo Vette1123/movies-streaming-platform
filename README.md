@@ -27,7 +27,7 @@ Reely is a production-grade movie and TV show tracker built on the TMDB API. It 
 - **TMDB-powered catalog** — trending, popular, top-rated, now-playing, and on-the-air movies and TV shows, pulled live from the TMDB API.
 - **Animated hero slider** — auto-rotating showcase of trending media on the landing page, with an inline trailer preview.
 - **Browse movies & TV** — dedicated listing pages with a deep, live-applying filter system and infinite scroll (TanStack `useInfiniteQuery` + intersection observer).
-- **Advanced filters** — sort, tri-state genre pills (include / exclude / off), TMDB rating, vote count, runtime, release year (decade chips + range slider), original language, age rating (certification), and *where to watch* (streaming-provider logo grid + region picker). All filters live-apply on a 300ms debounce — no "Save" button — with an active-filter chips bar (tap to remove, or clear all) above the grid.
+- **Advanced filters** — sort, tri-state genre pills (include / exclude / off), TMDB rating, vote count, runtime, release year (decade chips + range slider), original language, age rating (certification), and _where to watch_ (streaming-provider logo grid + region picker). All filters live-apply on a 300ms debounce — no "Save" button — with an active-filter chips bar (tap to remove, or clear all) above the grid.
 - **Rich detail pages** — synopsis, cast, similar titles, recommendations, trailer, and both IMDb and TMDB ratings — fetched in a single TMDB `append_to_response` call.
 - **In-page streaming player** — watch movies and individual TV episodes via a configurable external source (see the in-app disclaimer).
 - **Season & episode navigator** — drill into any TV show by season and episode with a dedicated selector.
@@ -65,22 +65,22 @@ Reely is a fully installable PWA — not just a manifest, but a working offline-
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-| --- | --- |
-| Framework | Next.js 16 (App Router, Turbopack, RSC + Server Actions) + React 19 |
-| Language | TypeScript 6 |
-| Styling | Tailwind CSS 4 + `tailwindcss-animate` + `@tailwindcss/typography` |
-| UI | shadcn/ui + Radix UI, `lucide-react` icons, Framer Motion, `sonner` toasts |
-| Data fetching | TanStack Query 5 + React Server Components |
-| URL state | `nuqs` |
-| Search | `cmdk` command palette + `use-debounce` |
-| Infinite scroll | `react-intersection-observer` |
-| PWA | Web App Manifest + hand-written service worker (no `next-pwa`/serwist) |
-| Data source | [TMDB API](https://www.themoviedb.org/documentation/api) + IMDb ratings + ImageKit imagery |
-| Streaming | External, configurable video source |
-| Analytics | PostHog (client + server) |
-| Deployment | Cloudflare Workers via [OpenNext](https://opennext.js.org/cloudflare) |
-| Tooling | ESLint, Prettier, Husky, Commitlint, Renovate |
+| Layer           | Technology                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------------ |
+| Framework       | Next.js 16 (App Router, Turbopack, RSC + Server Actions) + React 19                        |
+| Language        | TypeScript 6                                                                               |
+| Styling         | Tailwind CSS 4 + `tailwindcss-animate` + `@tailwindcss/typography`                         |
+| UI              | shadcn/ui + Radix UI, `lucide-react` icons, Framer Motion, `sonner` toasts                 |
+| Data fetching   | TanStack Query 5 + React Server Components                                                 |
+| URL state       | `nuqs`                                                                                     |
+| Search          | `cmdk` command palette + `use-debounce`                                                    |
+| Infinite scroll | `react-intersection-observer`                                                              |
+| PWA             | Web App Manifest + hand-written service worker (no `next-pwa`/serwist)                     |
+| Data source     | [TMDB API](https://www.themoviedb.org/documentation/api) + IMDb ratings + ImageKit imagery |
+| Streaming       | External, configurable video source                                                        |
+| Analytics       | PostHog (client + server)                                                                  |
+| Deployment      | Cloudflare Workers via [OpenNext](https://opennext.js.org/cloudflare)                      |
+| Tooling         | ESLint, Prettier, Husky, Commitlint, Renovate                                              |
 
 ## 📖 Getting Started
 
@@ -117,17 +117,17 @@ pnpm deploy    # deploy via wrangler
 
 Copy `.env.sample` to `.env.local` and fill in the values you need. Only TMDB-related variables are required to run the app locally; the rest enable optional integrations.
 
-| Variable | Description |
-| --- | --- |
-| `TMDB_API_KEY` | TMDB v3 API key (required) |
-| `TMDB_HEADER_KEY` | TMDB v4 bearer token used in request headers (required) |
-| `NEXT_PUBLIC_TMDB_BASEURL` | TMDB API base URL (e.g. `https://api.themoviedb.org/3`) |
-| `NEXT_PUBLIC_BASE_URL` | Public base URL of your deployment |
-| `NEXT_PUBLIC_STREAMING_MOVIES_API_URL` | Streaming source base URL used by the player |
-| `NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE` | Google search URL template for actor lookups |
-| `NEXT_PUBLIC_IMAGE_CACHE_HOST_URL` | Optional image cache/CDN host |
-| `NEXT_PUBLIC_POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_HOST` | PostHog project credentials (optional) |
-| `CLOUDFLARE_API_TOKEN` | Required only for `pnpm deploy` to Cloudflare Workers |
+| Variable                                               | Description                                             |
+| ------------------------------------------------------ | ------------------------------------------------------- |
+| `TMDB_API_KEY`                                         | TMDB v3 API key (required)                              |
+| `TMDB_HEADER_KEY`                                      | TMDB v4 bearer token used in request headers (required) |
+| `NEXT_PUBLIC_TMDB_BASEURL`                             | TMDB API base URL (e.g. `https://api.themoviedb.org/3`) |
+| `NEXT_PUBLIC_BASE_URL`                                 | Public base URL of your deployment                      |
+| `NEXT_PUBLIC_STREAMING_MOVIES_API_URL`                 | Streaming source base URL used by the player            |
+| `NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE`                      | Google search URL template for actor lookups            |
+| `NEXT_PUBLIC_IMAGE_CACHE_HOST_URL`                     | Optional image cache/CDN host                           |
+| `NEXT_PUBLIC_POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_HOST` | PostHog project credentials (optional)                  |
+| `CLOUDFLARE_API_TOKEN`                                 | Required only for `pnpm deploy` to Cloudflare Workers   |
 
 ## 🙌 Credits
 

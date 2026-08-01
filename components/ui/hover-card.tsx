@@ -14,7 +14,13 @@ const HoverCardContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof HoverCardPrimitive.Content>
 >(
   (
-    { className, align = 'center', sideOffset = 8, collisionPadding = 16, ...props },
+    {
+      className,
+      align = 'center',
+      sideOffset = 8,
+      collisionPadding = 16,
+      ...props
+    },
     ref
   ) => (
     // Portal is REQUIRED: cards live inside the rail's `overflow-x-auto` track,

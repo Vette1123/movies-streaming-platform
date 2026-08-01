@@ -2,6 +2,10 @@ cache
 .cache
 package.json
 package-lock.json
+# pnpm owns these two — prettier rewrote 5.7k lockfile lines and re-quoted the
+# workspace overrides, which pnpm then undoes on the next install.
+pnpm-lock.yaml
+pnpm-workspace.yaml
 public
 CHANGELOG.md
 .yarn

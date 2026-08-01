@@ -45,8 +45,15 @@ const nextConfig = {
   // (browsers honour them, and OpenNext's own cache reads them), but don't
   // assume an edge HIT is absorbing the load. See scripts/cf-waf-setup.mjs.
   async headers() {
-    const edgeCache = 'public, max-age=0, s-maxage=28800, stale-while-revalidate=86400'
-    const cachedPaths = ['/', '/movies', '/tv-shows', '/movies/:id', '/tv-shows/:id']
+    const edgeCache =
+      'public, max-age=0, s-maxage=28800, stale-while-revalidate=86400'
+    const cachedPaths = [
+      '/',
+      '/movies',
+      '/tv-shows',
+      '/movies/:id',
+      '/tv-shows/:id',
+    ]
     // Baseline security/SEO headers on every route. Deliberately conservative:
     // NO Permissions-Policy / CSP / COEP — those would risk the cross-origin
     // VidSrc player (fullscreen, autoplay) and the hero trailer embed. These
@@ -116,8 +123,7 @@ const posthogApiKey = process.env.POSTHOG_API_KEY
 const isCI =
   !!process.env.CI && process.env.CI !== 'false' && process.env.CI !== '0'
 const shouldUploadSourcemaps =
-  !!posthogApiKey &&
-  (isCI || process.env.POSTHOG_UPLOAD_SOURCEMAPS === '1')
+  !!posthogApiKey && (isCI || process.env.POSTHOG_UPLOAD_SOURCEMAPS === '1')
 
 export default shouldUploadSourcemaps
   ? withPostHogConfig(nextConfig, {

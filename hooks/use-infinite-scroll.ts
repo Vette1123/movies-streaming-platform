@@ -17,18 +17,18 @@ export const useInfiniteScroll = ({
 }: Props) => {
   const { data, fetchNextPage, isFetchingNextPage, hasNextPage } =
     useInfiniteQuery({
-    queryKey: [queryKey],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam = 1 }) => {
-      const data = await popularMediaAction({ page: pageParam })
-      return data
-    },
-    getNextPageParam: (_, pages) => pages.length + 1,
-    initialData: {
-      pages: [media],
-      pageParams: [1],
-    },
-  })
+      queryKey: [queryKey],
+      initialPageParam: 0,
+      queryFn: async ({ pageParam = 1 }) => {
+        const data = await popularMediaAction({ page: pageParam })
+        return data
+      },
+      getNextPageParam: (_, pages) => pages.length + 1,
+      initialData: {
+        pages: [media],
+        pageParams: [1],
+      },
+    })
 
   return {
     data,

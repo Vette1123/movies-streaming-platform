@@ -1,7 +1,7 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import { getGenreListAction } from '@/actions/genres'
+import { useQuery } from '@tanstack/react-query'
 
 import { ItemType } from '@/types/movie-result'
 import { MOVIES_GENRE, TV_GENRE } from '@/lib/genres'

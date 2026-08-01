@@ -11,8 +11,8 @@
 // NUM_SHARDS MUST stay in sync with services/imdb.ts.
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { Readable } from 'node:stream'
 import { createInterface } from 'node:readline'
+import { Readable } from 'node:stream'
 import { createGunzip } from 'node:zlib'
 
 const DATASET_URL = 'https://datasets.imdbws.com/title.ratings.tsv.gz'

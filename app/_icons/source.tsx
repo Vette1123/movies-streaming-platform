@@ -112,7 +112,12 @@ export async function buildIconInput(markOptions: MarkOptions) {
       width: markOptions.size,
       height: markOptions.size,
       fonts: [
-        { name: 'Inter', data: font, weight: 900 as const, style: 'normal' as const },
+        {
+          name: 'Inter',
+          data: font,
+          weight: 900 as const,
+          style: 'normal' as const,
+        },
       ],
     },
   }

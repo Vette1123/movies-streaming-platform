@@ -60,10 +60,10 @@ export function useRecentSearches() {
     const value = term.trim()
     if (!value) return
     commit(
-      [value, ...store.filter((t) => t.toLowerCase() !== value.toLowerCase())].slice(
-        0,
-        MAX_RECENT
-      )
+      [
+        value,
+        ...store.filter((t) => t.toLowerCase() !== value.toLowerCase()),
+      ].slice(0, MAX_RECENT)
     )
   }, [])
 

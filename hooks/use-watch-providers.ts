@@ -1,9 +1,8 @@
 'use client'
 
 import { getWatchProvidersAction } from '@/actions/watch-providers'
-import { useQuery } from '@tanstack/react-query'
-
 import type { WatchProvider } from '@/services/watch-providers'
+import { useQuery } from '@tanstack/react-query'
 
 import { ItemType } from '@/types/movie-result'
 

@@ -50,7 +50,9 @@ if (!TOKEN) {
   process.exit(1)
 }
 if (!['none', 'quarantine', 'reject'].includes(DMARC_POLICY)) {
-  console.error(`DMARC_POLICY must be none|quarantine|reject, got "${DMARC_POLICY}"`)
+  console.error(
+    `DMARC_POLICY must be none|quarantine|reject, got "${DMARC_POLICY}"`
+  )
   process.exit(1)
 }
 
@@ -81,8 +83,12 @@ async function cf(path, init = {}) {
   })
   const json = await res.json()
   if (!res.ok || json.success === false) {
-    const detail = (json.errors || []).map((e) => `${e.code} ${e.message}`).join('; ')
-    throw new Error(`${init.method || 'GET'} ${path} → HTTP ${res.status} ${detail}`)
+    const detail = (json.errors || [])
+      .map((e) => `${e.code} ${e.message}`)
+      .join('; ')
+    throw new Error(
+      `${init.method || 'GET'} ${path} → HTTP ${res.status} ${detail}`
+    )
   }
   return json.result
 }
@@ -113,7 +119,9 @@ async function main() {
   console.log(`Zone: ${ZONE_NAME} (${zoneId})${DRY_RUN ? '  [DRY RUN]' : ''}\n`)
 
   // --- CAA ---
-  const existingCaa = await cf(`/zones/${zoneId}/dns_records?type=CAA&per_page=100`)
+  const existingCaa = await cf(
+    `/zones/${zoneId}/dns_records?type=CAA&per_page=100`
+  )
   const have = new Set(existingCaa.map((r) => `${r.data.tag}:${r.data.value}`))
 
   for (const tag of ['issue', 'issuewild']) {
@@ -151,7 +159,9 @@ async function main() {
   // turning inbound forwarding back on later doesn't also require remembering
   // to re-authorize it here.
   console.log('')
-  const spfRecords = await cf(`/zones/${zoneId}/dns_records?type=TXT&per_page=100`)
+  const spfRecords = await cf(
+    `/zones/${zoneId}/dns_records?type=TXT&per_page=100`
+  )
   const spf = spfRecords.find((r) => /^"?v=spf1/i.test(r.content))
   if (!spf) {
     console.warn('✗ No SPF record found — skipping')
@@ -211,7 +221,9 @@ async function main() {
   )
   const record = txt.find((r) => /v=DMARC1/i.test(r.content))
   if (!record) {
-    console.warn(`✗ No DMARC record at ${dmarcName} — nothing to ramp. Create one first.`)
+    console.warn(
+      `✗ No DMARC record at ${dmarcName} — nothing to ramp. Create one first.`
+    )
     return
   }
 
@@ -229,7 +241,9 @@ async function main() {
       method: 'PATCH',
       body: JSON.stringify({ content: next }),
     })
-    console.log(`✓ DMARC now p=${DMARC_POLICY}${DMARC_PCT === '100' ? '' : ` pct=${DMARC_PCT}`}`)
+    console.log(
+      `✓ DMARC now p=${DMARC_POLICY}${DMARC_PCT === '100' ? '' : ` pct=${DMARC_PCT}`}`
+    )
   }
 
   console.log(`

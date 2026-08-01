@@ -21,9 +21,17 @@ import sharp from 'sharp'
  */
 export async function optimizePng(input) {
   const [lossless, palette] = await Promise.all([
-    sharp(input).png({ compressionLevel: 9, effort: 10, palette: false }).toBuffer(),
     sharp(input)
-      .png({ compressionLevel: 9, effort: 10, palette: true, quality: 100, dither: 1 })
+      .png({ compressionLevel: 9, effort: 10, palette: false })
+      .toBuffer(),
+    sharp(input)
+      .png({
+        compressionLevel: 9,
+        effort: 10,
+        palette: true,
+        quality: 100,
+        dither: 1,
+      })
       .toBuffer(),
   ])
 
