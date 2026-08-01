@@ -7,6 +7,7 @@ import {
   PanInfo,
   useMotionValue,
   useReducedMotion,
+  useTransform,
 } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -33,6 +34,31 @@ const SLIDE_SPRING = {
   damping: 36,
   mass: 1,
 }
+
+// The cinematic part of the old transition, kept. The original crossfaded
+// opacity AND drifted x AND scaled; only the opacity crossfade caused the
+// ghosting (two full text stacks legible at once, 6% apart), so the zoom comes
+// back and the crossfade does not. An off-frame slide sits fractionally larger
+// and settles to 1:1 as it takes the frame, which reads as depth — and it can
+// never double-expose anything, because the slides are still a full width apart
+// and clipped by the stage.
+// Down, not up. Scaling an off-frame slide UP grows it about its centre, so at
+// rest its inner edge lands at 95.25% and ~20px of the NEXT slide is visible at
+// the edge of the stage. Scaling down moves that edge to 101.5% — off-frame by
+// construction, at any stage width — and the slide zooms in as it takes the
+// frame, which is the depth cue the old crossfade was really providing.
+const SLIDE_REST_SCALE = 1
+const SLIDE_OFF_SCALE = 0.98
+// How far the whole stage recedes at a full-width drag.
+const DRAG_SCALE_DEPTH = 0.02
+
+// Dark gutter between slides, in px. Every slide carries its own left-to-right
+// readability scrim (from-black/90 ... to-black/20), so abutting them puts the
+// outgoing slide's LIGHTEST edge hard against the incoming slide's DARKEST one —
+// a luminance step that reads as an ugly border drawn down the middle of the
+// swipe. Separating them lands that step on the stage's own black base instead,
+// where it's a deliberate gap between two pieces of art rather than a seam.
+const SLIDE_GAP = 24
 
 // useLayoutEffect on the server is a no-op that React warns about, and the
 // compensation below only has meaning once there's a DOM to measure.
@@ -141,6 +167,35 @@ export function Carousel({
   const stageRef = React.useRef<HTMLDivElement>(null)
   const prevIndexRef = React.useRef(currentIndex)
 
+  // Stage width, kept in a ref rather than measured where it's needed. The drag
+  // scale below reads it every frame, and offsetWidth forces a synchronous
+  // layout — doing that inside a motion transform would reflow the page on each
+  // tick of every swipe.
+  const widthRef = React.useRef(0)
+  useIsoLayoutEffect(() => {
+    const el = stageRef.current
+    if (!el) return
+    const measure = () => {
+      widthRef.current = el.offsetWidth
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  // The whole stage eases back a touch while you drag it and returns as it
+  // settles — the frame reads as a physical card being pushed rather than a
+  // texture sliding. Derived from x, so it's the same gesture-linked motion
+  // whether you drag, flick, or tap an arrow, and it costs nothing extra: it
+  // composites into the transform the track was already applying.
+  const scale = useTransform(x, (value) => {
+    if (reduce) return 1
+    const width = widthRef.current
+    if (!width) return 1
+    return 1 - Math.min(Math.abs(value) / width, 1) * DRAG_SCALE_DEPTH
+  })
+
   const settle = React.useCallback(() => {
     if (reduce) {
       x.set(0)
@@ -171,7 +226,8 @@ export function Carousel({
     // jump(), not set(): set() records the discontinuity as velocity, and the
     // spring inherited it and flew a further 120px PAST the start before turning
     // round (293 -> 414 -> 0). jump() reseats the value at rest.
-    x.jump(from + step * (stageRef.current?.offsetWidth ?? 0))
+    // width + gap, because that's the real distance the slides just moved.
+    x.jump(from + step * (widthRef.current + SLIDE_GAP))
     const controls = settle()
     return () => controls?.stop()
   }, [currentIndex, childrenCount, settle, x])
@@ -312,6 +368,7 @@ export function Carousel({
           className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
           style={{
             x,
+            scale,
             touchAction: 'pan-y pinch-zoom',
             WebkitUserSelect: 'none',
             userSelect: 'none',
@@ -331,14 +388,23 @@ export function Carousel({
             if (Math.abs(offset) > WINDOW) return null
             const active = offset === 0
             return (
-              <div
+              <motion.div
                 key={i}
                 className="absolute inset-0"
+                // x stays a plain style, NOT an animated property: the track owns
+                // all horizontal motion, and anything else writing x is what
+                // broke the release twice before. Only scale animates here, so
+                // the two never touch the same axis.
                 style={{
-                  transform: `translate3d(${offset * 100}%, 0, 0)`,
+                  x: `calc(${offset * 100}% + ${offset * SLIDE_GAP}px)`,
                   pointerEvents: active ? 'auto' : 'none',
                   backfaceVisibility: 'hidden',
                 }}
+                initial={false}
+                animate={{
+                  scale: active ? SLIDE_REST_SCALE : SLIDE_OFF_SCALE,
+                }}
+                transition={reduce ? { duration: 0 } : SLIDE_SPRING}
                 aria-hidden={!active}
                 // Pair with aria-hidden: also pull the off-screen slide's links out
                 // of the focus order + a11y tree (aria-hidden alone still leaves
@@ -354,7 +420,7 @@ export function Carousel({
                       { active }
                     )
                   : child}
-              </div>
+              </motion.div>
             )
           })}
         </motion.div>
