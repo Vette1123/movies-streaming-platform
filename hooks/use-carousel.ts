@@ -193,7 +193,14 @@ export const useCarousel = ({
         // A flick can end with almost no offset, so let velocity decide the
         // direction when the distance is too small to be meaningful — otherwise a
         // quick flick left could paginate right off a couple of stray pixels.
-        const direction = hasSignificantDistance ? offset : -info.velocity.x
+        //
+        // Both are POSITIVE when the finger moved right, which is what the check
+        // below reads. This used to negate the velocity, which inverted every
+        // gesture that fell under the distance threshold: a flick right paged
+        // forward instead of back. Desktop felt worse than touch because its
+        // threshold is 15% of a much wider stage, so nearly every mouse swipe
+        // took this branch.
+        const direction = hasSignificantDistance ? offset : info.velocity.x
         if (direction > 0) {
           paginate(-1) // Swipe right, go to previous
         } else {
