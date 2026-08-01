@@ -1,7 +1,13 @@
 'use client'
 
-import React, { useMemo } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
+import React from 'react'
+import {
+  animate,
+  motion,
+  PanInfo,
+  useMotionValue,
+  useReducedMotion,
+} from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import {
@@ -19,7 +25,29 @@ import { useCarousel } from '@/hooks/use-carousel'
 // and no blur-in — the flash of the previous/blank slide disappears entirely.
 const WINDOW = 1
 
-const DRAG_CONSTRAINTS = { left: 0, right: 0 }
+// Damping is just past critical for this stiffness, so it settles (~300ms) with
+// no overshoot — a carousel that wobbles past its stop looks broken, not springy.
+const SLIDE_SPRING = {
+  type: 'spring' as const,
+  stiffness: 320,
+  damping: 36,
+  mass: 1,
+}
+
+// useLayoutEffect on the server is a no-op that React warns about, and the
+// compensation below only has meaning once there's a DOM to measure.
+const useIsoLayoutEffect =
+  typeof window === 'undefined' ? React.useEffect : React.useLayoutEffect
+
+// Which way a step went on the ring, clamped to a single slide. A dot jump of
+// seven still animates as one slide-width glide: the slides in between are
+// outside the mounted window, so a literal seven-width translate would just be
+// a long drag through empty space.
+function stepDirection(from: number, to: number, count: number) {
+  if (from === to) return 0
+  const forward = (to - from + count) % count
+  return forward * 2 <= count ? 1 : -1
+}
 
 // Lets any slide freeze the carousel's autoplay while it's showing something
 // that shouldn't be interrupted (a hover trailer preview, an open trailer
@@ -92,6 +120,77 @@ export function Carousel({
     externalPaused,
   })
 
+  // ONE animated element. Slides are placed instantly at whole multiples of the
+  // stage width and never animate; the track carries all the motion, and every
+  // route to a new slide — drag, arrow, dot, keyboard, autoplay — lands in the
+  // same place below. Cheaper too: one transform to composite instead of three.
+  //
+  // Two earlier versions failed here, both for the same reason — something else
+  // was also animating x:
+  //   1. Track AND slides both sprang. They could not be made to agree, because
+  //      framer seeds the drag snapback with the flick's velocity while a fresh
+  //      `animate` starts from rest, so on release the incoming slide visibly
+  //      slid BACKWARDS ~30px before coming forward (172 -> 203 -> 56 -> 3 -> 0).
+  //   2. Only the track sprang, but `dragConstraints` was still set — so framer
+  //      started its own snapback at pointerup and had already dragged x most of
+  //      the way home by the time the layout effect read it, landing the track a
+  //      full width off (416 where 172 was correct).
+  // Hence NO dragConstraints: with nothing to snap back to, x simply stays where
+  // the finger left it and this component owns every pixel of the return.
+  const x = useMotionValue(0)
+  const stageRef = React.useRef<HTMLDivElement>(null)
+  const prevIndexRef = React.useRef(currentIndex)
+
+  const settle = React.useCallback(() => {
+    if (reduce) {
+      x.set(0)
+      return undefined
+    }
+    return animate(x, 0, SLIDE_SPRING)
+  }, [reduce, x])
+
+  // Where the finger let go, frozen at pointerup. The effect below cannot just
+  // read x.get(): a paginating release re-renders a whole slide before React
+  // commits, and x has measurably drifted by then (-240 at release, -119 by the
+  // time the effect ran), which lands the compensation short.
+  const releaseXRef = React.useRef<number | null>(null)
+
+  useIsoLayoutEffect(() => {
+    const prev = prevIndexRef.current
+    if (prev === currentIndex) return
+    prevIndexRef.current = currentIndex
+
+    const from = releaseXRef.current ?? x.get()
+    releaseXRef.current = null
+    const step = stepDirection(prev, currentIndex, childrenCount)
+    // The new active slide just jumped from `step * width` to 0. Push the track
+    // the other way by the same amount and the frame doesn't move at all — then
+    // animate that debt away, and THAT is the whole transition. Continuous by
+    // construction from wherever the finger let go, at any release velocity.
+    //
+    // jump(), not set(): set() records the discontinuity as velocity, and the
+    // spring inherited it and flew a further 120px PAST the start before turning
+    // round (293 -> 414 -> 0). jump() reseats the value at rest.
+    x.jump(from + step * (stageRef.current?.offsetWidth ?? 0))
+    const controls = settle()
+    return () => controls?.stop()
+  }, [currentIndex, childrenCount, settle, x])
+
+  // A drag that doesn't cross the threshold never changes the index, so the
+  // effect above won't run — this is what returns the track in that case. It has
+  // to be exclusive: settling here as well when the release DOES paginate meant
+  // this animation had already pulled x part-way home before the effect read it,
+  // and the compensation landed short (172 wanted, 293 measured).
+  const onDragEnd = React.useCallback(
+    (event: PointerEvent, info: PanInfo) => {
+      releaseXRef.current = x.get()
+      if (handleDragEnd(event, info)) return
+      releaseXRef.current = null
+      settle()
+    },
+    [handleDragEnd, settle, x]
+  )
+
   // Keyboard control when the carousel (or anything inside it) has focus.
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowLeft') {
@@ -144,18 +243,6 @@ export function Carousel({
     )
   }
 
-  // Compositor-only, transform-only: the slides just move. No opacity or scale
-  // to animate now that they travel a full width apart instead of crossfading —
-  // which is what stops two slides ever being readable at the same time.
-  // Slightly stiffer than the old parallax drift so a swipe lands promptly
-  // rather than gliding for most of a second under the finger.
-  const layerTransition = useMemo(() => {
-    if (reduce) return { duration: 0 }
-    return {
-      x: { type: 'spring' as const, stiffness: 260, damping: 34, mass: 0.9 },
-    }
-  }, [reduce])
-
   if (childrenCount === 0) {
     return null
   }
@@ -179,8 +266,14 @@ export function Carousel({
   return (
     <CarouselPauseContext.Provider value={pauseControls}>
       <div
+        ref={stageRef}
         data-carousel-stage
-        className={`group relative overflow-hidden ${stageClassName}`}
+        // tabIndex makes the stage keyboard-operable, but it also means a touch
+        // or a click FOCUSES it — and the UA default painted a 1px amber outline
+        // around the entire hero the instant you put a finger on it to swipe.
+        // focus-visible keeps the ring for keyboard users and drops it for
+        // pointer input, which is exactly who was seeing the border.
+        className={`group relative overflow-hidden outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white/70 ${stageClassName}`}
         onMouseEnter={handleHoverStart}
         onMouseLeave={handleHoverEnd}
         onKeyDown={handleKeyDown}
@@ -212,45 +305,40 @@ export function Carousel({
           offset animation fought over one transform and could leave a slide
           parked at the wrong offset or opacity.
 
-          Drag stays on the track and offsets stay on the slides, so nothing
-          shares a transform. dragElastic 1 against zero-width constraints means
-          the track tracks the finger 1:1 and springs home on release; when the
-          release does paginate, the offsets shift by 100% at the same moment
-          the track springs back to 0, and the two compose into one continuous
-          motion. */}
+          Unconstrained, so it follows the finger 1:1 and stays put on release;
+          the layout effect above owns the return, which is what makes drag and
+          autoplay produce the identical motion. */}
         <motion.div
           className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
           style={{
+            x,
             touchAction: 'pan-y pinch-zoom',
             WebkitUserSelect: 'none',
             userSelect: 'none',
           }}
           drag="x"
-          dragConstraints={DRAG_CONSTRAINTS}
-          dragElastic={1}
           dragMomentum={false}
           onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
+          onDragEnd={onDragEnd}
         >
-          {/* Windowed slides, laid out side by side. Off-stage slides sit a full
-            width away and are clipped by the container's overflow-hidden — no
-            opacity fade, so two slides can never be readable at once. Staying
-            mounted keeps their artwork decoded before they scroll in. */}
+          {/* Windowed slides, laid out side by side and placed INSTANTLY — plain
+            divs, no animation of their own. Off-stage slides sit a full width
+            away and are clipped by the container's overflow-hidden, so two
+            slides can never be readable at once. Staying mounted keeps their
+            artwork decoded before they scroll in. */}
           {childrenArray.map((child, i) => {
             const offset = wrappedOffset(i, currentIndex, childrenCount)
             if (Math.abs(offset) > WINDOW) return null
             const active = offset === 0
             return (
-              <motion.div
+              <div
                 key={i}
-                className="absolute inset-0 will-change-transform"
+                className="absolute inset-0"
                 style={{
+                  transform: `translate3d(${offset * 100}%, 0, 0)`,
                   pointerEvents: active ? 'auto' : 'none',
                   backfaceVisibility: 'hidden',
                 }}
-                initial={false}
-                animate={{ x: `${offset * 100}%` }}
-                transition={layerTransition}
                 aria-hidden={!active}
                 // Pair with aria-hidden: also pull the off-screen slide's links out
                 // of the focus order + a11y tree (aria-hidden alone still leaves
@@ -266,7 +354,7 @@ export function Carousel({
                       { active }
                     )
                   : child}
-              </motion.div>
+              </div>
             )
           })}
         </motion.div>

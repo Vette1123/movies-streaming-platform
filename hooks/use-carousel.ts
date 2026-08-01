@@ -205,6 +205,13 @@ export const useCarousel = ({
       setTimeout(() => {
         handleUserInteraction(false)
       }, 50)
+
+      // Tells the caller whether an index change is coming. The carousel needs
+      // this to decide who returns the track to rest: on a paginating release
+      // the index-change effect does it (and must be the ONLY thing touching x,
+      // or it reads a value that has already drifted); on a release that stays
+      // put, nothing else will, so the caller settles it itself.
+      return shouldChangeSlide
     },
     [paginate, handleUserInteraction]
   )

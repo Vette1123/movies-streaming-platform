@@ -19,6 +19,15 @@ function getPosterImageURL(path: string) {
   return `${apiConfig.w500Image(path)}`
 }
 
+// Title logos (the hero's stylised wordmark) paint at max 64px tall on mobile
+// and 128px on desktop. Requesting them through getImageURL meant `original` at
+// w-2560 — 216 KB of transparent PNG for a 64px element, which over mobile data
+// lost the race against the hero's fallback timer and left the plain text title
+// on screen. w500 is the same image at 29.6 KB, still 4x the widest painted size.
+function getLogoImageURL(path: string) {
+  return `${apiConfig.w500Image(path)}`
+}
+
 function getThumbPosterURL(path: string) {
   return `${apiConfig.w185Image(path)}`
 }
@@ -140,6 +149,7 @@ function seasonsFormatter(seasons: Season[]) {
 export {
   cn,
   getImageURL,
+  getLogoImageURL,
   getPosterImageURL,
   getThumbPosterURL,
   getThumbBackdropURL,

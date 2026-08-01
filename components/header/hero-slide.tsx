@@ -15,7 +15,12 @@ import {
   trackHeroWatchClicked,
 } from '@/lib/analytics'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
-import { cn, getImageURL, getPosterImageURL } from '@/lib/utils'
+import {
+  cn,
+  getImageURL,
+  getLogoImageURL,
+  getPosterImageURL,
+} from '@/lib/utils'
 import { useHeroAutoplay } from '@/hooks/use-hero-autoplay'
 import { useHeroExtras } from '@/hooks/use-hero-extras'
 import { buttonVariants } from '@/components/ui/button'
@@ -69,6 +74,31 @@ export function HeroSlide({
   // Gates the title-logo crossfade: the text title holds the frame until the
   // logo image has actually decoded, then they crossfade — no hard text→logo pop.
   const [logoLoaded, setLogoLoaded] = React.useState(false)
+
+  const markLogoLoaded = React.useCallback(() => {
+    firstPaintSettled = true
+    setLogoLoaded(true)
+  }, [])
+  const markLogoError = React.useCallback(() => {
+    firstPaintSettled = true
+    setLogoError(true)
+  }, [])
+  // onLoad alone is NOT enough for a server-rendered <img>. The logo ships in the
+  // SSR HTML, so on a warm cache the browser decodes it before React hydrates and
+  // attaches the listener — the event has already fired, nothing is listening,
+  // and logoLoaded stays false forever. The logo then sits at opacity-0 while the
+  // text title stays held, which is why the hero showed the plain title (or, on a
+  // remounted slide, no title at all). A ref callback runs at attach time and can
+  // read img.complete, catching exactly the case the event misses. naturalWidth
+  // distinguishes a decoded image from a completed-but-broken one.
+  const logoRef = React.useCallback(
+    (node: HTMLImageElement | null) => {
+      if (!node?.complete) return
+      if (node.naturalWidth > 0) markLogoLoaded()
+      else markLogoError()
+    },
+    [markLogoLoaded, markLogoError]
+  )
   // First (uncached) paint: hold the fallback-font text back until we know the
   // logo's fate — resolves to no-logo, or the logo decodes and crossfades in —
   // so the styled logo is never pre-empted by a flash of the plain title. A
@@ -326,22 +356,26 @@ export function HeroSlide({
                 is always identifiable; only the long overview recedes (below) to
                 give the trailer more of the frame. */}
             <div className="max-w-2xl">
-              {showLogo ? (
-                // Stack the text title and the official logo in one bottom-
-                // aligned box that reserves the logo's height, so there's no
-                // layout jump and no hard swap: the text shows immediately and
-                // holds the frame, then crossfades out as the decoded logo rises
-                // in. Plain <img> so we don't fight next/image over the logo's
-                // arbitrary aspect ratio; it falls back to the text on error.
-                <div className="relative mb-3 flex min-h-16 items-end sm:min-h-20 lg:mb-4 lg:min-h-32">
-                  {/* NEW badge + title share one bottom-aligned column so the tag
-                      hugs the title instead of floating at the top of the reserved
-                      logo space. z-10 keeps it above the rising logo. */}
-                  <div className="relative z-10 flex flex-col items-start">
-                    <NewBadgeWhenRecent
-                      date={movie.release_date || movie.first_air_date}
-                      className="relative top-0 left-0 mb-2"
-                    />
+              {/* The badge is its own row ABOVE the title, always. It used to
+                  share a bottom-aligned column with the text title inside the
+                  logo's reserved box — but the logo is absolutely positioned at
+                  bottom-0 left-0, so once it decoded it painted straight through
+                  the badge (or the badge, at z-10, painted over the wordmark).
+                  Out here it can't collide with either treatment, and the badge
+                  and title markup exist once instead of once per branch. */}
+              <div className="mb-3 flex flex-col items-start lg:mb-4">
+                <NewBadgeWhenRecent
+                  date={movie.release_date || movie.first_air_date}
+                  className="relative top-0 left-0 mb-2 px-2.5 py-1 text-[11px] lg:text-xs"
+                />
+                {showLogo ? (
+                  // Stack the text title and the official logo in one bottom-
+                  // aligned box that reserves the logo's height, so there's no
+                  // layout jump and no hard swap: the text shows immediately and
+                  // holds the frame, then crossfades out as the decoded logo
+                  // rises in. Plain <img> so we don't fight next/image over the
+                  // logo's arbitrary aspect ratio; falls back to text on error.
+                  <div className="relative flex min-h-16 w-full items-end sm:min-h-20 lg:min-h-32">
                     <h2
                       aria-hidden={logoLoaded}
                       className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md transition-opacity duration-500 ease-out sm:text-4xl lg:text-6xl ${
@@ -352,35 +386,28 @@ export function HeroSlide({
                     >
                       {title}
                     </h2>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      ref={logoRef}
+                      src={getLogoImageURL(logoPath!)}
+                      alt={title}
+                      // The first slide's wordmark is part of the LCP frame and
+                      // races a fallback timer; tell the browser so it isn't
+                      // queued behind the rails' posters.
+                      fetchPriority={priority ? 'high' : 'auto'}
+                      // Same reason as every image in BlurredImage: a native
+                      // image drag would ghost the logo and eat the gesture.
+                      draggable={false}
+                      onError={markLogoError}
+                      onLoad={markLogoLoaded}
+                      className={`absolute bottom-0 left-0 max-h-16 w-auto max-w-[80%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] transition-all duration-700 ease-out sm:max-h-20 lg:max-h-32 ${
+                        logoLoaded
+                          ? 'blur-0 translate-y-0 opacity-100'
+                          : 'pointer-events-none translate-y-2 opacity-0 blur-[2px]'
+                      }`}
+                    />
                   </div>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={getImageURL(logoPath!)}
-                    alt={title}
-                    // Same reason as every image in BlurredImage: a native image
-                    // drag would ghost the logo and eat the carousel's gesture.
-                    draggable={false}
-                    onError={() => {
-                      firstPaintSettled = true
-                      setLogoError(true)
-                    }}
-                    onLoad={() => {
-                      firstPaintSettled = true
-                      setLogoLoaded(true)
-                    }}
-                    className={`absolute bottom-0 left-0 max-h-16 w-auto max-w-[80%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] transition-all duration-700 ease-out sm:max-h-20 lg:max-h-32 ${
-                      logoLoaded
-                        ? 'blur-0 translate-y-0 opacity-100'
-                        : 'pointer-events-none translate-y-2 opacity-0 blur-[2px]'
-                    }`}
-                  />
-                </div>
-              ) : (
-                <div className="mb-3 flex flex-col items-start lg:mb-4">
-                  <NewBadgeWhenRecent
-                    date={movie.release_date || movie.first_air_date}
-                    className="relative top-0 left-0 mb-2 px-2.5 py-1 text-[11px] lg:text-xs"
-                  />
+                ) : (
                   <h2
                     className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md transition-opacity duration-500 ease-out sm:text-4xl lg:text-6xl ${
                       holdTitleText ? 'opacity-0' : 'opacity-100'
@@ -388,8 +415,8 @@ export function HeroSlide({
                   >
                     {title}
                   </h2>
-                </div>
-              )}
+                )}
+              </div>
               <HeroRatesInfos movie={movie} genreTable={genreTable} />
               {/* The clamp steps down by a WHOLE line on very short viewports
                   (~600px and under, e.g. a small phone with browser chrome)
