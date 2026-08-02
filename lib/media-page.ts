@@ -81,21 +81,40 @@ type PagedFetcher = (args: {
 
 // How deep to walk each TMDB list when picking what to prerender. Measured
 // against the live API: 20/10/3 yielded 542 movie + 592 tv ids (1,134 detail
-// pages); 30/15/5 yields 827 + 875 (1,702). Widened because everything OUTSIDE
-// this set is the expensive case — the incremental cache is read-only, so a
-// non-prerendered detail page re-renders on the Worker on EVERY hit and can
-// never be written back, which is what drives the CPU-kill rate. Deeper pages
-// hit a long tail of obscure titles nobody requests, so returns fall off fast;
-// this is the knee, not a ceiling to keep raising.
+// pages); 30/15/5 yields 827 + 875 (1,702 detail, 1,921 routes total).
 //
-// Cost is paid at build, and the schedule went 4x/day → 2x at the same time
-// (.github/workflows/deploy.yml), so daily TMDB load DROPPED (~5,000 → ~3,600
-// requests/day) even with 50% more pages. Peak concurrency — the thing that
-// actually earns a 429 — is capped by the fetch governor and unchanged.
+// Everything OUTSIDE this set is the expensive case, and prod headers show
+// exactly how expensive (measured 2026-08-03 on www.reely.space):
+//
+//   /movies/550    (prerendered)     -> x-opennext-cache: HIT   no render
+//   /movies/47090  (not prerendered) -> x-nextjs-cache: MISS    renders EVERY hit
+//
+// The incremental cache is read-only and Cloudflare does not edge-cache Worker
+// HTML, so a MISS never becomes a HIT no matter how often the URL is requested.
+// Those long-tail ids are what the Worker 503s are: the `exceededResources`
+// share of invocations sat at 25-40% of all traffic through 2026-08-02, and the
+// sampled 503 path list is almost entirely /movies/<id> and /tv-shows/<id>
+// outside this set. So the prerender set is sized to swallow as much of the real
+// id distribution as the build can afford.
+//
+// Doubled 2026-08-03 (30/15/5 -> 60/30/8) against the two limits that actually
+// bind, both measured from the 2026-08-02 deploy log:
+//   - Workers Static Assets: 4,047 files at 1,921 routes (~2.1 files/route),
+//     against a 20,000-file cap. ~4,200 routes lands near 8,900 files — 44% of
+//     the cap, still room for the genre/collection sets to grow.
+//   - Build: 52s to generate 1,921 pages, ~4 min for the whole job. Roughly
+//     doubles; deploy.yml timeout went to 30 min to keep the same margin.
+// Daily TMDB load roughly doubles too (~3,600 -> ~7,500 requests/day across the
+// 2 scheduled builds). Peak concurrency — the thing that actually earns a 429 —
+// is capped by the fetch governor and unchanged.
+//
+// Returns still fall off with depth (page 60 of `popular` is far less requested
+// than page 1), so the next lever is NOT depth 120 — it's making a non-
+// prerendered render cacheable at all.
 const LIST_DEPTH = {
-  popular: 30,
-  topRated: 15,
-  trending: 5,
+  popular: 60,
+  topRated: 30,
+  trending: 8,
 } as const
 
 // Prerender the head of the traffic distribution: popular, all-time top rated,

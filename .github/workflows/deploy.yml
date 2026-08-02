@@ -36,11 +36,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     # A full build + deploy + waf + smoke was ~3-5 min at ~1,100 prerendered
-    # detail pages; the wider prerender set (lib/media-page.ts) makes it ~1,700,
-    # so 20 keeps real headroom. Caps a hung wrangler/curl instead of the 6h
+    # detail pages, and ~4 min at 1,921 routes (52s of that generating pages).
+    # The 2026-08-03 widening in lib/media-page.ts roughly doubles both, so 30
+    # keeps the same margin. Caps a hung wrangler/curl instead of the 6h
     # default — raise this, don't shrink the prerender set, if a build ever
     # brushes it.
-    timeout-minutes: 20
+    timeout-minutes: 30
     # Single toggle for the IMDb ratings feature. 'false' (default) skips the
     # shard build + upload entirely — no ~10MB dataset download, no 256 dead
     # /imdb-ratings/*.json assets shipped to the Worker — and leaves the app on
