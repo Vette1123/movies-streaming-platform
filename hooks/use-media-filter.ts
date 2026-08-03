@@ -17,11 +17,11 @@ import {
   trackFiltersCleared,
   trackLoadMore,
 } from '@/lib/analytics'
+import { discoverApi } from '@/lib/api-client'
 import {
   CERTIFICATION_COUNTRY,
   DEFAULT_WATCH_REGION,
 } from '@/lib/filter-options'
-import { discoverApi } from '@/lib/api-client'
 import { QUERY_KEYS } from '@/lib/queryKeys'
 
 interface UseMediaFilterProps {

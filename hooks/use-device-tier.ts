@@ -51,26 +51,41 @@ function detectLowPower(): boolean {
   return false
 }
 
+// Read once per document, not per render: these signals cannot change, and
+// useSyncExternalStore calls getSnapshot on every render.
+let detected: boolean | undefined
+const getSnapshot = () => (detected ??= detectLowPower())
+
+// The hydration render must agree with the exported HTML, which was prerendered
+// with no navigator at all. See the note on useLowPowerDevice.
+const getServerSnapshot = () => true
+
+// Nothing to subscribe to — the value is fixed for the life of the document.
+const subscribe = () => () => {}
+
 /**
  * True when the device should not be asked to run the hero's optional ambient
- * effects. Read once after mount: these values do not change, and re-reading
- * them per slide would be pure overhead.
+ * effects.
  *
- * Deliberately starts at `true` and lowers to the real answer in an effect,
- * rather than seeding useState with `detectLowPower`. A useState initializer
- * runs during the HYDRATION render, where `navigator` is real — so a capable
- * desktop computed `false` on the very first client render while the exported
- * HTML said `true`, and the hero backdrop hydrated with `animate-hero-kenburns`
- * against markup that had no such class. React reports that as "a tree hydrated
- * but some attributes of the server rendered HTML didn't match" and, as the
- * message says, does NOT patch it up.
+ * The subtlety here is hydration, not detection. Seeding `useState` with
+ * `detectLowPower` runs the initializer during the HYDRATION render, where
+ * `navigator` is real — so a capable desktop computed `false` on the very first
+ * client render while the exported HTML said `true`, and the hero backdrop
+ * hydrated with `animate-hero-kenburns` against markup that had no such class.
+ * React reports that as "a tree hydrated but some attributes of the server
+ * rendered HTML didn't match" and, as the message says, does NOT patch it up.
+ *
+ * `useSyncExternalStore` is the API for exactly this: it uses
+ * `getServerSnapshot` for the hydration render and switches to `getSnapshot`
+ * immediately after, so the markup matches and the real answer still arrives.
+ * This replaced a `useEffect(() => setLowPower(...), [])`, which behaved the
+ * same but is a synchronous setState inside an effect — a cascading render that
+ * `react-hooks/set-state-in-effect` (correctly) rejects.
  *
  * The cost is one extra render on capable devices and the Ken Burns starting a
  * frame later. That is the right trade for ambience: it is an enhancement, and
  * an enhancement must never be what breaks hydration for the page under it.
  */
 export function useLowPowerDevice(): boolean {
-  const [lowPower, setLowPower] = React.useState(true)
-  React.useEffect(() => setLowPower(detectLowPower()), [])
-  return lowPower
+  return React.useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }
