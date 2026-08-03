@@ -1,0 +1,249 @@
+// Production health check for the Cloudflare deployment. Read-only.
+//
+//   pnpm cf:health            last 24h
+//   pnpm cf:health 3          last 3h
+//
+// This exists because the Cloudflare dashboard cannot answer "is the site
+// healthy" for this architecture, and reading it wrong has cost real debugging
+// time twice. Two traps it encodes:
+//
+// 1. MOST 5xx IN THE ZONE ARE NOT REAL. Requests carry a `requestSource`, and
+//    only `eyeball` is a browser. The rest are Cloudflare's own internal
+//    machinery, which logs synthetic statuses:
+//      - `edgeWorkerCacheAPI` — the Worker's `caches.default` bookkeeping
+//        (cloudflare/worker.js `cached()`): a match MISS logs 504 and the put
+//        logs 204, paired on the same path. Permanent and harmless.
+//      - `earlyHintsCache` — was ~23k phantom 504s/day until Early Hints was
+//        turned off (see scripts/cf-waf-setup.mjs).
+//    A 2026-08-03 audit spent 20 minutes proving the 25%-failure dashboard was
+//    entirely this. Hence: 5xx is reported eyeball-only.
+//
+// 2. CPU IS AN ACCOUNT-LEVEL DATASET. Page views are static assets and never
+//    invoke the Worker, so zone traffic says nothing about the 10ms CPU budget.
+//    `workersInvocationsAdaptive` is the only place kills are visible. NOTE the
+//    token in .env.local is zone-scoped for most things: `viewer{accounts{...}}`
+//    is rejected unless it is filtered by `accountTag`, which is why an
+//    unfiltered query looks like an empty result rather than an auth error.
+
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { loadLocalEnv } from './load-env.mjs'
+
+loadLocalEnv()
+
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
+const TOKEN = process.env.CLOUDFLARE_API_TOKEN
+const ZONE_NAME = process.env.CF_ZONE_NAME || 'reely.space'
+const HOURS = Number(process.argv[2]) || 24
+
+if (!TOKEN) {
+  console.error('Set CLOUDFLARE_API_TOKEN (or put it in .env.local).')
+  process.exit(1)
+}
+
+// Account id and script name come from wrangler.jsonc so this can never drift
+// from what is actually deployed. Regex rather than a JSONC parser: two fields.
+const wrangler = fs.readFileSync(path.join(root, 'wrangler.jsonc'), 'utf8')
+const field = (name) =>
+  wrangler.match(new RegExp(`"${name}":\\s*"([^"]+)"`))?.[1]
+const ACCOUNT_ID = field('account_id')
+const SCRIPT_NAME = field('name')
+
+// Free-plan ceilings. Exceeding these is what takes the site down, so they are
+// the thresholds the check grades against.
+const LIMITS = {
+  invocationsPerDay: 100_000,
+  subrequestsPerInvocation: 50,
+  cpuMsPerInvocation: 10,
+}
+
+const iso = (ms) => new Date(ms).toISOString().replace(/\.\d+Z$/, 'Z')
+const now = Date.now()
+const SINCE = iso(now - HOURS * 3600e3)
+const UNTIL = iso(now)
+
+async function gql(query) {
+  const res = await fetch('https://api.cloudflare.com/client/v4/graphql', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query }),
+  })
+  const body = await res.json()
+  if (body.errors?.length) {
+    throw new Error(body.errors.map((e) => e.message).join(' | '))
+  }
+  return body.data.viewer
+}
+
+async function zoneId() {
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/zones?name=${encodeURIComponent(ZONE_NAME)}`,
+    { headers: { Authorization: `Bearer ${TOKEN}` } }
+  )
+  const body = await res.json()
+  if (!body.result?.length) throw new Error(`Zone not found: ${ZONE_NAME}`)
+  return body.result[0].id
+}
+
+const pct = (part, whole) => (whole ? (100 * part) / whole : 0)
+const sum = (rows, pick) => rows.reduce((total, row) => total + pick(row), 0)
+
+const results = []
+function grade(ok, label, detail) {
+  results.push({ ok, label, detail })
+  console.log(`${ok ? '✓' : '✗'} ${label}\n    ${detail}`)
+}
+
+/** Worker CPU, invocation count and kills — the free-plan budget. */
+async function checkWorker() {
+  const filter = `datetime_geq:"${SINCE}",datetime_leq:"${UNTIL}",scriptName:"${SCRIPT_NAME}"`
+  const { accounts } =
+    await gql(`query{viewer{accounts(filter:{accountTag:"${ACCOUNT_ID}"}){
+    byStatus: workersInvocationsAdaptive(limit:1000,filter:{${filter}}){
+      dimensions{status} sum{requests errors subrequests}}
+    ok: workersInvocationsAdaptive(limit:100,filter:{${filter},status:"success"}){
+      sum{requests subrequests} quantiles{cpuTimeP50 cpuTimeP99 cpuTimeP999 wallTimeP99}}}}}`)
+
+  const byStatus = accounts[0].byStatus
+  const invocations = sum(byStatus, (r) => r.sum.requests)
+  if (!invocations) {
+    grade(true, 'Worker: no invocations in window', 'nothing to grade')
+    return
+  }
+
+  const counts = {}
+  for (const row of byStatus) {
+    counts[row.dimensions.status] =
+      (counts[row.dimensions.status] ?? 0) + row.sum.requests
+  }
+  // clientDisconnected is the eyeball leaving mid-flight — not our failure.
+  const killed =
+    (counts.exceededResources ?? 0) +
+    (counts.exceededMemory ?? 0) +
+    (counts.exceededCpu ?? 0) +
+    (counts.scriptThrewException ?? 0)
+
+  const perDay = (invocations / HOURS) * 24
+  const ok = accounts[0].ok[0]
+  const cpu = (key) => (ok ? ok.quantiles[key] / 1000 : 0)
+  const subPer = ok?.sum.requests ? ok.sum.subrequests / ok.sum.requests : 0
+
+  grade(
+    killed === 0,
+    `Worker kills: ${killed} of ${invocations} invocations (${pct(killed, invocations).toFixed(3)}%)`,
+    JSON.stringify(counts)
+  )
+  grade(
+    cpu('cpuTimeP99') < LIMITS.cpuMsPerInvocation,
+    `Worker CPU: p50 ${cpu('cpuTimeP50').toFixed(2)}ms, p99 ${cpu('cpuTimeP99').toFixed(2)}ms, p999 ${cpu('cpuTimeP999').toFixed(2)}ms`,
+    `budget ${LIMITS.cpuMsPerInvocation}ms/invocation — kills above are the ground truth, this is the margin`
+  )
+  grade(
+    perDay < LIMITS.invocationsPerDay,
+    `Invocations: ${Math.round(perDay).toLocaleString()}/day projected (${pct(perDay, LIMITS.invocationsPerDay).toFixed(0)}% of cap)`,
+    'static assets are exempt, so this counts only /api/* + tail-id fallbacks'
+  )
+  grade(
+    subPer < LIMITS.subrequestsPerInvocation / 2,
+    `Subrequests: ${subPer.toFixed(2)} per invocation`,
+    `cap ${LIMITS.subrequestsPerInvocation} — the cap that broke the homepage when IMDb enrichment was on`
+  )
+}
+
+/** What browsers actually got. The only 5xx number that means anything. */
+async function checkEyeball(zone) {
+  const filter = `datetime_geq:"${SINCE}",datetime_leq:"${UNTIL}",requestSource:"eyeball"`
+  const { zones } = await gql(`query{viewer{zones(filter:{zoneTag:"${zone}"}){
+    httpRequestsAdaptiveGroups(limit:60,filter:{${filter}},orderBy:[count_DESC]){
+      count dimensions{edgeResponseStatus}}}}}`)
+  const rows = zones[0].httpRequestsAdaptiveGroups
+  const total = sum(rows, (r) => r.count)
+  const server = rows.filter((r) => r.dimensions.edgeResponseStatus >= 500)
+  const failures = sum(server, (r) => r.count)
+
+  grade(
+    failures === 0,
+    `Eyeball 5xx: ${failures} of ${total.toLocaleString()} real requests (${pct(failures, total).toFixed(3)}%)`,
+    server.length
+      ? server
+          .map((r) => `${r.dimensions.edgeResponseStatus}×${r.count}`)
+          .join(' ')
+      : 'internal requestSources (edgeWorkerCacheAPI / earlyHintsCache) excluded — see header comment'
+  )
+  return total
+}
+
+/**
+ * Eyeball 4xx, bucketed. Every bucket here has been traced to a benign cause;
+ * they are printed so a NEW one stands out instead of hiding in the tail.
+ */
+const BUCKETS = [
+  [
+    'bot: blocked scrapers (/sw.js is HeadlessChrome, working as designed)',
+    /^\/sw\.js$/,
+  ],
+  ['bot: PHP/WordPress probes', /wp-|\.php$|\.env|\/admin/i],
+  ['bot: image crawler on stale URLs', /^\/[A-Za-z0-9_-]{20,32}\.(jpg|png)$/],
+  [
+    'bot: doubled path from bad referrers',
+    /^\/(movies|tv-shows)\/\d+\/(movies|tv-shows)\/\d+/,
+  ],
+  ['stale-deploy clients (chunk 404 → client reload)', /^\/_next\/static\//],
+  ['prefetch of non-prerendered id (page itself works)', /__next\._/],
+]
+
+async function checkClientErrors(zone) {
+  const filter = `datetime_geq:"${SINCE}",datetime_leq:"${UNTIL}",requestSource:"eyeball",edgeResponseStatus_geq:400,edgeResponseStatus_lt:500`
+  const { zones } = await gql(`query{viewer{zones(filter:{zoneTag:"${zone}"}){
+    httpRequestsAdaptiveGroups(limit:2000,filter:{${filter}},orderBy:[count_DESC]){
+      count dimensions{clientRequestPath edgeResponseStatus}}}}}`)
+
+  const tally = new Map()
+  const unknown = []
+  for (const row of zones[0].httpRequestsAdaptiveGroups) {
+    const bucket = BUCKETS.find(([, re]) =>
+      re.test(row.dimensions.clientRequestPath)
+    )
+    const key = bucket ? bucket[0] : null
+    if (!key) {
+      unknown.push(row)
+      continue
+    }
+    tally.set(key, (tally.get(key) ?? 0) + row.count)
+  }
+
+  console.log('\n  eyeball 4xx, known-benign:')
+  for (const [label, count] of [...tally].sort((a, b) => b[1] - a[1])) {
+    console.log(`    ${String(count).padStart(6)}  ${label}`)
+  }
+  const unknownTotal = sum(unknown, (r) => r.count)
+  console.log(
+    `\n  eyeball 4xx, unclassified: ${unknownTotal} — the only column worth reading closely`
+  )
+  for (const row of unknown.slice(0, 12)) {
+    console.log(
+      `    ${String(row.count).padStart(6)}  ${row.dimensions.edgeResponseStatus} ${row.dimensions.clientRequestPath.slice(0, 80)}`
+    )
+  }
+}
+
+const zone = await zoneId()
+console.log(
+  `${ZONE_NAME} / ${SCRIPT_NAME} — last ${HOURS}h (${SINCE} → ${UNTIL})\n`
+)
+await checkWorker()
+await checkEyeball(zone)
+await checkClientErrors(zone)
+
+const failed = results.filter((r) => !r.ok)
+console.log(
+  failed.length
+    ? `\n✗ ${failed.length} check(s) failed: ${failed.map((r) => r.label.split(':')[0]).join(', ')}`
+    : `\n✓ all ${results.length} checks passed`
+)
+process.exit(failed.length ? 1 : 0)

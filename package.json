@@ -20,7 +20,8 @@
     "icons:build": "node scripts/build-app-icons.mjs",
     "og:build": "node scripts/build-og-image.mjs",
     "waf:apply": "node scripts/cf-waf-setup.mjs",
-    "dns:harden": "node scripts/cf-dns-hardening.mjs"
+    "dns:harden": "node scripts/cf-dns-hardening.mjs",
+    "cf:health": "node scripts/cf-health.mjs"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.23",

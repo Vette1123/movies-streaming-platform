@@ -43,6 +43,10 @@
 
 import process from 'node:process'
 
+import { loadLocalEnv } from './load-env.mjs'
+
+loadLocalEnv()
+
 const TOKEN = process.env.CLOUDFLARE_API_TOKEN
 const ZONE_NAME = process.env.CF_ZONE_NAME || 'reely.space'
 const TAG = '[reely-waf]'
