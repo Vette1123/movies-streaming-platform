@@ -2,17 +2,10 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Clapperboard } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
-import {
-  ACCENT_BAR_VARIANT,
-  CHANGE_COLOR_VARIANT,
-  HIDDEN_TEXT_ARROW_VARIANT,
-  HIDDEN_TEXT_VARIANT,
-} from '@/lib/motion-variants'
 import { cn, itemRedirect } from '@/lib/utils'
 import { Card } from '@/components/card'
 import { Icons } from '@/components/icons'
@@ -34,9 +27,9 @@ const DRAG_THRESHOLD = 8
  * Horizontal poster rail. Replaces the old Splide carousel: the track is now a
  * native overflow-x scroll container with CSS scroll-snap, so scrolling runs on
  * the compositor (GPU) with zero per-frame JS — touch swipe and trackpad work
- * for free and stay buttery on mobile. Framer only powers the chrome (heading
- * hover, arrow reveal), never the scroll itself. Desktop keeps click-drag and
- * hover-reveal arrows for parity with the previous UX.
+ * for free and stay buttery on mobile. The chrome (heading hover, arrow reveal)
+ * is plain CSS — nothing in this rail runs framer any more. Desktop keeps
+ * click-drag and hover-reveal arrows for parity with the previous UX.
  */
 export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
   const railRef = React.useRef<HTMLDivElement>(null)
@@ -134,12 +127,16 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
     // wrap this in a narrow `container`, which made the row a different width than
     // home and clipped the scroll region).
     <nav className="cv-auto px-5 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10 xl:px-16 2xl:px-20">
-      <motion.div
-        initial="rest"
-        whileHover="hover"
-        animate="rest"
-        className="w-fit"
-      >
+      {/* Heading hover, in CSS instead of a framer variant orchestrator.
+          Identical motion (accent bar scaleY 1 → 1.35 with a touch of overshoot,
+          title to cyan-200, "Explore All" + arrow sliding in from ±50px), but
+          the homepage stacks ~8 of these rails and each one was FIVE motion
+          components propagating rest/hover — 40 instances, all for a hover the
+          compositor can do on its own. `motion-reduce:` keeps the
+          prefers-reduced-motion opt-out the variants got from framer.
+          Note: the reveals animate opacity + translate, not `display`, so the
+          text no longer pops in without a transition on the first frame. */}
+      <div className="group/heading w-fit">
         <Link
           href={itemRedirect(itemType)}
           // Homepage stacks many carousels; each heading would viewport-prefetch a
@@ -147,31 +144,21 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
           prefetch={false}
           className="mb-4 flex w-fit items-center gap-2"
         >
-          <motion.h2
-            className="flex items-center gap-2.5 text-2xl font-bold tracking-tight transition"
-            variants={CHANGE_COLOR_VARIANT}
-          >
-            <motion.span
+          <h2 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight transition-colors duration-200 ease-in group-hover/heading:text-cyan-200">
+            <span
               aria-hidden
-              variants={ACCENT_BAR_VARIANT}
-              className="h-5 w-[3px] origin-center rounded-full bg-gradient-to-b from-cyan-300 to-cyan-500 shadow-[0_0_8px_rgba(103,232,249,0.5)]"
+              className="h-5 w-[3px] origin-center rounded-full bg-gradient-to-b from-cyan-300 to-cyan-500 opacity-85 shadow-[0_0_8px_rgba(103,232,249,0.5)] transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/heading:scale-y-[1.35] group-hover/heading:opacity-100 motion-reduce:transition-none"
             />
             {title}
-          </motion.h2>
-          <motion.div
-            className="mt-1 text-base text-cyan-200"
-            variants={HIDDEN_TEXT_VARIANT}
-          >
+          </h2>
+          <div className="mt-1 -translate-x-12 text-base text-cyan-200 opacity-0 transition-[transform,opacity] duration-300 ease-in group-hover/heading:translate-x-0 group-hover/heading:opacity-100 motion-reduce:transition-none">
             <span className="font-sans text-sm font-medium">Explore All</span>
-          </motion.div>
-          <motion.span
-            variants={HIDDEN_TEXT_ARROW_VARIANT}
-            className="mt-1 text-base text-cyan-200"
-          >
+          </div>
+          <span className="mt-1 translate-x-12 text-base text-cyan-200 opacity-0 transition-[transform,opacity] duration-300 ease-in group-hover/heading:translate-x-0 group-hover/heading:opacity-100 motion-reduce:transition-none">
             <Icons.arrowRight className="ml-1 inline-block h-4 w-4" />
-          </motion.span>
+          </span>
         </Link>
-      </motion.div>
+      </div>
 
       {items.length === 0 && (
         <div
@@ -210,7 +197,7 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
             // pointer-drag animate toward its target, so rapid drag updates fight
             // the smoothing and the rail feels stuck / unswipeable on desktop.
             // Arrow paging still animates via scrollBy({ behavior: 'smooth' }).
-            className="no-scrollbar -mx-4 -my-6 flex snap-x snap-mandatory gap-6 overflow-x-auto px-4 py-6 scroll-pl-4"
+            className="no-scrollbar -mx-4 -my-6 flex snap-x snap-mandatory scroll-pl-4 gap-6 overflow-x-auto px-4 py-6"
           >
             {items.map((item) => (
               // Responsive width matching SliderHorizontalListLoader so the
@@ -266,7 +253,7 @@ const RailArrow = ({ direction, visible, onClick }: RailArrowProps) => {
         'opacity-0 transition-[opacity,scale,background,border-color] duration-300 ease-out',
         'hover:scale-[1.08] hover:border-cyan-300/55 hover:bg-[rgba(20,24,36,0.82)] active:scale-95',
         'focus-visible:border-cyan-300/70 focus-visible:opacity-100 focus-visible:outline-none',
-        'group-hover/rail:opacity-100 group-focus-within/rail:opacity-100',
+        'group-focus-within/rail:opacity-100 group-hover/rail:opacity-100',
         isLeft ? 'left-2' : 'right-2',
         !visible && 'pointer-events-none !opacity-0'
       )}

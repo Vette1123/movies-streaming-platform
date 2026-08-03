@@ -204,6 +204,16 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="" />
         )}
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
+        {/*
+          The hero arms its muted trailer 0.5–1.2s after a slide takes the frame,
+          so the YouTube embed's DNS+TLS handshake would otherwise start from
+          cold right as the page is busiest. dns-prefetch, deliberately NOT
+          preconnect: the trailer is opt-out and defaults off on low-power
+          devices, so a full handshake would be spent on nothing for every
+          visitor who never sees one. Resolving the name is the cheap half.
+        */}
+        <link rel="dns-prefetch" href="https://www.youtube-nocookie.com" />
+        <link rel="dns-prefetch" href="https://i.ytimg.com" />
         <link
           rel="mask-icon"
           href="/safari-pinned-tab.svg"

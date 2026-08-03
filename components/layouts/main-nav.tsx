@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { motion } from 'framer-motion'
 
 import { NavItem } from '@/types/navbar'
 import { siteConfig } from '@/config/site'
@@ -44,7 +43,15 @@ export function MainNav({ items }: MainNavProps) {
                     item.disabled && 'cursor-not-allowed opacity-80'
                   )}
                 >
-                  <motion.span layoutId={item.title}>{item.title}</motion.span>
+                  {/* Plain span. This used to be a `motion.span` with a
+                      `layoutId`, which animated nothing: shared-layout only
+                      transitions when an element with that id unmounts and
+                      another mounts, and every nav label is mounted for the
+                      whole session. It cost real money though — the nav lives
+                      in the root layout, so that one no-op dragged framer-motion
+                      into EVERY route's bundle, and gave each label a layout
+                      projection node measured on every render. */}
+                  <span>{item.title}</span>
                 </Link>
               )
           )}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { PanInfo } from 'framer-motion'
+import type { PanInfo } from 'framer-motion'
 
 import { useMounted } from '@/hooks/use-mounted'
 
