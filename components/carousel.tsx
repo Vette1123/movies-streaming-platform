@@ -167,6 +167,25 @@ export function Carousel({
   const stageRef = React.useRef<HTMLDivElement>(null)
   const prevIndexRef = React.useRef(currentIndex)
 
+  // Which slide the mounted WINDOW is centred on. Deliberately lags
+  // currentIndex, and that lag is the point.
+  //
+  // Advancing the index shifts the window, so one brand-new slide mounts on the
+  // very commit that starts the spring: a full HeroSlide subtree renders, and
+  // the browser lays out and decodes a backdrop it has never seen, all inside
+  // the frame that is supposed to begin the motion. That was the last long
+  // frame left after the image-size fix — 293ms on a 6x-throttled phone.
+  //
+  // useDeferredValue splits it in two. The urgent render keeps the OLD window,
+  // which is exactly the set the transition needs: the outgoing slide (now at
+  // offset -1) and the incoming one (offset 0) are both already mounted and
+  // decoded, and the slide that drops to offset -2 is clipped off-stage where
+  // nobody can see it. The new neighbour arrives on the follow-up low-priority
+  // render, once the spring is already running.
+  //
+  // Nothing visible is deferred — only the off-stage prefetch is.
+  const mountIndex = React.useDeferredValue(currentIndex)
+
   // Stage width, kept in a ref rather than measured where it's needed. The drag
   // scale below reads it every frame, and offsetWidth forces a synchronous
   // layout — doing that inside a motion transform would reflow the page on each
@@ -411,8 +430,12 @@ export function Carousel({
             slides can never be readable at once. Staying mounted keeps their
             artwork decoded before they scroll in. */}
           {childrenArray.map((child, i) => {
+            // Position from the live index, mount from the lagging one. A slide
+            // that has fallen outside the window but is still mounted simply
+            // sits at ±2 widths, which the stage clips.
             const offset = wrappedOffset(i, currentIndex, childrenCount)
-            if (Math.abs(offset) > WINDOW) return null
+            if (Math.abs(wrappedOffset(i, mountIndex, childrenCount)) > WINDOW)
+              return null
             const active = offset === 0
             return (
               <motion.div
