@@ -108,6 +108,18 @@ export function BlurredImage({
     // pattern for a responsive box and avoids the "width/height modified" distortion
     // warning. width/height are stripped so `fill` isn't passed alongside them.
     const { width, height, ...rest } = props
+    // `fill` with no `sizes` makes next/image emit `sizes="100vw"`, so the
+    // browser picks a candidate for the whole viewport width — measured on the
+    // homepage as 64 of 70 images fetching the 500px variant into a 250px box,
+    // and it gets worse the bigger the screen (and on a dpr-3 phone, where
+    // 100vw resolves to ~1180px of intent for a ~150px poster).
+    //
+    // The box is `w-full` of a rail item / grid track that is sized around the
+    // intrinsic width, so declaring that width is honest: the browser still
+    // multiplies by DPR, it just stops budgeting for a full-bleed image. Under
+    // 640px the grid/rail puts roughly two across, hence 50vw there. Callers
+    // with a genuinely different layout can pass their own `sizes` and win.
+    const sizes = rest.sizes ?? `(max-width: 640px) 50vw, ${width}px`
     return (
       <div
         className="relative w-full overflow-hidden rounded-lg bg-slate-900"
@@ -127,10 +139,11 @@ export function BlurredImage({
           alt={alt}
           src={imgSrc}
           fill
+          sizes={sizes}
           className={cn(
             className,
             'object-cover transition-[transform,filter] duration-500 ease-out',
-            isLoading ? 'scale-[1.03] blur-lg' : 'scale-100 blur-0'
+            isLoading ? 'scale-[1.03] blur-lg' : 'blur-0 scale-100'
           )}
           onLoad={() => setLoading(false)}
           onError={handleError}
