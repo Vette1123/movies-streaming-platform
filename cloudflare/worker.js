@@ -105,9 +105,13 @@ const json = (body, init = {}) =>
  */
 const BUILD_ID = typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'dev'
 
+// Sorted, because the Cache API keys on the literal URL: `?page=2&mediaType=tv`
+// and `?mediaType=tv&page=2` are the same query and were two entries, so one of
+// them always paid full price. nuqs does not promise a stable param order.
 const cacheKeyUrl = (href) => {
   const url = new URL(href)
   url.searchParams.set('__b', BUILD_ID)
+  url.searchParams.sort()
   return url.toString()
 }
 
@@ -144,13 +148,53 @@ async function cached(request, ctx, compute) {
   return response
 }
 
-/** Every query param except the ones the router itself consumes. */
-function passthroughParams(searchParams, drop) {
+/**
+ * The discover params /api/filter forwards to TMDB — the keys of FilterParams
+ * in types/filter.ts, minus the two the router consumes itself. Keep in sync.
+ *
+ * An allowlist rather than a denylist because this reads straight off the query
+ * string. Anything else was forwarded verbatim to TMDB AND became part of the
+ * Cache API key, so `?with_genres=28&x=1`, `&x=2`, `&x=3` were three separate
+ * misses of the same result — a free-plan-quota hole that needed no more effort
+ * than a loop, and cache-key noise even without one.
+ */
+const FILTER_PARAMS = new Set([
+  'with_genres',
+  'without_genres',
+  'release_date.gte',
+  'release_date.lte',
+  'first_air_date.gte',
+  'first_air_date.lte',
+  'vote_average.gte',
+  'vote_average.lte',
+  'vote_count.gte',
+  'sort_by',
+  'with_runtime_gte',
+  'with_runtime_lte',
+  'include_adult',
+  'include_video',
+  'with_original_language',
+  'certification',
+  'certification_country',
+  'with_watch_providers',
+  'watch_region',
+  'with_watch_monetization_types',
+  'language',
+])
+
+function filterParams(searchParams) {
   const out = {}
   for (const [key, value] of searchParams) {
-    if (!drop.includes(key)) out[key] = value
+    if (FILTER_PARAMS.has(key)) out[key] = value
   }
   return out
+}
+
+/** TMDB refuses anything outside 1-500, so there is no reason to ask it. */
+const pageParam = (value) => {
+  const page = Number(value)
+  if (!Number.isInteger(page) || page < 1) return 1
+  return Math.min(page, 500)
 }
 
 const isTv = (value) => value === 'tv'
@@ -204,8 +248,8 @@ async function handleApi(pathname, url, request, ctx) {
 
   if (pathname === '/api/filter') {
     const mediaType = isTv(q.get('mediaType')) ? 'tv' : 'movie'
-    const page = Number(q.get('page')) || 1
-    const filters = passthroughParams(q, ['mediaType', 'page'])
+    const page = pageParam(q.get('page'))
+    const filters = filterParams(q)
     const discover = mediaType === 'tv' ? discoverSeries : discoverMovies
     return cached(request, ctx, async () =>
       json(await discover(filters, { page }))
@@ -215,7 +259,7 @@ async function handleApi(pathname, url, request, ctx) {
   // Page 2+ of the browse lists. Page 1 ships inside the prerendered HTML.
   if (pathname === '/api/popular') {
     const mediaType = isTv(q.get('mediaType')) ? 'tv' : 'movie'
-    const page = Number(q.get('page')) || 1
+    const page = pageParam(q.get('page'))
     const getPopular = mediaType === 'tv' ? getPopularSeries : getPopularMovies
     return cached(request, ctx, async () => json(await getPopular({ page })))
   }
@@ -238,7 +282,9 @@ async function handleApi(pathname, url, request, ctx) {
   if (pathname === '/api/season-details') {
     const seasonId = Number(q.get('seasonId'))
     const seasonNumber = q.get('seasonNumber')
-    if (!seasonId || !seasonNumber) {
+    // Digits only: seasonNumber lands in a TMDB path segment and in the cache
+    // key, and both should be a season number rather than whatever was typed.
+    if (!seasonId || !seasonNumber || !/^\d+$/.test(seasonNumber)) {
       return json(
         { error: 'seasonId and seasonNumber are required' },
         { status: 400 }
