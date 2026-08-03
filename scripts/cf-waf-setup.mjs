@@ -459,6 +459,26 @@ async function main() {
     })
   })
 
+  // Early Hints off. It only re-serves `Link: rel=preload/preconnect` headers it
+  // previously saw on an origin response, and nothing here ever sends one:
+  // `public/_headers` defines none, and a static asset response carries none
+  // either. So the feature can never emit a hint — but its cache-fill requests
+  // still run, and they time out: a 2026-08-03 audit found ~23,000 of the zone's
+  // ~23,300 daily 504s were internal, `requestSource: earlyHintsCache`, UA
+  // "nginx-ssl early hints", `originResponseStatus: 0`. No eyeball ever saw one
+  // (eyeball 5xx over the same 23h: zero), but they made the dashboard read as a
+  // 25%-failure site and buried the real signal.
+  //
+  // This is NOT the prefetch that matters here: `Speculation-Rules` on every
+  // response comes from Speed Brain, a separate setting that stays on. Turn this
+  // back on if we ever start emitting real preload headers.
+  await step('Early Hints off (needs Zone Settings: Edit)', async () => {
+    await cf(`/zones/${zoneId}/settings/early_hints`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: 'off' }),
+    })
+  })
+
   // TLS hardening. All three are free-plan zone settings and idempotent.
   //
   // min_tls_version 1.2 — the zone shipped on the CF default of 1.0, which
