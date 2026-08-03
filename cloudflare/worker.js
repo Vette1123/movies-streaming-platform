@@ -123,9 +123,9 @@ const cacheKeyUrl = (href) => {
  * recompute, never to a 5xx. This is the same guard the old
  * app/api/hero-extras route carried, for the same reason.
  */
-async function cached(request, ctx, compute) {
+async function cached(request, ctx, compute, keyHref = request.url) {
   const cache = globalThis.caches?.default
-  const key = new Request(cacheKeyUrl(request.url), { method: 'GET' })
+  const key = new Request(cacheKeyUrl(keyHref), { method: 'GET' })
 
   if (cache) {
     try {
@@ -567,31 +567,53 @@ async function handleDetailFallback(match, request, env, ctx, url) {
   const [, segment, id] = match
   const type = segment === 'tv-shows' ? 'tv' : 'movie'
 
-  return cached(request, ctx, async () => {
-    // The SUMMARY, not the full detail payload. This path only writes meta
-    // tags; it used to pull `append_to_response=credits,similar,
-    // recommendations,videos` (98KB for a movie) and read six fields out of it.
-    // See services/media-summary.ts. The shell fetches the full payload from
-    // /api/media/:id once it boots, which is where that cost belongs.
-    const details = await loadSummary(type, id)
-    if (!details?.id) return notFoundAsset(env, url)
+  // Cache the SUMMARY, not the assembled page.
+  //
+  // 99% of the ids that reach this handler are requested exactly once, by
+  // crawlers walking the TMDB id space (measured: 738 fallback invocations, 729
+  // distinct ids, zero from a browser-shaped UA). Storing 55 KB of HTML per id
+  // was therefore ~55x the write for the same 23% hit rate, and it evicted the
+  // entries that do get reused. The summary is ~1 KB, so far more ids stay
+  // resident, and a hit still skips what actually costs: the TMDB round trip.
+  //
+  // Assembling the page from the pre-split shell afterwards is a handful of
+  // string concatenations, so it is cheaper to redo than to store.
+  const summary = await cached(
+    request,
+    ctx,
+    async () => {
+      // The SUMMARY, not the full detail payload. This path only writes meta
+      // tags; it used to pull `append_to_response=credits,similar,
+      // recommendations,videos` (98KB for a movie) and read six fields out of
+      // it. See services/media-summary.ts. The shell fetches the full payload
+      // from /api/media/:id once it boots, which is where that cost belongs.
+      const details = await loadSummary(type, id)
+      // A 404 keeps `cached` from storing it: an id TMDB does not know must not
+      // be pinned for 8h on the strength of one possibly-transient failure.
+      if (!details?.id) return json({ error: 'not found' }, { status: 404 })
+      return json(details)
+    },
+    `${url.origin}/__summary/${type}/${id}`
+  )
 
-    const meta = buildMeta(type, id, details, siteUrlOf(url))
-    const jsonLd = {
-      '@context': 'https://schema.org',
-      '@type': type === 'tv' ? 'TVSeries' : 'Movie',
-      name: meta.title,
-      description: meta.description,
-      url: meta.canonical,
-      ...(meta.image ? { image: meta.image } : {}),
-    }
-    const ogType = type === 'tv' ? 'video.tv_show' : 'video.movie'
+  if (!summary.ok) return notFoundAsset(env, url)
+  const details = await summary.json()
 
-    return (
-      serveShellFromTemplate(SHELL_MEDIA, meta, ogType, jsonLd) ??
-      serveShell(SHELL_MEDIA, meta, ogType, jsonLd, env, url)
-    )
-  })
+  const meta = buildMeta(type, id, details, siteUrlOf(url))
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': type === 'tv' ? 'TVSeries' : 'Movie',
+    name: meta.title,
+    description: meta.description,
+    url: meta.canonical,
+    ...(meta.image ? { image: meta.image } : {}),
+  }
+  const ogType = type === 'tv' ? 'video.tv_show' : 'video.movie'
+
+  return (
+    serveShellFromTemplate(SHELL_MEDIA, meta, ogType, jsonLd) ??
+    serveShell(SHELL_MEDIA, meta, ogType, jsonLd, env, url)
+  )
 }
 
 /**
@@ -602,37 +624,48 @@ async function handleDetailFallback(match, request, env, ctx, url) {
 async function handleCollectionFallback(match, request, env, ctx, url) {
   const [, id] = match
 
-  return cached(request, ctx, async () => {
-    const collection = await loadCollection(id)
-    if (!collection?.id) return notFoundAsset(env, url)
+  // Same shape as handleDetailFallback: cache the TMDB payload under its own
+  // key, assemble the page fresh. See the note there.
+  const cachedCollection = await cached(
+    request,
+    ctx,
+    async () => {
+      const data = await loadCollection(id)
+      if (!data?.id) return json({ error: 'not found' }, { status: 404 })
+      return json(data)
+    },
+    `${url.origin}/__summary/collection/${id}`
+  )
 
-    const siteUrl = siteUrlOf(url)
-    const description =
-      collection.overview?.slice(0, 200) ||
-      `Every film in the ${collection.name} on Reely.`
-    const meta = {
-      heading: collection.name,
-      title: collection.name,
-      description,
-      image: collection.backdrop_path
-        ? getImageURL(collection.backdrop_path)
-        : '',
-      canonical: `${siteUrl}/collection/${id}`,
-    }
-    const jsonLd = {
-      '@context': 'https://schema.org',
-      '@type': 'CollectionPage',
-      name: meta.title,
-      description,
-      url: meta.canonical,
-      ...(meta.image ? { image: meta.image } : {}),
-    }
+  if (!cachedCollection.ok) return notFoundAsset(env, url)
+  const collection = await cachedCollection.json()
 
-    return (
-      serveShellFromTemplate(SHELL_COLLECTION, meta, 'website', jsonLd) ??
-      serveShell(SHELL_COLLECTION, meta, 'website', jsonLd, env, url)
-    )
-  })
+  const siteUrl = siteUrlOf(url)
+  const description =
+    collection.overview?.slice(0, 200) ||
+    `Every film in the ${collection.name} on Reely.`
+  const meta = {
+    heading: collection.name,
+    title: collection.name,
+    description,
+    image: collection.backdrop_path
+      ? getImageURL(collection.backdrop_path)
+      : '',
+    canonical: `${siteUrl}/collection/${id}`,
+  }
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: meta.title,
+    description,
+    url: meta.canonical,
+    ...(meta.image ? { image: meta.image } : {}),
+  }
+
+  return (
+    serveShellFromTemplate(SHELL_COLLECTION, meta, 'website', jsonLd) ??
+    serveShell(SHELL_COLLECTION, meta, 'website', jsonLd, env, url)
+  )
 }
 
 export default {
