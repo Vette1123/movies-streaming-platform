@@ -19,7 +19,7 @@ import {
   Param,
 } from '@/types/movie-result'
 import { RAIL_LIMIT } from '@/lib/constants'
-import { fetchClient } from '@/lib/fetch-client'
+import { fetchClient, isNotFoundError } from '@/lib/fetch-client'
 import { capListOverviews } from '@/lib/media'
 import { movieType } from '@/lib/tmdbConfig'
 import { pickTrailerKey } from '@/lib/videos'
@@ -198,8 +198,12 @@ const populateMovieDetailsPage = async (
       trailerKey: pickTrailerKey(videos?.results),
     }
   } catch (error: any) {
-    console.error(error, 'error')
-    throw new Error(error)
+    // An unknown id is not a fault: cloudflare/worker.js turns it into a 404 and
+    // the build simply skips the page. Logging it made every crawler probing a
+    // made-up id an error event. Rethrow the original so its status survives —
+    // the old `new Error(error)` stringified it and lost that.
+    if (!isNotFoundError(error)) console.error(error, 'error')
+    throw error
   }
 }
 

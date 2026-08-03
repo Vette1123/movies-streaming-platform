@@ -139,6 +139,24 @@ const isRetriableTransportError = (error: unknown): boolean =>
   error.name !== 'TimeoutError' &&
   error.name !== 'AbortError'
 
+/** A non-OK TMDB response, carrying its status so callers can tell 404 apart. */
+interface TmdbError extends Error {
+  status: number
+}
+
+const tmdbError = (status: number): TmdbError =>
+  Object.assign(new Error(`TMDB API error: ${status}`), { status })
+
+/**
+ * TMDB said "no such id".
+ *
+ * Exported because the two detail services log-and-rethrow around this client,
+ * and they need the same distinction: a bad id is a normal answer to a request
+ * for a bad id, and must not be reported as a fault.
+ */
+export const isNotFoundError = (error: unknown): boolean =>
+  (error as Partial<TmdbError> | null)?.status === 404
+
 export const fetchClient = {
   get: async <T>(
     url: string,
@@ -213,12 +231,16 @@ export const fetchClient = {
         if (!res.ok) {
           // Same reason: release the error response's body before bailing out.
           await res.body?.cancel()
-          throw new Error(`TMDB API error: ${res.status}`)
+          throw tmdbError(res.status)
         }
         return (await res.json()) as T
       }
     } catch (error: any) {
-      console.error(error)
+      // A 404 is TMDB answering "there is no such id", which is an ordinary
+      // outcome here, not a fault: every caller already turns it into a 404 page
+      // or a null. Logging it meant each crawler probing a made-up id produced an
+      // error event — a permanent error stream that reported nothing wrong.
+      if (!isNotFoundError(error)) console.error(error)
       throw error
     } finally {
       if (GOVERN) release()
@@ -238,11 +260,11 @@ export const fetchClient = {
       if (!res.ok) {
         // Cancel the unread body so the response can't strand an in-flight slot.
         await res.body?.cancel()
-        throw new Error(`TMDB API error: ${res.status}`)
+        throw tmdbError(res.status)
       }
       return await res.json()
     } catch (error: any) {
-      console.error(error)
+      if (!isNotFoundError(error)) console.error(error)
       throw error
     }
   },

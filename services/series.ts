@@ -9,7 +9,7 @@ import {
 } from '@/types/series-details'
 import { SeriesResponse } from '@/types/series-result'
 import { RAIL_LIMIT } from '@/lib/constants'
-import { fetchClient } from '@/lib/fetch-client'
+import { fetchClient, isNotFoundError } from '@/lib/fetch-client'
 import { tvType } from '@/lib/tmdbConfig'
 import { pickTrailerKey } from '@/lib/videos'
 
@@ -102,8 +102,10 @@ const populateSeriesDetailsPageData = async (
       trailerKey: pickTrailerKey(videos?.results),
     }
   } catch (error: any) {
-    console.error(error, 'error')
-    throw new Error(error)
+    // Same as populateMovieDetailsPage — an unknown id is a normal answer, not a
+    // fault, and the original error is rethrown so its status survives.
+    if (!isNotFoundError(error)) console.error(error, 'error')
+    throw error
   }
 }
 
