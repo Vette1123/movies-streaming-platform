@@ -1,35 +1,21 @@
 #!/usr/bin/env node
-// Deploy wrapper for OpenNext on Cloudflare.
+// Deploy wrapper for the static export + Worker.
 //
-// `opennextjs-cloudflare deploy` always runs `populate-cache` before pushing
-// the worker. With the static-assets incremental cache (open-next.config.ts)
-// that step is a local `cpSync` of `.open-next/cache` into
-// `.open-next/assets/cdn-cgi/_next_cache`, so it is cheap, idempotent, and has
-// to run BEFORE the asset upload — which is exactly the order `deploy` uses.
-// We just run it. Here we:
-//   1. Run deploy (populates the cache assets, then pushes the worker).
-//   2. After deploy: ping IndexNow with the sitemap URLs so Bing/Yandex/DDG pick
-//      up changes, and purge the CF edge cache ONLY if CF_PURGE=true (see below
-//      — no deploy asks for it any more).
+// The build (`pnpm build:cf`) has already written the site to `out/` and the
+// bundled Worker to `.cloudflare/worker.mjs`. This just pushes both with
+// `wrangler deploy` and then:
+//   1. Pings IndexNow with the sitemap URLs so Bing/Yandex/DDG pick up changes.
+//   2. Purges the CF edge cache ONLY if CF_PURGE=true (see below).
 //
-// This used to call populateCache separately and then move `.open-next/cache`
-// aside so the deploy's built-in populate would find nothing and short-circuit.
-// That existed for the KV store: a free-tier bulk-put can hit the write quota,
-// and a failed populate kills the whole deploy, so it was worth running once
-// and tolerating a partial upload. `cpSync` has no such failure mode — and on a
-// missing directory it throws ENOENT instead of no-oping, which failed the
-// deploy outright. Restore the dance if the incremental cache ever goes back to
-// KV or R2.
+// It used to drive `opennextjs-cloudflare deploy`, whose populate-cache step
+// copied a prerender cache into the asset directory. There is no incremental
+// cache any more — every prerendered page IS a static asset, and the only
+// runtime cache is `caches.default` inside the Worker.
 //
-// Why the purge is off by default: the edge-cache rule (scripts/cf-waf-setup.mjs)
-// asks the CDN to hold public document pages for 8h with a TTL that is not keyed
-// by build id, which is what the purge was for. But that rule never takes effect
-// — on a Workers Custom Domain the Worker is the origin and runs ahead of the
-// zone cache, so document routes return no cf-cache-status at all (audited
-// 2026-07-30). The pages come from the incremental cache instead, which IS keyed
-// by OPEN_NEXT_BUILD_ID and turns over on every deploy. Meanwhile /_next/static
-// DOES get edge HITs and is content-hashed, so purging only threw away hot,
-// still-valid entries. Set CF_PURGE=true to force one if that ever changes.
+// Why the purge is off by default: /_next/static is content-hashed, so purging
+// only throws away hot, still-valid entries. Documents are served straight from
+// the asset store, which is replaced wholesale by the deploy. Set CF_PURGE=true
+// to force one if that ever changes.
 import { spawnSync } from 'node:child_process'
 
 const SITE_HOST = 'www.reely.space'
@@ -41,7 +27,7 @@ function run(args) {
   // doesn't trip Node 24's DEP0190 (args-array-with-shell deprecation). `shell`
   // stays true because Windows dev needs it to resolve `pnpm` → `pnpm.cmd`; all
   // args here are internal constants, so there is no injection surface.
-  const result = spawnSync(`pnpm opennextjs-cloudflare ${args.join(' ')}`, {
+  const result = spawnSync(`pnpm wrangler ${args.join(' ')}`, {
     stdio: 'inherit',
     shell: true,
   })
@@ -66,8 +52,9 @@ async function postDeploy() {
   // pages, but on a Workers Custom Domain the Worker IS the origin and runs
   // ahead of the zone cache, so the CDN never stored that HTML in the first
   // place (audited 2026-07-30, see scripts/cf-waf-setup.mjs) — and the pages now
-  // come out of the incremental cache keyed by OPEN_NEXT_BUILD_ID, which turns
-  // over on its own with each deploy. What the zone DOES cache is
+  // are static assets replaced wholesale by the deploy, while the Worker's own
+  // `caches.default` is keyed by the Next build id (see scripts/build-worker.mjs)
+  // so it turns over on its own too. What the zone DOES cache is
   // `/_next/static/*`, which is content-hashed and never needs purging. So a
   // full purge evicted the only genuinely cached thing and cleared nothing that
   // was stale. Bring it back if Cloudflare ever starts edge-caching Worker HTML.

@@ -97,24 +97,33 @@ type PagedFetcher = (args: {
 // outside this set. So the prerender set is sized to swallow as much of the real
 // id distribution as the build can afford.
 //
-// Doubled 2026-08-03 (30/15/5 -> 60/30/8) against the two limits that actually
-// bind, both measured from the 2026-08-02 deploy log:
-//   - Workers Static Assets: 4,047 files at 1,921 routes (~2.1 files/route),
-//     against a 20,000-file cap. ~4,200 routes lands near 8,900 files — 44% of
-//     the cap, still room for the genre/collection sets to grow.
-//   - Build: 52s to generate 1,921 pages, ~4 min for the whole job. Roughly
-//     doubles; deploy.yml timeout went to 30 min to keep the same margin.
-// Daily TMDB load roughly doubles too (~3,600 -> ~7,500 requests/day across the
-// 2 scheduled builds). Peak concurrency — the thing that actually earns a 429 —
-// is capped by the fetch governor and unchanged.
+// SIZED BY THE ASSET CAP, not by CPU — and the difference matters.
 //
-// Returns still fall off with depth (page 60 of `popular` is far less requested
-// than page 1), so the next lever is NOT depth 120 — it's making a non-
-// prerendered render cacheable at all.
+// It was briefly widened to 60/30/8 (3,648 routes) while OpenNext was still in
+// place, because back then a non-prerendered id re-rendered React on the Worker
+// on every hit. That is no longer true: the static export serves prerendered
+// pages without invoking the Worker at all, and cloudflare/worker.js answers a
+// tail id with one TMDB fetch plus an HTMLRewriter pass (~1-3ms), caches it in
+// `caches.default`, and injects the same title/OG/JSON-LD a prerendered page
+// carries. A miss is now cheap AND still indexable, so a huge prerendered set
+// stopped being the thing protecting the site.
+//
+// What binds instead is the Workers Static Assets limit of 20,000 files. A
+// static export writes ~10 files per route, not the ~2 OpenNext produced: one
+// .html, one .txt, and eight per-segment client-prefetch payloads
+// (`__next._tree.txt`, `__next._full.txt`, …). Next 16.2 has no flag to turn
+// those off — there is no `experimental.clientSegmentCache` key in its config
+// types — so the cap is a hard ceiling of roughly 1,900 routes.
+//
+// Measured at 60/30/8: 3,714 routes → 36,819 files and 2.06 GB. Well over.
+// 15/8/3 lands near ~1,000 routes → ~10,000 files, leaving real headroom for
+// the genre and collection sets. The sitemap is unaffected: it is built from
+// the TMDB lists directly, so it still advertises far more URLs than this, and
+// every one of them resolves through the Worker fallback.
 const LIST_DEPTH = {
-  popular: 60,
-  topRated: 30,
-  trending: 8,
+  popular: 15,
+  topRated: 8,
+  trending: 3,
 } as const
 
 // Prerender the head of the traffic distribution: popular, all-time top rated,

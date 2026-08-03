@@ -1,10 +1,11 @@
-'use server'
-
 import { Param } from '@/types/movie-result'
 import { SeasonDetails } from '@/types/season-details'
 import { fetchClient } from '@/lib/fetch-client'
 
-export const getSeasonEpisodesAction = async (
+// Episodes for one season, moved out of actions/season-details.ts (a Server
+// Action, which a static export cannot contain) so cloudflare/worker.js can
+// serve it as /api/season-details.
+export const getSeasonEpisodes = async (
   seasonId: number,
   seasonNumber: string,
   params?: Param

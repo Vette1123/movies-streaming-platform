@@ -44,7 +44,15 @@ const MAX_RETRIES = 4
 // Critically the DEFAULT (an unknown/undefined NEXT_PHASE) is "don't govern",
 // so if the Worker ever reports an unexpected phase we fail toward the safe,
 // non-blocking path rather than re-introducing the isolate hang.
+//
+// DEPLOY_TARGET is the load-bearing one now. It is set by scripts/build-cf.mjs
+// for the static export and by nothing else — in particular it is NOT a Worker
+// var, so the production runtime still flows straight through. Relying on
+// NEXT_PHASE alone was not enough: the export build fanned out across 11
+// workers with the governor disengaged and TMDB answered 429 during "Collecting
+// page data", before a single page was written.
 const GOVERN =
+  process.env.DEPLOY_TARGET === 'cloudflare' ||
   process.env.NEXT_PHASE === 'phase-production-build' ||
   process.env.NEXT_PHASE === 'phase-development-server'
 

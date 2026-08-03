@@ -64,6 +64,7 @@ out of the file layout with no rules to maintain:
 | `/`, `/movies`, `/movies/550`, genre, collection, watchlist, disclaimer | static asset                | none — Worker not invoked |
 | `/api/*`                                                                | Worker (`run_worker_first`) | ~1–3ms                    |
 | `/movies/47090` (tail id, no matching asset)                            | Worker fallback             | ~1–3ms                    |
+| `/collection/645` (tail franchise id)                                   | Worker fallback             | ~1–3ms                    |
 
 This is the same shape as `social-media-downloader`, which already runs this way
 on the same free plan.
@@ -87,12 +88,28 @@ a Next server action into a Worker secret, never to the client.
 | `actions/watch-providers.ts`   | `GET /api/watch-providers?…`                          |
 | `app/api/hero-extras/route.ts` | `GET /api/hero-extras`                                |
 | (new)                          | `GET /api/media/:type/:id` — powers the tail fallback |
+| (new)                          | `GET /api/collection/:id` — powers the tail fallback  |
+| (new)                          | `GET /api/popular?mediaType=&page=` — list page 2+    |
 
-Every response is read from and written to `caches.default` keyed by request URL.
-A repeat hit costs no TMDB subrequest and sub-millisecond CPU. This is the
-in-Worker Cache API that `scripts/cf-waf-setup.mjs` already documents as the only
-thing that can cache Worker output on this zone — a zone cache rule cannot,
-because on a Workers Custom Domain the Worker runs ahead of the zone cache.
+`/api/popular` was not in the original plan. The browse lists passed
+`getPopularMediaAction` down as a prop for infinite scroll; a static export
+cannot pass a function to a client component, so page 2+ became an endpoint like
+the rest.
+
+Every response is read from and written to `caches.default`, keyed by request URL
+**plus the Next build id**. A repeat hit costs no TMDB subrequest and
+sub-millisecond CPU. This is the in-Worker Cache API that
+`scripts/cf-waf-setup.mjs` already documents as the only thing that can cache
+Worker output on this zone — a zone cache rule cannot, because on a Workers
+Custom Domain the Worker runs ahead of the zone cache.
+
+The build id in the key is not cosmetic. A cached fallback page is HTML that
+references `_next/static/chunks/*` by content hash, and a deploy deletes the old
+hashes. Without the build id, a colo that cached a tail page before a deploy
+serves it for the rest of its 8h TTL with scripts that 404 — the client boundary
+reads that as a stale deploy and reloads onto the same cached entry, so the page
+stays dead until it expires. Reproduced locally across two builds; keying by
+build id makes each deploy start from an empty Worker cache.
 
 **Tail-id fallback.** For a detail path with no matching asset:
 
@@ -106,12 +123,12 @@ because on a Workers Custom Domain the Worker runs ahead of the zone cache.
 
 Unknown/invalid ids return the real 404 asset with a 404 status.
 
-### Component 2: the fallback shell
+### Component 2: the fallback shells
 
-A client page at `app/_fallback/media/page.tsx`, exported to
-`out/_fallback/media/index.html` — one shell serving both media types. It reads
-the type and id from `window.location.pathname`, fetches
-`/api/media/:type/:id`, and renders
+A client page at `app/media-fallback/page.tsx`, exported to
+`out/media-fallback.html` (`trailingSlash` is false, so no `index.html`
+directory) — one shell serving both media types. It reads the type and id from
+`window.location.pathname`, fetches `/api/media/:type/:id`, and renders
 `MovieDetailsHero` + `MoviesDetailsContent` (or the TV pair).
 
 This is cheap because those components are already props-driven —
@@ -119,6 +136,22 @@ This is cheap because those components are already props-driven —
 thin wrapper that fetches, builds JSON-LD, and passes props. The fallback reuses
 the same components with the same props from a different data source, so a tail
 page is visually and behaviourally identical to a prerendered one.
+
+`app/collection-fallback/page.tsx` is the same shape for `/collection/:id`. The
+prerendered franchise set is derived from `belongs_to_collection` on prerendered
+movies, so before this existed, a tail movie's "part of X collection" link was
+the last dead link on the site. Adding it meant lifting the collection page's
+JSX into `components/collection/collection-view.tsx`, now rendered by both the
+prerendered route (on the server, at build) and the shell (in the browser).
+
+Both shells carry `robots: { index: false, follow: false }` — the bare
+`/media-fallback` URL is an empty shell and must not compete with the real
+detail URLs, which the Worker gives a proper canonical.
+
+Each shell re-sets `document.title` once its data arrives. The Worker injects
+the real title into the HTML, which is what crawlers and unfurlers read, but
+hydration re-renders the shell's own title — without the effect the tab reverts
+to the generic site title as soon as the page becomes interactive.
 
 ### Component 3: config that must move
 
@@ -134,6 +167,20 @@ Both files are native to Workers Static Assets.
 
 `instrumentation.ts` and `lib/posthog-server.ts` are deleted: there is no server
 left to throw. Client-side capture in `lib/analytics.ts` is untouched.
+
+The public config must also move **into the Worker bundle**. Next inlines every
+`process.env.NEXT_PUBLIC_*` textually when it builds the app, but esbuild builds
+the Worker, so the same reads stay live lookups against a workerd `process.env`
+that only carries what Cloudflare was given — which is the two TMDB secrets and
+nothing else. `scripts/build-worker.mjs` therefore inlines every `NEXT_PUBLIC_*`
+that is set at build time, reproducing what Next does for the app half. Without
+it `NEXT_PUBLIC_TMDB_BASEURL` is undefined in production and every `/api/*` call
+and tail page 500s. Secrets are deliberately not inlined; they stay runtime reads
+fed by `copyEnv()` from the Worker's secret store.
+
+The `@modal` parallel slot and its intercepting `(.)disclaimer` route are
+deleted — intercepting routes are not supported under `output: 'export'`. The
+disclaimer is now an ordinary full-page navigation.
 
 ### What is removed
 
@@ -167,14 +214,28 @@ Nothing here is claimed until it is run. No test runner is configured in this
 repo, so verification is a browser and a set of probes, per the project's own
 convention.
 
-**Spikes, before the plan is finalized (blocking):**
+**Spikes, before the plan is finalized (blocking) — both resolved:**
 
 1. Does `app/@modal/(.)disclaimer` — an intercepting route — survive
-   `output: 'export'`? If not, the fallback is the disclaimer opening as a full
-   page, which is a one-line route change.
+   `output: 'export'`? **No.** Intercepting routes are unsupported; the slot was
+   deleted and the disclaimer is a full-page navigation.
 2. Does the widened `generateStaticParams` set export cleanly, and how many files
    does `out/` contain against the 20,000-file cap? Current OpenNext build: 4,047
    files at 1,921 routes.
+
+   **This inverted the sizing decision.** A static export writes ~10 files per
+   route (Next 16's client segment cache emits `__next._tree.txt`,
+   `__next._full.txt`, `__next._head.txt`, `__next._index.txt` and a per-segment
+   `__PAGE__.txt` alongside the HTML) against OpenNext's ~2, and Next 16.2 exposes
+   no config flag to disable it. The widened `LIST_DEPTH` of 60/30/8 measured
+   3,714 routes → **36,819 files / 2.06 GB**, nearly double the cap. Cut to
+   15/8/3: 1,037 routes → **10,302 files / 601 MB**, a ~38s build.
+
+   Shrinking the prerender set is the right call here rather than a regression.
+   Under OpenNext a tail id meant a full React render on the Worker, so the only
+   defence was to prerender more. With a cheap, SEO-complete Worker fallback a
+   tail id costs one TMDB fetch and an HTMLRewriter pass, so the size of the
+   prerendered set no longer governs CPU at all.
 
 **Pre-merge:**
 
@@ -219,10 +280,12 @@ prerendered asset set is identical either way.
 
 ## Risks
 
-- **Intercepting route** may not survive export (spike 1). Low impact.
-- **Asset count** grows with the prerender set; the 20k cap is the real ceiling
-  on how many pages this site can have. At ~4,200 routes we expect to sit near
-  half of it. Spike 2 measures it.
+- **Intercepting route** did not survive export (spike 1). The disclaimer is now
+  a full-page navigation. Low impact, as expected.
+- **Asset count** grows with the prerender set at ~10 files per route, so the 20k
+  cap is the real ceiling on how many pages this site can have — roughly 2,000
+  routes. Currently 10,302 files at 1,037 routes, ~half the cap. Anything that
+  widens `LIST_DEPTH` must re-measure `find out -type f | wc -l` before deploying.
 - **Tail pages are client-rendered for the body.** Unfurlers read only the head,
   which is injected, so they are unaffected. Googlebot executes JS. Other
   crawlers see the injected `<h1>` and overview but not the full cast list —

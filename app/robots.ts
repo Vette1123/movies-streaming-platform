@@ -4,6 +4,10 @@ import { siteConfig } from '@/config/site'
 
 const baseUrl = siteConfig.websiteURL
 
+// Required by `output: 'export'`: a metadata route must declare that it renders
+// once at build time rather than per request. Emits a static out/robots.txt.
+export const dynamic = 'force-static'
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [

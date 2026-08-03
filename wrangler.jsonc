@@ -1,13 +1,34 @@
 {
   "account_id": "90d6fc64545d1c449331032979dcbfb5",
   "$schema": "node_modules/wrangler/config-schema.json",
-  "main": ".open-next/worker.js",
+  // A small hand-written Worker, not a framework adapter. The site is a static
+  // export served from `assets` below; this script only answers /api/* and the
+  // detail ids the build did not prerender. See cloudflare/worker.js, and
+  // docs/superpowers/specs/2026-08-03-static-export-migration-design.md for why
+  // OpenNext was removed. Built by scripts/build-worker.mjs (esbuild), which
+  // resolves the `@/…` aliases the shared services use.
+  "main": ".cloudflare/worker.mjs",
   "name": "movies-streaming-platform",
   "compatibility_date": "2026-06-11",
+  // nodejs_compat: the shared services read `process.env`, which the Worker
+  // populates from its secrets on the first request.
+  //
+  // global_fetch_strictly_public: makes fetch() from inside the Worker resolve
+  // over the public internet instead of looping back into this same Worker.
+  // Every TMDB subrequest targets a third-party host.
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
-    "directory": ".open-next/assets",
+    // `next build` with DEPLOY_TARGET=cloudflare writes the whole site here.
+    // Cloudflare matches these BEFORE invoking the Worker, which is the entire
+    // point of the migration: a prerendered page view runs no code, costs no
+    // CPU against the 10ms budget, and is exempt from the 100k requests/day cap.
+    "directory": "out",
     "binding": "ASSETS",
+    // Unmatched paths fall through to the Worker (it is `main`), which decides
+    // between the tail-detail fallback and serving out/404.html itself.
+    "not_found_handling": "none",
+    // Assets must never swallow an API call.
+    "run_worker_first": ["/api/*"],
   },
   "observability": {
     "enabled": true,
@@ -18,9 +39,6 @@
   // www.reely.space) and it bypasses every WAF / cache / redirect rule, which
   // are all bound to the reely.space zone.
   "workers_dev": false,
-  // "placement": {
-  // 	"mode": "smart",
-  // },
   "routes": [
     {
       "pattern": "reely.space",
@@ -33,26 +51,10 @@
       "custom_domain": true,
     },
   ],
-  "services": [
-    {
-      "binding": "WORKER_SELF_REFERENCE",
-      "service": "movies-streaming-platform",
-    },
-  ],
   // Preserve vars configured in the Cloudflare Dashboard on deploy
   "keep_vars": true,
   "vars": {
     "ENVIRONMENT": "production",
     "NODE_ENV": "production",
   },
-  // Incremental cache store for OpenNext. KV errors (free-plan 1k writes/day,
-  // 100k reads/day) are swallowed by the override and by scripts/cf-deploy.mjs,
-  // so hitting a limit degrades to live rendering / stale content — never a
-  // crash or a failed deploy. See open-next.config.ts.
-  "kv_namespaces": [
-    {
-      "binding": "NEXT_INC_CACHE_KV",
-      "id": "cd422b9f51424c32b976ee260b967be3",
-    },
-  ],
 }

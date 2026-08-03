@@ -19,22 +19,21 @@ import { SeriesPlaybackProvider } from '@/components/series/playback-context'
 
 // 24h: series metadata is essentially static and CI redeploys twice daily,
 // repopulating the cache with fresh data. A shorter window buys no freshness —
-// the incremental cache is read-only (see open-next.config.ts), so an expired
-// entry can't be revalidated in place anyway; the redeploy is the refresh.
+// the site is a static export, so an expired entry can't be revalidated in
+// place anyway; the redeploy is the refresh.
 export const revalidate = 86400
 
 // Pre-render the most popular series pages at build time so they ship as static
-// assets (served by the ASSETS binding — zero Worker CPU). `dynamicParams`
-// stays true so any other id still resolves, but that path is EXPENSIVE and does
-// not get cheaper on repeat: Cloudflare does not edge-cache Worker-generated
-// HTML (no cf-cache-status on these responses), and the read-only incremental
-// cache can't store the render, so every hit re-renders on the Worker. Measured
-// 0.7-5.4s per render, and crawlers walking TMDB ids this way are what drive the
-// free-plan CPU kills — which is why the prerender set is sized to swallow as
-// much of the real distribution as a build can afford (lib/media-page.ts).
-// Fail-soft to [] so a TMDB hiccup at build never breaks the deploy (empty list
-// = all-dynamic behaviour, no regression).
-export const dynamicParams = true
+// assets, matched by Cloudflare BEFORE the Worker is invoked — zero CPU, and not
+// even counted against the free plan's request cap.
+//
+// `dynamicParams` is false because `output: 'export'` requires it. Ids outside
+// this set are not lost: cloudflare/worker.js serves them from the exported
+// shell with real metadata injected (see the migration spec). That path costs
+// one TMDB fetch instead of the 0.4-1.0s React re-render it used to cost on
+// EVERY hit — which is what was killing 25-40% of all Worker invocations.
+// Fail-soft to [] so a TMDB hiccup at build never breaks the deploy.
+export const dynamicParams = false
 
 export function generateStaticParams() {
   return buildMediaStaticParams({

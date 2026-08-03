@@ -2,7 +2,7 @@ import React from 'react'
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { discoverMoviesAction, discoverSeriesAction } from '@/actions/filter'
+import { discoverMovies, discoverSeries } from '@/services/discover'
 
 import { FilterParams } from '@/types/filter'
 import { MediaResponse } from '@/types/media'
@@ -48,7 +48,7 @@ export const MOVIE_GENRE_PAGE_CONFIG: GenrePageConfig = {
   navLabel: 'Movie genres',
   genres: MOVIE_GENRES_WITH_SLUG,
   findBySlug: findMovieGenreBySlug,
-  discover: discoverMoviesAction,
+  discover: discoverMovies,
   metaDescription: (name) =>
     `Watch the most popular ${name.toLowerCase()} movies. Browse top ${name.toLowerCase()} films and find your next watch on Reely.`,
 }
@@ -61,7 +61,7 @@ export const TV_GENRE_PAGE_CONFIG: GenrePageConfig = {
   navLabel: 'TV genres',
   genres: TV_GENRES_WITH_SLUG,
   findBySlug: findTvGenreBySlug,
-  discover: discoverSeriesAction,
+  discover: discoverSeries,
   metaDescription: (name) =>
     `Watch the most popular ${name.toLowerCase()} TV shows. Browse top ${name.toLowerCase()} series and find your next binge on Reely.`,
 }
@@ -166,7 +166,7 @@ export async function GenrePage({
         ))}
       </nav>
 
-      {/* Genre infinite-scroll paginates through Server Actions; a failure
+      {/* Genre infinite-scroll paginates through the Worker API; a failure
           there should leave the genre nav above it intact. */}
       <SectionErrorBoundary
         section={`${config.mediaType}_genre_grid`}

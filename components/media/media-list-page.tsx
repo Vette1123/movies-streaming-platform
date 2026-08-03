@@ -1,7 +1,6 @@
 import React, { Suspense } from 'react'
 
 import { MediaResponse } from '@/types/media'
-import { PopularMediaAction } from '@/types/movie-result'
 import { siteConfig } from '@/config/site'
 import { MediaListPageConfig } from '@/lib/media-page'
 import { QUERY_KEYS } from '@/lib/queryKeys'
@@ -16,7 +15,6 @@ import { SectionErrorBoundary } from '@/components/section-error-boundary'
 
 interface MediaListPageProps {
   media: MediaResponse
-  getPopularMediaAction: PopularMediaAction<MediaResponse>
   queryKey: typeof QUERY_KEYS.SERIES_KEY | typeof QUERY_KEYS.MOVIES_KEY
   config: MediaListPageConfig
 }
@@ -31,7 +29,6 @@ interface MediaListPageProps {
 // no heading and no crawlable content at all.
 export const MediaListPage = ({
   media,
-  getPopularMediaAction,
   queryKey,
   config,
 }: MediaListPageProps) => {
@@ -72,7 +69,6 @@ export const MediaListPage = ({
         >
           <MediaContent
             media={media}
-            getPopularMediaAction={getPopularMediaAction}
             queryKey={queryKey}
             enableFilters={true}
             filterLayout="sidebar"

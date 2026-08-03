@@ -1,8 +1,42 @@
 # Cloudflare Static Assets header overrides.
+#
+# This file also carries what `next.config.mjs` headers() used to do: that hook
+# is unsupported in `output: 'export'`, and Workers Static Assets applies these
+# natively — WITHOUT invoking the Worker, which the old Next headers could not
+# claim. Keep it in sync with serverOnlyConfig in next.config.mjs, which is the
+# `next dev` half of the same intent.
+#
+# Deliberately conservative on security headers: no Permissions-Policy / CSP /
+# COEP, which would risk the cross-origin VidSrc player (fullscreen, autoplay)
+# and the hero trailer embed.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+
 # CF defaults to `max-age=0, must-revalidate` for files in public/. That's
 # fine for icons / manifests, but Next.js hashes filenames under _next/static
 # (e.g. chunks.<hash>.js, fonts named with a content hash), so those files
 # never change — they're safe to cache for a year with immutable.
-
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Documents refresh on the 2x/day deploy, so a long shared cache is safe while a
+# zero browser cache keeps a returning visitor current.
+/
+  Cache-Control: public, max-age=0, s-maxage=28800, stale-while-revalidate=86400
+/movies
+  Cache-Control: public, max-age=0, s-maxage=28800, stale-while-revalidate=86400
+/tv-shows
+  Cache-Control: public, max-age=0, s-maxage=28800, stale-while-revalidate=86400
+/movies/*
+  Cache-Control: public, max-age=0, s-maxage=28800, stale-while-revalidate=86400
+/tv-shows/*
+  Cache-Control: public, max-age=0, s-maxage=28800, stale-while-revalidate=86400
+
+# Personal and noindex — never store these in a shared cache.
+/watch-history
+  Cache-Control: private, no-store
+/watchlist
+  Cache-Control: private, no-store

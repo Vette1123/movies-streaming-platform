@@ -3,7 +3,6 @@
 import * as React from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { searchMovieAction } from '@/actions/search'
 import { Clock, Film, Home, Search, Tv, X } from 'lucide-react'
 import { useDebouncedCallback } from 'use-debounce'
 
@@ -16,6 +15,7 @@ import {
   trackSearchPerformed,
   trackSearchResultClicked,
 } from '@/lib/analytics'
+import { searchMediaApi } from '@/lib/api-client'
 import { COMPANION_APPS, openOnPlayStore } from '@/lib/apps'
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
@@ -143,7 +143,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
       if (!trimmed) return
       const seq = ++requestSeqRef.current
       try {
-        const res = await searchMovieAction({ query: trimmed })
+        const res = await searchMediaApi(trimmed)
         if (seq !== requestSeqRef.current) return
         const results = res?.results ?? []
         setData(results)

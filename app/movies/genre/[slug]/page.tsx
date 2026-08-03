@@ -10,15 +10,16 @@ import {
 // Static: the genre set is finite and fixed, so all slugs are prebuilt below and
 // served from static assets — never rendered on the Worker (no free-plan
 // subrequest/CPU caps). revalidate=false → refreshed by the 2x/day CI deploy.
-// dynamicParams MUST stay true: under OpenNext/Cloudflare, dynamicParams=false
-// 404s even the prebuilt SSG pages (valid genres returned 404). With it true the
-// prebuilt genres serve static, and any non-genre slug falls through to one cheap
-// on-demand render that notFound()s → 404 (same result, no static regression).
-// discoverMoviesAction fetches with revalidate:false (actions/filter.ts), which is
+// dynamicParams=false is required by `output: 'export'`, and is finally safe
+// here: the old OpenNext bug where false 404'd even prebuilt SSG pages died with
+// OpenNext itself. The genre set is closed and every slug is prebuilt below, so
+// nothing legitimate is lost — an unknown slug is now a static 404 instead of an
+// on-demand render, which is strictly cheaper.
+// discoverMovies fetches with revalidate:false (services/discover.ts), which is
 // what makes the route build-only — revalidate=false alone would be floored to 8h
 // by the fetch's own revalidate.
 export const revalidate = false
-export const dynamicParams = true
+export const dynamicParams = false
 
 interface GenrePageProps {
   params: Promise<{ slug: string }>

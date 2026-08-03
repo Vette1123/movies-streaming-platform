@@ -20,7 +20,6 @@ async function Movies() {
   return (
     <MediaListPage
       media={movies}
-      getPopularMediaAction={getPopularMovies}
       queryKey={QUERY_KEYS.MOVIES_KEY}
       config={MOVIES_LIST_CONFIG}
     />

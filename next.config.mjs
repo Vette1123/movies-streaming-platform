@@ -1,10 +1,28 @@
-import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare'
 import { withPostHogConfig } from '@posthog/nextjs-config'
 
-initOpenNextCloudflareForDev()
+// Production is a pure static export on Cloudflare Workers: `next build` writes
+// plain HTML/CSS/JS into `out/`, wrangler uploads it as Workers Static Assets,
+// and the only server-side code left is cloudflare/worker.js. Next.js does not
+// run in production at all.
+//
+// That is what fixes the free plan: static assets are matched BEFORE the Worker
+// is invoked, so a page view costs zero CPU against the 10ms per-request budget
+// and is exempt from the 100k requests/day cap. Under OpenNext every page view
+// ran NextServer, and detail ids outside the prerendered set re-rendered React
+// on every single hit — killing 25-40% of all invocations.
+// See docs/superpowers/specs/2026-08-03-static-export-migration-design.md
+const isStaticExport = process.env.DEPLOY_TARGET === 'cloudflare'
+
+// `headers()` and `redirects()` are unsupported in a static export, so their
+// production equivalents live in public/_headers and public/_redirects, which
+// Workers Static Assets reads natively. They stay wired up here for `next dev`
+// and `next start`, where those files mean nothing.
+const staticExportConfig = {
+  output: 'export',
+}
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+const baseConfig = {
   images: {
     unoptimized: true,
     remotePatterns: [
@@ -32,18 +50,14 @@ const nextConfig = {
     // and without this the whole icon set bloats the client bundle.
     optimizePackageImports: ['framer-motion', 'lucide-react'],
   },
-  // Override Next's default `Cache-Control: private, no-store` on public pages
-  // so the Cloudflare edge cache (CDN — no KV, no quota cost) keeps a rendered
-  // copy for 8h. Without this, every visit / crawl re-renders on the Worker,
-  // burning the free-plan 10ms CPU budget (→ 5xx under load) and pressuring
-  // TMDB. The homepage is the heaviest render, so it matters most here. Paths
-  // must stay in sync with the CDN cache rule in scripts/cf-waf-setup.mjs.
+}
+
+// Dev / Node-host only. A static export ignores `headers()` and `redirects()`,
+// which is why the production copies live in public/_headers and
+// public/_redirects — those two files and this block must say the same thing.
+const serverOnlyConfig = {
+  // Override Next's default `Cache-Control: private, no-store` on public pages.
   // `/watch-history` is intentionally omitted — it's personal + noindex.
-  // Caveat (audited 2026-07-30): document routes still return no
-  // cf-cache-status in prod — on a Workers Custom Domain the Worker runs ahead
-  // of the zone cache, so the CDN never stores the HTML. Keep these headers
-  // (browsers honour them, and OpenNext's own cache reads them), but don't
-  // assume an edge HIT is absorbing the load. See scripts/cf-waf-setup.mjs.
   async headers() {
     const edgeCache =
       'public, max-age=0, s-maxage=28800, stale-while-revalidate=86400'
@@ -100,6 +114,12 @@ const nextConfig = {
       },
     ]
   },
+}
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  ...baseConfig,
+  ...(isStaticExport ? staticExportConfig : serverOnlyConfig),
 }
 
 // Production stack traces are minified, and PostHog's symbolicator can't fetch

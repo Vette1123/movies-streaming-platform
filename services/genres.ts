@@ -25,20 +25,23 @@ const staticGenres = (mediaType: ItemType): MovieGenre[] =>
  * long-cached. Falls back to the bundled static list on any failure, so callers
  * always receive a usable, non-empty list.
  */
-const getGenreList = cache(
-  async (mediaType: ItemType): Promise<MovieGenre[]> => {
-    try {
-      const data = await fetchClient.get<GenreListResponse>(
-        `genre/${mediaType}/list?language=en-US`,
-        {},
-        true,
-        GENRE_REVALIDATE
-      )
-      return data?.genres?.length ? data.genres : staticGenres(mediaType)
-    } catch {
-      return staticGenres(mediaType)
-    }
+const fetchGenreList = async (mediaType: ItemType): Promise<MovieGenre[]> => {
+  try {
+    const data = await fetchClient.get<GenreListResponse>(
+      `genre/${mediaType}/list?language=en-US`,
+      {},
+      true,
+      GENRE_REVALIDATE
+    )
+    return data?.genres?.length ? data.genres : staticGenres(mediaType)
+  } catch {
+    return staticGenres(mediaType)
   }
-)
+}
 
-export { getGenreList }
+// React's `cache()` only has meaning inside a render, and cloudflare/worker.js
+// runs outside React entirely — so the Worker imports `fetchGenreList` and the
+// app imports the memoized `getGenreList`. Same function either way.
+const getGenreList = cache(fetchGenreList)
+
+export { fetchGenreList, getGenreList }

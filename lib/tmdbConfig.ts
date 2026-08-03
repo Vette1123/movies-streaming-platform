@@ -1,9 +1,20 @@
 import { IMAGE_CACHE_HOST_URL } from './constants'
 
+// Read lazily, NOT captured at module init. cloudflare/worker.js copies the
+// Worker's secrets onto `process.env` when a request arrives, which is after
+// this module has already been evaluated — eager fields would have frozen the
+// undefined values from module scope and every TMDB call would go out keyless.
+// Next still inlines `process.env.NEXT_PUBLIC_*` textually inside a getter.
 const apiConfig = {
-  baseUrl: process.env.NEXT_PUBLIC_TMDB_BASEURL,
-  apiKey: process.env.TMDB_API_KEY,
-  headerKey: process.env.TMDB_HEADER_KEY,
+  get baseUrl() {
+    return process.env.NEXT_PUBLIC_TMDB_BASEURL
+  },
+  get apiKey() {
+    return process.env.TMDB_API_KEY
+  },
+  get headerKey() {
+    return process.env.TMDB_HEADER_KEY
+  },
   // On-the-fly ImageKit optimization. URL transforms are enabled by default on
   // every ImageKit account and produce the *same image* (resized + WebP) rather
   // than a different one — so the <img>/<Image> is byte-for-byte identical in

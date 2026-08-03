@@ -1,9 +1,10 @@
-import { getSeasonEpisodesAction } from '@/actions/season-details'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+
+import { getSeasonEpisodesApi } from '@/lib/api-client'
 
 // ONE query definition for a season's episode list, shared by the season
 // navigator and the hero's continue-watching caption. Identical query key +
-// fetcher means TanStack de-duplicates them into a SINGLE Server Action call —
+// fetcher means TanStack de-duplicates them into a SINGLE /api/season-details call —
 // naming the resume episode in the hero costs no extra TMDB subrequest, which
 // matters against the free-plan 50-subrequests/invocation cap.
 export const useSeasonEpisodes = (
@@ -20,7 +21,7 @@ export const useSeasonEpisodes = (
     // season]) carrying the identity. Reporting here too fired on every retry
     // attempt (4× per real failure), inflating the counts in PostHog.
     queryFn: async () => {
-      const seasonDetails = await getSeasonEpisodesAction(
+      const seasonDetails = await getSeasonEpisodesApi(
         Number(seriesId),
         String(season)
       )

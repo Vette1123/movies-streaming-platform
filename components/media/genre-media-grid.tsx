@@ -1,11 +1,11 @@
 'use client'
 
 import React from 'react'
-import { discoverMoviesAction, discoverSeriesAction } from '@/actions/filter'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useInView } from 'react-intersection-observer'
 
 import { MediaResponse, MediaType } from '@/types/media'
+import { discoverApi } from '@/lib/api-client'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/card'
 import { MediaGridSkeleton } from '@/components/loaders/media-grid-skeleton'
@@ -42,14 +42,12 @@ export const GenreMediaGrid = ({
     // hook keys only on media type and would collide across genres).
     queryKey: ['genre-discover', mediaType, genreId],
     initialPageParam: 1,
-    queryFn: ({ pageParam }) => {
-      const action =
-        mediaType === 'movie' ? discoverMoviesAction : discoverSeriesAction
-      return action(
+    queryFn: ({ pageParam }) =>
+      discoverApi(
+        mediaType,
         { with_genres: String(genreId), sort_by: 'popularity.desc' },
         { page: pageParam }
-      )
-    },
+      ),
     getNextPageParam: (lastPage, pages) => {
       // Don't gate on `total_pages`: the runtime discover response (server
       // action, Cloudflare) can come back without it — or `initialData` can

@@ -53,8 +53,9 @@ const getAllTimeTopRatedMovies = async (params: Param = {}) => {
   const data = await fetchClient.get<MovieResponse>(url, params, true, false)
   return listResponse(data)
 }
+// No 'use server' here: a static export cannot contain Server Actions, and this
+// is only ever called at build time (homepage, sitemap, generateStaticParams).
 const getPopularMovies = async (params: Param = {}) => {
-  'use server'
   const url = `movie/${movieType.popular}?language=en-US`
   const data = await fetchClient.get<MediaResponse>(url, params, true, false)
   return listResponse(data)

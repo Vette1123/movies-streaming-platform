@@ -1,5 +1,3 @@
-'use server'
-
 import { attachImdbRatings } from '@/services/imdb'
 
 import { FilterParams } from '@/types/filter'
@@ -8,8 +6,18 @@ import { Param } from '@/types/movie-result'
 import { fetchClient } from '@/lib/fetch-client'
 import { capListOverviews } from '@/lib/media'
 
+// TMDB /discover, used from two runtimes and therefore deliberately free of
+// both 'use server' and anything Next-specific:
+//   - at build, by the static genre pages (server components);
+//   - at runtime, by cloudflare/worker.js serving /api/filter for the browse
+//     filters and genre infinite scroll.
+// It used to live in actions/filter.ts as a Server Action, which a static
+// export cannot contain. Keeping ONE implementation is the point — the filter
+// results a crawler sees prerendered and the ones a user scrolls to must come
+// from identical code.
+
 // Drop undefined/null filters and coerce booleans to strings for the TMDB query
-// string. Shared by both discover actions so the normalization can't diverge.
+// string. Shared by both discover entry points so normalization can't diverge.
 function normalizeFilterParams(
   filterParams: FilterParams
 ): Record<string, string | number> {
@@ -56,8 +64,8 @@ async function discover(
     ...params,
   }
 
-  // revalidate:false → build-only for the static genre pages; runtime filtering
-  // then reuses the deploy-cached results (fewer TMDB/KV hits), refreshed 2x/day.
+  // revalidate:false → build-only for the static genre pages. In the Worker the
+  // `next` option is inert and caching is the Cache API layer in worker.js.
   const data = await fetchClient.get<MediaResponse>(
     `discover/${mediaType}`,
     queryParams,
@@ -74,14 +82,12 @@ async function discover(
   }
 }
 
-// Discover movies with filters
-export const discoverMoviesAction = async (
+export const discoverMovies = async (
   filterParams: FilterParams = {},
   params: Param = {}
 ): Promise<MediaResponse> => discover('movie', filterParams, params)
 
-// Discover TV series with filters
-export const discoverSeriesAction = async (
+export const discoverSeries = async (
   filterParams: FilterParams = {},
   params: Param = {}
 ): Promise<MediaResponse> => discover('tv', filterParams, params)

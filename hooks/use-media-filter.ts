@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useMemo } from 'react'
-import { discoverMoviesAction, discoverSeriesAction } from '@/actions/filter'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import {
   parseAsArrayOf,
@@ -22,6 +21,7 @@ import {
   CERTIFICATION_COUNTRY,
   DEFAULT_WATCH_REGION,
 } from '@/lib/filter-options'
+import { discoverApi } from '@/lib/api-client'
 import { QUERY_KEYS } from '@/lib/queryKeys'
 
 interface UseMediaFilterProps {
@@ -217,8 +217,8 @@ export const useMediaFilter = ({
   // React Query for filtered data
   const queryKey =
     mediaType === 'movie' ? QUERY_KEYS.MOVIES_KEY : QUERY_KEYS.SERIES_KEY
-  const discoverFunction =
-    mediaType === 'movie' ? discoverMoviesAction : discoverSeriesAction
+  const discoverFunction = (filters: FilterParams, params: { page: number }) =>
+    discoverApi(mediaType, filters, params)
 
   const {
     data,

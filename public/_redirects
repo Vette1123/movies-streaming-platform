@@ -1,0 +1,14 @@
+# Production redirects for the static export.
+#
+# `next.config.mjs` redirects() is unsupported in `output: 'export'`; Workers
+# Static Assets applies this file natively instead, without invoking the Worker.
+# Keep in sync with serverOnlyConfig in next.config.mjs.
+#
+# These are legacy sitemap URLs that search engines still request from an older
+# multi-sitemap layout. 301 so they stop being crawled.
+
+/sitemap-movies.xml      /sitemap.xml  301
+/sitemap-tv-shows.xml    /sitemap.xml  301
+/sitemap-trending.xml    /sitemap.xml  301
+/sitemap-static.xml      /sitemap.xml  301
+/server-sitemap-index.xml /sitemap.xml 301

@@ -17,6 +17,10 @@ import { MOVIE_GENRES_WITH_SLUG, TV_GENRES_WITH_SLUG } from '@/lib/genres'
 
 export const revalidate = 86400
 
+// Required by `output: 'export'` — see app/robots.ts. Emits out/sitemap.xml,
+// built from the same TMDB lists the prerendered pages come from.
+export const dynamic = 'force-static'
+
 const baseUrl = siteConfig.websiteURL
 
 const buildDate = (): string => new Date().toISOString()

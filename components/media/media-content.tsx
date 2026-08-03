@@ -5,7 +5,6 @@ import { Clapperboard } from 'lucide-react'
 import { useInView } from 'react-intersection-observer'
 
 import { MediaResponse, MediaType } from '@/types/media'
-import { PopularMediaAction } from '@/types/movie-result'
 import { QUERY_KEYS } from '@/lib/queryKeys'
 import { useInfiniteScroll } from '@/hooks/use-infinite-scroll'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -16,7 +15,6 @@ import { FilteredMediaContent } from './filtered-media-content'
 
 interface MediaContentProps {
   media: MediaResponse
-  getPopularMediaAction: PopularMediaAction<MediaResponse>
   queryKey: typeof QUERY_KEYS.SERIES_KEY | typeof QUERY_KEYS.MOVIES_KEY
   enableFilters?: boolean
   filterLayout?: 'sidebar' | 'dialog' | 'sheet'
@@ -24,7 +22,6 @@ interface MediaContentProps {
 
 export const MediaContent = ({
   media,
-  getPopularMediaAction,
   queryKey,
   enableFilters = false,
   filterLayout = 'dialog',
@@ -38,7 +35,6 @@ export const MediaContent = ({
   const { data, fetchNextPage, isFetchingNextPage, hasNextPage } =
     useInfiniteScroll({
       media,
-      popularMediaAction: getPopularMediaAction,
       queryKey,
     })
 

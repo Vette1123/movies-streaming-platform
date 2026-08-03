@@ -181,10 +181,13 @@ export const metadata: Metadata = {
 
 interface RootLayoutProps {
   children: React.ReactNode
-  modal: React.ReactNode
 }
 
-export default function RootLayout({ children, modal }: RootLayoutProps) {
+// The `@modal` parallel slot that used to intercept /disclaimer is gone:
+// intercepting routes are unsupported in `output: 'export'` (Next 16 docs,
+// "Static Exports → Unsupported Features"). /disclaimer is now an ordinary
+// full-page navigation, which is what a hard load or a shared link always did.
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -259,7 +262,6 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
             </NuqsAdapter>
             <ToastProvider />
             <Footer />
-            {modal && modal}
             <ServiceWorkerRegister />
             <InstallPrompt />
           </div>

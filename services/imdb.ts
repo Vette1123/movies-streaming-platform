@@ -1,7 +1,19 @@
 import { cache } from 'react'
-import { getCloudflareContext } from '@opennextjs/cloudflare'
 
 import { fetchClient } from '@/lib/fetch-client'
+
+// The Workers static-assets binding, injected by cloudflare/worker.js on each
+// request. It used to be pulled from `getCloudflareContext()`, but that is an
+// OpenNext API and OpenNext no longer runs here — the site is a static export
+// (see docs/superpowers/specs/2026-08-03-static-export-migration-design.md).
+// Injection keeps this module runtime-agnostic: it stays null at build and
+// under `next dev`, where the disk read and the self-fetch below cover it.
+type AssetsBinding = { fetch: (input: URL) => Promise<Response> }
+let assetsBinding: AssetsBinding | null = null
+
+export const setImdbAssetsBinding = (binding: AssetsBinding | null): void => {
+  assetsBinding = binding
+}
 
 // IMDb ratings come from IMDb's free Non-Commercial dataset (title.ratings),
 // pre-sharded into small static JSON files by `scripts/build-imdb-ratings.mjs`.
@@ -71,11 +83,8 @@ const loadShard = async (shard: number): Promise<Record<string, string>> => {
       // touches the edge, so it can't be challenged.
       let res: Response | null = null
       try {
-        const env = getCloudflareContext().env as unknown as {
-          ASSETS?: { fetch: (input: URL) => Promise<Response> }
-        }
-        if (env.ASSETS) {
-          res = await env.ASSETS.fetch(
+        if (assetsBinding) {
+          res = await assetsBinding.fetch(
             new URL(`/imdb-ratings/${shard}.json`, 'https://assets.local')
           )
         }

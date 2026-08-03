@@ -20,7 +20,6 @@ async function TvShows() {
   return (
     <MediaListPage
       media={series}
-      getPopularMediaAction={getPopularSeries}
       queryKey={QUERY_KEYS.SERIES_KEY}
       config={TV_LIST_CONFIG}
     />

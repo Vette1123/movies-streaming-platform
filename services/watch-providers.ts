@@ -20,23 +20,25 @@ interface WatchProvidersResponse {
 // list — the provider roster is near-static. Fails soft to [] so the section just
 // renders empty rather than throwing. The region matters: availability AND the
 // roster differ per region, which is why the caller keys the query by region too.
-export const getWatchProviders = cache(
-  async (
-    mediaType: ItemType,
-    region: string = 'US'
-  ): Promise<WatchProvider[]> => {
-    try {
-      const data = await fetchClient.get<WatchProvidersResponse>(
-        `watch/providers/${mediaType}`,
-        { watch_region: region, language: 'en-US' },
-        true,
-        false
-      )
-      const list = data?.results ?? []
-      // Copy before sort — never mutate a cached array in place.
-      return [...list].sort((a, b) => a.display_priority - b.display_priority)
-    } catch {
-      return []
-    }
+export const fetchWatchProviders = async (
+  mediaType: ItemType,
+  region: string = 'US'
+): Promise<WatchProvider[]> => {
+  try {
+    const data = await fetchClient.get<WatchProvidersResponse>(
+      `watch/providers/${mediaType}`,
+      { watch_region: region, language: 'en-US' },
+      true,
+      false
+    )
+    const list = data?.results ?? []
+    // Copy before sort — never mutate a cached array in place.
+    return [...list].sort((a, b) => a.display_priority - b.display_priority)
+  } catch {
+    return []
   }
-)
+}
+
+// Uncached twin for cloudflare/worker.js, which runs outside React — see the
+// same split in services/genres.ts.
+export const getWatchProviders = cache(fetchWatchProviders)

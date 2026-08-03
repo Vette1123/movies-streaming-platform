@@ -26,8 +26,8 @@ const getLatestTrendingSeries = async (params: Param = {}) => {
   return { ...dto, results: await attachImdbRatings(dto.results, 'tv') }
 }
 
+// No 'use server' here — see the same note in services/movies.ts.
 const getPopularSeries = async (params: Param = {}) => {
-  'use server'
   const url = `tv/${tvType.popular}?language=en-US`
   const rawData = await fetchClient.get<SeriesResponse>(
     url,
