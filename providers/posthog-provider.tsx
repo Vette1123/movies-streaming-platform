@@ -11,7 +11,7 @@ import {
   isTransportError,
 } from '@/lib/client-errors'
 import { enrichPersonProfile } from '@/lib/person'
-import { loadPostHog, ph } from '@/lib/posthog-client'
+import { analyticsEnabled, loadPostHog, ph } from '@/lib/posthog-client'
 
 /**
  * Runtime context attached to every captured $exception. Our production stack
@@ -72,6 +72,10 @@ function errorContext(): Record<string, unknown> {
  * - _internal_videoInjector*: a video-downloader extension's page script poking
  *   at a <video> it thinks exists. Not a symbol our bundle ever defines.
  * - "Hydration failed because…": the unminified twin of #418, same cause.
+ * - `standardSelectors`: Brave's Shields cosmetic-filtering content script (the
+ *   symbol is brave-core's, appears in no dependency of ours) throwing inside
+ *   its own injected code on iOS. Arrives synthetic, unhandled, with zero stack
+ *   frames from our bundle, and nothing on the page is actually broken.
  * - `<something>.data.split is not a function`: a `message` event handler that
  *   assumed a string payload got an object instead. We register no message
  *   listener anywhere (the YouTube embed is postMessage-out only), and these
@@ -86,6 +90,7 @@ const NOISE_EXCEPTION_PATTERNS = [
   /Cannot read properties of null \(reading 'document'\)/i,
   /ResizeObserver loop/i,
   /_internal_videoInjector/i,
+  /\bstandardSelectors\b/,
   /\bdata\.split is not a function/i,
 ]
 
@@ -200,9 +205,10 @@ let initialized = false
  * lib/posthog-client and replayed in order the moment the module lands.
  */
 async function initPosthog() {
-  if (initialized || !process.env.NEXT_PUBLIC_POSTHOG_KEY) return
+  if (initialized || !analyticsEnabled()) return
   initialized = true
   const posthog = await loadPostHog()
+  if (!posthog) return
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, POSTHOG_CONFIG)
   // The deferred init means the first $pageview (which <PostHogPageView> gates
   // on `initialized`) was skipped during the pre-init window. Capture it now so
@@ -253,7 +259,7 @@ function scheduleInit() {
   for (const e of events) window.addEventListener(e, onFirstGesture, true)
 }
 
-if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+if (analyticsEnabled()) {
   // Don't load or init eagerly — schedule both off the critical path (see
   // scheduleInit). Call sites are safe in the meantime: ph() queues anything
   // captured before the module lands and replays it in order afterwards.

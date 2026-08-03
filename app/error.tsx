@@ -52,7 +52,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
     // Force the posthog module in rather than queueing: the user is looking at
     // an error screen and may reload or leave before the idle scheduler fires.
     void loadPostHog().then((posthog) =>
-      posthog.captureException(error, {
+      posthog?.captureException(error, {
         error_boundary: 'app/error.tsx',
         error_digest: error.digest,
         error_pathname: pathname,

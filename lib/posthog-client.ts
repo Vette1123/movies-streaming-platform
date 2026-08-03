@@ -17,8 +17,38 @@
 
 import type { PostHog } from 'posthog-js'
 
+// Hosts that are never a real visitor: the dev server, `pnpm preview`'s wrangler
+// runtime, and a phone testing over the LAN. Covers loopback, `.local` mDNS and
+// the three RFC1918 private ranges.
+const LOCAL_HOST =
+  /^(localhost|127\.|0\.0\.0\.0|\[?::1\]?|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/
+
+/**
+ * Analytics is PRODUCTION-ONLY, and this is the one place that decides it.
+ *
+ * Every dev session was reporting into the same project as real users: an HMR
+ * `ReferenceError` ("useMemo is not defined"), a Turbopack stale-module failure,
+ * a 404 fired while poking at an API by hand. On 2026-08-03 **all 20** open
+ * Error Tracking issues were `http://localhost:3000` — they buried the real
+ * ones completely, and the two genuine signals in the project were both
+ * third-party browser noise.
+ *
+ * The gate lives in this module because it is the single gateway both the
+ * provider and every `ph()` call site already go through, so a new call site
+ * cannot leak dev data by omission. Two independent checks, either of which is
+ * sufficient: NODE_ENV catches `pnpm dev`, the hostname catches a production
+ * bundle served locally (`pnpm preview` on :8787, a LAN IP on a phone) where
+ * NODE_ENV is legitimately "production".
+ */
+export const analyticsEnabled = (): boolean =>
+  typeof window !== 'undefined' &&
+  Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY) &&
+  process.env.NODE_ENV === 'production' &&
+  !LOCAL_HOST.test(window.location.hostname) &&
+  !window.location.hostname.endsWith('.local')
+
 let instance: PostHog | null = null
-let loading: Promise<PostHog> | null = null
+let loading: Promise<PostHog | null> | null = null
 const queued: ((posthog: PostHog) => void)[] = []
 
 /**
@@ -30,9 +60,15 @@ const queued: ((posthog: PostHog) => void)[] = []
  * path) and the error boundaries, which need the module NOW because the page may
  * be about to be reloaded or abandoned. Everything else queues via `ph()` and
  * rides along when one of those resolves.
+ *
+ * Resolves to `null` where analytics is off (see analyticsEnabled) — the error
+ * boundaries call this directly, so returning null rather than rejecting keeps a
+ * disabled build from turning every boundary report into an unhandled rejection,
+ * which would be a new error event of its own.
  */
-export function loadPostHog(): Promise<PostHog> {
+export function loadPostHog(): Promise<PostHog | null> {
   if (instance) return Promise.resolve(instance)
+  if (!analyticsEnabled()) return Promise.resolve(null)
   loading ??= import('posthog-js').then((mod) => {
     instance = mod.default
     for (const fn of queued.splice(0)) fn(instance)
@@ -56,5 +92,9 @@ export function ph(fn: (posthog: PostHog) => void): void {
     fn(instance)
     return
   }
+  // Drop instead of queue where analytics is off: nothing will ever flush the
+  // queue, so every capture in a dev session would accumulate in it for the
+  // lifetime of the tab.
+  if (!analyticsEnabled()) return
   queued.push(fn)
 }

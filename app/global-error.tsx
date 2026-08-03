@@ -34,7 +34,7 @@ export default function GlobalError({
     // document is gone here, so there may be no later flush.
     void loadPostHog()
       .then((posthog) =>
-        posthog.captureException(error, {
+        posthog?.captureException(error, {
           error_boundary: 'app/global-error.tsx',
           error_digest: error.digest,
         })

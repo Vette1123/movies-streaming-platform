@@ -60,7 +60,7 @@ export class SectionErrorBoundary extends React.Component<
     // Forces the posthog module in rather than queueing (see app/error.tsx) —
     // a section that just blew up is exactly when the report matters most.
     void loadPostHog().then((posthog) =>
-      posthog.captureException(error, {
+      posthog?.captureException(error, {
         error_boundary: 'SectionErrorBoundary',
         error_section: this.props.section,
         component_stack: info.componentStack,
