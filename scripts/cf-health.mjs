@@ -270,9 +270,14 @@ const BUCKETS = [
   // ImageKit srcset URL on the commas inside it: "/tr:w-500,q-82,f-auto/w500/x.jpg"
   // becomes a request for "/f-auto/w500/x.jpg". Every image URL the site actually
   // emits is absolute and correct, so 404 is the right answer to all of these.
+  //
+  // The fragment is matched ANYWHERE in the path, not just at the root: a crawler
+  // that resolves the same fragment relative to the page it found it on asks for
+  // "/movies/f-auto/w500/x.jpg". Measured 2026-08-03 — anchoring at "^/" left
+  // those in the unclassified column, which is the one column meant to be signal.
   [
     'bot: image crawler on stale/mis-split URLs',
-    /^\/([A-Za-z0-9_-]{20,32}\.(jpg|png)$|(f-auto|f-webp|pr-true|q-\d+)\/)/,
+    /^\/[A-Za-z0-9_-]{20,32}\.(jpg|png)$|\/(f-auto|f-webp|pr-true|q-\d+)\//,
   ],
   [
     'bot: doubled path from bad referrers',
@@ -287,12 +292,46 @@ const BUCKETS = [
   // nothing to answer it, so the asset handler returns 405. Harmless — RUM is
   // not a data source we use (see scripts/cf-health.mjs; PostHog does web vitals).
   ['cloudflare RUM beacon (405, unused)', /^\/cdn-cgi\//],
-  // Guessed conventional paths that were never routes here.
+  // Guessed conventional paths that were never routes here. The CMS-flavoured
+  // names (wordpress/cms/feed/site/main) come from the same scanners as the
+  // .php probes above, just without an extension to give them away.
   [
     'bot: guessed conventional path',
-    /^\/(static|wp|new|blog|assets|include|files)\//,
+    /^\/(static|wp|new|blog|assets|include|files|wordpress|cms|feed|site|main)\//,
   ],
+  // Chrome asks every origin for this before using the private prefetch proxy.
+  // Not a bot and not an error — 404 means "no opinion", which is the answer we
+  // want. It recurs daily, so it is classified rather than left as noise.
+  ['chrome private prefetch proxy probe', /^\/\.well-known\/traffic-advice$/],
 ]
+
+/**
+ * Statuses that are benign for a structural reason rather than a path pattern.
+ * Tried only AFTER the path buckets above, so `/sw.js` stays "blocked scrapers"
+ * instead of collapsing into the generic 403 row.
+ *
+ * 403 — nothing in this architecture can emit one. The Worker's own statuses are
+ *   200/400/404/405/500 (cloudflare/worker.js), and Workers Static Assets answers
+ *   200/304/404/405. So every 403 on this zone was produced by Cloudflare ahead
+ *   of the origin: our WAF rules, or the zone security level challenging a bad
+ *   reputation IP. Sampled 2026-08-03 — PerplexityBot, coccocbot, Go-http-client
+ *   on /favicon.ico, and a UA-spoofing scanner POSTing to /. All working as
+ *   designed. A real user wrongly blocked would show up as this bucket jumping,
+ *   and a blocked *search* crawler already fails checkCrawlers() above.
+ * 405 — a non-GET to a GET-only path. Bots POST at detail pages, and tabs still
+ *   running the pre-static-export bundle retry a Server Action POST against the
+ *   page URL, which is now a plain asset. Both are correct 405s.
+ * 499 — the client hung up before the response was written. Not our failure.
+ */
+const STATUS_BUCKETS = [
+  ['edge-blocked/challenged by Cloudflare (403, by design)', 403],
+  ['non-GET to a GET-only path (bots + stale Server Action tabs)', 405],
+  ['client disconnected mid-request (499)', 499],
+]
+
+const bucketFor = ({ clientRequestPath, edgeResponseStatus }) =>
+  BUCKETS.find(([, re]) => re.test(clientRequestPath))?.[0] ??
+  STATUS_BUCKETS.find(([, status]) => status === edgeResponseStatus)?.[0]
 
 async function checkClientErrors(zone) {
   const filter = `datetime_geq:"${SINCE}",datetime_leq:"${UNTIL}",requestSource:"eyeball",edgeResponseStatus_geq:400,edgeResponseStatus_lt:500`
@@ -303,10 +342,7 @@ async function checkClientErrors(zone) {
   const tally = new Map()
   const unknown = []
   for (const row of zones[0].httpRequestsAdaptiveGroups) {
-    const bucket = BUCKETS.find(([, re]) =>
-      re.test(row.dimensions.clientRequestPath)
-    )
-    const key = bucket ? bucket[0] : null
+    const key = bucketFor(row.dimensions)
     if (!key) {
       unknown.push(row)
       continue
