@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-**Reely** — a TMDB-powered movie/TV discovery, tracking, and streaming app. Next.js 16 (App Router, RSC + Server Actions, Turbopack) + React 19 + TypeScript 6 + Tailwind 4. Deployed to **Cloudflare Workers via OpenNext** — most non-obvious constraints in this codebase exist to stay inside the Cloudflare **free plan** limits.
+**Reely** — a TMDB-powered movie/TV discovery, tracking, and streaming app. Next.js 16 (App Router, RSC, Turbopack) + React 19 + TypeScript 6 + Tailwind 4. Shipped as a **static export (`output: 'export'`) on Cloudflare Workers Static Assets**, with one hand-written Worker for the parts that cannot be static — most non-obvious constraints in this codebase exist to stay inside the Cloudflare **free plan** limits.
 
 ## Commands
 
@@ -14,10 +14,11 @@ pnpm lint               # next lint (ESLint 9)
 pnpm prettier:check     # verify formatting; prettier:format to write
 pnpm build              # next build (rarely needed locally — see below)
 
-# Cloudflare Workers (OpenNext)
-pnpm preview            # build worker + run it locally (real runtime)
+# Cloudflare (static export + Worker)
+pnpm build:cf           # static export to out/ + bundle .cloudflare/worker.mjs
+pnpm preview            # build:cf + wrangler dev (real workerd runtime)
 pnpm deploy             # deploy via scripts/cf-deploy.mjs (needs CLOUDFLARE_API_TOKEN)
-pnpm deploy:full        # build worker + deploy
+pnpm deploy:full        # build:cf + deploy
 
 # One-off asset/data builds
 pnpm imdb:ratings       # regenerate public/imdb-ratings/*.json shards
@@ -27,7 +28,8 @@ pnpm waf:apply          # push Cloudflare WAF + CDN cache rules
 
 - **Package manager is pnpm 10** (`packageManager` pin). Do not use npm/yarn.
 - **No test runner is configured.** Verify changes by driving the app in a browser, not by a test suite.
-- **Avoid `pnpm build` for routine verification** — it prerenders ~1800 pages and is slow. Use the dev server + a browser. Build only when specifically diagnosing a build/prerender issue or before a deploy.
+- **Avoid `pnpm build` for routine verification** — it prerenders ~1000 pages and is slow (~40s). Use the dev server + a browser. Build only when specifically diagnosing a build/prerender issue or before a deploy.
+- **`wrangler dev` holds `out/` open on Windows** — a rebuild while it runs dies with `EBUSY: rmdir 'out'`. Stop the dev task and kill stray `workerd` processes before `pnpm build:cf`.
 - Path alias: `@/*` maps to repo root (e.g. `@/lib/fetch-client`).
 
 ## Architecture
@@ -36,18 +38,24 @@ pnpm waf:apply          # push Cloudflare WAF + CDN cache rules
 
 Everything flows through one governed client — **never add raw parallel `fetch()` calls to TMDB**.
 
-- `lib/fetch-client.ts` — the single TMDB gateway. Wraps `fetch` with a **concurrency governor + 429 retry/backoff**. The governor is intentionally **active only during `next build` / dev** (`GOVERN` gate on `NEXT_PHASE`); in the production Worker runtime it flows straight through, because a module-global semaphore in a per-request isolate caused hangs (blank episode lists, React #418). Read the long comments before touching this file — each guard fixes a specific past outage.
+- `lib/fetch-client.ts` — the single TMDB gateway. Wraps `fetch` with a **concurrency governor + 429 retry/backoff**. The governor is intentionally **active only during the build / dev** (`GOVERN` gates on `DEPLOY_TARGET` + `NEXT_PHASE`); in the production Worker runtime it flows straight through, because a module-global semaphore in a per-request isolate caused hangs (blank episode lists, React #418). The `DEPLOY_TARGET` clause matters: under Turbopack's export build `NEXT_PHASE` alone did not engage it and the build hit TMDB 429s. Read the long comments before touching this file — each guard fixes a specific past outage.
 - `services/*.ts` (`movies`, `series`, `genres`, `imdb`, `watch-providers`) — typed read functions built on `fetchClient`. Wrapped in React `cache()` so a page's `generateMetadata` + body share one TMDB request.
-- `actions/*.ts` (`filter`, `genres`, `search`, `season-details`, `watch-providers`) — `'use server'` Server Actions, mostly for client-driven fetches (filtering, infinite scroll, search).
-- `dtos/`, `types/` — request/response shapes. `lib/tmdbConfig.ts` holds base URL + auth keys.
+- `cloudflare/worker.js` `/api/*` — what used to be `actions/*.ts` Server Actions. A static export cannot contain Server Actions, so client-driven fetches (search, filter, infinite scroll, genres, season details, watch providers) go over HTTP to the Worker, which calls **the same `services/*` functions the build calls**. `lib/api-client.ts` is the browser half; the Worker's router is the other half. Keep the query-string contract in those two files only.
+- `dtos/`, `types/` — request/response shapes. `lib/tmdbConfig.ts` holds base URL + auth keys, as **lazy getters** — the Worker copies its secrets onto `process.env` on the first request, which is after module init.
 
-Detail pages use TMDB **`append_to_response`** (`credits,similar,recommendations,videos`) so the whole page renders on **one** TMDB request / one KV write — critical for the free-plan quotas.
+Detail pages use TMDB **`append_to_response`** (`credits,similar,recommendations,videos`) so the whole page renders on **one** TMDB request — critical for the free-plan quotas.
 
-### Cloudflare free-plan caching (the core constraint)
+### Cloudflare free-plan architecture (the core constraint)
 
-- **Static-assets incremental cache** (`open-next.config.ts`): prerendered pages are read through the `ASSETS` binding from `cdn-cgi/_next_cache`, which `populateCache` copies out of `.open-next/cache` at deploy. Free, no quota, no KV in the request path. It is **read-only** — no on-demand or time-based revalidation, content changes only on the 2×/day redeploy. Replaced the regional-cache + KV tiers on 2026-07-31: KV writes ran past the free 1k/day cap, so the cache went unpopulated and static pages re-rendered per request (Worker CPU kills hit 41% of invocations). The `NEXT_INC_CACHE_KV` binding is left in `wrangler.jsonc` so the old config can be restored by editing one file.
+Replaced OpenNext on 2026-08-03. Under OpenNext, prod was killing **25–40% of all Worker invocations** on the 10ms CPU budget: a detail id outside the prerendered set re-rendered React on every request (0.4–1.0s wall) and could never become a cache hit, because the incremental cache was read-only and Cloudflare will not edge-cache Worker-generated HTML. See `docs/superpowers/specs/2026-08-03-static-export-migration-design.md`.
+
+- **Static assets match before the Worker runs.** Every prerendered page is a plain asset in `out/`: zero CPU, and it does not count against the 100k invocations/day cap. Next.js does not run in production at all.
+- **The Worker (`cloudflare/worker.js`) only handles what cannot be static**: `/api/*` (`run_worker_first`), and detail/collection ids outside the prerendered set. A tail id costs one TMDB fetch plus an `HTMLRewriter` pass over an exported client shell (`app/media-fallback`, `app/collection-fallback`) into which it injects the real title, OG/Twitter tags, JSON-LD and a crawlable `<h1>` — so unfurlers and crawlers cannot tell a tail page from a prerendered one. Unknown ids get the 404 asset.
+- **`caches.default` is keyed by URL + the Next build id.** The build id is not optional: cached fallback HTML references content-hashed chunks that the next deploy deletes, so without it a colo serves a page with dead scripts for the rest of its 8h TTL and the client bounces off the stale-deploy boundary. `scripts/build-worker.mjs` stamps it in. This per-colo Cache API is the **only** cache that works here — on a Workers Custom Domain the Worker runs ahead of the zone cache.
+- **`scripts/build-worker.mjs` inlines every `NEXT_PUBLIC_*` at bundle time.** Next inlines those textually for the app, but esbuild builds the Worker, so they would stay live lookups against a `process.env` holding only the two TMDB secrets — and an undefined `NEXT_PUBLIC_TMDB_BASEURL` 500s every API call in prod.
+- **The 20,000-file asset cap is the real ceiling on site size.** A static export writes **~10 files per route** (Next 16's client segment cache; no flag disables it), so `LIST_DEPTH` in `lib/media-page.ts` is 15/8/3 → 1,037 routes / ~10,300 files. Re-measure `find out -type f | wc -l` before widening it. Prerender size no longer governs CPU, so widening buys freshness, not stability.
 - **Static-first**: homepage and browse/list pages are fully static (`revalidate: false` on their TMDB fetches) and refresh only on the ~2×/day deploy. `fetchClient.get(..., revalidate)` — pass `false` for build-only/static, a number for time-based ISR (default 8h).
-- **Edge cache headers** (`next.config.mjs headers()`): overrides Next's default `no-store` so the Cloudflare CDN keeps rendered pages 8h. **Cached paths here must stay in sync with the CDN rule in `scripts/cf-waf-setup.mjs`.**
+- **`headers()` / `redirects()` do not exist under `output: 'export'`** — they live in `public/_headers` and `public/_redirects`, native to Workers Static Assets. **Cached paths must stay in sync with the CDN rule in `scripts/cf-waf-setup.mjs`.** `next.config.mjs` still defines them for the non-export build; `DEPLOY_TARGET=cloudflare` is what flips between the two configs.
 - **WAF** (`scripts/cf-waf-setup.mjs`): scraper-challenge + rate-limit rules. The rate-limit rule **excludes `/*/genre`** (genre infinite-scroll would otherwise trip it). Run `pnpm waf:apply` after changing rules.
 
 ### IMDb ratings (feature-flagged OFF)
@@ -62,11 +70,13 @@ Detail pages use TMDB **`append_to_response`** (`credits,similar,recommendations
 
 ### App Router layout
 
-`app/` uses route groups and parallel routes: `(landing)` home, `movies` / `tv-shows` with `(…-list)`, `genre/[slug]`, and `[id]/(…-details)` segments, `collection/[id]`, `watchlist`, `watch-history`, plus a `@modal` parallel slot for the intercepted disclaimer. SEO is server-rendered: `sitemap.ts`, `robots.ts`, JSON-LD in `lib/structured-data.tsx`, dynamic OG in `app/_og`.
+`app/` uses route groups: `(landing)` home, `movies` / `tv-shows` with `(…-list)`, `genre/[slug]`, and `[id]/(…-details)` segments, `collection/[id]`, `watchlist`, `watch-history`, plus the two noindex fallback shells (`media-fallback`, `collection-fallback`) the Worker serves under tail ids. SEO is prerendered: `sitemap.ts`, `robots.ts` (both need `dynamic = 'force-static'` under export), JSON-LD in `lib/structured-data.tsx`, static OG in `app/_og`.
+
+**Intercepting routes are unsupported by `output: 'export'`** — the `@modal` slot is gone and the disclaimer is an ordinary full-page navigation. Don't reintroduce one.
 
 ### Analytics
 
-PostHog (client + server), all events centralized in `lib/analytics.ts`. Source maps are uploaded to PostHog at build time via `withPostHogConfig` (gated on `POSTHOG_API_KEY` + CI) so minified prod stack traces symbolicate.
+PostHog **client-side only** — all events centralized in `lib/analytics.ts`. Server-side capture (`instrumentation.ts`, `lib/posthog-server.ts`) is deleted: there is no server left to throw. Source maps are uploaded to PostHog at build time via `withPostHogConfig` (gated on `POSTHOG_API_KEY` + CI) so minified prod stack traces symbolicate.
 
 ## Code style (enforced conventions)
 
