@@ -205,6 +205,58 @@ async function checkEyeball(zone) {
 }
 
 /**
+ * Search crawlers that actually drive organic traffic. Anything else calling
+ * itself a bot (PerplexityBot, SERanking, scrapers) is SUPPOSED to be challenged
+ * — being strict with those is the point of the WAF, so they are not graded.
+ */
+const SEO_CRAWLERS =
+  /Googlebot|bingbot|DuckDuckBot|YandexBot|Applebot|PetalBot/i
+
+/**
+ * What the search crawlers got — the one error class whose cost is invisible in
+ * the app itself.
+ *
+ * A 404 here is fine and expected: crawlers replay dead URLs for months and 404
+ * is the honest answer. A 403 is not — Search Console files it as "Blocked due
+ * to access forbidden", which is a worse signal than the truth, and a 5xx makes
+ * Google slow its crawl rate. Both are invisible to every other check in this
+ * script, because the pages a human visits are fine.
+ *
+ * This exists because on 2026-08-03 a hand-written query found Googlebot-Image
+ * and bingbot each taking ~14 403s/day from the dead-extension WAF rule, which
+ * had been added the same day and matched before the verified-bot allowlist.
+ */
+async function checkCrawlers(zone) {
+  const filter = `datetime_geq:"${SINCE}",datetime_leq:"${UNTIL}",requestSource:"eyeball",edgeResponseStatus_geq:400`
+  const { zones } = await gql(`query{viewer{zones(filter:{zoneTag:"${zone}"}){
+    httpRequestsAdaptiveGroups(limit:2000,filter:{${filter}},orderBy:[count_DESC]){
+      count dimensions{userAgent edgeResponseStatus}}}}}`)
+
+  const offenders = new Map()
+  for (const row of zones[0].httpRequestsAdaptiveGroups) {
+    const { userAgent, edgeResponseStatus: status } = row.dimensions
+    if (!SEO_CRAWLERS.test(userAgent ?? '')) continue
+    // 404 is the correct answer to a request for something that isn't there.
+    if (status !== 403 && status < 500) continue
+    const name = SEO_CRAWLERS.exec(userAgent)[0]
+    const key = `${name} ${status}`
+    offenders.set(key, (offenders.get(key) ?? 0) + row.count)
+  }
+
+  const total = sum(
+    [...offenders.values()].map((n) => ({ n })),
+    (r) => r.n
+  )
+  grade(
+    total === 0,
+    `Search crawlers: ${total} blocked/failed requests to Googlebot &c.`,
+    offenders.size
+      ? [...offenders].map(([key, count]) => `${key}×${count}`).join(' ')
+      : '403s and 5xx only — 404 is the correct answer to a dead URL and is not counted'
+  )
+}
+
+/**
  * Eyeball 4xx, bucketed. Every bucket here has been traced to a benign cause;
  * they are printed so a NEW one stands out instead of hiding in the tail.
  */
@@ -228,6 +280,18 @@ const BUCKETS = [
   ],
   ['stale-deploy clients (chunk 404 → client reload)', /^\/_next\/static\//],
   ['prefetch of non-prerendered id (page itself works)', /__next\._/],
+  // A crawler appending .txt/.xml to a real route, guessing at a plain-text or
+  // sitemap twin that this site never published.
+  ['bot: guessed .txt/.xml twin of a real route', /\.(txt|xml)$/],
+  // Cloudflare's own RUM beacon POSTs here. Under `output: 'export'` there is
+  // nothing to answer it, so the asset handler returns 405. Harmless — RUM is
+  // not a data source we use (see scripts/cf-health.mjs; PostHog does web vitals).
+  ['cloudflare RUM beacon (405, unused)', /^\/cdn-cgi\//],
+  // Guessed conventional paths that were never routes here.
+  [
+    'bot: guessed conventional path',
+    /^\/(static|wp|new|blog|assets|include|files)\//,
+  ],
 ]
 
 async function checkClientErrors(zone) {
@@ -321,6 +385,7 @@ console.log(
 )
 await checkWorker()
 await checkEyeball(zone)
+await checkCrawlers(zone)
 await checkClientErrors(zone)
 
 const failed = results.filter((r) => r.status === false)

@@ -188,11 +188,13 @@ const orExpr = (frags) =>
  * Kept AHEAD of ALLOW_RULE on purpose. ALLOW_RULE skips the rest of the ruleset
  * for verified bots, and the biggest single source here IS a verified bot
  * (Googlebot-Image), so behind the allowlist this rule would never fire on the
- * traffic it was written for.
+ * traffic it was written for. The `cf.client.bot` carve-out below is therefore
+ * inside this rule's own expression rather than delegated to the allowlist.
  */
-const DEAD_EXTENSIONS = [
-  '.jpg',
-  '.jpeg',
+
+// Attack probes. Nothing legitimate ever requests these — verified crawler or
+// not — so they are blocked unconditionally. Googlebot has never asked for one.
+const PROBE_EXTENSIONS = [
   '.php',
   '.asp',
   '.aspx',
@@ -202,11 +204,26 @@ const DEAD_EXTENSIONS = [
   '.bak',
 ]
 
+// Stale and mis-split image URLs (a crawler splitting an ImageKit srcset on the
+// commas inside it, or replaying a hash from a long-dead deploy). Blocked too —
+// but NOT for verified crawlers. A 403 tells Googlebot "forbidden", which shows
+// up in Search Console as "Blocked due to access forbidden" and is a worse
+// signal than the truth: the URL simply does not exist. Measured 2026-08-03:
+// Googlebot-Image 14/day and bingbot 13/day were getting 403 here where a 404 is
+// the correct answer. Letting verified bots through costs one Worker invocation
+// each (~30/day against a 100k cap) and buys a clean, honest 404.
+const DEAD_IMAGE_EXTENSIONS = ['.jpg', '.jpeg']
+
+const endsWithAny = (extensions) =>
+  extensions
+    .map((ext) => `ends_with(http.request.uri.path, "${ext}")`)
+    .join(' or ')
+
 const DEAD_EXTENSION_RULE = {
   description: `${TAG} block extensions this site never serves`,
-  expression: DEAD_EXTENSIONS.map(
-    (ext) => `(ends_with(http.request.uri.path, "${ext}"))`
-  ).join(' or '),
+  expression:
+    `(${endsWithAny(PROBE_EXTENSIONS)})` +
+    ` or ((${endsWithAny(DEAD_IMAGE_EXTENSIONS)}) and not cf.client.bot)`,
   action: 'block',
 }
 
