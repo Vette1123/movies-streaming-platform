@@ -21,6 +21,7 @@ import {
   getLogoImageURL,
   getPosterImageURL,
 } from '@/lib/utils'
+import { useLowPowerDevice } from '@/hooks/use-device-tier'
 import { useHeroAutoplay } from '@/hooks/use-hero-autoplay'
 import { useHeroExtras } from '@/hooks/use-hero-extras'
 import { buttonVariants } from '@/components/ui/button'
@@ -62,8 +63,13 @@ const TOUCH_PREVIEW_DELAY = 1200
 // nothing to lose. The class swap restarts the animation as a slide becomes
 // active, which is the correct behaviour anyway — the pan should begin when the
 // slide takes the frame, not partway through.
-const kenBurns = (active: boolean) =>
-  active
+//
+// And on a weak device, nowhere at all. Even one instance is a full-viewport
+// backdrop being scaled for 14s straight — continuous compositor work for as
+// long as the slide is up, which is most of the time. See
+// hooks/use-device-tier.ts for what counts as weak.
+const kenBurns = (active: boolean, lowPower: boolean) =>
+  active && !lowPower
     ? 'animate-hero-kenburns will-change-transform motion-reduce:animate-none'
     : ''
 
@@ -150,6 +156,8 @@ export function HeroSlide({
       typeof window !== 'undefined' &&
       window.matchMedia('(hover: hover) and (pointer: fine)').matches
   )
+  // Whether this device gets the optional ambient effects at all.
+  const lowPower = useLowPowerDevice()
   const [previewActive, setPreviewActive] = React.useState(false)
   const [dialogOpen, setDialogOpen] = React.useState(false)
 
@@ -250,7 +258,7 @@ export function HeroSlide({
   // never rotates away mid-trailer; a swipe still advances manually. When the
   // slide goes inactive the cleanup unmounts it.
   React.useEffect(() => {
-    if (reduce || !trailerKey || !active || !autoplayEnabled) return
+    if (reduce || lowPower || !trailerKey || !active || !autoplayEnabled) return
     const t = setTimeout(
       () => setPreviewActive(true),
       hasHover ? HOVER_PREVIEW_DELAY : TOUCH_PREVIEW_DELAY
@@ -259,7 +267,7 @@ export function HeroSlide({
       clearTimeout(t)
       setPreviewActive(false)
     }
-  }, [hasHover, reduce, trailerKey, active, autoplayEnabled])
+  }, [hasHover, reduce, lowPower, trailerKey, active, autoplayEnabled])
 
   const href = mediaDetailHref(mediaType, movie.id)
 
@@ -284,7 +292,7 @@ export function HeroSlide({
         <BlurredImage
           src={getImageURL(media.backdrop_path)}
           alt={title}
-          className={`block size-full object-cover object-top ${kenBurns(active)}`}
+          className={`block size-full object-cover object-top ${kenBurns(active, lowPower)}`}
           fill
           // The backdrop is full-bleed at every breakpoint, so it is 100vw at
           // every breakpoint. The old "1024px above lg" was a lie the browser
@@ -300,7 +308,7 @@ export function HeroSlide({
           <BlurredImage
             src={getPosterImageURL(media.poster_path)}
             alt={title}
-            className={`block size-full object-cover object-center ${kenBurns(active)}`}
+            className={`block size-full object-cover object-center ${kenBurns(active, lowPower)}`}
             fill
             sizes="100vw"
             intro
@@ -327,17 +335,31 @@ export function HeroSlide({
         />
       )}
 
-      {/* Cinematic legibility scrims. Both soften during takeover so the playing
-          trailer becomes the dominant layer; they retain just enough to keep the
-          title and actions row (Watch Now) legible over the brighter video. */}
+      {/* Legibility scrim — vertical ONLY, and that is the whole point.
+
+          There used to be a horizontal one too (from-black/90 ... to-black/20).
+          It is what put a border down the middle of every swipe: a horizontal
+          gradient makes a slide dark on one edge and bright on the other, so
+          two of them side by side meet bright-against-dark. That step IS the
+          border. It was fought three times — a 24px black gutter, fade overlays
+          that switched on while the track moved, then sealing both edges to
+          black — and each fix only changed the border's colour, because each
+          one still varied the treatment across x.
+
+          A gradient that runs bottom-to-top is constant along x. Every column of
+          every slide is treated identically, so neighbouring slides meet at
+          exactly matching luminance no matter where the artwork is bright or
+          dark. There is no step to see, at any drag offset, with nothing to
+          toggle and no gutter. It is also one full-screen gradient layer
+          instead of three.
+
+          The copy is bottom-anchored, so bottom-up is where the coverage was
+          needed anyway; from-black/95 carries the title, chips, overview and
+          buttons over bright artwork. Softens during the trailer takeover so the
+          video owns the frame. */}
       <div
-        className={`pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-black/90 via-black/55 to-black/20 transition-opacity duration-500 ease-out lg:to-transparent ${
-          cinematic ? 'opacity-40' : 'opacity-100'
-        }`}
-      />
-      <div
-        className={`pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/10 to-black/30 transition-opacity duration-500 ease-out ${
-          cinematic ? 'opacity-70' : 'opacity-100'
+        className={`pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/95 via-black/55 to-black/25 transition-opacity duration-500 ease-out ${
+          cinematic ? 'opacity-60' : 'opacity-100'
         }`}
       />
 

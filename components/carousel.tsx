@@ -7,7 +7,6 @@ import {
   PanInfo,
   useMotionValue,
   useReducedMotion,
-  useTransform,
 } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -35,30 +34,36 @@ const SLIDE_SPRING = {
   mass: 1,
 }
 
-// The cinematic part of the old transition, kept. The original crossfaded
-// opacity AND drifted x AND scaled; only the opacity crossfade caused the
-// ghosting (two full text stacks legible at once, 6% apart), so the zoom comes
-// back and the crossfade does not. An off-frame slide sits fractionally larger
-// and settles to 1:1 as it takes the frame, which reads as depth — and it can
-// never double-expose anything, because the slides are still a full width apart
-// and clipped by the stage.
-// Down, not up. Scaling an off-frame slide UP grows it about its centre, so at
-// rest its inner edge lands at 95.25% and ~20px of the NEXT slide is visible at
-// the edge of the stage. Scaling down moves that edge to 101.5% — off-frame by
-// construction, at any stage width — and the slide zooms in as it takes the
-// frame, which is the depth cue the old crossfade was really providing.
-const SLIDE_REST_SCALE = 1
-const SLIDE_OFF_SCALE = 0.98
-// How far the whole stage recedes at a full-width drag.
-const DRAG_SCALE_DEPTH = 0.02
+// NOTHING SCALES. The swipe is a pure horizontal translate of one element, and
+// that is the entire reason it is smooth.
+//
+// There were two scale effects here: the whole stage receded slightly while you
+// dragged it, and each slide sat at 0.98 off-frame and grew to 1:1 as it took
+// the frame. Both were sold as "depth", and both were measured as free — but
+// they were measured while every slide was pinned to its own compositor layer,
+// where a scale is just a matrix on a finished texture.
+//
+// That promotion had to go: scaled layers resample, and the resampling put
+// coloured fringes on the artwork and the title treatment. Without it, a scale
+// is no longer free — it is the opposite. A transform that changes SIZE cannot
+// be composited from the existing raster, so every frame of every drag
+// re-rasterised the full stage at a new scale: three slides, backdrop, scrim,
+// title, chips, buttons, at 393x851 and dpr 3. A translate needs none of that;
+// the compositor shifts what it already has.
+//
+// So the choice was depth-with-fringing-and-jank, or a clean fast swipe. The
+// carousel keeps the spring, the drag-follows-your-finger feel, and the
+// artwork. It does not keep two percent of zoom nobody could name.
 
-// Dark gutter between slides, in px. Every slide carries its own left-to-right
-// readability scrim (from-black/90 ... to-black/20), so abutting them puts the
-// outgoing slide's LIGHTEST edge hard against the incoming slide's DARKEST one —
-// a luminance step that reads as an ugly border drawn down the middle of the
-// swipe. Separating them lands that step on the stage's own black base instead,
-// where it's a deliberate gap between two pieces of art rather than a seam.
-const SLIDE_GAP = 24
+// Slides abut exactly. There used to be a 24px black gutter here, to hide the
+// luminance step where one slide's bright edge met the next slide's dark one —
+// but a gutter does not remove a step, it fills it with black, which on a phone
+// is a black bar sliding through the middle of every swipe. Reported as
+// "borders" three times, through three different attempted fixes.
+// It is gone at its source now: HeroSlide's scrim runs bottom-to-top instead of
+// left-to-right, so it is constant along x and every slide is treated identically
+// edge to edge. There is no step left to hide.
+const SLIDE_GAP = 0
 
 // useLayoutEffect on the server is a no-op that React warns about, and the
 // compensation below only has meaning once there's a DOM to measure.
@@ -203,43 +208,22 @@ export function Carousel({
     return () => observer.disconnect()
   }, [])
 
-  // The whole stage eases back a touch while you drag it and returns as it
-  // settles — the frame reads as a physical card being pushed rather than a
-  // texture sliding. Derived from x, so it's the same gesture-linked motion
-  // whether you drag, flick, or tap an arrow.
+  // Returning the track to rest. Deliberately NOT tracked in React state.
   //
-  // This was removed at one point on the theory that scaling the track was what
-  // made swipes expensive. Measuring said otherwise: the cost was full-size
-  // image decodes (see lib/image-loader.ts), and with the slides promoted to
-  // their own layers below, scaling their parent is a compositor transform.
-  const scale = useTransform(x, (value) => {
-    if (reduce) return 1
-    const width = widthRef.current
-    if (!width) return 1
-    return 1 - Math.min(Math.abs(value) / width, 1) * DRAG_SCALE_DEPTH
-  })
-
-  // True whenever the track is off-rest: mid-drag, or springing back. Drives the
-  // slide edge fades below, which must not be visible when the hero is sitting
-  // still. The token guards against an interrupted settle (swipe again before
-  // the last one lands) resolving late and switching the fades off mid-motion.
-  const [moving, setMoving] = React.useState(false)
-  const settleTokenRef = React.useRef(0)
-
+  // There used to be a `moving` boolean here, set on drag start and cleared when
+  // the spring resolved, purely to fade the old edge overlays in and out. It
+  // cost two full re-renders of the carousel — and therefore of all three
+  // mounted slides — on every single swipe, one of them landing exactly as the
+  // spring started. The edges are sealed in CSS now and nothing needs to know
+  // whether the track is moving, so the renders go with it. The whole gesture is
+  // now motion-value driven: React does not re-render at all between the index
+  // change and the spring finishing.
   const settle = React.useCallback(() => {
-    const token = ++settleTokenRef.current
-    setMoving(true)
     if (reduce) {
       x.jump(0)
-      setMoving(false)
       return undefined
     }
-    const controls = animate(x, 0, SLIDE_SPRING)
-    const done = () => {
-      if (settleTokenRef.current === token) setMoving(false)
-    }
-    controls.then(done, done)
-    return controls
+    return animate(x, 0, SLIDE_SPRING)
   }, [reduce, x])
 
   // Where the finger let go, frozen at pointerup. The effect below cannot just
@@ -285,13 +269,7 @@ export function Carousel({
     [handleDragEnd, settle, x]
   )
 
-  const onDragStart = React.useCallback(
-    (event: PointerEvent, info: PanInfo) => {
-      setMoving(true)
-      handleDragStart(event, info)
-    },
-    [handleDragStart]
-  )
+  const onDragStart = handleDragStart
 
   // Keyboard control when the carousel (or anything inside it) has focus.
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -414,7 +392,6 @@ export function Carousel({
           className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
           style={{
             x,
-            scale,
             touchAction: 'pan-y pinch-zoom',
             WebkitUserSelect: 'none',
             userSelect: 'none',
@@ -434,44 +411,52 @@ export function Carousel({
             // that has fallen outside the window but is still mounted simply
             // sits at ±2 widths, which the stage clips.
             const offset = wrappedOffset(i, currentIndex, childrenCount)
-            if (Math.abs(wrappedOffset(i, mountIndex, childrenCount)) > WINDOW)
-              return null
             const active = offset === 0
+            // ...but the lagging window may NEVER unmount the slide on screen.
+            // Normally it cannot: one step of the index leaves the new active
+            // slide inside the old window. Several steps before React gets to
+            // the deferred render — a flurry of fast swipes — would put it two
+            // or more away, and the stage would paint its bare black base with
+            // no slide in it at all. Measured as un-reproducible under a
+            // 5-swipe burst at 4x throttle, which makes it exactly the kind of
+            // thing that only shows up on someone's phone. One boolean.
+            if (
+              !active &&
+              Math.abs(wrappedOffset(i, mountIndex, childrenCount)) > WINDOW
+            )
+              return null
             return (
               <motion.div
                 key={i}
-                className="absolute inset-0"
-                // x stays a plain style, NOT an animated property: the track owns
-                // all horizontal motion, and anything else writing x is what
-                // broke the release twice before. Only scale animates here, so
-                // the two never touch the same axis.
+                // Each slide is 1px wider than the stage on BOTH sides, so
+                // neighbours overlap instead of meeting. Abutting them exactly
+                // is not actually exact: the stage is 393 CSS px on a phone at
+                // dpr 3, so a half-way drag puts the join on device pixel 589.5
+                // and the browser antialiases both edges against each other —
+                // a one-pixel dark line that tracks the finger. No amount of
+                // colour matching removes it, because it is a rasterisation
+                // artifact, not a colour step. Overlapping by a pixel means
+                // there is no boundary to antialias, and since both edges are
+                // sealed to black the overlap itself cannot be seen.
+                className="absolute inset-y-0 -right-px -left-px"
+                // A slide is placed once and never animates. The track owns all
+                // horizontal motion; anything else writing x broke the release
+                // twice before, and there is no longer a second property being
+                // animated here either.
+                //
+                // No `will-change` / `contain` on slides. Promoting each one to
+                // its own compositor layer was tried and reverted: a promoted
+                // layer that is also scaled gets resampled, which put coloured
+                // fringes on the artwork and the title treatment — visible on a
+                // real phone as lit borders around the wordmark. The one element
+                // that should be promoted is the track, and framer already
+                // promotes it because it animates a transform.
                 style={{
                   x: `calc(${offset * 100}% + ${offset * SLIDE_GAP}px)`,
                   pointerEvents: active ? 'auto' : 'none',
                   backfaceVisibility: 'hidden',
-                  // Give every slide its own compositor layer, and stop paint
-                  // and layout from crossing its boundary.
-                  //
-                  // This is the fix that actually mattered. A sampling profile
-                  // of a swipe on a 6x-throttled phone profile came back 54%
-                  // "(program)" — browser layout/paint/raster — and only 5%
-                  // framer-motion. Translating the track was repainting the
-                  // whole stage every frame (393x851 at DPR 2.5 is ~2M pixels)
-                  // because there was no layer to slide. With the slides
-                  // promoted, a swipe is the compositor moving three finished
-                  // textures, which is work the GPU does for free.
-                  //
-                  // `contain: layout paint` is what lets the browser skip the
-                  // off-stage slides entirely instead of painting them behind
-                  // the clip.
-                  willChange: 'transform',
-                  contain: 'layout paint',
                 }}
                 initial={false}
-                animate={{
-                  scale: active ? SLIDE_REST_SCALE : SLIDE_OFF_SCALE,
-                }}
-                transition={reduce ? { duration: 0 } : SLIDE_SPRING}
                 aria-hidden={!active}
                 // Pair with aria-hidden: also pull the off-screen slide's links out
                 // of the focus order + a11y tree (aria-hidden alone still leaves
@@ -487,27 +472,9 @@ export function Carousel({
                       { active }
                     )
                   : child}
-
-                {/* Edge falloff, ONLY while the track is off-rest. The gutter
-                  alone didn't fix the seam: a slide's scrim runs from-black/90
-                  to-black/20, so its trailing edge is the BRIGHTEST part of the
-                  frame and ends on a hard vertical line against the gap — which
-                  is the border you can see mid-swipe. Dissolving both edges into
-                  the black base removes the line whatever the artwork is doing.
-                  Gated on `moving` so the hero is never vignetted sitting still,
-                  and the fade in/out happens under cover of the motion itself. */}
-                <div
-                  aria-hidden
-                  className={`pointer-events-none absolute inset-y-0 -left-px z-[70] w-10 bg-gradient-to-r from-black via-black/60 to-transparent transition-opacity duration-200 sm:w-20 ${
-                    moving ? 'opacity-100' : 'opacity-0'
-                  }`}
-                />
-                <div
-                  aria-hidden
-                  className={`pointer-events-none absolute inset-y-0 -right-px z-[70] w-10 bg-gradient-to-l from-black via-black/60 to-transparent transition-opacity duration-200 sm:w-20 ${
-                    moving ? 'opacity-100' : 'opacity-0'
-                  }`}
-                />
+                {/* No edge overlays here any more — HeroSlide seals its own
+                  edges permanently, so there is nothing to switch on and off as
+                  the track moves. */}
               </motion.div>
             )
           })}

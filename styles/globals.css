@@ -432,6 +432,22 @@
   */
   html {
     scrollbar-gutter: stable;
+    /*
+      Kill Android Chrome's pull-to-refresh.
+
+      The hero carousel sits at the very top of the page and is a horizontal
+      drag surface carrying `touch-action: pan-y` — it has to, or you could not
+      scroll the page by starting the gesture on the hero. That leaves the
+      browser free to claim the VERTICAL component of a swipe, and at scrollTop
+      0 a downward claim is a page reload. So a slightly diagonal flick through
+      the hero — which is most real thumb swipes — silently reloaded the site:
+      the carousel snapped back to slide 1 with its artwork undecoded, which
+      looks exactly like the carousel breaking. Caught on a screen recording.
+
+      `contain` stops the gesture escaping to the browser while leaving normal
+      scrolling, and inner scroll containers, untouched.
+    */
+    overscroll-behavior-y: contain;
   }
   /*
     Radix overlays lock scroll via react-remove-scroll, which injects
