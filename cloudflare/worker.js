@@ -32,6 +32,7 @@ import { discoverMovies, discoverSeries } from '@/services/discover'
 import { fetchGenreList } from '@/services/genres'
 import { getHeroExtras } from '@/services/hero-extras'
 import { setImdbAssetsBinding } from '@/services/imdb'
+import { getMediaSummary } from '@/services/media-summary'
 import {
   getCollectionById,
   getPopularMovies,
@@ -166,6 +167,18 @@ async function loadDetails(type, id) {
     return type === 'tv'
       ? await populateSeriesDetailsPageData(id)
       : await populateMovieDetailsPage(id)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Same contract as loadDetails, but only the fields the fallback HTML needs.
+ * This is the cheap path — see services/media-summary.ts for why it exists.
+ */
+async function loadSummary(type, id) {
+  try {
+    return await getMediaSummary(type, id)
   } catch {
     return null
   }
@@ -428,8 +441,12 @@ async function handleDetailFallback(match, request, env, ctx, url) {
   const type = segment === 'tv-shows' ? 'tv' : 'movie'
 
   return cached(request, ctx, async () => {
-    const payload = await loadDetails(type, id)
-    const details = payload?.movieDetails || payload?.seriesDetails
+    // The SUMMARY, not the full detail payload. This path only writes meta
+    // tags; it used to pull `append_to_response=credits,similar,
+    // recommendations,videos` (98KB for a movie) and read six fields out of it.
+    // See services/media-summary.ts. The shell fetches the full payload from
+    // /api/media/:id once it boots, which is where that cost belongs.
+    const details = await loadSummary(type, id)
     if (!details?.id) return notFoundAsset(env, url)
 
     const meta = buildMeta(type, id, details, siteUrlOf(url))

@@ -271,6 +271,21 @@ export function Carousel({
 
   const onDragStart = handleDragStart
 
+  // Contain the browser's overscroll for exactly as long as a finger is down on
+  // the stage, and no longer. Android Chrome reads pull-to-refresh from the
+  // START of a gesture, so this has to be set on pointerdown — by the time
+  // framer reports a drag the browser has already decided. Cleared on pointerup
+  // AND pointercancel, and on unmount, because leaving the flag set would
+  // silently disable pull-to-refresh for the rest of the session.
+  // See the html[data-hero-dragging] rule in styles/globals.css.
+  const holdOverscroll = React.useCallback((held: boolean) => {
+    const root = document.documentElement
+    if (held) root.setAttribute('data-hero-dragging', '')
+    else root.removeAttribute('data-hero-dragging')
+  }, [])
+
+  React.useEffect(() => () => holdOverscroll(false), [holdOverscroll])
+
   // Keyboard control when the carousel (or anything inside it) has focus.
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowLeft') {
@@ -357,6 +372,9 @@ export function Carousel({
         onMouseEnter={handleHoverStart}
         onMouseLeave={handleHoverEnd}
         onKeyDown={handleKeyDown}
+        onPointerDown={() => holdOverscroll(true)}
+        onPointerUp={() => holdOverscroll(false)}
+        onPointerCancel={() => holdOverscroll(false)}
         tabIndex={0}
         role="region"
         aria-roledescription="carousel"
