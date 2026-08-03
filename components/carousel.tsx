@@ -187,8 +187,12 @@ export function Carousel({
   // The whole stage eases back a touch while you drag it and returns as it
   // settles — the frame reads as a physical card being pushed rather than a
   // texture sliding. Derived from x, so it's the same gesture-linked motion
-  // whether you drag, flick, or tap an arrow, and it costs nothing extra: it
-  // composites into the transform the track was already applying.
+  // whether you drag, flick, or tap an arrow.
+  //
+  // This was removed at one point on the theory that scaling the track was what
+  // made swipes expensive. Measuring said otherwise: the cost was full-size
+  // image decodes (see lib/image-loader.ts), and with the slides promoted to
+  // their own layers below, scaling their parent is a compositor transform.
   const scale = useTransform(x, (value) => {
     if (reduce) return 1
     const width = widthRef.current
@@ -422,6 +426,23 @@ export function Carousel({
                   x: `calc(${offset * 100}% + ${offset * SLIDE_GAP}px)`,
                   pointerEvents: active ? 'auto' : 'none',
                   backfaceVisibility: 'hidden',
+                  // Give every slide its own compositor layer, and stop paint
+                  // and layout from crossing its boundary.
+                  //
+                  // This is the fix that actually mattered. A sampling profile
+                  // of a swipe on a 6x-throttled phone profile came back 54%
+                  // "(program)" — browser layout/paint/raster — and only 5%
+                  // framer-motion. Translating the track was repainting the
+                  // whole stage every frame (393x851 at DPR 2.5 is ~2M pixels)
+                  // because there was no layer to slide. With the slides
+                  // promoted, a swipe is the compositor moving three finished
+                  // textures, which is work the GPU does for free.
+                  //
+                  // `contain: layout paint` is what lets the browser skip the
+                  // off-stage slides entirely instead of painting them behind
+                  // the clip.
+                  willChange: 'transform',
+                  contain: 'layout paint',
                 }}
                 initial={false}
                 animate={{
@@ -525,8 +546,14 @@ export function Carousel({
               className="my-2 text-center"
               {...CAROUSEL_POSITION_INDICATOR_VARIANTS}
             >
+              {/* Solid tint, NOT backdrop-blur. This pill sits over the stage
+                and is always mounted, so a backdrop-filter here forces the
+                compositor to re-blur what is behind it on every frame of every
+                swipe. The arrows can afford one (lg: only, so no phone pays for
+                it); this cannot. Opacity raised to keep the same legibility the
+                blur was buying. */}
               <motion.span
-                className="rounded-full bg-black/50 px-2 py-1 text-xs text-white/90 backdrop-blur-sm sm:text-sm"
+                className="rounded-full bg-black/65 px-2 py-1 text-xs text-white/90 sm:text-sm"
                 key={currentIndex}
                 {...CAROUSEL_POSITION_TEXT_VARIANTS}
               >

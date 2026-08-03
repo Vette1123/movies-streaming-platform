@@ -24,7 +24,12 @@ const staticExportConfig = {
 /** @type {import('next').NextConfig} */
 const baseConfig = {
   images: {
-    unoptimized: true,
+    // NOT `unoptimized: true`. That flag also suppresses `srcset`, which meant
+    // every device fetched the width baked into the URL — a 2560px hero backdrop
+    // on a 393px phone. A custom loader keeps srcset generation while letting
+    // ImageKit do the resizing. See lib/image-loader.ts.
+    loader: 'custom',
+    loaderFile: './lib/image-loader.ts',
     remotePatterns: [
       {
         protocol: 'https',

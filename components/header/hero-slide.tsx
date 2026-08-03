@@ -47,6 +47,26 @@ interface HeroSlideProps {
 const HOVER_PREVIEW_DELAY = 500
 const TOUCH_PREVIEW_DELAY = 1200
 
+// Ken Burns runs on the slide you can SEE, and nowhere else.
+//
+// The carousel keeps a slide either side mounted so their artwork is decoded
+// before they scroll in, but those two are parked a full stage-width away and
+// clipped. Animating them was three full-viewport backdrops scaling forever
+// instead of one, and `will-change: transform` pinned all three as compositor
+// layers permanently — the animation is `both`, so the layer never demoted even
+// after the 14s finished. On a throttled phone that was the whole problem:
+// a swipe then had to composite three oversized promoted textures while the
+// track sprang. Measured 94.7ms/frame average, 351ms worst.
+//
+// Off-slides get no animation and no promotion; they are invisible, so there is
+// nothing to lose. The class swap restarts the animation as a slide becomes
+// active, which is the correct behaviour anyway — the pan should begin when the
+// slide takes the frame, not partway through.
+const kenBurns = (active: boolean) =>
+  active
+    ? 'animate-hero-kenburns will-change-transform motion-reduce:animate-none'
+    : ''
+
 // Whether the hero has resolved its title treatment once for this page load.
 // Module-scoped on purpose: it must survive a slide unmounting, which is exactly
 // what the windowed carousel does every time you swipe. See titleGraceElapsed.
@@ -264,9 +284,13 @@ export function HeroSlide({
         <BlurredImage
           src={getImageURL(media.backdrop_path)}
           alt={title}
-          className="animate-hero-kenburns block size-full object-cover object-top will-change-transform motion-reduce:animate-none"
+          className={`block size-full object-cover object-top ${kenBurns(active)}`}
           fill
-          sizes="(min-width: 1024px) 1024px, 100vw"
+          // The backdrop is full-bleed at every breakpoint, so it is 100vw at
+          // every breakpoint. The old "1024px above lg" was a lie the browser
+          // believed: with a real srcset now in play it would have picked a
+          // 1024px image for a 2560px monitor and the hero would look soft.
+          sizes="100vw"
           intro
           priority={priority}
           loading={priority ? undefined : 'lazy'}
@@ -276,7 +300,7 @@ export function HeroSlide({
           <BlurredImage
             src={getPosterImageURL(media.poster_path)}
             alt={title}
-            className="animate-hero-kenburns block size-full object-cover object-center will-change-transform motion-reduce:animate-none"
+            className={`block size-full object-cover object-center ${kenBurns(active)}`}
             fill
             sizes="100vw"
             intro
