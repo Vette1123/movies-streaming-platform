@@ -254,6 +254,37 @@ export function Carousel({
     return () => controls?.stop()
   }, [currentIndex, childrenCount, settle, x])
 
+  // Contain the browser's overscroll for exactly as long as a HORIZONTAL drag is
+  // in progress, and no longer.
+  //
+  // The first version of this held from pointerdown, which was wrong in the one
+  // place it mattered: the hero fills the top of the home screen, so every
+  // pull-to-refresh starts with a finger on this stage — and the flag was
+  // already set before the browser could read the gesture as a pull. Gating on
+  // framer's drag threshold instead means a straight pull down never starts a
+  // drag, never sets the flag, and refreshes normally; only a swipe that has
+  // committed to the x axis suppresses the overscroll it would otherwise fight.
+  //
+  // Cleared on drag end and on unmount, because leaving it set would disable
+  // pull-to-refresh for the rest of the session.
+  // See the html[data-hero-dragging] rule in styles/globals.css.
+  const holdOverscroll = React.useCallback((held: boolean) => {
+    const root = document.documentElement
+    if (held) root.setAttribute('data-hero-dragging', '')
+    else root.removeAttribute('data-hero-dragging')
+  }, [])
+
+  // framer starts a drag on total distance travelled, not on distance along the
+  // drag axis, so onDragStart fires for a straight pull down too — which is how
+  // the first attempt still ate pull-to-refresh. dragDirectionLock resolves the
+  // gesture to one axis and reports it here; only 'x' is ours.
+  const onDirectionLock = React.useCallback(
+    (axis: 'x' | 'y') => holdOverscroll(axis === 'x'),
+    [holdOverscroll]
+  )
+
+  const onDragStart = handleDragStart
+
   // A drag that doesn't cross the threshold never changes the index, so the
   // effect above won't run — this is what returns the track in that case. It has
   // to be exclusive: settling here as well when the release DOES paginate meant
@@ -261,28 +292,14 @@ export function Carousel({
   // and the compensation landed short (172 wanted, 293 measured).
   const onDragEnd = React.useCallback(
     (event: PointerEvent, info: PanInfo) => {
+      holdOverscroll(false)
       releaseXRef.current = x.get()
       if (handleDragEnd(event, info)) return
       releaseXRef.current = null
       settle()
     },
-    [handleDragEnd, settle, x]
+    [handleDragEnd, holdOverscroll, settle, x]
   )
-
-  const onDragStart = handleDragStart
-
-  // Contain the browser's overscroll for exactly as long as a finger is down on
-  // the stage, and no longer. Android Chrome reads pull-to-refresh from the
-  // START of a gesture, so this has to be set on pointerdown — by the time
-  // framer reports a drag the browser has already decided. Cleared on pointerup
-  // AND pointercancel, and on unmount, because leaving the flag set would
-  // silently disable pull-to-refresh for the rest of the session.
-  // See the html[data-hero-dragging] rule in styles/globals.css.
-  const holdOverscroll = React.useCallback((held: boolean) => {
-    const root = document.documentElement
-    if (held) root.setAttribute('data-hero-dragging', '')
-    else root.removeAttribute('data-hero-dragging')
-  }, [])
 
   React.useEffect(() => () => holdOverscroll(false), [holdOverscroll])
 
@@ -372,9 +389,6 @@ export function Carousel({
         onMouseEnter={handleHoverStart}
         onMouseLeave={handleHoverEnd}
         onKeyDown={handleKeyDown}
-        onPointerDown={() => holdOverscroll(true)}
-        onPointerUp={() => holdOverscroll(false)}
-        onPointerCancel={() => holdOverscroll(false)}
         tabIndex={0}
         role="region"
         aria-roledescription="carousel"
@@ -416,8 +430,17 @@ export function Carousel({
           }}
           drag="x"
           dragMomentum={false}
+          // Resolve every gesture to a single axis. A vertical pull then scrolls
+          // the page (and pull-to-refreshes at the top) without the track
+          // fighting it for the horizontal component.
+          dragDirectionLock
+          onDirectionLock={onDirectionLock}
           onDragStart={onDragStart}
           onDragEnd={onDragEnd}
+          // Belt and braces: onDragEnd covers the normal release, but a flag
+          // left set here would kill pull-to-refresh for the whole session.
+          onPointerUp={() => holdOverscroll(false)}
+          onPointerCancel={() => holdOverscroll(false)}
         >
           {/* Windowed slides, laid out side by side and placed INSTANTLY — plain
             divs, no animation of their own. Off-stage slides sit a full width
