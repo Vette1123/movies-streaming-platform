@@ -81,21 +81,25 @@ const populateSeriesDetailsPageData = async (
   try {
     const data = await getSeriesWithExtras(id)
     if (!data?.id) throw new Error('Series not found')
+    // Same peel as populateMovieDetailsPage — see the note there. `external_ids`
+    // stays on seriesDetails: unlike the others it is not re-exposed in a
+    // sibling field, and it is what imdbRating is derived from.
+    const { credits, similar, recommendations, videos, ...details } = data
     return {
       seriesDetails: {
-        ...data,
+        ...details,
         imdbRating: await getImdbRating(data.external_ids?.imdb_id),
       },
-      seriesCredits: data.credits ?? { id: data.id, cast: [], crew: [] },
-      similarSeries: (data.similar
-        ? seriesDTO(data.similar).results
+      seriesCredits: credits ?? { id: data.id, cast: [], crew: [] },
+      similarSeries: (similar ? seriesDTO(similar).results : []).slice(
+        0,
+        RAIL_LIMIT
+      ),
+      recommendedSeries: (recommendations
+        ? seriesDTO(recommendations).results
         : []
       ).slice(0, RAIL_LIMIT),
-      recommendedSeries: (data.recommendations
-        ? seriesDTO(data.recommendations).results
-        : []
-      ).slice(0, RAIL_LIMIT),
-      trailerKey: pickTrailerKey(data.videos?.results),
+      trailerKey: pickTrailerKey(videos?.results),
     }
   } catch (error: any) {
     console.error(error, 'error')

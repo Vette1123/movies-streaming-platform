@@ -93,10 +93,25 @@ async function zoneId() {
 const pct = (part, whole) => (whole ? (100 * part) / whole : 0)
 const sum = (rows, pick) => rows.reduce((total, row) => total + pick(row), 0)
 
+/**
+ * `true` passes, `false` fails the run, `'warn'` prints but does not fail.
+ *
+ * The warn state exists because the useful signal for a resource budget arrives
+ * before the budget is spent: a check that only fires at 100% tells you about an
+ * outage you already had. Anything on a free-plan ceiling gets a margin band.
+ */
 const results = []
-function grade(ok, label, detail) {
-  results.push({ ok, label, detail })
-  console.log(`${ok ? '✓' : '✗'} ${label}\n    ${detail}`)
+const MARK = { true: '✓', false: '✗', warn: '!' }
+function grade(status, label, detail) {
+  results.push({ status, label, detail })
+  console.log(`${MARK[status]} ${label}\n    ${detail}`)
+}
+
+/** Pass under `warnAt`, warn between `warnAt` and `limit`, fail at `limit`. */
+const band = (value, warnAt, limit) => {
+  if (value >= limit) return false
+  if (value >= warnAt) return 'warn'
+  return true
 }
 
 /** Worker CPU, invocation count and kills — the free-plan budget. */
@@ -138,18 +153,29 @@ async function checkWorker() {
     `Worker kills: ${killed} of ${invocations} invocations (${pct(killed, invocations).toFixed(3)}%)`,
     JSON.stringify(counts)
   )
+  // CPU warns but never fails, and the reason is worth writing down: the free
+  // plan's nominal budget is 10ms per invocation, yet p999 sat at 10-12ms for
+  // hours with exactly zero kills — Cloudflare is evidently not enforcing it as
+  // a hard per-invocation cap here. Failing on the nominal number would report an
+  // outage the site is not having, while the kill count above is direct evidence
+  // either way. So this is a margin gauge: watch it move, do not gate on it.
+  const budget = LIMITS.cpuMsPerInvocation
   grade(
-    cpu('cpuTimeP99') < LIMITS.cpuMsPerInvocation,
+    cpu('cpuTimeP99') < budget * 0.8 ? true : 'warn',
     `Worker CPU: p50 ${cpu('cpuTimeP50').toFixed(2)}ms, p99 ${cpu('cpuTimeP99').toFixed(2)}ms, p999 ${cpu('cpuTimeP999').toFixed(2)}ms`,
-    `budget ${LIMITS.cpuMsPerInvocation}ms/invocation — kills above are the ground truth, this is the margin`
+    `nominal budget ${budget}ms — a gauge, not a gate (kills are the gate); warns over ${budget * 0.8}ms p99`
   )
   grade(
-    perDay < LIMITS.invocationsPerDay,
+    band(perDay, LIMITS.invocationsPerDay * 0.7, LIMITS.invocationsPerDay),
     `Invocations: ${Math.round(perDay).toLocaleString()}/day projected (${pct(perDay, LIMITS.invocationsPerDay).toFixed(0)}% of cap)`,
     'static assets are exempt, so this counts only /api/* + tail-id fallbacks'
   )
   grade(
-    subPer < LIMITS.subrequestsPerInvocation / 2,
+    band(
+      subPer,
+      LIMITS.subrequestsPerInvocation * 0.4,
+      LIMITS.subrequestsPerInvocation
+    ),
     `Subrequests: ${subPer.toFixed(2)} per invocation`,
     `cap ${LIMITS.subrequestsPerInvocation} — the cap that broke the homepage when IMDb enrichment was on`
   )
@@ -297,11 +323,18 @@ await checkWorker()
 await checkEyeball(zone)
 await checkClientErrors(zone)
 
-const failed = results.filter((r) => !r.ok)
+const failed = results.filter((r) => r.status === false)
+const warned = results.filter((r) => r.status === 'warn')
 if (failed.length) await showTimeline(zone)
-console.log(
-  failed.length
-    ? `\n✗ ${failed.length} check(s) failed: ${failed.map((r) => r.label.split(':')[0]).join(', ')}`
-    : `\n✓ all ${results.length} checks passed`
-)
+
+const names = (rows) => rows.map((r) => r.label.split(':')[0]).join(', ')
+if (failed.length) {
+  console.log(`\n✗ ${failed.length} check(s) failed: ${names(failed)}`)
+} else if (warned.length) {
+  console.log(
+    `\n! ${results.length - warned.length}/${results.length} clear, approaching a ceiling: ${names(warned)}`
+  )
+} else {
+  console.log(`\n✓ all ${results.length} checks passed`)
+}
 process.exit(failed.length ? 1 : 0)

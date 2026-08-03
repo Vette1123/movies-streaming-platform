@@ -178,15 +178,24 @@ const populateMovieDetailsPage = async (
   try {
     const data = await getMovieWithExtras(id)
     if (!data?.id) throw new Error('Movie not found')
+    // Peel the append_to_response blocks OFF movieDetails instead of spreading
+    // them along with it. Each one is already returned in trimmed form in a
+    // sibling field below, and nothing reads them from movieDetails — so
+    // spreading `data` shipped `recommendations` (11.4 KB raw vs 6.5 KB trimmed),
+    // `credits` (4.4 KB, byte-identical to movieCredits), `similar` and `videos`
+    // a second time. That was 16 KB of the 28 KB payload: half the JSON the
+    // Worker stringifies on /api/media/*, its most expensive route, and half of
+    // what every prerendered detail page carries in its flight data.
+    const { credits, similar, recommendations, videos, ...details } = data
     return {
-      movieDetails: { ...data, imdbRating: await getImdbRating(data.imdb_id) },
-      movieCredits: data.credits ?? { id: data.id, cast: [], crew: [] },
-      similarMovies: (data.similar?.results ?? []).slice(0, RAIL_LIMIT),
-      recommendedMovies: (data.recommendations?.results ?? []).slice(
-        0,
-        RAIL_LIMIT
-      ),
-      trailerKey: pickTrailerKey(data.videos?.results),
+      movieDetails: {
+        ...details,
+        imdbRating: await getImdbRating(data.imdb_id),
+      },
+      movieCredits: credits ?? { id: data.id, cast: [], crew: [] },
+      similarMovies: (similar?.results ?? []).slice(0, RAIL_LIMIT),
+      recommendedMovies: (recommendations?.results ?? []).slice(0, RAIL_LIMIT),
+      trailerKey: pickTrailerKey(videos?.results),
     }
   } catch (error: any) {
     console.error(error, 'error')
