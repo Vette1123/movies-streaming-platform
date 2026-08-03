@@ -38,6 +38,96 @@ const buildId = await readFile(path.join(root, '.next', 'BUILD_ID'), 'utf8')
   .then((id) => id.trim())
   .catch(() => 'dev')
 
+/**
+ * Pre-split the exported fallback shells so the Worker never has to parse HTML.
+ *
+ * The tail-id fallback is ~70% of all Worker invocations, and it used to run a
+ * 55 KB shell through HTMLRewriter on every cache miss: six selector handlers,
+ * four of them only there to delete the shell's own generic <meta> tags. All of
+ * that is the same work every time, on a file that only changes when we deploy —
+ * so it belongs here, once per build, not there, once per request.
+ *
+ * The runtime is left with string concatenation between pre-encoded byte chunks.
+ * It also drops an ASSETS subrequest per fallback, because the shell now travels
+ * inside the bundle instead of being fetched.
+ *
+ * Emits, per shell, the four static pieces around the three dynamic insertions:
+ *
+ *   head … <title>│heading│</title> … │meta + JSON-LD│</head> … <body>│SEO div│…
+ *
+ * Every step asserts. A silently mis-split shell would serve a broken page for
+ * every non-prerendered id, which is worse than a failed build by a wide margin;
+ * if Next's output shape ever moves, this must stop the deploy, not survive it.
+ */
+async function shellTemplates() {
+  const shells = {
+    '/media-fallback.html': 'media-fallback.html',
+    '/collection-fallback.html': 'collection-fallback.html',
+  }
+  const templates = {}
+
+  for (const [route, file] of Object.entries(shells)) {
+    let html
+    try {
+      html = await readFile(path.join(root, 'out', file), 'utf8')
+    } catch {
+      // No export in out/ — this is a worker-only rebuild (`pnpm build:worker`).
+      // The Worker keeps its HTMLRewriter path for exactly this case.
+      console.log(`shell templates: out/${file} absent, using runtime rewrite`)
+      return null
+    }
+
+    // Strip the shell's own metadata. HTMLRewriter used to do this per request
+    // for one reason: it appends to <head>, so the generic site-level tags
+    // survived AHEAD of the injected ones, and an unfurler reads the first
+    // occurrence — every shared tail link showed "Reely — Movie & TV Show
+    // Tracker" with the default OG image.
+    const stripped = html
+      .replace(/<meta[^>]+property="og:[^"]*"[^>]*>/g, '')
+      .replace(/<meta[^>]+name="twitter:[^"]*"[^>]*>/g, '')
+      .replace(/<meta[^>]+name="description"[^>]*>/g, '')
+      .replace(/<link[^>]+rel="canonical"[^>]*>/g, '')
+
+    if (/property="og:|name="twitter:/.test(stripped)) {
+      throw new Error(`${file}: og/twitter tags survived the strip`)
+    }
+
+    const title = stripped.match(/<title>.*?<\/title>/s)
+    const headEnd = stripped.indexOf('</head>')
+    const bodyOpen = stripped.match(/<body[^>]*>/)
+    if (!title || headEnd === -1 || !bodyOpen) {
+      throw new Error(
+        `${file}: expected <title>, </head> and <body> (title=${!!title} head=${headEnd !== -1} body=${!!bodyOpen})`
+      )
+    }
+
+    const titleStart = title.index
+    const titleEnd = titleStart + title[0].length
+    const bodyEnd = bodyOpen.index + bodyOpen[0].length
+
+    if (!(titleEnd <= headEnd && headEnd < bodyEnd)) {
+      throw new Error(`${file}: <title>, </head>, <body> are out of order`)
+    }
+
+    templates[route] = {
+      // …<title>
+      beforeTitle: stripped.slice(0, titleStart) + '<title>',
+      // </title>…(rest of head)
+      afterTitle: '</title>' + stripped.slice(titleEnd, headEnd),
+      // </head>…<body …>
+      afterHead: stripped.slice(headEnd, bodyEnd),
+      // (rest of document)
+      afterBody: stripped.slice(bodyEnd),
+    }
+  }
+
+  const bytes = JSON.stringify(templates).length
+  console.log(
+    `shell templates: ${Object.keys(templates).length} shells inlined (${(bytes / 1024).toFixed(1)} KiB raw)`
+  )
+  return templates
+}
+
 // The public config the shared services read off `process.env`.
 //
 // Next inlines every `process.env.NEXT_PUBLIC_*` textually when it builds the
@@ -80,6 +170,7 @@ const result = await esbuild.build({
     // Bundled for production; nothing here should take a dev-only branch.
     'process.env.NODE_ENV': '"production"',
     __BUILD_ID__: JSON.stringify(buildId),
+    __SHELL_TEMPLATES__: JSON.stringify(await shellTemplates()),
     ...publicEnvDefines(),
   },
   minify: true,

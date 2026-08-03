@@ -398,10 +398,101 @@ async function notFoundAsset(env, url) {
 }
 
 /**
+ * The two dynamic blocks a shell needs, shared by both render paths below so
+ * they cannot drift into producing different HTML.
+ */
+const headBlock = (meta, ogType, jsonLd) =>
+  `${metaTags(meta, ogType)}<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`
+
+// A crawler that does not execute JS still gets the title and synopsis. Hidden
+// from sighted users because the client render paints the real page over it a
+// moment later.
+const seoBlock = (meta) =>
+  `<div hidden data-fallback-seo><h1>${escapeHtml(meta.heading)}</h1><p>${escapeHtml(meta.description)}</p></div>`
+
+/**
+ * The shells, pre-split at build time by scripts/build-worker.mjs, or null on a
+ * worker-only rebuild with no export in out/ (then serveShell runs instead).
+ */
+const SHELL_TEMPLATES =
+  typeof __SHELL_TEMPLATES__ === 'object' ? __SHELL_TEMPLATES__ : null
+
+const encoder = new TextEncoder()
+
+/**
+ * The static chunks of a shell as bytes, encoded once per isolate.
+ *
+ * Lazily, per shell: a media fallback isolate should not pay to encode the
+ * collection shell, and vice versa. Encoding 55 KB is cheap but it is not free,
+ * and this is the path whose whole point is being cheap.
+ */
+const encodedShells = new Map()
+function encodedShell(route) {
+  const cached = encodedShells.get(route)
+  if (cached) return cached
+
+  const parts = SHELL_TEMPLATES?.[route]
+  if (!parts) return null
+
+  const encoded = {
+    beforeTitle: encoder.encode(parts.beforeTitle),
+    afterTitle: encoder.encode(parts.afterTitle),
+    afterHead: encoder.encode(parts.afterHead),
+    afterBody: encoder.encode(parts.afterBody),
+  }
+  encodedShells.set(route, encoded)
+  return encoded
+}
+
+/**
+ * Assemble a fallback page from the pre-split shell — the fast path.
+ *
+ * No HTML parse, no ASSETS subrequest: seven chunks queued onto a stream, four
+ * of them already-encoded bytes shared by every request this isolate serves, so
+ * the only per-request encoding is the title, the meta block and the SEO div.
+ * Returns null when the build did not inline templates.
+ */
+function serveShellFromTemplate(shellPath, meta, ogType, jsonLd) {
+  const parts = encodedShell(shellPath)
+  if (!parts) return null
+
+  const chunks = [
+    parts.beforeTitle,
+    encoder.encode(escapeHtml(meta.heading)),
+    parts.afterTitle,
+    encoder.encode(headBlock(meta, ogType, jsonLd)),
+    parts.afterHead,
+    encoder.encode(seoBlock(meta)),
+    parts.afterBody,
+  ]
+
+  return new Response(
+    new ReadableStream({
+      start(controller) {
+        for (const chunk of chunks) controller.enqueue(chunk)
+        controller.close()
+      },
+    }),
+    {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': CACHE_CONTROL,
+      },
+    }
+  )
+}
+
+/**
  * Take an exported client shell out of the asset store and stream it through
  * HTMLRewriter, replacing its generic head with the real title, description, OG
  * and Twitter tags, JSON-LD, and a crawlable <h1> + summary. Returns 200: these
  * are real pages, just ones the build did not have room to bake.
+ *
+ * The slow path, kept for worker-only rebuilds where no export was available to
+ * split. Deploys always go through build:cf, so production takes the fast path —
+ * but this must keep producing byte-identical HTML, because it is the reference
+ * the fast path was derived from.
  */
 async function serveShell(shellPath, meta, ogType, jsonLd, env, url) {
   const shell = await env.ASSETS.fetch(new URL(shellPath, url.origin))
@@ -445,22 +536,12 @@ async function serveShell(shellPath, meta, ogType, jsonLd, env, url) {
     })
     .on('head', {
       element(el) {
-        el.append(metaTags(meta, ogType), { html: true })
-        el.append(
-          `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`,
-          { html: true }
-        )
+        el.append(headBlock(meta, ogType, jsonLd), { html: true })
       },
     })
-    // A crawler that does not execute JS still gets the title and synopsis.
-    // Hidden from sighted users because the client render paints the real
-    // page over it a moment later.
     .on('body', {
       element(el) {
-        el.prepend(
-          `<div hidden data-fallback-seo><h1>${escapeHtml(meta.heading)}</h1><p>${escapeHtml(meta.description)}</p></div>`,
-          { html: true }
-        )
+        el.prepend(seoBlock(meta), { html: true })
       },
     })
     .transform(shell)
@@ -506,7 +587,10 @@ async function handleDetailFallback(match, request, env, ctx, url) {
     }
     const ogType = type === 'tv' ? 'video.tv_show' : 'video.movie'
 
-    return serveShell(SHELL_MEDIA, meta, ogType, jsonLd, env, url)
+    return (
+      serveShellFromTemplate(SHELL_MEDIA, meta, ogType, jsonLd) ??
+      serveShell(SHELL_MEDIA, meta, ogType, jsonLd, env, url)
+    )
   })
 }
 
@@ -544,7 +628,10 @@ async function handleCollectionFallback(match, request, env, ctx, url) {
       ...(meta.image ? { image: meta.image } : {}),
     }
 
-    return serveShell(SHELL_COLLECTION, meta, 'website', jsonLd, env, url)
+    return (
+      serveShellFromTemplate(SHELL_COLLECTION, meta, 'website', jsonLd) ??
+      serveShell(SHELL_COLLECTION, meta, 'website', jsonLd, env, url)
+    )
   })
 }
 

@@ -170,6 +170,46 @@ const BLOCK_UAS = [
 const orExpr = (frags) =>
   frags.map((f) => `(http.user_agent contains "${f}")`).join(' or ')
 
+/**
+ * Extensions this site cannot serve, dropped at the edge.
+ *
+ * `not_found_handling: "none"` in wrangler.jsonc sends every unmatched path to
+ * the Worker so a non-prerendered detail id can be answered — which also means
+ * every junk request is a Worker invocation against the 100k/day cap. Measured
+ * over 23h: ~1,700 requests for bare TMDB image paths (Googlebot-Image retrying
+ * URLs this site has never emitted; every real image URL points at ImageKit) and
+ * ~330 PHP/WordPress probes. That was ~10% of all invocations spent producing
+ * 404s.
+ *
+ * The export contains zero .jpg/.jpeg and zero .php/.asp files — checked, not
+ * assumed — so nothing legitimate can match. Icons are .png and .ico and are
+ * deliberately NOT listed: those exist.
+ *
+ * Kept AHEAD of ALLOW_RULE on purpose. ALLOW_RULE skips the rest of the ruleset
+ * for verified bots, and the biggest single source here IS a verified bot
+ * (Googlebot-Image), so behind the allowlist this rule would never fire on the
+ * traffic it was written for.
+ */
+const DEAD_EXTENSIONS = [
+  '.jpg',
+  '.jpeg',
+  '.php',
+  '.asp',
+  '.aspx',
+  '.cgi',
+  '.env',
+  '.sql',
+  '.bak',
+]
+
+const DEAD_EXTENSION_RULE = {
+  description: `${TAG} block extensions this site never serves`,
+  expression: DEAD_EXTENSIONS.map(
+    (ext) => `(ends_with(http.request.uri.path, "${ext}"))`
+  ).join(' or '),
+  action: 'block',
+}
+
 const ALLOW_RULE = {
   description: `${TAG} allow social scrapers and verified search bots`,
   // `cf.client.bot` is true for bots Cloudflare verified via reverse DNS
@@ -412,7 +452,12 @@ async function main() {
       await putRuleset(
         zoneId,
         rs,
-        [ALLOW_RULE, BLOCK_RULE, CHALLENGE_DETAIL_SCRAPERS_RULE],
+        [
+          DEAD_EXTENSION_RULE,
+          ALLOW_RULE,
+          BLOCK_RULE,
+          CHALLENGE_DETAIL_SCRAPERS_RULE,
+        ],
         {
           position: 'top',
         }
