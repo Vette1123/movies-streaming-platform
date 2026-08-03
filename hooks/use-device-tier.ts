@@ -89,3 +89,44 @@ const subscribe = () => () => {}
 export function useLowPowerDevice(): boolean {
   return React.useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }
+
+/** A real pointer that can hover — a mouse or trackpad, not a finger. */
+function detectHoverPointer(): boolean {
+  if (typeof window === 'undefined' || !window.matchMedia) return false
+  return window.matchMedia('(hover: hover) and (pointer: fine)').matches
+}
+
+let hoverDetected: boolean | undefined
+const getHoverSnapshot = () => (hoverDetected ??= detectHoverPointer())
+
+// Prerendered HTML is built ONCE and served to every device, so this answer has
+// to pick a side. It picks touch, deliberately, and the asymmetry is the whole
+// point: a desktop that starts on the touch tree pays one extra render to
+// upgrade, while a phone that started on the hover tree would have to build
+// every hover-only component first and then throw it away — which is exactly the
+// cost this exists to avoid. Same trade, same reasoning, as getServerSnapshot
+// above.
+const getHoverServerSnapshot = () => false
+
+/**
+ * True only where hover interactions can actually happen.
+ *
+ * Callers use this to skip mounting hover-only machinery on touch, where it can
+ * never run. The homepage mounts 72 cards, each of which was building a Radix
+ * HoverCard and a framer motion component for a pointer the device does not
+ * have. Measured at 6x CPU throttle on a 393px viewport, the homepage spent
+ * 7-8s in long tasks with scrolling itself nearly free — the cost is mount, not
+ * motion, so the fix is to not mount it.
+ *
+ * `useSyncExternalStore` rather than a `useState` initialiser for the same
+ * reason as `useLowPowerDevice`: the initialiser would run during hydration,
+ * where `matchMedia` is real, and return a different answer than the exported
+ * HTML — which React reports as a hydration mismatch and does NOT patch up.
+ */
+export function useHasHoverPointer(): boolean {
+  return React.useSyncExternalStore(
+    subscribe,
+    getHoverSnapshot,
+    getHoverServerSnapshot
+  )
+}

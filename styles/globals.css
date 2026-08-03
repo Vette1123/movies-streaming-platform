@@ -245,26 +245,60 @@
   );
   animation: aurora-b 31s ease-in-out infinite alternate;
 }
+/* The blobs ROAM but never RESIZE, and that distinction is the whole cost here.
+   Each of these is a 58vw square carrying `filter: blur(70px)`, and it animates
+   forever, on every page. A translate of that is free: the compositor shifts a
+   texture it already has. A scale is not — a transform that changes SIZE cannot
+   be composited from the existing raster, so every frame re-blurred a
+   viewport-sized layer at a new scale, at 70px radius, for as long as the tab
+   was open. That is continuous raster work behind every page on the site, and it
+   is worst exactly where it can least be afforded.
+   The scale is kept, but CONSTANT — same value at both stops — so the blobs sit
+   at the size they always did and the animation is pure translation. What is
+   gone is a 25%-over-24s size pulse on a heavily blurred, 38%-opacity blob.
+   Same trade, and the same reasoning, as the scales removed from the carousel. */
 @keyframes aurora-a {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    transform: translate3d(32vw, 20vh, 0) scale(1.25);
-  }
-}
-@keyframes aurora-b {
   from {
     transform: translate3d(0, 0, 0) scale(1.12);
   }
   to {
-    transform: translate3d(-28vw, -22vh, 0) scale(1);
+    transform: translate3d(32vw, 20vh, 0) scale(1.12);
+  }
+}
+@keyframes aurora-b {
+  from {
+    transform: translate3d(0, 0, 0) scale(1.06);
+  }
+  to {
+    transform: translate3d(-28vw, -22vh, 0) scale(1.06);
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .site-aurora::before,
   .site-aurora::after {
     animation: none;
+  }
+}
+
+/* Phones get the static wash and nothing else.
+   These two blobs are the most expensive thing on the page, and it is not close:
+   each is a viewport-sized layer carrying `filter: blur(70px)`, permanently
+   promoted, animating for as long as the tab is open — on EVERY page. A CPU
+   profile of a carousel swipe on a 393px viewport at 6x throttle came back 74.7%
+   `(program)`: the swipe was not spending its time in JavaScript at all, it was
+   spending it in native paint/raster/composite, and this is the layer driving
+   that. It is also the least visible thing on the page, because on a phone it
+   sits behind a full-bleed opaque hero.
+   `.site-aurora` keeps its own two radial-gradients, which is where the colour
+   actually comes from — so the backdrop still reads as the same deep blue-violet
+   wash, just without two blurred blobs roaming across it. Desktop is untouched.
+   Keyed on `hover: none` rather than width: this is about the device's GPU, and
+   a coarse pointer identifies a phone better than a viewport that any desktop
+   can produce by narrowing a window. */
+@media (hover: none) {
+  .site-aurora::before,
+  .site-aurora::after {
+    display: none;
   }
 }
 
@@ -370,6 +404,18 @@
   .aurora-stars--1,
   .aurora-stars--2 {
     animation: none;
+  }
+}
+
+/* Same call as the blobs above, for the same reason. Two more viewport-sized
+   layers (inset -35%, so ~170% of the viewport each) animating forever behind an
+   opaque hero. Cheaper per frame than a 70px blur — translate and opacity only —
+   but still two permanently-composited full-screen layers a phone is painting
+   for something it cannot see. */
+@media (hover: none) {
+  .aurora-stars--1,
+  .aurora-stars--2 {
+    display: none;
   }
 }
 

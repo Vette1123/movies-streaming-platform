@@ -304,6 +304,14 @@ export function HeroSlide({
           // every breakpoint. The old "1024px above lg" was a lie the browser
           // believed: with a real srcset now in play it would have picked a
           // 1024px image for a 2560px monitor and the hero would look soft.
+          //
+          // Do NOT try to "cap" this with a pixel slot on small screens. `sizes`
+          // is a CSS-pixel slot and the browser multiplies it by DPR, so
+          // `(max-width: 640px) 828px` asks a dpr-3 phone for 828*3 = 2484 and
+          // it picks the 2560 candidate — twice the pixels of the 1200 that
+          // plain `100vw` selects (393 * 3 = 1179). Measured, and it was a
+          // straight regression. 100vw is both the honest answer and the cheap
+          // one here.
           sizes="100vw"
           intro
           priority={priority}
