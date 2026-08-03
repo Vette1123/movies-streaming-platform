@@ -34,6 +34,14 @@
   Cache-Control: public, max-age=0, s-maxage=28800, stale-while-revalidate=86400
 /tv-shows/*
   Cache-Control: public, max-age=0, s-maxage=28800, stale-while-revalidate=86400
+# Prerendered like every other document route, and refreshed by the same deploy —
+# they were simply missing here, so they fell through to the asset default
+# (`max-age=0, must-revalidate`): no shared TTL at all, and a conditional request
+# on every visit to a franchise page.
+/collection/*
+  Cache-Control: public, max-age=0, s-maxage=28800, stale-while-revalidate=86400
+/disclaimer
+  Cache-Control: public, max-age=0, s-maxage=28800, stale-while-revalidate=86400
 
 # Personal and noindex — never store these in a shared cache.
 /watch-history

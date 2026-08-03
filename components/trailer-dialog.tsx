@@ -28,7 +28,10 @@ interface TrailerDialogProps {
   onOpenChange?: (open: boolean) => void
 }
 
-export function TrailerDialog({
+// Memoised: the hero passes primitives plus a `setState` function, all stable,
+// so the Radix trigger + dialog subtree is built once per slide instead of on
+// every re-render of the slide around it.
+export const TrailerDialog = React.memo(function TrailerDialog({
   trailerKey,
   mediaId,
   mediaType,
@@ -83,4 +86,4 @@ export function TrailerDialog({
       </DialogContent>
     </Dialog>
   )
-}
+})

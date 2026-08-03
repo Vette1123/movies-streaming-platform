@@ -22,7 +22,13 @@ interface SaveButtonProps {
   className?: string
 }
 
-export function SaveButton({ media, className }: SaveButtonProps) {
+// Memoised: `media` is a server payload object and `className` a literal, so
+// both are stable per call site. The watchlist state this reads comes from a
+// hook, which memo does not block — a save still repaints the button.
+export const SaveButton = React.memo(function SaveButton({
+  media,
+  className,
+}: SaveButtonProps) {
   const { isSaved, toggle } = useWatchlist()
   const isMounted = useMounted()
 
@@ -65,4 +71,4 @@ export function SaveButton({ media, className }: SaveButtonProps) {
       <span className="hidden sm:inline">{saved ? 'Saved' : 'Save'}</span>
     </Button>
   )
-}
+})

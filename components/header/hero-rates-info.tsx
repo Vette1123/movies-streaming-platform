@@ -31,12 +31,16 @@ function resolveHeroMediaType(
   return movie ? resolveMediaType(movie) : 'movie'
 }
 
-export const HeroRatesInfos = ({
+// Memoised: every prop is a payload object the server rendered once, so they are
+// referentially stable and this row — chips, score, formatted date, up to three
+// genre links, plus the getGenres lookup — need not be rebuilt each time the
+// carousel re-renders the slide around it.
+export const HeroRatesInfos = React.memo(function HeroRatesInfos({
   movie,
   movieDetails,
   seriesDetails,
   genreTable,
-}: HeroRatesInfosProps) => {
+}: HeroRatesInfosProps) {
   const item = (movieDetails || movie || seriesDetails) as (
     MovieDetails | Movie
   ) &
@@ -86,4 +90,4 @@ export const HeroRatesInfos = ({
       ))}
     </div>
   )
-}
+})

@@ -25,14 +25,22 @@ export const useCarousel = ({
   // LCP image), so the first frame is correct and decoded fast — no restore
   // jump, no flash. Slide 0 is also the freshest trending title.
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [direction, setDirection] = useState(0)
   const [isUserInteracting, setIsUserInteracting] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
   const [isTabHidden, setIsTabHidden] = useState(false)
   const isMounted = useMounted()
 
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null)
   const userInteractionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  // A ref, not state, and nothing outside this hook reads it. It used to be
+  // state, which meant a swipe forced a React render at pointerdown and another
+  // at pointerup — both landing on the frames that have the least budget to
+  // spare, and both re-rendering the whole carousel for a flag no rendered
+  // output depends on. `isPaused` never needed it either: every path that sets
+  // it also calls handleUserInteraction(true) in the same batch, and the 3s
+  // resume delay keeps isUserInteracting true well past the release. The
+  // autoplay interval reads it live here, which is more correct than the stale
+  // closure copy it used to read.
+  const isDraggingRef = useRef(false)
 
   // Pause autoplay while the tab is backgrounded. No point rotating (and firing
   // slide-view work) when nobody's looking, and it stops a flurry of catch-up
@@ -50,7 +58,6 @@ export const useCarousel = ({
 
   const paginate = useCallback(
     (newDirection: number) => {
-      setDirection(newDirection)
       setCurrentIndex((prevIndex) => {
         if (newDirection > 0) {
           return prevIndex === childrenCount - 1 ? 0 : prevIndex + 1
@@ -78,7 +85,7 @@ export const useCarousel = ({
     }
 
     autoPlayRef.current = setInterval(() => {
-      if (!isUserInteracting && !isDragging && !document.hidden) {
+      if (!isUserInteracting && !isDraggingRef.current && !document.hidden) {
         paginate(1)
       }
     }, autoPlayInterval)
@@ -88,7 +95,6 @@ export const useCarousel = ({
     paginate,
     childrenCount,
     isUserInteracting,
-    isDragging,
     isTabHidden,
     externalPaused,
   ])
@@ -152,7 +158,7 @@ export const useCarousel = ({
         return false // Prevent drag
       }
 
-      setIsDragging(true)
+      isDraggingRef.current = true
       handleUserInteraction(true)
     },
     [handleUserInteraction]
@@ -160,7 +166,7 @@ export const useCarousel = ({
 
   const handleDragEnd = useCallback(
     (event: any, info: PanInfo) => {
-      setIsDragging(false)
+      isDraggingRef.current = false
 
       // Measure the stage, not the event target. This used to read
       // `event.currentTarget.offsetWidth`, but on a pointerup React has already
@@ -243,21 +249,21 @@ export const useCarousel = ({
   const handleDotClick = useCallback(
     (index: number) => {
       handleUserInteraction(true)
-      setDirection(index > currentIndex ? 1 : -1)
       setCurrentIndex(index)
       handleUserInteraction(false)
     },
-    [currentIndex, handleUserInteraction]
+    // No longer depends on currentIndex, so this callback is now stable for the
+    // life of the carousel — the dot row stops getting fresh handlers on every
+    // slide change.
+    [handleUserInteraction]
   )
 
   return {
     currentIndex,
-    direction,
     isUserInteracting,
-    isDragging,
     isMounted,
     // For the autoplay progress bar: freeze it whenever the timer isn't running.
-    isPaused: isUserInteracting || isDragging || isTabHidden || externalPaused,
+    isPaused: isUserInteracting || isTabHidden || externalPaused,
     hasMultipleSlides,
     showAllDots,
     paginate,

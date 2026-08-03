@@ -11,7 +11,16 @@ interface BlurImageProps extends ImageProps {
   intro?: boolean
 }
 
-export function BlurredImage({
+// Memoised. Every prop this takes is a primitive (src, alt, className, sizes,
+// width/height, priority…), so a shallow compare is exact rather than a
+// heuristic — and the two callers that re-render most are the ones that hurt:
+// the hero carousel re-renders a slide whenever it becomes active, and the rails
+// re-render their rows on every infinite-scroll page. Both handed this component
+// byte-identical props and got a full next/image reconcile for it.
+//
+// Memo cannot make this stale: the fallback-chain state below is driven by the
+// `src` prop through a render-time snapshot, so a changed src always re-renders.
+export const BlurredImage = React.memo(function BlurredImage({
   src,
   alt,
   className,
@@ -171,4 +180,4 @@ export function BlurredImage({
       />
     </div>
   )
-}
+})

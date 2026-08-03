@@ -105,13 +105,46 @@ function wrappedOffset(i: number, current: number, count: number) {
   return d
 }
 
+// The memo boundary between the carousel's own state and the slide subtrees.
+//
+// `cloneElement` mints a NEW element every time this component renders, so
+// without a boundary every carousel re-render reconciled all three mounted
+// slides in full — and a slide is not cheap (backdrop, trailer preview, copy,
+// rating row, three buttons). The carousel re-renders far more often than a
+// slide actually changes: drag start, drag end, the pause registry when a
+// trailer arms, the deferred mount window, the 3s interaction timeout. None of
+// those alter a single slide prop.
+//
+// Memoised, only the two slides whose `active` genuinely flips re-render, and
+// only on an index change. Everything else stops at this boundary. `child` is
+// referentially stable because `childrenArray` is memoised on the `children`
+// prop — recomputing it per render would defeat this entirely.
+const SlideContent = React.memo(function SlideContent({
+  child,
+  active,
+}: {
+  child: React.ReactNode
+  active: boolean
+}) {
+  if (!React.isValidElement(child)) return <>{child}</>
+  return React.cloneElement(child as React.ReactElement<{ active?: boolean }>, {
+    active,
+  })
+})
+
 export function Carousel({
   children,
   autoPlay = true,
   autoPlayInterval = 5000,
   stageClassName = '',
 }: CarouselProps) {
-  const childrenArray = React.Children.toArray(children)
+  // Memoised, not recomputed: toArray re-keys and therefore RE-CREATES every
+  // child element, which would hand SlideContent a new `child` prop on every
+  // render and make the memo above a no-op.
+  const childrenArray = React.useMemo(
+    () => React.Children.toArray(children),
+    [children]
+  )
   const childrenCount = childrenArray.length
   const reduce = useReducedMotion()
 
@@ -365,12 +398,7 @@ export function Carousel({
         className={`relative overflow-hidden ${stageClassName}`}
         {...CAROUSEL_SINGLE_SLIDE_VARIANTS}
       >
-        {React.isValidElement(childrenArray[0])
-          ? React.cloneElement(
-              childrenArray[0] as React.ReactElement<{ active?: boolean }>,
-              { active: true }
-            )
-          : childrenArray[0]}
+        <SlideContent child={childrenArray[0]} active />
       </motion.div>
     )
   }
@@ -507,12 +535,7 @@ export function Carousel({
               >
                 {/* Tell the slide whether it's the one on screen, so touch devices
                   can autoplay the active slide's trailer preview (no hover). */}
-                {React.isValidElement(child)
-                  ? React.cloneElement(
-                      child as React.ReactElement<{ active?: boolean }>,
-                      { active }
-                    )
-                  : child}
+                <SlideContent child={child} active={active} />
                 {/* No edge overlays here any more — HeroSlide seals its own
                   edges permanently, so there is nothing to switch on and off as
                   the track moves. */}
