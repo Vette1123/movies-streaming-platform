@@ -188,7 +188,14 @@ const BUCKETS = [
     /^\/sw\.js$/,
   ],
   ['bot: PHP/WordPress probes', /wp-|\.php$|\.env|\/admin/i],
-  ['bot: image crawler on stale URLs', /^\/[A-Za-z0-9_-]{20,32}\.(jpg|png)$/],
+  // Bare TMDB paths, plus the fragments a naive crawler produces by splitting an
+  // ImageKit srcset URL on the commas inside it: "/tr:w-500,q-82,f-auto/w500/x.jpg"
+  // becomes a request for "/f-auto/w500/x.jpg". Every image URL the site actually
+  // emits is absolute and correct, so 404 is the right answer to all of these.
+  [
+    'bot: image crawler on stale/mis-split URLs',
+    /^\/([A-Za-z0-9_-]{20,32}\.(jpg|png)$|(f-auto|f-webp|pr-true|q-\d+)\/)/,
+  ],
   [
     'bot: doubled path from bad referrers',
     /^\/(movies|tv-shows)\/\d+\/(movies|tv-shows)\/\d+/,
@@ -232,6 +239,56 @@ async function checkClientErrors(zone) {
   }
 }
 
+/**
+ * Hour-by-hour kills and eyeball 5xx, printed only when something failed.
+ *
+ * "Is this a live regression, or does my window just span a fix?" is always the
+ * next question, and a 24h aggregate cannot answer it — the run right after the
+ * static-export deploy failed on 7,670 real 503s that had all stopped hours
+ * earlier. One glance at the timeline settles it.
+ */
+async function showTimeline(zone) {
+  const window = `datetime_geq:"${SINCE}",datetime_leq:"${UNTIL}"`
+  const [{ accounts }, { zones }] = await Promise.all([
+    gql(`query{viewer{accounts(filter:{accountTag:"${ACCOUNT_ID}"}){
+      workersInvocationsAdaptive(limit:1000,filter:{${window},scriptName:"${SCRIPT_NAME}"},orderBy:[datetimeHour_ASC]){
+        dimensions{datetimeHour status} sum{requests}}}}}`),
+    gql(`query{viewer{zones(filter:{zoneTag:"${zone}"}){
+      httpRequestsAdaptiveGroups(limit:1000,filter:{${window},requestSource:"eyeball",edgeResponseStatus_geq:500},orderBy:[datetimeHour_ASC]){
+        count dimensions{datetimeHour}}}}}`),
+  ])
+
+  const hours = new Map()
+  const at = (hour) => {
+    if (!hours.has(hour))
+      hours.set(hour, { invocations: 0, killed: 0, http5xx: 0 })
+    return hours.get(hour)
+  }
+  const KILL_STATUSES = new Set([
+    'exceededResources',
+    'exceededMemory',
+    'exceededCpu',
+    'scriptThrewException',
+  ])
+  for (const row of accounts[0].workersInvocationsAdaptive) {
+    const hour = at(row.dimensions.datetimeHour)
+    hour.invocations += row.sum.requests
+    if (KILL_STATUSES.has(row.dimensions.status))
+      hour.killed += row.sum.requests
+  }
+  for (const row of zones[0].httpRequestsAdaptiveGroups) {
+    at(row.dimensions.datetimeHour).http5xx += row.count
+  }
+
+  console.log('\n  hour (UTC)         invocations  killed   eyeball 5xx')
+  for (const [hour, v] of [...hours].sort()) {
+    const flag = v.killed || v.http5xx ? ' ←' : ''
+    console.log(
+      `    ${hour.slice(0, 16)}  ${String(v.invocations).padStart(9)}  ${String(v.killed).padStart(6)}  ${String(v.http5xx).padStart(11)}${flag}`
+    )
+  }
+}
+
 const zone = await zoneId()
 console.log(
   `${ZONE_NAME} / ${SCRIPT_NAME} — last ${HOURS}h (${SINCE} → ${UNTIL})\n`
@@ -241,6 +298,7 @@ await checkEyeball(zone)
 await checkClientErrors(zone)
 
 const failed = results.filter((r) => !r.ok)
+if (failed.length) await showTimeline(zone)
 console.log(
   failed.length
     ? `\n✗ ${failed.length} check(s) failed: ${failed.map((r) => r.label.split(':')[0]).join(', ')}`
