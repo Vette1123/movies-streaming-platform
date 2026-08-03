@@ -184,10 +184,16 @@ export function HeroSlide({
     }
   }
 
-  // Trailer autoplay is opt-out: on by default, persisted per user. Governs both
-  // the touch active-slide autoplay AND the desktop hover/active preview, so the
-  // one toggle fully turns trailer previews off everywhere.
-  const { enabled: autoplayEnabled, toggle: toggleAutoplay } = useHeroAutoplay()
+  // Trailer autoplay is opt-out, persisted per user. Governs both the touch
+  // active-slide autoplay AND the desktop hover/active preview, so the one
+  // toggle fully turns trailer previews off everywhere.
+  //
+  // The device tier only picks the DEFAULT (weak phones start off, everything
+  // else starts on) — it is not a second gate below the toggle. It used to be,
+  // and since practically every phone reads as low power, the toggle showed ON
+  // on mobile while the trailer could never actually start.
+  const { enabled: autoplayEnabled, toggle: toggleAutoplay } =
+    useHeroAutoplay(!lowPower)
 
   // Full-view (native browser fullscreen) of the playing trailer. Ref points at
   // the trailer cover element; fullscreen it directly so the video owns the
@@ -258,7 +264,7 @@ export function HeroSlide({
   // never rotates away mid-trailer; a swipe still advances manually. When the
   // slide goes inactive the cleanup unmounts it.
   React.useEffect(() => {
-    if (reduce || lowPower || !trailerKey || !active || !autoplayEnabled) return
+    if (reduce || !trailerKey || !active || !autoplayEnabled) return
     const t = setTimeout(
       () => setPreviewActive(true),
       hasHover ? HOVER_PREVIEW_DELAY : TOUCH_PREVIEW_DELAY
@@ -267,7 +273,7 @@ export function HeroSlide({
       clearTimeout(t)
       setPreviewActive(false)
     }
-  }, [hasHover, reduce, lowPower, trailerKey, active, autoplayEnabled])
+  }, [hasHover, reduce, trailerKey, active, autoplayEnabled])
 
   const href = mediaDetailHref(mediaType, movie.id)
 

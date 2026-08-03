@@ -2,16 +2,23 @@
 
 import { useCallback, useSyncExternalStore } from 'react'
 
-// Persisted user preference: should the hero autoplay muted trailer previews on
-// touch devices? Default ON (empty/unknown === on); the user can opt out and it
-// sticks across slides, reloads, and tabs.
+// Persisted user preference: should the hero autoplay muted trailer previews?
+// Tri-state on purpose — 'on' / 'off' / unset. Unset falls back to `defaultOn`,
+// which the caller derives from the device tier (weak phones default off, see
+// use-device-tier). An EXPLICIT choice always beats the heuristic: the device
+// tier may pick the default, it may not override the user. Previously the tier
+// gated playback directly, so on a phone the toggle read ON while the trailer
+// could never start.
 const KEY = 'reely:hero-autoplay'
 
 const listeners = new Set<() => void>()
 
-function isOn(): boolean {
-  if (typeof window === 'undefined') return true
-  return window.localStorage.getItem(KEY) !== 'off'
+function isOn(defaultOn: boolean): boolean {
+  if (typeof window === 'undefined') return defaultOn
+  const stored = window.localStorage.getItem(KEY)
+  if (stored === 'on') return true
+  if (stored === 'off') return false
+  return defaultOn
 }
 
 function subscribe(cb: () => void): () => void {
@@ -36,11 +43,24 @@ export function setHeroAutoplay(on: boolean): void {
 
 /**
  * Read + toggle the hero trailer-autoplay preference. useSyncExternalStore keeps
- * the SSR/first-client render (always ON) consistent, then reconciles to the
+ * the SSR/first-client render (`defaultOn`) consistent, then reconciles to the
  * stored value after hydration without a mismatch.
+ *
+ * `defaultOn` only decides what "never chosen" means; once the user touches the
+ * toggle their choice is what's read back, on every device.
  */
-export function useHeroAutoplay(): { enabled: boolean; toggle: () => void } {
-  const enabled = useSyncExternalStore(subscribe, isOn, () => true)
-  const toggle = useCallback(() => setHeroAutoplay(!isOn()), [])
+export function useHeroAutoplay(defaultOn: boolean): {
+  enabled: boolean
+  toggle: () => void
+} {
+  const read = useCallback(() => isOn(defaultOn), [defaultOn])
+  // getServerSnapshot must return what the SERVER rendered, and it is called on
+  // the client too — during hydration. Passing `read` here looked harmless but
+  // reintroduced a hydration mismatch: on the server `isOn` short-circuits on
+  // `typeof window === 'undefined'` and yields `defaultOn`, while the same
+  // function on the client reads localStorage and could answer 'on' against
+  // HTML that was exported as off. So this deliberately ignores storage.
+  const enabled = useSyncExternalStore(subscribe, read, () => defaultOn)
+  const toggle = useCallback(() => setHeroAutoplay(!read()), [read])
   return { enabled, toggle }
 }

@@ -15,8 +15,13 @@ import React from 'react'
 //
 // So the ambience is treated as an enhancement and skipped where it hurts. The
 // slide, its artwork, the copy and the controls are identical either way — you
-// lose the drifting zoom and the automatic trailer, not the hero. The trailer
+// lose the drifting zoom, and trailer autoplay starts turned OFF. The trailer
 // button still works on every device.
+//
+// This is a DEFAULT, not a veto: the hero's autoplay toggle writes an explicit
+// preference that wins over this heuristic (see use-hero-autoplay). Gating
+// playback on the tier directly meant a phone showed the toggle switched on
+// while no trailer could ever start.
 
 /** Signals that mean "do not spend anything optional here". */
 function detectLowPower(): boolean {
@@ -48,10 +53,24 @@ function detectLowPower(): boolean {
 
 /**
  * True when the device should not be asked to run the hero's optional ambient
- * effects. Read once at mount: these values do not change, and re-reading them
- * per slide would be pure overhead.
+ * effects. Read once after mount: these values do not change, and re-reading
+ * them per slide would be pure overhead.
+ *
+ * Deliberately starts at `true` and lowers to the real answer in an effect,
+ * rather than seeding useState with `detectLowPower`. A useState initializer
+ * runs during the HYDRATION render, where `navigator` is real — so a capable
+ * desktop computed `false` on the very first client render while the exported
+ * HTML said `true`, and the hero backdrop hydrated with `animate-hero-kenburns`
+ * against markup that had no such class. React reports that as "a tree hydrated
+ * but some attributes of the server rendered HTML didn't match" and, as the
+ * message says, does NOT patch it up.
+ *
+ * The cost is one extra render on capable devices and the Ken Burns starting a
+ * frame later. That is the right trade for ambience: it is an enhancement, and
+ * an enhancement must never be what breaks hydration for the page under it.
  */
 export function useLowPowerDevice(): boolean {
-  const [lowPower] = React.useState(detectLowPower)
+  const [lowPower, setLowPower] = React.useState(true)
+  React.useEffect(() => setLowPower(detectLowPower()), [])
   return lowPower
 }
