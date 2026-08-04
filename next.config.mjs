@@ -46,6 +46,11 @@ const baseConfig = {
     ],
   },
   typescript: { ignoreBuildErrors: false },
+  // Next 16.3 appends a `<!-- BEGIN:nextjs-agent-rules -->` block to CLAUDE.md
+  // on every `next dev` boot. This file is hand-maintained and the block comes
+  // back after any manual removal, so a permanently dirty working tree is the
+  // only other option.
+  agentRules: false,
   // Drop `X-Powered-By: Next.js` — free stack fingerprint for scanners, and it
   // rides on every single response.
   poweredByHeader: false,

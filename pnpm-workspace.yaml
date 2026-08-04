@@ -1,6 +1,6 @@
 overrides:
-  "@types/react": 19.2.17
-  "@types/react-dom": 19.2.3
+  "@types/react": 19.2.18
+  "@types/react-dom": 19.2.4
   # One sharp for the whole tree. The build scripts use sharp directly to
   # squeeze the pre-rendered PNGs in public/, and adding it as a devDependency
   # also made next's own optional sharp@0.34.5 resolvable for the first time —
