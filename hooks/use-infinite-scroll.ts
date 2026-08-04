@@ -21,7 +21,7 @@ interface Props {
 export const useInfiniteScroll = ({ media, queryKey }: Props) => {
   const mediaType = queryKey === QUERY_KEYS.MOVIES_KEY ? 'movie' : 'tv'
 
-  const { data, fetchNextPage, isFetchingNextPage, hasNextPage } =
+  const { data, fetchNextPage, isFetchingNextPage, hasNextPage, isError } =
     useInfiniteQuery({
       queryKey: [queryKey],
       initialPageParam: 0,
@@ -39,5 +39,6 @@ export const useInfiniteScroll = ({ media, queryKey }: Props) => {
     fetchNextPage,
     isFetchingNextPage,
     hasNextPage,
+    isError,
   }
 }

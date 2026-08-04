@@ -225,6 +225,7 @@ export const useMediaFilter = ({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetching,
     isLoading,
     isError,
     refetch,
@@ -353,6 +354,7 @@ export const useMediaFilter = ({
     data,
     isLoading,
     isError,
+    isFetching,
     hasNextPage,
     isFetchingNextPage,
 

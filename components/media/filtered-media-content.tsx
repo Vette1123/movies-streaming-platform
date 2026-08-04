@@ -16,6 +16,7 @@ import { FilterDebug } from './filter-debug'
 import { FilterDialog } from './filter-dialog'
 import { FilterSheet } from './filter-sheet'
 import { FilterSidebar } from './filter-sidebar'
+import { ListLoadError } from './list-load-error'
 
 interface FilteredMediaContentProps {
   initialData: MediaResponse
@@ -47,6 +48,9 @@ export const FilteredMediaContent = ({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetching,
+    isError,
+    refetch,
   } = useMediaFilter({ mediaType, initialData })
 
   const [myRef, inView] = useInView({
@@ -57,16 +61,32 @@ export const FilteredMediaContent = ({
     rootMargin: '0px 0px 900px 0px',
   })
 
-  // Optimized infinite scroll with debounce to prevent multiple rapid calls
+  // Optimized infinite scroll with debounce to prevent multiple rapid calls.
+  // Gated on `!isError` for the same reason as the genre grid: a failed page
+  // leaves the sentinel parked in view, and without this the effect re-fires
+  // fetchNextPage on every render for as long as the failure lasts.
   React.useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage && !isLoading) {
+    if (
+      inView &&
+      hasNextPage &&
+      !isFetchingNextPage &&
+      !isLoading &&
+      !isError
+    ) {
       const timeoutId = setTimeout(() => {
         fetchNextPage()
       }, 100) // Small debounce to prevent rapid calls
 
       return () => clearTimeout(timeoutId)
     }
-  }, [inView, hasNextPage, isFetchingNextPage, isLoading, fetchNextPage])
+  }, [
+    inView,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    fetchNextPage,
+  ])
 
   // Suppress the global site footer while more pages exist. The footer is the
   // last element in the root layout and shorter than the viewport, so a
@@ -87,6 +107,15 @@ export const FilteredMediaContent = ({
   }, [])
 
   const pages = data?.pages || []
+  const hasItems = pages.some((page) => (page?.results?.length ?? 0) > 0)
+  // A settled query with zero pages can only mean the first fetch failed — a
+  // successful one always yields a page, even an empty-results one. Deliberately
+  // NOT keyed on `isError`: refetch() clears the error while it re-runs, and if
+  // the retry fails too the flag doesn't reliably come back, which left the grid
+  // blank forever again the moment the user pressed Try again.
+  const isBusy = isLoading || isFetching
+  const showFullError = !isBusy && pages.length === 0
+  const showInitialSkeleton = isBusy && pages.length === 0
 
   const renderFilter = () => {
     switch (layout) {
@@ -187,40 +216,56 @@ export const FilteredMediaContent = ({
 
           {/* Content Grid - Always rendered to prevent layout shift */}
           <div className="space-y-8">
-            {/* Initial Loading State */}
-            {isLoading && pages.length === 0 ? (
-              <MediaGridSkeleton count={20} />
-            ) : (
+            {/* Fetch failed before anything rendered. This branch is what keeps
+                a failed /api/filter from leaving the grid on skeletons forever:
+                react-query gives up, isLoading drops, and every other branch
+                below needs a loaded page it will never get. */}
+            {showFullError && <ListLoadError isEmpty onRetry={refetch} />}
+
+            {!showFullError && (
               <>
+                {/* Initial Loading State */}
+                {showInitialSkeleton && <MediaGridSkeleton count={20} />}
+
                 {/* Results Grid. The "load more" skeletons live INSIDE this same
                     grid (not a detached grid below), so they continue the exact
                     row layout — filling the last partial row first — and the real
                     cards then replace them cell-for-cell. That's what keeps the
                     footer from lurching when a page lands: the reserved height
                     never changes across skeleton → real. */}
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                  {pages.map((page, index) => (
-                    <React.Fragment key={index}>
-                      {page?.results?.map((item) => (
-                        <Card
-                          key={item.id}
-                          item={item as MediaType}
-                          isTruncateOverview={false}
-                          itemType={mediaType}
-                        />
-                      ))}
-                    </React.Fragment>
-                  ))}
-                  {isFetchingNextPage && <GridSkeletonCells count={10} />}
-                </div>
+                {!showInitialSkeleton && (
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                    {pages.map((page, index) => (
+                      <React.Fragment key={index}>
+                        {page?.results?.map((item) => (
+                          <Card
+                            key={item.id}
+                            item={item as MediaType}
+                            isTruncateOverview={false}
+                            itemType={mediaType}
+                          />
+                        ))}
+                      </React.Fragment>
+                    ))}
+                    {isFetchingNextPage && <GridSkeletonCells count={10} />}
+                  </div>
+                )}
               </>
             )}
 
-            {/* Infinite Scroll Trigger */}
-            <div ref={myRef} className="h-10" />
+            {/* A later page failed — keep the cards already on screen and offer
+                a manual retry instead of dead-ending the list. */}
+            {isError && hasItems && !isFetchingNextPage && (
+              <ListLoadError isEmpty={false} onRetry={fetchNextPage} />
+            )}
+
+            {/* Infinite Scroll Trigger. Removed on error so it cannot sit parked
+                in view re-triggering the auto-fetch; the retry button owns it. */}
+            {!isError && <div ref={myRef} className="h-10" />}
 
             {/* No More Results */}
             {!isLoading &&
+              !isError &&
               !isFetchingNextPage &&
               !hasNextPage &&
               pages.length > 0 &&
@@ -232,6 +277,7 @@ export const FilteredMediaContent = ({
 
             {/* No Results */}
             {!isLoading &&
+              !isError &&
               pages.length > 0 &&
               (pages[0]?.results?.length ?? 0) === 0 && (
                 <EmptyState

@@ -6,9 +6,10 @@ import { useInView } from 'react-intersection-observer'
 
 import { MediaResponse, MediaType } from '@/types/media'
 import { discoverApi } from '@/lib/api-client'
-import { Button } from '@/components/ui/button'
 import { Card } from '@/components/card'
 import { MediaGridSkeleton } from '@/components/loaders/media-grid-skeleton'
+
+import { ListLoadError } from './list-load-error'
 
 interface GenreMediaGridProps {
   mediaType: 'movie' | 'tv'
@@ -37,6 +38,7 @@ export const GenreMediaGrid = ({
     isFetching,
     isFetchingNextPage,
     isError,
+    refetch,
   } = useInfiniteQuery({
     // Genre-scoped key so each genre keeps its own cache (the shared browse
     // hook keys only on media type and would collide across genres).
@@ -85,6 +87,12 @@ export const GenreMediaGrid = ({
     return <MediaGridSkeleton count={10} />
   }
 
+  // An errored page 1 has no results either, so it must be told apart from a
+  // genuinely empty genre — otherwise a failed fetch reads as "no titles here".
+  if (items.length === 0 && isError) {
+    return <ListLoadError isEmpty onRetry={refetch} />
+  }
+
   if (items.length === 0) {
     return (
       <p className="text-muted-foreground py-20 text-center">
@@ -111,14 +119,7 @@ export const GenreMediaGrid = ({
       {/* Auto-load failed (network, or a CF challenge blocking the server action
           on privacy browsers). Don't dead-end the list — let the user retry. */}
       {isError && !isFetchingNextPage && (
-        <div className="flex flex-col items-center gap-3 py-8">
-          <p className="text-muted-foreground text-sm">
-            Couldn&apos;t load more titles.
-          </p>
-          <Button variant="outline" onClick={() => fetchNextPage()}>
-            Try again
-          </Button>
-        </div>
+        <ListLoadError isEmpty={false} onRetry={fetchNextPage} />
       )}
 
       {/* Sentinel drives infinite scroll; hidden on error so it can't retrigger
