@@ -9,7 +9,7 @@
 // Output is a single ESM file with no external imports, which is exactly what
 // `main` in wrangler.jsonc expects.
 
-import { readFile, rm } from 'node:fs/promises'
+import { readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as esbuild from 'esbuild'
@@ -37,6 +37,28 @@ await rm(path.join(root, '.cloudflare'), { recursive: true, force: true })
 const buildId = await readFile(path.join(root, '.next', 'BUILD_ID'), 'utf8')
   .then((id) => id.trim())
   .catch(() => 'dev')
+
+// The same id goes into the exported service worker. `public/sw.js` ships a
+// literal `__BUILD_ID__`; stamping it here is what makes /sw.js differ byte-wise
+// between deploys, which is the only signal the browser accepts as "there is a
+// new worker" — see the comment on CACHE in public/sw.js. Assert rather than
+// silently skip: a missed substitution costs nothing at build time and leaves
+// every installed PWA frozen on this build until it happens to navigate.
+await (async () => {
+  const swPath = path.join(root, 'out', 'sw.js')
+  const source = await readFile(swPath, 'utf8').catch(() => null)
+  if (source === null) {
+    throw new Error(`sw.js missing from the export (${swPath})`)
+  }
+  if (!source.includes('__BUILD_ID__')) {
+    // Already stamped with this build: re-running the bundler on an export that
+    // next build didn't just overwrite. Anything else means the placeholder is
+    // gone from public/sw.js and every installed PWA would freeze here.
+    if (source.includes(buildId)) return
+    throw new Error('sw.js has no __BUILD_ID__ placeholder left to stamp')
+  }
+  await writeFile(swPath, source.replaceAll('__BUILD_ID__', buildId))
+})()
 
 /**
  * Pre-split the exported fallback shells so the Worker never has to parse HTML.

@@ -12,13 +12,20 @@
  * Its real jobs: (1) satisfy the install criteria, (2) cache-first the immutable
  * hashed build assets for instant loads, (3) show a friendly offline page.
  *
- * Bump CACHE to invalidate everything on the next visit.
+ * Bump BUILD (or just deploy) to invalidate everything on the next visit.
  */
-// v2 also evicts every entry v1 poisoned: putInCache used to store non-OK
-// responses, so a chunk URL the Worker answered with its HTML 404 page was
-// cached as `text/html` forever, and the browser refused to execute it on every
-// later visit. The activate handler below deletes any cache that isn't CACHE.
-const CACHE = 'reely-v2'
+// `__BUILD_ID__` is replaced with the Next build id by scripts/build-worker.mjs.
+// Two jobs, both required for an installed PWA to ever see a new deploy:
+//   - It makes this file's BYTES change every build. A byte-identical /sw.js is
+//     not an update as far as the browser is concerned, so without it the
+//     `registration.update()` in components/pwa/service-worker-register.tsx has
+//     nothing to install and a standalone window can run a retired build for
+//     days.
+//   - It scopes the cache to one build, so the activate handler below drops the
+//     previous build's entries instead of serving chunk URLs the deploy deleted.
+// It stays literal in `next dev` / a non-export build; the SW is not registered
+// in dev, and one stable cache name there is harmless.
+const CACHE = 'reely-__BUILD_ID__'
 const OFFLINE_URL = '/offline.html'
 const PRECACHE = [OFFLINE_URL]
 
