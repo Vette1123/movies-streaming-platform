@@ -600,12 +600,27 @@ async function main() {
   // Free-plan Bot Fight Mode is intentionally OFF — it runs before the WAF
   // phases so ALLOW_RULE can't exempt Googlebot/GSC, and left on it serves the
   // "Just a moment..." challenge that breaks sitemap fetching + indexing.
+  //
+  // JavaScript Detections goes off with it, and for a plainer reason: nothing
+  // here reads what it produces. It injects /cdn-cgi/challenge-platform/scripts/
+  // jsd/main.js into every HTML response to compute a bot SCORE — and every rule
+  // in this file classifies on user-agent strings and `cf.client.bot` instead
+  // (BLOCK_RULE, CHALLENGE_DETAIL_SCRAPERS_RULE), while the score itself is a
+  // paid Bot Management feature we don't have. So it was a script every real
+  // visitor executed to feed a signal no rule consults.
+  //
+  // It is not free: measured 2026-08-06 on mobile prod, jsd/main.js is a 360ms
+  // long task on /disclaimer — a page that is otherwise static text and whose
+  // TOTAL blocking time is ~1,020ms — and 434ms on the homepage, the second
+  // largest long task there. Nothing defensive is lost: the UA rules, the
+  // managed challenges, the rate limit and AI-bot blocking are all independent
+  // of it.
   await step(
-    'Bot Fight Mode off (needs Zone Bot Management: Edit)',
+    'Bot Fight Mode + JS Detections off (needs Zone Bot Management: Edit)',
     async () => {
       await cf(`/zones/${zoneId}/bot_management`, {
         method: 'PUT',
-        body: JSON.stringify({ fight_mode: false }),
+        body: JSON.stringify({ fight_mode: false, enable_js: false }),
       })
     }
   )

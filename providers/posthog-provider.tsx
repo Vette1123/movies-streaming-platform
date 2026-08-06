@@ -179,13 +179,54 @@ const POSTHOG_CONFIG = {
   // profile-less. 'always' gives each visitor a person profile enriched
   // with geo / device / UTM (auto) plus our own props (see lib/person.ts).
   person_profiles: 'always' as const,
-  // Session replay.
+  // Session replay. Whether it runs at all is decided per session — see
+  // shouldRecordSession; this value is overridden at init.
   disable_session_recording: false,
   session_recording: {
     maskAllInputs: true,
     maskTextSelector: '[data-ph-mask]',
     recordCrossOriginIframes: false,
   },
+}
+
+/**
+ * Fraction of sessions that get a session replay.
+ *
+ * Recording every session cost every visitor the recorder bundle: 57KB and a
+ * 383ms long task, measured on the mobile homepage, where it was one of the
+ * largest single blocking tasks on the page. Replays are a debugging tool
+ * consumed a handful at a time, so paying for them on 100% of sessions buys
+ * volume nobody watches at a price everybody pays.
+ */
+const REPLAY_SAMPLE_RATE = 0.1
+
+/** sessionStorage key holding this session's sampling verdict. */
+const REPLAY_KEY = 'reely:ph-replay'
+
+/**
+ * Decide once per session whether to record, and remember it.
+ *
+ * Rolling per page LOAD instead would shred a session across navigations —
+ * three pages recorded, two missing, and the replay of a bug report jumps a gap
+ * exactly where the interesting thing happened. A partial replay is worse than
+ * no replay, because you cannot tell which one you are looking at. So the
+ * verdict is taken on the first load of a session and reused for the rest of it.
+ *
+ * Falls back to recording when sessionStorage is unavailable (private mode,
+ * blocked storage): the failure that keeps the feature working is the better
+ * one, and those sessions are rare enough not to move the sample.
+ */
+function shouldRecordSession(): boolean {
+  try {
+    const stored = window.sessionStorage.getItem(REPLAY_KEY)
+    if (stored === 'on') return true
+    if (stored === 'off') return false
+    const record = Math.random() < REPLAY_SAMPLE_RATE
+    window.sessionStorage.setItem(REPLAY_KEY, record ? 'on' : 'off')
+    return record
+  } catch {
+    return true
+  }
 }
 
 let initialized = false
@@ -210,7 +251,12 @@ async function initPosthog() {
   initialized = true
   const posthog = await loadPostHog()
   if (!posthog) return
-  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, POSTHOG_CONFIG)
+  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
+    ...POSTHOG_CONFIG,
+    // Rolled here rather than in the const so it is a client-side decision made
+    // at init, not a value baked in when the module first evaluates.
+    disable_session_recording: !shouldRecordSession(),
+  })
   // The deferred init means the first $pageview (which <PostHogPageView> gates
   // on `initialized`) was skipped during the pre-init window. Capture it now so
   // the landing visit is attributed — equivalent to the eager path.
