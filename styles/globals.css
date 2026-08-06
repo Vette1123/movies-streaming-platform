@@ -48,6 +48,15 @@
   /* Slow cinematic push-in for hero artwork; longer than the 5s autoplay so
      each slide keeps drifting and never settles. Reduced-motion opts out. */
   --animate-hero-kenburns: hero-kenburns 14s ease-out both;
+  /* Entrance for the empty/error state's stack: fade up, staggered by an inline
+     animation-delay per child. This exists in CSS rather than framer-motion
+     because its only consumer (components/ui/empty-state.tsx) is reachable from
+     app/error.tsx — the ROOT error boundary, which Next bundles into every
+     route's client JS. One `motion.div` there put 145KB of framer (48KB over the
+     wire) on every page of the site to animate a screen that almost never
+     renders. `both` holds the opening frame so nothing flashes before its delay
+     elapses. */
+  --animate-rise-in: rise-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 
   @keyframes accordion-down {
     from {
@@ -95,6 +104,16 @@
     }
     to {
       transform: scale(1.16) translate3d(-1.2%, -1.4%, 0);
+    }
+  }
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
     }
   }
   /* Autoplay progress fill — transform-only (GPU) so the bar is cheap to run
@@ -277,6 +296,18 @@
   .site-aurora::before,
   .site-aurora::after {
     animation: none;
+  }
+  /* Same entrance, minus the movement. Redefining the keyframes keeps one class
+     and one set of delays at the call site — and unlike framer's
+     useReducedMotion, the preference is honoured by the first painted frame
+     rather than after hydration reads it. */
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 }
 

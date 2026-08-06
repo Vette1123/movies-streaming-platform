@@ -2,7 +2,6 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { motion, useReducedMotion } from 'framer-motion'
 import type { LucideIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -25,6 +24,22 @@ interface EmptyStateProps {
   secondaryAction?: EmptyStateAction
   className?: string
 }
+
+// The stack fades up one element at a time. This was a framer-motion variant
+// stagger, which is a heavy way to buy four animation-delays: this component is
+// reachable from app/error.tsx, the ROOT error boundary, and Next bundles that
+// into every route's client JS — so the library rode along on every page of the
+// site (145KB raw / 48KB transferred, measured) to animate a screen almost
+// nobody sees. The CSS keyframes are in styles/globals.css, including the
+// reduced-motion variant, so nothing here has to wait for hydration to know
+// which one to run.
+const STAGGER_MS = 80
+const STAGGER_DELAY_MS = 40
+
+/** Inline `animation-delay` for the nth element in the entrance sequence. */
+const riseDelay = (index: number): React.CSSProperties => ({
+  animationDelay: `${STAGGER_DELAY_MS + index * STAGGER_MS}ms`,
+})
 
 // A ghost poster echoes the real WatchedItemCard's 2:3 shape, so the empty
 // state previews the grid that will eventually fill this space.
@@ -87,28 +102,8 @@ export function EmptyState({
   secondaryAction,
   className,
 }: EmptyStateProps) {
-  const reduce = useReducedMotion()
-
-  const container = {
-    hidden: {},
-    show: {
-      transition: { staggerChildren: reduce ? 0 : 0.08, delayChildren: 0.04 },
-    },
-  }
-  const item = {
-    hidden: reduce ? { opacity: 0 } : { opacity: 0, y: 12 },
-    show: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const },
-    },
-  }
-
   return (
-    <motion.div
-      variants={container}
-      initial="hidden"
-      animate="show"
+    <div
       role="status"
       aria-live="polite"
       className={cn(
@@ -117,9 +112,9 @@ export function EmptyState({
       )}
     >
       {/* Signature: a fanned trio of ghost posters with a floating medallion. */}
-      <motion.div
-        variants={item}
-        className="relative mb-8 flex items-end justify-center"
+      <div
+        style={riseDelay(0)}
+        className="animate-rise-in relative mb-8 flex items-end justify-center"
       >
         <div
           aria-hidden
@@ -131,25 +126,25 @@ export function EmptyState({
         <div className="bg-background/70 ring-primary/20 absolute top-1/2 left-1/2 z-20 grid size-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-2xl border border-cyan-300/30 text-cyan-300 shadow-xl ring-1 backdrop-blur-md">
           <Icon className="size-7" aria-hidden />
         </div>
-      </motion.div>
+      </div>
 
-      <motion.h2
-        variants={item}
-        className="text-foreground text-xl font-semibold text-balance sm:text-2xl"
+      <h2
+        style={riseDelay(1)}
+        className="animate-rise-in text-foreground text-xl font-semibold text-balance sm:text-2xl"
       >
         {title}
-      </motion.h2>
-      <motion.p
-        variants={item}
-        className="text-muted-foreground mt-2 max-w-sm text-sm leading-relaxed text-pretty sm:text-base"
+      </h2>
+      <p
+        style={riseDelay(2)}
+        className="animate-rise-in text-muted-foreground mt-2 max-w-sm text-sm leading-relaxed text-pretty sm:text-base"
       >
         {description}
-      </motion.p>
+      </p>
 
       {(primaryAction || secondaryAction) && (
-        <motion.div
-          variants={item}
-          className="mt-7 flex flex-wrap items-center justify-center gap-3"
+        <div
+          style={riseDelay(3)}
+          className="animate-rise-in mt-7 flex flex-wrap items-center justify-center gap-3"
         >
           {primaryAction && (
             <ActionButton
@@ -164,8 +159,8 @@ export function EmptyState({
               className="text-muted-foreground hover:text-foreground gap-2 rounded-full"
             />
           )}
-        </motion.div>
+        </div>
       )}
-    </motion.div>
+    </div>
   )
 }
