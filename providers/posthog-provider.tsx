@@ -10,6 +10,7 @@ import {
   isStaleDeployError,
   isTransportError,
 } from '@/lib/client-errors'
+import { onIdle } from '@/lib/idle'
 import { enrichPersonProfile } from '@/lib/person'
 import { analyticsEnabled, loadPostHog, ph } from '@/lib/posthog-client'
 
@@ -228,15 +229,24 @@ async function initPosthog() {
 function scheduleInit() {
   if (typeof window === 'undefined' || initialized) return
 
-  // requestIdleCallback's { timeout } is a HARD ceiling: if the browser hasn't
-  // gone idle within 2s, it runs anyway. This guarantees analytics never waits
-  // indefinitely on a busy main thread, while still keeping init off the LCP/INP
-  // critical path in the common (idle-soon) case.
-  const ric = (window as { requestIdleCallback?: typeof requestIdleCallback })
-    .requestIdleCallback
-  const handle: number = ric
-    ? ric(initPosthog, { timeout: 2000 })
-    : (window.setTimeout(initPosthog, 1) as number)
+  // A prerendered page (speculation rules, or Cloudflare's Speed Brain if it
+  // ever moves past prefetch) runs all of this in a hidden background renderer
+  // for a navigation that may never happen — including the idle callback and its
+  // timeout. Initing there would bill a $pageview to a visit nobody made. Chrome
+  // exposes `document.prerendering` for exactly this: hold off, and re-enter on
+  // `prerenderingchange`, which fires when the page is actually activated.
+  if ((document as Document & { prerendering?: boolean }).prerendering) {
+    document.addEventListener('prerenderingchange', scheduleInit, {
+      once: true,
+    })
+    return
+  }
+
+  // The { timeout } is a HARD ceiling: if the browser hasn't gone idle within 2s,
+  // it runs anyway. Analytics never waits indefinitely on a busy main thread,
+  // while init stays off the LCP/INP critical path in the common (idle-soon)
+  // case.
+  const cancelIdle = onIdle(initPosthog, 2000)
 
   const events: (keyof WindowEventMap)[] = [
     'pointerdown',
@@ -248,11 +258,7 @@ function scheduleInit() {
   const onFirstGesture = () => {
     if (flushed) return
     flushed = true
-    const w = window as Window & {
-      cancelIdleCallback?: (handle: number) => void
-    }
-    if (typeof w.cancelIdleCallback === 'function') w.cancelIdleCallback(handle)
-    else window.clearTimeout(handle)
+    cancelIdle()
     void initPosthog()
     for (const e of events) window.removeEventListener(e, onFirstGesture, true)
   }

@@ -11,6 +11,17 @@ const SEARCH_DEBOUNCE = 400
 // page weight.
 const RAIL_LIMIT = 12
 
+// How many slides the homepage hero carries. The rails got capped for page
+// weight and the hero never did, even though it is the more expensive of the two
+// per item: every slide ships a full TMDB object in the RSC flight payload AND
+// costs a build-time TMDB request of its own to resolve its trailer + title logo
+// (services/hero-extras.ts). The carousel renders a 3-slide window and it is a
+// homepage banner, not a catalogue — the tail of a 20-slide deck was paid for on
+// every single load and reached by nobody. 12 matches RAIL_LIMIT: still a 40%
+// cut, and it leaves the deck long enough to keep browsing rather than trimming
+// it to the few slides a median visitor sees.
+const HERO_LIMIT = 12
+
 export {
   TOP_OFFSET,
   STREAMING_MOVIES_API_URL,
@@ -18,4 +29,5 @@ export {
   SEARCH_DEBOUNCE,
   IMAGE_CACHE_HOST_URL,
   RAIL_LIMIT,
+  HERO_LIMIT,
 }

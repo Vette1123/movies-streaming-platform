@@ -18,7 +18,7 @@ import {
   MultiRequestProps,
   Param,
 } from '@/types/movie-result'
-import { RAIL_LIMIT } from '@/lib/constants'
+import { HERO_LIMIT, RAIL_LIMIT } from '@/lib/constants'
 import { fetchClient, isNotFoundError } from '@/lib/fetch-client'
 import { capListOverviews } from '@/lib/media'
 import { movieType } from '@/lib/tmdbConfig'
@@ -75,20 +75,25 @@ const getTrendingAllDay = async (page: number = 1, params: Param = {}) => {
   return fetchClient.get<MovieResponse>(url, params, true, false)
 }
 
-// One TMDB page — 20 slides. It used to pull two pages for 40, which nobody
-// swipes through: the carousel renders a 3-slide window, but EVERY slide's full
-// TMDB object is serialized into the RSC flight payload regardless, and each one
-// carries an overview, genre list and the rest. Halving the count is a straight
-// cut to homepage weight for slides a visitor was never going to reach, and it
-// drops a build-time TMDB request too.
+// One TMDB page, capped to HERO_LIMIT. It used to pull two pages for 40, then
+// one page of 20, and neither number came from what anyone actually swipes
+// through: the carousel renders a 3-slide window, but EVERY slide's full TMDB
+// object is serialized into the RSC flight payload regardless, and each one also
+// costs a build-time TMDB request to resolve its trailer + logo. Cutting the
+// deck is the one lever that shrinks both at once.
+//
+// Capped HERE rather than in the component so it holds for everything downstream
+// — the hero-extras prefetch in HeroSlider maps over exactly this array, so a
+// cap applied later would have trimmed the markup while still paying for the
+// requests.
 const getTrendingMediaForHeroSlider = async (
   params: Param = {}
 ): Promise<Movie[]> => {
   try {
     const response = await getTrendingAllDay(1, params)
     // The hero line-clamps to 3 lines, so the rest of a TMDB synopsis is pure
-    // payload — and at 20 slides that adds up. Same cap the cards use.
-    return capListOverviews(response?.results || [])
+    // payload. Same cap the cards use.
+    return capListOverviews((response?.results || []).slice(0, HERO_LIMIT))
   } catch (error) {
     console.error('Error fetching trending media for hero slider:', error)
     return [] // Return empty array or throw error as per desired error handling

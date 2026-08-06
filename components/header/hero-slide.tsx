@@ -14,6 +14,7 @@ import {
   trackHeroAutoplayToggled,
   trackHeroWatchClicked,
 } from '@/lib/analytics'
+import { onIdleAfterLoad } from '@/lib/idle'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
 import {
   cn,
@@ -263,14 +264,22 @@ export function HeroSlide({
   // header. `trailerEngaged` freezes carousel rotation while it plays so it
   // never rotates away mid-trailer; a swipe still advances manually. When the
   // slide goes inactive the cleanup unmounts it.
+  //
+  // The arm is queued behind page load + an idle slot, not fired off a bare
+  // timer from mount. Mounting the preview pulls in a YouTube embed — ~880KB of
+  // third-party script, measured, by far the heaviest thing the homepage
+  // touches — and the old 1.2s timer dropped that squarely into hydration, next
+  // to the LCP backdrop still decoding. The trailer is ambience; it has no claim
+  // on that slot. After first load the document is already `complete`, so a
+  // slide the user swipes to arms on the same delay as before.
   React.useEffect(() => {
     if (reduce || !trailerKey || !active || !autoplayEnabled) return
-    const t = setTimeout(
+    const cancel = onIdleAfterLoad(
       () => setPreviewActive(true),
       hasHover ? HOVER_PREVIEW_DELAY : TOUCH_PREVIEW_DELAY
     )
     return () => {
-      clearTimeout(t)
+      cancel()
       setPreviewActive(false)
     }
   }, [hasHover, reduce, trailerKey, active, autoplayEnabled])
