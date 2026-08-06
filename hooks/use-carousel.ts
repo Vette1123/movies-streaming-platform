@@ -54,7 +54,17 @@ export const useCarousel = ({
 
   // Memoized values for performance
   const hasMultipleSlides = useMemo(() => childrenCount > 1, [childrenCount])
-  const showAllDots = useMemo(() => childrenCount <= 15, [childrenCount])
+  // How many dots fit on ONE row of a phone, not how many are "a lot".
+  //
+  // This was 15, and 15 dots have never fitted a 390px screen: the row is
+  // `flex-wrap` inside `max-w-[90vw]`, so past ~8 it wraps to a second and third
+  // line and grows UPWARD into the hero's Watch Now / Trailer / Save buttons.
+  // Nothing caught it because the hero shipped 20 slides, which took the
+  // truncated branch below; cutting the deck to 12 (lib/constants.ts) dropped it
+  // under the old threshold and into a layout that never worked. 8 is measured
+  // against the narrow case — ~12px per dot plus the wider active one, inside
+  // 90vw of 390px — so anything larger paginates instead of wrapping.
+  const showAllDots = useMemo(() => childrenCount <= 8, [childrenCount])
 
   const paginate = useCallback(
     (newDirection: number) => {

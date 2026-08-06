@@ -701,8 +701,17 @@ export default {
         )
       }
 
-      // Anything else that reached the Worker has no asset behind it.
-      return env.ASSETS.fetch(request)
+      // Anything else that reached the Worker has no asset behind it — assets
+      // match first, so getting here means nothing in out/ answers this path.
+      //
+      // Serve the build's own 404 page rather than handing the request back to
+      // ASSETS. With `not_found_handling: "none"` (which wrangler.jsonc has to
+      // keep, or unmatched detail ids would get 404.html instead of reaching the
+      // fallback renderer above), ASSETS answers an unmatched path with a bare
+      // `404 Content-Length: 0` — so every mistyped or dead URL on the site
+      // rendered as a blank white page. Same helper the tail-id paths already
+      // use for a made-up id.
+      return await notFoundAsset(env, url)
     } catch (error) {
       console.error(error)
       return json({ error: 'internal error' }, { status: 500 })
