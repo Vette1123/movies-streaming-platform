@@ -22,7 +22,7 @@ import {
   getLogoImageURL,
   getPosterImageURL,
 } from '@/lib/utils'
-import { useLowPowerDevice } from '@/hooks/use-device-tier'
+import { useHasHoverPointer, useLowPowerDevice } from '@/hooks/use-device-tier'
 import { useHeroAutoplay } from '@/hooks/use-hero-autoplay'
 import { useHeroExtras } from '@/hooks/use-hero-extras'
 import { buttonVariants } from '@/components/ui/button'
@@ -150,13 +150,15 @@ export function HeroSlide({
   }, [])
 
   // Desktop pointers get a slightly longer arm delay than touch (they can flick
-  // across slides), but autoplay drives the preview on BOTH — hover no longer
-  // gates it. Read once at init; not rendered, so the SSR/client split is fine.
-  const [hasHover] = React.useState(
-    () =>
-      typeof window !== 'undefined' &&
-      window.matchMedia('(hover: hover) and (pointer: fine)').matches
-  )
+  // across slides). Also decides whether ambient autoplay is on by DEFAULT —
+  // see the note on useHeroAutoplay below.
+  //
+  // Reads the shared hydration-safe hook rather than matchMedia in a useState
+  // initialiser. The local copy was fine while this value only picked a timeout,
+  // but it now feeds rendered output (the autoplay toggle's pressed state), and
+  // an initialiser runs during hydration where matchMedia is real — the exact
+  // mismatch useHasHoverPointer exists to avoid.
+  const hasHover = useHasHoverPointer()
   // Whether this device gets the optional ambient effects at all.
   const lowPower = useLowPowerDevice()
   const [previewActive, setPreviewActive] = React.useState(false)
@@ -189,12 +191,22 @@ export function HeroSlide({
   // active-slide autoplay AND the desktop hover/active preview, so the one
   // toggle fully turns trailer previews off everywhere.
   //
-  // The device tier only picks the DEFAULT (weak phones start off, everything
-  // else starts on) — it is not a second gate below the toggle. It used to be,
-  // and since practically every phone reads as low power, the toggle showed ON
-  // on mobile while the trailer could never actually start.
-  const { enabled: autoplayEnabled, toggle: toggleAutoplay } =
-    useHeroAutoplay(!lowPower)
+  // The device signals only pick the DEFAULT — they are not a second gate below
+  // the toggle. That is the older bug: the tier gated playback directly, and
+  // since practically every phone reads as low power, the toggle showed ON on
+  // mobile while the trailer could never actually start.
+  //
+  // Ambient autoplay now defaults off on TOUCH, not just on weak devices. It
+  // mounts a YouTube embed, and the player chain is ~6.9MB across 31 requests
+  // (measured, mobile prod) — the largest single cost on the homepage by an
+  // order of magnitude, spent on decoration for a phone that is probably on
+  // cellular. `lowPower` didn't cover it: a flagship phone passes the cores and
+  // memory checks and paid the full 6.9MB. Nothing is removed — the Trailer
+  // button and full view work everywhere, and this toggle turns ambience on and
+  // remembers it.
+  const { enabled: autoplayEnabled, toggle: toggleAutoplay } = useHeroAutoplay(
+    !lowPower && hasHover
+  )
 
   // Full-view (native browser fullscreen) of the playing trailer. Ref points at
   // the trailer cover element; fullscreen it directly so the video owns the

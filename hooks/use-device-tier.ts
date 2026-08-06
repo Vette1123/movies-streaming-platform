@@ -18,6 +18,12 @@ import React from 'react'
 // lose the drifting zoom, and trailer autoplay starts turned OFF. The trailer
 // button still works on every device.
 //
+// This hook governs the Ken Burns pan. Trailer autoplay takes a second signal on
+// top of it — useHasHoverPointer below — because the embed costs ~6.9MB and no
+// touch device should spend that on ambience by default, however many cores it
+// reports. Composed at the call site in hero-slide.tsx, not folded in here: the
+// two effects have genuinely different budgets.
+//
 // This is a DEFAULT, not a veto: the hero's autoplay toggle writes an explicit
 // preference that wins over this heuristic (see use-hero-autoplay). Gating
 // playback on the tier directly meant a phone showed the toggle switched on
