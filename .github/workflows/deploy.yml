@@ -4,20 +4,35 @@ on:
   push:
     branches: [main] # deploy on every push to main (single source of truth)
   schedule:
-    # 2x/day, 12h apart. Was 4x spaced to spread KV writes across the day — that
-    # rationale died when KV left the request path (see open-next.config.ts), and
-    # deploy frequency turned out not to affect the Worker CPU-kill rate at all:
-    # the kills are cold renders of detail pages outside the prerender set, which
-    # a redeploy doesn't add. What frequency actually buys is content freshness,
-    # and the static routes here are snapshots of TMDB popular/top-rated/trending
-    # — lists that barely move within a day. Halving it also halves the chunk-hash
-    # rotations that force a stale-bundle reload on tabs left open, and funds a
-    # 50% wider prerender set (lib/media-page.ts) at LOWER daily TMDB load.
+    # Every 6h. Deploy cadence is the ONLY freshness control on this site: every
+    # page is a build-time snapshot, nothing revalidates on demand, so whatever
+    # interval is set here is exactly how stale the content can get.
+    #
+    # It ran at 2x/day on the reasoning that the TMDB lists behind these pages
+    # "barely move within a day". Half true, and the wrong half was load-bearing:
+    # the hero was reading `trending/all/week`, a 7-day rolling window that really
+    # does sit still for weeks — so redeploying changed nothing visible and the
+    # cadence looked irrelevant. The hero is on `trending/all/day` now
+    # (services/movies.ts), which turns over daily, so the interval finally buys
+    # something. 6h is where it stops paying: TMDB's daily window is recomputed
+    # on its own schedule, and building 8x/day would mostly re-fetch identical
+    # lists.
+    #
+    # The two costs that argued for a longer interval are both settled. Chunk-hash
+    # rotation no longer strands anyone — the SW is build-id stamped and an
+    # installed PWA reloads itself on the next foreground (components/pwa/
+    # service-worker-register.tsx). And deploy frequency has never affected the
+    # Worker CPU-kill rate: kills were cold renders of detail pages outside the
+    # prerender set, which a redeploy does not add. Actions minutes are free on a
+    # public repo, and a run is ~2.5min.
+    #
     # NOTE: cron is UTC. Egypt = UTC+2 (winter) / UTC+3 (summer DST, late-Apr→late-Oct),
     # so local times below shift +1h in summer. GitHub also delays scheduled runs a
     # few min-to-30min under load (and rarely skips one) — exact-minute firing isn't guaranteed.
     - cron: '0 0 * * *' # 02:00 winter / 03:00 summer Egypt — overnight refresh
+    - cron: '0 6 * * *' # 08:00 winter / 09:00 summer Egypt — morning refresh
     - cron: '0 12 * * *' # 14:00 winter / 15:00 summer Egypt — midday refresh
+    - cron: '0 18 * * *' # 20:00 winter / 21:00 summer Egypt — evening refresh
   workflow_dispatch:
 
 # Least privilege: the job only reads the repo (checkout). Everything that

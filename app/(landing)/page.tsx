@@ -14,7 +14,7 @@ import { MoviesIntroSection } from '@/components/main-page/intro-section'
 import { SectionErrorBoundary } from '@/components/section-error-boundary'
 
 // Fully static: rendered ONLY at build, served from static assets, never on the
-// Worker. Freshness comes from the 2x/day CI redeploy — not on-demand ISR. This
+// Worker. Freshness comes from the 4x/day CI redeploy — not on-demand ISR. This
 // is deliberate: an on-demand render fans out enough TMDB subrequests to trip the
 // Cloudflare free-plan 50-subrequests/invocation cap (and the 10ms CPU ceiling),
 // which is what 500'd / 1102'd this page. Static build has no such caps.

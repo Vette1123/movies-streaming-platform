@@ -22,26 +22,35 @@
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
 
-# Documents refresh on the 2x/day deploy, so a long shared cache is safe while a
-# zero browser cache keeps a returning visitor current.
+# Documents are build-time snapshots refreshed by the 6h scheduled deploy
+# (.github/workflows/deploy.yml), so the shared TTL tracks that interval and the
+# zero browser cache keeps a returning visitor current. Don't let s-maxage drift
+# past the deploy interval: a document that outlives its build is the whole site
+# frozen on old data, since nothing here revalidates on demand.
+#
+# On the reely.space zone itself these s-maxage values are advisory — the cache
+# rule in scripts/cf-waf-setup.mjs sets the edge TTL with `override_origin`, and
+# cf-deploy.mjs purges after every deploy. They still govern every OTHER shared
+# cache (a corporate proxy, an ISP cache), which no purge of ours can reach.
+# Change all three together.
 /
-  Cache-Control: public, max-age=0, s-maxage=28800, stale-while-revalidate=86400
+  Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
 /movies
-  Cache-Control: public, max-age=0, s-maxage=28800, stale-while-revalidate=86400
+  Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
 /tv-shows
-  Cache-Control: public, max-age=0, s-maxage=28800, stale-while-revalidate=86400
+  Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
 /movies/*
-  Cache-Control: public, max-age=0, s-maxage=28800, stale-while-revalidate=86400
+  Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
 /tv-shows/*
-  Cache-Control: public, max-age=0, s-maxage=28800, stale-while-revalidate=86400
+  Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
 # Prerendered like every other document route, and refreshed by the same deploy —
 # they were simply missing here, so they fell through to the asset default
 # (`max-age=0, must-revalidate`): no shared TTL at all, and a conditional request
 # on every visit to a franchise page.
 /collection/*
-  Cache-Control: public, max-age=0, s-maxage=28800, stale-while-revalidate=86400
+  Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
 /disclaimer
-  Cache-Control: public, max-age=0, s-maxage=28800, stale-while-revalidate=86400
+  Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
 
 # Personal and noindex — never store these in a shared cache.
 /watch-history

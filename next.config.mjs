@@ -70,7 +70,7 @@ const serverOnlyConfig = {
   // `/watch-history` is intentionally omitted — it's personal + noindex.
   async headers() {
     const edgeCache =
-      'public, max-age=0, s-maxage=28800, stale-while-revalidate=86400'
+      'public, max-age=0, s-maxage=21600, stale-while-revalidate=3600'
     const cachedPaths = [
       '/',
       '/movies',

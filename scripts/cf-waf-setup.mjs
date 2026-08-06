@@ -360,40 +360,40 @@ const NOT_RSC = '(not any(http.request.headers["rsc"][*] == "1"))'
 
 const CACHEABLE_EXPR = `${NOT_RSC} and (${CACHEABLE_PATHS})`
 
-// KNOWN NO-OP for this site's HTML — kept, documented, not trusted.
+// LIVE. It was documented here as a known no-op — that was measured 2026-08-01,
+// under OpenNext, and it was true then for a structural reason: Cache Rules
+// govern what CF stores from an ORIGIN response, every one of these paths was
+// served by the Worker, and Cloudflare does not edge-cache Worker-generated
+// responses. No cf-cache-status header appeared on /movies/<id> or on the
+// homepage. (VARY_STRIP_RULE below had already landed, so the absence was
+// conclusive rather than ambiguous.)
 //
-// The intent was: an edge HIT never runs the Worker, so CDN-caching the document
-// routes would be the biggest defence against the free-plan 10ms CPU limit. It
-// does not work, and the reason is structural rather than a misconfiguration:
-// Cache Rules govern what CF stores from an ORIGIN response, and on this zone
-// every one of these paths is served by the Worker itself. Cloudflare does not
-// edge-cache Worker-generated responses. Measured 2026-08-01 with GET (not HEAD,
-// which can hide it): no cf-cache-status header on /movies/<id>, and none on the
-// homepage either — the whole document surface is uncached at the edge.
+// The static-export migration two days later changed the premise: these paths are
+// plain assets now, matched before the Worker ever runs, so they are ordinary
+// origin responses and the rule does what it always meant to. Re-measured
+// 2026-08-06: `CF-Cache-Status: HIT` on `/`.
 //
-// VARY_STRIP_RULE below was the earlier fix for the same symptom and DID land
-// (responses no longer carry Next's `Vary: rsc,...`), which is what makes the
-// remaining absence conclusive rather than ambiguous.
-//
-// Consequence, and the reason CHALLENGE_DETAIL_SCRAPERS_RULE exists: repeat hits
-// on the same URL are never free. Combined with a read-only incremental cache, a
-// detail page outside the prerender set re-renders on the Worker every single
-// time it is requested.
-//
-// Left in place because it costs nothing and becomes correct the moment any of
-// these paths is served by something other than the Worker. Caching Worker HTML
-// for real needs the Cache API inside the Worker, not a zone rule.
+// That flips a consequence too. Repeat hits are now genuinely free — but a cached
+// document also no longer notices that a deploy replaced the asset behind it, and
+// nothing about the deploy invalidates the zone cache on its own. That is why the
+// TTL below tracks the deploy interval and why scripts/cf-deploy.mjs purges after
+// every deploy; without both, the edge silently pins the site to an old build.
 const CACHE_RULE = {
   description: `${TAG} edge-cache public document pages, pin TTL + cache key`,
   expression: CACHEABLE_EXPR,
   action: 'set_cache_settings',
   action_parameters: {
     cache: true,
+    // `override_origin` means THIS is the edge TTL — the `s-maxage` in
+    // public/_headers does not set it (it only reaches caches that aren't this
+    // zone). Held at the 6h scheduled-deploy interval in .github/workflows/
+    // deploy.yml so a missed purge costs one cycle of staleness, not a day and a
+    // half. Move the two together.
     edge_ttl: {
       mode: 'override_origin',
-      default: 28800,
+      default: 21600,
       status_code_ttl: [
-        { status_code: 200, value: 28800 },
+        { status_code: 200, value: 21600 },
         { status_code_range: { from: 300, to: 399 }, value: 3600 },
         { status_code_range: { from: 400, to: 499 }, value: 60 },
         { status_code_range: { from: 500, to: 599 }, value: 0 },

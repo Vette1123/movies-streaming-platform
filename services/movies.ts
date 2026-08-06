@@ -43,7 +43,7 @@ const listResponse = async <T extends { results?: Movie[] }>(data: T) => ({
 const getLatestTrendingMovies = async (params: Param = {}) => {
   const url = `${movieType.trending}/movie/day?language=en-US`
   // revalidate:false → build-only; the homepage/list pages that use this are
-  // fully static and refresh on the 2x/day deploy (see fetch-client.ts).
+  // fully static and refresh on the 4x/day deploy (see fetch-client.ts).
   const data = await fetchClient.get<MovieResponse>(url, params, true, false)
   return listResponse(data)
 }
@@ -61,9 +61,16 @@ const getPopularMovies = async (params: Param = {}) => {
   return listResponse(data)
 }
 
-// New function to get trending media (movies and TV shows) for the week
-const getTrendingAllWeek = async (page: number = 1, params: Param = {}) => {
-  const url = `trending/all/week?language=en-US&page=${page}`
+// Trending media (movies and TV shows) for the hero slider.
+//
+// `/day`, not `/week`: the homepage is a build-time snapshot, so the hero is only
+// ever as fresh as the endpoint behind it. TMDB's weekly window is a 7-day
+// rolling aggregate — a handful of tentpole titles pin the top slots for weeks,
+// so redeploying more often changed nothing visible above the fold. The daily
+// window actually turns over between deploys, which is the whole point of
+// rebuilding on a schedule.
+const getTrendingAllDay = async (page: number = 1, params: Param = {}) => {
+  const url = `trending/all/day?language=en-US&page=${page}`
   // revalidate:false → build-only (hero slider is on the fully static homepage).
   return fetchClient.get<MovieResponse>(url, params, true, false)
 }
@@ -78,7 +85,7 @@ const getTrendingMediaForHeroSlider = async (
   params: Param = {}
 ): Promise<Movie[]> => {
   try {
-    const response = await getTrendingAllWeek(1, params)
+    const response = await getTrendingAllDay(1, params)
     // The hero line-clamps to 3 lines, so the rest of a TMDB synopsis is pure
     // payload — and at 20 slides that adds up. Same cap the cards use.
     return capListOverviews(response?.results || [])

@@ -49,8 +49,8 @@ import { fetchWatchProviders } from '@/services/watch-providers'
 import { getMediaHeroImageUrl } from '@/lib/media'
 import { getImageURL } from '@/lib/utils'
 
-/** 8h, matching the deploy cadence that refreshes the static half of the site. */
-const CACHE_CONTROL = 'public, max-age=3600, s-maxage=28800'
+/** 6h, matching the deploy cadence that refreshes the static half of the site. */
+const CACHE_CONTROL = 'public, max-age=3600, s-maxage=21600'
 
 /** A tail detail path: /movies/123 or /tv-shows/123, nothing deeper. */
 const DETAIL_PATH = /^\/(movies|tv-shows)\/(\d+)\/?$/

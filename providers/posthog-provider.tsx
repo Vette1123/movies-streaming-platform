@@ -122,7 +122,7 @@ function isNoiseException(messages: string[]): boolean {
  * PostHog autocaptures them as unhandled window errors / rejections, which never
  * pass through the react-query reporter that already classifies them as expected
  * (providers/query-provider.tsx). They aren't code faults — a tab that outlived
- * one of our ~2x/day deploys, or a connection that dropped — and the same event
+ * one of our ~4x/day deploys, or a connection that dropped — and the same event
  * already triggers reloadForStaleDeploy() to recover the user. Drop them so the
  * dashboard keeps showing only errors we can actually fix.
  */
