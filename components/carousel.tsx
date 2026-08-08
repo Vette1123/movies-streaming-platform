@@ -5,6 +5,7 @@ import {
   animate,
   motion,
   PanInfo,
+  useDragControls,
   useMotionValue,
   useReducedMotion,
 } from 'framer-motion'
@@ -355,6 +356,40 @@ export function Carousel({
 
   const onDragStart = handleDragStart
 
+  // The drag is started BY US, not by framer's own pointerdown listener, and
+  // that is what finally makes a tap on Watch Now land.
+  //
+  // framer attaches its listener to the track element itself and deliberately
+  // only refuses to drag from text inputs — "buttons and links don't block drag
+  // since they don't have click-and-move actions of their own" (its words, in
+  // VisualElementDragControls). So every tap on the hero's buttons armed a drag.
+  // useCarousel's handleDragStart tried to veto that with `return false`, which
+  // framer never reads: the guard has been dead the whole time.
+  //
+  // A finger is not a mouse. Practically every tap travels the 3px that starts a
+  // drag, and a quick one clears handleDragEnd's 250px/s velocity threshold on
+  // its own — so tapping a button could paginate the carousel, move the anchor
+  // out from under the finger, and lose the click. That is the "I tap Watch Now,
+  // nothing happens, I have to tap it again", and it gets worse right after a
+  // swipe, when the finger is already moving.
+  //
+  // dragListener={false} + dragControls is framer's supported way to own this
+  // decision. Drag from the artwork, the scrim, the copy — anywhere that isn't
+  // an interactive control — still swipes exactly as before. Drag from a
+  // control doesn't start a gesture at all, so the click is never in question.
+  const dragControls = useDragControls()
+  const startDragUnlessInteractive = React.useCallback(
+    (event: React.PointerEvent) => {
+      const target = event.target as HTMLElement | null
+      if (
+        target?.closest('a, button, input, select, textarea, [role="button"]')
+      )
+        return
+      dragControls.start(event)
+    },
+    [dragControls]
+  )
+
   // A drag that doesn't cross the threshold never changes the index, so the
   // effect above won't run — this is what returns the track in that case. It has
   // to be exclusive: settling here as well when the release DOES paginate meant
@@ -504,6 +539,11 @@ export function Carousel({
             userSelect: 'none',
           }}
           drag="x"
+          // See startDragUnlessInteractive: framer's own pointerdown listener is
+          // off, so a tap on a control can never arm a swipe.
+          dragListener={false}
+          dragControls={dragControls}
+          onPointerDown={startDragUnlessInteractive}
           dragMomentum={false}
           // Resolve every gesture to a single axis. A vertical pull then scrolls
           // the page (and pull-to-refreshes at the top) without the track

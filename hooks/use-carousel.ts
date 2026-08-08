@@ -155,24 +155,21 @@ export const useCarousel = ({
     }
   }, [])
 
-  // Enhanced drag handling with much better UX
-  const handleDragStart = useCallback(
-    (event: any, info: PanInfo) => {
-      // Prevent drag if user is interacting with buttons or clickable elements
-      const target = event.target as HTMLElement
-      const isInteractiveElement = target.closest(
-        'button, a, input, select, textarea, [role="button"]'
-      )
-
-      if (isInteractiveElement) {
-        return false // Prevent drag
-      }
-
-      isDraggingRef.current = true
-      handleUserInteraction(true)
-    },
-    [handleUserInteraction]
-  )
+  // By the time this runs the gesture is already a real drag, so there is
+  // nothing left to veto here.
+  //
+  // This used to open with a `target.closest('button, a, …')` check and
+  // `return false // Prevent drag`. framer-motion never reads what onDragStart
+  // returns, so that guard did nothing for as long as it existed — and taps on
+  // the hero's own buttons kept arming a drag, which is what made them
+  // intermittently do nothing on touch. The decision now happens where it can
+  // actually be enforced: the carousel starts the drag itself via dragControls
+  // and simply doesn't start one on an interactive target (see
+  // startDragUnlessInteractive in components/carousel.tsx).
+  const handleDragStart = useCallback(() => {
+    isDraggingRef.current = true
+    handleUserInteraction(true)
+  }, [handleUserInteraction])
 
   const handleDragEnd = useCallback(
     (event: any, info: PanInfo) => {

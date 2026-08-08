@@ -98,9 +98,16 @@ export const DetailsHero = ({
                 initial={{ opacity: 0, y: 80 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -150 }}
-                className={cn('flex flex-col items-center gap-4 sm:gap-5', {
-                  hidden: isIframeShown,
-                })}
+                // absolute, NOT in flow — this is the layout shift on "Watch".
+                // The button stack and the iframe are siblings in one centered
+                // flex box, so for the ~300ms the exit animation was still
+                // running BOTH were laid out: the iframe was sized next to a
+                // stack that was on its way out, then snapped to full width the
+                // frame it unmounted. Taking the outgoing stack out of flow
+                // means the iframe gets the whole box from the moment it
+                // appears, and the exit animates over the top of it — the video
+                // never moves.
+                className="absolute inset-0 flex flex-col items-center justify-center gap-4 sm:gap-5"
               >
                 <PlayButton
                   onClick={playVideo}
