@@ -65,6 +65,11 @@ const SLIDE_SPRING = {
 // edge to edge. There is no step left to hide.
 const SLIDE_GAP = 0
 
+// How far a finger may travel and still count as a tap rather than a swipe.
+// Comfortably under framer's own 3px drag threshold doubled — a deliberate
+// swipe covers tens of pixels, a thumb pressing a button covers a handful.
+const TAP_SLOP = 12
+
 // useLayoutEffect on the server is a no-op that React warns about, and the
 // compensation below only has meaning once there's a DOM to measure.
 const useIsoLayoutEffect =
@@ -342,6 +347,63 @@ export function Carousel({
   useIsoLayoutEffect(syncReachability)
   React.useEffect(() => x.on('change', syncReachability), [x, syncReachability])
 
+  // A TAP ACTIVATES WHAT THE FINGER LANDED ON, not what happens to be under it
+  // when the finger lifts.
+  //
+  // This is the last piece of the Watch-Now-does-nothing bug, and the one the
+  // geometry rule below cannot supply on its own. syncReachability guarantees
+  // the slide you can see is the slide you can TOUCH; it cannot stop that slide
+  // from MOVING. For the ~300ms the spring is running the button is travelling
+  // ~150px, and a touch is not a click: the browser hit-tests at touchdown and
+  // again at lift, and dispatches the click to what the two have in common. Land
+  // on Watch Now mid-flight and it has slid on by the time you lift, so the
+  // click resolves to the slide behind it and nothing happens. Measured against
+  // prod before this: a tap 0-250ms after a swipe release missed every time, and
+  // only from ~300ms did it reliably land.
+  //
+  // Stopping the animation on touchdown was tried first and is WORSE: the finger
+  // is aimed at where the button is drawn right now, so snapping the track home
+  // teleports the target out from under a tap that had actually caught it.
+  //
+  // So the geometry is left entirely alone and the intent is honoured instead.
+  // Remember the control under the finger at touchdown; if the finger hasn't
+  // travelled far enough to be a swipe, suppress the browser's own click — which
+  // is the one that hit-tests the wrong element — and activate the remembered
+  // control directly. Nothing here cares where anything has moved to, so it
+  // holds mid-spring, mid-autoplay-rotation, and for whatever motion comes next.
+  const tapRef = React.useRef<{ el: HTMLElement; x: number; y: number } | null>(
+    null
+  )
+
+  const onStageTouchStart = React.useCallback((e: React.TouchEvent) => {
+    tapRef.current = null
+    if (e.touches.length !== 1) return
+    const target = e.target as HTMLElement | null
+    // Only controls. A tap on artwork has nothing to activate, and leaving those
+    // to the browser keeps this off every path it isn't needed on.
+    const el = target?.closest?.(
+      'a[href], button:not([disabled])'
+    ) as HTMLElement | null
+    if (!el) return
+    const touch = e.touches[0]
+    tapRef.current = { el, x: touch.clientX, y: touch.clientY }
+  }, [])
+
+  const onStageTouchEnd = React.useCallback((e: React.TouchEvent) => {
+    const tap = tapRef.current
+    tapRef.current = null
+    if (!tap || e.changedTouches.length !== 1) return
+    const touch = e.changedTouches[0]
+    // Anything past the slop is a swipe (or a scroll) that happened to start on
+    // a control — it must not navigate.
+    if (Math.hypot(touch.clientX - tap.x, touch.clientY - tap.y) > TAP_SLOP)
+      return
+    // The element may have left the document (a slide unmounting mid-gesture).
+    if (!tap.el.isConnected) return
+    e.preventDefault()
+    tap.el.click()
+  }, [])
+
   // Contain the browser's overscroll for exactly as long as a HORIZONTAL drag is
   // in progress, and no longer.
   //
@@ -487,6 +549,10 @@ export function Carousel({
         onPointerDown={handleHoverStart}
         onPointerUp={handleHoverEnd}
         onPointerCancel={handleHoverEnd}
+        // See onStageTouchEnd — a tap activates the control it landed on, not
+        // whatever the transition has slid under the finger by the time it lifts.
+        onTouchStart={onStageTouchStart}
+        onTouchEnd={onStageTouchEnd}
         onKeyDown={handleKeyDown}
         tabIndex={0}
         role="region"
