@@ -23,7 +23,6 @@ export function BrandLogo() {
   return (
     <Link
       href="/"
-      prefetch={false}
       aria-label={`${siteConfig.name} home`}
       className="flex shrink-0 items-baseline space-x-2"
     >
@@ -53,9 +52,14 @@ export function MainNav({ items }: MainNavProps) {
                   key={index}
                   href={item.href}
                   scroll={item.scroll}
-                  // Header is always in-viewport, so every nav route auto-prefetches
-                  // on each page load — one Worker RSC hit per route. Fetch on click.
-                  prefetch={false}
+                  // Prefetched. The old comment here — "one Worker RSC hit per
+                  // route" — described OpenNext; since the static-export move
+                  // these six routes are prerendered assets served ahead of the
+                  // Worker, so warming them is a route tree (~0.5KB) plus a page
+                  // segment off the CDN, no invocation and no rate-limit
+                  // exposure. It's the difference between a header link
+                  // painting on the next frame and paying ~600ms of RSC fetch
+                  // after the click.
                   className={cn(
                     // whitespace-nowrap is the actual guard: a flex row will
                     // happily break a two-word label rather than overflow, and

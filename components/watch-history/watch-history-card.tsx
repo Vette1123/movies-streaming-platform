@@ -10,6 +10,7 @@ import {
 import { mediaDetailHref } from '@/lib/media'
 import { dateFormatter, getPosterImageURL } from '@/lib/utils'
 import { WatchedItem } from '@/hooks/use-local-storage'
+import { usePrefetchIntent } from '@/hooks/use-prefetch-intent'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { MediaTypeIcon } from '@/components/media/media-type-icon'
@@ -29,7 +30,7 @@ const CARD_VARIANT = {
 }
 
 export function WatchedItemCard({ item, onRemove }: WatchedItemCardProps) {
-  const handleRedirect = () => {
+  const buildHref = () => {
     const href = mediaDetailHref(toAnalyticsMediaType(item.type), item.id)
     // Watchlist items are saved without a season/episode; only deep-link to a
     // specific episode when we actually have one (watch-history items do).
@@ -39,13 +40,18 @@ export function WatchedItemCard({ item, onRemove }: WatchedItemCardProps) {
     return href
   }
 
+  const href = buildHref()
+  const prefetchIntent = usePrefetchIntent(href)
+
   return (
     <Link
-      href={handleRedirect()}
+      href={href}
       // Watch-history is a full grid; viewport auto-prefetch would fire one RSC
-      // request per watched item at once. Prefetch on hover only (page is
-      // personal/noindex, so eager prefetch isn't worth the rate-limit risk).
+      // request per watched item at once. Warmed on intent instead — hover,
+      // focus, and touch, since Next 16's prefetch={false} switches off its own
+      // hover prefetch too. See hooks/use-prefetch-intent.ts.
       prefetch={false}
+      {...prefetchIntent}
       className="group h-fit"
       onClick={() =>
         trackWatchHistoryItemClicked({

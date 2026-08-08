@@ -139,9 +139,10 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
       <div className="group/heading w-fit">
         <Link
           href={itemRedirect(itemType)}
-          // Homepage stacks many carousels; each heading would viewport-prefetch a
-          // section route. Every prefetch is an extra Worker RSC hit — skip it.
-          prefetch={false}
+          // Prefetched: every heading on the page points at one of the same two
+          // section routes (/movies, /tv-shows), so the router dedupes them into
+          // two prerendered-asset fetches for the whole homepage — not the
+          // per-card storm the card links below still have to avoid.
           className="mb-4 flex w-fit items-center gap-2"
         >
           <h2 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight transition-colors duration-200 ease-in group-hover/heading:text-cyan-200">

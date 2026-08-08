@@ -162,7 +162,6 @@ export function MobileNav({ items }: MobileNavProps) {
           <Link
             aria-label="Home"
             href="/"
-            prefetch={false}
             className="flex w-fit items-center"
             onClick={close}
           >
@@ -255,7 +254,13 @@ function MobileLink({
     <Link
       href={href}
       scroll={scroll}
-      prefetch={false}
+      // Prefetched, deliberately. These links only exist while the drawer is
+      // open, so opening it IS the intent signal — by the time a thumb reaches a
+      // row its route payload has already landed and the tap paints instantly.
+      // The cost is a handful of prerendered static assets (a 493-byte route
+      // tree plus the page segment, ~12KB); they're matched by Workers Static
+      // Assets ahead of the Worker, so they cost no invocation and can't trip
+      // the WAF rate limit the card links have to worry about.
       className={cn(
         'text-foreground/70 hover:text-foreground flex h-11 items-center text-base font-medium transition-colors',
         pathname === href && 'text-secondary-foreground',

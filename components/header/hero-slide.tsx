@@ -2,7 +2,6 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useReducedMotion } from 'framer-motion'
 import { Maximize, Video, VideoOff, Volume2, VolumeX } from 'lucide-react'
 
@@ -25,6 +24,7 @@ import {
 import { useHasHoverPointer, useLowPowerDevice } from '@/hooks/use-device-tier'
 import { useHeroAutoplay } from '@/hooks/use-hero-autoplay'
 import { useHeroExtras } from '@/hooks/use-hero-extras'
+import { usePrefetchIntent } from '@/hooks/use-prefetch-intent'
 import { buttonVariants } from '@/components/ui/button'
 import { BlurredImage } from '@/components/blurred-image'
 import { CarouselPauseContext } from '@/components/carousel'
@@ -95,7 +95,6 @@ export function HeroSlide({
     ready: extrasReady,
   } = useHeroExtras(movie.id, mediaType)
 
-  const router = useRouter()
   const reduce = useReducedMotion()
   const [logoError, setLogoError] = React.useState(false)
   // Gates the title-logo crossfade: the text title holds the frame until the
@@ -297,6 +296,7 @@ export function HeroSlide({
   }, [hasHover, reduce, trailerKey, active, autoplayEnabled])
 
   const href = mediaDetailHref(mediaType, movie.id)
+  const prefetchIntent = usePrefetchIntent(href)
 
   const showLogo = !!logoPath && !logoError
   // Keep the plain title hidden while the logo's outcome is still pending
@@ -521,10 +521,13 @@ export function HeroSlide({
               <Link
                 href={href}
                 // Skip viewport auto-prefetch (the heavy watch route), but warm
-                // it on hover/focus intent so the click navigates instantly.
+                // it on intent so the click navigates instantly. This used to
+                // be a hand-rolled onMouseEnter/onFocus pair, which meant the
+                // hero's primary CTA warmed nothing at all on a phone — the one
+                // device with no hover, and the one where the cold RSC fetch
+                // hurts most. usePrefetchIntent adds the touch.
                 prefetch={false}
-                onMouseEnter={() => router.prefetch(href)}
-                onFocus={() => router.prefetch(href)}
+                {...prefetchIntent}
                 onClick={() =>
                   trackHeroWatchClicked({
                     media_id: movie.id,

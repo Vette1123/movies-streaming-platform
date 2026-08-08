@@ -13,6 +13,7 @@ import { cn, dateFormatter, getPosterImageURL, itemRedirect } from '@/lib/utils'
 import { useCompletedMedia } from '@/hooks/use-completed-media'
 import { useHasHoverPointer } from '@/hooks/use-device-tier'
 import { useMounted } from '@/hooks/use-mounted'
+import { usePrefetchIntent } from '@/hooks/use-prefetch-intent'
 import { chipVariants } from '@/components/ui/chip'
 import {
   HoverCard,
@@ -66,6 +67,9 @@ const CardComponent = ({
   // nearly free, so the cost is mounting, and the only real fix is to not mount.
   // A phone loses nothing: it cannot hover, so none of this could ever run.
   const hasHover = useHasHoverPointer()
+
+  const href = `${itemRedirect(itemType)}/${item.id}`
+  const prefetchIntent = usePrefetchIntent(href)
 
   const frame = (
     <>
@@ -124,14 +128,17 @@ const CardComponent = ({
 
   const cardLink = (
     <Link
-      href={`${itemRedirect(itemType)}/${item.id}`}
+      href={href}
+      {...prefetchIntent}
       // Block-level so the poster's `w-full` resolves against the grid track
       // / rail item width instead of an inline <a>'s shrink-to-fit box.
       className="block w-full"
       // Viewport auto-prefetch fires one RSC request per card; a homepage
       // of carousels mounts 100+ cards at once and trips the CF rate-limit
-      // (100 req/10s on detail paths) → 1015 on our own page load. Prefetch
-      // on hover only — pairs with the HoverCard, keeps nav snappy.
+      // (100 req/10s on detail paths) → 1015 on our own page load. So the
+      // warming is driven by intent instead — and by touch as well as hover,
+      // because in Next 16 `prefetch={false}` kills the built-in hover prefetch
+      // too. See hooks/use-prefetch-intent.ts.
       prefetch={false}
       onClick={() =>
         trackMediaCardClicked({

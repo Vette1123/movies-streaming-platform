@@ -37,7 +37,8 @@ export function StaticRail({
     <nav className="cv-auto px-5 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10 xl:px-16 2xl:px-20">
       <Link
         href={itemRedirect(itemType)}
-        prefetch={false}
+        // Same two section routes as every other rail heading — see the note in
+        // components/list.tsx. Deduped by the router, prerendered assets.
         className="mb-4 flex w-fit items-center gap-2"
       >
         <h2 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight">
