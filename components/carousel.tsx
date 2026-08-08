@@ -265,6 +265,27 @@ export function Carousel({
   // time the effect ran), which lands the compensation short.
   const releaseXRef = React.useRef<number | null>(null)
 
+  // Which slide may be interacted with. Deliberately LAGS currentIndex until the
+  // track's spring has settled, and that lag is the whole point.
+  //
+  // The compensation below jumps the track a full stage-width the instant the
+  // index changes, precisely so the frame does NOT move yet — which means the
+  // slide filling the screen for the entire animation is the OUTGOING one. Its
+  // `inert` + `pointer-events: none` were keyed on the index alone, so they
+  // flipped a whole spring before the artwork did: for ~700ms after every
+  // rotation the hero you could see was completely untappable, and a tap on
+  // Watch Now fell through the translated track to the stage's z-0 base. At a
+  // 5s autoplay interval that is 14% of all taps, measured on prod.
+  //
+  // Desktop hid it: hovering the stage sets isUserInteracting and freezes
+  // autoplay, so a pointer on its way to the button has already stopped the
+  // rotation. A phone has no hover, so nothing pauses and the dead window is
+  // live the whole time — which is exactly where it was reported.
+  //
+  // Only interactivity lags. Positioning and `active` (which arms the incoming
+  // slide's trailer) still follow currentIndex immediately.
+  const [settledIndex, setSettledIndex] = React.useState(currentIndex)
+
   useIsoLayoutEffect(() => {
     const prev = prevIndexRef.current
     if (prev === currentIndex) return
@@ -284,7 +305,23 @@ export function Carousel({
     // width + gap, because that's the real distance the slides just moved.
     x.jump(from + step * (widthRef.current + SLIDE_GAP))
     const controls = settle()
-    return () => controls?.stop()
+    // Hand interactivity to the new slide only once it actually holds the frame.
+    // Under reduced motion settle() jumps instead of animating, so there is no
+    // transition to wait for. An interrupted spring never resolves, but the
+    // interruption is always a fresh index change, whose own animation resolves
+    // with the newer value — so this can't strand settledIndex behind.
+    if (!controls) {
+      setSettledIndex(currentIndex)
+      return
+    }
+    let cancelled = false
+    controls.then(() => {
+      if (!cancelled) setSettledIndex(currentIndex)
+    })
+    return () => {
+      cancelled = true
+      controls.stop()
+    }
   }, [currentIndex, childrenCount, settle, x])
 
   // Contain the browser's overscroll for exactly as long as a HORIZONTAL drag is
@@ -416,6 +453,16 @@ export function Carousel({
         className={`group relative overflow-hidden outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white/70 ${stageClassName}`}
         onMouseEnter={handleHoverStart}
         onMouseLeave={handleHoverEnd}
+        // A phone has no hover, so nothing ever froze the rotation while a
+        // finger was on its way to Watch Now — the slide could change out from
+        // under the tap. A pointer going down on the stage freezes autoplay
+        // exactly the way a mouse entering it does, and the release resumes on
+        // the usual 3s delay. Belt and braces with settledIndex above: this
+        // stops a tap meeting a transition, that one keeps the visible slide
+        // tappable if it does anyway.
+        onPointerDown={handleHoverStart}
+        onPointerUp={handleHoverEnd}
+        onPointerCancel={handleHoverEnd}
         onKeyDown={handleKeyDown}
         tabIndex={0}
         role="region"
@@ -481,6 +528,13 @@ export function Carousel({
             // sits at ±2 widths, which the stage clips.
             const offset = wrappedOffset(i, currentIndex, childrenCount)
             const active = offset === 0
+            // Tappable while it holds the frame: the incoming slide, plus the
+            // outgoing one until the spring settles (see settledIndex). Once
+            // settled the two collapse to the same slide, which is the resting
+            // behaviour. Both being live mid-transition is harmless — the one
+            // off-frame is clipped by the stage's overflow-hidden, so nothing
+            // can reach it anyway.
+            const interactive = active || i === settledIndex
             // ...but the lagging window may NEVER unmount the slide on screen.
             // Normally it cannot: one step of the index leaves the new active
             // slide inside the old window. Several steps before React gets to
@@ -522,16 +576,16 @@ export function Carousel({
                 // promotes it because it animates a transform.
                 style={{
                   x: `calc(${offset * 100}% + ${offset * SLIDE_GAP}px)`,
-                  pointerEvents: active ? 'auto' : 'none',
+                  pointerEvents: interactive ? 'auto' : 'none',
                   backfaceVisibility: 'hidden',
                 }}
                 initial={false}
-                aria-hidden={!active}
+                aria-hidden={!interactive}
                 // Pair with aria-hidden: also pull the off-screen slide's links out
                 // of the focus order + a11y tree (aria-hidden alone still leaves
                 // focusable descendants → axe "aria-hidden-focus"). undefined (not
                 // false) so the attribute is simply absent on the active slide.
-                inert={!active || undefined}
+                inert={!interactive || undefined}
               >
                 {/* Tell the slide whether it's the one on screen, so touch devices
                   can autoplay the active slide's trailer preview (no hover). */}

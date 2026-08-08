@@ -14,27 +14,26 @@ export const MovieDetailsHero = ({
   movie: MovieDetails
   trailerKey?: string
 }) => {
-  const [isIframeShown, setIsIframeShown] = React.useState(false)
-  const iframeRef = React.useRef<HTMLIFrameElement>(null)
+  // The embed URL, empty until play is pressed — see the note on DetailsHero.
+  // This used to write iframeRef.current.src behind an `if (iframeRef.current)`
+  // guard, so a play that landed while the ref was empty did nothing at all and
+  // said nothing about it.
+  const [src, setSrc] = React.useState('')
 
   React.useEffect(() => {
     if (!movie?.id) return
     trackMediaDetailViewed(buildMediaEventBase(movie, 'movie'))
   }, [movie?.id])
 
-  const playVideo = () => {
-    if (iframeRef.current) {
-      setIsIframeShown(true)
-      iframeRef.current.src = `${STREAMING_MOVIES_API_URL}/movie/${movie?.id}`
-    }
-  }
+  const playVideo = () =>
+    setSrc(`${STREAMING_MOVIES_API_URL}/movie/${movie?.id}`)
+
   return (
     <DetailsHero
       movie={movie}
-      isIframeShown={isIframeShown}
+      src={src}
       playVideo={playVideo}
       trailerKey={trailerKey}
-      ref={iframeRef}
     />
   )
 }

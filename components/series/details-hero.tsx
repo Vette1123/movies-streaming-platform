@@ -55,11 +55,11 @@ export const SeriesDetailsHero = ({
   series: SeriesDetails
   trailerKey?: string
 }) => {
-  const [isIframeShown, setIsIframeShown] = React.useState(false)
+  // The embed URL, empty until play is pressed — see the note on DetailsHero.
+  const [src, setSrc] = React.useState('')
   const [deepLink, setDeepLink] = React.useState<DeepLink | null>(null)
   const { registerPlayer, reportPlaying } = useSeriesPlayback()
-  const iframeRef = React.useRef<HTMLIFrameElement>(null)
-  // Which episode the embed is currently loaded with (see startPlayback).
+  // Which episode we have already counted as played (see startPlayback).
   const playedKeyRef = React.useRef<string | null>(null)
   const router = useRouter()
 
@@ -106,19 +106,23 @@ export const SeriesDetailsHero = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [series?.id])
 
-  // Single entry point for starting the embed, keyed on the episode. Pressing
-  // play in the hero and clicking the same episode in the list resolve to the
-  // SAME target, so without this guard the iframe src would be rewritten —
-  // restarting playback from zero — and media_played would fire twice.
+  // Single entry point for starting the embed. Pressing play in the hero and
+  // clicking the same episode in the list resolve to the SAME target, and
+  // restarting playback from zero on the second one would be wrong — but that
+  // is now handled by React: setSrc with an unchanged string re-renders nothing,
+  // so the iframe is never re-pointed at the URL it already has.
+  //
+  // playedKeyRef survives only to dedupe the media_played EVENT, which is all it
+  // was ever really about. It no longer gates the src write, so it can't leave
+  // the embed unstarted, and there is no ref to be null: setting the src is
+  // unconditional, so pressing play always does something.
   const startPlayback = React.useCallback(
     (target: DeepLink | null, options?: { track?: boolean }) => {
-      if (!iframeRef.current) return
-      setIsIframeShown(true)
       reportPlaying(target)
+      setSrc(seriesStreamUrl(series?.id, target))
       const key = playbackKey(target)
       if (playedKeyRef.current === key) return
       playedKeyRef.current = key
-      iframeRef.current.src = seriesStreamUrl(series?.id, target)
       if (target && options?.track) {
         trackMediaPlayed({
           ...buildMediaEventBase(series, 'tv'),
@@ -161,7 +165,7 @@ export const SeriesDetailsHero = ({
       </Suspense>
       <DetailsHero
         series={series}
-        isIframeShown={isIframeShown}
+        src={src}
         playVideo={playDefaultSeries}
         trailerKey={trailerKey}
         playTarget={playTarget}
@@ -172,7 +176,6 @@ export const SeriesDetailsHero = ({
             episodeName={resumeEpisodeName}
           />
         }
-        ref={iframeRef}
       />
     </>
   )
