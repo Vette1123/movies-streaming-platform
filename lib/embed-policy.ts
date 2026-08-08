@@ -118,6 +118,11 @@ export const AMBIENT_TRAILER_ALLOW = embedAllow(['autoplay', 'encrypted-media'])
 // only safe because the frame is cross-origin (a same-origin frame holding both
 // can delete its own sandbox attribute).
 //
+// `pnpm embed:probe` screens a candidate provider for exactly this in about a
+// minute — it renders the same URL sandboxed and unsandboxed side by side, with
+// a YouTube positive control so a broken probe cannot be mistaken for a
+// hostile provider. Both currently configured providers fail it.
+//
 // What the `allow` attribute above achieves is real and is not detected: no
 // clipboard access, no motion sensors, and no Topics / Attribution Reporting /
 // Protected Audience profiling. What it cannot touch is an ad drawn inside the

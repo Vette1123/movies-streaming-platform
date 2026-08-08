@@ -21,6 +21,7 @@
     "icons:verify": "node scripts/verify-icons.mjs",
     "seo:verify": "node scripts/verify-seo.mjs",
     "og:build": "node scripts/build-og-image.mjs",
+    "embed:probe": "node scripts/embed-probe.mjs",
     "waf:apply": "node scripts/cf-waf-setup.mjs",
     "dns:harden": "node scripts/cf-dns-hardening.mjs",
     "cf:health": "node scripts/cf-health.mjs"
