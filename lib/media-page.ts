@@ -133,8 +133,13 @@ type PagedFetcher = (args: {
 // app/sitemap.ts is built from this same helper, so widening LIST_DEPTH widens
 // the sitemap with it — they used to be derived from different TMDB lists, and
 // the sitemap advertised a quarter of the pages the build actually baked.
+// Nudged popular 30 -> 33: measured 2,127 routes -> 12,863 files (64% of the
+// cap), sitemap 2,120 URLs. Note the route count is emergent, not a dial: these
+// pages are TMDB's live lists, deduped against each other, and the collection
+// set is whatever those movies happen to belong to. It moves by tens of routes
+// between builds on its own, so treat any exact figure here as "about".
 const LIST_DEPTH = {
-  popular: 30,
+  popular: 33,
   topRated: 16,
   trending: 6,
 } as const
