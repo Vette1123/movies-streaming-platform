@@ -20,6 +20,7 @@ import { Footer } from '@/components/layouts/footer'
 import { SiteHeader } from '@/components/layouts/site-header'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register'
+import { APPLE_SPLASH } from '@/app/_icons/apple-splash'
 
 export const viewport: Viewport = {
   themeColor: [
@@ -228,6 +229,23 @@ export default function RootLayout({ children }: RootLayoutProps) {
           with no "R" in it. So it did nothing on every current Safari and
           showed the wrong brand on the ones where it still worked.
         */}
+        {/*
+          iOS launch screens. Safari ignores the manifest's background_color,
+          so without these an installed app shows a white rectangle while it
+          boots — on a black-backgrounded app that reads as launching the wrong
+          thing. Apple offers no way to do it with fewer files: one image per
+          device resolution per orientation, picked by media query. The table
+          is app/_icons/apple-splash.ts, which is also what renders the files,
+          so a tag here can't point at something the build didn't write.
+        */}
+        {APPLE_SPLASH.map((splash) => (
+          <link
+            key={splash.file}
+            rel="apple-touch-startup-image"
+            href={splash.file}
+            media={splash.media}
+          />
+        ))}
         <meta
           name="google-adsense-account"
           content="ca-pub-3842960431278714"

@@ -46,7 +46,13 @@ try {
     import(pathToFileURL(bundlePath).href),
     import('next/og.js'),
   ])
-  const { buildIconInput, MASKABLE_GLYPH_SCALE, DEFAULT_RADIUS } = source
+  const {
+    buildIconInput,
+    buildSplashInput,
+    MASKABLE_GLYPH_SCALE,
+    DEFAULT_RADIUS,
+    APPLE_SPLASH,
+  } = source
 
   // radius: only the targets the platform does NOT mask get rounded. The
   // maskable pair, the iOS icons and the Windows tile are clipped to the
@@ -120,6 +126,23 @@ try {
   await writeFile('public/favicon.ico', ico)
   console.log(
     `✓ public/favicon.ico (${FAVICON_SIZES.join('/')}px, ${ico.length}B)`
+  )
+
+  // iOS launch screens, one per device resolution per orientation. See
+  // app/_icons/apple-splash.ts for why there is no way to do this with fewer
+  // files. Mostly flat background, so they quantize to a few KB each.
+  mkdirSync(join('public', 'splash'), { recursive: true })
+  let splashBytes = 0
+  for (const target of APPLE_SPLASH) {
+    const { jsx, options } = await buildSplashInput(target)
+    const raw = Buffer.from(await new ImageResponse(jsx, options).arrayBuffer())
+    const { buf } = await optimizePng(raw)
+    // target.file is the public-root href ("/splash/..."), so strip the slash.
+    await writeFile(join('public', target.file.slice(1)), buf)
+    splashBytes += buf.length
+  }
+  console.log(
+    `✓ public/splash/ (${APPLE_SPLASH.length} launch screens, ${Math.round(splashBytes / 1024)}KB total)`
   )
 } finally {
   rmSync(TMP, { recursive: true, force: true })

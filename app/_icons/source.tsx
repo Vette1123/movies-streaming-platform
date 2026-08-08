@@ -16,6 +16,12 @@
 
 import { loadInter } from '../_fonts/load'
 
+// Re-exported so scripts/build-app-icons.mjs gets the launch-screen table off
+// the same esbuild bundle as the artwork. app/layout.tsx imports the table
+// module directly instead — pulling it through here would drag the font loader
+// into the client bundle.
+export { APPLE_SPLASH } from './apple-splash'
+
 export type MarkOptions = {
   size: number
   /** Corner rounding as a fraction of size. 0 for platforms that mask their
@@ -111,22 +117,74 @@ export function brandMark({
   )
 }
 
+/**
+ * An iOS launch screen: the mark, centred, on the app's own background.
+ *
+ * Sized off the shorter axis so the same composition works in both
+ * orientations, and rounded like the home-screen icon it launches from — this
+ * is the frame the user stares at between tapping and first paint, so it
+ * should look like the icon growing, not like a different asset.
+ */
+export function brandSplash({
+  width,
+  height,
+}: {
+  width: number
+  height: number
+}) {
+  const mark = Math.round(Math.min(width, height) * 0.28)
+  return (
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: SPLASH_BACKGROUND,
+      }}
+    >
+      <div style={{ display: 'flex', width: mark, height: mark }}>
+        {brandMark({ size: mark, radius: DEFAULT_RADIUS })}
+      </div>
+    </div>
+  )
+}
+
+/** Matches `background_color` in site.webmanifest and the app's own body. */
+export const SPLASH_BACKGROUND = '#000000'
+
 /** jsx + ImageResponse options, ready for `new ImageResponse(...)`. */
 export async function buildIconInput(markOptions: MarkOptions) {
-  const font = await loadInter(900, 'R')
   return {
     jsx: brandMark(markOptions),
-    options: {
-      width: markOptions.size,
-      height: markOptions.size,
-      fonts: [
-        {
-          name: 'Inter',
-          data: font,
-          weight: 900 as const,
-          style: 'normal' as const,
-        },
-      ],
-    },
+    options: await imageResponseOptions(markOptions.size, markOptions.size),
+  }
+}
+
+/** Same, for an iOS launch screen at a given device resolution. */
+export async function buildSplashInput(size: {
+  width: number
+  height: number
+}) {
+  return {
+    jsx: brandSplash(size),
+    options: await imageResponseOptions(size.width, size.height),
+  }
+}
+
+async function imageResponseOptions(width: number, height: number) {
+  const font = await loadInter(900, 'R')
+  return {
+    width,
+    height,
+    fonts: [
+      {
+        name: 'Inter',
+        data: font,
+        weight: 900 as const,
+        style: 'normal' as const,
+      },
+    ],
   }
 }

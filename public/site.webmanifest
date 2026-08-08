@@ -43,6 +43,22 @@
       "type": "image/png"
     }
   ],
+  "screenshots": [
+    {
+      "src": "/screenshot-wide.webp",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "form_factor": "wide",
+      "label": "Browse trending movies and TV shows on Reely"
+    },
+    {
+      "src": "/screenshot-narrow.webp",
+      "sizes": "780x1688",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "Browse trending movies and TV shows on Reely"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Browse Movies",

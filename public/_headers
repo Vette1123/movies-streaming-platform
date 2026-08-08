@@ -54,6 +54,18 @@
   Cache-Control: public, max-age=604800
 /opengraph-image.png
   Cache-Control: public, max-age=604800
+# Manifest screenshots, fetched only when Chrome draws the richer install
+# dialog. WebP rather than PNG: they're photographic, and the pair went from
+# 611KB to 134KB.
+/screenshot-wide.webp
+  Cache-Control: public, max-age=604800
+/screenshot-narrow.webp
+  Cache-Control: public, max-age=604800
+# Trailing wildcard, which Workers Static Assets does support. iOS fetches
+# exactly one of these — whichever media query matches the device — and only
+# for an installed app, so the week is about not re-fetching it on every launch.
+/splash/*
+  Cache-Control: public, max-age=604800
 
 # Documents are build-time snapshots refreshed by the 6h scheduled deploy
 # (.github/workflows/deploy.yml), so the shared TTL tracks that interval and the
