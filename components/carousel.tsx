@@ -265,26 +265,7 @@ export function Carousel({
   // time the effect ran), which lands the compensation short.
   const releaseXRef = React.useRef<number | null>(null)
 
-  // Which slide may be interacted with. Deliberately LAGS currentIndex until the
-  // track's spring has settled, and that lag is the whole point.
-  //
-  // The compensation below jumps the track a full stage-width the instant the
-  // index changes, precisely so the frame does NOT move yet — which means the
-  // slide filling the screen for the entire animation is the OUTGOING one. Its
-  // `inert` + `pointer-events: none` were keyed on the index alone, so they
-  // flipped a whole spring before the artwork did: for ~700ms after every
-  // rotation the hero you could see was completely untappable, and a tap on
-  // Watch Now fell through the translated track to the stage's z-0 base. At a
-  // 5s autoplay interval that is 14% of all taps, measured on prod.
-  //
-  // Desktop hid it: hovering the stage sets isUserInteracting and freezes
-  // autoplay, so a pointer on its way to the button has already stopped the
-  // rotation. A phone has no hover, so nothing pauses and the dead window is
-  // live the whole time — which is exactly where it was reported.
-  //
-  // Only interactivity lags. Positioning and `active` (which arms the incoming
-  // slide's trailer) still follow currentIndex immediately.
-  const [settledIndex, setSettledIndex] = React.useState(currentIndex)
+  const trackRef = React.useRef<HTMLDivElement>(null)
 
   useIsoLayoutEffect(() => {
     const prev = prevIndexRef.current
@@ -305,24 +286,61 @@ export function Carousel({
     // width + gap, because that's the real distance the slides just moved.
     x.jump(from + step * (widthRef.current + SLIDE_GAP))
     const controls = settle()
-    // Hand interactivity to the new slide only once it actually holds the frame.
-    // Under reduced motion settle() jumps instead of animating, so there is no
-    // transition to wait for. An interrupted spring never resolves, but the
-    // interruption is always a fresh index change, whose own animation resolves
-    // with the newer value — so this can't strand settledIndex behind.
-    if (!controls) {
-      setSettledIndex(currentIndex)
-      return
-    }
-    let cancelled = false
-    controls.then(() => {
-      if (!cancelled) setSettledIndex(currentIndex)
-    })
-    return () => {
-      cancelled = true
-      controls.stop()
-    }
+    return () => controls?.stop()
   }, [currentIndex, childrenCount, settle, x])
+
+  // WHAT IS REACHABLE IS DECIDED BY GEOMETRY, AND ONLY BY GEOMETRY.
+  //
+  // This is the structural fix for a bug that came back three times, because
+  // every version of it was a different guess at the same broken premise.
+  //
+  // The carousel had two answers to "which slide is on screen": currentIndex,
+  // which flips instantly, and where the slides actually are, which is x plus
+  // each slide's offset. Those two DISAGREE for the whole of every transition,
+  // and not by accident — the layout effect above deliberately jumps the track a
+  // full step so the frame does not move yet. So for ~400ms after every swipe
+  // and every rotation, the slide filling the screen is the one the index has
+  // already written off, and `inert` + `pointer-events: none` were derived from
+  // the index. The hero you could see was not the hero you could touch.
+  //
+  // Patching the index with a lagging copy of itself failed twice: once waiting
+  // on the spring's completion promise (flipped early), once on x reaching zero
+  // (right, but still a second source of truth to keep in step). The premise was
+  // the problem. A slide is reachable iff its box overlaps the frame, which is
+  // exactly `|offset * step + x| < step` — true at every instant, mid-spring,
+  // mid-drag or at rest, with nothing to synchronise.
+  //
+  // So this owns inert / aria-hidden / pointer-events outright and React sets
+  // none of them. One writer, one rule, no timing. It runs off x's subscription
+  // rather than React state, so a transition still costs zero re-renders — the
+  // property the rest of this file is built around.
+  //
+  // It fails OPEN. Before the stage has been measured there is no geometry to
+  // judge, and the failure mode we are eliminating is content you cannot touch,
+  // so an unmeasured carousel is fully reachable rather than fully dead.
+  const syncReachability = React.useCallback(() => {
+    const track = trackRef.current
+    if (!track) return
+    const step = widthRef.current + SLIDE_GAP
+    const tx = x.get()
+    for (const node of Array.from(track.children)) {
+      const el = node as HTMLElement
+      const offset = Number(el.dataset.offset)
+      const reachable =
+        step <= 0 || !Number.isFinite(offset)
+          ? true
+          : Math.abs(offset * step + tx) < step
+      el.style.pointerEvents = reachable ? 'auto' : 'none'
+      el.toggleAttribute('inert', !reachable)
+      if (reachable) el.removeAttribute('aria-hidden')
+      else el.setAttribute('aria-hidden', 'true')
+    }
+  }, [x])
+
+  // Re-run on every commit (the offsets change with currentIndex) and on every
+  // frame x moves.
+  useIsoLayoutEffect(syncReachability)
+  React.useEffect(() => x.on('change', syncReachability), [x, syncReachability])
 
   // Contain the browser's overscroll for exactly as long as a HORIZONTAL drag is
   // in progress, and no longer.
@@ -465,9 +483,7 @@ export function Carousel({
         // finger was on its way to Watch Now — the slide could change out from
         // under the tap. A pointer going down on the stage freezes autoplay
         // exactly the way a mouse entering it does, and the release resumes on
-        // the usual 3s delay. Belt and braces with settledIndex above: this
-        // stops a tap meeting a transition, that one keeps the visible slide
-        // tappable if it does anyway.
+        // the usual 3s delay.
         onPointerDown={handleHoverStart}
         onPointerUp={handleHoverEnd}
         onPointerCancel={handleHoverEnd}
@@ -504,6 +520,7 @@ export function Carousel({
           the layout effect above owns the return, which is what makes drag and
           autoplay produce the identical motion. */}
         <motion.div
+          ref={trackRef}
           className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
           style={{
             x,
@@ -536,13 +553,6 @@ export function Carousel({
             // sits at ±2 widths, which the stage clips.
             const offset = wrappedOffset(i, currentIndex, childrenCount)
             const active = offset === 0
-            // Tappable while it holds the frame: the incoming slide, plus the
-            // outgoing one until the spring settles (see settledIndex). Once
-            // settled the two collapse to the same slide, which is the resting
-            // behaviour. Both being live mid-transition is harmless — the one
-            // off-frame is clipped by the stage's overflow-hidden, so nothing
-            // can reach it anyway.
-            const interactive = active || i === settledIndex
             // ...but the lagging window may NEVER unmount the slide on screen.
             // Normally it cannot: one step of the index leaves the new active
             // slide inside the old window. Several steps before React gets to
@@ -584,16 +594,16 @@ export function Carousel({
                 // promotes it because it animates a transform.
                 style={{
                   x: `calc(${offset * 100}% + ${offset * SLIDE_GAP}px)`,
-                  pointerEvents: interactive ? 'auto' : 'none',
                   backfaceVisibility: 'hidden',
                 }}
                 initial={false}
-                aria-hidden={!interactive}
-                // Pair with aria-hidden: also pull the off-screen slide's links out
-                // of the focus order + a11y tree (aria-hidden alone still leaves
-                // focusable descendants → axe "aria-hidden-focus"). undefined (not
-                // false) so the attribute is simply absent on the active slide.
-                inert={!interactive || undefined}
+                // Where this slide sits, in steps from the frame. The ONLY input
+                // syncReachability needs — it pairs this with the live x to work
+                // out what is actually on screen. React does not set
+                // pointer-events / inert / aria-hidden here on purpose: those
+                // have a single owner, and deriving them from the index is the
+                // bug (see syncReachability).
+                data-offset={offset}
               >
                 {/* Tell the slide whether it's the one on screen, so touch devices
                   can autoplay the active slide's trailer preview (no hover). */}

@@ -29,6 +29,21 @@ export const useCarousel = ({
   const [isTabHidden, setIsTabHidden] = useState(false)
   const isMounted = useMounted()
 
+  // Once the visitor drives the carousel themselves, it stops driving itself —
+  // permanently, for the life of the page.
+  //
+  // Everything else here is a TEMPORARY pause that resumes after 3s, and that
+  // is what keeps putting a rotation underneath a finger: you swipe to the
+  // title you want, reach for Watch Now, and the hero advances between your eye
+  // choosing the target and your thumb reaching it. The tap then lands on a
+  // slide mid-flight and does nothing, which is exactly the "I have to tap it
+  // twice" report. No timing fix can close that gap — a moving target is the
+  // problem, so once you have shown you are steering, the carousel stops moving
+  // on its own. WCAG 2.2.2 asks for auto-updating content to be stoppable
+  // anyway, and a hero the visitor has already engaged with has no business
+  // rotating away from them.
+  const [userTookOver, setUserTookOver] = useState(false)
+
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null)
   const userInteractionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   // A ref, not state, and nothing outside this hook reads it. It used to be
@@ -84,6 +99,7 @@ export const useCarousel = ({
     if (
       !autoPlay ||
       childrenCount <= 1 ||
+      userTookOver ||
       isUserInteracting ||
       isTabHidden ||
       externalPaused
@@ -104,6 +120,7 @@ export const useCarousel = ({
     autoPlayInterval,
     paginate,
     childrenCount,
+    userTookOver,
     isUserInteracting,
     isTabHidden,
     externalPaused,
@@ -174,6 +191,8 @@ export const useCarousel = ({
   const handleDragEnd = useCallback(
     (event: any, info: PanInfo) => {
       isDraggingRef.current = false
+      // You are steering now — see userTookOver.
+      setUserTookOver(true)
 
       // Measure the stage, not the event target. This used to read
       // `event.currentTarget.offsetWidth`, but on a pointerup React has already
@@ -246,6 +265,7 @@ export const useCarousel = ({
 
   const handleButtonClick = useCallback(
     (newDirection: number) => {
+      setUserTookOver(true)
       handleUserInteraction(true)
       paginate(newDirection)
       handleUserInteraction(false)
@@ -255,6 +275,7 @@ export const useCarousel = ({
 
   const handleDotClick = useCallback(
     (index: number) => {
+      setUserTookOver(true)
       handleUserInteraction(true)
       setCurrentIndex(index)
       handleUserInteraction(false)
