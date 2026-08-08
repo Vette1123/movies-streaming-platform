@@ -72,7 +72,14 @@ export const metadata: Metadata = {
   // All of these come out of `pnpm icons:build`.
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: '64x64', type: 'image/x-icon' },
+      // The .ico carries 16/32/48/64 — `sizes` has to say so, or a browser
+      // picking by size sees a 64 it has to downscale and reaches for the
+      // 192 PNG instead, which is the wasteful version of the same choice.
+      {
+        url: '/favicon.ico',
+        sizes: '16x16 32x32 48x48 64x64',
+        type: 'image/x-icon',
+      },
       {
         url: '/android-chrome-192x192.png',
         sizes: '192x192',
@@ -214,11 +221,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
         */}
         <link rel="dns-prefetch" href="https://www.youtube-nocookie.com" />
         <link rel="dns-prefetch" href="https://i.ytimg.com" />
-        <link
-          rel="mask-icon"
-          href="/safari-pinned-tab.svg"
-          color={siteConfig.theme.colors.dark}
-        />
+        {/*
+          No <link rel="mask-icon">. Safari 15 dropped it in favour of the
+          manifest icons + favicon, and the safari-pinned-tab.svg it pointed at
+          was a potrace of the pre-Reely logo — a monitor-and-play-button glyph
+          with no "R" in it. So it did nothing on every current Safari and
+          showed the wrong brand on the ones where it still worked.
+        */}
         <meta
           name="google-adsense-account"
           content="ca-pub-3842960431278714"

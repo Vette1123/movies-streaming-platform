@@ -15,12 +15,45 @@
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: SAMEORIGIN
 
-# CF defaults to `max-age=0, must-revalidate` for files in public/. That's
-# fine for icons / manifests, but Next.js hashes filenames under _next/static
-# (e.g. chunks.<hash>.js, fonts named with a content hash), so those files
-# never change — they're safe to cache for a year with immutable.
+# CF defaults to `max-age=0, must-revalidate` for files in public/, but Next.js
+# hashes filenames under _next/static (e.g. chunks.<hash>.js, fonts named with a
+# content hash), so those files never change — they're safe to cache for a year
+# with immutable.
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Brand assets. Unhashed names, so they can't be immutable, but the artwork
+# changes about once a year — under the CF default every visit spent a
+# conditional request on each of the favicon, the manifest, the touch icon and
+# whichever android-chrome size matched. A week of browser cache costs at worst
+# a week of a stale icon after an `icons:build`, which is not a thing anyone
+# notices, and the deploy purge still refreshes every shared cache immediately.
+/favicon.ico
+  Cache-Control: public, max-age=604800
+/site.webmanifest
+  Cache-Control: public, max-age=604800
+/browserconfig.xml
+  Cache-Control: public, max-age=604800
+# Spelled out rather than globbed: Workers Static Assets only guarantees a
+# trailing `*`, and `/apple-touch-icon*.png` silently matching nothing is
+# indistinguishable from it working. These are the exact TARGETS list in
+# scripts/build-app-icons.mjs — add a line when you add a target there.
+/apple-touch-icon.png
+  Cache-Control: public, max-age=604800
+/apple-touch-icon-precomposed.png
+  Cache-Control: public, max-age=604800
+/android-chrome-192x192.png
+  Cache-Control: public, max-age=604800
+/android-chrome-512x512.png
+  Cache-Control: public, max-age=604800
+/android-chrome-192x192-maskable.png
+  Cache-Control: public, max-age=604800
+/android-chrome-512x512-maskable.png
+  Cache-Control: public, max-age=604800
+/mstile-150x150.png
+  Cache-Control: public, max-age=604800
+/opengraph-image.png
+  Cache-Control: public, max-age=604800
 
 # Documents are build-time snapshots refreshed by the 6h scheduled deploy
 # (.github/workflows/deploy.yml), so the shared TTL tracks that interval and the

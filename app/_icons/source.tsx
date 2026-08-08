@@ -30,6 +30,14 @@ export type MarkOptions = {
 
 /** Fills the frame. Correct for anything that is NOT circle-masked. */
 export const DEFAULT_GLYPH_SCALE = 0.78
+/**
+ * Corner rounding for the targets nothing masks for us — the favicon and the
+ * `purpose: "any"` manifest icons, which Chrome's desktop install prompt and
+ * the Windows/Chrome OS shortcut it creates draw exactly as given. 0.2237 is
+ * the ratio Apple's squircle uses, and it is the shape every other app icon
+ * on those surfaces has, so a hard square read as broken next to them.
+ */
+export const DEFAULT_RADIUS = 0.2237
 /** Fits inside Android's 80% maskable safe zone with room for the descender. */
 export const MASKABLE_GLYPH_SCALE = 0.52
 
