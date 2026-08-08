@@ -46,6 +46,50 @@ export const COMPANION_APPS: CompanionApp[] = [
 ]
 
 /**
+ * The off-site links that appear in both the header and the mobile drawer.
+ *
+ * They used to be four hand-written <Link> blocks in the header and a separate
+ * four-entry array in the drawer — the same list twice, which is how the header
+ * ended up with five icon buttons nobody was counting against the nav's width.
+ *
+ * `icon` is a key into `Icons` rather than a component so this module stays
+ * free of JSX imports; each consumer resolves it.
+ */
+export interface ExternalLink {
+  label: string
+  href: string
+  icon: 'gitHub' | 'twitter' | 'portfolio' | 'buyMeACoffee'
+  /** Right-aligned qualifier in the drawer. */
+  hint?: string
+  iconClassName?: string
+}
+
+export const EXTERNAL_LINKS: ExternalLink[] = [
+  {
+    label: 'GitHub',
+    href: 'https://github.com/Vette1123',
+    icon: 'gitHub',
+    hint: 'Source',
+  },
+  {
+    label: 'X (Twitter)',
+    href: 'https://twitter.com/Sadge1996',
+    icon: 'twitter',
+    iconClassName: 'fill-current',
+  },
+  {
+    label: 'Portfolio',
+    href: 'https://www.mohamedgado.com/',
+    icon: 'portfolio',
+  },
+  {
+    label: 'Buy me a coffee',
+    href: 'https://buymeacoffee.com/vetteotp',
+    icon: 'buyMeACoffee',
+  },
+]
+
+/**
  * Open an app's Play listing, mirroring the apps' own deep-link behaviour: try
  * the native Play Store app first, then fall back to the web listing.
  *

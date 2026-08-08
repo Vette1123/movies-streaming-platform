@@ -11,18 +11,41 @@ interface MainNavProps {
   items?: NavItem[]
 }
 
+/**
+ * The wordmark, rendered by SiteHeader rather than by MainNav.
+ *
+ * It used to live inside MainNav, which meant it inherited MainNav's
+ * breakpoint — so every width below the desktop nav's showed a header with a
+ * hamburger, a search box and no brand on it at all. The logo is not part of
+ * the nav; it belongs at every size.
+ */
+export function BrandLogo() {
+  return (
+    <Link
+      href="/"
+      prefetch={false}
+      aria-label={`${siteConfig.name} home`}
+      className="flex shrink-0 items-baseline space-x-2"
+    >
+      <Icons.reelLogo className="size-7 shrink-0 self-center" />
+      <span className="text-secondary-foreground hidden text-2xl font-bold whitespace-nowrap sm:inline-block 2xl:text-3xl">
+        {siteConfig.name}
+      </span>
+    </Link>
+  )
+}
+
 export function MainNav({ items }: MainNavProps) {
   const pathname = usePathname()
   return (
-    <div className="hidden gap-6 md:gap-10 lg:flex">
-      <Link href="/" prefetch={false} className="flex items-baseline space-x-2">
-        <Icons.reelLogo className="h-7 w-7" />
-        <span className="text-secondary-foreground inline-block text-3xl font-bold">
-          {siteConfig.name}
-        </span>
-      </Link>
+    // xl, not lg. Six labels plus the logo plus the search box do not fit the
+    // 960px of content lg leaves, so between 1024 and 1279 this used to render
+    // anyway and buckle — "TV Shows" and "Watch History" broke onto a second
+    // line inside a 4rem header and ran into the search box. Below xl the
+    // hamburger drawer carries the same routes.
+    <div className="hidden shrink-0 items-center xl:flex">
       {items?.length ? (
-        <nav className="flex gap-6">
+        <nav className="flex items-center gap-4 2xl:gap-6">
           {items?.map(
             (item, index) =>
               item.href && (
@@ -34,7 +57,10 @@ export function MainNav({ items }: MainNavProps) {
                   // on each page load — one Worker RSC hit per route. Fetch on click.
                   prefetch={false}
                   className={cn(
-                    'text-secondary-foreground flex items-center text-base font-medium',
+                    // whitespace-nowrap is the actual guard: a flex row will
+                    // happily break a two-word label rather than overflow, and
+                    // a wrapped label is taller than the header.
+                    'text-secondary-foreground flex shrink-0 items-center text-sm font-medium whitespace-nowrap 2xl:text-base',
                     pathname === item.href && 'underline underline-offset-4',
                     buttonVariants({
                       size: 'text',

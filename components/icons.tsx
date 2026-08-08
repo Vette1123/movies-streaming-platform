@@ -5,6 +5,7 @@ import {
   LucideProps,
   Menu,
   Moon,
+  MoreHorizontal,
   PlayCircle,
   Search,
   Settings,
@@ -33,6 +34,7 @@ export const Icons = {
     </svg>
   ),
   menu: Menu,
+  moreHorizontal: MoreHorizontal,
   star: StarIcon,
   playIcon: PlayCircle,
   search: Search,

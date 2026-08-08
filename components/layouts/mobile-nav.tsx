@@ -5,7 +5,7 @@ import { Download, Smartphone } from 'lucide-react'
 
 import { NavItem } from '@/types/navbar'
 import { siteConfig } from '@/config/site'
-import { COMPANION_APPS, openOnPlayStore } from '@/lib/apps'
+import { COMPANION_APPS, EXTERNAL_LINKS, openOnPlayStore } from '@/lib/apps'
 import { cn } from '@/lib/utils'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
 import { Button } from '@/components/ui/button'
@@ -124,29 +124,16 @@ const TOOL_LINKS: DrawerLink[] = [
   },
 ]
 
-const SOCIAL_LINKS: DrawerLink[] = [
-  {
-    href: siteConfig.links.website,
-    label: 'Portfolio',
-    Icon: Icons.portfolio,
-  },
-  {
-    href: siteConfig.links.github,
-    label: 'GitHub',
-    Icon: Icons.gitHub,
-  },
-  {
-    href: siteConfig.links.twitter,
-    label: 'X (Twitter)',
-    Icon: Icons.twitter,
-    iconClassName: 'fill-current',
-  },
-  {
-    href: siteConfig.links.buyMeACoffee,
-    label: 'Buy me a coffee',
-    Icon: Icons.buyMeACoffee,
-  },
-]
+// Same list the header popover renders — see EXTERNAL_LINKS. It was duplicated
+// here, which is how the two ended up showing different sets.
+const SOCIAL_LINKS: DrawerLink[] = EXTERNAL_LINKS.map(
+  ({ label, href, icon, iconClassName }) => ({
+    label,
+    href,
+    Icon: Icons[icon],
+    iconClassName,
+  })
+)
 
 export function MobileNav({ items }: MobileNavProps) {
   const [isOpen, setIsOpen] = React.useState(false)
@@ -159,7 +146,9 @@ export function MobileNav({ items }: MobileNavProps) {
       <SheetTrigger asChild>
         <Button
           variant="ghost"
-          className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 lg:hidden"
+          // xl:hidden, matching MainNav's xl:flex — the two must switch on the
+          // same breakpoint or a width exists with both or neither.
+          className="mr-2 shrink-0 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 xl:hidden"
         >
           <Icons.menu className="size-6" />
           <span className="sr-only">Toggle Menu</span>

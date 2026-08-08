@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 
 import { siteConfig } from '@/config/site'
-import { COMPANION_APPS, openOnPlayStore } from '@/lib/apps'
+import { COMPANION_APPS, EXTERNAL_LINKS, openOnPlayStore } from '@/lib/apps'
 import { cn } from '@/lib/utils'
 import { useNavbarScrollOverlay } from '@/hooks/use-scroll-overlay'
 import { buttonVariants } from '@/components/ui/button'
@@ -14,7 +14,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Icons } from '@/components/icons'
-import { MainNav } from '@/components/layouts/main-nav'
+import { BrandLogo, MainNav } from '@/components/layouts/main-nav'
 import { MobileNav } from '@/components/layouts/mobile-nav'
 
 // The command palette (cmdk + avatar + debounce + the search server-action, ~645
@@ -29,11 +29,77 @@ const CommandMenu = dynamic(
     loading: () => (
       <div
         aria-hidden
-        className="bg-muted/40 h-9 w-full animate-pulse rounded-md border md:w-44 lg:w-64"
+        // Widths must track the real trigger in command-menu.tsx, or the swap
+        // shifts the header.
+        className="bg-muted/40 h-9 w-full animate-pulse rounded-md border md:w-44 xl:w-52 2xl:w-64"
       />
     ),
   }
 )
+
+// Both header popovers render the same row: icon, title, optional second line.
+// One template so the apps list and the links list can't drift apart on icon
+// size, gap or hover treatment — the drawer's DrawerAction is the same idea.
+const POPOVER_ROW =
+  'hover:bg-accent focus-visible:bg-accent flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left outline-none'
+
+function PopoverHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-muted-foreground px-2 pt-1 pb-2 text-xs font-medium">
+      {children}
+    </p>
+  )
+}
+
+interface PopoverRowProps {
+  Icon: React.ComponentType<{ className?: string }>
+  title: string
+  subtitle?: string
+  iconClassName?: string
+  /** Present → renders an external link; absent → a button. */
+  href?: string
+  onClick?: () => void
+}
+
+function PopoverRow({
+  Icon,
+  title,
+  subtitle,
+  iconClassName,
+  href,
+  onClick,
+}: PopoverRowProps) {
+  const content = (
+    <>
+      <Icon className={cn('size-5 shrink-0', iconClassName)} />
+      <span className="flex min-w-0 flex-col">
+        <span className="truncate text-sm font-medium">{title}</span>
+        {subtitle && (
+          <span className="text-muted-foreground text-xs">{subtitle}</span>
+        )}
+      </span>
+    </>
+  )
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className={POPOVER_ROW}
+      >
+        {content}
+      </Link>
+    )
+  }
+
+  return (
+    <button type="button" onClick={onClick} className={POPOVER_ROW}>
+      {content}
+    </button>
+  )
+}
 
 export function SiteHeader() {
   const { isShowNavBackground } = useNavbarScrollOverlay()
@@ -46,107 +112,65 @@ export function SiteHeader() {
         }
       )}
     >
-      <div className="container flex h-16 max-w-(--breakpoint-2xl) items-center space-x-4 sm:justify-between sm:space-x-0">
-        <MainNav items={siteConfig.mainNav} />
+      <div className="container flex h-16 max-w-(--breakpoint-2xl) items-center gap-3 sm:justify-between xl:gap-6">
         <MobileNav items={siteConfig.mainNav} />
-        <div className="flex flex-1 items-center justify-end space-x-4">
-          <div className="w-full flex-1 md:w-auto md:flex-none">
+        <BrandLogo />
+        <MainNav items={siteConfig.mainNav} />
+        {/* min-w-0 so this cluster is the side that gives when space runs out —
+            without it a flex item refuses to shrink below its content and the
+            nav is what buckles, which is how the labels ended up on two lines. */}
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+          <div className="w-full min-w-0 flex-1 md:w-auto md:flex-none">
             <CommandMenu />
           </div>
-          <nav className="hidden items-center space-x-1 md:flex">
+          <nav className="hidden shrink-0 items-center gap-1 md:flex">
             <Popover>
               <PopoverTrigger
                 aria-label="Our apps on Google Play"
-                className={buttonVariants({
-                  size: 'icon',
-                  variant: 'ghost',
-                })}
+                className={buttonVariants({ size: 'icon', variant: 'ghost' })}
               >
                 <Icons.googlePlay className="size-5" />
                 <span className="sr-only">Our apps on Google Play</span>
               </PopoverTrigger>
               <PopoverContent align="end" className="w-72 p-2">
-                <p className="text-muted-foreground px-2 pt-1 pb-2 text-xs font-medium">
-                  Our apps on Google Play
-                </p>
+                <PopoverHeading>Our apps on Google Play</PopoverHeading>
                 {COMPANION_APPS.map((app) => (
-                  <button
+                  <PopoverRow
                     key={app.slug}
-                    type="button"
+                    Icon={Icons.googlePlay}
+                    title={app.name}
+                    subtitle={app.tagline}
                     onClick={() => openOnPlayStore(app)}
-                    className="hover:bg-accent focus-visible:bg-accent flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left outline-none"
-                  >
-                    <Icons.googlePlay className="size-5 shrink-0" />
-                    <span className="flex flex-col">
-                      <span className="text-sm font-medium">{app.name}</span>
-                      <span className="text-muted-foreground text-xs">
-                        {app.tagline}
-                      </span>
-                    </span>
-                  </button>
+                  />
                 ))}
               </PopoverContent>
             </Popover>
-            <Link
-              href={siteConfig.links.github}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <div
-                className={buttonVariants({
-                  size: 'icon',
-                  variant: 'ghost',
-                })}
+            {/* GitHub, X, portfolio and the tip jar used to be four separate
+                icon buttons out here. Five buttons plus a 16rem search plus six
+                nav labels does not fit the 1400px container, so they live
+                behind one trigger — same links, a fifth of the width, and the
+                list is the one the drawer already renders. */}
+            <Popover>
+              <PopoverTrigger
+                aria-label="Links"
+                className={buttonVariants({ size: 'icon', variant: 'ghost' })}
               >
-                <Icons.gitHub className="size-5" />
-                <span className="sr-only">GitHub</span>
-              </div>
-            </Link>
-            <Link
-              href={siteConfig.links.twitter}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <div
-                className={buttonVariants({
-                  size: 'icon',
-                  variant: 'ghost',
-                })}
-              >
-                <Icons.twitter className="size-5 fill-current" />
-                <span className="sr-only">X (Twitter)</span>
-              </div>
-            </Link>
-            <Link
-              href={siteConfig.author.website}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <div
-                className={buttonVariants({
-                  size: 'icon',
-                  variant: 'ghost',
-                })}
-              >
-                <Icons.portfolio className="size-5" />
-                <span className="sr-only">Portfolio</span>
-              </div>
-            </Link>
-            <Link
-              href={siteConfig.links.buyMeACoffee}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <div
-                className={buttonVariants({
-                  size: 'icon',
-                  variant: 'ghost',
-                })}
-              >
-                <Icons.buyMeACoffee className="size-5" />
-                <span className="sr-only">Buy me a coffee</span>
-              </div>
-            </Link>
+                <Icons.moreHorizontal className="size-5" />
+                <span className="sr-only">Links</span>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-56 p-2">
+                <PopoverHeading>Links</PopoverHeading>
+                {EXTERNAL_LINKS.map((link) => (
+                  <PopoverRow
+                    key={link.label}
+                    Icon={Icons[link.icon]}
+                    iconClassName={link.iconClassName}
+                    title={link.label}
+                    href={link.href}
+                  />
+                ))}
+              </PopoverContent>
+            </Popover>
           </nav>
         </div>
       </div>

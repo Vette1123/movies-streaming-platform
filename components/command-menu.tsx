@@ -266,7 +266,10 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
       <Button
         variant="outline"
         className={cn(
-          'text-muted-foreground hover:border-primary/40 relative w-full justify-start pl-9 text-sm transition-colors sm:pr-14 md:w-44 lg:w-64'
+          // Widens only where there is room to spare. It used to jump to 16rem
+          // at lg, which is exactly the band where the desktop nav is fighting
+          // for the same pixels.
+          'text-muted-foreground hover:border-primary/40 relative w-full justify-start pl-9 text-sm transition-colors sm:pr-14 md:w-44 xl:w-52 2xl:w-64'
         )}
         onClick={() => setOpen(true)}
         {...props}
