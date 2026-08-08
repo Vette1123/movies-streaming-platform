@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 import {
   getAllTimeTopRatedMovies,
   getLatestTrendingMovies,
-  getNowPlayingMovies,
+  getMovieDetailsById,
   getPopularMovies,
 } from '@/services/movies'
 import {
@@ -11,9 +11,12 @@ import {
   getPopularSeries,
 } from '@/services/series'
 
-import { MediaResponse } from '@/types/media'
 import { siteConfig } from '@/config/site'
 import { MOVIE_GENRES_WITH_SLUG, TV_GENRES_WITH_SLUG } from '@/lib/genres'
+import {
+  buildCollectionStaticParams,
+  buildMediaStaticParams,
+} from '@/lib/media-page'
 
 export const revalidate = 86400
 
@@ -25,26 +28,27 @@ const baseUrl = siteConfig.websiteURL
 
 const buildDate = (): string => new Date().toISOString()
 
-// Fan out the paged fetchers, flatten + dedupe by id, and map each item to a
-// sitemap entry under `pathPrefix`. Shared by movies and TV so the dedupe and
-// priority heuristic stay identical; a failed fetch degrades to no rows.
+// The sitemap is built from the SAME helper that decides what gets prerendered,
+// not from its own hand-picked list of TMDB pages.
+//
+// It used to fetch 7 movie + 6 TV list pages of its own and advertise whatever
+// came back — 240 URLs. Meanwhile LIST_DEPTH prerenders ~1,000 detail routes
+// and buildCollectionStaticParams another ~230 franchise pages, so the sitemap
+// was omitting three quarters of the site and listing some ids that were never
+// baked. Sharing the helper means the two sets cannot drift again, and it is
+// close to free at build time: the detail routes already issue these exact
+// requests, so Next's build fetch cache serves the second read.
 const mediaSitemapUrls = async (
   pathPrefix: string,
-  fetchers: Array<() => Promise<MediaResponse | undefined>>
+  params: () => Promise<{ id: string }[]>
 ): Promise<MetadataRoute.Sitemap> => {
   try {
-    const pages = await Promise.all(fetchers.map((fetch) => fetch()))
-    const all = pages.flatMap((page) => page?.results || [])
-    const unique = all.filter(
-      (item, i, self) => i === self.findIndex((x) => x.id === item.id)
-    )
-
     const lastModified = buildDate()
-    return unique.map((item) => ({
-      url: `${baseUrl}${pathPrefix}/${item.id}`,
+    return (await params()).map(({ id }) => ({
+      url: `${baseUrl}${pathPrefix}/${id}`,
       lastModified,
       changeFrequency: 'monthly' as const,
-      priority: (item as any).popularity > 50 ? 0.8 : 0.6,
+      priority: 0.7,
     }))
   } catch (error) {
     console.error(`Error generating ${pathPrefix} URLs for sitemap:`, error)
@@ -52,26 +56,31 @@ const mediaSitemapUrls = async (
   }
 }
 
+const movieParams = () =>
+  buildMediaStaticParams({
+    popular: getPopularMovies,
+    topRated: getAllTimeTopRatedMovies,
+    trending: getLatestTrendingMovies,
+  })
+
 const generateMovieUrls = (): Promise<MetadataRoute.Sitemap> =>
-  mediaSitemapUrls('/movies', [
-    () => getPopularMovies({ page: 1 }),
-    () => getPopularMovies({ page: 2 }),
-    () => getLatestTrendingMovies({ page: 1 }),
-    () => getLatestTrendingMovies({ page: 2 }),
-    () => getAllTimeTopRatedMovies({ page: 1 }),
-    () => getAllTimeTopRatedMovies({ page: 2 }),
-    () => getNowPlayingMovies({ page: 1 }),
-  ])
+  mediaSitemapUrls('/movies', movieParams)
 
 const generateTVShowUrls = (): Promise<MetadataRoute.Sitemap> =>
-  mediaSitemapUrls('/tv-shows', [
-    () => getPopularSeries({ page: 1 }),
-    () => getPopularSeries({ page: 2 }),
-    () => getLatestTrendingSeries({ page: 1 }),
-    () => getLatestTrendingSeries({ page: 2 }),
-    () => getAllTimeTopRatedSeries({ page: 1 }),
-    () => getAllTimeTopRatedSeries({ page: 2 }),
-  ])
+  mediaSitemapUrls('/tv-shows', () =>
+    buildMediaStaticParams({
+      popular: getPopularSeries,
+      topRated: getAllTimeTopRatedSeries,
+      trending: getLatestTrendingSeries,
+    })
+  )
+
+// Franchise pages were in no sitemap at all, despite being prerendered and
+// linked from every movie that belongs to one.
+const generateCollectionUrls = (): Promise<MetadataRoute.Sitemap> =>
+  mediaSitemapUrls('/collection', () =>
+    buildCollectionStaticParams(movieParams, getMovieDetailsById)
+  )
 
 const SITE_LAUNCH_DATE = '2024-01-01T00:00:00.000Z'
 
@@ -116,12 +125,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   try {
-    const [movieUrls, tvShowUrls] = await Promise.all([
+    const [movieUrls, tvShowUrls, collectionUrls] = await Promise.all([
       generateMovieUrls(),
       generateTVShowUrls(),
+      generateCollectionUrls(),
     ])
 
-    return [...staticRoutes, ...movieUrls, ...tvShowUrls].sort((a, b) => {
+    return [
+      ...staticRoutes,
+      ...movieUrls,
+      ...tvShowUrls,
+      ...collectionUrls,
+    ].sort((a, b) => {
       const diff = (b.priority || 0) - (a.priority || 0)
       return diff !== 0 ? diff : a.url.localeCompare(b.url)
     })

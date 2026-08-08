@@ -116,14 +116,27 @@ type PagedFetcher = (args: {
 // types — so the cap is a hard ceiling of roughly 1,900 routes.
 //
 // Measured at 60/30/8: 3,714 routes → 36,819 files and 2.06 GB. Well over.
-// 15/8/3 lands near ~1,000 routes → ~10,000 files, leaving real headroom for
-// the genre and collection sets. The sitemap is unaffected: it is built from
-// the TMDB lists directly, so it still advertises far more URLs than this, and
-// every one of them resolves through the Worker fallback.
+//
+// Re-measured 2026-08-08 at 15/8/3: 1,045 routes → 6,335 files. That is 6.1
+// files per route, not the ~10 assumed above, so the ceiling is nearer 3,200
+// routes than 1,900 and there was a lot of unused headroom.
+//
+// 30/16/6 measured: 2,005 routes → 12,131 files (61% of the cap) and 905 MB in
+// out/. That doubles the indexable surface — the sitemap goes 1,034 → 1,998
+// URLs — while keeping ~7,800 files in reserve for the genre and collection
+// sets, which grow on their own as TMDB's lists move.
+//
+// Re-measure with `find out -type f | wc -l` before going further: the
+// per-route file count is a Next implementation detail that has already moved
+// once, and the cap is a hard failure, not a degradation.
+//
+// app/sitemap.ts is built from this same helper, so widening LIST_DEPTH widens
+// the sitemap with it — they used to be derived from different TMDB lists, and
+// the sitemap advertised a quarter of the pages the build actually baked.
 const LIST_DEPTH = {
-  popular: 15,
-  topRated: 8,
-  trending: 3,
+  popular: 30,
+  topRated: 16,
+  trending: 6,
 } as const
 
 // Prerender the head of the traffic distribution: popular, all-time top rated,

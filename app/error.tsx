@@ -66,6 +66,8 @@ export default function GlobalError({ error, reset }: ErrorProps) {
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-4">
       <EmptyState
         icon={copy.icon}
+        // This boundary replaces the page's own content, so it owns the h1.
+        headingLevel="h1"
         title={copy.title}
         description={copy.description}
         primaryAction={{ label: 'Try again', onClick: reset, icon: RotateCcw }}

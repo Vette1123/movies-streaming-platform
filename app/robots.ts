@@ -8,6 +8,26 @@ const baseUrl = siteConfig.websiteURL
 // once at build time rather than per request. Emits a static out/robots.txt.
 export const dynamic = 'force-static'
 
+// One list rather than the same nine lines copied into each rule block.
+const CRAWL_DISALLOW = [
+  '/api/',
+  '/watch-history',
+  '/admin/',
+  '/private/',
+  '/auth/',
+  '/login',
+  '/register',
+  '/*?*',
+  // The two fallback shells are an implementation detail: cloudflare/worker.js
+  // serves their exported HTML under the real /movies/<id>, /tv-shows/<id> and
+  // /collection/<id> URLs, with the title, OG tags, JSON-LD and an <h1>
+  // injected. Fetched at their own bare path they are an empty skeleton with
+  // no heading, which is what an SEO crawl reports as a missing <h1>. They
+  // already carry noindex; this stops a crawler spending a fetch on them.
+  '/media-fallback',
+  '/collection-fallback',
+]
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
@@ -25,30 +45,12 @@ export default function robots(): MetadataRoute.Robots {
           'Applebot',
         ],
         allow: ['/'],
-        disallow: [
-          '/api/',
-          '/watch-history',
-          '/admin/',
-          '/private/',
-          '/auth/',
-          '/login',
-          '/register',
-          '/*?*',
-        ],
+        disallow: CRAWL_DISALLOW,
       },
       {
         userAgent: '*',
         allow: ['/'],
-        disallow: [
-          '/api/',
-          '/watch-history',
-          '/admin/',
-          '/private/',
-          '/auth/',
-          '/login',
-          '/register',
-          '/*?*',
-        ],
+        disallow: CRAWL_DISALLOW,
       },
       {
         userAgent: [

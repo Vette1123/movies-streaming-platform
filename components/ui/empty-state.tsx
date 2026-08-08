@@ -23,6 +23,15 @@ interface EmptyStateProps {
   primaryAction?: EmptyStateAction
   secondaryAction?: EmptyStateAction
   className?: string
+  /**
+   * `h2` by default, because most callers drop this inside a page that already
+   * has its own `<h1>` (an empty watchlist under "My Watchlist", a failed rail
+   * under "Movies"). On 404 and the error boundary this component IS the page,
+   * so those pass `h1` — a document whose top heading is an `h2` has no
+   * document title for a screen reader, and it is what an SEO crawl reports as
+   * a missing `<h1>`.
+   */
+  headingLevel?: 'h1' | 'h2'
 }
 
 // The stack fades up one element at a time. This was a framer-motion variant
@@ -101,6 +110,7 @@ export function EmptyState({
   primaryAction,
   secondaryAction,
   className,
+  headingLevel: Heading = 'h2',
 }: EmptyStateProps) {
   return (
     <div
@@ -128,12 +138,12 @@ export function EmptyState({
         </div>
       </div>
 
-      <h2
+      <Heading
         style={riseDelay(1)}
         className="animate-rise-in text-foreground text-xl font-semibold text-balance sm:text-2xl"
       >
         {title}
-      </h2>
+      </Heading>
       <p
         style={riseDelay(2)}
         className="animate-rise-in text-muted-foreground mt-2 max-w-sm text-sm leading-relaxed text-pretty sm:text-base"

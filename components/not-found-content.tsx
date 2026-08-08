@@ -15,6 +15,8 @@ export function NotFoundContent() {
       <NotFoundTracker />
       <EmptyState
         icon={Compass}
+        // The only heading on this page, so it has to be the h1.
+        headingLevel="h1"
         title="404 — this page wandered off"
         description="The page you're looking for doesn't exist or has moved. Let's get you back to the good stuff."
         primaryAction={{ href: '/', label: 'Go home', icon: Home }}

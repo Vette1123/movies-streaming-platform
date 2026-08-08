@@ -371,6 +371,11 @@ function metaTags({ heading, description, image, canonical }, ogType) {
   const tags = [
     `<meta name="description" content="${escapeHtml(description)}">`,
     `<link rel="canonical" href="${escapeHtml(canonical)}">`,
+    // These pages are as real as the prerendered ones — the build simply ran
+    // out of room to bake them. The shell they are assembled from carries
+    // `noindex, nofollow` for its own bare URL, which build-worker.mjs strips
+    // out of the template precisely so this line can state the truth.
+    `<meta name="robots" content="index, follow">`,
     `<meta property="og:type" content="${ogType}">`,
     `<meta property="og:title" content="${escapeHtml(heading)}">`,
     `<meta property="og:description" content="${escapeHtml(description)}">`,
@@ -530,6 +535,14 @@ async function serveShell(shellPath, meta, ogType, jsonLd, env, url) {
       },
     })
     .on('link[rel="canonical"]', {
+      element(el) {
+        el.remove()
+      },
+    })
+    // Same reason as the canonical: the shell's own `noindex, nofollow` is for
+    // the bare /media-fallback URL, not for the real detail page being built
+    // out of it. headBlock's metaTags() appends `index, follow` after this.
+    .on('meta[name="robots"]', {
       element(el) {
         el.remove()
       },

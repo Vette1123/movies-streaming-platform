@@ -109,9 +109,18 @@ async function shellTemplates() {
       .replace(/<meta[^>]+name="twitter:[^"]*"[^>]*>/g, '')
       .replace(/<meta[^>]+name="description"[^>]*>/g, '')
       .replace(/<link[^>]+rel="canonical"[^>]*>/g, '')
+      // The robots meta especially. app/media-fallback/layout.tsx sets
+      // `noindex, nofollow` so the bare /media-fallback URL stays out of the
+      // index — correct for that URL, and catastrophic for the pages built
+      // from it: the Worker serves this HTML as the REAL /movies/<id>, so
+      // every detail page outside the prerendered set was telling Google not
+      // to index it. That is Search Console's "Excluded by 'noindex' tag".
+      // The static asset keeps its own tag; only the Worker's copy loses it,
+      // and metaTags() puts `index, follow` back.
+      .replace(/<meta[^>]+name="robots"[^>]*>/g, '')
 
-    if (/property="og:|name="twitter:/.test(stripped)) {
-      throw new Error(`${file}: og/twitter tags survived the strip`)
+    if (/property="og:|name="twitter:|name="robots"/.test(stripped)) {
+      throw new Error(`${file}: og/twitter/robots tags survived the strip`)
     }
 
     const title = stripped.match(/<title>.*?<\/title>/s)

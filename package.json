@@ -19,6 +19,7 @@
     "fonts:og": "node scripts/build-og-fonts.mjs",
     "icons:build": "node scripts/build-app-icons.mjs",
     "icons:verify": "node scripts/verify-icons.mjs",
+    "seo:verify": "node scripts/verify-seo.mjs",
     "og:build": "node scripts/build-og-image.mjs",
     "waf:apply": "node scripts/cf-waf-setup.mjs",
     "dns:harden": "node scripts/cf-dns-hardening.mjs",
