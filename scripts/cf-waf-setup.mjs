@@ -615,12 +615,32 @@ async function main() {
   // largest long task there. Nothing defensive is lost: the UA rules, the
   // managed challenges, the rate limit and AI-bot blocking are all independent
   // of it.
+  // `is_robots_txt_managed` goes off in the same call. Cloudflare turns it on by
+  // default and it does not merge with ours — the edge SERVES ITS OWN
+  // /robots.txt in place of the exported one, so app/robots.ts might as well not
+  // exist. Measured 2026-08-08 on prod: our file has 1 `Sitemap:` line and the
+  // AhrefsBot/SemrushBot blocks, the live one had 0 of either. Nothing was
+  // blocked (CF's version allows search engines) but losing `Sitemap:` costs
+  // sitemap auto-discovery, which is the whole reason robots.txt is served.
+  //
+  // `ai_bots_protection: 'block'` is NOT this setting and stays on: that is edge
+  // enforcement against AI crawlers, robots.txt is only advisory. This PUT is a
+  // partial merge — unlisted fields keep their values — so it does not disturb
+  // it (proven by this very step, which has only ever sent the two booleans
+  // below and left `ai_bots_protection` reading 'block').
+  //
+  // The one thing CF's file did that ours did not was disallow AI *training*
+  // crawlers; those user-agents moved into app/robots.ts so nothing is lost.
   await step(
-    'Bot Fight Mode + JS Detections off (needs Zone Bot Management: Edit)',
+    'Bot Fight Mode + JS Detections + managed robots.txt off (needs Zone Bot Management: Edit)',
     async () => {
       await cf(`/zones/${zoneId}/bot_management`, {
         method: 'PUT',
-        body: JSON.stringify({ fight_mode: false, enable_js: false }),
+        body: JSON.stringify({
+          fight_mode: false,
+          enable_js: false,
+          is_robots_txt_managed: false,
+        }),
       })
     }
   )

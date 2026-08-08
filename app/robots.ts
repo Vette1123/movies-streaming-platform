@@ -65,6 +65,33 @@ export default function robots(): MetadataRoute.Robots {
         ],
         disallow: '/',
       },
+      // AI *training* crawlers. These were only ever disallowed by Cloudflare's
+      // managed robots.txt, which scripts/cf-waf-setup.mjs now turns off (it
+      // replaced this whole file at the edge and dropped the `Sitemap:` line
+      // with it), so the rules move here or they are gone.
+      //
+      // The AI *search* crawlers are deliberately NOT in this list —
+      // OAI-SearchBot, ChatGPT-User and PerplexityBot fetch a page to cite it to
+      // a user, which is a referral, not training. Blocking them would remove
+      // the site from AI answers for no gain.
+      {
+        userAgent: [
+          'GPTBot',
+          'ClaudeBot',
+          'anthropic-ai',
+          'CCBot',
+          'Google-Extended',
+          'Applebot-Extended',
+          'meta-externalagent',
+          'FacebookBot',
+          'Bytespider',
+          'Amazonbot',
+          'cohere-ai',
+          'Diffbot',
+          'omgili',
+        ],
+        disallow: '/',
+      },
     ],
     sitemap: [`${baseUrl}/sitemap.xml`],
     host: baseUrl,

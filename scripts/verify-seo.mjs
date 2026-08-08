@@ -132,12 +132,28 @@ for (const path of [
 }
 
 // ---- robots.txt ------------------------------------------------------------
+//
+// These fail while Cloudflare's managed robots.txt is enabled on the zone: it
+// is injected at the edge and REPLACES the exported /robots.txt outright, so
+// app/robots.ts might as well not exist. Its own rules allow search engines, so
+// nothing is blocked — but the `Sitemap:` line goes with it, and that is a
+// primary way Google discovers a sitemap without a Search Console submission.
+// Turn it off under AI Crawl Control in the dashboard, or accept the loss and
+// keep the sitemap submitted in Search Console.
 {
   const { html: txt } = await get('/robots.txt')
+  const managed = /Cloudflare Managed [Cc]ontent|Content-Signal:/.test(txt)
+  const hint = managed
+    ? 'Cloudflare managed robots.txt is overriding app/robots.ts'
+    : 'served from app/robots.ts'
   for (const path of ['/media-fallback', '/collection-fallback']) {
-    check(`robots.txt disallows ${path}`, txt.includes(`Disallow: ${path}`))
+    check(
+      `robots.txt disallows ${path}`,
+      txt.includes(`Disallow: ${path}`),
+      hint
+    )
   }
-  check('robots.txt points at the sitemap', /Sitemap:\s*\S+/i.test(txt))
+  check('robots.txt points at the sitemap', /Sitemap:\s*\S+/i.test(txt), hint)
 }
 
 const failed = results.filter((r) => !r.pass)
