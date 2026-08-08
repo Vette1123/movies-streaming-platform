@@ -37,13 +37,29 @@ export type MarkOptions = {
 /** Fills the frame. Correct for anything that is NOT circle-masked. */
 export const DEFAULT_GLYPH_SCALE = 0.78
 /**
- * Corner rounding for the targets nothing masks for us — the favicon and the
- * `purpose: "any"` manifest icons, which Chrome's desktop install prompt and
- * the Windows/Chrome OS shortcut it creates draw exactly as given. 0.2237 is
- * the ratio Apple's squircle uses, and it is the shape every other app icon
- * on those surfaces has, so a hard square read as broken next to them.
+ * Corner rounding for apple-touch-icon, and the floor for everything else.
+ *
+ * 0.2237 is the exact ratio of Apple's squircle, and apple-touch-icon must not
+ * exceed it: iOS clips that file to the squircle on the home screen, so a
+ * rounder source gets bitten into by the mask and leaves transparent slivers at
+ * the four corners. It must not go under it either — iOS *generates* a launch
+ * screen from this same file when no apple-touch-startup-image matches, and
+ * that generated screen does not mask, so a square icon shows up square there.
+ * Matching the mask exactly is the only value that is right on both surfaces.
  */
 export const DEFAULT_RADIUS = 0.2237
+/**
+ * Corner rounding for the targets nothing masks for us — the favicon and the
+ * `purpose: "any"` manifest icons, which Chrome's desktop install prompt and
+ * the Windows/Chrome OS shortcut it creates draw exactly as given.
+ *
+ * Deliberately rounder than the squircle above, because these are the sizes
+ * where a squircle stops reading as one: at a 16px favicon, 0.2237 is a 3.6px
+ * radius spread over ~2 antialiased pixels, which the eye resolves as a hard
+ * square next to genuinely rounded tab icons. 0.30 gives 4.8px at 16 and
+ * survives the downscale. Nothing masks these, so there is no sliver risk.
+ */
+export const SOFT_RADIUS = 0.3
 /** Fits inside Android's 80% maskable safe zone with room for the descender. */
 export const MASKABLE_GLYPH_SCALE = 0.52
 

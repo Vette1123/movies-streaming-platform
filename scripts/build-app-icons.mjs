@@ -51,6 +51,7 @@ try {
     buildSplashInput,
     MASKABLE_GLYPH_SCALE,
     DEFAULT_RADIUS,
+    SOFT_RADIUS,
     APPLE_SPLASH,
   } = source
 
@@ -68,11 +69,16 @@ try {
   // that DO mask, the rounding lands on the mask boundary rather than inside
   // it — no pale slivers, which was the other half of the original worry.
   //
+  // Two different radii, because two different rules apply. The apple files
+  // must match iOS's squircle exactly (see DEFAULT_RADIUS); the unmasked ones
+  // are drawn as given, so they take the rounder SOFT_RADIUS that still reads
+  // as rounded at favicon sizes.
+  //
   // Still square: the maskable pair (Android draws them through an adaptive
   // mask sized for the safe zone) and the Windows tile (square by design).
   const TARGETS = [
-    { file: 'android-chrome-192x192.png', size: 192, radius: DEFAULT_RADIUS },
-    { file: 'android-chrome-512x512.png', size: 512, radius: DEFAULT_RADIUS },
+    { file: 'android-chrome-192x192.png', size: 192, radius: SOFT_RADIUS },
+    { file: 'android-chrome-512x512.png', size: 512, radius: SOFT_RADIUS },
     // Separate maskable files rather than one "any maskable" entry: a mark
     // sized to fill the frame loses its corners to Android's circular mask,
     // and a mark sized for the safe zone looks shrunken everywhere else.
@@ -134,7 +140,7 @@ try {
   const FAVICON_SIZES = [16, 32, 48, 64]
   const renders = []
   for (const size of FAVICON_SIZES) {
-    renders.push(await renderPng({ size, radius: DEFAULT_RADIUS }))
+    renders.push(await renderPng({ size, radius: SOFT_RADIUS }))
   }
   const ico = pngsToIco(renders.map((r) => r.buf))
   await writeFile('public/favicon.ico', ico)

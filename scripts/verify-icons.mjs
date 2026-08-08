@@ -93,33 +93,64 @@ check(
 )
 
 // 4. Corner alpha: rounded where nothing masks, square where the platform does.
-const cornerAlpha = async (path) => {
+//
+// Alpha alone is not enough. A corner can be transparent and the icon still
+// read as a hard square — that was the actual complaint after the first pass,
+// when every file here was "rounded" at Apple's 0.2237 squircle ratio and the
+// 16px favicon still looked square, because 0.2237 of 16px is a 3.6px radius
+// spread over about two antialiased pixels. So measure the radius too: walk in
+// along the diagonal until the pixel is opaque, and express that inset as a
+// fraction of the side. A pure-square icon gives 0.
+const cornerGeometry = async (path) => {
   const buf = Buffer.from(await (await get(path)).res.arrayBuffer())
   const { data, info } = await sharp(buf)
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true })
-  return data[3] // top-left pixel alpha
+  const alphaAt = (x, y) => data[(y * info.width + x) * 4 + 3]
+  let inset = 0
+  while (inset < info.width && alphaAt(inset, inset) < 250) inset++
+  return { alpha: alphaAt(0, 0), insetRatio: inset / info.width }
 }
-for (const path of [
-  '/android-chrome-192x192.png',
-  '/android-chrome-512x512.png',
+
+// The diagonal inset of a rounded rect is r*(1 - 1/sqrt(2)) ~= 0.293r, so a
+// 0.30 radius lands near 0.088 and Apple's 0.2237 near 0.066. Floors sit just
+// under each so antialiasing and palette quantization cannot trip them.
+const ROUNDED = [
+  { path: '/android-chrome-192x192.png', minInset: 0.08 },
+  { path: '/android-chrome-512x512.png', minInset: 0.08 },
   // Rounded on purpose. iOS generates a launch screen from this icon whenever
   // no apple-touch-startup-image matches, and that generated screen does not
-  // mask — a square file here is a square icon on the splash.
-  '/apple-touch-icon.png',
-  '/apple-touch-icon-precomposed.png',
-]) {
-  const a = await cornerAlpha(path)
-  check(`rounded (corner transparent)  ${path}`, a === 0, `cornerAlpha=${a}`)
+  // mask — a square file here is a square icon on the splash. It stays at the
+  // squircle ratio rather than the rounder one: iOS clips it on the home
+  // screen, and overshooting the mask leaves transparent corner slivers.
+  { path: '/apple-touch-icon.png', minInset: 0.06 },
+  { path: '/apple-touch-icon-precomposed.png', minInset: 0.06 },
+]
+for (const { path, minInset } of ROUNDED) {
+  const { alpha, insetRatio } = await cornerGeometry(path)
+  check(
+    `rounded (corner transparent)  ${path}`,
+    alpha === 0,
+    `cornerAlpha=${alpha}`
+  )
+  check(
+    `radius reads as rounded  ${path}`,
+    insetRatio >= minInset,
+    `diagonal inset=${(insetRatio * 100).toFixed(1)}% of side, need >=${(minInset * 100).toFixed(1)}%`
+  )
 }
 for (const path of [
   '/android-chrome-192x192-maskable.png',
   '/android-chrome-512x512-maskable.png',
   '/mstile-150x150.png',
 ]) {
-  const a = await cornerAlpha(path)
-  check(`square (platform masks it)  ${path}`, a === 255, `cornerAlpha=${a}`)
+  const { alpha } = await cornerGeometry(path)
+  check(
+    `square (platform masks it)  ${path}`,
+    alpha === 255,
+    `cornerAlpha=${alpha}`
+  )
 }
 
 // 5. Manifest contents.
