@@ -16,6 +16,12 @@ const DEVICES: Array<[number, number, number]> = [
   // iPhone. Several models share a resolution (the 12, 13 and 14 are all
   // 390x844@3, for instance) — the table is keyed by resolution, not model,
   // so one row covers all of them.
+  //
+  // A gap here is not cosmetic: with no matching image iOS generates its own
+  // launch screen out of the apple-touch icon, so every missing row is a
+  // device that gets the fallback instead of the real thing. Err toward
+  // including a resolution.
+  [320, 568, 2], // SE 1st gen / 5s
   [375, 667, 2], // 6 / 7 / 8, SE 2nd + 3rd
   [414, 736, 3], // 8 Plus
   [375, 812, 3], // X / XS / 11 Pro / 12 mini / 13 mini
@@ -28,12 +34,15 @@ const DEVICES: Array<[number, number, number]> = [
   [402, 874, 3], // 16 Pro
   [440, 956, 3], // 16 Pro Max
   // iPad.
-  [768, 1024, 2], // mini / 9.7"
+  [744, 1133, 2], // mini 6th + 7th
+  [768, 1024, 2], // mini 5th / 9.7"
   [810, 1080, 2], // 10.2"
-  [820, 1180, 2], // Air 10.9" / 11"
+  [820, 1180, 2], // Air 10.9" / 11", iPad 10th
   [834, 1112, 2], // 10.5"
-  [834, 1194, 2], // Pro 11"
-  [1024, 1366, 2], // Pro 12.9"
+  [834, 1194, 2], // Pro 11" (1st–4th gen)
+  [834, 1210, 2], // Pro 11" M4
+  [1024, 1366, 2], // Pro 12.9", Air 13"
+  [1032, 1376, 2], // Pro 13" M4
 ]
 
 export type AppleSplash = {

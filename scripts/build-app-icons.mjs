@@ -54,12 +54,22 @@ try {
     APPLE_SPLASH,
   } = source
 
-  // radius: only the targets the platform does NOT mask get rounded. The
-  // maskable pair, the iOS icons and the Windows tile are clipped to the
-  // platform's own shape, and rounding those twice shows as pale slivers in
-  // the corners. Everything else — favicon, `purpose: "any"` manifest icons —
-  // is drawn as-is, so it has to carry its own corners or it reads as a hard
-  // square next to every other icon on the shelf.
+  // radius: everything that is not drawn through a platform mask carries its
+  // own corners.
+  //
+  // apple-touch-icon is on that list, which it was not at first. The reasoning
+  // for leaving it square was that iOS clips it to a squircle anyway — true on
+  // the home screen, and false everywhere else the file gets used. iOS falls
+  // back to generating a launch screen from this icon when no
+  // apple-touch-startup-image matches the device, and that generated screen
+  // does NOT mask: a square icon on the splash is exactly the "still sharp"
+  // report. Android's install fallback and link unfurlers don't mask it
+  // either. DEFAULT_RADIUS is Apple's own squircle ratio, so on the surfaces
+  // that DO mask, the rounding lands on the mask boundary rather than inside
+  // it — no pale slivers, which was the other half of the original worry.
+  //
+  // Still square: the maskable pair (Android draws them through an adaptive
+  // mask sized for the safe zone) and the Windows tile (square by design).
   const TARGETS = [
     { file: 'android-chrome-192x192.png', size: 192, radius: DEFAULT_RADIUS },
     { file: 'android-chrome-512x512.png', size: 512, radius: DEFAULT_RADIUS },
@@ -76,10 +86,14 @@ try {
       size: 512,
       glyphScale: MASKABLE_GLYPH_SCALE,
     },
-    { file: 'apple-touch-icon.png', size: 180 },
+    { file: 'apple-touch-icon.png', size: 180, radius: DEFAULT_RADIUS },
     // Ancient iOS looked for -precomposed to mean "don't add your own gloss".
     // Harmless to keep, and it is referenced by enough scrapers to be worth it.
-    { file: 'apple-touch-icon-precomposed.png', size: 180 },
+    {
+      file: 'apple-touch-icon-precomposed.png',
+      size: 180,
+      radius: DEFAULT_RADIUS,
+    },
     { file: 'mstile-150x150.png', size: 150 },
   ]
 

@@ -104,12 +104,16 @@ const cornerAlpha = async (path) => {
 for (const path of [
   '/android-chrome-192x192.png',
   '/android-chrome-512x512.png',
+  // Rounded on purpose. iOS generates a launch screen from this icon whenever
+  // no apple-touch-startup-image matches, and that generated screen does not
+  // mask — a square file here is a square icon on the splash.
+  '/apple-touch-icon.png',
+  '/apple-touch-icon-precomposed.png',
 ]) {
   const a = await cornerAlpha(path)
   check(`rounded (corner transparent)  ${path}`, a === 0, `cornerAlpha=${a}`)
 }
 for (const path of [
-  '/apple-touch-icon.png',
   '/android-chrome-192x192-maskable.png',
   '/android-chrome-512x512-maskable.png',
   '/mstile-150x150.png',
