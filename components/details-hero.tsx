@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react'
 
 import { MovieDetails } from '@/types/movie-details'
 import { SeriesDetails } from '@/types/series-details'
+import { STREAM_EMBED_ALLOW } from '@/lib/embed-policy'
 import { getMediaTitle } from '@/lib/media'
 import { cn } from '@/lib/utils'
 import { HeroImage } from '@/components/header/hero-image'
@@ -155,7 +156,11 @@ export const DetailsHero = forwardRef<
               title={title}
               about={media?.overview}
               key={media?.id}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              // The embed is a third party we do not control, funded by ads.
+              // There is deliberately NO `sandbox` here — the provider refuses
+              // to load inside one at all. See lib/embed-policy.ts before
+              // adding it back.
+              allow={STREAM_EMBED_ALLOW}
             ></iframe>
           </div>
         </div>

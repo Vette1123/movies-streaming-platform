@@ -4,6 +4,7 @@ import React from 'react'
 import { Play } from 'lucide-react'
 
 import { MediaKind, trackTrailerPlayed } from '@/lib/analytics'
+import { YOUTUBE_EMBED_ALLOW } from '@/lib/embed-policy'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -78,7 +79,7 @@ export const TrailerDialog = React.memo(function TrailerDialog({
               className="h-full w-full"
               src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&rel=0`}
               title={title ? `${title} trailer` : 'Trailer'}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allow={YOUTUBE_EMBED_ALLOW}
               allowFullScreen
             />
           )}

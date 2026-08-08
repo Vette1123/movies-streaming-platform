@@ -4,6 +4,8 @@ import React from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Minimize, Pause, Play, Volume2, VolumeX } from 'lucide-react'
 
+import { AMBIENT_TRAILER_ALLOW } from '@/lib/embed-policy'
+
 interface HeroTrailerPreviewProps {
   trailerKey: string
   // The parent slide owns the hover intent (it already pauses autoplay on
@@ -354,7 +356,7 @@ function PreviewFrame({
       ref={iframeRef}
       src={src}
       title={title ? `${title} trailer preview` : 'Trailer preview'}
-      allow="autoplay; encrypted-media"
+      allow={AMBIENT_TRAILER_ALLOW}
     />
   )
 }
