@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import Link from 'next/link'
 import { useReducedMotion } from 'framer-motion'
 import { Maximize, Video, VideoOff, Volume2, VolumeX } from 'lucide-react'
 
@@ -24,13 +23,13 @@ import {
 import { useHasHoverPointer, useLowPowerDevice } from '@/hooks/use-device-tier'
 import { useHeroAutoplay } from '@/hooks/use-hero-autoplay'
 import { useHeroExtras } from '@/hooks/use-hero-extras'
-import { usePrefetchIntent } from '@/hooks/use-prefetch-intent'
 import { buttonVariants } from '@/components/ui/button'
 import { BlurredImage } from '@/components/blurred-image'
 import { CarouselPauseContext } from '@/components/carousel'
 import { HeroRatesInfos } from '@/components/header/hero-rates-info'
 import { HeroTrailerPreview } from '@/components/header/hero-trailer-preview'
 import { Icons } from '@/components/icons'
+import { MediaLink } from '@/components/media/media-link'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 import { SaveButton } from '@/components/save-button'
 import { TrailerDialog } from '@/components/trailer-dialog'
@@ -296,7 +295,6 @@ export function HeroSlide({
   }, [hasHover, reduce, trailerKey, active, autoplayEnabled])
 
   const href = mediaDetailHref(mediaType, movie.id)
-  const prefetchIntent = usePrefetchIntent(href)
 
   const showLogo = !!logoPath && !logoError
   // Keep the plain title hidden while the logo's outcome is still pending
@@ -518,16 +516,14 @@ export function HeroSlide({
                 exactly the 280px content box and tipped Save onto its own row.
                 8px gaps leave the row 4px of slack on the narrowest phone. */}
             <div className="mt-5 flex flex-wrap items-center justify-start gap-2 sm:mt-6 sm:gap-3">
-              <Link
+              {/* Skips viewport auto-prefetch (the heavy watch route) and warms
+                  on intent instead — see components/media/media-link.tsx. It
+                  used to be a hand-rolled onMouseEnter/onFocus pair here, which
+                  meant the hero's primary CTA warmed nothing at all on a phone:
+                  the one device with no hover, and the one where the cold RSC
+                  fetch hurts most. */}
+              <MediaLink
                 href={href}
-                // Skip viewport auto-prefetch (the heavy watch route), but warm
-                // it on intent so the click navigates instantly. This used to
-                // be a hand-rolled onMouseEnter/onFocus pair, which meant the
-                // hero's primary CTA warmed nothing at all on a phone — the one
-                // device with no hover, and the one where the cold RSC fetch
-                // hurts most. usePrefetchIntent adds the touch.
-                prefetch={false}
-                {...prefetchIntent}
                 onClick={() =>
                   trackHeroWatchClicked({
                     media_id: movie.id,
@@ -548,7 +544,7 @@ export function HeroSlide({
               >
                 <Icons.watch className="mr-2" />
                 Watch Now
-              </Link>
+              </MediaLink>
 
               {trailerKey && (
                 <TrailerDialog

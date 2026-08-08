@@ -1,5 +1,4 @@
 import React from 'react'
-import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { CalendarDays, X } from 'lucide-react'
 
@@ -10,9 +9,9 @@ import {
 import { mediaDetailHref } from '@/lib/media'
 import { dateFormatter, getPosterImageURL } from '@/lib/utils'
 import { WatchedItem } from '@/hooks/use-local-storage'
-import { usePrefetchIntent } from '@/hooks/use-prefetch-intent'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { MediaLink } from '@/components/media/media-link'
 import { MediaTypeIcon } from '@/components/media/media-type-icon'
 
 import { BlurredImage } from '../blurred-image'
@@ -41,17 +40,10 @@ export function WatchedItemCard({ item, onRemove }: WatchedItemCardProps) {
   }
 
   const href = buildHref()
-  const prefetchIntent = usePrefetchIntent(href)
 
   return (
-    <Link
+    <MediaLink
       href={href}
-      // Watch-history is a full grid; viewport auto-prefetch would fire one RSC
-      // request per watched item at once. Warmed on intent instead — hover,
-      // focus, and touch, since Next 16's prefetch={false} switches off its own
-      // hover prefetch too. See hooks/use-prefetch-intent.ts.
-      prefetch={false}
-      {...prefetchIntent}
       className="group h-fit"
       onClick={() =>
         trackWatchHistoryItemClicked({
@@ -113,6 +105,6 @@ export function WatchedItemCard({ item, onRemove }: WatchedItemCardProps) {
           </Card>
         </motion.div>
       </motion.div>
-    </Link>
+    </MediaLink>
   )
 }

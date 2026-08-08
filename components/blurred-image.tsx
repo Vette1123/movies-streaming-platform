@@ -11,6 +11,27 @@ interface BlurImageProps extends ImageProps {
   intro?: boolean
 }
 
+// Every image on this site came through at ImageKit's q-82, which is a default
+// nobody chose — and measured against the actual artwork it is most of the
+// payload. On a cold 4x-throttled mobile load the homepage pulled 2.0 MB of
+// images against 332 KB of (brotli'd) JS, so this is THE lever.
+//
+// Measured on the real files, same URL, same f-auto (ImageKit serves WebP):
+//   backdrop w1200  q82 62.5KB -> q65 33.1KB   (-47%)
+//   poster   w500   q82 112KB  -> q70 86KB     (-24%)
+//
+// The two numbers differ because the two jobs differ. A backdrop is a
+// full-bleed photo that spends its life under a scrim, behind text, often
+// mid-ken-burns and mid-swipe — nobody inspects it, and 65 is invisible there.
+// A poster IS the content: it is small, dense, carries a legible title
+// treatment, and is what someone is actually looking at when they choose what to
+// watch, so it only gives up the top of the range where the returns are worst.
+//
+// Set here rather than at the call sites so a new poster somewhere can't quietly
+// reintroduce the default. Any caller can still pass its own `quality` and win.
+const HERO_QUALITY = 65
+const POSTER_QUALITY = 70
+
 // Memoised. Every prop this takes is a primitive (src, alt, className, sizes,
 // width/height, priority…), so a shallow compare is exact rather than a
 // heuristic — and the two callers that re-render most are the ones that hurt:
@@ -99,6 +120,7 @@ export const BlurredImage = React.memo(function BlurredImage({
           className="pointer-events-none absolute inset-0 bg-slate-900"
         />
         <Image
+          quality={HERO_QUALITY}
           {...props}
           ref={imgRef}
           alt={alt}
@@ -143,6 +165,7 @@ export const BlurredImage = React.memo(function BlurredImage({
             no blank before the first pixels paint, and the aspect-ratio box means
             zero CLS. */}
         <Image
+          quality={POSTER_QUALITY}
           {...rest}
           ref={imgRef}
           alt={alt}
@@ -170,6 +193,7 @@ export const BlurredImage = React.memo(function BlurredImage({
   return (
     <div className="w-fit overflow-hidden rounded-lg bg-slate-900">
       <Image
+        quality={HERO_QUALITY}
         {...props}
         ref={imgRef}
         alt={alt}

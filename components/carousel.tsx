@@ -184,7 +184,13 @@ export function Carousel({
     handleDotClick,
   } = useCarousel({
     childrenCount,
-    autoPlay,
+    // Reduced-motion turns the rotation OFF, not just the spring. It was only
+    // wired to `settle` here, so a visitor who had asked for less motion still
+    // got a hero that changed under them every 5s — the biggest movement on the
+    // page, and the one WCAG 2.2.2 is actually about. It also stops the deck
+    // pulling a fresh full-width backdrop every interval for someone who never
+    // asked to be shown one.
+    autoPlay: autoPlay && !reduce,
     autoPlayInterval,
     externalPaused,
   })

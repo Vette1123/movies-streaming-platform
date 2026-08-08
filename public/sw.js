@@ -5,8 +5,10 @@
  *     wsrv, analytics, fonts) are NEVER intercepted — they go straight to the
  *     network. A movie always streams live; nothing is (or can be) cached for
  *     offline playback.
- *   - Dynamic app data (RSC payloads `?_rsc=`, `/api/*`, any non-GET / server
- *     action) is never cached, so pages stay fresh.
+ *   - Live app data (`/api/*`, any non-GET) is never cached, so search, filters
+ *     and season lists always hit TMDB. RSC navigation payloads are a different
+ *     thing despite looking dynamic — under `output: 'export'` they are
+ *     prerendered files — and ARE cached, build-scoped; see the fetch handler.
  *   - Page navigations are network-first, so the Cloudflare edge cache still
  *     serves fresh HTML when online; the SW only steps in offline.
  * Its real jobs: (1) satisfy the install criteria, (2) cache-first the immutable
@@ -73,8 +75,44 @@ self.addEventListener('fetch', (event) => {
   // Cross-origin (video iframe, image CDNs, analytics, fonts) — never touch.
   if (url.origin !== self.location.origin) return
 
-  // Never cache dynamic data: server-action/RSC payloads and API routes.
-  if (url.pathname.startsWith('/api/') || url.searchParams.has('_rsc')) return
+  // Never cache live app data. /api/* is the Worker calling TMDB — search
+  // results, filters, season lists — and must always be fresh.
+  if (url.pathname.startsWith('/api/')) return
+
+  // RSC navigation payloads (`?_rsc=`) → stale-while-revalidate.
+  //
+  // These used to be lumped in with /api/* and skipped outright, on the
+  // reasoning that they are "dynamic app data". They are not: under
+  // `output: 'export'` every one of them is a PRERENDERED FILE, a build-time
+  // snapshot of exactly the same vintage as the .html sitting next to it. The
+  // only thing that makes one stale is a deploy — and CACHE is keyed by the
+  // build id, so a deploy drops the whole set on activate. There is no window in
+  // which this can serve a payload from a build the page isn't running.
+  //
+  // What it buys: every route the visitor has already opened, plus everything
+  // the Link prefetcher warmed on the way past, navigates with ZERO network.
+  // Even a fresh one costs only the revalidation, since the response comes off
+  // the cache first. The origin fetch still runs and still overwrites, so a
+  // same-build re-deploy is picked up on the next visit either way.
+  if (url.searchParams.has('_rsc')) {
+    // ignoreSearch, because `_rsc` is the router's own cache-buster and the
+    // path already identifies the payload uniquely. Matching on the full URL
+    // would make every entry a one-shot: the value is stable per URL today, but
+    // it is Next's to change, and a cache that silently stops hitting is worse
+    // than no cache at all. No other query string reaches these paths.
+    event.respondWith(
+      caches.match(request, { ignoreSearch: true }).then((cached) => {
+        const network = fetch(request)
+          .then((res) => {
+            putInCache(request, res)
+            return res
+          })
+          .catch(() => cached)
+        return cached || network
+      })
+    )
+    return
+  }
 
   // Immutable hashed build assets → cache-first (instant repeat loads).
   if (url.pathname.startsWith('/_next/static/')) {

@@ -7,6 +7,7 @@ import { ItemType } from '@/types/movie-result'
 import { getMediaTitle } from '@/lib/media'
 import { getPosterImageURL, itemRedirect } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
+import { MediaLink } from '@/components/media/media-link'
 import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
 
 interface StaticRailProps {
@@ -69,9 +70,8 @@ export function StaticRail({
                 key={item.id}
                 className="w-[160px] shrink-0 snap-start sm:w-[190px] lg:w-[230px] 2xl:w-[250px]"
               >
-                <Link
+                <MediaLink
                   href={`${itemRedirect(itemType)}/${item.id}`}
-                  prefetch={false}
                   className="block w-full"
                 >
                   {item?.poster_path ? (
@@ -94,7 +94,7 @@ export function StaticRail({
                       className="shadow-lg"
                     />
                   )}
-                </Link>
+                </MediaLink>
               </div>
             )
           })}

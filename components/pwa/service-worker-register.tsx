@@ -76,6 +76,19 @@ export function ServiceWorkerRegister() {
     // that page, so only an existing controller being replaced counts.
     const onControllerChange = () => {
       pendingUpdate = true
+      // If nobody is looking, take the update NOW. Waiting for the next
+      // foreground was costing a whole extra app-switch: foregrounding is what
+      // calls update(), the new worker takes over a few seconds later while the
+      // app is still open, and the reload then waited for the foreground AFTER
+      // that — so seeing a deploy took two open-close cycles, not one. Reloading
+      // a hidden document is free and invisible; the next time it's opened it's
+      // already the new build. The visible case still defers, deliberately: a
+      // deploy lands while someone is halfway through a stream, and yanking the
+      // document out from under them is worse than being one build behind.
+      if (document.visibilityState === 'hidden' && !reloading) {
+        reloading = true
+        window.location.reload()
+      }
     }
     const hadController = Boolean(navigator.serviceWorker.controller)
     if (hadController) {

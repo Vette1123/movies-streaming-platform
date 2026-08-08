@@ -97,8 +97,15 @@
 /disclaimer
   Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
 
-# Personal and noindex — never store these in a shared cache.
+# Personal and noindex — `private` is what keeps them out of every SHARED cache,
+# and that is the part that matters. `no-store` on top of it was doing something
+# else and not a useful something: it also forbids the visitor's OWN browser from
+# keeping a copy, so a returning visitor re-downloaded the document every time
+# for no privacy gained — the personal data isn't in it. These pages are an empty
+# static shell; the watchlist lives in localStorage and is rendered client-side.
+# max-age=0 + must-revalidate keeps them exactly as fresh (revalidate on every
+# use) while letting the 304 do its job.
 /watch-history
-  Cache-Control: private, no-store
+  Cache-Control: private, max-age=0, must-revalidate
 /watchlist
-  Cache-Control: private, no-store
+  Cache-Control: private, max-age=0, must-revalidate

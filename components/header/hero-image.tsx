@@ -34,7 +34,15 @@ export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
           fill
           sizes="(min-width: 1024px) 1024px, 100vw"
           intro
-          priority
+          // `priority`, not `priority={priority}`, is what this said — so the
+          // prop above, and the comment on it promising that only slide 0
+          // preloads, did nothing on the branch that actually runs. Every slide
+          // in the mounted window (3 of them) emitted a fetchpriority=high
+          // <link rel=preload> for a full-width backdrop, and the two nobody can
+          // see raced the one that is the LCP. Measured on a cold 4x-throttled
+          // mobile load: ~126KB of preloads for off-stage artwork.
+          priority={priority}
+          loading={priority ? undefined : 'lazy'}
         />
       ) : (
         media?.poster_path && (

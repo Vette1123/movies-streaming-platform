@@ -30,6 +30,13 @@ const baseConfig = {
     // ImageKit do the resizing. See lib/image-loader.ts.
     loader: 'custom',
     loaderFile: './lib/image-loader.ts',
+    // Next 15.4+ only lets `quality` take values declared here, and rejects the
+    // rest at build time — a custom loader is no exception, since the check runs
+    // in next/image before the loader is ever called. These are the two
+    // components/blurred-image.tsx sets (65 backdrops / 70 posters) plus Next's
+    // own 75 default, which is what anything not going through BlurredImage
+    // still asks for.
+    qualities: [65, 70, 75],
     remotePatterns: [
       {
         protocol: 'https',

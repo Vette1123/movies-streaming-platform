@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { CalendarDays, Check } from 'lucide-react'
 
@@ -13,7 +12,6 @@ import { cn, dateFormatter, getPosterImageURL, itemRedirect } from '@/lib/utils'
 import { useCompletedMedia } from '@/hooks/use-completed-media'
 import { useHasHoverPointer } from '@/hooks/use-device-tier'
 import { useMounted } from '@/hooks/use-mounted'
-import { usePrefetchIntent } from '@/hooks/use-prefetch-intent'
 import { chipVariants } from '@/components/ui/chip'
 import {
   HoverCard,
@@ -22,6 +20,7 @@ import {
 } from '@/components/ui/hover-card'
 import { BlurredImage } from '@/components/blurred-image'
 import { SpriteIcon } from '@/components/icon-sprite'
+import { MediaLink } from '@/components/media/media-link'
 import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
 import { ScoreChip } from '@/components/media/score-chip'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
@@ -69,7 +68,6 @@ const CardComponent = ({
   const hasHover = useHasHoverPointer()
 
   const href = `${itemRedirect(itemType)}/${item.id}`
-  const prefetchIntent = usePrefetchIntent(href)
 
   const frame = (
     <>
@@ -127,19 +125,11 @@ const CardComponent = ({
   )
 
   const cardLink = (
-    <Link
+    <MediaLink
       href={href}
-      {...prefetchIntent}
       // Block-level so the poster's `w-full` resolves against the grid track
       // / rail item width instead of an inline <a>'s shrink-to-fit box.
       className="block w-full"
-      // Viewport auto-prefetch fires one RSC request per card; a homepage
-      // of carousels mounts 100+ cards at once and trips the CF rate-limit
-      // (100 req/10s on detail paths) → 1015 on our own page load. So the
-      // warming is driven by intent instead — and by touch as well as hover,
-      // because in Next 16 `prefetch={false}` kills the built-in hover prefetch
-      // too. See hooks/use-prefetch-intent.ts.
-      prefetch={false}
       onClick={() =>
         trackMediaCardClicked({
           media_id: item.id,
@@ -197,7 +187,7 @@ const CardComponent = ({
           <div className={CARD_FRAME}>{frame}</div>
         )}
       </div>
-    </Link>
+    </MediaLink>
   )
 
   // Touch stops here. Everything past this point is hover-only machinery.
