@@ -30,10 +30,24 @@ const apiConfig = {
   // (also optimized) then TMDB origin — so this can never break an image, only
   // fail back to the (still-working) unoptimized.
   //
-  // `f-auto` (not a hard f-webp) lets ImageKit serve AVIF to browsers that
-  // advertise it (Chrome/Android/modern Safari) and WebP to the rest — AVIF is
-  // ~20-30% smaller than WebP at the SAME quality, so this only shrinks bytes,
-  // never resolution (q/width unchanged). The wsrv.nl fallback stays webp.
+  // `f-auto` (not a hard f-webp) so ImageKit negotiates the format from the
+  // request's Accept header — it does set `Vary: Accept`, so this is honest
+  // content negotiation and safe to cache.
+  //
+  // It does NOT reach AVIF, though, and the comment here used to claim it did.
+  // Measured against this endpoint: `Accept: image/avif,image/webp` gets WebP
+  // back, and `Accept: image/avif` alone gets JPEG. AVIF is an account-level
+  // setting in the ImageKit dashboard, off by default, and f-auto only offers
+  // what the account allows. Until that is switched on, AVIF is obtained by
+  // asking for it by name — see avifSrcSet in lib/image-loader.ts, which puts it
+  // on a <source> so no browser is ever handed bytes it can't decode. Switching
+  // the account setting on is strictly better and would make that redundant;
+  // it costs nothing to leave in place either way.
+  //
+  // The q-82 baked in below is only the URL's default. Everything rendered
+  // through BlurredImage overrides it (65 backdrops / 70 posters) via the
+  // loader; what is left on 82 is the hero's transparent title logo.
+  // The wsrv.nl fallback stays webp.
   originalImage: (imgPath: string) =>
     `${IMAGE_CACHE_HOST_URL}/tr:w-2560,q-82,f-auto,pr-true/original${imgPath}`,
   w500Image: (imgPath: string) =>

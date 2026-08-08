@@ -3,6 +3,7 @@
 import React from 'react'
 import Image, { ImageProps } from 'next/image'
 
+import { avifSrcSet } from '@/lib/image-loader'
 import { getNextImageFallback } from '@/lib/tmdbConfig'
 import { cn } from '@/lib/utils'
 
@@ -31,6 +32,43 @@ interface BlurImageProps extends ImageProps {
 // reintroduce the default. Any caller can still pass its own `quality` and win.
 const HERO_QUALITY = 65
 const POSTER_QUALITY = 70
+
+// Offers the browser AVIF before next/image's own <img>, and gets out of the way
+// when it can't.
+//
+// A <source type="image/avif"> is read by the browser BEFORE it fetches
+// anything: one that can't decode AVIF skips straight to the <img>, so this
+// costs nothing and risks nothing — unlike baking f-avif into the URL, which
+// would hand pre-2022 Safari bytes it can't read and drop it down the
+// ImageKit -> wsrv -> TMDB error chain (a second request, on another host, after
+// a visible failure). See lib/image-loader.ts for why f-auto won't do this
+// itself and what it saves.
+//
+// Two deliberate abstentions:
+//   - `priority` images. next/image emits <link rel="preload" imagesrcset> for
+//     those, and that preload names the WEBP srcset. The document would then
+//     preload one format and render another: the LCP image downloaded twice.
+//     The hero's first slide is the only priority image on a page, so it keeps
+//     its preload and its WebP; every other slide still gets AVIF.
+//   - Anything that has fallen off ImageKit. Once handleError has walked `src`
+//     on to wsrv or the TMDB origin, an ImageKit AVIF URL is not a smaller copy
+//     of that image, it is the URL that just failed.
+function AvifSource({
+  src,
+  sizes,
+  quality,
+  priority,
+}: {
+  src: ImageProps['src']
+  sizes?: string
+  quality: number
+  priority?: boolean
+}) {
+  if (priority || typeof src !== 'string') return null
+  const srcSet = avifSrcSet(src, quality)
+  if (!srcSet) return null
+  return <source type="image/avif" srcSet={srcSet} sizes={sizes} />
+}
 
 // Memoised. Every prop this takes is a primitive (src, alt, className, sizes,
 // width/height, priority…), so a shallow compare is exact rather than a
@@ -119,16 +157,24 @@ export const BlurredImage = React.memo(function BlurredImage({
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-slate-900"
         />
-        <Image
-          quality={HERO_QUALITY}
-          {...props}
-          ref={imgRef}
-          alt={alt}
-          src={imgSrc}
-          className={blurClassName}
-          onLoad={() => setLoading(false)}
-          onError={handleError}
-        />
+        <picture>
+          <AvifSource
+            src={imgSrc}
+            sizes={props.sizes}
+            quality={HERO_QUALITY}
+            priority={props.priority}
+          />
+          <Image
+            quality={HERO_QUALITY}
+            {...props}
+            ref={imgRef}
+            alt={alt}
+            src={imgSrc}
+            className={blurClassName}
+            onLoad={() => setLoading(false)}
+            onError={handleError}
+          />
+        </picture>
       </>
     )
   }
@@ -164,22 +210,30 @@ export const BlurredImage = React.memo(function BlurredImage({
             unchanged. The wrapper's bg-slate-900 backs the reserved box, so there's
             no blank before the first pixels paint, and the aspect-ratio box means
             zero CLS. */}
-        <Image
-          quality={POSTER_QUALITY}
-          {...rest}
-          ref={imgRef}
-          alt={alt}
-          src={imgSrc}
-          fill
-          sizes={sizes}
-          className={cn(
-            className,
-            'object-cover transition-[transform,filter] duration-500 ease-out',
-            isLoading ? 'scale-[1.03] blur-lg' : 'blur-0 scale-100'
-          )}
-          onLoad={() => setLoading(false)}
-          onError={handleError}
-        />
+        <picture>
+          <AvifSource
+            src={imgSrc}
+            sizes={sizes}
+            quality={POSTER_QUALITY}
+            priority={rest.priority}
+          />
+          <Image
+            quality={POSTER_QUALITY}
+            {...rest}
+            ref={imgRef}
+            alt={alt}
+            src={imgSrc}
+            fill
+            sizes={sizes}
+            className={cn(
+              className,
+              'object-cover transition-[transform,filter] duration-500 ease-out',
+              isLoading ? 'scale-[1.03] blur-lg' : 'blur-0 scale-100'
+            )}
+            onLoad={() => setLoading(false)}
+            onError={handleError}
+          />
+        </picture>
       </div>
     )
   }
@@ -192,16 +246,24 @@ export const BlurredImage = React.memo(function BlurredImage({
   })
   return (
     <div className="w-fit overflow-hidden rounded-lg bg-slate-900">
-      <Image
-        quality={HERO_QUALITY}
-        {...props}
-        ref={imgRef}
-        alt={alt}
-        src={imgSrc}
-        className={blurClassName}
-        onLoad={() => setLoading(false)}
-        onError={handleError}
-      />
+      <picture>
+        <AvifSource
+          src={imgSrc}
+          sizes={props.sizes}
+          quality={HERO_QUALITY}
+          priority={props.priority}
+        />
+        <Image
+          quality={HERO_QUALITY}
+          {...props}
+          ref={imgRef}
+          alt={alt}
+          src={imgSrc}
+          className={blurClassName}
+          onLoad={() => setLoading(false)}
+          onError={handleError}
+        />
+      </picture>
     </div>
   )
 })
