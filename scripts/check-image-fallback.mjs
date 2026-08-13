@@ -131,9 +131,23 @@ check('ImageKit rewrite is unchanged', () => {
   assert.equal(m.avifSrcSet(m.getNextImageFallback(hero), 65), undefined)
 })
 
-check('circuit breaker demotes an untouched primary URL, once tripped', () => {
+check('circuit breaker needs 3 DISTINCT primary failures, not 1', () => {
   assert.equal(m.demoteFromPrimary(hero), hero)
-  m.markPrimaryImageHostDown()
+  // One error — a missing poster, an aborted request, a content blocker — must
+  // not trip it. Tripping on one moved 17 of 20 already-painted homepage images
+  // off a working host, which is what "the images went blank" actually was.
+  m.markPrimaryImageHostDown(hero)
+  assert.equal(m.isPrimaryImageHostDown(), false)
+  // The SAME url failing again is the same evidence, not new evidence.
+  m.markPrimaryImageHostDown(hero)
+  assert.equal(m.isPrimaryImageHostDown(), false)
+  // A failure on a later stage says nothing about the primary.
+  m.markPrimaryImageHostDown(m.getNextImageFallback(hero))
+  m.markPrimaryImageHostDown('https://image.tmdb.org/t/p/w500/x.jpg')
+  assert.equal(m.isPrimaryImageHostDown(), false)
+  // Three distinct primary URLs — a host that is actually down.
+  m.markPrimaryImageHostDown(poster)
+  m.markPrimaryImageHostDown(IMAGEKIT_HOST + '/tr:q-82,f-auto/w500/ghi.png')
   assert.ok(m.isPrimaryImageHostDown())
   assert.equal(m.demoteFromPrimary(hero), m.getNextImageFallback(hero))
   // Already past stage 0 — must not rewind.

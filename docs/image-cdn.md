@@ -61,11 +61,31 @@ non-ImageKit URL, so nothing offers an AVIF `<source>` that would 400.
 ## Circuit breaker
 
 ImageKit running out of quota is not one broken image, it is every image on
-every page. `lib/tmdbConfig.ts` keeps a module-level flag: the first failure on
-the primary host trips it, and every mounted `BlurredImage` (subscribed via
-`useSyncExternalStore`) re-renders straight onto wsrv. Without it each `<img>`
-pays a doomed request first, and the hero's `<link rel=preload imagesrcset>`
-names a URL that will 4xx.
+every page. `lib/tmdbConfig.ts` keeps a module-level flag: **three distinct**
+primary-host failures trip it, and every `BlurredImage` that has not painted yet
+(subscribed via `useSyncExternalStore`) re-renders straight onto wsrv. Without it
+each `<img>` pays a doomed request first, and the hero's
+`<link rel=preload imagesrcset>` names a URL that will 4xx.
+
+**Two guards, both paid for in blood.** The first cut tripped on ONE error and
+demoted every mounted image. Measured in a browser: dispatching a single `error`
+on one poster moved **17 of 20** homepage images to wsrv — all already painted
+from ImageKit and warm in the HTTP cache. They re-downloaded from a cold host and
+replayed their blur-ups, which reads exactly as _"the images went blank on
+refresh and nothing is cached"_. So:
+
+1. **Three distinct URLs, not one.** `error` fires for a poster TMDB no longer
+   has, a request aborted by navigating away, a content blocker, a flaky
+   connection. A host that is really down fails every image and reaches three
+   within the first screenful; none of the others do. The same URL retrying is
+   one piece of evidence, and a failure on a later stage is evidence about that
+   stage.
+2. **Never demote an image that already painted.** The breaker exists to stop
+   images that have _not loaded yet_ from queueing behind a dead host. Anything
+   with pixels on screen keeps its working, cached URL.
+
+Measured after the fix: 1 error moves 1 image; 4 distinct errors trip the breaker
+and still move only the 4 that failed; a refresh is 17/17 from cache, 0 KB.
 
 It is deliberately **not persisted** — a fresh tab probes ImageKit once more,
 which is also how the site notices the quota reset without a deploy.

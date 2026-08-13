@@ -8,7 +8,6 @@ import {
   demoteFromPrimary,
   getNextImageFallback,
   isPrimaryImageHostDown,
-  isPrimaryImageURL,
   markPrimaryImageHostDown,
   subscribePrimaryImageHost,
 } from '@/lib/tmdbConfig'
@@ -123,23 +122,30 @@ export const BlurredImage = React.memo(function BlurredImage({
     setImgSrc(src)
   }
 
-  // Once ANY image has proved the primary host is down (quota exhausted, most
-  // likely — that fails for every image for the rest of the month, not once),
-  // skip stage 0 outright instead of making each new <img> rediscover it with a
-  // request that cannot succeed. Derived at render rather than written into
-  // `imgSrc`, so the chain position this component actually walks stays
-  // untouched: an image already down at wsrv or the origin is returned as-is.
-  // Server snapshot is always `false` — the prerendered HTML names ImageKit, and
-  // claiming otherwise during hydration would be a mismatch.
+  // Once enough images have proved the primary host is down (quota exhausted,
+  // most likely — that fails every image for the rest of the month), skip stage
+  // 0 instead of making each new <img> rediscover it with a request that cannot
+  // succeed. Derived at render rather than written into `imgSrc`, so the chain
+  // position this component actually walks stays untouched: an image already
+  // down at wsrv or the origin is returned as-is. Server snapshot is always
+  // `false` — the prerendered HTML names ImageKit, and claiming otherwise during
+  // hydration would be a mismatch.
   const primaryDown = React.useSyncExternalStore(
     subscribePrimaryImageHost,
     isPrimaryImageHostDown,
     returnFalse
   )
-  const effectiveSrc = primaryDown ? demoteFromPrimary(imgSrc) : imgSrc
+  // `isLoading` is the guard that matters: an image that has ALREADY painted is
+  // left exactly where it is. Demoting those was measured to be the whole
+  // problem — one stray error moved 17 of 20 homepage images off a host that
+  // had just served them, throwing away 17 warm HTTP cache entries and replaying
+  // 17 blur-ups against a cold host. The breaker exists to stop images that have
+  // not loaded yet from queueing behind a dead host, and that is all it should do.
+  const effectiveSrc =
+    primaryDown && isLoading ? demoteFromPrimary(imgSrc) : imgSrc
 
   const handleError = React.useCallback(() => {
-    if (isPrimaryImageURL(effectiveSrc)) markPrimaryImageHostDown()
+    markPrimaryImageHostDown(effectiveSrc)
     const fallback = getNextImageFallback(effectiveSrc)
     if (fallback && fallback !== effectiveSrc) setImgSrc(fallback)
   }, [effectiveSrc])

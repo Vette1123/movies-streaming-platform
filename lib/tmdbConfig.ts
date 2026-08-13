@@ -203,15 +203,34 @@ function isWsrvURL(src: string): boolean {
 // the one that works, the hero's `<link rel=preload imagesrcset>` names a URL
 // that will 4xx, and a list scroll doubles its request count.
 //
-// So the first failure on the primary host flips a flag and every mounted image
-// re-renders straight onto the fallback. Deliberately NOT persisted: a fresh tab
-// probes ImageKit once more, which is also how the site notices the quota has
-// reset without anyone shipping a deploy.
+// So enough failures on the primary host flip a flag and every image that has
+// not painted yet re-renders straight onto the fallback. Deliberately NOT
+// persisted: a fresh tab probes ImageKit once more, which is also how the site
+// notices the quota has reset without anyone shipping a deploy.
+//
+// THREE distinct URLs, not one. The first cut tripped on a single `error` event
+// and that was measured to be a disaster: dispatching one error on one poster
+// moved 17 of 20 images on the homepage to wsrv — all of them already painted
+// from ImageKit and sitting in the HTTP cache. Every one re-downloaded from a
+// cold host and replayed its blur-up, which reads exactly like "the images went
+// blank on refresh and nothing is cached". And `error` fires for far more than
+// a dead host: one poster TMDB no longer has, a request aborted by navigating
+// away, a content blocker's rule, a flaky connection. A host that is genuinely
+// out of quota fails every image, so it reaches three in the first screenful;
+// nothing else does.
+const PRIMARY_FAILURE_THRESHOLD = 3
 let primaryImageHostDown = false
+const failedPrimaryURLs = new Set<string>()
 const primaryImageHostSubs = new Set<() => void>()
 
-function markPrimaryImageHostDown() {
+function markPrimaryImageHostDown(src: unknown) {
   if (primaryImageHostDown) return
+  // Only a failure ON the primary is evidence about the primary — a wsrv or
+  // origin URL erroring says nothing about ImageKit.
+  if (typeof src !== 'string' || !isPrimaryImageURL(src)) return
+  // Distinct URLs: one image retrying itself is one piece of evidence, not N.
+  failedPrimaryURLs.add(src)
+  if (failedPrimaryURLs.size < PRIMARY_FAILURE_THRESHOLD) return
   primaryImageHostDown = true
   primaryImageHostSubs.forEach((notify) => notify())
 }
@@ -247,7 +266,7 @@ function demoteFromPrimary<T>(src: T): T | string {
 function handleImageFallbackError(el: HTMLImageElement | null) {
   if (!el) return
   const current = el.src
-  if (isPrimaryImageURL(current)) markPrimaryImageHostDown()
+  markPrimaryImageHostDown(current)
   const next = getNextImageFallback(current)
   if (next && next !== current) el.src = next
 }

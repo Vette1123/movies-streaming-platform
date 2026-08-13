@@ -64,6 +64,28 @@ follow-up "anything else?" question. When a class of bug is found in one branch
 of a chain, grep the other branches before calling it done: the fallback and the
 primary are both "an image proxy being told a width".
 
+**Shipped a hair-trigger circuit breaker and it broke the page.** The breaker
+tripped on the FIRST `error` event from the primary host, and every mounted
+`BlurredImage` then re-rendered onto wsrv. Measured in a browser afterwards:
+dispatching one `error` on one poster moved **17 of 20** homepage images off
+ImageKit — every one already painted and warm in the HTTP cache. They all
+re-downloaded from a cold host and replayed their blur-up. The user's report was
+"I refresh and see image blanks, not cached", which is precisely that.
+
+Two things were wrong and both are obvious in hindsight. `error` is not a signal
+about the _host_: it fires for a poster TMDB no longer has, a request aborted by
+navigating away, a content blocker, a dropped connection. And a global switch
+had no business touching images that had already succeeded — the breaker's whole
+job is to stop images that have _not loaded yet_ from queueing behind a dead
+host. Now: three distinct primary URLs must fail, and an image with pixels on
+screen is never demoted.
+
+The deeper mistake is that this was the one part of the change that could only
+be observed in a browser, and it shipped without one because the browser was
+unavailable. "Can't verify it" should have meant "don't ship that part yet", not
+"ship it and note the gap" — the URL-shape work was independently verifiable and
+could have gone alone.
+
 **The reflex to reach for the browser was right and unavailable.** Chrome needs
 a one-time "Allow remote debugging?" click, and this session is non-interactive,
 so the in-browser simulation (block `*ik.imagekit.io*`, watch the chain walk)
@@ -95,7 +117,12 @@ live fetches cover everything except the React re-render path.
   pins itself to whatever width was baked into the URL.
 - **Never ask an image proxy to enlarge.** `original` is not a width. wsrv needs
   `&we`; check the equivalent for any proxy before making it a stage.
-- **A per-image fallback needs a per-session breaker.** A quota outage fails
-  every image for weeks; without a shared flag, each one re-pays the discovery.
+- **A per-image fallback needs a per-session breaker — with a threshold.** A
+  quota outage fails every image for weeks, so a shared flag is right; but one
+  `error` is not evidence a host is down, and the flag must never touch an image
+  that already painted. A global switch that can be thrown by any single failure
+  will be, by the noisiest thing on the page.
+- **A change you cannot verify is a change you do not ship yet.** Split it out
+  and send the part you can prove.
 - **When two probes of the same URL disagree, suspect the probe.** Re-read the
   string you actually sent before writing a theory about the server.
