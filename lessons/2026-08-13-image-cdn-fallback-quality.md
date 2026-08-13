@@ -26,6 +26,14 @@ Second pass, after "anything else to improve?":
 - `image_host_fallback` PostHog event, fired once per session from a single
   subscriber in the provider.
 
+Third pass, a full homepage image audit in headless Chrome (cold/warm at 390@3x,
+764@1x, 1512@2x): caching is already perfect — every warm load is 100% cache
+hits, 0 KB, HTTP/3, no duplicate URLs. Two payload gaps found and fixed: the
+hero wordmark was the page's two heaviest files and still on `q-82` (it is the
+one plain `<img>`, so the loader never retuned it), and the hero's cinematic
+side poster was being eagerly fetched _and preloaded_ on viewports where its
+`hidden lg:flex` wrapper makes it `display:none`.
+
 ## Mistakes
 
 **Assumed the premise, then failed to reproduce it.** The whole first hour went
@@ -85,6 +93,16 @@ be observed in a browser, and it shipped without one because the browser was
 unavailable. "Can't verify it" should have meant "don't ship that part yet", not
 "ship it and note the gap" — the URL-shape work was independently verifiable and
 could have gone alone.
+
+**Nearly shipped a width cut to the hero wordmark because the ratio looked bad.**
+It measured 500 px of file into a 264 px box, and `w-320` was -42% against
+`q-70`'s -12% — so width was obviously the lever. It is not: the logo is
+`w-auto` under `max-h`/`max-w` caps, and above lg neither cap binds, so the
+element lays out at the file's _intrinsic_ width (measured: a logo painting at
+exactly 500 CSS px at 1512). A narrower file would have silently shrunk the
+wordmark rather than sharpening it. "Natural width > box width" only means waste
+for images whose box is set by CSS. Check which one is driving layout before
+treating the ratio as a bug.
 
 **The reflex to reach for the browser was right and unavailable.** Chrome needs
 a one-time "Allow remote debugging?" click, and this session is non-interactive,

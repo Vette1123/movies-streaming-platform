@@ -570,15 +570,31 @@ export function HeroSlide({
             }`}
           >
             <div className="relative min-h-[700px] w-[400px] overflow-hidden rounded-xl shadow-2xl">
+              {/* `sizes` is a flat 400px because the box above is a flat 400px,
+                  and this panel only exists at lg and up (the wrapper is
+                  `hidden lg:flex`). The old value claimed 1024px there and 30vw
+                  below it: the first asked for 2.5x the pixels the box can show,
+                  and the second described a breakpoint at which this element is
+                  display:none.
+
+                  Never `priority`, even on the first slide. It used to inherit
+                  it, which meant every phone and tablet load eagerly fetched
+                  this poster AND emitted a <link rel=preload imagesrcset> for
+                  it — for an element that is display:none at that width and can
+                  never paint. `loading="lazy"` is what actually stops it: a
+                  display:none image never intersects the viewport, so it is not
+                  requested at all below lg, and above lg it is in view and
+                  fetched immediately. It is decorative anyway — it enters from
+                  opacity-0 behind a 500ms transition and is never the LCP, which
+                  is the full-bleed backdrop. */}
               <BlurredImage
                 src={getPosterImageURL(movie.poster_path)}
                 alt={title}
                 className="pointer-events-none size-full object-fill lg:object-cover"
                 fill
-                sizes="(min-width: 1024px) 1024px, 30vw"
+                sizes="400px"
                 intro
-                priority={priority}
-                loading={priority ? undefined : 'lazy'}
+                loading="lazy"
               />
             </div>
           </div>

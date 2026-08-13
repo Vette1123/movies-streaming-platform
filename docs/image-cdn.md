@@ -110,6 +110,38 @@ names an exact width and the loader already clamps to it, so upscaling is
 impossible — and adding it there measured 3% _larger_ and shaved a pixel
 (500→499).
 
+## Homepage image audit (2026-08-13, headless Chrome)
+
+Cold vs warm, cache cleared between:
+
+| viewport | requests | cold   | warm              |
+| -------- | -------- | ------ | ----------------- |
+| 764 @1x  | 17       | 247 KB | 17/17 cache, 0 KB |
+| 390 @3x  | 19       | 573 KB | 19/19 cache, 0 KB |
+| 1512 @2x | 23       | 941 KB | —                 |
+
+All over HTTP/3, no duplicate URLs, **no image fetched that is never displayed**,
+0 blank, 0 stuck blurred. Caching needs nothing: ImageKit sends
+`Cache-Control: public, max-age=31536000, must-revalidate`, and the service
+worker never touches cross-origin, so nothing can interfere.
+
+Two payload gaps the audit found, both fixed:
+
+- **The hero wordmark was the two heaviest files on the page** (31 KB + 29 KB of
+  a 247 KB load). It is the only image rendered as a plain `<img>`, so
+  next/image's loader never saw it and it kept the URL's default `q-82` while
+  every other image was tuned to 65/70. Now `apiConfig.logoImage` at `q-70`.
+  Width is deliberately left at 500 — see that builder's comment; shrinking the
+  file shrinks the wordmark, it does not sharpen it.
+- **The hero's cinematic side poster was fetched on phones and tablets**, where
+  its wrapper is `hidden lg:flex` and it can never paint. It inherited
+  `priority` from the first slide, so it was eager AND got a
+  `<link rel=preload imagesrcset>`. Now `loading="lazy"` (a display:none image
+  never intersects, so it is not requested below lg) and `sizes="400px"` instead
+  of a claim of 1024px for a 400px box. Measured after: 0 fetches at 390 and
+  768, 2 at 1512 where it is actually on screen, and one image preload instead
+  of two.
+
 ## Where it lives
 
 - `lib/tmdbConfig.ts`

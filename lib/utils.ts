@@ -23,9 +23,13 @@ function getPosterImageURL(path: string) {
 // and 128px on desktop. Requesting them through getImageURL meant `original` at
 // w-2560 — 216 KB of transparent PNG for a 64px element, which over mobile data
 // lost the race against the hero's fallback timer and left the plain text title
-// on screen. w500 is the same image at 29.6 KB, still 4x the widest painted size.
+// on screen. w500 is the same image at 29.6 KB.
+//
+// Its own builder rather than w500Image: this is a plain <img>, so it never
+// passes through next/image's loader and would otherwise keep the URL's default
+// q-82 forever — see apiConfig.logoImage for why quality and not width.
 function getLogoImageURL(path: string) {
-  return `${apiConfig.w500Image(path)}`
+  return `${apiConfig.logoImage(path)}`
 }
 
 function getThumbPosterURL(path: string) {

@@ -62,6 +62,21 @@ const apiConfig = {
     `${IMAGE_CACHE_HOST_URL}/tr:w-2560,q-82,f-auto,pr-true,c-at_max/original${imgPath}`,
   w500Image: (imgPath: string) =>
     `${IMAGE_CACHE_HOST_URL}/tr:q-82,f-auto/w500${imgPath}`,
+  // The hero's title wordmark. It is the ONE image on the site that renders as a
+  // plain <img>, so next/image's loader never sees it and the q-82 above stands
+  // — which made the two visible logos the two heaviest files on the homepage
+  // (31 KB + 29 KB of a 247 KB cold load, 28% of all image bytes).
+  //
+  // Only the quality is lowered, deliberately. Width looks like the bigger lever
+  // (w-500 -> w-320 is -42% against q-82 -> q-70's -12%) and it is a trap: the
+  // logo is `w-auto` under a `max-h`/`max-w` cap, so above the lg breakpoint
+  // NEITHER cap binds and the element lays out at the file's intrinsic width —
+  // measured at 1512px, a logo painted at exactly 500 CSS px. Serving a narrower
+  // file would not sharpen anything, it would visibly shrink the wordmark. Below
+  // lg the height cap binds and the extra pixels are real detail on a dpr-2
+  // phone, which needs ~560 for a box the 500px source can only just fill.
+  logoImage: (imgPath: string) =>
+    `${IMAGE_CACHE_HOST_URL}/tr:q-70,f-auto,c-at_max/w500${imgPath}`,
   w185Image: (imgPath: string) =>
     `${IMAGE_CACHE_HOST_URL}/tr:q-80,f-auto/w185${imgPath}`,
   w300Image: (imgPath: string) =>
