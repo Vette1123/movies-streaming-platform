@@ -18,6 +18,14 @@ left a runnable check so nobody has to discover this during the next outage.
 - `components/command-menu.tsx` had the same `onError` body twice; both now call
   the shared `handleImageFallbackError`.
 
+Second pass, after "anything else to improve?":
+
+- `c-at_max` on the ImageKit `original` transform — the **primary** path had the
+  same upscale bug the fallback did, and it runs on every load, not just during
+  an outage. 780 px source asked for `w-2560`: 30 060 B → 6 054 B.
+- `image_host_fallback` PostHog event, fired once per session from a single
+  subscriber in the provider.
+
 ## Mistakes
 
 **Assumed the premise, then failed to reproduce it.** The whole first hour went
@@ -47,6 +55,14 @@ and failed. The test was wrong about the code, but the code had the worse
 contract — a function that silently demotes even when nothing is down is a trap
 for the next caller. Moved the gate inside. A failing check is a question, not
 a verdict on which side is wrong.
+
+**Fixed the fallback's upscale and did not check the primary for the same bug.**
+`&we` went onto wsrv, the diff was written, the commit was made — and the
+identical `w-2560`-off-`/original` enlargement was sitting in `originalImage`
+the whole time, on the path every visitor loads every day. It only surfaced on a
+follow-up "anything else?" question. When a class of bug is found in one branch
+of a chain, grep the other branches before calling it done: the fallback and the
+primary are both "an image proxy being told a width".
 
 **The reflex to reach for the browser was right and unavailable.** Chrome needs
 a one-time "Allow remote debugging?" click, and this session is non-interactive,

@@ -56,6 +56,8 @@ export const EVENTS = {
   // PWA install lifecycle
   PWA_INSTALLABLE: 'pwa_installable',
   PWA_INSTALLED: 'pwa_installed',
+  // Infrastructure
+  IMAGE_HOST_FALLBACK: 'image_host_fallback',
 } as const
 
 export type MediaKind = 'movie' | 'tv'
@@ -357,4 +359,18 @@ export function trackPwaInstallable(): void {
 /** App was installed to the home screen / desktop (`appinstalled` fired). */
 export function trackPwaInstalled(): void {
   track(EVENTS.PWA_INSTALLED)
+}
+
+// ---- Infrastructure ---------------------------------------------------------
+
+/**
+ * The primary image CDN (ImageKit) failed and the session fell to wsrv.nl.
+ *
+ * Fired once per session, by the circuit breaker in lib/tmdbConfig.ts. The
+ * fallback chain is silent by design — it keeps every image on screen — so
+ * without this the way we find out the ImageKit quota ran out is a user saying
+ * the site looks wrong. Which is exactly how it went last time.
+ */
+export function trackImageHostFallback(): void {
+  track(EVENTS.IMAGE_HOST_FALLBACK)
 }

@@ -48,8 +48,18 @@ const apiConfig = {
   // through BlurredImage overrides it (65 backdrops / 70 posters) via the
   // loader; what is left on 82 is the hero's transparent title logo.
   // The wsrv.nl fallback stays webp.
+  // `c-at_max` = fit inside the requested box, never enlarge. TMDB's `original`
+  // is not a width — plenty of backdrops are natively 1280 or 780 px — and
+  // without this ImageKit upscales one to whatever w- it is handed, which is
+  // more bytes for strictly no more detail. Measured on a 780 px source asked
+  // for w-2560: 30,060 B upscaled against 6,054 B at its native width, and the
+  // browser was going to stretch it to the same painted size either way. A
+  // source that IS bigger is unaffected (the 3840 px original returned an
+  // identical 55,044 B / 2560x1440 with and without it). Same fix as `&we` on
+  // the wsrv stage — the fallback got it first, this is the path everyone
+  // actually loads.
   originalImage: (imgPath: string) =>
-    `${IMAGE_CACHE_HOST_URL}/tr:w-2560,q-82,f-auto,pr-true/original${imgPath}`,
+    `${IMAGE_CACHE_HOST_URL}/tr:w-2560,q-82,f-auto,pr-true,c-at_max/original${imgPath}`,
   w500Image: (imgPath: string) =>
     `${IMAGE_CACHE_HOST_URL}/tr:q-82,f-auto/w500${imgPath}`,
   w185Image: (imgPath: string) =>

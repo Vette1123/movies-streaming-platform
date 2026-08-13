@@ -70,6 +70,26 @@ names a URL that will 4xx.
 It is deliberately **not persisted** — a fresh tab probes ImageKit once more,
 which is also how the site notices the quota reset without a deploy.
 
+`<ImageHostTracker>` (providers/posthog-provider.tsx) subscribes once and fires
+the `image_host_fallback` PostHog event when it trips. The chain is silent by
+design, so without that the way we'd learn the quota is spent is a user saying
+the site looks wrong.
+
+## `c-at_max` on the primary
+
+`originalImage` asks for `w-2560`, and TMDB `original` files are frequently
+narrower than that. ImageKit upscales on request just like wsrv: a 780 px source
+asked for `w-2560` came back **30 060 B** against **6 054 B** at its native
+width — the browser paints it at the same size either way. `c-at_max` fits
+inside the requested box without enlarging, and a source that _is_ bigger is
+untouched (a 3840 px original returns an identical 55 044 B / 2560×1440 with and
+without it).
+
+The `w500`/`w300`/`w185` builders deliberately **don't** carry it: their path
+names an exact width and the loader already clamps to it, so upscaling is
+impossible — and adding it there measured 3% _larger_ and shaved a pixel
+(500→499).
+
 ## Where it lives
 
 - `lib/tmdbConfig.ts`

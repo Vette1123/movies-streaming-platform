@@ -4,7 +4,11 @@ import { PropsWithChildren, Suspense, useEffect, useRef } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import type { CaptureResult, ConfigDefaults } from 'posthog-js'
 
-import { trackPwaInstallable, trackPwaInstalled } from '@/lib/analytics'
+import {
+  trackImageHostFallback,
+  trackPwaInstallable,
+  trackPwaInstalled,
+} from '@/lib/analytics'
 import {
   isStaleChunkError,
   isStaleDeployError,
@@ -13,6 +17,7 @@ import {
 import { onIdle } from '@/lib/idle'
 import { enrichPersonProfile } from '@/lib/person'
 import { analyticsEnabled, loadPostHog, ph } from '@/lib/posthog-client'
+import { subscribePrimaryImageHost } from '@/lib/tmdbConfig'
 
 /**
  * Runtime context attached to every captured $exception. Our production stack
@@ -393,6 +398,21 @@ function PwaInstallTracker() {
 }
 
 /**
+ * Reports the one infrastructure failure the app is deliberately silent about:
+ * the primary image CDN going down (a spent ImageKit quota fails every image
+ * for the rest of the month). The fallback chain keeps the pictures on screen,
+ * which is the whole point — and also why nobody would notice.
+ *
+ * Subscribing here rather than from BlurredImage means ONE listener regardless
+ * of how many images are mounted, so the event fires exactly once per session
+ * without a second "have I reported this yet" flag to keep in sync.
+ */
+function ImageHostTracker() {
+  useEffect(() => subscribePrimaryImageHost(trackImageHostFallback), [])
+  return null
+}
+
+/**
  * Mounts the PostHog side-effect components. There's no React context provider
  * here on purpose: posthog-js/react's <PostHogProvider> takes the singleton as a
  * prop, which would mean importing posthog-js statically and pulling all 221KB
@@ -405,6 +425,7 @@ export function CSPostHogProvider({ children }: PropsWithChildren) {
       <SuspendedPageView />
       <PostHogIdentity />
       <PwaInstallTracker />
+      <ImageHostTracker />
       {children}
     </>
   )
