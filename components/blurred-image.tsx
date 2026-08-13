@@ -4,7 +4,14 @@ import React from 'react'
 import Image, { ImageProps } from 'next/image'
 
 import { avifSrcSet } from '@/lib/image-loader'
-import { getNextImageFallback } from '@/lib/tmdbConfig'
+import {
+  demoteFromPrimary,
+  getNextImageFallback,
+  isPrimaryImageHostDown,
+  isPrimaryImageURL,
+  markPrimaryImageHostDown,
+  subscribePrimaryImageHost,
+} from '@/lib/tmdbConfig'
 import { cn } from '@/lib/utils'
 
 interface BlurImageProps extends ImageProps {
@@ -32,6 +39,10 @@ interface BlurImageProps extends ImageProps {
 // reintroduce the default. Any caller can still pass its own `quality` and win.
 const HERO_QUALITY = 65
 const POSTER_QUALITY = 70
+
+// Stable server snapshot for useSyncExternalStore — an inline `() => false`
+// would be a new function every render.
+const returnFalse = () => false
 
 // Offers the browser AVIF before next/image's own <img>, and gets out of the way
 // when it can't.
@@ -112,10 +123,26 @@ export const BlurredImage = React.memo(function BlurredImage({
     setImgSrc(src)
   }
 
+  // Once ANY image has proved the primary host is down (quota exhausted, most
+  // likely — that fails for every image for the rest of the month, not once),
+  // skip stage 0 outright instead of making each new <img> rediscover it with a
+  // request that cannot succeed. Derived at render rather than written into
+  // `imgSrc`, so the chain position this component actually walks stays
+  // untouched: an image already down at wsrv or the origin is returned as-is.
+  // Server snapshot is always `false` — the prerendered HTML names ImageKit, and
+  // claiming otherwise during hydration would be a mismatch.
+  const primaryDown = React.useSyncExternalStore(
+    subscribePrimaryImageHost,
+    isPrimaryImageHostDown,
+    returnFalse
+  )
+  const effectiveSrc = primaryDown ? demoteFromPrimary(imgSrc) : imgSrc
+
   const handleError = React.useCallback(() => {
-    const fallback = getNextImageFallback(imgSrc)
-    if (fallback && fallback !== imgSrc) setImgSrc(fallback)
-  }, [imgSrc])
+    if (isPrimaryImageURL(effectiveSrc)) markPrimaryImageHostDown()
+    const fallback = getNextImageFallback(effectiveSrc)
+    if (fallback && fallback !== effectiveSrc) setImgSrc(fallback)
+  }, [effectiveSrc])
 
   // next/image forwards `ref` to the underlying <img> (Next 16). A callback ref
   // runs synchronously during commit — before the browser paints — so when the
@@ -159,7 +186,7 @@ export const BlurredImage = React.memo(function BlurredImage({
         />
         <picture>
           <AvifSource
-            src={imgSrc}
+            src={effectiveSrc}
             sizes={props.sizes}
             quality={HERO_QUALITY}
             priority={props.priority}
@@ -169,7 +196,7 @@ export const BlurredImage = React.memo(function BlurredImage({
             {...props}
             ref={imgRef}
             alt={alt}
-            src={imgSrc}
+            src={effectiveSrc}
             className={blurClassName}
             onLoad={() => setLoading(false)}
             onError={handleError}
@@ -212,7 +239,7 @@ export const BlurredImage = React.memo(function BlurredImage({
             zero CLS. */}
         <picture>
           <AvifSource
-            src={imgSrc}
+            src={effectiveSrc}
             sizes={sizes}
             quality={POSTER_QUALITY}
             priority={rest.priority}
@@ -222,7 +249,7 @@ export const BlurredImage = React.memo(function BlurredImage({
             {...rest}
             ref={imgRef}
             alt={alt}
-            src={imgSrc}
+            src={effectiveSrc}
             fill
             sizes={sizes}
             className={cn(
@@ -248,7 +275,7 @@ export const BlurredImage = React.memo(function BlurredImage({
     <div className="w-fit overflow-hidden rounded-lg bg-slate-900">
       <picture>
         <AvifSource
-          src={imgSrc}
+          src={effectiveSrc}
           sizes={props.sizes}
           quality={HERO_QUALITY}
           priority={props.priority}
@@ -258,7 +285,7 @@ export const BlurredImage = React.memo(function BlurredImage({
           {...props}
           ref={imgRef}
           alt={alt}
-          src={imgSrc}
+          src={effectiveSrc}
           className={blurClassName}
           onLoad={() => setLoading(false)}
           onError={handleError}

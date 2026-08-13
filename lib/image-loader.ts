@@ -13,9 +13,21 @@
 // looks like. ImageKit already resizes from the URL, so the width simply gets
 // substituted into the transform it is asked for.
 //
-// Non-ImageKit URLs pass through untouched. That matters: BlurredImage walks a
-// fallback chain (ImageKit -> wsrv.nl -> TMDB origin) on error, and the last two
-// stages must not have ImageKit syntax spliced into them.
+// The chain's SECOND stage is rewritten too, in wsrv's own query syntax. It used
+// to pass through untouched, which quietly cost the fallback everything this
+// loader exists for: a URL the loader does not rewrite produces a srcset whose
+// candidates are all the same file under different `w` descriptors, so the whole
+// site pinned itself to the single width baked into the fallback URL — 2560 for
+// anything off `/original`. A phone that fell off ImageKit downloaded a 2560px
+// hero (118 KB measured) where the width it actually paints costs 18 KB, and it
+// got that 2560px image by UPSCALING sources that are natively 1280 or 780 (see
+// buildWsrvURL's `&we`). Byte-for-byte at a matched width wsrv and ImageKit are
+// identical, so with this the fallback is not a downgrade in anything but AVIF.
+//
+// Anything else (Unsplash, avatars, the TMDB origin last resort) still passes
+// through untouched — the origin has no resizing to ask for.
+
+import { buildWsrvURL, extractTMDBPath, isWsrvURL } from './tmdbConfig'
 
 interface LoaderArgs {
   src: string
@@ -81,6 +93,14 @@ function buildURL({
 }
 
 export default function imageKitLoader({ src, width, quality }: LoaderArgs) {
+  if (isWsrvURL(src)) {
+    const path = extractTMDBPath(src)
+    if (!path) return src
+    // Same clamp as ImageKit: never ask for more than the TMDB size segment
+    // holds. `&we` inside buildWsrvURL covers the `/original` case, where the
+    // segment names no width at all and 2560 is only an upper bound.
+    return buildWsrvURL(path, Math.min(width, sourceWidth(path)), quality)
+  }
   return buildURL({ src, width, quality })
 }
 

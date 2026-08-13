@@ -19,7 +19,7 @@ import { searchMediaApi } from '@/lib/api-client'
 import { COMPANION_APPS, openOnPlayStore } from '@/lib/apps'
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
-import { getNextImageFallback } from '@/lib/tmdbConfig'
+import { handleImageFallbackError } from '@/lib/tmdbConfig'
 import {
   cn,
   getThumbBackdropURL,
@@ -459,13 +459,9 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                             className="object-cover"
                             draggable={false}
                             unoptimized
-                            onError={(e) => {
-                              const fb = getNextImageFallback(
-                                e.currentTarget.src
-                              )
-                              if (fb && e.currentTarget.src !== fb)
-                                e.currentTarget.src = fb
-                            }}
+                            onError={(e) =>
+                              handleImageFallbackError(e.currentTarget)
+                            }
                           />
                         </div>
                       ) : movie?.poster_path ? (
@@ -478,13 +474,9 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                             className="object-cover object-top"
                             draggable={false}
                             unoptimized
-                            onError={(e) => {
-                              const fb = getNextImageFallback(
-                                e.currentTarget.src
-                              )
-                              if (fb && e.currentTarget.src !== fb)
-                                e.currentTarget.src = fb
-                            }}
+                            onError={(e) =>
+                              handleImageFallbackError(e.currentTarget)
+                            }
                           />
                         </div>
                       ) : (

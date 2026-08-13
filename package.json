@@ -11,6 +11,8 @@
     "prettier:format": "prettier --write .",
     "prettier:check": "prettier --check .",
     "imdb:ratings": "node scripts/build-imdb-ratings.mjs",
+    "images:check": "node scripts/check-image-fallback.mjs",
+    "images:check:live": "node scripts/check-image-fallback.mjs --live",
     "build:worker": "node scripts/build-worker.mjs",
     "build:cf": "node scripts/build-cf.mjs",
     "preview": "pnpm build:cf && wrangler dev",

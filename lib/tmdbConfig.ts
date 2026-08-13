@@ -121,6 +121,42 @@ function widthFromPath(path: string): number | undefined {
   return 2560 // /original — matches the ImageKit hero width above
 }
 
+// wsrv has no AVIF saver ("Saving to avif is disabled. Supported savers: jpg,
+// png, webp, tiff, gif, json, jxl"), so the fallback tops out at WebP. That
+// costs bytes, not pixels: at the SAME width and quality wsrv and ImageKit hand
+// back byte-identical WebP (measured — w1200 q65 of the same backdrop was 10678
+// bytes from both, q82 was 18252 from both). Which is the point worth holding
+// on to: this chain has never had a quality problem it did not give itself by
+// asking for the wrong width.
+//
+// Default quality matches BlurredImage's poster setting. It is only what a bare
+// URL carries — every image rendered through next/image goes back through
+// lib/image-loader.ts, which rewrites `w` and `q` per candidate.
+const WSRV_DEFAULT_QUALITY = 70
+
+/**
+ * Build the wsrv.nl stage for a TMDB path (e.g. "/w500/abc.jpg").
+ *
+ * `&we` = "without enlargement", and it is the whole reason the fallback used to
+ * look bad. `widthFromPath` maps `/original` to 2560 because that is what the
+ * ImageKit hero asks for, but TMDB's `original` is not a width — plenty of
+ * backdrops are only 1280 or 780 px wide, and wsrv will cheerfully upscale one
+ * to whatever it is asked for. Measured on a w780 source asked for w=2560:
+ * 45.8 KB of soft, upscaled mush, against 10.1 KB for the same request with
+ * `&we` (which returns the native 780 px and lets the browser do the stretching,
+ * if any). Blurrier AND four times the bytes.
+ *
+ * TMDB image paths are clean (no query string), so the origin URL goes
+ * unencoded in wsrv's `?url=` — which keeps the `image.tmdb.org/t/p` marker
+ * literal so extractTMDBPath can still find it on the way to the next stage.
+ */
+function buildWsrvURL(path: string, width?: number, quality?: number) {
+  const w = width ?? widthFromPath(path)
+  const widthParam = w ? `&w=${w}` : ''
+  const q = quality ?? WSRV_DEFAULT_QUALITY
+  return `${WSRV_BASE}${TMDB_ORIGIN_IMAGE_BASE}${path}${widthParam}&q=${q}&output=webp&we`
+}
+
 // Given the current (failed) image URL, return the next fallback in the chain,
 // or null when exhausted (already at TMDB origin, or not one of our URLs).
 // Each stage stays OPTIMIZED (resized + WebP) so a fallback never regresses to
@@ -129,22 +165,81 @@ function getNextImageFallback(src: unknown): string | null {
   if (typeof src !== 'string') return null
   const path = extractTMDBPath(src)
   if (!path) return null
-  const tmdbOrigin = `${TMDB_ORIGIN_IMAGE_BASE}${path}`
   switch (imageStage(src)) {
-    case 0: {
-      // ImageKit -> wsrv.nl (still optimized: width+quality+WebP).
-      // TMDB image paths are clean (no query string), so the origin URL can go
-      // unencoded in wsrv's ?url= — which keeps the `image.tmdb.org/t/p` marker
-      // literal so the NEXT stage's extractTMDBPath can still find it.
-      const w = widthFromPath(path)
-      const widthParam = w ? `&w=${w}` : ''
-      return `${WSRV_BASE}${tmdbOrigin}${widthParam}&q=82&output=webp`
-    }
+    case 0: // ImageKit -> wsrv.nl (still optimized: width+quality+WebP)
+      return buildWsrvURL(path)
     case 1: // wsrv.nl -> TMDB origin direct (last resort, unoptimizable)
-      return tmdbOrigin
+      return `${TMDB_ORIGIN_IMAGE_BASE}${path}`
     default: // origin (2) is the last resort, or unknown host
       return null
   }
+}
+
+/** Is this URL still on the primary (ImageKit) host? */
+function isPrimaryImageURL(src: unknown): boolean {
+  return typeof src === 'string' && imageStage(src) === 0
+}
+
+/** Is this URL the wsrv.nl stage? (the loader rewrites those too) */
+function isWsrvURL(src: string): boolean {
+  return src.startsWith(WSRV_BASE)
+}
+
+// --- primary-host circuit breaker --------------------------------------------
+//
+// ImageKit running out of quota is not one broken image, it is every image on
+// every page for the rest of the month. Walking the chain per-<img> handles the
+// pixels but not the cost: each one pays a doomed request before it can start
+// the one that works, the hero's `<link rel=preload imagesrcset>` names a URL
+// that will 4xx, and a list scroll doubles its request count.
+//
+// So the first failure on the primary host flips a flag and every mounted image
+// re-renders straight onto the fallback. Deliberately NOT persisted: a fresh tab
+// probes ImageKit once more, which is also how the site notices the quota has
+// reset without anyone shipping a deploy.
+let primaryImageHostDown = false
+const primaryImageHostSubs = new Set<() => void>()
+
+function markPrimaryImageHostDown() {
+  if (primaryImageHostDown) return
+  primaryImageHostDown = true
+  primaryImageHostSubs.forEach((notify) => notify())
+}
+
+function subscribePrimaryImageHost(notify: () => void) {
+  primaryImageHostSubs.add(notify)
+  return () => {
+    primaryImageHostSubs.delete(notify)
+  }
+}
+
+function isPrimaryImageHostDown() {
+  return primaryImageHostDown
+}
+
+/**
+ * Skip the primary stage for a URL that has not failed *yet*, once we know the
+ * primary is down. A no-op until the breaker trips, and anything already past
+ * stage 0 is returned untouched — this never rewinds an image that has walked
+ * further down the chain.
+ */
+function demoteFromPrimary<T>(src: T): T | string {
+  if (!primaryImageHostDown) return src
+  if (!isPrimaryImageURL(src)) return src
+  return getNextImageFallback(src) ?? src
+}
+
+/**
+ * Shared `onError` for a plain <img>/next-image that renders one of our URLs:
+ * advance one stage, and record a primary-host failure so the rest of the page
+ * stops trying it. Used by every image that is not a BlurredImage.
+ */
+function handleImageFallbackError(el: HTMLImageElement | null) {
+  if (!el) return
+  const current = el.src
+  if (isPrimaryImageURL(current)) markPrimaryImageHostDown()
+  const next = getNextImageFallback(current)
+  if (next && next !== current) el.src = next
 }
 
 // old
@@ -167,4 +262,18 @@ const tvType = {
   trending: 'trending',
 }
 
-export { apiConfig, movieType, tvType, getNextImageFallback }
+export {
+  apiConfig,
+  movieType,
+  tvType,
+  getNextImageFallback,
+  buildWsrvURL,
+  extractTMDBPath,
+  isPrimaryImageURL,
+  isWsrvURL,
+  demoteFromPrimary,
+  handleImageFallbackError,
+  markPrimaryImageHostDown,
+  subscribePrimaryImageHost,
+  isPrimaryImageHostDown,
+}
