@@ -29,7 +29,11 @@ export const CollectionBanner = ({ movie }: { movie: MovieDetails }) => {
           src={getImageURL(backdrop)}
           alt={collection.name}
           fill
-          sizes="(min-width: 1024px) 1024px, 100vw"
+          // The banner is as wide as the details container, which caps at the
+          // 2xl breakpoint less its gutters — measured at 1472 CSS px on a
+          // 2560px window, not the 1024 this used to claim. Below that cap it
+          // simply is the viewport width.
+          sizes="(min-width: 1536px) 1472px, 100vw"
           className="object-cover object-center transition-transform duration-500 ease-out group-hover/collection:scale-105"
         />
       )}

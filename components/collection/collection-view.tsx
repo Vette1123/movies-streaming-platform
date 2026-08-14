@@ -61,10 +61,21 @@ export function CollectionView({
             src={getImageURL(collection.backdrop_path)}
             alt={collection.name}
             fill
-            sizes="100vw"
+            // The band is a fixed 448px tall and `object-cover`, so below a
+            // ~800px viewport the HEIGHT binds and the backdrop paints ~797 CSS
+            // px wide however narrow the screen gets — `100vw` under-described
+            // that by 2x on a phone (measured: a 1200px file across 2393 device
+            // px). The 640px clause is the same deliberate brake the heroes use;
+            // see lib/image-sizes.ts.
+            sizes="(max-width: 640px) 160vw, (max-width: 800px) 800px, 100vw"
             className="object-cover object-center"
             intro
-            priority
+            // Eager + high rather than `priority`: same fetch, no WebP preload
+            // tag, which is what lets this take the AVIF <source> like the two
+            // heroes do (measured there at 110 KB -> 65 KB). See
+            // components/header/hero-image.tsx.
+            loading="eager"
+            fetchPriority="high"
           />
         )}
         <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/70 to-slate-950/20" />

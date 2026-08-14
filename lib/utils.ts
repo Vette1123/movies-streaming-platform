@@ -32,8 +32,21 @@ function getLogoImageURL(path: string) {
   return `${apiConfig.logoImage(path)}`
 }
 
+// The wordmark is a plain <img> (next/image's loader never sees it — see
+// apiConfig.logoImage), so the density ladder has to be written by hand. The
+// element lays out at the file's intrinsic ~500 CSS px, which a retina screen
+// paints at 1000 device px; without this the browser had one 500px file for
+// both cases and simply stretched it.
+function getLogoImageSrcSet(path: string) {
+  return `${apiConfig.logoImage(path, 500)} 1x, ${apiConfig.logoImage(path, 1000)} 2x`
+}
+
+// Both search-result thumbs paint in the same 96x54 box, and both are rendered
+// `unoptimized` (a fixed-size <img> with no srcset), so the file has to cover
+// the densest screen on its own: 96 CSS px at dpr 3 is 288. w185 could not —
+// it was the one thumb on the site being upscaled — and w300 can, for a few KB.
 function getThumbPosterURL(path: string) {
-  return `${apiConfig.w185Image(path)}`
+  return `${apiConfig.w300Image(path)}`
 }
 
 function getThumbBackdropURL(path: string) {
@@ -154,6 +167,7 @@ export {
   cn,
   getImageURL,
   getLogoImageURL,
+  getLogoImageSrcSet,
   getPosterImageURL,
   getThumbPosterURL,
   getThumbBackdropURL,

@@ -131,8 +131,11 @@ Two payload gaps the audit found, both fixed:
   a 247 KB load). It is the only image rendered as a plain `<img>`, so
   next/image's loader never saw it and it kept the URL's default `q-82` while
   every other image was tuned to 65/70. Now `apiConfig.logoImage` at `q-70`.
-  Width is deliberately left at 500 — see that builder's comment; shrinking the
-  file shrinks the wordmark, it does not sharpen it.
+  Width was left at 500 on the reasoning that the element lays out at the file's
+  intrinsic width, so a narrower file would shrink the wordmark rather than
+  sharpen it — true of CSS px, and it forgot DPR. 2026-08-14 added a hand-written
+  1x/2x `srcSet` (`getLogoImageSrcSet`); retina now gets 1000 px, and only
+  retina pays for it.
 - **The hero's cinematic side poster was fetched on phones and tablets**, where
   its wrapper is `hidden lg:flex` and it can never paint. It inherited
   `priority` from the first slide, so it was eager AND got a
@@ -142,8 +145,53 @@ Two payload gaps the audit found, both fixed:
   768, 2 at 1512 where it is actually on screen, and one image preload instead
   of two.
 
+## Whole-site sharpness audit (2026-08-14)
+
+The 2026-08-13 audit measured **bytes**. This one measured **pixels**, and found
+the site's real image defect: several `sizes` strings described the element's
+box while the image was laid out with `object-cover`, which paints the image
+_wider_ than its box as soon as the box is taller than the image's ratio.
+
+For a 16:9 backdrop in a full-bleed `100svh` hero:
+
+```
+painted width = max(100vw, 100svh × 16/9)     // 1500 CSS px on a 390×844 phone
+served px     = candidate width               // capped by the source segment
+ratio         = served ÷ (painted × DPR)      // 1.0 = exactly enough
+```
+
+Measured before → after (ratio; higher is sharper, 1.0 is the target):
+
+| image                     | before | after | why                               |
+| ------------------------- | ------ | ----- | --------------------------------- |
+| details hero, 2560 window | 0.42   | 1.00  | `sizes` claimed a 1024px box      |
+| details / home hero, dpr3 | 0.27   | 0.43  | cover geometry + deliberate brake |
+| hero wordmark, dpr2       | 0.50   | 1.00  | plain `<img>` had no 2x srcset    |
+| hero side poster, dpr2    | 0.54   | 1.16  | `w500` source was the ceiling     |
+| collection banner, phone  | 0.50   | 0.80  | fixed-height cover band           |
+| details poster            | 0.63   | 1.03  | `w500` ceiling + `q-65` default   |
+| cast portraits, desktop   | 1.95   | 1.49  | over-served, `15vw` → `10vw`      |
+
+Rules that came out of it live in `lib/image-sizes.ts`. The remaining sub-1.0
+rows are deliberate ceilings, both documented where they are set: `/original`
+requests are capped at 2560 px (`lib/image-loader.ts`), and phones ask for
+160vw rather than the full cover width (1920 instead of 2560: 76 KB vs 112 KB,
+on the image that is ~70% cropped away on a phone).
+
+**Heroes no longer pass `priority`.** It emits `<link rel=preload imagesrcset>`
+naming the WebP srcset, which is exactly why `BlurredImage` refuses to offer an
+AVIF `<source>` alongside it — so the LCP image was the one image on the page
+that could never be AVIF. `loading="eager"` + `fetchPriority="high"` is the same
+fetch minus the preload tag. Measured on the details page (1.6 Mbit, 4x CPU,
+cold, dpr 2, 4 runs each): **110 KB WebP starting ~320ms and done ~4.8s** versus
+**65 KB AVIF starting ~450ms and done ~3.3s**.
+
+Verified on both stages of the chain: with `*ik.imagekit.io*` blocked in CDP,
+wsrv served the same widths at the same quality (WebP, as documented above).
+
 ## Where it lives
 
+- `lib/image-sizes.ts` — cover-aware `sizes` for the heroes, with the numbers
 - `lib/tmdbConfig.ts`
   - `apiConfig.{originalImage,w500Image,w185Image,w300Image}` — build the
     **primary** URL from `IMAGE_CACHE_HOST_URL`.

@@ -12,6 +12,7 @@ a unit of work genuinely had no wrong turn, say so in one line and keep it short
 Read the lessons touching an area before starting work in it. Commit the lesson
 with the work, not after.
 
-| Date       | Lesson                                                                 | The one thing                                                                                  |
-| ---------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| 2026-08-13 | [Image CDN fallback quality](2026-08-13-image-cdn-fallback-quality.md) | The fallback CDN was never worse per pixel — it was asking for the wrong width, and upscaling. |
+| Date       | Lesson                                                                 | The one thing                                                                                                                   |
+| ---------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-13 | [Image CDN fallback quality](2026-08-13-image-cdn-fallback-quality.md) | The fallback CDN was never worse per pixel — it was asking for the wrong width, and upscaling.                                  |
+| 2026-08-14 | [Cover-aware image `sizes`](2026-08-14-cover-aware-image-sizes.md)     | `sizes` must describe what `object-cover` paints (`100svh × ratio`), not the box — and `naturalWidth` is not the decoded width. |

@@ -65,18 +65,19 @@ const apiConfig = {
   // The hero's title wordmark. It is the ONE image on the site that renders as a
   // plain <img>, so next/image's loader never sees it and the q-82 above stands
   // — which made the two visible logos the two heaviest files on the homepage
-  // (31 KB + 29 KB of a 247 KB cold load, 28% of all image bytes).
+  // (31 KB + 29 KB of a 247 KB cold load, 28% of all image bytes). Hence q-70.
   //
-  // Only the quality is lowered, deliberately. Width looks like the bigger lever
-  // (w-500 -> w-320 is -42% against q-82 -> q-70's -12%) and it is a trap: the
-  // logo is `w-auto` under a `max-h`/`max-w` cap, so above the lg breakpoint
-  // NEITHER cap binds and the element lays out at the file's intrinsic width —
-  // measured at 1512px, a logo painted at exactly 500 CSS px. Serving a narrower
-  // file would not sharpen anything, it would visibly shrink the wordmark. Below
-  // lg the height cap binds and the extra pixels are real detail on a dpr-2
-  // phone, which needs ~560 for a box the 500px source can only just fill.
-  logoImage: (imgPath: string) =>
-    `${IMAGE_CACHE_HOST_URL}/tr:q-70,f-auto,c-at_max/w500${imgPath}`,
+  // The width argument is the part that used to be missing. The old builder was
+  // pinned to TMDB's `/w500` segment on the reasoning that the element lays out
+  // at the file's intrinsic 500 CSS px, so a narrower file would shrink the
+  // wordmark rather than sharpen it. True — and it left out DPR. A plain <img>
+  // has no srcset, so a dpr-2 laptop painted those 500 CSS px across 1000 device
+  // px from a 500px file: measured at ratio 0.5, the softest image on the
+  // homepage. Reading from `/original` (and `c-at_max`, so a small source is
+  // never enlarged) lets getLogoImageSrcSet hand out a real 1x/2x pair, and the
+  // 2x file is only ever fetched by a screen that can show it.
+  logoImage: (imgPath: string, width = 500) =>
+    `${IMAGE_CACHE_HOST_URL}/tr:w-${width},q-70,f-auto,c-at_max/original${imgPath}`,
   w185Image: (imgPath: string) =>
     `${IMAGE_CACHE_HOST_URL}/tr:q-80,f-auto/w185${imgPath}`,
   w300Image: (imgPath: string) =>

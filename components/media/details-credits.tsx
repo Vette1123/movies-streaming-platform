@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Credit } from '@/types/credit'
 import { SEARCH_ACTOR_GOOGLE } from '@/lib/constants'
 import { getPosterImageURL } from '@/lib/utils'
-import { BlurredImage } from '@/components/blurred-image'
+import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
 
 export const DetailsCredits = ({ movieCredits }: { movieCredits: Credit }) => {
   return (
@@ -26,7 +26,16 @@ export const DetailsCredits = ({ movieCredits }: { movieCredits: Credit }) => {
                   alt={cast.name}
                   fill
                   className="cursor-pointer object-cover"
-                  sizes="(max-width: 640px) 45vw, (max-width: 768px) 30vw, (max-width: 1024px) 25vw, 15vw"
+                  // 10vw above lg, not 15: the cast grid is 5 columns of a
+                  // COLUMN of the page, not of the page — measured at 192 CSS
+                  // px on a movie page and 128 on a series page (which gives a
+                  // slice to the season navigator), where 15vw claimed 227 and
+                  // bought a 500px file for a 128px box.
+                  sizes="(max-width: 640px) 45vw, (max-width: 768px) 30vw, (max-width: 1024px) 25vw, 10vw"
+                  // A portrait, not a backdrop: the `intro` reveal below would
+                  // otherwise hand it the 65 tuned for full-bleed photos under
+                  // a scrim. These are faces at thumbnail size.
+                  quality={POSTER_QUALITY}
                   intro
                 />
               </div>

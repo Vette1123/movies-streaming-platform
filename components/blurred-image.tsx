@@ -37,7 +37,11 @@ interface BlurImageProps extends ImageProps {
 // Set here rather than at the call sites so a new poster somewhere can't quietly
 // reintroduce the default. Any caller can still pass its own `quality` and win.
 const HERO_QUALITY = 65
-const POSTER_QUALITY = 70
+// Exported because the `intro` branch (blur-up reveal) defaults to the BACKDROP
+// number, and two posters render through it — the big details poster and the
+// cast portraits. They are posters wearing the hero's reveal, so they name the
+// poster quality explicitly rather than inheriting 65 by accident.
+export const POSTER_QUALITY = 70
 
 // Stable server snapshot for useSyncExternalStore — an inline `() => false`
 // would be a new function every render.
@@ -58,24 +62,40 @@ const returnFalse = () => false
 //   - `priority` images. next/image emits <link rel="preload" imagesrcset> for
 //     those, and that preload names the WEBP srcset. The document would then
 //     preload one format and render another: the LCP image downloaded twice.
-//     The hero's first slide is the only priority image on a page, so it keeps
-//     its preload and its WebP; every other slide still gets AVIF.
+//     Nothing on the site passes `priority` any more for exactly that reason —
+//     the heroes ask for `loading="eager"` + `fetchPriority="high"` instead,
+//     which is the same fetch minus the preload tag, and measured strictly
+//     faster because AVIF is worth more than the head start (see
+//     components/header/hero-image.tsx). This guard stays for anything that
+//     reintroduces `priority` later.
 //   - Anything that has fallen off ImageKit. Once handleError has walked `src`
 //     on to wsrv or the TMDB origin, an ImageKit AVIF URL is not a smaller copy
 //     of that image, it is the URL that just failed.
+//
+// `quality` is the caller's own value when it passed one, and the branch
+// default otherwise — resolved HERE rather than at the three call sites. The
+// <img> has always honoured a caller's `quality` (it is spread after the
+// default), but this <source> used to be handed the branch default directly, so
+// a caller asking for something else got it in WebP and silently lost it in the
+// AVIF copy that every modern browser actually takes.
 function AvifSource({
   src,
   sizes,
   quality,
+  fallbackQuality,
   priority,
 }: {
   src: ImageProps['src']
   sizes?: string
-  quality: number
+  quality?: number | string
+  fallbackQuality: number
   priority?: boolean
 }) {
   if (priority || typeof src !== 'string') return null
-  const srcSet = avifSrcSet(src, quality)
+  const srcSet = avifSrcSet(
+    src,
+    typeof quality === 'number' ? quality : fallbackQuality
+  )
   if (!srcSet) return null
   return <source type="image/avif" srcSet={srcSet} sizes={sizes} />
 }
@@ -194,7 +214,8 @@ export const BlurredImage = React.memo(function BlurredImage({
           <AvifSource
             src={effectiveSrc}
             sizes={props.sizes}
-            quality={HERO_QUALITY}
+            quality={props.quality}
+            fallbackQuality={HERO_QUALITY}
             priority={props.priority}
           />
           <Image
@@ -247,7 +268,8 @@ export const BlurredImage = React.memo(function BlurredImage({
           <AvifSource
             src={effectiveSrc}
             sizes={sizes}
-            quality={POSTER_QUALITY}
+            quality={rest.quality}
+            fallbackQuality={POSTER_QUALITY}
             priority={rest.priority}
           />
           <Image
@@ -283,7 +305,8 @@ export const BlurredImage = React.memo(function BlurredImage({
         <AvifSource
           src={effectiveSrc}
           sizes={props.sizes}
-          quality={HERO_QUALITY}
+          quality={props.quality}
+          fallbackQuality={HERO_QUALITY}
           priority={props.priority}
         />
         <Image

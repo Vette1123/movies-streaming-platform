@@ -3,13 +3,12 @@ import React, { Suspense } from 'react'
 import { Credit } from '@/types/credit'
 import { MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
-import { getPosterImageURL } from '@/lib/utils'
-import { BlurredImage } from '@/components/blurred-image'
 import { List } from '@/components/list'
 import { SliderHorizontalListLoader } from '@/components/loaders/slider-horizontal-list-loader'
 import { CollectionBanner } from '@/components/media/collection-banner'
 import { DetailsCredits } from '@/components/media/details-credits'
 import { DetailsExtraInfo } from '@/components/media/details-extra-info'
+import { DetailsPoster } from '@/components/media/details-poster'
 
 export const MoviesDetailsContent = ({
   movie,
@@ -29,18 +28,7 @@ export const MoviesDetailsContent = ({
     <>
       <section className="container max-w-(--breakpoint-2xl) pt-12 pb-6 lg:pb-10">
         <div className="flex flex-col gap-8 lg:flex-row">
-          <div className="mx-auto w-full max-w-[220px] shrink-0 sm:max-w-[260px] lg:mx-0 lg:w-[400px] lg:max-w-none">
-            <div className="relative aspect-2/3 w-full overflow-hidden rounded-xl shadow-xl lg:aspect-auto lg:min-h-[600px]">
-              <BlurredImage
-                src={getPosterImageURL(movie.poster_path)}
-                alt={movie.title}
-                className="h-full w-full object-cover"
-                fill
-                sizes="(min-width: 1024px) 400px, 260px"
-                intro
-              />
-            </div>
-          </div>
+          <DetailsPoster path={movie.poster_path} alt={movie.title} />
           <section className="flex flex-col gap-4">
             <DetailsExtraInfo movie={movie} director={director} />
             <DetailsCredits movieCredits={movieCredits} />

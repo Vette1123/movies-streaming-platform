@@ -3,18 +3,28 @@ import React from 'react'
 import { MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
 import { SeriesDetails } from '@/types/series-details'
+import { COVER_BACKDROP_SIZES, COVER_POSTER_SIZES } from '@/lib/image-sizes'
 import { getMediaTitle } from '@/lib/media'
-import { getImageURL, getPosterImageURL } from '@/lib/utils'
+import { getImageURL } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
 
 export type HeroImageMedia = (Movie | MovieDetails) & SeriesDetails
 interface HeroImageProps {
   movie?: HeroImageMedia
-  // Only the first slide preloads (LCP); the rest load lazily as they enter the
-  // mounted window so we don't fire N full-width backdrop preloads at once.
+  // The one image on the page that is worth fetching eagerly (the LCP). Every
+  // other hero waits until it is on screen, so a mounted-but-off-stage slide
+  // never races the one being looked at.
   priority?: boolean
 }
 
+// The details hero is full-bleed and 100svh tall with `object-cover`, so what
+// it paints is the cover width, not the box width — see lib/image-sizes.ts.
+// The old `(min-width: 1024px) 1024px, 100vw` here promised a 1024px box to a
+// hero as wide as the display: measured on a 2560px window, the browser picked
+// the 1080w candidate and stretched it across 2552 CSS px. That 2.4x upscale
+// was the "details page looks blurry" report — nothing to do with the CDN, the
+// quality setting or the fallback chain. We asked for the wrong width, the same
+// class of bug as the wsrv `&we` fix in docs/image-cdn.md.
 export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
   const media = movie
   const alt = (media && getMediaTitle(media)) || 'ALT TEXT'
@@ -32,29 +42,45 @@ export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
           alt={alt}
           className="block size-full object-cover object-center"
           fill
-          sizes="(min-width: 1024px) 1024px, 100vw"
+          sizes={COVER_BACKDROP_SIZES}
           intro
-          // `priority`, not `priority={priority}`, is what this said — so the
-          // prop above, and the comment on it promising that only slide 0
-          // preloads, did nothing on the branch that actually runs. Every slide
-          // in the mounted window (3 of them) emitted a fetchpriority=high
-          // <link rel=preload> for a full-width backdrop, and the two nobody can
-          // see raced the one that is the LCP. Measured on a cold 4x-throttled
-          // mobile load: ~126KB of preloads for off-stage artwork.
-          priority={priority}
-          loading={priority ? undefined : 'lazy'}
+          // `loading="eager"` + `fetchPriority="high"` rather than `priority`,
+          // which is the same thing MINUS Next's `<link rel=preload
+          // imagesrcset>`. Losing the preload is what BUYS the AVIF: the
+          // preload names the WebP srcset, so an image that carries one can't
+          // also offer an AVIF <source> without risking the LCP image being
+          // downloaded twice (see components/blurred-image.tsx).
+          //
+          // Measured on this page, 1.6 Mbit / 4x CPU, cold cache, dpr 2, 4 runs
+          // each — the hero is 2560 px wide either way:
+          //
+          //   priority + WebP   110 KB   fetch starts ~320ms, done ~4.8s
+          //   eager    + AVIF    65 KB   fetch starts ~450ms, done ~3.3s
+          //
+          // The preload wins the start by ~130ms and loses the finish by ~1.4s,
+          // because the <img> is in the first screenful of the document anyway
+          // — the preload scanner finds it either way — and 45 KB is worth far
+          // more than a head start on a link this slow. Page image bytes go
+          // 249 KB -> 204 KB with it.
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : 'auto'}
         />
       ) : (
         media?.poster_path && (
           <BlurredImage
-            src={getPosterImageURL(media?.poster_path)}
+            // `original`, not the w500 poster: this one is the whole hero when a
+            // title has no backdrop, so a 500px source was upscaled across the
+            // entire viewport. The loader still clamps the request to what the
+            // layout asks for, so the bigger source costs nothing on small
+            // screens.
+            src={getImageURL(media?.poster_path)}
             alt={alt}
             className="animate-hero-kenburns block size-full object-cover object-center will-change-transform motion-reduce:animate-none"
             fill
-            sizes="100vw"
+            sizes={COVER_POSTER_SIZES}
             intro
-            priority={priority}
-            loading={priority ? undefined : 'lazy'}
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : 'auto'}
           />
         )
       )}

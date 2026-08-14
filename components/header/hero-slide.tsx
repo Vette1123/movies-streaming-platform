@@ -13,12 +13,13 @@ import {
   trackHeroWatchClicked,
 } from '@/lib/analytics'
 import { onIdleAfterLoad } from '@/lib/idle'
+import { COVER_BACKDROP_SIZES, COVER_POSTER_SIZES } from '@/lib/image-sizes'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
 import {
   cn,
   getImageURL,
+  getLogoImageSrcSet,
   getLogoImageURL,
-  getPosterImageURL,
 } from '@/lib/utils'
 import { useHasHoverPointer, useLowPowerDevice } from '@/hooks/use-device-tier'
 import { useHeroAutoplay } from '@/hooks/use-hero-autoplay'
@@ -319,34 +320,38 @@ export function HeroSlide({
           alt={title}
           className={`block size-full object-cover object-top ${kenBurns(active, lowPower)}`}
           fill
-          // The backdrop is full-bleed at every breakpoint, so it is 100vw at
-          // every breakpoint. The old "1024px above lg" was a lie the browser
-          // believed: with a real srcset now in play it would have picked a
-          // 1024px image for a 2560px monitor and the hero would look soft.
-          //
-          // Do NOT try to "cap" this with a pixel slot on small screens. `sizes`
-          // is a CSS-pixel slot and the browser multiplies it by DPR, so
-          // `(max-width: 640px) 828px` asks a dpr-3 phone for 828*3 = 2484 and
-          // it picks the 2560 candidate — twice the pixels of the 1200 that
-          // plain `100vw` selects (393 * 3 = 1179). Measured, and it was a
-          // straight regression. 100vw is both the honest answer and the cheap
-          // one here.
-          sizes="100vw"
+          // Full-bleed AND `object-cover`, which is why this is not `100vw`:
+          // on any viewport taller than 16:9 the cover math paints the backdrop
+          // far wider than the box, and `100vw` under-described it by 4x on a
+          // phone (measured: 1200px of image stretched across 4498 device px).
+          // See lib/image-sizes.ts — including why the phone case keeps a
+          // deliberate brake instead of asking for the full cover width.
+          sizes={COVER_BACKDROP_SIZES}
           intro
-          priority={priority}
-          loading={priority ? undefined : 'lazy'}
+          // Not `priority`: same trade as the details hero (see
+          // components/header/hero-image.tsx). Dropping Next's WebP preload is
+          // what lets slide 0 take the AVIF <source> like every other slide —
+          // measured on the details page at 110 KB -> 65 KB for the same 2560px
+          // hero, and the fetch still starts from the document, which the
+          // preload scanner reads before any of this hydrates.
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : 'auto'}
         />
       ) : (
         media.poster_path && (
           <BlurredImage
-            src={getPosterImageURL(media.poster_path)}
+            // `original`, not w500: with no backdrop this poster IS the hero,
+            // cover-cropped across the whole viewport, so a 500px source was
+            // the ceiling on a full-bleed image. The loader only ever requests
+            // the width the layout asks for, so a bigger source costs nothing.
+            src={getImageURL(media.poster_path)}
             alt={title}
             className={`block size-full object-cover object-center ${kenBurns(active, lowPower)}`}
             fill
-            sizes="100vw"
+            sizes={COVER_POSTER_SIZES}
             intro
-            priority={priority}
-            loading={priority ? undefined : 'lazy'}
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : 'auto'}
           />
         )
       )}
@@ -469,11 +474,24 @@ export function HeroSlide({
                     <img
                       ref={logoRef}
                       src={getLogoImageURL(logoPath!)}
+                      // A plain <img> gets no srcset from next/image, so the
+                      // density pair is written by hand: the wordmark lays out
+                      // at ~500 CSS px, which retina paints at 1000.
+                      srcSet={getLogoImageSrcSet(logoPath!)}
                       alt={title}
                       // The first slide's wordmark is part of the LCP frame and
                       // races a fallback timer; tell the browser so it isn't
                       // queued behind the rails' posters.
                       fetchPriority={priority ? 'high' : 'auto'}
+                      // The carousel keeps a slide mounted either side, and
+                      // their wordmarks are parked a stage-width away where
+                      // nobody can see them. Eager, they were 3 logo downloads
+                      // on load — measured at 24/59/67 KB once the 2x file
+                      // exists, i.e. more than the hero backdrop itself. Lazy,
+                      // an off-stage slide fetches its logo when it slides in,
+                      // behind the title-text fallback the crossfade already
+                      // has for exactly this case.
+                      loading={priority ? 'eager' : 'lazy'}
                       // Same reason as every image in BlurredImage: a native
                       // image drag would ghost the logo and eat the gesture.
                       draggable={false}
@@ -588,11 +606,21 @@ export function HeroSlide({
                   opacity-0 behind a 500ms transition and is never the LCP, which
                   is the full-bleed backdrop. */}
               <BlurredImage
-                src={getPosterImageURL(movie.poster_path)}
+                // `original`, not w500. The box is 400 CSS px wide and 700 tall
+                // with `object-cover`, so a dpr-2 laptop paints it at 800+
+                // device px — measured needing 933 against a 500px source, i.e.
+                // an upscale no `sizes` value could fix, because the source
+                // itself was the ceiling. Only ever fetched above lg (see
+                // below), where the extra width is exactly what is on screen.
+                src={getImageURL(movie.poster_path)}
                 alt={title}
                 className="pointer-events-none size-full object-fill lg:object-cover"
                 fill
-                sizes="400px"
+                // 470, not the box's 400: the frame is 400x700 and a 2:3 poster
+                // is cover-cropped into it, so the height binds and the poster
+                // paints ~467 CSS px wide. Measured at dpr 2 it needs 933 and
+                // `400px` was picking the 828 rung.
+                sizes="470px"
                 intro
                 loading="lazy"
               />
