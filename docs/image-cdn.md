@@ -172,11 +172,32 @@ Measured before → after (ratio; higher is sharper, 1.0 is the target):
 | details poster            | 0.63   | 1.03  | `w500` ceiling + `q-65` default   |
 | cast portraits, desktop   | 1.95   | 1.49  | over-served, `15vw` → `10vw`      |
 
-Rules that came out of it live in `lib/image-sizes.ts`. The remaining sub-1.0
-rows are deliberate ceilings, both documented where they are set: `/original`
-requests are capped at 2560 px (`lib/image-loader.ts`), and phones ask for
-160vw rather than the full cover width (1920 instead of 2560: 76 KB vs 112 KB,
-on the image that is ~70% cropped away on a phone).
+Rules that came out of it live in `lib/image-sizes.ts`. What is left is two
+deliberate ceilings, each documented where it is set.
+
+**`/original` requests cap at 3072 px** (`ORIGINAL_MAX_WIDTH`,
+`lib/image-loader.ts`, mirrored by `widthFromPath` for the wsrv stage). Bytes
+per width for a hero backdrop, AVIF q65 — the format the heroes actually serve
+now:
+
+| width | AVIF   | WebP   |
+| ----- | ------ | ------ |
+| 1920  | 45 KB  | 74 KB  |
+| 2560  | 64 KB  | 109 KB |
+| 3072  | 82 KB  | 145 KB |
+| 3840  | 126 KB | 233 KB |
+
+A 1512px retina laptop paints its hero at 3378 device px: 2560 was 0.76 of that,
+3072 is **0.91 for +18 KB**, and 3840 would buy the last 9% for +62 KB. Note the
+trade is width-vs-quality, not width-vs-nothing — at the same 82 KB you can have
+q65 at 3072 (0.91 sampling) or q75 at 2560 (0.76), and on an undersampled image
+pixels beat compression quality.
+
+**Phones ask 160vw, not the full cover width.** The honest ask lands a dpr-3
+phone on the top rung; 160vw lands it on 1920 (45 KB vs 64 KB) at 0.43 instead
+of 0.57, on an image that is ~70% cropped off-screen there and sits under a
+scrim. Lifting it is a one-word change in `lib/image-sizes.ts` if the phone hero
+ever reads soft in the hand.
 
 **Heroes no longer pass `priority`.** It emits `<link rel=preload imagesrcset>`
 naming the WebP srcset, which is exactly why `BlurredImage` refuses to offer an

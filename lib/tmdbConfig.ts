@@ -19,11 +19,15 @@ const apiConfig = {
   // every ImageKit account and produce the *same image* (resized + WebP) rather
   // than a different one — so the <img>/<Image> is byte-for-byte identical in
   // content, just dramatically smaller. A full-width TMDB backdrop is typically
-  // 1–3 MB; tr:w-2560,q-82,f-auto brings the LCP hero to ~300–420 KB (AVIF). The
-  // details hero is full-bleed object-cover at 100dvh, so on a 2560px monitor or
-  // a 1440p/retina panel the backdrop paints edge-to-edge at up to ~2560 CSS px —
-  // w-2000 was visibly upscaled/soft there, w-2560 renders it crisp at native
-  // width. Quality is q-82 (posters) / q-80 (thumbs):
+  // 1–3 MB; this brings it to tens of KB.
+  //
+  // The `w-2560` here is only what a BARE copy of this URL carries — the OG/
+  // Twitter tags, the Worker's injected metadata, anything not rendered through
+  // next/image. Everything on a page goes through lib/image-loader.ts, which
+  // substitutes the width the layout actually asks for and caps `/original`
+  // requests at ORIGINAL_MAX_WIDTH (3072). Change the ceiling there, not here:
+  // a bigger number in this string would only inflate the unfurl image.
+  // Quality is q-82 (posters) / q-80 (thumbs):
   // WebP at q-82 is effectively visually lossless on poster faces/text while
   // still ~40% smaller than the JPEG origin — q-70/72 was over-soft. If a
   // transform ever 404s, the onError chain in BlurredImage walks to wsrv.nl
@@ -144,7 +148,10 @@ function widthFromPath(path: string): number | undefined {
   const m = path.match(/^\/(?:original|w(\d+))/)
   if (!m) return undefined
   if (m[1]) return Number(m[1])
-  return 2560 // /original — matches the ImageKit hero width above
+  // /original — the same ceiling `ORIGINAL_MAX_WIDTH` sets in
+  // lib/image-loader.ts (see there for the bytes-per-width measurement). The
+  // two must move together or the fallback stage stops matching the primary.
+  return 3072
 }
 
 // wsrv has no AVIF saver ("Saving to avif is disabled. Supported savers: jpg,

@@ -39,16 +39,30 @@ interface LoaderArgs {
 const TRANSFORM = /\/tr:([^/]+)\//
 
 /**
- * How many pixels wide the underlying TMDB file actually is.
+ * How many pixels wide the underlying TMDB file actually is — or, for
+ * `/original`, how wide we are willing to ask for.
  *
- * Requesting more than this from ImageKit upscales: more bytes, no more detail.
- * `original` has no fixed width; 2560 matches the widest the full-bleed hero
- * ever paints (a 2560px or retina panel) and is what the URL already asked for.
+ * A `w500` path caps at 500: asking ImageKit for more upscales it, which is
+ * more bytes for strictly no more detail. `original` has no fixed width, so
+ * this is a spending decision rather than a fact, and it is the ceiling on how
+ * sharp a full-bleed hero can be. Measured on a hero backdrop (AVIF, q65 — what
+ * the heroes actually serve since they stopped preloading WebP):
+ *
+ *   w1920  45 KB    w2560  64 KB    w3072  82 KB    w3840 126 KB
+ *
+ * A 1512px retina laptop — the common desktop — paints its 100svh hero at 3377
+ * device px. At 2560 that was 0.76 of what it paints; 3072 makes it 0.91 for
+ * +18 KB, and 3840 would buy the last 9% for +62 KB. So: 3072.
+ *
+ * `widthFromPath` in lib/tmdbConfig.ts is the same ceiling for the wsrv stage
+ * and has to move with this one.
  */
+const ORIGINAL_MAX_WIDTH = 3072
+
 function sourceWidth(src: string): number {
   const size = src.match(/\/(original|w(\d+))\//)
-  if (!size) return 2560
-  return size[2] ? Number(size[2]) : 2560
+  if (!size) return ORIGINAL_MAX_WIDTH
+  return size[2] ? Number(size[2]) : ORIGINAL_MAX_WIDTH
 }
 
 /** Is this a URL this loader can rewrite at all? */
