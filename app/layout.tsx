@@ -289,16 +289,27 @@ export default function RootLayout({ children }: RootLayoutProps) {
             hidden until focused, jumps past the header nav straight to content. */}
         <a
           href="#main-content"
-          className="focus:bg-primary focus:text-primary-foreground sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:px-4 focus:py-2 focus:shadow-lg focus:ring-2 focus:ring-white/70 focus:outline-none"
+          className="focus:bg-primary-fill focus:text-primary-foreground sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:px-4 focus:py-2 focus:shadow-lg focus:ring-2 focus:ring-white/70 focus:outline-none"
         >
           Skip to content
         </a>
         {/* Defs for the icons that repeat per card — see components/icon-sprite.
             Must be in the document for any <use href="#i-…"> on the page. */}
         <IconSprite />
-        <div className="flex flex-col">
+        {/*
+          Sticky footer, three lines of it: the shell is a full-height column,
+          the content region is the only part allowed to grow, and the footer is
+          its sibling rather than its last child. Without that, a short page
+          (sign-in, an empty watchlist, a 404) left the footer wherever the
+          content happened to stop, floating in the middle of the viewport.
+
+          min-h-svh, not dvh: svh is the *smallest* viewport height, so the
+          footer sits at the bottom edge whether or not mobile browser chrome is
+          showing. With dvh it would hide under the address bar until you scroll.
+        */}
+        <div className="flex min-h-svh flex-col">
           <SiteHeader />
-          <div className="h-full flex-1 overflow-x-hidden">
+          <div className="flex-1 overflow-x-hidden">
             <NuqsAdapter>
               <QueryProvider>
                 {/* Single page-level <main> landmark. Inner error/not-found/filter
@@ -308,13 +319,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 </CSPostHogProvider>
               </QueryProvider>
             </NuqsAdapter>
-            <ToastProvider />
-            <Footer />
-            <ServiceWorkerRegister />
-            <InstallPrompt />
-            {/* Renders nothing: library sync + appearance, mounted once. */}
-            <AccountBoot />
           </div>
+          <Footer />
+          <ToastProvider />
+          <ServiceWorkerRegister />
+          <InstallPrompt />
+          {/* Renders nothing: library sync + appearance, mounted once. */}
+          <AccountBoot />
         </div>
       </body>
     </html>

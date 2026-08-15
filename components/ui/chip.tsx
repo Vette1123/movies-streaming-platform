@@ -34,7 +34,8 @@ const chipVariants = cva(
         outline:
           'border border-white/15 bg-secondary/85 text-secondary-foreground',
         // Filled brand — active facets, primary emphasis.
-        primary: 'border border-transparent bg-primary text-primary-foreground',
+        primary:
+          'border border-transparent bg-primary-fill text-primary-foreground',
         // IMDb wordmark. Colour is brand-locked, do not theme it.
         imdb: 'bg-[#f5c518] font-bold tracking-wide text-black',
         // TMDB star rating and similar amber-accented scores.
@@ -54,7 +55,7 @@ const chipVariants = cva(
       interactive: {
         // Fancy hover: lift, fill with brand blue, and cast a soft blue glow so
         // the pill clearly "pops" off the page on interaction.
-        true: 'cursor-pointer hover:-translate-y-0.5 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.6)]',
+        true: 'cursor-pointer hover:-translate-y-0.5 hover:border-primary hover:bg-primary-fill hover:text-primary-foreground hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.6)]',
         false: '',
       },
     },

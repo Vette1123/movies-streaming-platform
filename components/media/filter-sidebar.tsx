@@ -93,9 +93,9 @@ const filterToggleVariants = cva(
         square: 'rounded-md text-xs font-semibold transition-colors',
       },
       state: {
-        idle: 'border-white/12 bg-secondary text-secondary-foreground shadow-sm hover:-translate-y-0.5 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.6)]',
+        idle: 'border-white/12 bg-secondary text-secondary-foreground shadow-sm hover:-translate-y-0.5 hover:border-primary hover:bg-primary-fill hover:text-primary-foreground hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.6)]',
         active:
-          'border-primary bg-primary text-primary-foreground hover:border-primary hover:text-primary-foreground',
+          'border-primary bg-primary-fill text-primary-foreground hover:border-primary hover:text-primary-foreground',
         excluded:
           'border-destructive/50 bg-destructive/10 text-destructive hover:text-destructive line-through',
       },
@@ -623,7 +623,7 @@ export const FilterSidebar = ({
                         className="h-full w-full object-contain"
                       />
                       {active && (
-                        <span className="bg-primary text-primary-foreground absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full">
+                        <span className="bg-primary-fill text-primary-foreground absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full">
                           <Check className="h-2.5 w-2.5" />
                         </span>
                       )}

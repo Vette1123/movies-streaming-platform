@@ -13,6 +13,7 @@
   --color-foreground: hsl(var(--foreground));
 
   --color-primary: hsl(var(--primary));
+  --color-primary-fill: hsl(var(--primary-fill));
   --color-primary-foreground: hsl(var(--primary-foreground));
 
   --color-secondary: hsl(var(--secondary));
@@ -458,8 +459,26 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
+    /*
+      Two blues, on purpose.
+
+      --primary is the accent: text, icons, rings, tints. It has to stay light
+      enough to read as a colour against this near-black background (blue-500
+      on it is 5.1:1; blue-600 would be 3.6:1, which is where link text starts
+      looking muddy).
+
+      --primary-fill is the same blue as a *background*, one step deeper, and it
+      exists because the label sitting on it has the opposite requirement: white
+      on blue-500 is only 3.7:1, which fails AA at the 14px a button label
+      actually is. On blue-600 the same white label is 5.2:1.
+
+      So: --primary for colour, --primary-fill wherever --primary-foreground is
+      painted on top of it. An accent that reads fine both ways (below) just
+      sets them to the same value.
+    */
     --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary-fill: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
@@ -482,6 +501,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
     --primary: 221.2 83.2% 53.3%;
+    --primary-fill: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -584,29 +604,39 @@
   --primary-foreground is set alongside every accent: it is the text ON the
   accent, and an accent light enough to need dark text (amber, cyan) makes white
   labels unreadable. Contrast is not optional here.
+
+  --primary-fill only has to differ from --primary where the label is white: a
+  white-on-colour pair needs the fill a step deeper than the colour is allowed
+  to be as text (see the note next to the default blue). The three accents with
+  dark labels are already far past AA, so their fill is the accent itself.
 */
 html[data-accent='ember'] {
   --primary: 24 90% 55%;
+  --primary-fill: 24 90% 55%;
   --primary-foreground: 20 60% 10%;
   --ring: 24 90% 55%;
 }
 html[data-accent='ocean'] {
   --primary: 190 85% 48%;
+  --primary-fill: 190 85% 48%;
   --primary-foreground: 195 70% 8%;
   --ring: 190 85% 48%;
 }
 html[data-accent='forest'] {
   --primary: 152 60% 45%;
+  --primary-fill: 152 60% 45%;
   --primary-foreground: 155 60% 8%;
   --ring: 152 60% 45%;
 }
 html[data-accent='violet'] {
   --primary: 268 75% 62%;
+  --primary-fill: 268 72% 53%;
   --primary-foreground: 270 60% 98%;
   --ring: 268 75% 62%;
 }
 html[data-accent='rose'] {
   --primary: 346 80% 58%;
+  --primary-fill: 346 76% 46%;
   --primary-foreground: 345 60% 98%;
   --ring: 346 80% 58%;
 }

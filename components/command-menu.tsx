@@ -342,7 +342,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                     key={term}
                     value={`recent:${term}`}
                     onSelect={() => submitSearch(term)}
-                    className="group/recent hover:bg-primary-foreground/50 cursor-pointer"
+                    className="group/recent hover:bg-accent cursor-pointer"
                   >
                     <Clock
                       className="text-muted-foreground mr-2 size-4 shrink-0"
@@ -434,7 +434,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                   <CommandItem
                     key={`${movie.media_type ?? 'movie'}-${movie.id}`}
                     value={`${movie.id}-${movie.title}`}
-                    className="group/command-item hover:bg-primary-foreground/50 cursor-pointer transition-colors duration-200"
+                    className="group/command-item hover:bg-accent cursor-pointer transition-colors duration-200"
                     onSelect={() => {
                       trackSearchResultClicked({
                         query: trimmedQuery,

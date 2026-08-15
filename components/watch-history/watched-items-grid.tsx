@@ -69,7 +69,10 @@ export const WatchedItemsGrid = ({
     )
 
   return (
-    <div className="flex min-h-screen flex-1 flex-col">
+    // No min-height here: the shell in app/layout.tsx is the full-height column
+    // now, so a second viewport-tall box inside it only pushed the footer a
+    // screen below the fold when the grid held two rows.
+    <div className="flex flex-1 flex-col">
       {toolbar && <div className="mb-2 flex justify-end">{toolbar}</div>}
       <div className="grid grid-cols-2 gap-x-4 gap-y-2 lg:grid-cols-5">
         {sorted.map((item) => (

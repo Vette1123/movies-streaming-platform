@@ -60,7 +60,7 @@ const getEpisodeBadgeClass = (
   isUpNext: boolean,
   completed: boolean
 ) => {
-  if (isActive) return 'bg-primary text-primary-foreground'
+  if (isActive) return 'bg-primary-fill text-primary-foreground'
   if (completed)
     return 'bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/30'
   if (isUpNext) return 'bg-primary/15 text-primary'

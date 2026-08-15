@@ -14,10 +14,16 @@ import { ShareButton } from '@/components/share-button'
 import { TrailerDialog } from '@/components/trailer-dialog'
 import { WatchedButton } from '@/components/watched-button'
 
-// Muted caption under each action button; mobile-only (buttons show their own
-// text label at sm+). Fixed width so two-word captions wrap under the pill.
+// Caption under each action button; mobile-only (buttons show their own text
+// label at sm+). Fixed width so two-word captions wrap under the pill.
+//
+// Near-white with the same drop shadow the pill labels carry, not a muted grey:
+// this sits directly on the backdrop image, where a 55%-white 10px label lands
+// somewhere between 1.5:1 and 3:1 depending entirely on which frame is behind
+// it. The shadow is what makes it legible over a bright still — opacity alone
+// cannot be tuned for an image nobody chose.
 const captionClass =
-  'w-14 text-center text-[10px] leading-tight text-white/55 sm:hidden'
+  'w-14 text-center text-[10px] leading-tight font-medium text-white/90 [text-shadow:0_1px_3px_rgba(0,0,0,0.85)] sm:hidden'
 
 // The embed is driven by a `src` STRING, not by writing `.src` on a ref.
 //

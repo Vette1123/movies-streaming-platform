@@ -113,7 +113,7 @@ export function SettingSwitch({
         aria-hidden
         className={cn(
           'mt-0.5 inline-flex h-6 w-10 shrink-0 items-center rounded-full border transition-colors',
-          checked ? 'border-primary bg-primary' : 'bg-muted'
+          checked ? 'border-primary bg-primary-fill' : 'bg-muted'
         )}
       >
         <span

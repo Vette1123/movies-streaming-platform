@@ -128,7 +128,7 @@ export function useAccountIdentity(): AccountIdentity {
     // pass is the earliest anything can read it. Same shape as use-mounted.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCached(cachedProfile())
-     
+
     setHydrated(true)
   }, [])
 

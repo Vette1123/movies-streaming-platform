@@ -104,7 +104,7 @@ const CardComponent = ({
         <>
           {/* Hover scrim + play affordance. */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-black/35 opacity-0 transition-opacity duration-500 ease-out group-hover/card:opacity-100">
-            <span className="bg-primary/90 text-primary-foreground grid size-12 translate-y-1 place-items-center rounded-full shadow-lg backdrop-blur-sm transition-transform duration-300 group-hover/card:translate-y-0">
+            <span className="bg-primary-fill/90 text-primary-foreground grid size-12 translate-y-1 place-items-center rounded-full shadow-lg backdrop-blur-sm transition-transform duration-300 group-hover/card:translate-y-0">
               {/* Sprite, not lucide: one per card in every rail and grid. */}
               <SpriteIcon name="play" className="size-5 translate-x-0.5" />
             </span>

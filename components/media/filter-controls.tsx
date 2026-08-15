@@ -63,7 +63,7 @@ export const CountBadge = ({
       className={cn(
         'flex h-5 min-w-5 items-center justify-center rounded-full font-semibold tabular-nums',
         tone === 'solid'
-          ? 'bg-primary text-primary-foreground ml-1 px-1 text-xs'
+          ? 'bg-primary-fill text-primary-foreground ml-1 px-1 text-xs'
           : 'bg-primary/15 text-primary px-1.5 text-[11px]',
         className
       )}
