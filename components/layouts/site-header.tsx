@@ -13,6 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { AccountControl } from '@/components/account/account-control'
 import { Icons } from '@/components/icons'
 import { BrandLogo, MainNav } from '@/components/layouts/main-nav'
 import { MobileNav } from '@/components/layouts/mobile-nav'
@@ -172,6 +173,12 @@ export function SiteHeader() {
               </PopoverContent>
             </Popover>
           </nav>
+          {/* Outside the `md:flex` nav on purpose: the two popovers above are
+              desktop conveniences, but signing in is the one control that has to
+              be reachable on a phone, where most of this site is used. It is a
+              fixed-size slot at every width, so the header never reflows when it
+              settles. */}
+          <AccountControl />
         </div>
       </div>
     </header>

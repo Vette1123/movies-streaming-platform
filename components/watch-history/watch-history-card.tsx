@@ -91,11 +91,15 @@ export function WatchedItemCard({ item, onRemove }: WatchedItemCardProps) {
             <CardContent className="p-4">
               <div className="flex items-baseline justify-between">
                 <h3 className="truncate font-semibold">{item.title}</h3>
-                {item.type === 'series' && (
-                  <span className="text-muted-foreground ml-2 shrink-0 text-xs">
-                    S{item.season}, E{item.episode}
-                  </span>
-                )}
+                {/* Both, not just the type: a series SAVED rather than watched
+                    carries no episode, and this printed a bare "S, E" at it. */}
+                {item.type === 'series' &&
+                  item.season !== undefined &&
+                  item.episode !== undefined && (
+                    <span className="text-muted-foreground ml-2 shrink-0 text-xs">
+                      S{item.season}, E{item.episode}
+                    </span>
+                  )}
               </div>
               <div className="text-muted-foreground mt-2 flex items-center text-xs">
                 <CalendarDays className="mr-1 size-3" />

@@ -26,7 +26,9 @@
     "embed:probe": "node scripts/embed-probe.mjs",
     "waf:apply": "node scripts/cf-waf-setup.mjs",
     "dns:harden": "node scripts/cf-dns-hardening.mjs",
-    "cf:health": "node scripts/cf-health.mjs"
+    "cf:health": "node scripts/cf-health.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.23",
@@ -79,6 +81,7 @@
     "sharp": "^0.35.3",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
+    "vitest": "^4.1.10",
     "wrangler": "^4.118.0"
   }
 }

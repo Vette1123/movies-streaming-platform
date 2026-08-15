@@ -7,6 +7,7 @@ import { ToastProvider } from '@/providers/toast-provider'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 
 import { siteConfig } from '@/config/site'
+import { APPEARANCE_BOOT_SCRIPT } from '@/lib/appearance'
 import { IMAGE_CACHE_HOST_URL } from '@/lib/constants'
 import { fontSans } from '@/lib/fonts'
 import {
@@ -15,6 +16,7 @@ import {
   websiteJsonLd,
 } from '@/lib/structured-data'
 import { cn } from '@/lib/utils'
+import { AccountBoot } from '@/components/account/account-boot'
 import { IconSprite } from '@/components/icon-sprite'
 import { Footer } from '@/components/layouts/footer'
 import { SiteHeader } from '@/components/layouts/site-header'
@@ -250,6 +252,15 @@ export default function RootLayout({ children }: RootLayoutProps) {
           name="google-adsense-account"
           content="ca-pub-3842960431278714"
         ></meta>
+        {/*
+          A supporter's accent, applied before the first paint. It has to be a
+          blocking inline script: anything React renders runs after the page has
+          already painted in the default palette, which is a visible flash on
+          every single navigation. It reads the profile cache in localStorage —
+          the same one the header's avatar paints from — so it costs no request,
+          and it does nothing at all for everyone else. See lib/appearance.ts.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: APPEARANCE_BOOT_SCRIPT }} />
         <JsonLd data={websiteJsonLd} />
         <JsonLd data={organizationJsonLd} />
       </head>
@@ -278,7 +289,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             hidden until focused, jumps past the header nav straight to content. */}
         <a
           href="#main-content"
-          className="focus:bg-primary focus:text-primary-foreground sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:px-4 focus:py-2 focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-white/70"
+          className="focus:bg-primary focus:text-primary-foreground sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:px-4 focus:py-2 focus:shadow-lg focus:ring-2 focus:ring-white/70 focus:outline-none"
         >
           Skip to content
         </a>
@@ -301,6 +312,8 @@ export default function RootLayout({ children }: RootLayoutProps) {
             <Footer />
             <ServiceWorkerRegister />
             <InstallPrompt />
+            {/* Renders nothing: library sync + appearance, mounted once. */}
+            <AccountBoot />
           </div>
         </div>
       </body>

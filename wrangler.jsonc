@@ -51,6 +51,25 @@
       "custom_domain": true,
     },
   ],
+  // Accounts, entitlement and the synced library. ONLY the /api/auth/*,
+  // /api/billing/*, /api/sync, /api/lists, /api/push/* routes and the cron sweep
+  // touch this — no page view, no /api/search, and no tail-id fallback reads it,
+  // which is what keeps the paths that carry ~100% of this Worker's traffic free
+  // of database latency.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "reely",
+      "database_id": "PLACEHOLDER_SET_BY_CF_SETUP",
+    },
+  ],
+  // The new-episode sweep. Hourly, bounded to 25 TMDB lookups and 20 pushes per
+  // tick (lib/push/sweep.ts) so one invocation can never approach the
+  // 50-subrequest cap. Cron invocations are free of the request budget that page
+  // views compete for.
+  "triggers": {
+    "crons": ["0 * * * *"],
+  },
   // Preserve vars configured in the Cloudflare Dashboard on deploy
   "keep_vars": true,
   "vars": {

@@ -160,3 +160,77 @@ self.addEventListener('fetch', (event) => {
     })
   )
 })
+
+/*
+ * Push notifications for supporters.
+ *
+ * The push itself carries NO payload — see lib/push/vapid.ts for why (it
+ * removes the ECDH + HKDF + AES128GCM half of web push entirely). So this
+ * handler's first job is to go and find out what it was woken up for.
+ *
+ * `credentials: 'include'` is load-bearing: a service worker woken by a push has
+ * no access to any page's memory, so the httpOnly session cookie is the only
+ * credential available to it. That is also why /api/push/pending authenticates
+ * with the cookie rather than with an access token.
+ *
+ * A push that resolves to nothing still shows something. Every browser that
+ * grants the permission requires a visible notification per push, and a silent
+ * one costs the site its notification permission.
+ */
+self.addEventListener('push', (event) => {
+  event.waitUntil(
+    fetch('/api/push/pending', { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const items = (data && data.notifications) || []
+        if (items.length === 0) {
+          return self.registration.showNotification('Reely', {
+            body: 'Something you follow has an update.',
+            icon: '/android-chrome-192x192.png',
+            badge: '/android-chrome-192x192.png',
+            data: { url: '/watchlist' },
+          })
+        }
+        return Promise.all(
+          items.map((item) =>
+            self.registration.showNotification(item.title, {
+              body: item.body,
+              icon: '/android-chrome-192x192.png',
+              badge: '/android-chrome-192x192.png',
+              // One tag per target, so two pushes about the same show replace
+              // each other in the tray instead of stacking.
+              tag: item.url,
+              data: { url: item.url },
+            })
+          )
+        )
+      })
+      .catch(() =>
+        self.registration.showNotification('Reely', {
+          body: 'Something you follow has an update.',
+          icon: '/android-chrome-192x192.png',
+          data: { url: '/watchlist' },
+        })
+      )
+  )
+})
+
+// Focus an open tab rather than opening a second one, which is what turns a
+// notification tap into "the app I already had" instead of a duplicate window.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const target = (event.notification.data && event.notification.data.url) || '/'
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clients) => {
+        for (const client of clients) {
+          if ('focus' in client) {
+            client.navigate(target)
+            return client.focus()
+          }
+        }
+        return self.clients.openWindow(target)
+      })
+  )
+})

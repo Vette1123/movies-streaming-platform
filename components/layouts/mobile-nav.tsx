@@ -10,107 +10,28 @@ import { cn } from '@/lib/utils'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { AccountDrawerSection } from '@/components/account/account-drawer-section'
 import { Icons } from '@/components/icons'
+import {
+  DrawerAction,
+  DrawerSection,
+  type DrawerActionProps,
+} from '@/components/layouts/drawer-action'
 
 interface MobileNavProps {
   items?: NavItem[]
 }
 
-// Every action in the drawer footer — install prompt, Play Store apps, external
-// links — renders through one row template so icon size, gap, height and label
-// alignment can't drift apart again. Tone is the *only* thing that varies, and
-// it maps to hierarchy: accent = the one primary CTA, brand = our own products,
-// muted = everything else.
-type DrawerTone = 'accent' | 'brand' | 'muted'
-
-const DRAWER_ROW =
-  'ring-offset-background focus-visible:ring-ring inline-flex h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3.5 text-left text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden'
-
-const DRAWER_TONE: Record<DrawerTone, string> = {
-  accent:
-    'bg-gradient-to-br from-cyan-300 to-cyan-500 text-[#04121a] hover:from-cyan-200 hover:to-cyan-400',
-  brand:
-    'border border-emerald-500/25 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20',
-  muted:
-    'border-border/60 bg-muted/40 text-foreground hover:bg-muted border hover:text-foreground',
-}
-
-interface DrawerActionProps {
-  Icon: React.ComponentType<{ className?: string }>
-  label: string
-  /** Right-aligned qualifier, e.g. where the link goes. */
-  hint?: string
-  tone?: DrawerTone
-  iconClassName?: string
-  ariaLabel?: string
-  /** Present → renders an external <Link>; absent → a <button>. */
-  href?: string
-  onClick?: () => void
-}
-
-function DrawerAction({
-  Icon,
-  label,
-  hint,
-  tone = 'muted',
-  iconClassName,
-  ariaLabel,
-  href,
-  onClick,
-}: DrawerActionProps) {
-  const className = cn(DRAWER_ROW, DRAWER_TONE[tone])
-  const content = (
-    <>
-      <Icon className={cn('size-5 shrink-0', iconClassName)} />
-      <span className="flex-1 truncate">{label}</span>
-      {hint && (
-        <span className="shrink-0 text-xs font-normal opacity-60">{hint}</span>
-      )}
-    </>
-  )
-
-  if (href) {
-    return (
-      <Link
-        href={href}
-        target="_blank"
-        rel="noreferrer"
-        aria-label={ariaLabel ?? label}
-        onClick={onClick}
-        className={className}
-      >
-        {content}
-      </Link>
-    )
-  }
-
-  return (
-    <button type="button" onClick={onClick} className={className}>
-      {content}
-    </button>
-  )
-}
-
-function DrawerSection({
-  title,
-  children,
-}: {
-  title: string
-  children: React.ReactNode
-}) {
-  return (
-    <section className="space-y-2">
-      <h3 className="text-muted-foreground px-1 text-[11px] font-semibold tracking-widest uppercase">
-        {title}
-      </h3>
-      {children}
-    </section>
-  )
-}
-
 type DrawerLink = Pick<
   DrawerActionProps,
-  'href' | 'label' | 'Icon' | 'hint' | 'ariaLabel' | 'iconClassName' | 'tone'
+  | 'href'
+  | 'label'
+  | 'Icon'
+  | 'hint'
+  | 'ariaLabel'
+  | 'iconClassName'
+  | 'tone'
+  | 'external'
 >
 
 // Our own products that aren't on Google Play.
@@ -121,6 +42,7 @@ const TOOL_LINKS: DrawerLink[] = [
     Icon: Download,
     hint: 'Web',
     tone: 'brand',
+    external: true,
   },
 ]
 
@@ -132,6 +54,7 @@ const SOCIAL_LINKS: DrawerLink[] = EXTERNAL_LINKS.map(
     href,
     Icon: Icons[icon],
     iconClassName,
+    external: true,
   })
 )
 
@@ -192,6 +115,7 @@ export function MobileNav({ items }: MobileNavProps) {
               canPrompt || needsIosHint ? 'pb-28' : 'pb-10'
             )}
           >
+            <AccountDrawerSection onNavigate={close} />
             <DrawerSection title="Apps & tools">
               {canPrompt && (
                 <DrawerAction

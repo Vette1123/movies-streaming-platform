@@ -46,6 +46,8 @@ import {
 } from '@/services/series'
 import { fetchWatchProviders } from '@/services/watch-providers'
 
+import { ownsPath, routeAccountApi } from '@/lib/api/account-router'
+import { loadPublicList } from '@/lib/lists/routes'
 import { getMediaHeroImageUrl } from '@/lib/media'
 import { getImageURL } from '@/lib/utils'
 
@@ -59,12 +61,23 @@ const DETAIL_PATH = /^\/(movies|tv-shows)\/(\d+)\/?$/
 const COLLECTION_PATH = /^\/collection\/(\d+)\/?$/
 
 /**
+ * A shared list: /l/weekend-a1b2c3.
+ *
+ * Same machinery as a tail detail id — a static shell decorated with real
+ * metadata — for the same reason: the page has to unfurl with a title and a
+ * poster in a group chat, and it cannot be prerendered because it did not exist
+ * at build time.
+ */
+const LIST_PATH = /^\/l\/([A-Za-z0-9-]{1,64})\/?$/
+
+/**
  * The exported client shells the tail fallbacks decorate and return.
  * `trailingSlash` is false, so the export writes `media-fallback.html`, not
  * `media-fallback/index.html`.
  */
 const SHELL_MEDIA = '/media-fallback.html'
 const SHELL_COLLECTION = '/collection-fallback.html'
+const SHELL_LIST = '/list-fallback.html'
 
 /**
  * The secrets live on the Worker, but the services read `process.env` (they are
@@ -81,6 +94,17 @@ function copyEnv(env) {
     'NEXT_PUBLIC_BASE_URL',
     'NEXT_PUBLIC_IMAGE_CACHE_HOST_URL',
     'NEXT_PUBLIC_IMDB_RATINGS',
+    // Accounts. All secrets, all read through `process.env` by lib/auth and
+    // lib/billing for the same reason the TMDB keys are: those modules are
+    // plain TypeScript that also has to run under `next dev`, where the only
+    // configuration channel is the environment.
+    'GOOGLE_CLIENT_ID',
+    'GOOGLE_CLIENT_SECRET',
+    'SESSION_TOKEN_SECRET',
+    'BMC_WEBHOOK_SECRET',
+    'VAPID_PUBLIC_KEY',
+    'VAPID_PRIVATE_KEY',
+    'VAPID_SUBJECT',
   ]) {
     if (env[key] !== undefined) process.env[key] = env[key]
   }
@@ -681,13 +705,107 @@ async function handleCollectionFallback(match, request, env, ctx, url) {
   )
 }
 
+/**
+ * A published list at /l/<slug>.
+ *
+ * Deliberately NOT stored in `caches.default`: unpublishing has to take the page
+ * down at once, and a cached copy would keep serving someone else's list for the
+ * rest of its TTL. The read behind it is one indexed D1 lookup, which is I/O and
+ * costs no CPU, so there is very little to cache anyway.
+ */
+async function handleListPage(match, env, url) {
+  const [, slug] = match
+  const db = env.DB
+  if (!db) return notFoundAsset(env, url)
+
+  const list = await loadPublicList(db, slug)
+  if (!list) return notFoundAsset(env, url)
+
+  const siteUrl = siteUrlOf(url)
+  const count = list.items.length
+  const owner = list.owner ? ` by ${list.owner}` : ''
+  const meta = {
+    heading: list.name,
+    title: list.name,
+    description:
+      list.description ||
+      `${count} ${count === 1 ? 'title' : 'titles'}${owner} on Reely.`,
+    // The first poster is the list's face. `getImageURL` is the same helper the
+    // rest of the site builds image URLs with, so a shared link and the page it
+    // opens show the same artwork.
+    image: list.items[0]?.poster_path
+      ? getImageURL(list.items[0].poster_path)
+      : '',
+    canonical: `${siteUrl}/l/${slug}`,
+  }
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: list.name,
+    description: meta.description,
+    url: meta.canonical,
+    numberOfItems: count,
+    itemListElement: list.items.slice(0, 20).map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.title,
+      url: `${siteUrl}/${item.type === 'series' ? 'tv-shows' : 'movies'}/${item.id}`,
+    })),
+  }
+
+  return (
+    serveShellFromTemplate(SHELL_LIST, meta, 'website', jsonLd) ??
+    serveShell(SHELL_LIST, meta, 'website', jsonLd, env, url)
+  )
+}
+
 export default {
+  /**
+   * The hourly sweep for new-episode alerts. Imported lazily so its TMDB and
+   * push code is evaluated only in the isolate that actually runs a cron tick,
+   * never in one serving requests.
+   */
+  async scheduled(event, env, ctx) {
+    copyEnv(env)
+    if (!env.DB) return
+    const { runSweep } = await import('@/lib/push/sweep')
+    ctx.waitUntil(
+      runSweep(env.DB, Date.now())
+        .then((result) => console.log('sweep', JSON.stringify(result)))
+        .catch((error) => console.error('sweep failed', String(error)))
+    )
+  },
+
   async fetch(request, env, ctx) {
     copyEnv(env)
     setImdbAssetsBinding(env.ASSETS ?? null)
 
     const url = new URL(request.url)
     const { pathname } = url
+
+    // Before the method check below: every mutating account route is a POST,
+    // and this dispatcher does its own per-path method table.
+    if (ownsPath(pathname)) {
+      try {
+        const response = await routeAccountApi(pathname, request, env, ctx)
+        if (response) return response
+      } catch (error) {
+        console.error('account route failed', String(error))
+        // Not the `json` helper above: that one stamps the site's shared
+        // Cache-Control on everything it returns, and a per-session failure must
+        // never be storable by any cache.
+        return new Response(
+          JSON.stringify({ success: false, error: 'internal error' }),
+          {
+            status: 500,
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'private, no-store',
+            },
+          }
+        )
+      }
+    }
 
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return json({ error: 'method not allowed' }, { status: 405 })
@@ -696,6 +814,11 @@ export default {
     try {
       if (pathname.startsWith('/api/')) {
         return await handleApi(pathname, url, request, ctx)
+      }
+
+      const list = pathname.match(LIST_PATH)
+      if (list) {
+        return await handleListPage(list, env, url)
       }
 
       const detail = pathname.match(DETAIL_PATH)

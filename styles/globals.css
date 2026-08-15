@@ -569,6 +569,65 @@
   }
 }
 
+/*
+  Supporter accents.
+
+  One attribute on <html> repaints the whole site, because every accented
+  surface in this codebase already reads --primary rather than a literal colour.
+  That is the only reason this feature is six lines per palette instead of a
+  theming rewrite: the discipline was already there.
+
+  Set from the cached profile by the inline script in app/layout.tsx before the
+  first paint, so a supporter's colour is never a flash of blue first. The
+  fallback (no attribute) is Reely's own blue, which is what everyone else sees.
+
+  --primary-foreground is set alongside every accent: it is the text ON the
+  accent, and an accent light enough to need dark text (amber, cyan) makes white
+  labels unreadable. Contrast is not optional here.
+*/
+html[data-accent='ember'] {
+  --primary: 24 90% 55%;
+  --primary-foreground: 20 60% 10%;
+  --ring: 24 90% 55%;
+}
+html[data-accent='ocean'] {
+  --primary: 190 85% 48%;
+  --primary-foreground: 195 70% 8%;
+  --ring: 190 85% 48%;
+}
+html[data-accent='forest'] {
+  --primary: 152 60% 45%;
+  --primary-foreground: 155 60% 8%;
+  --ring: 152 60% 45%;
+}
+html[data-accent='violet'] {
+  --primary: 268 75% 62%;
+  --primary-foreground: 270 60% 98%;
+  --ring: 268 75% 62%;
+}
+html[data-accent='rose'] {
+  --primary: 346 80% 58%;
+  --primary-foreground: 345 60% 98%;
+  --ring: 346 80% 58%;
+}
+
+/*
+  Density, as one number.
+
+  Tailwind's whole spacing and type scale is in `rem`, so moving the root font
+  size moves padding, gaps, text and card sizes together, in proportion — which
+  is what "denser" actually means. The alternative was a compact variant on every
+  grid, list and card in the app: dozens of edits, all of them able to drift out
+  of step with each other.
+
+  6.25% (16px to 15px) is deliberately mild. It fits roughly one more poster per
+  row at common widths without making anything look cramped or breaking the
+  header's single-line budget.
+*/
+html[data-density='compact'] {
+  font-size: 93.75%;
+}
+
 ::-webkit-scrollbar {
   width: 8px; /* Scrollbar width*/
 }

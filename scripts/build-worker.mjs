@@ -85,6 +85,9 @@ async function shellTemplates() {
   const shells = {
     '/media-fallback.html': 'media-fallback.html',
     '/collection-fallback.html': 'collection-fallback.html',
+    // The shared-list shell. Same treatment for the same reason: /l/<slug> is
+    // assembled per request and has to unfurl like a real page.
+    '/list-fallback.html': 'list-fallback.html',
   }
   const templates = {}
 

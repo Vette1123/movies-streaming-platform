@@ -9,6 +9,14 @@ import { Icons } from '../icons'
 import { PlayStoreLink } from '../play-store-link'
 import { buttonVariants } from '../ui/button'
 
+const SITE_LINKS = [
+  { href: '/support', label: 'Support Reely' },
+  { href: '/account', label: 'Account' },
+  { href: '/privacy', label: 'Privacy' },
+  { href: '/terms', label: 'Terms' },
+  { href: '/disclaimer', label: 'Disclaimer' },
+]
+
 // "A, B and C" — the separator that follows the item at `index`.
 function listSeparator(index: number, total: number): string {
   if (index === total - 1) return ''
@@ -90,6 +98,19 @@ export function Footer() {
           on Google Play, apps made by us.
         </p>
       </div>
+      {/* The site's own pages, which had no link anywhere on it until accounts
+          existed: a privacy page nobody can reach is not a privacy page. */}
+      <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+        {SITE_LINKS.map(({ href, label }) => (
+          <Link
+            key={href}
+            href={href}
+            className="text-foreground/75 hover:text-foreground font-medium transition-colors"
+          >
+            {label}
+          </Link>
+        ))}
+      </nav>
       <div className="flex items-center justify-center">
         <Link
           target="_blank"

@@ -123,6 +123,36 @@ function bindStorage() {
 
 const getServerSnapshot = () => EMPTY
 
+// The same three stores, reachable from outside React.
+//
+// Library sync (hooks/use-library-sync.ts) has to read and write every key
+// without being a consumer of any of them: it runs once per page, not once per
+// card, and it must not re-render anything by reading. These go through the same
+// load/commit path as the hook, so a write from the sync engine notifies every
+// subscribed card exactly as a user's own click does — which is what makes a
+// pulled change appear immediately instead of on the next navigation.
+
+export function readStore(key: string): WatchedItem[] {
+  load(key)
+  return getStore(key).value
+}
+
+export function writeStore(key: string, next: WatchedItem[]): void {
+  load(key)
+  commit(key, next)
+}
+
+/** Notify on any change to one key, including one made by another tab. */
+export function subscribeStore(key: string, listener: () => void): () => void {
+  bindStorage()
+  load(key)
+  const store = getStore(key)
+  store.listeners.add(listener)
+  return () => {
+    store.listeners.delete(listener)
+  }
+}
+
 export function useLocalStorage(
   key: string,
   _initialValue: WatchedItem[] = EMPTY

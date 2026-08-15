@@ -57,6 +57,37 @@ export const Icons = {
     </svg>
   ),
 
+  // Google's four-colour mark, from their own brand guidelines: the sign-in
+  // button is required to carry it rather than a generic account glyph, and it
+  // is deliberately NOT `currentColor` — a monochrome G is off-brand and reads
+  // as a knock-off next to the real one people expect.
+  google: (props: LucideProps) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      height={props.height ?? '1em'}
+      width={props.width ?? '1em'}
+      {...props}
+    >
+      <path
+        fill="#4285F4"
+        d="M23.52 12.273c0-.851-.076-1.67-.218-2.455H12v4.642h6.458a5.52 5.52 0 01-2.394 3.622v3.01h3.878c2.269-2.088 3.578-5.164 3.578-8.82z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.956-1.075 7.942-2.908l-3.878-3.01c-1.075.72-2.45 1.145-4.064 1.145-3.125 0-5.77-2.11-6.714-4.947H1.276v3.108A11.995 11.995 0 0012 24z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.286 14.28a7.2 7.2 0 01-.376-2.28c0-.792.136-1.56.376-2.28V6.612H1.276A11.995 11.995 0 000 12c0 1.936.464 3.768 1.276 5.388l4.01-3.108z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.773c1.762 0 3.343.606 4.587 1.795l3.442-3.442C17.951 1.19 15.235 0 12 0 7.31 0 3.256 2.69 1.276 6.612l4.01 3.108C6.23 6.883 8.875 4.773 12 4.773z"
+      />
+    </svg>
+  ),
+
   fullStar: (props: LucideProps) => (
     <svg
       viewBox="0 0 576 512"
