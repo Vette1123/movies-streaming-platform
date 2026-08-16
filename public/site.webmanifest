@@ -1,7 +1,7 @@
 {
-  "name": "Reely — Movie & TV Show Tracker",
+  "name": "Reely",
   "short_name": "Reely",
-  "description": "Discover, track, and watch trending movies and TV shows all in one place.",
+  "description": "Discover, track and stream movies and TV shows. Search thousands of titles, keep a watchlist, and tick off the episodes you have watched.",
   "start_url": "/",
   "scope": "/",
   "id": "/",

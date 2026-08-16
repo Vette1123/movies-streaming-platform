@@ -33,7 +33,14 @@ const HOME_DESCRIPTION =
   'Discover trending movies and TV shows, track what you watch, and never miss a release. Reely brings the latest, top-rated, and popular titles into one seamless experience.'
 
 export const metadata: Metadata = {
-  title: `${siteConfig.name} — Discover & Track Movies and TV Shows`,
+  // Absolute, so the root template does not append "| Reely" to a title that
+  // already opens with it. The old value rendered as
+  // "Reely — Discover & Track Movies and TV Shows | Reely": harmless to a
+  // person, two different names to anything matching the consent screen's app
+  // name against this page.
+  title: {
+    absolute: `${siteConfig.name} — Discover & Track Movies and TV Shows`,
+  },
   description: HOME_DESCRIPTION,
   alternates: {
     canonical: '/',

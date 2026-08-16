@@ -27,6 +27,21 @@ function listSeparator(index: number, total: number): string {
 export function Footer() {
   return (
     <footer className="text-muted-foreground container space-y-4 pb-16 text-sm">
+      {/* The app named, and said plainly, on every page rather than only on the
+          homepage: an automated reviewer that lands anywhere on this site should
+          be able to read what it is and who runs it without scrolling a poster
+          wall. */}
+      <div className="flex items-center justify-center">
+        <p className="max-w-[70ch] text-center">
+          <span className="text-foreground font-semibold">
+            {siteConfig.name}
+          </span>{' '}
+          is a free movie and TV discovery app. Search thousands of titles, keep
+          a watchlist, track the episodes you have watched, and stream them in
+          your browser. Signing in with Google is optional and syncs your
+          library across devices.
+        </p>
+      </div>
       <div className="flex items-center justify-center">
         <p>
           Coded in{' '}
