@@ -9,6 +9,7 @@ import { SUPPORT_PRICES } from '@/config/support'
 import { trackSupportCtaClicked } from '@/lib/analytics'
 import { COMPANION_APPS, EXTERNAL_LINKS, openOnPlayStore } from '@/lib/apps'
 import { cn } from '@/lib/utils'
+import { useAccountIdentity } from '@/hooks/use-account'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -59,6 +60,39 @@ const SOCIAL_LINKS: DrawerLink[] = EXTERNAL_LINKS.map(
     external: true,
   })
 )
+
+/**
+ * The plans, or the plan you are already on.
+ *
+ * Everyone sees a row here, signed in or not: this used to live only inside the
+ * account menu, which meant a visitor with no account — most visitors — had no
+ * route to the plans at all and the footer link was the entire funnel.
+ *
+ * A supporter gets the same row pointing at the same page, worded as management
+ * rather than a sale. "From $5/mo" under a heading that asks them to support is
+ * the site asking for money it has already been given, which is precisely what
+ * the support page promises never to do again.
+ */
+function SupportDrawerSection({ onNavigate }: { onNavigate: () => void }) {
+  const { ready, pro } = useAccountIdentity()
+  const supporter = ready && pro
+
+  return (
+    <DrawerSection title={supporter ? 'Your plan' : 'Support Reely'}>
+      <DrawerAction
+        Icon={Heart}
+        href="/support"
+        label={supporter ? 'Manage membership' : 'Support Reely'}
+        hint={supporter ? undefined : `From $${SUPPORT_PRICES.monthly}/mo`}
+        tone="accent"
+        onClick={() => {
+          if (!supporter) trackSupportCtaClicked({ surface: 'drawer' })
+          onNavigate()
+        }}
+      />
+    </DrawerSection>
+  )
+}
 
 export function MobileNav({ items }: MobileNavProps) {
   const [isOpen, setIsOpen] = React.useState(false)
@@ -117,23 +151,7 @@ export function MobileNav({ items }: MobileNavProps) {
               canPrompt || needsIosHint ? 'pb-28' : 'pb-10'
             )}
           >
-            {/* Everyone sees this, signed in or not. It used to live only
-                inside the account menu, which meant a visitor with no account —
-                most visitors — had no route to the plans at all, and the footer
-                link was the entire funnel. */}
-            <DrawerSection title="Support Reely">
-              <DrawerAction
-                Icon={Heart}
-                href="/support"
-                label="Support Reely"
-                hint={`From $${SUPPORT_PRICES.monthly}/mo`}
-                tone="accent"
-                onClick={() => {
-                  trackSupportCtaClicked({ surface: 'drawer' })
-                  close()
-                }}
-              />
-            </DrawerSection>
+            <SupportDrawerSection onNavigate={close} />
             <AccountDrawerSection onNavigate={close} />
             <DrawerSection title="Apps & tools">
               {canPrompt && (

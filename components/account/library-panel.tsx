@@ -11,12 +11,6 @@ import { Button } from '@/components/ui/button'
 
 import { SupporterGate } from './supporter-gate'
 
-const STORE_LABELS: Record<string, string> = {
-  watchlist: 'Saved titles',
-  watchedItems: 'Watch history',
-  completedItems: 'Episodes ticked off',
-}
-
 /**
  * The library section: what is synced, and whether it is.
  *
@@ -31,14 +25,16 @@ export function LibraryPanel() {
   const [watchlist] = useLocalStorage('watchlist', [])
   const [history] = useLocalStorage('watchedItems', [])
   const [completed] = useLocalStorage('completedItems', [])
+  const [reviews] = useLocalStorage('reviews', [])
 
-  const counts = useMemo(
+  const counts: Record<string, number> = useMemo(
     () => ({
       watchlist: watchlist.length,
       watchedItems: history.length,
       completedItems: completed.length,
+      reviews: reviews.length,
     }),
-    [completed.length, history.length, watchlist.length]
+    [completed.length, history.length, reviews.length, watchlist.length]
   )
 
   if (!pro) {
@@ -54,15 +50,13 @@ export function LibraryPanel() {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-3">
-        {SYNCED_STORES.map(({ key }) => (
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {SYNCED_STORES.map(({ key, label }) => (
           <div key={key} className="bg-card/50 rounded-lg border p-4">
             <p className="font-mono text-2xl font-semibold tabular-nums">
-              {counts[key as keyof typeof counts]}
+              {counts[key] ?? 0}
             </p>
-            <p className="text-muted-foreground mt-1 text-xs">
-              {STORE_LABELS[key]}
-            </p>
+            <p className="text-muted-foreground mt-1 text-xs">{label}</p>
           </div>
         ))}
       </div>

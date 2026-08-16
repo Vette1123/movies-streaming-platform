@@ -10,6 +10,7 @@ import { buttonVariants } from '@/components/ui/button'
 import {
   Popover,
   PopoverContent,
+  PopoverRow,
   PopoverTrigger,
 } from '@/components/ui/popover'
 import {
@@ -100,26 +101,16 @@ export function AccountControl() {
         <div className="bg-border my-1 h-px" />
 
         {accountMenuFor(pro).map(({ href, label, Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className="hover:bg-accent focus-visible:bg-accent flex w-full items-center gap-3 rounded-sm px-2 py-2 text-sm outline-hidden"
-          >
-            <Icon className="size-4 shrink-0" />
-            {label}
-          </Link>
+          <PopoverRow key={href} Icon={Icon} title={label} href={href} />
         ))}
 
         <div className="bg-border my-1 h-px" />
 
-        <button
-          type="button"
+        <PopoverRow
+          Icon={LogOut}
+          title="Sign out"
           onClick={() => void signOut()}
-          className="hover:bg-accent focus-visible:bg-accent flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left text-sm outline-hidden"
-        >
-          <LogOut className="size-4 shrink-0" />
-          Sign out
-        </button>
+        />
       </PopoverContent>
     </Popover>
   )

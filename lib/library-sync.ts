@@ -24,11 +24,15 @@ import {
 } from '@/hooks/use-local-storage'
 
 /** localStorage key → the server-side store name. */
+// `label` lives here rather than next to the panel that prints it: the account
+// page counts one tile per synced store, and a store added without a label
+// rendered a card with no number and no words in it. One table, so a new store
+// cannot be half-added again.
 export const SYNCED_STORES = [
-  { key: 'watchlist', store: 'watchlist' },
-  { key: 'watchedItems', store: 'history' },
-  { key: 'completedItems', store: 'completed' },
-  { key: 'reviews', store: 'reviews' },
+  { key: 'watchlist', store: 'watchlist', label: 'Saved titles' },
+  { key: 'watchedItems', store: 'history', label: 'Watch history' },
+  { key: 'completedItems', store: 'completed', label: 'Episodes ticked off' },
+  { key: 'reviews', store: 'reviews', label: 'Ratings and notes' },
 ] as const
 
 const MIRROR_KEY = 'reely_sync_mirror'

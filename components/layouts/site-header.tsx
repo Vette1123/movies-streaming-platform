@@ -1,7 +1,6 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import Link from 'next/link'
 import { Heart } from 'lucide-react'
 
 import { siteConfig } from '@/config/site'
@@ -12,6 +11,8 @@ import { buttonVariants } from '@/components/ui/button'
 import {
   Popover,
   PopoverContent,
+  PopoverHeading,
+  PopoverRow,
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { AccountControl } from '@/components/account/account-control'
@@ -40,70 +41,6 @@ const CommandMenu = dynamic(
   }
 )
 
-// Both header popovers render the same row: icon, title, optional second line.
-// One template so the apps list and the links list can't drift apart on icon
-// size, gap or hover treatment — the drawer's DrawerAction is the same idea.
-const POPOVER_ROW =
-  'hover:bg-accent focus-visible:bg-accent flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left outline-none'
-
-function PopoverHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-muted-foreground px-2 pt-1 pb-2 text-xs font-medium">
-      {children}
-    </p>
-  )
-}
-
-interface PopoverRowProps {
-  Icon: React.ComponentType<{ className?: string }>
-  title: string
-  subtitle?: string
-  iconClassName?: string
-  /** Present → renders an external link; absent → a button. */
-  href?: string
-  onClick?: () => void
-}
-
-function PopoverRow({
-  Icon,
-  title,
-  subtitle,
-  iconClassName,
-  href,
-  onClick,
-}: PopoverRowProps) {
-  const content = (
-    <>
-      <Icon className={cn('size-5 shrink-0', iconClassName)} />
-      <span className="flex min-w-0 flex-col">
-        <span className="truncate text-sm font-medium">{title}</span>
-        {subtitle && (
-          <span className="text-muted-foreground text-xs">{subtitle}</span>
-        )}
-      </span>
-    </>
-  )
-
-  if (href) {
-    return (
-      <Link
-        href={href}
-        target="_blank"
-        rel="noreferrer"
-        className={POPOVER_ROW}
-      >
-        {content}
-      </Link>
-    )
-  }
-
-  return (
-    <button type="button" onClick={onClick} className={POPOVER_ROW}>
-      {content}
-    </button>
-  )
-}
-
 export function SiteHeader() {
   const { isShowNavBackground } = useNavbarScrollOverlay()
   return (
@@ -115,7 +52,10 @@ export function SiteHeader() {
         }
       )}
     >
-      <div className="container flex h-16 max-w-(--breakpoint-2xl) items-center gap-3 sm:justify-between xl:gap-6">
+      {/* gap-2 on the narrowest phones: the support heart lives in this row at
+          every width now, and at 360px the three px a gap-3 costs came out of
+          the search box's label. */}
+      <div className="container flex h-16 max-w-(--breakpoint-2xl) items-center gap-2 sm:justify-between sm:gap-3 xl:gap-6">
         <MobileNav items={siteConfig.mainNav} />
         <BrandLogo />
         <MainNav items={siteConfig.mainNav} />
@@ -126,21 +66,27 @@ export function SiteHeader() {
           <div className="w-full min-w-0 flex-1 md:w-auto md:flex-none">
             <CommandMenu />
           </div>
+          {/* Outside the `md:flex` nav below, deliberately. On a phone the only
+              routes to the plans were the drawer and the footer — one behind a
+              hamburger and a scroll, the other at the very bottom of every page.
+              This is the one control on the site that has to be a single tap
+              from anywhere, so it sits in the always-visible cluster.
+
+              Shown to supporters too, and pointing at the same page: for them it
+              is where the plan is managed. Rendering it unconditionally is also
+              what keeps the icon row from shifting sideways once the browser
+              works out who is looking. */}
+          <SupportLink
+            surface="header"
+            aria-label="Support Reely"
+            className={cn(
+              buttonVariants({ size: 'icon', variant: 'ghost' }),
+              'text-primary hover:text-primary shrink-0'
+            )}
+          >
+            <Heart className="size-5" />
+          </SupportLink>
           <nav className="hidden shrink-0 items-center gap-1 md:flex">
-            {/* Shown to supporters too, and pointing at the same page: for them
-                it is where the plan is managed. Rendering it unconditionally is
-                also what keeps the icon row from shifting sideways once the
-                browser works out who is looking. */}
-            <SupportLink
-              surface="header"
-              aria-label="Support Reely"
-              className={cn(
-                buttonVariants({ size: 'icon', variant: 'ghost' }),
-                'text-primary hover:text-primary'
-              )}
-            >
-              <Heart className="size-5" />
-            </SupportLink>
             <Popover>
               <PopoverTrigger
                 aria-label="Our apps on Google Play"
@@ -184,6 +130,7 @@ export function SiteHeader() {
                     iconClassName={link.iconClassName}
                     title={link.label}
                     href={link.href}
+                    external
                   />
                 ))}
               </PopoverContent>

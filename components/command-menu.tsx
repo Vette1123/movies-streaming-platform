@@ -28,6 +28,7 @@ import {
   getThumbPosterURL,
   pluralize,
 } from '@/lib/utils'
+import { useAccountIdentity } from '@/hooks/use-account'
 import { useCMDKListener } from '@/hooks/use-cmdk-listener'
 import { useRecentSearches } from '@/hooks/use-recent-searches'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -126,6 +127,8 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
   const [mediaFilter, setMediaFilter] = React.useState<MediaFilter>('all')
   const { recent, add: addRecent, remove: removeRecent } = useRecentSearches()
   const router = useRouter()
+  const { ready, pro } = useAccountIdentity()
+  const supporter = ready && pro
 
   // Sequence id to drop stale responses when the user types quickly.
   const requestSeqRef = React.useRef(0)
@@ -592,19 +595,24 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
             </CommandItem>
             {/* The palette is the fastest route to anywhere on this site for
                 the people who use it most, which makes it the one place the
-                plans should not be missing from. */}
+                plans should not be missing from. Supporters get the same row
+                pointing at the same page, worded as their plan rather than a
+                pitch — see FooterSupportCard for the rest of that promise. */}
             <CommandItem
               className="cursor-pointer"
               onSelect={() => {
-                trackSupportCtaClicked({ surface: 'command_menu' })
+                if (!supporter)
+                  trackSupportCtaClicked({ surface: 'command_menu' })
                 runCommand(() => router.push(`/support`))
               }}
             >
               <Heart className="mr-2 size-4" />
               <div className="flex flex-col">
-                <span>Support Reely</span>
+                <span>{supporter ? 'Your plan' : 'Support Reely'}</span>
                 <span className="text-muted-foreground text-xs">
-                  From ${SUPPORT_PRICES.monthly} a month · keeps the site free
+                  {supporter
+                    ? 'Manage or change your supporter membership'
+                    : `From $${SUPPORT_PRICES.monthly} a month · keeps the site free`}
                 </span>
               </div>
             </CommandItem>

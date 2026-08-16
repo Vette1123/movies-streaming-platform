@@ -1,12 +1,11 @@
 import React from 'react'
 import Link from 'next/link'
-import { Heart } from 'lucide-react'
 
 import { siteConfig } from '@/config/site'
-import { SUPPORT_EMAIL, SUPPORT_PRICES, supportMailto } from '@/config/support'
+import { SUPPORT_EMAIL, supportMailto } from '@/config/support'
 import { COMPANION_APPS } from '@/lib/apps'
 import { cn } from '@/lib/utils'
-import { SupportLink } from '@/components/support/support-link'
+import { FooterSupportCard } from '@/components/support/footer-support-card'
 
 import { Icons } from '../icons'
 import { PlayStoreLink } from '../play-store-link'
@@ -107,31 +106,9 @@ export function Footer() {
 
         {/* The support pitch, on every page. The footer link on its own asked
             for nothing and said nothing about what it costs or what it buys,
-            which is most of why nobody followed it. */}
-        <div className="border-primary/25 from-primary/10 space-y-3 rounded-lg border bg-gradient-to-br to-transparent p-5">
-          <p className="text-foreground text-base font-semibold">
-            Reely stays free. Support keeps it that way.
-          </p>
-          <p className="leading-relaxed">
-            Supporters move their library off one browser and unlock a queue
-            that knows which episode they are on, their own ratings, suggestions
-            read from their history, a Letterboxd and IMDb import, backup
-            streaming servers, a calendar feed with reminders, shareable lists,
-            release alerts, a year-in-review card and themes. Everything free
-            today stays free either way.
-          </p>
-          <p className="text-foreground/90 font-medium">
-            ${SUPPORT_PRICES.monthly}/month · ${SUPPORT_PRICES.yearly}/year · $
-            {SUPPORT_PRICES.lifetime} once
-          </p>
-          <SupportLink
-            surface="footer"
-            className={cn(buttonVariants({ size: 'sm' }), 'w-full sm:w-auto')}
-          >
-            <Heart className="mr-2 size-4" />
-            See what support unlocks
-          </SupportLink>
-        </div>
+            which is most of why nobody followed it. A supporter gets the other
+            side of the same card — see FooterSupportCard. */}
+        <FooterSupportCard />
       </div>
 
       <div className="border-border/60 border-t">
