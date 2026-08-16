@@ -33,6 +33,37 @@ export const websiteJsonLd = {
   },
 }
 
+/**
+ * The site described as an application rather than as a document.
+ *
+ * `WebSite` says "a site called Reely exists here"; nothing in it says what the
+ * software does or that it is free. Google's OAuth brand review checks that the
+ * homepage names the app and explains its purpose, and `WebApplication` is the
+ * one vocabulary that states both in machine-readable form, next to the visible
+ * h1 that says the same thing to a person.
+ */
+export const webApplicationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  '@id': `${SITE_URL}#webapp`,
+  name: siteConfig.name,
+  url: SITE_URL,
+  applicationCategory: 'EntertainmentApplication',
+  operatingSystem: 'Any',
+  browserRequirements: 'Requires JavaScript. Requires HTML5.',
+  description:
+    'Reely is a movie and TV discovery app. Search thousands of films and series, keep a watchlist, track the episodes you have watched, and stream titles in the browser. Signing in with Google is optional and syncs that library across devices.',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+  publisher: {
+    '@type': 'Organization',
+    '@id': `${SITE_URL}#organization`,
+  },
+}
+
 export const organizationJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',

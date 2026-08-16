@@ -7,6 +7,7 @@ import {
   breadcrumbJsonLd,
   collectionPageJsonLd,
   JsonLd,
+  webApplicationJsonLd,
 } from '@/lib/structured-data'
 import { HeroSlider } from '@/components/header/hero-slider'
 import { FullScreenLoader } from '@/components/loaders/intro-pages-loader'
@@ -38,6 +39,11 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
+    // `siteName` is repeated from the root layout because Next REPLACES the
+    // parent `openGraph` object rather than merging into it — declaring one here
+    // dropped `og:site_name` from the homepage, and that tag is one of the few
+    // machine-readable places an automated reviewer looks for the app's name.
+    siteName: siteConfig.openGraph.siteName,
     title: `${siteConfig.name} — Discover & Track Movies and TV Shows`,
     description: HOME_DESCRIPTION,
     url: siteConfig.websiteURL,
@@ -71,6 +77,7 @@ async function IndexPage() {
         })}
       />
       <JsonLd data={breadcrumbJsonLd([{ name: 'Home', url: '/' }])} />
+      <JsonLd data={webApplicationJsonLd} />
       {/* Hero and rails get their own boundaries: a failure in the carousel
           (or in one of its lazily-loaded chunks) used to blank the entire
           homepage, even though every poster row below had rendered fine. */}
@@ -97,10 +104,12 @@ async function IndexPage() {
           <h1 className="text-xl font-semibold tracking-tight text-balance sm:text-2xl">
             {siteConfig.name}: discover, track and stream movies and TV shows
           </h1>
-          <p className="text-muted-foreground mt-2 max-w-[65ch] text-sm leading-relaxed sm:text-base">
+          <p className="text-muted-foreground mt-2 max-w-[70ch] text-sm leading-relaxed sm:text-base">
             Search thousands of films and series, keep a watchlist, tick off
             every episode you finish, and play anything in your browser. Free,
-            and no account needed.
+            and no account needed. Signing in with Google is optional: Reely
+            asks only for your name, email address and profile picture, and uses
+            them to keep that library in sync across your devices.
           </p>
         </div>
         <SectionErrorBoundary
