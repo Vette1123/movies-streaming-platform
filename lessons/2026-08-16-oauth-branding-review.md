@@ -19,7 +19,7 @@ so the hero keeps its full height.
 - **Answered a screenshot with metadata.** Round after round went into `<title>`,
   `og:site_name`, `application-name`, the manifest, and `WebApplication` JSON-LD.
   Every one of those is machine-readable and every one of them was already right.
-  The rejection is about what a reviewer *sees*: the first screenshot of the
+  The rejection is about what a reviewer _sees_: the first screenshot of the
   homepage was a poster carousel and a six-letter wordmark, with no sentence
   anywhere on it saying what the site does. The purpose statement existed — in
   the footer, four screens down.

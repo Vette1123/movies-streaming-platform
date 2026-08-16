@@ -12,17 +12,17 @@ and deleting it afterwards.
 
 Verified live, in this order:
 
-| Case                                                | Result |
-| --------------------------------------------------- | ------ |
-| Bad signature                                        | `401 bad signature`, no `cf-mitigated` header — the WAF never sees it |
-| Valid signature, **empty user-agent**                | `200 ok`, `supporters` row written with `grants=pro` |
-| Redelivery of the same `event_id`                    | Row unchanged |
-| `extra_purchase.created` for the Lifetime            | `lifetime=1` |
-| `membership.cancelled` on a lifetime row             | Grant survives |
-| `membership.cancelled` on a recurring row            | `grants=''`, row kept as a tombstone |
-| Stale `started` redelivered after the cancel         | Refused — no resurrection |
-| Level belonging to a sibling project                 | Nothing granted |
-| `GET` on the webhook path                            | `405`, JSON |
+| Case                                         | Result                                                                |
+| -------------------------------------------- | --------------------------------------------------------------------- |
+| Bad signature                                | `401 bad signature`, no `cf-mitigated` header — the WAF never sees it |
+| Valid signature, **empty user-agent**        | `200 ok`, `supporters` row written with `grants=pro`                  |
+| Redelivery of the same `event_id`            | Row unchanged                                                         |
+| `extra_purchase.created` for the Lifetime    | `lifetime=1`                                                          |
+| `membership.cancelled` on a lifetime row     | Grant survives                                                        |
+| `membership.cancelled` on a recurring row    | `grants=''`, row kept as a tombstone                                  |
+| Stale `started` redelivered after the cancel | Refused — no resurrection                                             |
+| Level belonging to a sibling project         | Nothing granted                                                       |
+| `GET` on the webhook path                    | `405`, JSON                                                           |
 
 `BMC_WEBHOOK_SECRET` is set on the Worker, and the fact that a signature
 generated from `.env.local` verifies in production proves the two copies match —

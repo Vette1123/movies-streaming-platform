@@ -1,10 +1,16 @@
 // DNS hardening for reely.space: CAA records, plus the three records that say
 // "this domain never sends email".
 //
-// reely.space sends no mail and receives none. Audited 2026-07-30: no DKIM
-// selector exists for any common provider, SPF authorizes nothing but the
-// registrar's forwarder, and the app itself has no accounts and no mail
-// service. The MX records are Namecheap's default inbound forwarding, unused.
+// reely.space sends no mail. It DOES receive, since 2026-08-16: Cloudflare
+// Email Routing forwards support@reely.space to a personal inbox. Receiving
+// changes nothing here — SPF, DKIM and DMARC all describe who may send AS this
+// domain, and the answer is still nobody. Email Routing forwards under its own
+// envelope sender (SRS), so the strict policy below does not touch it.
+//
+// What DID change: the MX records are Cloudflare's (route1-3.mx.cloudflare.net)
+// instead of Namecheap's forwarders, and SPF now includes _spf.mx.cloudflare.net
+// instead of the registrar's. The Email Routing wizard rewrites SPF to `~all`
+// whenever it runs, so re-run this script after touching Email Routing.
 //
 // That matters because it removes the usual reason to be careful here. A
 // domain that sends real mail has to walk DMARC up slowly (none → quarantine →
@@ -159,9 +165,10 @@ async function main() {
   // for a domain that might be sending from somewhere it forgot to list; this
   // one isn't sending at all, so the polite version only helps a spoofer.
   //
-  // The registrar's forwarder include stays. It costs nothing, and it means
-  // turning inbound forwarding back on later doesn't also require remembering
-  // to re-authorize it here.
+  // The `include:` stays whatever it is — Email Routing's own wizard sets it to
+  // _spf.mx.cloudflare.net and this script only ever touches the trailing
+  // qualifier. That split matters: the wizard resets `-all` to `~all` every
+  // time it runs, and this line is what puts it back.
   console.log('')
   const spfRecords = await cf(
     `/zones/${zoneId}/dns_records?type=TXT&per_page=100`
@@ -255,8 +262,8 @@ Done. Nothing further to do — this is the end state, not a step.
 
 In plain terms: reely.space now tells every mail server in the world that it
 sends no email, and that anything claiming to come from @reely.space should be
-refused. Since you don't send or receive mail on this domain, there is nothing
-of yours that this can break.
+refused. Inbound is unaffected: Email Routing still forwards support@reely.space,
+because these three records govern sending, not receiving.
 
 The one thing to remember: if you ever DO set up email on reely.space, update
 SPF and DKIM for the new sender and set DMARC_POLICY=none here BEFORE sending
