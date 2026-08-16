@@ -145,10 +145,11 @@ export function UpcomingPanel() {
         Every dated episode and release day across your whole watchlist, on one
         page, soonest first — plus a private calendar link that puts all of it
         straight into Google Calendar, Apple Calendar or Outlook and keeps it
-        there. Save a show today and next season&rsquo;s premiere appears in
-        your calendar on its own, months from now, without you doing anything.
-        Reely already tracks these dates to send your alerts; supporting turns
-        them into something you can plan around.
+        there, with a reminder the morning before each one. Save a show today
+        and next season&rsquo;s premiere appears in your calendar on its own,
+        months from now, without you doing anything. Reely already tracks these
+        dates to send your alerts; supporting turns them into something you can
+        plan around.
       </SupporterGate>
     )
   }
@@ -266,7 +267,9 @@ function FeedSection({
         </h3>
         <p className="text-muted-foreground max-w-[62ch] text-sm leading-relaxed">
           A private link your calendar app checks on its own. Anything you add
-          to your watchlist from now on turns up in it without another import.
+          to your watchlist from now on turns up in it without another import,
+          with a reminder the morning before it airs, and the past week stays in
+          there so you can see what you missed.
         </p>
       </div>
 

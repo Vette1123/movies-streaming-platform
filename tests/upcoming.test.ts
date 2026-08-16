@@ -32,6 +32,33 @@ describe('buildIcs', () => {
     expect(ics).toContain('URL:https://www.reely.space/tv-shows/1399')
   })
 
+  it('carries one alarm per event, the morning before', () => {
+    const ics = build([item()])
+    // 15h before midnight-local is 09:00 the previous day, in whatever zone the
+    // calendar is read in — no VTIMEZONE needed.
+    expect(ics).toContain('TRIGGER;RELATED=START:-PT15H')
+    // Exactly one. A calendar that fires twice per episode gets muted.
+    expect(ics.match(/BEGIN:VALARM/g)).toHaveLength(1)
+    expect(ics.match(/END:VALARM/g)).toHaveLength(1)
+    expect(ics).toContain('DESCRIPTION:Tomorrow: Game of Thrones — S08E01')
+  })
+
+  it('tells the client how often to come back', () => {
+    const ics = build([])
+    // Both spellings: RFC 7986 for anything modern, the X- property for Outlook
+    // and Apple, which read that one instead.
+    expect(ics).toContain('REFRESH-INTERVAL;VALUE=DURATION:PT6H')
+    expect(ics).toContain('X-PUBLISHED-TTL:PT6H')
+  })
+
+  it('categorises by media type and keeps the entry private and free', () => {
+    expect(build([item()])).toContain('CATEGORIES:TV')
+    const film = build([item({ key: 'movie:550', label: null })])
+    expect(film).toContain('CATEGORIES:Film')
+    expect(film).toContain('CLASS:PRIVATE')
+    expect(film).toContain('TRANSP:TRANSPARENT')
+  })
+
   it('rolls the end date over a month boundary', () => {
     expect(build([item({ date: '2026-08-31' })])).toContain(
       'DTEND;VALUE=DATE:20260901'

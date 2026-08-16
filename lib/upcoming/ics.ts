@@ -87,6 +87,20 @@ const pathOf = (key: string): string => {
 const summaryOf = (item: UpcomingItem): string =>
   item.label ? `${item.name} — ${item.label}` : `${item.name} (release day)`
 
+const isSeries = (key: string): boolean => key.startsWith('series:')
+
+/**
+ * How long before it airs to nudge somebody.
+ *
+ * DTSTART is a DATE, which a client reads as midnight local. Fifteen hours
+ * earlier is 09:00 the previous day — a civil hour, the day before, in whatever
+ * zone the calendar is being read in, with no timezone data in the file at all.
+ *
+ * One alarm, not two. A calendar that fires twice per episode gets muted, and a
+ * muted calendar is worth less than no calendar.
+ */
+const ALARM_TRIGGER = '-PT15H'
+
 /**
  * The whole file.
  *
@@ -107,6 +121,14 @@ export function buildIcs(
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'X-WR-CALNAME:Reely — coming up',
+    'X-WR-CALDESC:Episodes and release days from your Reely watchlist.',
+    // How often a client should come back. Both spellings: REFRESH-INTERVAL is
+    // RFC 7986, X-PUBLISHED-TTL is what Outlook and Apple actually read. Without
+    // either, clients pick their own interval — some poll every few minutes,
+    // which is a Worker invocation each time for data that changes hourly at
+    // best, and others go a whole day, which is too late for a premiere.
+    'REFRESH-INTERVAL;VALUE=DURATION:PT6H',
+    'X-PUBLISHED-TTL:PT6H',
   ]
 
   for (const item of items) {
@@ -126,8 +148,20 @@ export function buildIcs(
       `DTSTART;VALUE=DATE:${start}`,
       `DTEND;VALUE=DATE:${end}`,
       `SUMMARY:${escapeText(summaryOf(item))}`,
+      // The link again, in the body. URL is not rendered by most clients, and
+      // the whole point of the entry is to be one tap from the thing.
+      `DESCRIPTION:${escapeText(`${item.name} — open in Reely: ${origin}${pathOf(item.key)}`)}`,
       `URL:${origin}${pathOf(item.key)}`,
+      `CATEGORIES:${isSeries(item.key) ? 'TV' : 'Film'}`,
+      // Nothing here is a commitment: an air date should never make somebody
+      // look busy to their colleagues.
       'TRANSP:TRANSPARENT',
+      'CLASS:PRIVATE',
+      'BEGIN:VALARM',
+      'ACTION:DISPLAY',
+      `TRIGGER;RELATED=START:${ALARM_TRIGGER}`,
+      `DESCRIPTION:${escapeText(`Tomorrow: ${summaryOf(item)}`)}`,
+      'END:VALARM',
       'END:VEVENT'
     )
   }

@@ -58,7 +58,7 @@ const UNLOCKS = [
   {
     Icon: CalendarDays,
     title: 'Your watchlist, in your real calendar',
-    body: 'Every dated episode and release day on one page — and a private link Google Calendar, Apple Calendar or Outlook subscribes to once. Save a show tonight and next season’s premiere appears in your calendar months from now, on its own, next to your actual life.',
+    body: 'Every dated episode and release day on one page — and a private link Google Calendar, Apple Calendar or Outlook subscribes to once, with a reminder the morning before each one. Save a show tonight and next season’s premiere appears in your calendar months from now, on its own, next to your actual life.',
   },
   {
     Icon: Server,

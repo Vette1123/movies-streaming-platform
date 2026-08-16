@@ -23,6 +23,8 @@ import { buildIcs, type UpcomingItem } from './ics'
 const HORIZON_DAYS = 180
 /** Far above any watchlist that has this many titles dated at once. */
 const MAX_ROWS = 100
+/** How far back the subscribable feed reaches. See handleCalendarFeed. */
+const FEED_BACKFILL_DAYS = 7
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -47,7 +49,8 @@ const dayOf = (stamp: number): string =>
 async function loadUpcoming(
   db: D1Database,
   userId: string,
-  now: number
+  now: number,
+  backDays = 0
 ): Promise<UpcomingItem[]> {
   const rows = await db
     .prepare(
@@ -66,7 +69,11 @@ async function loadUpcoming(
        ORDER BY watched_media.next_air_date ASC
        LIMIT ${MAX_ROWS}`
     )
-    .bind(userId, dayOf(now), dayOf(now + HORIZON_DAYS * 86400000))
+    .bind(
+      userId,
+      dayOf(now - backDays * 86400000),
+      dayOf(now + HORIZON_DAYS * 86400000)
+    )
     .all<{
       key: string
       name: string | null
@@ -222,7 +229,11 @@ export async function handleCalendarFeed(
     return calendar(buildIcs([], feedOrigin(), now))
   }
 
-  const items = await loadUpcoming(db, user.id, now)
+  // The feed reaches a week back; the panel does not. A calendar that opens on
+  // an empty month looks broken, and "this aired on Tuesday and you missed it"
+  // is exactly what somebody wants from a calendar. The panel is a schedule of
+  // what is coming, so the past has no business in it.
+  const items = await loadUpcoming(db, user.id, now, FEED_BACKFILL_DAYS)
   return calendar(buildIcs(items, feedOrigin(), now))
 }
 
