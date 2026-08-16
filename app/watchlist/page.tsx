@@ -36,8 +36,10 @@ function Watchlist() {
       >
         Everything above is saved in this browser and nowhere else — a new
         phone, a cleared cache or a different laptop starts empty. Supporters
-        keep one watchlist across every device they sign in on, and get a
-        notification the day something on it airs.
+        keep one watchlist across every device they sign in on, get a
+        notification the day something on it airs, and can subscribe their own
+        calendar to it so every premiere and release day turns up next to the
+        rest of their week.
       </SupportPrompt>
     </section>
   )

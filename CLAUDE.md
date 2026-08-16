@@ -28,7 +28,8 @@ pnpm bmc:probe          # end-to-end check of the live payment webhook (writes +
 ```
 
 - **Package manager is pnpm 10** (`packageManager` pin). Do not use npm/yarn.
-- **No test runner is configured.** Verify changes by driving the app in a browser, not by a test suite.
+- **`pnpm test` (vitest, node environment) covers the pure logic behind accounts, billing, sync, lists and the support nudge** — `tests/*.test.ts`, see `vitest.config.mts`. That is where a bug is silent and expensive: who is entitled, whether a webhook is genuine, which way a sync conflict resolves, whether somebody gets asked for money twice. Run it after touching any of that.
+- **Everything visual is verified in a browser, not by a test.** There are no component or DOM tests and none are wanted: drive the app.
 - **Avoid `pnpm build` for routine verification** — it prerenders ~1000 pages and is slow (~40s). Use the dev server + a browser. Build only when specifically diagnosing a build/prerender issue or before a deploy.
 - **`wrangler dev` holds `out/` open on Windows** — a rebuild while it runs dies with `EBUSY: rmdir 'out'`. Stop the dev task and kill stray `workerd` processes before `pnpm build:cf`.
 - Path alias: `@/*` maps to repo root (e.g. `@/lib/fetch-client`).
@@ -60,6 +61,9 @@ Replaced OpenNext on 2026-08-03. Under OpenNext, prod was killing **25–40% of 
 - **`headers()` / `redirects()` do not exist under `output: 'export'`** — they live in `public/_headers` and `public/_redirects`, native to Workers Static Assets. **Cached paths must stay in sync with the CDN rule in `scripts/cf-waf-setup.mjs`.** `next.config.mjs` still defines them for the non-export build; `DEPLOY_TARGET=cloudflare` is what flips between the two configs.
 - **WAF** (`scripts/cf-waf-setup.mjs`): scraper-challenge + rate-limit rules. The rate-limit rule **excludes `/*/genre`** (genre infinite-scroll would otherwise trip it). Run `pnpm waf:apply` after changing rules.
 - **The payment webhook (`/api/billing/bmc`) is exempt from the UA challenge AND from the apex→www redirect**, and both exemptions are load-bearing: its callers are machines with no user-agent, and a 301 is not a 2xx, so a sender that does not follow redirects loses the delivery while the money still lands. `pnpm bmc:probe` proves the whole path against production (signature, WAF, both hosts, grant, revoke, replay) in ~10s — run it after touching WAF rules, `lib/billing/*`, or the offer names in `config/support.ts`.
+
+- **The supporter calendar feed (`/api/calendar/<token>.ics`) carries the same two exemptions**, for the same reason: what polls it is Google/Apple/Outlook's fetcher, not a browser. A challenge turns a subscription permanently red, and a 301 loses the poll on any client that does not follow it. Both are prefix matches in `scripts/cf-waf-setup.mjs` (`CALENDAR_PREFIX`) — run `pnpm waf:apply` after touching them.
+- **`/api/upcoming` and the feed are one D1 JOIN with zero TMDB traffic.** The hourly sweep already writes `watched_media.next_air_date` for every watchlisted title (it must, to send alerts), so the schedule is a read over rows that exist for another reason. Keep it that way: a per-title TMDB call here would reintroduce the 50-subrequest problem. Migration `0002_calendar_feed.sql` adds `users.calendar_token` — **apply it before deploying** (`pnpm exec wrangler d1 migrations apply reely --remote`).
 
 ### IMDb ratings (feature-flagged OFF)
 

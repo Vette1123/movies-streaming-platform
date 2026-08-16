@@ -3,7 +3,12 @@
 import Link from 'next/link'
 import { ArrowUpRight, Check, Heart } from 'lucide-react'
 
-import { SUPPORT_PRICES, SUPPORT_URL } from '@/config/support'
+import {
+  SUPPORT_EMAIL,
+  SUPPORT_PRICES,
+  SUPPORT_URL,
+  supportMailto,
+} from '@/config/support'
 import { useAccountIdentity } from '@/hooks/use-account'
 import { buttonVariants } from '@/components/ui/button'
 
@@ -33,8 +38,9 @@ function SupporterPanel() {
         </h2>
         <p className="text-muted-foreground mt-3 max-w-[60ch] leading-relaxed">
           Your library syncs across devices, lists are shareable, alerts are
-          running and the themes are yours. Thank you — this is what keeps Reely
-          online and free for everyone else.
+          running, your watchlist has a calendar feed, and the themes are yours.
+          Thank you — this is what keeps Reely online and free for everyone
+          else.
         </p>
 
         <div className="mt-8 grid gap-8 md:grid-cols-2">
@@ -67,8 +73,15 @@ function SupporterPanel() {
               deleted when support ends.
             </p>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Paid under a different address than the one you sign in with?
-              Reply to the welcome note and I will move it across the same day.
+              Paid under a different address than the one you sign in with, or
+              anything else gone wrong? Email{' '}
+              <a
+                href={supportMailto('Supporter question')}
+                className="text-foreground underline underline-offset-4"
+              >
+                {SUPPORT_EMAIL}
+              </a>{' '}
+              and I will sort it the same day.
             </p>
           </div>
         </div>

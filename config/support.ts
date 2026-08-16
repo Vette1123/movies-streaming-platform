@@ -57,3 +57,28 @@ export const SUPPORT_PRICES = { monthly: 5, yearly: 50, lifetime: 99 } as const
 
 /** Where the two offers live. One page; the levels are cards on it. */
 export const SUPPORT_URL = 'https://buymeacoffee.com/vetteotp/membership'
+
+/**
+ * Where a human answers.
+ *
+ * Printed wherever money is involved, and deliberately an address rather than a
+ * form: a payment that did not switch anything on is a problem the person who
+ * paid cannot debug, and one they will abandon rather than hunt for a contact
+ * page. There is no ticket system behind it — it is one mailbox, read by the
+ * person who wrote the code.
+ *
+ * Receiving is all this address does. It is Cloudflare Email Routing forwarding
+ * to a real mailbox, and the domain still SENDS nothing: SPF ends `-all`, the
+ * wildcard DKIM selector is a null policy and DMARC is `p=reject`, so nothing
+ * can be forged as coming from `@reely.space`. All three govern sending only,
+ * which is why inbound works and a reply has to leave from somewhere else.
+ *
+ * Do not "fix" that by loosening SPF, and re-run `pnpm dns:harden` after any
+ * Email Routing change — the wizard resets the qualifier to `~all` behind you.
+ * See lessons/2026-08-16-email-routing-support-address.md.
+ */
+export const SUPPORT_EMAIL = 'support@reely.space'
+
+/** A pre-addressed mail, so nobody has to explain which site they mean. */
+export const supportMailto = (subject: string): string =>
+  `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`${SUPPORT_TAG} — ${subject}`)}`

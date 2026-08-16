@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Heart } from 'lucide-react'
 
 import { siteConfig } from '@/config/site'
-import { SUPPORT_PRICES } from '@/config/support'
+import { SUPPORT_EMAIL, SUPPORT_PRICES, supportMailto } from '@/config/support'
 import { COMPANION_APPS } from '@/lib/apps'
 import { cn } from '@/lib/utils'
 import { SupportLink } from '@/components/support/support-link'
@@ -19,6 +19,10 @@ const SITE_LINKS = [
   { href: '/privacy', label: 'Privacy' },
   { href: '/terms', label: 'Terms' },
   { href: '/disclaimer', label: 'Disclaimer' },
+  // A real address rather than a form. Every page carries it, because the person
+  // who needs it most — somebody whose payment did not switch anything on — is
+  // exactly the person who will not go looking for a contact page.
+  { href: supportMailto('Hello'), label: `Email: ${SUPPORT_EMAIL}` },
 ]
 
 // The stack, as links. A list rather than a sentence: the prose version had to
@@ -109,9 +113,10 @@ export function Footer() {
             Reely stays free. Support keeps it that way.
           </p>
           <p className="leading-relaxed">
-            Supporters move their library off one browser and unlock shareable
-            lists, release alerts, yearly stats and themes. Everything free
-            today stays free either way.
+            Supporters move their library off one browser and unlock a calendar
+            feed of everything they are waiting for, shareable lists, release
+            alerts, yearly stats and themes. Everything free today stays free
+            either way.
           </p>
           <p className="text-foreground/90 font-medium">
             ${SUPPORT_PRICES.monthly}/month · ${SUPPORT_PRICES.yearly}/year · $

@@ -297,6 +297,22 @@ const REVIEW_PATHS = ['/', '/privacy', '/terms', '/disclaimer', '/support']
 const EXEMPT_PATHS = [WEBHOOK_PATH, ...REVIEW_PATHS]
 
 /**
+ * The supporter calendar feed, exempt for the same reason the webhook is.
+ *
+ * What polls it is Google Calendar's fetcher, Apple's, or Outlook's — machines
+ * with their own user-agents, none of which is a browser and one of which sends
+ * none at all. A managed challenge for any of them is an HTML page where a
+ * calendar expected an .ics, and the subscription goes permanently red with no
+ * way for the supporter to fix it. A prefix rather than a path because the
+ * credential is IN the path.
+ *
+ * Nothing is given away by exempting it: the token is 128 bits, unguessable, and
+ * checked against a UNIQUE index, so an unauthenticated request costs one
+ * indexed lookup and returns an empty calendar.
+ */
+const CALENDAR_PREFIX = '/api/calendar/'
+
+/**
  * Everything a page needs in order to BE a page.
  *
  * Exempting the documents alone was half a fix and looked like a whole one: the
@@ -342,6 +358,7 @@ const BLOCK_RULE = {
   expression:
     `((${orExpr(BLOCK_UAS)}) or (http.user_agent eq ""))` +
     ` and ${notAnyPath(EXEMPT_PATHS)}` +
+    ` and not starts_with(http.request.uri.path, "${CALENDAR_PREFIX}")` +
     ` and not (${assetExpr()})`,
   action: 'managed_challenge',
 }
@@ -428,11 +445,18 @@ const RATELIMIT_RULE = {
 // payments and show up nowhere. Serving the apex directly costs nothing: the
 // route is signature-authenticated and reads no cookie, so the host it arrives
 // on does not matter.
-const WEBHOOK_HOST_EXEMPT = `not (http.request.uri.path eq "${WEBHOOK_PATH}")`
+//
+// The calendar feed rides along for the same reason: the clients that poll it
+// are calendar fetchers, not browsers, and a subscription that was pasted
+// without the `www.` would 301 forever. Some fetchers follow it, some quietly
+// mark the calendar broken — and the supporter would have no way to tell which.
+const MACHINE_HOST_EXEMPT =
+  `not (http.request.uri.path eq "${WEBHOOK_PATH}")` +
+  ` and not starts_with(http.request.uri.path, "${CALENDAR_PREFIX}")`
 
 const REDIRECT_APEX_RULE = {
   description: `${TAG} 301 apex → www`,
-  expression: `(http.host eq "${ZONE_NAME}") and ${WEBHOOK_HOST_EXEMPT}`,
+  expression: `(http.host eq "${ZONE_NAME}") and ${MACHINE_HOST_EXEMPT}`,
   action: 'redirect',
   action_parameters: {
     from_value: {

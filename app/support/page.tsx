@@ -2,9 +2,11 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import {
   BellRing,
+  CalendarDays,
   Check,
   Heart,
   ListMusic,
+  Mail,
   MessageSquare,
   Palette,
   RefreshCw,
@@ -13,10 +15,12 @@ import {
 
 import { siteConfig } from '@/config/site'
 import {
+  SUPPORT_EMAIL,
   SUPPORT_LIFETIME,
   SUPPORT_MEMBERSHIP,
   SUPPORT_PRICES,
   SUPPORT_URL,
+  supportMailto,
 } from '@/config/support'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
@@ -51,6 +55,11 @@ const UNLOCKS = [
     body: 'Saved titles, watch history and every episode you have ticked off, kept in step across your phone, your laptop and the browser on the TV. A new device signs in and finds everything already there.',
   },
   {
+    Icon: CalendarDays,
+    title: 'Your watchlist, in your real calendar',
+    body: 'Every dated episode and release day on one page — and a private link Google Calendar, Apple Calendar or Outlook subscribes to once. Save a show tonight and next season’s premiere appears in your calendar months from now, on its own, next to your actual life.',
+  },
+  {
     Icon: ListMusic,
     title: 'Lists worth sharing',
     body: 'Build collections out of your own library, put a note and a score on anything worth one, then publish a list as a real link that unfurls with poster art wherever you paste it.',
@@ -73,7 +82,7 @@ const UNLOCKS = [
   {
     Icon: MessageSquare,
     title: 'A direct line',
-    body: 'My contact goes out in the welcome note. Ask for a feature and I will build it if it can be built. Supporters are a short list, so this is a real promise rather than a nice sentence.',
+    body: `Write to ${SUPPORT_EMAIL} about anything — a billing problem, a bug, or a feature you think should exist. It reaches one person and I answer it myself. Supporters are a short list, so this is a real promise rather than a nice sentence.`,
   },
 ] as const
 
@@ -143,7 +152,11 @@ const FAQ = [
   },
   {
     q: 'I paid with a different email than I sign in with.',
-    a: 'Reply to the welcome note with the address you sign in with and I will move it the same day. Nothing links a Google account to a payment address on its own, so this one needs a human.',
+    a: `Email me at ${SUPPORT_EMAIL} with the address you sign in with and I will move it the same day. Nothing links a Google account to a payment address on its own, so this one needs a human.`,
+  },
+  {
+    q: 'I paid and nothing switched on. Now what?',
+    a: `Email ${SUPPORT_EMAIL} and say which address you paid with. It is almost always the two-addresses problem above, it takes me a minute to fix, and you are not the one who should be debugging it. There is no ticket system — the mail comes to me.`,
   },
   {
     q: 'Can I cancel?',
@@ -246,11 +259,12 @@ export default function SupportPage() {
               <article
                 key={title}
                 className={
-                  // A rhythm rather than six identical tiles: the two features
-                  // that justify the price get half a row each, the rest sit in
-                  // thirds underneath.
-                  index < 2
-                    ? 'bg-card/50 rounded-lg border p-6 md:col-span-3'
+                  // A rhythm rather than a grid of identical tiles: the one
+                  // feature that justifies the price on its own takes the full
+                  // width, and the rest sit in thirds underneath — which also
+                  // happens to divide evenly, so no row is left ragged.
+                  index === 0
+                    ? 'bg-card/50 rounded-lg border p-6 md:col-span-6'
                     : 'bg-card/50 rounded-lg border p-6 md:col-span-2'
                 }
               >
@@ -319,9 +333,8 @@ export default function SupportPage() {
                   there.
                 </p>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  Paid under a different address? Reply to the welcome note with
-                  the one you sign in with and I will move it across the same
-                  day.
+                  Paid under a different address? Email {SUPPORT_EMAIL} with the
+                  one you sign in with and I will move it across the same day.
                 </p>
               </div>
               <div className="space-y-3">
@@ -385,7 +398,49 @@ export default function SupportPage() {
             </span>
           </div>
         </section>
+
+        <ContactSection />
       </PlanView>
     </div>
+  )
+}
+
+/**
+ * The way out of every problem this page can cause.
+ *
+ * Money changes what a missing contact costs. Everywhere else on Reely a
+ * confused visitor closes the tab; here they have already paid, and the failure
+ * mode is somebody out of pocket with nowhere to write. So the address is
+ * printed in full rather than hidden behind a form — there is no ticket system,
+ * no autoresponder, and no queue: it is one person's mailbox, which is the whole
+ * promise.
+ */
+function ContactSection() {
+  return (
+    <section className="container max-w-(--breakpoint-xl) py-16">
+      <div className="border-primary/25 from-primary/5 rounded-lg border bg-gradient-to-br to-transparent p-6 sm:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-6">
+          <div className="min-w-0 space-y-3">
+            <h2 className="text-2xl font-bold tracking-tight">
+              Something wrong? Write to me directly.
+            </h2>
+            <p className="text-muted-foreground max-w-[60ch] leading-relaxed">
+              A payment that did not switch anything on, a subscription you want
+              cancelled or refunded, the wrong email address on the account, a
+              bug, or a feature you think Reely should have. It comes straight
+              to me and I answer it myself — usually the same day.
+            </p>
+            <p className="font-mono text-sm">{SUPPORT_EMAIL}</p>
+          </div>
+          <a
+            href={supportMailto('Support')}
+            className={buttonVariants({ size: 'lg' })}
+          >
+            <Mail className="mr-2 size-4" />
+            Email me
+          </a>
+        </div>
+      </div>
+    </section>
   )
 }

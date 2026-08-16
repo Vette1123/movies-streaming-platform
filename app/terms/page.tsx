@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 
 import { siteConfig } from '@/config/site'
-import { SUPPORT_PRICES } from '@/config/support'
+import { SUPPORT_EMAIL, SUPPORT_PRICES, supportMailto } from '@/config/support'
 import { LegalPage } from '@/components/legal/legal-page'
 
 export const metadata: Metadata = {
@@ -73,8 +73,8 @@ export default function TermsPage() {
         </li>
         <li>
           Supporter status attaches to the email address the payment was made
-          with. If that is not the address you sign in with, reply to the
-          welcome note and it will be moved across.
+          with. If that is not the address you sign in with, email{' '}
+          {SUPPORT_EMAIL} and it will be moved across.
         </li>
       </ul>
       <p>
@@ -117,9 +117,7 @@ export default function TermsPage() {
 
       <h2>Contact</h2>
       <p>
-        <a href={`mailto:${siteConfig.author.email}`}>
-          {siteConfig.author.email}
-        </a>
+        <a href={supportMailto('Terms')}>{SUPPORT_EMAIL}</a>
       </p>
     </LegalPage>
   )

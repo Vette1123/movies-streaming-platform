@@ -5,6 +5,7 @@ import Link from 'next/link'
 import {
   AlertTriangle,
   BellRing,
+  CalendarDays,
   ExternalLink,
   Heart,
   LayoutGrid,
@@ -16,7 +17,12 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 
-import { SUPPORT_PRICES, SUPPORT_URL } from '@/config/support'
+import {
+  SUPPORT_EMAIL,
+  SUPPORT_PRICES,
+  SUPPORT_URL,
+  supportMailto,
+} from '@/config/support'
 import { signInHref, type AccountState } from '@/lib/account'
 import { cn } from '@/lib/utils'
 import { useAccountSession } from '@/hooks/use-account'
@@ -31,6 +37,7 @@ import { DataPanel } from './data-panel'
 import { LibraryPanel } from './library-panel'
 import { ListsPanel } from './lists-panel'
 import { PlaybackPanel } from './playback-panel'
+import { UpcomingPanel } from './upcoming-panel'
 
 const SIGN_IN_ERRORS: Record<string, string> = {
   expired:
@@ -72,6 +79,14 @@ const SECTIONS: SectionDef[] = [
     lede: 'Collections you build from your own library, with a note and a score on anything worth one.',
     Icon: ListMusic,
     Panel: ListsPanel,
+  },
+  {
+    id: 'upcoming',
+    label: 'Coming up',
+    title: 'Coming up',
+    lede: 'Every dated episode and release day on your watchlist, soonest first — and a calendar file of the lot.',
+    Icon: CalendarDays,
+    Panel: UpcomingPanel,
   },
   {
     id: 'alerts',
@@ -473,8 +488,9 @@ function PlanSection({ account }: { account: AccountState }) {
         <p className="text-muted-foreground mt-2 max-w-[60ch] leading-relaxed">
           Nothing you use today depends on paying, and nothing ever will.
           Supporting Reely adds the things an account makes possible: your
-          library everywhere, lists worth sharing, alerts when a new episode
-          lands, and a say in what gets built.
+          library everywhere, your watchlist as a live feed in your own
+          calendar, lists worth sharing, alerts when a new episode lands, and a
+          say in what gets built.
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Link href="/support" className={buttonVariants()}>
@@ -512,6 +528,20 @@ function PlanSection({ account }: { account: AccountState }) {
           <ExternalLink className="ml-2 size-4" />
         </a>
       </div>
+      {/* Printed for supporters specifically. Everyone else can open an issue or
+          close the tab; somebody who has paid and hit a problem needs an address,
+          and needs it where they already are rather than three pages away. */}
+      <p className="text-muted-foreground mt-5 text-sm">
+        Anything wrong with your membership — the wrong address, a payment that
+        did not register, a refund — email{' '}
+        <a
+          href={supportMailto('Membership')}
+          className="text-foreground underline underline-offset-4"
+        >
+          {SUPPORT_EMAIL}
+        </a>{' '}
+        and I will sort it myself.
+      </p>
     </section>
   )
 }

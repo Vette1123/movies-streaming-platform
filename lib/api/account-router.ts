@@ -21,6 +21,7 @@ import { handleBmcWebhook } from '@/lib/billing/bmc'
 import { handleLists, loadPublicList } from '@/lib/lists/routes'
 import { handlePushPending, handlePushSubscribe } from '@/lib/push/routes'
 import { handleSync } from '@/lib/sync/routes'
+import { handleCalendarFeed, handleUpcoming } from '@/lib/upcoming/routes'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -65,10 +66,15 @@ const ROUTES: Record<string, 'GET' | 'POST' | 'GET|POST'> = {
   '/api/lists': 'GET|POST',
   '/api/push/subscribe': 'POST',
   '/api/push/pending': 'GET',
+  '/api/upcoming': 'GET|POST',
 }
 
 export function ownsPath(pathname: string): boolean {
-  return pathname in ROUTES || pathname.startsWith('/api/list/')
+  return (
+    pathname in ROUTES ||
+    pathname.startsWith('/api/list/') ||
+    pathname.startsWith('/api/calendar/')
+  )
 }
 
 /**
@@ -85,6 +91,17 @@ export async function routeAccountApi(
   ctx: WaitUntilContext
 ): Promise<Response | null> {
   void ctx
+
+  // The calendar feed carries its own credential in the URL, because the thing
+  // polling it is Google Calendar or Apple Calendar — no cookies, no session, no
+  // way to sign in. Handled before the method table for the same reason as the
+  // public list below: it is a prefix, not a fixed path.
+  if (pathname.startsWith('/api/calendar/')) {
+    if (request.method !== 'GET') return methodNotAllowed()
+    const db = requireDb(env)
+    if (db instanceof Response) return db
+    return handleCalendarFeed(pathname, db)
+  }
 
   // The public list read is the one path here a stranger can reach, and the only
   // one that is cacheable. Handled first so it never pays for the method table.
@@ -137,6 +154,8 @@ export async function routeAccountApi(
       return handlePushSubscribe(request, db)
     case '/api/push/pending':
       return handlePushPending(request, db)
+    case '/api/upcoming':
+      return handleUpcoming(request, db)
     default:
       return null
   }

@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 
 import { siteConfig } from '@/config/site'
+import { SUPPORT_EMAIL, supportMailto } from '@/config/support'
 import { LegalPage } from '@/components/legal/legal-page'
 
 export const metadata: Metadata = {
@@ -120,10 +121,7 @@ export default function PrivacyPage() {
       <h2>Getting in touch</h2>
       <p>
         Questions, or a request about your data, go to{' '}
-        <a href={`mailto:${siteConfig.author.email}`}>
-          {siteConfig.author.email}
-        </a>
-        .
+        <a href={supportMailto('Privacy')}>{SUPPORT_EMAIL}</a>.
       </p>
     </LegalPage>
   )
