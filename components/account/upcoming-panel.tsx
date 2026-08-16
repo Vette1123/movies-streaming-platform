@@ -9,12 +9,14 @@ import {
   Copy,
   Loader2,
   RefreshCw,
+  ShieldAlert,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { buildIcs, type UpcomingItem } from '@/lib/upcoming/ics'
 import { useAccount } from '@/hooks/use-account'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 import { SupporterGate } from './supporter-gate'
 
@@ -241,7 +243,6 @@ function FeedSection({
   onRotate: () => Promise<boolean>
 }) {
   const [copied, setCopied] = useState(false)
-  const [rotating, setRotating] = useState(false)
 
   if (!feedPath) return null
 
@@ -253,16 +254,7 @@ function FeedSection({
   const webcal = url.replace(/^https?:/, 'webcal:')
 
   const rotate = async () => {
-    if (
-      !window.confirm(
-        'Replace this link? Any calendar already subscribed to the old one stops updating, and you will need to add the new link there.'
-      )
-    ) {
-      return
-    }
-    setRotating(true)
     const ok = await onRotate()
-    setRotating(false)
     toast(ok ? 'New calendar link ready' : 'Could not replace the link')
   }
 
@@ -314,17 +306,40 @@ function FeedSection({
           <CalendarPlus className="mr-2 size-4" />
           Download once
         </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={rotating}
-          onClick={() => void rotate()}
+        <ConfirmDialog
+          trigger={
+            <Button size="sm" variant="ghost">
+              <RefreshCw className="mr-2 size-4" />
+              Replace link
+            </Button>
+          }
+          title="Replace this calendar link?"
+          description="A new private link is minted straight away, and this one stops working the moment it is."
+          confirmLabel="Replace link"
+          cancelLabel="Keep this one"
+          Icon={ShieldAlert}
+          onConfirm={rotate}
         >
-          <RefreshCw
-            className={`mr-2 size-4 ${rotating ? 'animate-spin' : ''}`}
-          />
-          Replace link
-        </Button>
+          {/* The consequence people actually care about, and the one a single
+              sentence buries: a calendar that is already subscribed does not
+              follow the change, it just quietly stops updating. */}
+          <ul className="text-muted-foreground space-y-2 text-sm">
+            <li className="flex gap-2">
+              <span aria-hidden className="text-destructive">
+                &bull;
+              </span>
+              Any calendar already subscribed to the old link stops updating.
+              You will need to add the new one there.
+            </li>
+            <li className="flex gap-2">
+              <span aria-hidden className="text-destructive">
+                &bull;
+              </span>
+              Anyone you shared the old link with loses access immediately —
+              which is the point, if that is why you are here.
+            </li>
+          </ul>
+        </ConfirmDialog>
       </div>
 
       <p className="text-muted-foreground text-xs leading-relaxed">

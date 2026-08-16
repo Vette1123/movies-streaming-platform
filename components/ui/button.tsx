@@ -48,12 +48,20 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, type, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button'
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
+        // A bare <button> inside a <form> is a SUBMIT button, and submitting a
+        // form with no action reloads the page — which looks exactly like the
+        // app crashing and reopening. Every button here is an app control
+        // unless it says otherwise, so the safe default belongs at the bottom
+        // rather than on each of the callers that happens to sit in a form.
+        // `asChild` renders somebody else's element, which may not be a button
+        // at all, so the attribute is only forced when we own the tag.
+        type={asChild ? type : (type ?? 'button')}
         {...props}
       />
     )
