@@ -42,10 +42,12 @@ function SupporterPanel() {
         </h2>
         <p className="text-muted-foreground mt-3 max-w-[60ch] leading-relaxed">
           Your library syncs across every device, your queue knows which episode
-          you are up to, every backup server is open to you, lists are
-          shareable, alerts are running, your watchlist has a calendar feed with
-          reminders, your year comes as a card, and the themes are yours. Thank
-          you — this is what keeps Reely online and free for everyone else.
+          you are up to, your ratings are yours to keep, suggestions read your
+          history, Letterboxd and IMDb imports are open, every backup server is
+          available, lists are shareable, alerts are running, your watchlist has
+          a calendar feed with reminders, your year comes as a card, and the
+          themes are yours. Thank you — this is what keeps Reely online and free
+          for everyone else.
         </p>
 
         <div className="mt-8 grid gap-8 md:grid-cols-2">

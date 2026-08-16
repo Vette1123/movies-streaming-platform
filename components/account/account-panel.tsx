@@ -16,6 +16,8 @@ import {
   Palette,
   PlayCircle,
   ShieldCheck,
+  Sparkles,
+  Upload,
 } from 'lucide-react'
 
 import {
@@ -35,6 +37,8 @@ import { Icons } from '@/components/icons'
 import { AlertsPanel } from './alerts-panel'
 import { AppearancePanel } from './appearance-panel'
 import { DataPanel } from './data-panel'
+import { ForYouPanel } from './for-you-panel'
+import { ImportPanel } from './import-panel'
 import { LibraryPanel } from './library-panel'
 import { ListsPanel } from './lists-panel'
 import { NextUpPanel } from './next-up-panel'
@@ -83,6 +87,14 @@ const SECTIONS: SectionDef[] = [
     Panel: NextUpPanel,
   },
   {
+    id: 'for-you',
+    label: 'For you',
+    title: 'Because you watched',
+    lede: 'What to watch next, worked out from what you actually finished.',
+    Icon: Sparkles,
+    Panel: ForYouPanel,
+  },
+  {
     id: 'lists',
     label: 'Lists',
     title: 'Lists',
@@ -121,6 +133,14 @@ const SECTIONS: SectionDef[] = [
     lede: 'Which server streams come from, what plays on its own, and what waits to be asked.',
     Icon: PlayCircle,
     Panel: PlaybackPanel,
+  },
+  {
+    id: 'import',
+    label: 'Import',
+    title: 'Bring a library in',
+    lede: 'Years of Letterboxd or IMDb ratings, read straight in from their CSV export.',
+    Icon: Upload,
+    Panel: ImportPanel,
   },
   {
     id: 'data',

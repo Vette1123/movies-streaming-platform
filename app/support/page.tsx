@@ -14,6 +14,9 @@ import {
   RefreshCw,
   Server,
   Sparkles,
+  Star,
+  Upload,
+  Wand2,
 } from 'lucide-react'
 
 import { siteConfig } from '@/config/site'
@@ -60,7 +63,22 @@ const UNLOCKS = [
   {
     Icon: ListVideo,
     title: 'Never ask “which episode was I on”',
-    body: 'Every show you have going, in one queue, newest first — the exact episode you are up to, how far through the show you are, and a link that opens the player right on it. Reely works it out from the episodes you have already ticked off, so there is nothing to set up and nothing to keep tidy.',
+    body: 'A row across the top of the homepage with every show you have going — the exact episode you are up to, how far through you are, one tap from playing. Reely works it out from the episodes you have already ticked off, so there is nothing to set up and nothing to keep tidy.',
+  },
+  {
+    Icon: Star,
+    title: 'Your own score, on everything',
+    body: 'Rate anything out of ten and leave yourself a line about why. It sits with the title everywhere it appears and follows you to every device — so a watch history stops being a log and becomes something you can look back through. Which was it you gave a 9 to last spring?',
+  },
+  {
+    Icon: Wand2,
+    title: 'Suggestions that read your history',
+    body: 'Not “more like the page you are on” — what to watch tonight, worked out from the last films and shows you actually finished, with everything already on your watchlist or in your history taken back out. Each one tells you which of your titles it came from.',
+  },
+  {
+    Icon: Upload,
+    title: 'Bring your Letterboxd or IMDb library with you',
+    body: 'Years of ratings and a watchlist you have been adding to forever, read straight in from their CSV export and matched to real titles, with your scores carried onto the ten-point scale. The file is read on your own device and never uploaded — only the titles that need a lookup are sent, and never your ratings.',
   },
   {
     Icon: CalendarDays,

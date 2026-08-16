@@ -114,8 +114,9 @@ export function Footer() {
           </p>
           <p className="leading-relaxed">
             Supporters move their library off one browser and unlock a queue
-            that knows which episode they are on, backup streaming servers, a
-            calendar feed of everything they are waiting for, shareable lists,
+            that knows which episode they are on, their own ratings, suggestions
+            read from their history, a Letterboxd and IMDb import, backup
+            streaming servers, a calendar feed with reminders, shareable lists,
             release alerts, a year-in-review card and themes. Everything free
             today stays free either way.
           </p>

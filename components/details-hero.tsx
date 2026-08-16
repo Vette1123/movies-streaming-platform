@@ -11,6 +11,7 @@ import { type StreamSourceControl } from '@/hooks/use-stream-source'
 import { HeroImage } from '@/components/header/hero-image'
 import { PlayButton } from '@/components/play-button'
 import { SourceSwitcher } from '@/components/player/source-switcher'
+import { RateButton } from '@/components/rate-button'
 import { SaveButton } from '@/components/save-button'
 import { ShareButton } from '@/components/share-button'
 import { TrailerDialog } from '@/components/trailer-dialog'
@@ -148,6 +149,10 @@ export const DetailsHero = ({
                   <div className="flex flex-col items-center gap-1.5">
                     <SaveButton media={media} />
                     <span className={captionClass}>Add to list</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <RateButton media={media} />
+                    <span className={captionClass}>Rate it</span>
                   </div>
                   {/* Whole-series "watched" is ambiguous (many episodes), so the
                       movie-level toggle only shows for movies; series completion

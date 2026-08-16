@@ -18,6 +18,8 @@ import {
   handleRefresh,
 } from '@/lib/auth/routes'
 import { handleBmcWebhook } from '@/lib/billing/bmc'
+import { handleForYou } from '@/lib/foryou/routes'
+import { handleImportResolve } from '@/lib/import/routes'
 import { handleLists, loadPublicList } from '@/lib/lists/routes'
 import { handleNextUp } from '@/lib/nextup/routes'
 import { handlePushPending, handlePushSubscribe } from '@/lib/push/routes'
@@ -69,6 +71,8 @@ const ROUTES: Record<string, 'GET' | 'POST' | 'GET|POST'> = {
   '/api/push/pending': 'GET',
   '/api/upcoming': 'GET|POST',
   '/api/next-up': 'GET',
+  '/api/for-you': 'GET',
+  '/api/import/resolve': 'POST',
 }
 
 export function ownsPath(pathname: string): boolean {
@@ -160,6 +164,10 @@ export async function routeAccountApi(
       return handleUpcoming(request, db)
     case '/api/next-up':
       return handleNextUp(request, db)
+    case '/api/for-you':
+      return handleForYou(request, db)
+    case '/api/import/resolve':
+      return handleImportResolve(request, db)
     default:
       return null
   }

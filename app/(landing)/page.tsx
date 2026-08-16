@@ -11,6 +11,7 @@ import {
 } from '@/lib/structured-data'
 import { HeroSlider } from '@/components/header/hero-slider'
 import { FullScreenLoader } from '@/components/loaders/intro-pages-loader'
+import { ContinueWatching } from '@/components/main-page/continue-watching'
 import { MoviesIntroSection } from '@/components/main-page/intro-section'
 import { SectionErrorBoundary } from '@/components/section-error-boundary'
 
@@ -110,6 +111,16 @@ async function IndexPage() {
           of appearing as a hard seam. */}
       <div className="relative">
         <div className="from-background pointer-events-none absolute inset-x-0 top-0 z-[-1] h-52 bg-gradient-to-b to-transparent" />
+        {/* Above the catalogue rails, below the hero: what you were already
+            watching outranks what is popular this week. Renders nothing at all
+            until it has rows, so the homepage's first paint is unchanged for
+            everyone signed out. */}
+        <SectionErrorBoundary
+          section="home_continue"
+          title="This row didn't load"
+        >
+          <ContinueWatching />
+        </SectionErrorBoundary>
         <SectionErrorBoundary
           section="home_rails"
           title="These rows didn't load"

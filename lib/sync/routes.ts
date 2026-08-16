@@ -17,11 +17,19 @@ import { loadSession, sessionCookieOf } from '@/lib/auth/session'
 import { isEntitled } from '@/lib/billing/entitlement'
 
 /**
- * The four stores, as an allowlist. `store` lands in a primary key, so an
- * unbounded value would let a client write unlimited distinct rows under one
- * account — the cheapest possible way to fill someone else's database.
+ * The stores, as an allowlist. `store` lands in a primary key, so an unbounded
+ * value would let a client write unlimited distinct rows under one account —
+ * the cheapest possible way to fill someone else's database.
  */
-export const SYNC_STORES = ['watchlist', 'history', 'completed', 'resume']
+export const SYNC_STORES = [
+  'watchlist',
+  'history',
+  'completed',
+  'resume',
+  // Your own score and note per title. Same row shape as the rest; see the
+  // rating/note fields on WatchedItem.
+  'reviews',
+]
 
 /**
  * Bounds, all of them chosen so one request can never be expensive.

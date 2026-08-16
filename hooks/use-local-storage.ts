@@ -14,6 +14,15 @@ export interface WatchedItem {
   poster_path: string
   season?: number
   episode?: number
+  /**
+   * Your own score out of 10, and a line about why — set on the `reviews`
+   * store and unused by every other one. Optional on the shared shape rather
+   * than a separate type because a review IS a watched item with an opinion
+   * attached: it carries the same id, title and artwork, syncs through the same
+   * engine, and a second shape would mean a second copy of all of that.
+   */
+  rating?: number
+  note?: string
   added_at: string
   modified_at: string
 }
