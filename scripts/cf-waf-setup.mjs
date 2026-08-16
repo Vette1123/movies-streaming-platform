@@ -519,7 +519,7 @@ async function main() {
   )
 
   await step(
-    `Redirect ${ZONE_NAME} → www (needs Zone Transform Rules: Edit)`,
+    `Redirect ${ZONE_NAME} → www (needs Zone Dynamic Redirect: Edit)`,
     async () => {
       const rs = await getOrCreatePhaseEntrypoint(
         zoneId,

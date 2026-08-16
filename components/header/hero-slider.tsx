@@ -27,7 +27,13 @@ export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
     <div className="relative overflow-hidden">
       {/* Must precede the Carousel — the hook reads the cache on first render. */}
       <HeroExtrasSeeder seed={heroExtras} />
-      <Carousel stageClassName="min-h-[86svh] sm:min-h-[70svh] lg:min-h-screen">
+      {/* Not `lg:min-h-screen`. A full-viewport hero put the page's only
+          statement of what this site is below the fold at desktop, so one
+          screenshot of the homepage showed a poster wall and nothing else —
+          which is what Google's brand review kept rejecting. 88svh leaves the
+          hero cinematic and lets the h1 under it break the fold. svh, not vh,
+          for the usual mobile-chrome reason. */}
+      <Carousel stageClassName="min-h-[86svh] sm:min-h-[70svh] lg:min-h-[88svh]">
         {movies?.map((movie, index) => {
           const isTv = resolveMediaType(movie) === 'tv'
           return (
