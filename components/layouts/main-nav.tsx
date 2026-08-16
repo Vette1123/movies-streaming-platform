@@ -12,7 +12,8 @@ interface MainNavProps {
 }
 
 /**
- * The wordmark, rendered by SiteHeader rather than by MainNav.
+ * The brand mark (plus the wordmark from sm up), rendered by SiteHeader rather
+ * than by MainNav.
  *
  * It used to live inside MainNav, which meant it inherited MainNav's
  * breakpoint — so every width below the desktop nav's showed a header with a
@@ -27,11 +28,14 @@ export function BrandLogo() {
       className="flex shrink-0 items-baseline space-x-2"
     >
       <Icons.reelLogo className="size-7 shrink-0 self-center" />
-      {/* Shown at every width. It used to be `hidden sm:inline-block`, which
-          left a phone viewport with the reel mark and no name anywhere above
-          the footer — and a mobile-first automated reviewer reports that as an
-          app name that does not match the consent screen. */}
-      <span className="text-secondary-foreground text-xl font-bold whitespace-nowrap sm:text-2xl 2xl:text-3xl">
+      {/* Hidden below sm: the mark alone is the brand on a phone, and the
+          header row there is tight — drawer, logo, search, heart and account
+          all share it. It was shown at every width while the OAuth consent
+          screen was under review (a mobile-first reviewer reads a missing
+          wordmark as an app name that does not match the consent screen);
+          branding is verified now, so the phone gets the space back. The
+          link's aria-label still carries the name for assistive tech. */}
+      <span className="text-secondary-foreground hidden text-xl font-bold whitespace-nowrap sm:inline-block sm:text-2xl 2xl:text-3xl">
         {siteConfig.name}
       </span>
     </Link>

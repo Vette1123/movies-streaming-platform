@@ -60,3 +60,13 @@ so the hero keeps its full height.
 - When a visible element conflicts with a full-bleed hero, position it out of
   flow rather than deleting it. `absolute` + `pointer-events-none` under the
   fixed header costs no height and eats no taps.
+
+## Follow-up (2026-08-17)
+
+Branding verification passed, so the header wordmark went back to
+`hidden sm:inline-block` — on a phone the reel mark alone is the brand, and the
+row it shares with the drawer, search, heart and account control needs the
+space more than the name. The visible homepage `h1` stays: that one is a
+product decision now, not a review artifact. Note which changes in a review
+round were _for the reviewer_ (revertable once verified) and which were real
+gaps the review happened to expose (permanent) — this round had one of each.
