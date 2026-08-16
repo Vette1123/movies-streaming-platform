@@ -84,6 +84,17 @@ written on the constant in both repos.
   homepage requirements.
 - Verification checks the _deployed_ site. A page that exists only in an unpushed
   commit is a 404 to every reviewer and crawler, whatever the repo says.
+- **Fixing the document and calling it done, when a page is not a document.**
+  The first WAF fix exempted `/`, `/privacy`, `/terms`, `/disclaimer` and
+  `/support` from the user-agent challenge, was verified with `curl` on exactly
+  those five paths, and was reported as solved. It was half a fix: `/` returned
+  200 while every sub-resource under it still returned 403 —
+  `/_next/static/chunks/*.js`, `site.webmanifest`, `opengraph-image.png`,
+  `favicon.ico`. A headless reviewer got the HTML and then nothing that makes it
+  a page, so it rendered an unhydrated, unstyled shell that names nothing and
+  explains nothing. The findings never changed because the cause never changed.
+  Verifying a page with a request for the page is not verifying the page; load
+  it in a browser as the client in question and read what renders.
 - **A reviewer's complaint describes what the reviewer SAW, which is not
   necessarily what the site serves.** Google rejected the homepage three times
   for "does not explain the purpose of your app" and a name mismatch. Both were
@@ -99,6 +110,19 @@ written on the constant in both repos.
   `hidden sm:inline-block` — so at a phone viewport the page showed a poster wall
   with no name and no purpose, and the brand review said exactly that. Anything a
   reviewer is asked to confirm has to be visible at the smallest breakpoint.
+
+- A user-agent blocklist must never contain a token that identifies a real
+  browser engine. `HeadlessChrome` was the only such entry here, and everything
+  it caught was honest: brand review, Lighthouse, link previewers, uptime
+  checks. Anything hostile sends a normal Chrome string.
+- Never challenge static assets. They are matched before the Worker, so they
+  cost nothing to serve, and denying the CSS to a client that already has the
+  HTML protects nothing while breaking every automated renderer.
+- Google throttles repeat verification submissions: several in a short period
+  triggers a cooldown, and further attempts replay the stored findings instead
+  of re-crawling. Identical, instant, content-immune rejections mean stop
+  submitting, fix the site, wait 24 hours, submit once
+  (support.google.com/cloud/answer/16868008).
 
 Related: `docs/buymeacoffee-setup.md` for the fields themselves, and
 `social-media-downloader/lessons/2026-08-15-buymeacoffee-webhook.md` for the
