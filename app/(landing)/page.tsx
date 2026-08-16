@@ -63,12 +63,6 @@ async function IndexPage() {
   } = await populateHomePageData()
   return (
     <section className="h-full">
-      {/* Single page-level h1 for SEO. Visually hidden (sr-only) so it doesn't
-          disrupt the cinematic hero, but present in the DOM/SSR HTML — the hero
-          slide titles are h2s, so the page had no h1 before. */}
-      <h1 className="sr-only">
-        {siteConfig.name} — Discover, track & stream movies and TV shows
-      </h1>
       <JsonLd
         data={collectionPageJsonLd({
           name: `${siteConfig.name} — Home`,
@@ -91,6 +85,24 @@ async function IndexPage() {
           of appearing as a hard seam. */}
       <div className="relative">
         <div className="from-background pointer-events-none absolute inset-x-0 top-0 z-[-1] h-52 bg-gradient-to-b to-transparent" />
+        {/* The page's only h1, and the only place the site says out loud what it
+            is. It was `sr-only` until 2026-08-16: correct for SEO, useless to a
+            human reading the page, and the hero above is a poster wall that
+            names nothing. Google's OAuth brand review rejected the homepage
+            twice on exactly that — no visible purpose, no visible app name
+            (the header wordmark is `hidden sm:inline-block`, so a phone
+            viewport shows only the reel icon). Kept small and quiet so the
+            hero stays the entrance. */}
+        <div className="container max-w-(--breakpoint-2xl) pt-6 pb-2 sm:pt-8">
+          <h1 className="text-xl font-semibold tracking-tight text-balance sm:text-2xl">
+            {siteConfig.name}: discover, track and stream movies and TV shows
+          </h1>
+          <p className="text-muted-foreground mt-2 max-w-[65ch] text-sm leading-relaxed sm:text-base">
+            Search thousands of films and series, keep a watchlist, tick off
+            every episode you finish, and play anything in your browser. Free,
+            and no account needed.
+          </p>
+        </div>
         <SectionErrorBoundary
           section="home_rails"
           title="These rows didn't load"

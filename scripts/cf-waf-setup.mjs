@@ -251,9 +251,20 @@ const ALLOW_RULE = {
   },
 }
 
+// The billing webhook is the one endpoint on this site whose callers are all
+// machines, and a managed challenge for a machine is a dropped payment: Buy Me a
+// Coffee sees an HTML 403, retries a few times, and eventually stops — the money
+// lands and the supporter never gets their grant, with nothing in our logs to say
+// so. The path carries its own authentication (HMAC-SHA256 over the raw body,
+// verified before the body is even parsed), so bot heuristics add nothing here
+// that the signature does not already do better.
+const WEBHOOK_PATH = '/api/billing/bmc'
+
 const BLOCK_RULE = {
   description: `${TAG} challenge obvious scraper user-agents`,
-  expression: `(${orExpr(BLOCK_UAS)}) or (http.user_agent eq "")`,
+  expression:
+    `((${orExpr(BLOCK_UAS)}) or (http.user_agent eq ""))` +
+    ` and not (http.request.uri.path eq "${WEBHOOK_PATH}")`,
   action: 'managed_challenge',
 }
 

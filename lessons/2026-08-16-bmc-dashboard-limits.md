@@ -84,6 +84,11 @@ written on the constant in both repos.
   homepage requirements.
 - Verification checks the *deployed* site. A page that exists only in an unpushed
   commit is a 404 to every reviewer and crawler, whatever the repo says.
+- `sr-only` satisfies a crawler, never a human reviewer. The homepage h1 named
+  the site and said what it does, invisibly, while the header wordmark was
+  `hidden sm:inline-block` — so at a phone viewport the page showed a poster wall
+  with no name and no purpose, and the brand review said exactly that. Anything a
+  reviewer is asked to confirm has to be visible at the smallest breakpoint.
 
 Related: `docs/buymeacoffee-setup.md` for the fields themselves, and
 `social-media-downloader/lessons/2026-08-15-buymeacoffee-webhook.md` for the
