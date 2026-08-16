@@ -12,7 +12,10 @@
 //      challenges Googlebot/GSC and breaks sitemap fetching + indexing. Scraper
 //      defense is handled by the BLOCK_RULE + rate limit instead.
 //   5. Dynamic redirect: 301 apex (reely.space/*) → www.reely.space/*
-//      Needs Zone.Transform Rules: Edit on the API token.
+//      Needs Zone.Dynamic Redirect: Edit on the API token — NOT Transform
+//      Rules, which is a separate permission that does not cover redirects.
+//      Measured on this token: `http_request_transform` reads fine (404, phase
+//      simply not created) while `http_request_dynamic_redirect` is a flat 403.
 //   6. Cache rule: marks /, /disclaimer, /movies and /tv-shows CDN-eligible.
 //      MEASURED NO-OP on this zone — CF does not edge-cache Worker responses,
 //      and every one of those paths is Worker-served. Kept and documented at
@@ -34,10 +37,16 @@
 // Token needs these zone-level permissions on reely.space:
 //   - Zone.Zone Settings: Edit    (Tiered Cache, min TLS, SSL mode, HSTS)
 //   - Zone.Zone WAF: Edit         (custom rules + rate limit)
-//   - Zone.Transform Rules: Edit  (apex→www redirect AND the Vary-strip that
-//                                  makes the edge cache actually cache — without
-//                                  this both silently ✗-skip and apex keeps
-//                                  getting indexed as a duplicate of www)
+//   - Zone.Transform Rules: Edit  (the Vary-strip that makes the edge cache
+//                                  actually cache — without it the step ✗-skips
+//                                  and nothing on this zone is edge-cacheable)
+//   - Zone.Dynamic Redirect: Edit (apex→www 301. A DIFFERENT permission from
+//                                  Transform Rules; a token holding only the
+//                                  latter gets 403 on the redirect phase and the
+//                                  apex keeps getting indexed as a duplicate of
+//                                  www. An already-created rule keeps working —
+//                                  the permission gates changing it, so the ✗ is
+//                                  "cannot re-assert", not "redirect is down")
 //   - Zone.Cache Rules: Edit      (edge-cache rule — the 10ms-CPU defence)
 //   - Zone.Bot Management: Edit   (optional, for Bot Fight Mode toggle)
 
@@ -456,8 +465,9 @@ const CACHE_RULE = {
 // reason removing Set-Cookie makes a response cacheable), so stripping Vary here
 // lets the edge cache the HTML. Scoped to the exact same document requests as
 // CACHE_RULE — RSC requests keep their Vary and are never cached, so no HTML/RSC
-// cache collision is possible. Needs Zone.Transform Rules: Edit (same token
-// scope the redirect rule already uses).
+// cache collision is possible. Needs Zone.Transform Rules: Edit — which is not
+// what the redirect rule needs (that one wants Zone.Dynamic Redirect: Edit), so
+// a token can hold one and 403 on the other.
 const VARY_STRIP_RULE = {
   description: `${TAG} strip Vary on cacheable pages so CF will edge-cache them`,
   expression: CACHEABLE_EXPR,
