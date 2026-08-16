@@ -3,17 +3,19 @@
 import * as React from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Clock, Film, Home, Search, Tv, X } from 'lucide-react'
+import { Clock, Film, Heart, Home, Search, Tv, X } from 'lucide-react'
 import { useDebouncedCallback } from 'use-debounce'
 
 import { MediaType } from '@/types/media'
 import { siteConfig } from '@/config/site'
+import { SUPPORT_PRICES } from '@/config/support'
 import {
   trackCommandShortcutUsed,
   trackSearchNoResults,
   trackSearchOpened,
   trackSearchPerformed,
   trackSearchResultClicked,
+  trackSupportCtaClicked,
 } from '@/lib/analytics'
 import { searchMediaApi } from '@/lib/api-client'
 import { COMPANION_APPS, openOnPlayStore } from '@/lib/apps'
@@ -587,6 +589,24 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
             >
               <Home className="mr-2 size-4" />
               Home
+            </CommandItem>
+            {/* The palette is the fastest route to anywhere on this site for
+                the people who use it most, which makes it the one place the
+                plans should not be missing from. */}
+            <CommandItem
+              className="cursor-pointer"
+              onSelect={() => {
+                trackSupportCtaClicked({ surface: 'command_menu' })
+                runCommand(() => router.push(`/support`))
+              }}
+            >
+              <Heart className="mr-2 size-4" />
+              <div className="flex flex-col">
+                <span>Support Reely</span>
+                <span className="text-muted-foreground text-xs">
+                  From ${SUPPORT_PRICES.monthly} a month · keeps the site free
+                </span>
+              </div>
             </CommandItem>
             <CommandItem
               className="cursor-pointer"

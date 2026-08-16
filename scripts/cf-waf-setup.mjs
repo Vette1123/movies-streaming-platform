@@ -419,9 +419,20 @@ const RATELIMIT_RULE = {
   },
 }
 
+// The billing webhook is exempt, and it is the one path that should be.
+//
+// A 301 is not a 2xx, and a webhook sender that does not follow redirects — or
+// that follows one by re-issuing a POST without its body, which is legal and
+// common — sees a permanent failure, retries, and gives up. The dashboard field
+// holding this URL is typed by hand once; a missing `www.` in it would cost real
+// payments and show up nowhere. Serving the apex directly costs nothing: the
+// route is signature-authenticated and reads no cookie, so the host it arrives
+// on does not matter.
+const WEBHOOK_HOST_EXEMPT = `not (http.request.uri.path eq "${WEBHOOK_PATH}")`
+
 const REDIRECT_APEX_RULE = {
   description: `${TAG} 301 apex → www`,
-  expression: `(http.host eq "${ZONE_NAME}")`,
+  expression: `(http.host eq "${ZONE_NAME}") and ${WEBHOOK_HOST_EXEMPT}`,
   action: 'redirect',
   action_parameters: {
     from_value: {

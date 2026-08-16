@@ -29,6 +29,7 @@ function Watchlist() {
       <WatchlistContainer />
       <SupportPrompt
         icon="sync"
+        surface="watchlist"
         title="Take this watchlist with you"
         cta="See what support unlocks"
         className="mt-12"

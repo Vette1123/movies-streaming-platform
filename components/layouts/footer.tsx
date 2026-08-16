@@ -6,6 +6,7 @@ import { siteConfig } from '@/config/site'
 import { SUPPORT_PRICES } from '@/config/support'
 import { COMPANION_APPS } from '@/lib/apps'
 import { cn } from '@/lib/utils'
+import { SupportLink } from '@/components/support/support-link'
 
 import { Icons } from '../icons'
 import { PlayStoreLink } from '../play-store-link'
@@ -116,13 +117,13 @@ export function Footer() {
             ${SUPPORT_PRICES.monthly}/month · ${SUPPORT_PRICES.yearly}/year · $
             {SUPPORT_PRICES.lifetime} once
           </p>
-          <Link
-            href="/support"
+          <SupportLink
+            surface="footer"
             className={cn(buttonVariants({ size: 'sm' }), 'w-full sm:w-auto')}
           >
             <Heart className="mr-2 size-4" />
             See what support unlocks
-          </Link>
+          </SupportLink>
         </div>
       </div>
 

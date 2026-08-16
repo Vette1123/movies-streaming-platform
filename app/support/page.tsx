@@ -18,6 +18,7 @@ import {
   SUPPORT_PRICES,
   SUPPORT_URL,
 } from '@/config/support'
+import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { PlanView } from '@/components/support/plan-view'
 
@@ -76,6 +77,88 @@ const UNLOCKS = [
   },
 ] as const
 
+// The prices, and what each is worth against the others. Derived rather than
+// typed: the yearly saving is a fact about two numbers in config/support.ts, and
+// a hand-written "save $10" is how a price change turns into a lie.
+const YEARLY_SAVING = SUPPORT_PRICES.monthly * 12 - SUPPORT_PRICES.yearly
+const LIFETIME_YEARS = Math.round(
+  SUPPORT_PRICES.lifetime / SUPPORT_PRICES.yearly
+)
+
+const PLANS: {
+  name: string
+  price: number
+  note: string
+  badge?: string
+}[] = [
+  {
+    name: 'Monthly',
+    price: SUPPORT_PRICES.monthly,
+    note: 'Stop whenever you like',
+  },
+  {
+    name: 'Yearly',
+    price: SUPPORT_PRICES.yearly,
+    note: 'Two months cheaper than paying monthly',
+    badge: `Save $${YEARLY_SAVING}`,
+  },
+  {
+    name: 'Lifetime',
+    price: SUPPORT_PRICES.lifetime,
+    note: `Paid once. Cheaper than yearly after ${LIFETIME_YEARS} years, and it covers everything I build`,
+    badge: 'Best value',
+  },
+]
+
+/**
+ * Where the money goes, in the order it is spent.
+ *
+ * Printed because the honest version converts better than the vague one: a
+ * stranger deciding whether $5 is worth it can see that the site has real bills
+ * and that none of them are a salary.
+ */
+const COSTS = [
+  {
+    title: 'The bills this has to cover',
+    body: 'The domain, the image and data traffic, the error and analytics tooling, and the paid tiers this site will hit if it keeps growing. Reely runs on free plans today and is engineered hard to stay inside them — that engineering is the reason there are no ads.',
+  },
+  {
+    title: 'The part that is not money',
+    body: 'Everything here is built by one person in evenings. Support is what makes that time defensible against the rest of life, and it is the only reason a feature request from a supporter turns into a shipped feature rather than a maybe.',
+  },
+  {
+    title: 'What it will never pay for',
+    body: 'Ads, trackers sold to anyone, a paywall around anything that is free today, or a feature removed from the free plan to make the paid one look better.',
+  },
+] as const
+
+const FAQ = [
+  {
+    q: 'Do I have to pay to use Reely?',
+    a: 'No, and you never will. The catalogue, search, filters, the player, the watchlist, watch history and episode tracking are free for everyone with no account. Support adds to that; it does not unlock it.',
+  },
+  {
+    q: 'What happens the moment I pay?',
+    a: 'Buy Me a Coffee tells Reely which email address paid, usually within a minute. Sign in with that address and everything is already on. If you paid before signing in, it is waiting for the first time you do.',
+  },
+  {
+    q: 'I paid with a different email than I sign in with.',
+    a: 'Reply to the welcome note with the address you sign in with and I will move it the same day. Nothing links a Google account to a payment address on its own, so this one needs a human.',
+  },
+  {
+    q: 'Can I cancel?',
+    a: 'One click on Buy Me a Coffee, any time. It runs to the end of the period you already paid for. Nothing you saved is deleted when support ends — your library stays in your browser exactly as it does for everyone else.',
+  },
+  {
+    q: 'Is the Lifetime really once?',
+    a: `Yes. $${SUPPORT_PRICES.lifetime}, nothing to renew, nothing to cancel. It is also not tied to this site: it switches on supporter status in every project I build, including the ones that do not exist yet.`,
+  },
+  {
+    q: 'Where do my card details go?',
+    a: 'To Buy Me a Coffee, who handle the payment. Reely never sees a card number — the only thing that reaches this site is an email address and which level was bought.',
+  },
+] as const
+
 const FREE_FOREVER = [
   'The whole catalogue, every filter, and search',
   'The player, on everything',
@@ -123,39 +206,30 @@ export default function SupportPage() {
           <div className="border-primary/25 from-primary/10 rounded-lg border bg-gradient-to-br to-transparent p-6 sm:p-8">
             <p className="text-muted-foreground text-sm">Three ways to do it</p>
             <div className="mt-5 space-y-5">
-              <div className="flex items-baseline justify-between gap-4">
-                <div>
-                  <p className="font-semibold">Monthly</p>
-                  <p className="text-muted-foreground text-sm">
-                    Stop whenever you like
+              {PLANS.map(({ name, price, note, badge }, index) => (
+                <div
+                  key={name}
+                  className={cn(
+                    'flex items-baseline justify-between gap-4',
+                    index > 0 && 'border-t pt-5'
+                  )}
+                >
+                  <div>
+                    <p className="flex flex-wrap items-center gap-2 font-semibold">
+                      {name}
+                      {badge && (
+                        <span className="bg-primary/15 text-primary rounded-full px-2 py-0.5 text-xs font-semibold">
+                          {badge}
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-muted-foreground text-sm">{note}</p>
+                  </div>
+                  <p className="font-mono text-3xl font-semibold tabular-nums">
+                    ${price}
                   </p>
                 </div>
-                <p className="font-mono text-3xl font-semibold tabular-nums">
-                  ${SUPPORT_PRICES.monthly}
-                </p>
-              </div>
-              <div className="flex items-baseline justify-between gap-4 border-t pt-5">
-                <div>
-                  <p className="font-semibold">Yearly</p>
-                  <p className="text-muted-foreground text-sm">
-                    Two months cheaper than monthly
-                  </p>
-                </div>
-                <p className="font-mono text-3xl font-semibold tabular-nums">
-                  ${SUPPORT_PRICES.yearly}
-                </p>
-              </div>
-              <div className="flex items-baseline justify-between gap-4 border-t pt-5">
-                <div>
-                  <p className="font-semibold">Lifetime</p>
-                  <p className="text-muted-foreground text-sm">
-                    Paid once, and it covers everything I build
-                  </p>
-                </div>
-                <p className="font-mono text-3xl font-semibold tabular-nums">
-                  ${SUPPORT_PRICES.lifetime}
-                </p>
-              </div>
+              ))}
             </div>
             <p className="text-muted-foreground mt-6 text-xs leading-relaxed">
               Handled by Buy Me a Coffee. Reely never sees a card number.
@@ -214,6 +288,22 @@ export default function SupportPage() {
         </section>
 
         <section className="container max-w-(--breakpoint-xl) py-16">
+          <h2 className="max-w-[24ch] text-3xl font-bold tracking-tight md:text-4xl">
+            Where the money actually goes
+          </h2>
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {COSTS.map(({ title, body }) => (
+              <article key={title} className="bg-card/50 rounded-lg border p-6">
+                <h3 className="text-lg font-semibold">{title}</h3>
+                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  {body}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="container max-w-(--breakpoint-xl) py-16">
           <div className="rounded-lg border p-6 sm:p-8">
             <h2 className="text-2xl font-bold tracking-tight">
               How it reaches your account
@@ -242,10 +332,8 @@ export default function SupportPage() {
                   stays in this browser exactly as it does for everyone else.
                 </p>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  The Lifetime is paid once. There is nothing to renew and
-                  nothing to cancel, and it is not tied to this site — it
-                  switches on supporter status in every project I build,
-                  including the ones that do not exist yet.
+                  Everything else — a different email address, what the Lifetime
+                  covers, where card details go — is answered below.
                 </p>
               </div>
             </div>
@@ -264,6 +352,37 @@ export default function SupportPage() {
                 year, or ${SUPPORT_PRICES.lifetime} once.
               </span>
             </div>
+          </div>
+        </section>
+
+        <section className="container max-w-(--breakpoint-xl) py-16">
+          <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+            Questions worth asking first
+          </h2>
+          <dl className="mt-10 grid gap-x-12 gap-y-8 md:grid-cols-2">
+            {FAQ.map(({ q, a }) => (
+              <div key={q} className="space-y-2">
+                <dt className="font-semibold">{q}</dt>
+                <dd className="text-muted-foreground max-w-[60ch] text-sm leading-relaxed">
+                  {a}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <div className="mt-12 flex flex-wrap items-center gap-3">
+            <a
+              href={SUPPORT_URL}
+              target="_blank"
+              rel="noreferrer"
+              className={buttonVariants({ size: 'lg' })}
+            >
+              <Heart className="mr-2 size-4" />
+              Support Reely
+            </a>
+            <span className="text-muted-foreground text-sm">
+              ${SUPPORT_PRICES.monthly} a month, ${SUPPORT_PRICES.yearly} a
+              year, or ${SUPPORT_PRICES.lifetime} once. Cancel in one click.
+            </span>
           </div>
         </section>
       </PlanView>

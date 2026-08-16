@@ -29,6 +29,7 @@ function WatchHistory() {
       <WatchHistoryContainer />
       <SupportPrompt
         icon="stats"
+        surface="watch_history"
         title="This history is worth keeping"
         cta="See what support unlocks"
         className="mt-12"

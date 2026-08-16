@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Lock } from 'lucide-react'
 
 import { SUPPORT_PRICES } from '@/config/support'
+import { trackSupportCtaClicked } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 
@@ -21,10 +22,13 @@ export function SupporterGate({
   className,
   Icon = Lock,
   cta = 'Support Reely',
+  surface = 'account',
 }: {
   title: string
   children: React.ReactNode
   className?: string
+  /** Where this panel is, for the CTA breakdown. See trackSupportCtaClicked. */
+  surface?: string
   /** A padlock reads as "locked" — wrong on a page whose feature works today
    *  and would simply follow you to your other devices if you paid. */
   Icon?: React.ComponentType<{ className?: string }>
@@ -49,6 +53,7 @@ export function SupporterGate({
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/support"
+              onClick={() => trackSupportCtaClicked({ surface })}
               className={buttonVariants({ size: 'sm', variant: 'default' })}
             >
               {cta}

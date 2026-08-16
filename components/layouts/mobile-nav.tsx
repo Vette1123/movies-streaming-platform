@@ -6,6 +6,7 @@ import { Download, Heart, Smartphone } from 'lucide-react'
 import { NavItem } from '@/types/navbar'
 import { siteConfig } from '@/config/site'
 import { SUPPORT_PRICES } from '@/config/support'
+import { trackSupportCtaClicked } from '@/lib/analytics'
 import { COMPANION_APPS, EXTERNAL_LINKS, openOnPlayStore } from '@/lib/apps'
 import { cn } from '@/lib/utils'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
@@ -127,7 +128,10 @@ export function MobileNav({ items }: MobileNavProps) {
                 label="Support Reely"
                 hint={`From $${SUPPORT_PRICES.monthly}/mo`}
                 tone="accent"
-                onClick={close}
+                onClick={() => {
+                  trackSupportCtaClicked({ surface: 'drawer' })
+                  close()
+                }}
               />
             </DrawerSection>
             <AccountDrawerSection onNavigate={close} />

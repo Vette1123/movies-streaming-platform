@@ -110,6 +110,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'yearly',
       priority: 0.3,
     },
+    // Indexable on purpose, unlike /account and /watchlist: this one is the same
+    // page for everybody, it is the only page that explains what supporting the
+    // site buys, and it is what a search for "reely supporter" should find.
+    {
+      url: `${baseUrl}/support`,
+      lastModified: SITE_LAUNCH_DATE,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    // Google's OAuth brand review fetches both of these directly, and a page a
+    // reviewer has to be able to read is a page worth being in the sitemap.
+    {
+      url: `${baseUrl}/privacy`,
+      lastModified: SITE_LAUNCH_DATE,
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/terms`,
+      lastModified: SITE_LAUNCH_DATE,
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
     ...MOVIE_GENRES_WITH_SLUG.map((genre) => ({
       url: `${baseUrl}/movies/genre/${genre.slug}`,
       lastModified: SITE_LAUNCH_DATE,

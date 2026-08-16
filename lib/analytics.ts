@@ -56,6 +56,11 @@ export const EVENTS = {
   // PWA install lifecycle
   PWA_INSTALLABLE: 'pwa_installable',
   PWA_INSTALLED: 'pwa_installed',
+  // Support / monetisation. One event with a `surface` property rather than an
+  // event per placement: the only question worth asking of it is which surface
+  // sends people to the plans, and that is a breakdown, not six funnels.
+  SUPPORT_CTA_CLICKED: 'support_cta_clicked',
+  SUPPORT_NUDGE_SHOWN: 'support_nudge_shown',
   // Infrastructure
   IMAGE_HOST_FALLBACK: 'image_host_fallback',
 } as const
@@ -246,6 +251,23 @@ export function trackWatchlistRemoved(props: {
   title?: string
 }): void {
   track(EVENTS.WATCHLIST_REMOVED, props)
+}
+
+// ---- Support / monetisation -------------------------------------------------
+
+/**
+ * A route to the plans was taken. `surface` is where from — `footer`,
+ * `header`, `drawer`, `watchlist`, `watch_history`, `account`, `list`,
+ * `command_menu`, `nudge` — so the placements can be compared and the ones that
+ * convert nobody can be removed rather than multiplied.
+ */
+export function trackSupportCtaClicked(props: { surface: string }): void {
+  track(EVENTS.SUPPORT_CTA_CLICKED, props)
+}
+
+/** The one-time earned nudge was actually shown to someone. */
+export function trackSupportNudgeShown(props: { trigger: string }): void {
+  track(EVENTS.SUPPORT_NUDGE_SHOWN, props)
 }
 
 // ---- Navigation health ------------------------------------------------------

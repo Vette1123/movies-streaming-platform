@@ -1,12 +1,15 @@
 'use client'
 
-import { Star } from 'lucide-react'
+import Link from 'next/link'
+import { Heart, Star } from 'lucide-react'
 
 import type { ListItem, PublicList } from '@/lib/lists/routes'
 import { getPosterImageURL, itemRedirect } from '@/lib/utils'
+import { buttonVariants } from '@/components/ui/button'
 import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
 import { MediaLink } from '@/components/media/media-link'
 import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
+import { SupportLink } from '@/components/support/support-link'
 
 /**
  * A published list, as a stranger sees it.
@@ -52,6 +55,39 @@ export function PublicListView({ list }: { list: PublicList }) {
           ))}
         </ul>
       )}
+
+      {/* The one page on this site a stranger reaches without looking for it.
+          Somebody sent them a link; they are looking at somebody else's taste
+          in films on a site they have never heard of. Telling them what Reely
+          is, and that the thing they are reading is what supporting it buys, is
+          worth more here than anywhere else on the site. */}
+      <section className="border-primary/25 from-primary/10 mt-16 rounded-lg border bg-gradient-to-br to-transparent p-6 sm:p-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-[52ch] space-y-2">
+            <h2 className="text-xl font-semibold tracking-tight">
+              This list was made on Reely, and Reely is free
+            </h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              A movie and TV guide: search thousands of titles, keep a
+              watchlist, tick off the episodes you finish, and stream them in
+              your browser. No account needed for any of it. Published lists
+              like this one are what supporters get on top.
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-3">
+            <Link href="/" className={buttonVariants()}>
+              Browse Reely
+            </Link>
+            <SupportLink
+              surface="public_list"
+              className={buttonVariants({ variant: 'outline' })}
+            >
+              <Heart className="mr-2 size-4" />
+              Make your own
+            </SupportLink>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

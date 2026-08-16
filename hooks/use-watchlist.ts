@@ -7,6 +7,7 @@ import {
   trackWatchlistAdded,
   trackWatchlistRemoved,
 } from '@/lib/analytics'
+import { maybeNudgeSupport } from '@/lib/support-nudge'
 import {
   buildWatchedItem,
   useLocalStorage,
@@ -58,7 +59,12 @@ export function useWatchlist(): WatchlistHookResult {
         return
       }
       const item = buildWatchedItem(media)
-      setWatchlist([...watchlist, item])
+      const next = [...watchlist, item]
+      setWatchlist(next)
+      // Here rather than in the buttons: every route to a save goes through this
+      // one function, so the ask cannot fire twice from two call sites or be
+      // forgotten by a third.
+      maybeNudgeSupport(next.length)
       trackWatchlistAdded({
         media_id: item.id,
         media_type: toAnalyticsMediaType(item.type),

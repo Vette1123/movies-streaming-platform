@@ -18,6 +18,7 @@ import { AccountControl } from '@/components/account/account-control'
 import { Icons } from '@/components/icons'
 import { BrandLogo, MainNav } from '@/components/layouts/main-nav'
 import { MobileNav } from '@/components/layouts/mobile-nav'
+import { SupportLink } from '@/components/support/support-link'
 
 // The command palette (cmdk + avatar + debounce + the search server-action, ~645
 // lines) sits in the root layout, so it used to ship in the first-load JS of
@@ -130,8 +131,8 @@ export function SiteHeader() {
                 it is where the plan is managed. Rendering it unconditionally is
                 also what keeps the icon row from shifting sideways once the
                 browser works out who is looking. */}
-            <Link
-              href="/support"
+            <SupportLink
+              surface="header"
               aria-label="Support Reely"
               className={cn(
                 buttonVariants({ size: 'icon', variant: 'ghost' }),
@@ -140,7 +141,7 @@ export function SiteHeader() {
             >
               <Heart className="size-5" />
               <span className="sr-only">Support Reely</span>
-            </Link>
+            </SupportLink>
             <Popover>
               <PopoverTrigger
                 aria-label="Our apps on Google Play"
