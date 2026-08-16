@@ -143,7 +143,7 @@ export default function SupportPage() {
               <div>
                 <p className="font-semibold">Lifetime</p>
                 <p className="text-muted-foreground text-sm">
-                  Paid once, nothing to cancel
+                  Paid once, and it covers everything I build
                 </p>
               </div>
               <p className="font-mono text-3xl font-semibold tabular-nums">
@@ -235,7 +235,9 @@ export default function SupportPage() {
               </p>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 The Lifetime is paid once. There is nothing to renew and nothing
-                to cancel.
+                to cancel, and it is not tied to this site — it switches on
+                supporter status in every project I build, including the ones
+                that do not exist yet.
               </p>
             </div>
           </div>

@@ -20,12 +20,24 @@ export const SUPPORT_TAG = 'Reely'
 export const SUPPORT_MEMBERSHIP = `${SUPPORT_TAG} — Supporter`
 
 /**
- * The one-time purchase. Sold as a second membership level billed once, which is
- * what the provider calls a one-time level, and which fires the same
- * `membership.started` event; if it is ever moved to the Extras shelf,
- * `extra_purchase.created` is already subscribed and already matched by name.
+ * The one-time purchase — and the one offer that is deliberately NOT tagged.
+ *
+ * Buy Me a Coffee allows exactly one lifetime level per account, not one per
+ * project, so `Reely — Lifetime` cannot exist alongside another project's. The
+ * choice that leaves is either no lifetime here at all, or one lifetime that
+ * covers everything on the account. This is the second: the string below is
+ * shared verbatim by every project's `config/support.ts`, every endpoint
+ * recognises it, and $99 buys supporter status in all of them at once.
+ *
+ * That is the exact behaviour `SUPPORT_TAG` exists to prevent, allowed here on
+ * purpose and only here. It is safe in the direction that matters — a *recurring*
+ * membership still unlocks one project, so the cheap offer cannot leak across —
+ * and the price is set for the whole shelf rather than for one site.
+ *
+ * Rename it in the dashboard and it stops granting everywhere at once, so the
+ * string has to change in every project's config in the same sitting.
  */
-export const SUPPORT_LIFETIME = `${SUPPORT_TAG} — Lifetime`
+export const SUPPORT_LIFETIME = 'Lifetime — everything I build'
 
 /**
  * What each one costs, in whole dollars, so the site and the dashboard cannot
@@ -35,6 +47,11 @@ export const SUPPORT_LIFETIME = `${SUPPORT_TAG} — Lifetime`
  * discount on it. Priced under the annual it kills the annual outright and pays
  * for itself inside a year — a permanent grant sold for less than one year of
  * the thing it replaces.
+ *
+ * The lifetime now buys every project rather than this one (see
+ * `SUPPORT_LIFETIME`), which makes $99 a better deal than it was, not a worse
+ * one — but it also means the number is set once for the whole account and
+ * cannot be tuned per site.
  */
 export const SUPPORT_PRICES = { monthly: 5, yearly: 50, lifetime: 99 } as const
 
