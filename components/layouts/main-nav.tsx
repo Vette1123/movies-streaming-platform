@@ -27,7 +27,11 @@ export function BrandLogo() {
       className="flex shrink-0 items-baseline space-x-2"
     >
       <Icons.reelLogo className="size-7 shrink-0 self-center" />
-      <span className="text-secondary-foreground hidden text-2xl font-bold whitespace-nowrap sm:inline-block 2xl:text-3xl">
+      {/* Shown at every width. It used to be `hidden sm:inline-block`, which
+          left a phone viewport with the reel mark and no name anywhere above
+          the footer — and a mobile-first automated reviewer reports that as an
+          app name that does not match the consent screen. */}
+      <span className="text-secondary-foreground text-xl font-bold whitespace-nowrap sm:text-2xl 2xl:text-3xl">
         {siteConfig.name}
       </span>
     </Link>

@@ -549,6 +549,28 @@ async function main() {
   // Order matters: ALLOW_RULE skips the REST of this ruleset (`ruleset:
   // 'current'`) for verified bots and social scrapers, so it has to stay first —
   // everything below only ever sees traffic that isn't already trusted.
+  //
+  // WAF_PERMISSIVE=1 ships the allowlist and nothing that can challenge: no
+  // user-agent challenge, no detail-page browser-token check, no rate limit, and
+  // the junk-extension block stays because it only ever matches paths this site
+  // does not serve. It exists for one situation — an external reviewer whose
+  // client we cannot identify in advance has to be able to load the whole site,
+  // and every remaining guess about which rule is in its way costs another
+  // review cycle. Turn it on, get verified, run `pnpm waf:apply` without it.
+  const permissive = process.env.WAF_PERMISSIVE === '1'
+  if (permissive) {
+    console.log(
+      'WAF_PERMISSIVE=1 — challenge + rate-limit rules OFF for this run.'
+    )
+  }
+  const customRules = permissive
+    ? [DEAD_EXTENSION_RULE, ALLOW_RULE]
+    : [
+        DEAD_EXTENSION_RULE,
+        ALLOW_RULE,
+        BLOCK_RULE,
+        CHALLENGE_DETAIL_SCRAPERS_RULE,
+      ]
   await step(
     'Custom rules: allowlist + block-scrapers (needs Zone WAF: Edit)',
     async () => {
@@ -556,19 +578,9 @@ async function main() {
         zoneId,
         'http_request_firewall_custom'
       )
-      await putRuleset(
-        zoneId,
-        rs,
-        [
-          DEAD_EXTENSION_RULE,
-          ALLOW_RULE,
-          BLOCK_RULE,
-          CHALLENGE_DETAIL_SCRAPERS_RULE,
-        ],
-        {
-          position: 'top',
-        }
-      )
+      await putRuleset(zoneId, rs, customRules, {
+        position: 'top',
+      })
     }
   )
 
@@ -683,7 +695,9 @@ async function main() {
     'Rate limit: /movies/[id] and /tv-shows/[id] (needs Zone WAF: Edit)',
     async () => {
       const rs = await getOrCreatePhaseEntrypoint(zoneId, 'http_ratelimit')
-      await putRuleset(zoneId, rs, [RATELIMIT_RULE], { replaceAll: true })
+      await putRuleset(zoneId, rs, permissive ? [] : [RATELIMIT_RULE], {
+        replaceAll: true,
+      })
     }
   )
 
