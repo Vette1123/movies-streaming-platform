@@ -163,6 +163,15 @@ const SCRAPER_UAS = [
   'YandexBot',
 ]
 
+// `HeadlessChrome` is deliberately NOT here. It is the only token on this list
+// that identifies a real browser engine, and the clients that send it are the
+// ones that have to render this site to do their job: Google's OAuth brand
+// review, Lighthouse, link previewers, uptime checkers. Challenging it cost
+// three rejected verification rounds — the reviewer got the document, then a 403
+// on every script, stylesheet and image, and reported a homepage that names
+// nothing and explains nothing, which is exactly what an unhydrated shell is.
+// A scraper that wants to hide sends a normal Chrome UA anyway; this token only
+// ever caught the honest ones.
 const BLOCK_UAS = [
   'python-requests',
   'scrapy',
@@ -170,7 +179,6 @@ const BLOCK_UAS = [
   'node-fetch',
   'axios/',
   'okhttp',
-  'HeadlessChrome',
   'PhantomJS',
   'wget/',
   'curl/',
@@ -273,13 +281,10 @@ const WEBHOOK_PATH = '/api/billing/bmc'
  * The pages an automated reviewer has to be able to read, exempt from the
  * user-agent challenge below.
  *
- * `HeadlessChrome` is in `BLOCK_UAS`, and Google's OAuth brand review drives a
- * headless browser: it fetched this homepage three times, got
- * `cf-mitigated: challenge` and a "Just a moment..." interstitial every time,
- * and rejected the app for a homepage that "does not explain the purpose of your
- * app" and an app name that "does not match the app name on your homepage".
- * Both complaints were about the challenge page. No amount of homepage copy
- * could have answered them.
+ * Google's OAuth brand review drives a headless browser and rejected this app
+ * three times for a homepage that "does not explain the purpose of your app"
+ * and an app name that "does not match the app name on your homepage". Both
+ * described the challenge page it was actually served, not the site.
  *
  * Exempting these costs nothing that the challenge was buying: every one is a
  * prerendered static asset, matched before the Worker ever runs, so a headless
@@ -291,6 +296,44 @@ const REVIEW_PATHS = ['/', '/privacy', '/terms', '/disclaimer', '/support']
 
 const EXEMPT_PATHS = [WEBHOOK_PATH, ...REVIEW_PATHS]
 
+/**
+ * Everything a page needs in order to BE a page.
+ *
+ * Exempting the documents alone was half a fix and looked like a whole one: the
+ * reviewer got `/` with a 200 and then a 403 on every chunk, stylesheet, icon
+ * and image under it, so what it rendered was an unhydrated shell with no name
+ * and no copy on it — the same two findings, now caused by the sub-resources
+ * instead of the document. Measured after the first fix: `/` 200,
+ * `/_next/static/chunks/*.js` 403, `/site.webmanifest` 403,
+ * `/opengraph-image.png` 403, `/favicon.ico` 403.
+ *
+ * None of these can cost anything to serve. They are static assets matched
+ * before the Worker, and a client that can already read the HTML gains nothing
+ * from being denied the CSS.
+ */
+const ASSET_EXTENSIONS = [
+  '.js',
+  '.css',
+  '.png',
+  '.svg',
+  '.ico',
+  '.webmanifest',
+  '.woff2',
+  '.txt',
+  '.xml',
+  '.json',
+  '.avif',
+  '.webp',
+]
+
+const assetExpr = () =>
+  [
+    'starts_with(http.request.uri.path, "/_next/")',
+    ...ASSET_EXTENSIONS.map(
+      (ext) => `ends_with(http.request.uri.path, "${ext}")`
+    ),
+  ].join(' or ')
+
 const notAnyPath = (paths) =>
   `not (${paths.map((p) => `http.request.uri.path eq "${p}"`).join(' or ')})`
 
@@ -298,7 +341,8 @@ const BLOCK_RULE = {
   description: `${TAG} challenge obvious scraper user-agents`,
   expression:
     `((${orExpr(BLOCK_UAS)}) or (http.user_agent eq ""))` +
-    ` and ${notAnyPath(EXEMPT_PATHS)}`,
+    ` and ${notAnyPath(EXEMPT_PATHS)}` +
+    ` and not (${assetExpr()})`,
   action: 'managed_challenge',
 }
 
