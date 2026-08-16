@@ -60,7 +60,7 @@
     {
       "binding": "DB",
       "database_name": "reely",
-      "database_id": "PLACEHOLDER_SET_BY_CF_SETUP",
+      "database_id": "3ef0e030-df5b-4852-8fda-bda034b004b7",
     },
   ],
   // The new-episode sweep. Hourly, bounded to 25 TMDB lookups and 20 pushes per

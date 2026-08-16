@@ -114,10 +114,27 @@ jobs:
         run: |
           printf '%s' "$TMDB_API_KEY" | pnpm wrangler secret put TMDB_API_KEY
           printf '%s' "$TMDB_HEADER_KEY" | pnpm wrangler secret put TMDB_HEADER_KEY
+          printf '%s' "$SESSION_TOKEN_SECRET" | pnpm wrangler secret put SESSION_TOKEN_SECRET
+          printf '%s' "$GOOGLE_CLIENT_ID" | pnpm wrangler secret put GOOGLE_CLIENT_ID
+          printf '%s' "$GOOGLE_CLIENT_SECRET" | pnpm wrangler secret put GOOGLE_CLIENT_SECRET
+          printf '%s' "$BMC_WEBHOOK_SECRET" | pnpm wrangler secret put BMC_WEBHOOK_SECRET
+          printf '%s' "$VAPID_PUBLIC_KEY" | pnpm wrangler secret put VAPID_PUBLIC_KEY
+          printf '%s' "$VAPID_PRIVATE_KEY" | pnpm wrangler secret put VAPID_PRIVATE_KEY
+          printf '%s' "$VAPID_SUBJECT" | pnpm wrangler secret put VAPID_SUBJECT
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           TMDB_HEADER_KEY: ${{ secrets.TMDB_HEADER_KEY }}
+          # Accounts + push. Rotating any of these is the same one dispatch as
+          # rotating a TMDB key; sign-in breaks for existing sessions when
+          # SESSION_TOKEN_SECRET changes, which is the point of rotating it.
+          SESSION_TOKEN_SECRET: ${{ secrets.SESSION_TOKEN_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          BMC_WEBHOOK_SECRET: ${{ secrets.BMC_WEBHOOK_SECRET }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
 
       - run: pnpm run deploy:full
         env:
@@ -132,6 +149,11 @@ jobs:
           NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
           NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
           NEXT_PUBLIC_IMDB_RATINGS: ${{ env.NEXT_PUBLIC_IMDB_RATINGS }}
+          # The push subscribe call needs the VAPID public key in the browser
+          # bundle, and NEXT_PUBLIC_* is inlined at build time — missing here it
+          # is simply absent in prod, and the alerts panel reports "this browser
+          # cannot receive notifications" on browsers that perfectly well can.
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
           # Personal API key → build-time sourcemap upload (withPostHogConfig in
           # next.config.mjs). The ONLY new secret to add. projectId (216915) and
           # API host (https://eu.posthog.com) default in next.config.mjs; if the

@@ -46,5 +46,9 @@ next-env.d.ts
 out
 .cloudflare
 
-# wrangler dev secrets — the local stand-in for `wrangler secret put`
+# wrangler dev secrets — the local stand-in for `wrangler secret put`.
+# Merged into .env.local (2026-08-16): wrangler only reads .env/.env.local when
+# no .dev.vars exists, so keeping one meant the other was dead weight. The old
+# file is kept as dev.vars.bak; both stay untracked.
 .dev.vars
+dev.vars.bak
