@@ -75,17 +75,17 @@ async function IndexPage() {
     allTimeTopRatedSeries,
   } = await populateHomePageData()
   return (
-    <section className="relative h-full">
-      {/* Single page-level h1 — the hero slide titles are h2s, so the page had
-          no h1 before. It used to be sr-only, with the only visible statement of
-          what this site is sitting in the footer; Google's OAuth branding review
-          rejected the homepage twice for not explaining the app's purpose,
-          because an above-the-fold screenshot is a poster carousel and a
-          six-letter wordmark. Absolutely positioned under the fixed 4rem header
-          so it costs the hero no height (a previous in-flow block did, and got
-          reverted) and pointer-events-none so it can't eat a hero tap. */}
-      <h1 className="pointer-events-none absolute inset-x-0 top-16 z-20 px-4 text-center text-sm font-medium text-white/70 sm:text-base">
-        {siteConfig.name} — discover, track &amp; stream movies and TV shows
+    <section className="h-full">
+      {/* Single page-level h1 for SEO. Visually hidden (sr-only) so it doesn't
+          disrupt the cinematic hero, but present in the DOM/SSR HTML — the hero
+          slide titles are h2s, so the page had no h1 before. The visible
+          statement of what this site is lives in the footer, on every page.
+          A visible version of this line rode over the hero for one deploy, to
+          answer Google's OAuth branding review; the review failed again with it
+          in place, so it bought nothing and cost the hero its clean first
+          screen. See lessons/2026-08-16-oauth-branding-review.md. */}
+      <h1 className="sr-only">
+        {siteConfig.name} — Discover, track &amp; stream movies and TV shows
       </h1>
       <JsonLd
         data={collectionPageJsonLd({
