@@ -136,16 +136,36 @@ export async function handleUpcoming(
     )
   }
 
-  const [items, token] = await Promise.all([
+  const [items, token, watchlist] = await Promise.all([
     loadUpcoming(db, user.id, now),
     feedToken(db, user.id, request.method === 'POST'),
+    watchlistSize(db, user.id),
   ])
 
   return json({
     success: true,
     items,
+    // How many titles this account has SYNCED, which is what tells an empty
+    // schedule apart from an empty watchlist. Without it the panel says "nothing
+    // dated yet" to somebody whose watchlist is empty, which reads as Reely not
+    // having got round to it — and leaves them waiting for something that is
+    // never going to arrive. Measured on a real account: the schedule was empty
+    // because nothing had ever been saved, and the copy gave no way to tell.
+    watchlist,
     feedPath: `/api/calendar/${token}.ics`,
   })
+}
+
+/** How many live (non-tombstone) titles this account has in its synced watchlist. */
+async function watchlistSize(db: D1Database, userId: string): Promise<number> {
+  const row = await db
+    .prepare(
+      `SELECT COUNT(*) AS n FROM sync_items
+       WHERE user_id = ? AND store = 'watchlist' AND payload IS NOT NULL`
+    )
+    .bind(userId)
+    .first<{ n: number }>()
+  return row?.n ?? 0
 }
 
 const calendar = (body: string, status = 200) =>

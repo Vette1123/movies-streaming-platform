@@ -69,12 +69,29 @@ interface Feed {
   success?: boolean
   items?: UpcomingItem[]
   feedPath?: string
+  /** Synced watchlist size — see the empty state, which needs it to tell the truth. */
+  watchlist?: number
+}
+
+/**
+ * What an empty schedule actually means.
+ *
+ * Two very different situations look identical from the panel's side, and
+ * saying the wrong one leaves somebody waiting for something that is never
+ * coming. The count is the only thing that separates them.
+ */
+function emptyCopy(watchlist: number): string {
+  if (watchlist === 0) {
+    return 'Your synced watchlist is empty, so there is nothing to put a date on. Save a few shows or films — anything with an episode still to air, or a release day still ahead, appears here within the hour and lands in your calendar on its own.'
+  }
+  return `Nothing on your watchlist has a date yet. Reely re-checks ${watchlist} saved ${watchlist === 1 ? 'title' : 'titles'} on a rolling schedule, and anything with an episode still to air or a release day ahead shows up here as soon as it does. Subscribing below now means it arrives in your calendar the moment it does.`
 }
 
 export function UpcomingPanel() {
   const { pro } = useAccount()
   const [items, setItems] = useState<UpcomingItem[]>([])
   const [feedPath, setFeedPath] = useState<string | null>(null)
+  const [watchlist, setWatchlist] = useState(0)
   const [state, setState] = useState<State>('loading')
 
   const load = useCallback(async (rotate = false): Promise<boolean> => {
@@ -89,6 +106,7 @@ export function UpcomingPanel() {
       }
       setItems(body.items ?? [])
       setFeedPath(body.feedPath ?? null)
+      setWatchlist(body.watchlist ?? 0)
       setState('ready')
       return true
     } catch {
@@ -155,11 +173,7 @@ export function UpcomingPanel() {
       {items.length === 0 ? (
         <div className="max-w-[60ch] space-y-4 rounded-lg border border-dashed p-5">
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Nothing dated yet. This fills in from your watchlist: shows with an
-            episode still to air, and films that have not reached their release
-            day. A title saved in the last hour or two may not have been picked
-            up yet — the schedule refreshes on its own. Subscribing below now
-            means it arrives in your calendar the moment it does.
+            {emptyCopy(watchlist)}
           </p>
           <Link
             href="/watchlist"
