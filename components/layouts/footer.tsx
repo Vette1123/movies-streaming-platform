@@ -1,7 +1,9 @@
 import React from 'react'
 import Link from 'next/link'
+import { Heart } from 'lucide-react'
 
 import { siteConfig } from '@/config/site'
+import { SUPPORT_PRICES } from '@/config/support'
 import { COMPANION_APPS } from '@/lib/apps'
 import { cn } from '@/lib/utils'
 
@@ -12,10 +14,25 @@ import { buttonVariants } from '../ui/button'
 const SITE_LINKS = [
   { href: '/support', label: 'Support Reely' },
   { href: '/account', label: 'Account' },
+  { href: '/stats', label: 'Your year in Reely' },
   { href: '/privacy', label: 'Privacy' },
   { href: '/terms', label: 'Terms' },
   { href: '/disclaimer', label: 'Disclaimer' },
 ]
+
+// The stack, as links. A list rather than a sentence: the prose version had to
+// invent connective words for every new entry, and one of them had drifted so
+// far that the link labelled Cloudflare pointed at vercel.com.
+const CREDITS = [
+  { href: 'https://nextjs.org/', label: 'Next.js' },
+  { href: 'https://tailwindcss.com/', label: 'Tailwind CSS' },
+  { href: 'https://www.cloudflare.com/', label: 'Cloudflare' },
+  { href: 'https://www.themoviedb.org/', label: 'TMDB' },
+  { href: 'https://vidsrc.to/', label: 'VidSrc' },
+]
+
+const linkClass =
+  'text-foreground/75 hover:text-foreground font-medium transition-colors'
 
 // "A, B and C" — the separator that follows the item at `index`.
 function listSeparator(index: number, total: number): string {
@@ -24,118 +41,121 @@ function listSeparator(index: number, total: number): string {
   return ', '
 }
 
-export function Footer() {
+function ExternalLink({ href, label }: { href: string; label: string }) {
   return (
-    <footer className="text-muted-foreground container space-y-4 pb-16 text-sm">
-      {/* The app named, and said plainly, on every page rather than only on the
-          homepage: an automated reviewer that lands anywhere on this site should
-          be able to read what it is and who runs it without scrolling a poster
-          wall. */}
-      <div className="flex items-center justify-center">
-        <p className="max-w-[70ch] text-center">
-          <span className="text-foreground font-semibold">
+    <Link
+      href={href}
+      className={linkClass}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {label}
+    </Link>
+  )
+}
+
+export function Footer() {
+  const year = new Date().getFullYear()
+
+  return (
+    <footer className="text-muted-foreground border-border/60 mt-8 border-t text-sm">
+      <div className="container grid gap-10 py-12 lg:grid-cols-[1.6fr_1fr_1.1fr] lg:gap-12">
+        {/* The app named and explained on every page, not only the homepage:
+            anyone who lands deep in the catalogue should be able to tell what
+            this site is without scrolling back to a poster wall. */}
+        <div className="space-y-3">
+          <p className="text-foreground text-base font-semibold">
             {siteConfig.name}
-          </span>{' '}
-          is a free movie and TV discovery app. Search thousands of titles, keep
-          a watchlist, track the episodes you have watched, and stream them in
-          your browser. Signing in with Google is optional and syncs your
-          library across devices.
-        </p>
+          </p>
+          <p className="max-w-[52ch] leading-relaxed">
+            A free movie and TV guide. Search thousands of titles, keep a
+            watchlist, tick off the episodes you have finished, and stream them
+            in your browser. Signing in with Google is optional and syncs your
+            library across devices.
+          </p>
+          <p className="max-w-[52ch] leading-relaxed">
+            Also from us:{' '}
+            {COMPANION_APPS.map((app, index) => (
+              <React.Fragment key={app.slug}>
+                <PlayStoreLink app={app} />
+                {listSeparator(index, COMPANION_APPS.length)}
+              </React.Fragment>
+            ))}{' '}
+            on Google Play.
+          </p>
+        </div>
+
+        <nav className="space-y-3" aria-label="Site">
+          <p className="text-foreground text-xs font-semibold tracking-wide uppercase">
+            Site
+          </p>
+          <ul className="space-y-2">
+            {SITE_LINKS.map(({ href, label }) => (
+              <li key={href}>
+                <Link href={href} className={linkClass}>
+                  {label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* The support pitch, on every page. The footer link on its own asked
+            for nothing and said nothing about what it costs or what it buys,
+            which is most of why nobody followed it. */}
+        <div className="border-primary/25 from-primary/10 space-y-3 rounded-lg border bg-gradient-to-br to-transparent p-5">
+          <p className="text-foreground text-base font-semibold">
+            Reely stays free. Support keeps it that way.
+          </p>
+          <p className="leading-relaxed">
+            Supporters move their library off one browser and unlock shareable
+            lists, release alerts, yearly stats and themes. Everything free
+            today stays free either way.
+          </p>
+          <p className="text-foreground/90 font-medium">
+            ${SUPPORT_PRICES.monthly}/month · ${SUPPORT_PRICES.yearly}/year · $
+            {SUPPORT_PRICES.lifetime} once
+          </p>
+          <Link
+            href="/support"
+            className={cn(buttonVariants({ size: 'sm' }), 'w-full sm:w-auto')}
+          >
+            <Heart className="mr-2 size-4" />
+            See what support unlocks
+          </Link>
+        </div>
       </div>
-      <div className="flex items-center justify-center">
-        <p>
-          Coded in{' '}
+
+      <div className="border-border/60 border-t">
+        <div className="container flex flex-col items-center justify-between gap-4 py-6 text-xs sm:flex-row">
+          <p>
+            © {year} {siteConfig.name}. Built by{' '}
+            <ExternalLink
+              href={siteConfig.author.website}
+              label={siteConfig.author.name}
+            />{' '}
+            with{' '}
+            {CREDITS.map(({ href, label }, index) => (
+              <React.Fragment key={href}>
+                <ExternalLink href={href} label={label} />
+                {listSeparator(index, CREDITS.length)}
+              </React.Fragment>
+            ))}
+            .
+          </p>
           <Link
-            href="https://code.visualstudio.com/"
-            className="text-foreground/75 hover:text-foreground font-medium transition-colors"
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noreferrer"
+            href={siteConfig.links.buyMeACoffee}
+            className={cn(
+              'text-white',
+              buttonVariants({ variant: 'outline', size: 'sm' })
+            )}
           >
-            Visual Studio Code
-          </Link>{' '}
-          by{' '}
-          <Link
-            href={siteConfig.author.website}
-            className="text-foreground/75 hover:text-foreground font-medium transition-colors"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            yours
-          </Link>{' '}
-          truly. Built with{' '}
-          <Link
-            href="https://nextjs.org/"
-            className="text-foreground/75 hover:text-foreground font-medium transition-colors"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Next.js
-          </Link>{' '}
-          and{' '}
-          <Link
-            href="https://tailwindcss.com/"
-            className="text-foreground/75 hover:text-foreground font-medium transition-colors"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Tailwind CSS
+            <Icons.buyMeACoffee className="mr-2 size-4" />
+            Buy me a coffee
           </Link>
-          , deployed with{' '}
-          <Link
-            href="https://vercel.com/"
-            className="text-foreground/75 hover:text-foreground font-medium transition-colors"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Cloudflare
-          </Link>
-          , Using{' '}
-          <Link
-            href="https://vidsrc.to/"
-            className="text-foreground/75 hover:text-foreground font-medium transition-colors"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            VidSrc
-          </Link>
-          .
-        </p>
-      </div>
-      <div className="flex items-center justify-center">
-        <p>
-          Also check out{' '}
-          {COMPANION_APPS.map((app, index) => (
-            <React.Fragment key={app.slug}>
-              <PlayStoreLink app={app} />
-              {listSeparator(index, COMPANION_APPS.length)}
-            </React.Fragment>
-          ))}{' '}
-          on Google Play, apps made by us.
-        </p>
-      </div>
-      {/* The site's own pages, which had no link anywhere on it until accounts
-          existed: a privacy page nobody can reach is not a privacy page. */}
-      <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
-        {SITE_LINKS.map(({ href, label }) => (
-          <Link
-            key={href}
-            href={href}
-            className="text-foreground/75 hover:text-foreground font-medium transition-colors"
-          >
-            {label}
-          </Link>
-        ))}
-      </nav>
-      <div className="flex items-center justify-center">
-        <Link
-          target="_blank"
-          rel="noreferrer"
-          href={siteConfig.links.buyMeACoffee}
-          className={cn('text-white', buttonVariants({ variant: 'outline' }))}
-        >
-          <Icons.buyMeACoffee className="mr-2 size-5" />
-          Buy me a coffee
-        </Link>
+        </div>
       </div>
     </footer>
   )

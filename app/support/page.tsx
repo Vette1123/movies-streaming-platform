@@ -19,6 +19,7 @@ import {
   SUPPORT_URL,
 } from '@/config/support'
 import { buttonVariants } from '@/components/ui/button'
+import { PlanView } from '@/components/support/plan-view'
 
 export const metadata: Metadata = {
   title: 'Support Reely',
@@ -86,178 +87,186 @@ const FREE_FOREVER = [
 export default function SupportPage() {
   return (
     <div className="pb-24">
-      <section className="container grid max-w-(--breakpoint-xl) gap-10 pt-24 pb-16 lg:grid-cols-[1.15fr_1fr] lg:items-center lg:gap-16 lg:pt-28">
-        <div className="space-y-6">
-          <h1 className="text-4xl font-bold tracking-tighter text-balance md:text-5xl lg:text-6xl">
-            Reely is free. Support is what keeps it that way.
-          </h1>
-          <p className="text-muted-foreground max-w-[52ch] text-lg leading-relaxed">
-            Everything on this site stays free for everyone. Supporting it moves
-            your library off this one browser and unlocks the rest.
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <a
-              href={SUPPORT_URL}
-              target="_blank"
-              rel="noreferrer"
-              className={buttonVariants({ size: 'lg' })}
-            >
-              <Heart className="mr-2 size-4" />
-              Support Reely
-            </a>
-            <Link
-              href="/account"
-              className={buttonVariants({ size: 'lg', variant: 'outline' })}
-            >
-              Your account
-            </Link>
-          </div>
-        </div>
-
-        <div className="border-primary/25 from-primary/10 rounded-lg border bg-gradient-to-br to-transparent p-6 sm:p-8">
-          <p className="text-muted-foreground text-sm">Two ways to do it</p>
-          <div className="mt-5 space-y-5">
-            <div className="flex items-baseline justify-between gap-4">
-              <div>
-                <p className="font-semibold">Monthly</p>
-                <p className="text-muted-foreground text-sm">
-                  Stop whenever you like
-                </p>
-              </div>
-              <p className="font-mono text-3xl font-semibold tabular-nums">
-                ${SUPPORT_PRICES.monthly}
-              </p>
-            </div>
-            <div className="flex items-baseline justify-between gap-4 border-t pt-5">
-              <div>
-                <p className="font-semibold">Yearly</p>
-                <p className="text-muted-foreground text-sm">
-                  Two months cheaper than monthly
-                </p>
-              </div>
-              <p className="font-mono text-3xl font-semibold tabular-nums">
-                ${SUPPORT_PRICES.yearly}
-              </p>
-            </div>
-            <div className="flex items-baseline justify-between gap-4 border-t pt-5">
-              <div>
-                <p className="font-semibold">Lifetime</p>
-                <p className="text-muted-foreground text-sm">
-                  Paid once, and it covers everything I build
-                </p>
-              </div>
-              <p className="font-mono text-3xl font-semibold tabular-nums">
-                ${SUPPORT_PRICES.lifetime}
-              </p>
+      {/* Everything below is the pitch, and a supporter is shown their own plan
+          instead — they came here to change it, not to be sold it again. The
+          prerendered HTML is still the full pitch, so crawlers and automated
+          reviewers read the complete description of the page. */}
+      <PlanView>
+        <section className="container grid max-w-(--breakpoint-xl) gap-10 pt-24 pb-16 lg:grid-cols-[1.15fr_1fr] lg:items-center lg:gap-16 lg:pt-28">
+          <div className="space-y-6">
+            <h1 className="text-4xl font-bold tracking-tighter text-balance md:text-5xl lg:text-6xl">
+              Reely is free. Support is what keeps it that way.
+            </h1>
+            <p className="text-muted-foreground max-w-[52ch] text-lg leading-relaxed">
+              Everything on this site stays free for everyone. Supporting it
+              moves your library off this one browser and unlocks the rest.
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href={SUPPORT_URL}
+                target="_blank"
+                rel="noreferrer"
+                className={buttonVariants({ size: 'lg' })}
+              >
+                <Heart className="mr-2 size-4" />
+                Support Reely
+              </a>
+              <Link
+                href="/account"
+                className={buttonVariants({ size: 'lg', variant: 'outline' })}
+              >
+                Your account
+              </Link>
             </div>
           </div>
-          <p className="text-muted-foreground mt-6 text-xs leading-relaxed">
-            Handled by Buy Me a Coffee. Reely never sees a card number.
-          </p>
-        </div>
-      </section>
 
-      <section className="container max-w-(--breakpoint-xl) py-16">
-        <h2 className="max-w-[20ch] text-3xl font-bold tracking-tight md:text-4xl">
-          What support unlocks
-        </h2>
-        <div className="mt-10 grid gap-4 md:grid-cols-6">
-          {UNLOCKS.map(({ Icon, title, body }, index) => (
-            <article
-              key={title}
-              className={
-                // A rhythm rather than six identical tiles: the two features
-                // that justify the price get half a row each, the rest sit in
-                // thirds underneath.
-                index < 2
-                  ? 'bg-card/50 rounded-lg border p-6 md:col-span-3'
-                  : 'bg-card/50 rounded-lg border p-6 md:col-span-2'
-              }
-            >
-              <Icon className="text-primary size-5" />
-              <h3 className="mt-4 text-lg font-semibold">{title}</h3>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                {body}
-              </p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="container max-w-(--breakpoint-xl) py-16">
-        <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
-          <div className="space-y-4">
-            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-              What stays free, permanently
-            </h2>
-            <p className="text-muted-foreground max-w-[52ch] leading-relaxed">
-              Not a trial, not a teaser, and not something that quietly shrinks
-              later. If you never pay a penny, Reely keeps doing everything it
-              does today.
+          <div className="border-primary/25 from-primary/10 rounded-lg border bg-gradient-to-br to-transparent p-6 sm:p-8">
+            <p className="text-muted-foreground text-sm">Three ways to do it</p>
+            <div className="mt-5 space-y-5">
+              <div className="flex items-baseline justify-between gap-4">
+                <div>
+                  <p className="font-semibold">Monthly</p>
+                  <p className="text-muted-foreground text-sm">
+                    Stop whenever you like
+                  </p>
+                </div>
+                <p className="font-mono text-3xl font-semibold tabular-nums">
+                  ${SUPPORT_PRICES.monthly}
+                </p>
+              </div>
+              <div className="flex items-baseline justify-between gap-4 border-t pt-5">
+                <div>
+                  <p className="font-semibold">Yearly</p>
+                  <p className="text-muted-foreground text-sm">
+                    Two months cheaper than monthly
+                  </p>
+                </div>
+                <p className="font-mono text-3xl font-semibold tabular-nums">
+                  ${SUPPORT_PRICES.yearly}
+                </p>
+              </div>
+              <div className="flex items-baseline justify-between gap-4 border-t pt-5">
+                <div>
+                  <p className="font-semibold">Lifetime</p>
+                  <p className="text-muted-foreground text-sm">
+                    Paid once, and it covers everything I build
+                  </p>
+                </div>
+                <p className="font-mono text-3xl font-semibold tabular-nums">
+                  ${SUPPORT_PRICES.lifetime}
+                </p>
+              </div>
+            </div>
+            <p className="text-muted-foreground mt-6 text-xs leading-relaxed">
+              Handled by Buy Me a Coffee. Reely never sees a card number.
             </p>
           </div>
-          <ul className="divide-y">
-            {FREE_FOREVER.map((line) => (
-              <li key={line} className="flex items-start gap-3 py-3">
-                <Check className="text-primary mt-0.5 size-4 shrink-0" />
-                <span className="text-sm leading-relaxed">{line}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+        </section>
 
-      <section className="container max-w-(--breakpoint-xl) py-16">
-        <div className="rounded-lg border p-6 sm:p-8">
-          <h2 className="text-2xl font-bold tracking-tight">
-            How it reaches your account
+        <section className="container max-w-(--breakpoint-xl) py-16">
+          <h2 className="max-w-[20ch] text-3xl font-bold tracking-tight md:text-4xl">
+            What support unlocks
           </h2>
-          <div className="mt-6 grid gap-8 md:grid-cols-2">
-            <div className="space-y-3">
-              <p className="text-sm leading-relaxed">
-                Pick <span className="font-medium">{SUPPORT_MEMBERSHIP}</span>{' '}
-                or <span className="font-medium">{SUPPORT_LIFETIME}</span> on
-                Buy Me a Coffee. Support switches on automatically for the email
-                address you pay with, usually within a minute or two. Sign in to
-                Reely with that same address and it is already there.
-              </p>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Paid under a different address? Reply to the welcome note with
-                the one you sign in with and I will move it across the same day.
+          <div className="mt-10 grid gap-4 md:grid-cols-6">
+            {UNLOCKS.map(({ Icon, title, body }, index) => (
+              <article
+                key={title}
+                className={
+                  // A rhythm rather than six identical tiles: the two features
+                  // that justify the price get half a row each, the rest sit in
+                  // thirds underneath.
+                  index < 2
+                    ? 'bg-card/50 rounded-lg border p-6 md:col-span-3'
+                    : 'bg-card/50 rounded-lg border p-6 md:col-span-2'
+                }
+              >
+                <Icon className="text-primary size-5" />
+                <h3 className="mt-4 text-lg font-semibold">{title}</h3>
+                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  {body}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="container max-w-(--breakpoint-xl) py-16">
+          <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
+            <div className="space-y-4">
+              <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+                What stays free, permanently
+              </h2>
+              <p className="text-muted-foreground max-w-[52ch] leading-relaxed">
+                Not a trial, not a teaser, and not something that quietly
+                shrinks later. If you never pay a penny, Reely keeps doing
+                everything it does today.
               </p>
             </div>
-            <div className="space-y-3">
-              <p className="text-sm leading-relaxed">
-                Cancelling is one click on Buy Me a Coffee, and it takes effect
-                at the end of the period you have already paid for. Nothing you
-                saved is deleted when support ends. Your library stays in this
-                browser exactly as it does for everyone else.
-              </p>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                The Lifetime is paid once. There is nothing to renew and nothing
-                to cancel, and it is not tied to this site — it switches on
-                supporter status in every project I build, including the ones
-                that do not exist yet.
-              </p>
+            <ul className="divide-y">
+              {FREE_FOREVER.map((line) => (
+                <li key={line} className="flex items-start gap-3 py-3">
+                  <Check className="text-primary mt-0.5 size-4 shrink-0" />
+                  <span className="text-sm leading-relaxed">{line}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="container max-w-(--breakpoint-xl) py-16">
+          <div className="rounded-lg border p-6 sm:p-8">
+            <h2 className="text-2xl font-bold tracking-tight">
+              How it reaches your account
+            </h2>
+            <div className="mt-6 grid gap-8 md:grid-cols-2">
+              <div className="space-y-3">
+                <p className="text-sm leading-relaxed">
+                  Pick <span className="font-medium">{SUPPORT_MEMBERSHIP}</span>{' '}
+                  or <span className="font-medium">{SUPPORT_LIFETIME}</span> on
+                  Buy Me a Coffee. Support switches on automatically for the
+                  email address you pay with, usually within a minute or two.
+                  Sign in to Reely with that same address and it is already
+                  there.
+                </p>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Paid under a different address? Reply to the welcome note with
+                  the one you sign in with and I will move it across the same
+                  day.
+                </p>
+              </div>
+              <div className="space-y-3">
+                <p className="text-sm leading-relaxed">
+                  Cancelling is one click on Buy Me a Coffee, and it takes
+                  effect at the end of the period you have already paid for.
+                  Nothing you saved is deleted when support ends. Your library
+                  stays in this browser exactly as it does for everyone else.
+                </p>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  The Lifetime is paid once. There is nothing to renew and
+                  nothing to cancel, and it is not tied to this site — it
+                  switches on supporter status in every project I build,
+                  including the ones that do not exist yet.
+                </p>
+              </div>
+            </div>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <a
+                href={SUPPORT_URL}
+                target="_blank"
+                rel="noreferrer"
+                className={buttonVariants({ size: 'lg' })}
+              >
+                <Heart className="mr-2 size-4" />
+                Support Reely
+              </a>
+              <span className="text-muted-foreground text-sm">
+                ${SUPPORT_PRICES.monthly} a month, ${SUPPORT_PRICES.yearly} a
+                year, or ${SUPPORT_PRICES.lifetime} once.
+              </span>
             </div>
           </div>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <a
-              href={SUPPORT_URL}
-              target="_blank"
-              rel="noreferrer"
-              className={buttonVariants({ size: 'lg' })}
-            >
-              <Heart className="mr-2 size-4" />
-              Support Reely
-            </a>
-            <span className="text-muted-foreground text-sm">
-              ${SUPPORT_PRICES.monthly} a month, ${SUPPORT_PRICES.yearly} a
-              year, or ${SUPPORT_PRICES.lifetime} once.
-            </span>
-          </div>
-        </div>
-      </section>
+        </section>
+      </PlanView>
     </div>
   )
 }

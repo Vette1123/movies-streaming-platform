@@ -1,10 +1,11 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Download, Smartphone } from 'lucide-react'
+import { Download, Heart, Smartphone } from 'lucide-react'
 
 import { NavItem } from '@/types/navbar'
 import { siteConfig } from '@/config/site'
+import { SUPPORT_PRICES } from '@/config/support'
 import { COMPANION_APPS, EXTERNAL_LINKS, openOnPlayStore } from '@/lib/apps'
 import { cn } from '@/lib/utils'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
@@ -115,6 +116,20 @@ export function MobileNav({ items }: MobileNavProps) {
               canPrompt || needsIosHint ? 'pb-28' : 'pb-10'
             )}
           >
+            {/* Everyone sees this, signed in or not. It used to live only
+                inside the account menu, which meant a visitor with no account —
+                most visitors — had no route to the plans at all, and the footer
+                link was the entire funnel. */}
+            <DrawerSection title="Support Reely">
+              <DrawerAction
+                Icon={Heart}
+                href="/support"
+                label="Support Reely"
+                hint={`From $${SUPPORT_PRICES.monthly}/mo`}
+                tone="accent"
+                onClick={close}
+              />
+            </DrawerSection>
             <AccountDrawerSection onNavigate={close} />
             <DrawerSection title="Apps & tools">
               {canPrompt && (

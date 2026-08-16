@@ -2,6 +2,7 @@ import React from 'react'
 import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { SupportPrompt } from '@/components/support/support-prompt'
 import { WatchHistoryContainer } from '@/components/watch-history/watch-history'
 
 export const metadata: Metadata = {
@@ -26,6 +27,17 @@ function WatchHistory() {
     <section className="container h-full py-20 lg:py-36">
       <h1 className="mb-6 text-2xl font-bold lg:text-3xl">Watch History</h1>
       <WatchHistoryContainer />
+      <SupportPrompt
+        icon="stats"
+        title="This history is worth keeping"
+        cta="See what support unlocks"
+        className="mt-12"
+      >
+        It lives in this browser, so clearing your data or picking up another
+        device loses it. Supporters keep it on their account, on every device,
+        and it becomes the year in review — hours watched, titles finished, the
+        genres you keep coming back to.
+      </SupportPrompt>
     </section>
   )
 }

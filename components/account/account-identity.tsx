@@ -14,19 +14,33 @@ export interface AccountDestination {
   href: string
   label: string
   Icon: React.ComponentType<{ className?: string }>
-  /** Supporters have already done this, so it drops off their menu. */
-  hideWhenPro?: boolean
+  /** Reads differently to someone who has already paid. */
+  proLabel?: string
 }
 
 export const ACCOUNT_MENU: AccountDestination[] = [
   { href: '/account', label: 'Account', Icon: User2 },
   { href: '/account#lists', label: 'Your lists', Icon: ListMusic },
   { href: '/stats', label: 'Your year in Reely', Icon: Sparkles },
-  { href: '/support', label: 'Support Reely', Icon: Heart, hideWhenPro: true },
+  {
+    href: '/support',
+    label: 'Support Reely',
+    Icon: Heart,
+    proLabel: 'Your plan',
+  },
 ]
 
+/**
+ * The support page used to drop off a supporter's menu entirely, on the logic
+ * that they had already done it. The effect was that the one person who most
+ * needs to reach that page — to see what they are on, or change it — was the one
+ * who could not find it from anywhere in the app. It stays, and says
+ * "Your plan" instead.
+ */
 export const accountMenuFor = (pro: boolean): AccountDestination[] =>
-  ACCOUNT_MENU.filter((item) => !(pro && item.hideWhenPro))
+  ACCOUNT_MENU.map((item) =>
+    pro && item.proLabel ? { ...item, label: item.proLabel } : item
+  )
 
 /**
  * Google's avatar, or a monogram.

@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
+import { Heart } from 'lucide-react'
 
 import { siteConfig } from '@/config/site'
 import { COMPANION_APPS, EXTERNAL_LINKS, openOnPlayStore } from '@/lib/apps'
@@ -125,6 +126,21 @@ export function SiteHeader() {
             <CommandMenu />
           </div>
           <nav className="hidden shrink-0 items-center gap-1 md:flex">
+            {/* Shown to supporters too, and pointing at the same page: for them
+                it is where the plan is managed. Rendering it unconditionally is
+                also what keeps the icon row from shifting sideways once the
+                browser works out who is looking. */}
+            <Link
+              href="/support"
+              aria-label="Support Reely"
+              className={cn(
+                buttonVariants({ size: 'icon', variant: 'ghost' }),
+                'text-primary hover:text-primary'
+              )}
+            >
+              <Heart className="size-5" />
+              <span className="sr-only">Support Reely</span>
+            </Link>
             <Popover>
               <PopoverTrigger
                 aria-label="Our apps on Google Play"

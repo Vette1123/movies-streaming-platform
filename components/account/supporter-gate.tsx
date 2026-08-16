@@ -19,10 +19,16 @@ export function SupporterGate({
   title,
   children,
   className,
+  Icon = Lock,
+  cta = 'Support Reely',
 }: {
   title: string
   children: React.ReactNode
   className?: string
+  /** A padlock reads as "locked" — wrong on a page whose feature works today
+   *  and would simply follow you to your other devices if you paid. */
+  Icon?: React.ComponentType<{ className?: string }>
+  cta?: string
 }) {
   return (
     <div
@@ -32,7 +38,7 @@ export function SupporterGate({
       )}
     >
       <div className="flex items-start gap-3">
-        <Lock className="text-muted-foreground mt-0.5 size-4 shrink-0" />
+        <Icon className="text-muted-foreground mt-0.5 size-4 shrink-0" />
         <div className="min-w-0 space-y-3">
           <div className="space-y-1">
             <h3 className="text-base font-semibold">{title}</h3>
@@ -45,7 +51,7 @@ export function SupporterGate({
               href="/support"
               className={buttonVariants({ size: 'sm', variant: 'default' })}
             >
-              Support Reely
+              {cta}
             </Link>
             <span className="text-muted-foreground text-xs">
               ${SUPPORT_PRICES.monthly} a month, ${SUPPORT_PRICES.yearly} a
