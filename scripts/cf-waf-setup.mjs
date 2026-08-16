@@ -260,11 +260,36 @@ const ALLOW_RULE = {
 // that the signature does not already do better.
 const WEBHOOK_PATH = '/api/billing/bmc'
 
+/**
+ * The pages an automated reviewer has to be able to read, exempt from the
+ * user-agent challenge below.
+ *
+ * `HeadlessChrome` is in `BLOCK_UAS`, and Google's OAuth brand review drives a
+ * headless browser: it fetched this homepage three times, got
+ * `cf-mitigated: challenge` and a "Just a moment..." interstitial every time,
+ * and rejected the app for a homepage that "does not explain the purpose of your
+ * app" and an app name that "does not match the app name on your homepage".
+ * Both complaints were about the challenge page. No amount of homepage copy
+ * could have answered them.
+ *
+ * Exempting these costs nothing that the challenge was buying: every one is a
+ * prerendered static asset, matched before the Worker ever runs, so a headless
+ * client reading them consumes no CPU and no invocation. The rule still guards
+ * everything expensive — the detail and collection routes keep their own
+ * stricter browser-token rule below.
+ */
+const REVIEW_PATHS = ['/', '/privacy', '/terms', '/disclaimer', '/support']
+
+const EXEMPT_PATHS = [WEBHOOK_PATH, ...REVIEW_PATHS]
+
+const notAnyPath = (paths) =>
+  `not (${paths.map((p) => `http.request.uri.path eq "${p}"`).join(' or ')})`
+
 const BLOCK_RULE = {
   description: `${TAG} challenge obvious scraper user-agents`,
   expression:
     `((${orExpr(BLOCK_UAS)}) or (http.user_agent eq ""))` +
-    ` and not (http.request.uri.path eq "${WEBHOOK_PATH}")`,
+    ` and ${notAnyPath(EXEMPT_PATHS)}`,
   action: 'managed_challenge',
 }
 

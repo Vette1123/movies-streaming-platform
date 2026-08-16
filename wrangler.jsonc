@@ -33,6 +33,18 @@
   "observability": {
     "enabled": true,
   },
+  // `wrangler dev` otherwise takes its Host from the first route above, so a
+  // local request arrives at the Worker as http://reely.space/… — and the OAuth
+  // redirect_uri is built from the request's own origin, which made local
+  // sign-in ask Google for `http://reely.space/api/auth/callback`. Google
+  // refuses to register that: a published app may only use https, with one
+  // exception — localhost. Pinning the dev host to localhost puts local sign-in
+  // on that exception, so the only URIs the OAuth client needs are the two real
+  // https ones plus http://localhost:8788/api/auth/callback.
+  "dev": {
+    "host": "localhost:8788",
+    "port": 8788,
+  },
   "preview_urls": false,
   // Never expose movies-streaming-platform.<subdomain>.workers.dev. It would
   // serve the whole site on a second, crawlable hostname (duplicate content vs

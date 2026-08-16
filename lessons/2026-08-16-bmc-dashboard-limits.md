@@ -84,6 +84,16 @@ written on the constant in both repos.
   homepage requirements.
 - Verification checks the *deployed* site. A page that exists only in an unpushed
   commit is a 404 to every reviewer and crawler, whatever the repo says.
+- **A reviewer's complaint describes what the reviewer SAW, which is not
+  necessarily what the site serves.** Google rejected the homepage three times
+  for "does not explain the purpose of your app" and a name mismatch. Both were
+  true of a Cloudflare interstitial: `HeadlessChrome` is in this zone's own
+  `BLOCK_UAS`, the review drives a headless browser, and every fetch got
+  `cf-mitigated: challenge` and `<title>Just a moment...</title>`. Two rounds of
+  homepage copy were written before anyone fetched the page *as the reviewer*.
+  One `curl -A HeadlessChrome` would have settled it at the start, and this zone
+  had already lost two webhook providers at the edge for the same class of
+  reason. Reproduce the client before rewriting the content.
 - `sr-only` satisfies a crawler, never a human reviewer. The homepage h1 named
   the site and said what it does, invisibly, while the header wordmark was
   `hidden sm:inline-block` — so at a phone viewport the page showed a poster wall
