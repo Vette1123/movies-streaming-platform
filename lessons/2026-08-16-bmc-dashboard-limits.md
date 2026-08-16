@@ -9,7 +9,7 @@ client for sign-in.
 
 The design assumption behind all of it was already written down in the sibling
 project: one account serves several projects, every webhook endpoint receives
-every event, and the *name* of the offer is the only thing tying a purchase to a
+every event, and the _name_ of the offer is the only thing tying a purchase to a
 project. Each project tags its two offers with its own short name.
 
 The dashboard does not allow that for the second offer. Buy Me a Coffee permits
@@ -26,7 +26,7 @@ written on the constant in both repos.
 - **Wrote the whole setup document against a shelf layout nobody had checked.**
   Two tagged levels per project was specified, priced, given copy, given rewards
   and committed — and then the dashboard refused the second lifetime. This is
-  the *same* mistake the sibling project's own ledger records from 2026-08-15
+  the _same_ mistake the sibling project's own ledger records from 2026-08-15
   ("wrote the whole setup document around a shelf the product never went on"),
   read during this work, and repeated anyway. A provider's UI constraints are
   not derivable from its API, and reading a lesson is not the same as applying
@@ -70,7 +70,7 @@ written on the constant in both repos.
 ## Rules
 
 - A provider's shelf limits (how many of a kind of offer, what may be one-time,
-  what may be free) are UI facts. Check them in the dashboard *before* writing
+  what may be free) are UI facts. Check them in the dashboard _before_ writing
   copy for them, never after.
 - When one string is shared by two repositories, each copy names the other's
   path in a comment. Nothing else can catch the drift — there is no import to
@@ -82,7 +82,7 @@ written on the constant in both repos.
 - An OAuth consent screen with no logo and only non-sensitive scopes needs no
   verification. Adding a logo buys one image and costs a review cycle plus
   homepage requirements.
-- Verification checks the *deployed* site. A page that exists only in an unpushed
+- Verification checks the _deployed_ site. A page that exists only in an unpushed
   commit is a 404 to every reviewer and crawler, whatever the repo says.
 - **A reviewer's complaint describes what the reviewer SAW, which is not
   necessarily what the site serves.** Google rejected the homepage three times
@@ -90,7 +90,7 @@ written on the constant in both repos.
   true of a Cloudflare interstitial: `HeadlessChrome` is in this zone's own
   `BLOCK_UAS`, the review drives a headless browser, and every fetch got
   `cf-mitigated: challenge` and `<title>Just a moment...</title>`. Two rounds of
-  homepage copy were written before anyone fetched the page *as the reviewer*.
+  homepage copy were written before anyone fetched the page _as the reviewer_.
   One `curl -A HeadlessChrome` would have settled it at the start, and this zone
   had already lost two webhook providers at the edge for the same class of
   reason. Reproduce the client before rewriting the content.
