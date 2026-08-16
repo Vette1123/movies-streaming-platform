@@ -27,7 +27,11 @@ import { buttonVariants } from '@/components/ui/button'
  */
 function SupporterPanel() {
   return (
-    <section className="container max-w-(--breakpoint-xl) py-16">
+    // The same top padding the pitch below uses. The header is sticky and sits
+    // over the top of the page, so a plain py-16 puts this card's border under
+    // it — which the pitch never showed, because it was the only branch anybody
+    // checked.
+    <section className="container max-w-(--breakpoint-xl) pt-24 pb-16 lg:pt-28">
       <div className="border-primary/25 from-primary/10 rounded-lg border bg-gradient-to-br to-transparent p-6 sm:p-8">
         <p className="text-primary inline-flex items-center gap-2 text-sm font-semibold">
           <Heart className="size-4" />
@@ -37,10 +41,11 @@ function SupporterPanel() {
           Everything is already switched on.
         </h2>
         <p className="text-muted-foreground mt-3 max-w-[60ch] leading-relaxed">
-          Your library syncs across devices, every backup server is open to you,
-          lists are shareable, alerts are running, your watchlist has a calendar
-          feed, and the themes are yours. Thank you — this is what keeps Reely
-          online and free for everyone else.
+          Your library syncs across every device, your queue knows which episode
+          you are up to, every backup server is open to you, lists are
+          shareable, alerts are running, your watchlist has a calendar feed with
+          reminders, your year comes as a card, and the themes are yours. Thank
+          you — this is what keeps Reely online and free for everyone else.
         </p>
 
         <div className="mt-8 grid gap-8 md:grid-cols-2">

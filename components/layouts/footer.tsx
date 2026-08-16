@@ -113,10 +113,11 @@ export function Footer() {
             Reely stays free. Support keeps it that way.
           </p>
           <p className="leading-relaxed">
-            Supporters move their library off one browser and unlock backup
-            streaming servers, a calendar feed of everything they are waiting
-            for, shareable lists, release alerts, yearly stats and themes.
-            Everything free today stays free either way.
+            Supporters move their library off one browser and unlock a queue
+            that knows which episode they are on, backup streaming servers, a
+            calendar feed of everything they are waiting for, shareable lists,
+            release alerts, a year-in-review card and themes. Everything free
+            today stays free either way.
           </p>
           <p className="text-foreground/90 font-medium">
             ${SUPPORT_PRICES.monthly}/month · ${SUPPORT_PRICES.yearly}/year · $

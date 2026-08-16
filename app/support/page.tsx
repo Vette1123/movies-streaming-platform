@@ -1,11 +1,13 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import {
+  BadgeCheck,
   BellRing,
   CalendarDays,
   Check,
   Heart,
   ListMusic,
+  ListVideo,
   Mail,
   MessageSquare,
   Palette,
@@ -52,38 +54,48 @@ export const metadata: Metadata = {
 const UNLOCKS = [
   {
     Icon: RefreshCw,
-    title: 'Your library on every device',
-    body: 'Saved titles, watch history and every episode you have ticked off, kept in step across your phone, your laptop and the browser on the TV. A new device signs in and finds everything already there.',
+    title: 'One library, every screen, forever',
+    body: 'Saved titles, watch history and every episode you have ticked off, kept in step across your phone, your laptop and the browser on the TV — within seconds, in both directions, without a sync button. Start something in bed, finish it at your desk. Clear your browser, lose your phone, buy a new laptop: sign in and it is all still there, exactly as you left it. This is the one that makes everything below it worth having, because a library that lives in one browser is a library you are one accident away from losing.',
+  },
+  {
+    Icon: ListVideo,
+    title: 'Never ask “which episode was I on”',
+    body: 'Every show you have going, in one queue, newest first — the exact episode you are up to, how far through the show you are, and a link that opens the player right on it. Reely works it out from the episodes you have already ticked off, so there is nothing to set up and nothing to keep tidy.',
   },
   {
     Icon: CalendarDays,
     title: 'Your watchlist, in your real calendar',
-    body: 'Every dated episode and release day on one page — and a private link Google Calendar, Apple Calendar or Outlook subscribes to once, with a reminder the morning before each one. Save a show tonight and next season’s premiere appears in your calendar months from now, on its own, next to your actual life.',
+    body: 'A private link Google Calendar, Apple Calendar or Outlook subscribes to once — then every dated episode and release day turns up in the calendar you already live in, with a reminder the morning before. Save a show tonight and next season’s premiere appears months from now, on its own, next to your dentist appointment.',
   },
   {
     Icon: Server,
-    title: 'Backup servers when a stream will not start',
-    body: 'Streams come from a third party, and third parties have bad days. Supporters get every backup server Reely has: one tap to switch, an automatic hop the moment one stops responding, and Reely remembers which server worked for which title so the same title never stalls twice.',
+    title: 'A stream that will not start is not the end of the night',
+    body: 'Streams come from a third party, and third parties have bad days. Supporters get every backup server Reely has: one tap to switch, an automatic hop the moment one stops responding, and a memory of which server worked for which title — so the same title never stalls on you twice.',
+  },
+  {
+    Icon: BellRing,
+    title: 'Told the day it lands',
+    body: 'A notification the day a new episode of something you follow is out, and the day a film you saved reaches its release date. No feed to check, no date to remember, nothing missed because it aired on a Tuesday.',
   },
   {
     Icon: ListMusic,
     title: 'Lists worth sharing',
-    body: 'Build collections out of your own library, put a note and a score on anything worth one, then publish a list as a real link that unfurls with poster art wherever you paste it.',
-  },
-  {
-    Icon: BellRing,
-    title: 'Alerts when it actually airs',
-    body: 'A notification the day a new episode of something on your watchlist is out, and the day a film you saved reaches its release date.',
+    body: 'Build collections out of your own library, put a note and a score on anything worth one, then publish a list as a real link that unfurls with poster art wherever you paste it. Unpublish and it is gone; publish again and the same link works.',
   },
   {
     Icon: Sparkles,
-    title: 'Your year in Reely',
-    body: 'Hours watched, titles finished, the genres you keep coming back to, your longest streak. Built from what you already track, on a card worth screenshotting.',
+    title: 'Your year, as a card worth posting',
+    body: 'Hours watched, films finished, episodes ticked off, longest streak, busiest month — drawn into an image on your own device, ready for a story or a group chat. Counted across every device you use rather than whichever browser you happen to be in.',
   },
   {
     Icon: Palette,
     title: 'Six accents and a denser layout',
-    body: 'Small, and the thing you will see every session. It follows your account, so every device you sign in on looks the same.',
+    body: 'Small, and the thing you will see every single session. It rides on your account, so every device you sign in on already looks the way you like it.',
+  },
+  {
+    Icon: BadgeCheck,
+    title: 'Never asked again',
+    body: 'The moment support lands, Reely stops asking. No prompts, no banners, no reminders — the supporter badge goes on your account and the subject never comes up again.',
   },
   {
     Icon: MessageSquare,
@@ -269,18 +281,32 @@ export default function SupportPage() {
               <article
                 key={title}
                 className={
-                  // A rhythm rather than a grid of identical tiles: the two
-                  // features that justify the price take half a row each, the
-                  // rest sit in thirds underneath. Keep the count at 2 + a
-                  // multiple of 3 or the last row is left ragged.
-                  index < 2
-                    ? 'bg-card/50 rounded-lg border p-6 md:col-span-3'
+                  // A rhythm rather than a grid of identical tiles: the one
+                  // feature that justifies the price on its own takes the whole
+                  // first row, the rest sit in thirds underneath. Keep the count
+                  // at 1 + a multiple of 3 or the last row is left ragged.
+                  index === 0
+                    ? 'bg-card/50 from-primary/10 rounded-lg border bg-linear-to-br to-transparent p-6 md:col-span-6 md:p-8'
                     : 'bg-card/50 rounded-lg border p-6 md:col-span-2'
                 }
               >
-                <Icon className="text-primary size-5" />
-                <h3 className="mt-4 text-lg font-semibold">{title}</h3>
-                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                <Icon
+                  className={cn('text-primary size-5', index === 0 && 'size-7')}
+                />
+                <h3
+                  className={cn(
+                    'mt-4 text-lg font-semibold',
+                    index === 0 && 'text-2xl tracking-tight md:text-3xl'
+                  )}
+                >
+                  {title}
+                </h3>
+                <p
+                  className={cn(
+                    'text-muted-foreground mt-2 text-sm leading-relaxed',
+                    index === 0 && 'max-w-[70ch] text-base'
+                  )}
+                >
                   {body}
                 </p>
               </article>

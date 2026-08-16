@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Check, Copy } from 'lucide-react'
+import { Check, Copy, ImageDown, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
-import { computeStats } from '@/lib/stats'
+import { computeStats, type LibraryStats } from '@/lib/stats'
+import { renderStatsCard } from '@/lib/stats-card'
 import { useAccount } from '@/hooks/use-account'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useMounted } from '@/hooks/use-mounted'
@@ -17,7 +19,7 @@ const monthName = (key: string): string => {
 }
 
 export function StatsPanel() {
-  const { pro } = useAccount()
+  const { pro, name } = useAccount()
   const mounted = useMounted()
   const [history] = useLocalStorage('watchedItems', [])
   const [completed] = useLocalStorage('completedItems', [])
@@ -108,11 +110,14 @@ export function StatsPanel() {
           )}
           {copied ? 'Copied' : 'Copy your summary'}
         </Button>
-        {!pro && (
+        {pro ? (
+          <ShareCard stats={stats} name={name} />
+        ) : (
           <p className="text-muted-foreground max-w-[52ch] text-sm leading-relaxed">
-            These numbers come from this browser alone. Supporting Reely syncs
-            your library, so they count everything you watch on every device and
-            survive a cleared browser.{' '}
+            These numbers come from this browser alone, and they stop at this
+            browser too. Supporting Reely counts everything you watch on every
+            device, survives a cleared browser, and turns the year into a card
+            worth posting.{' '}
             <Link href="/support" className="text-foreground underline">
               What support unlocks
             </Link>
@@ -120,6 +125,72 @@ export function StatsPanel() {
         )}
       </div>
     </div>
+  )
+}
+
+/**
+ * The card, and the two ways to get it off the device.
+ *
+ * `navigator.share` with a file is the good path on a phone — it opens the real
+ * share sheet, so the card goes straight into a story or a chat. Everything else
+ * gets a download, which is what a desktop wants anyway. Both are Pro: the
+ * numbers behind the card only mean anything once a library follows somebody
+ * between devices, and this is the part people show other people.
+ */
+function ShareCard({
+  stats,
+  name,
+}: {
+  stats: LibraryStats
+  name: string | null
+}) {
+  const [busy, setBusy] = useState(false)
+
+  const make = async (): Promise<File | null> => {
+    const blob = await renderStatsCard(stats, name)
+    if (!blob) return null
+    return new File([blob], 'reely-year.png', { type: 'image/png' })
+  }
+
+  const share = async () => {
+    setBusy(true)
+    try {
+      const file = await make()
+      if (!file) {
+        toast(
+          'This browser cannot draw the card. The summary above still copies.'
+        )
+        return
+      }
+      // canShare with the file, not just a share check: desktop Chrome has
+      // navigator.share and refuses files, and calling share anyway throws.
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'My year on Reely' })
+        return
+      }
+      const url = URL.createObjectURL(file)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = file.name
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      // A share sheet the user dismissed throws AbortError. Nothing went wrong
+      // and nothing needs saying.
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Button disabled={busy} onClick={() => void share()}>
+      {busy ? (
+        <Loader2 className="mr-2 size-4 animate-spin" />
+      ) : (
+        <ImageDown className="mr-2 size-4" />
+      )}
+      Get your card
+    </Button>
   )
 }
 

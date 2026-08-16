@@ -10,6 +10,7 @@ import {
   Heart,
   LayoutGrid,
   ListMusic,
+  ListVideo,
   Loader2,
   Monitor,
   Palette,
@@ -36,6 +37,7 @@ import { AppearancePanel } from './appearance-panel'
 import { DataPanel } from './data-panel'
 import { LibraryPanel } from './library-panel'
 import { ListsPanel } from './lists-panel'
+import { NextUpPanel } from './next-up-panel'
 import { PlaybackPanel } from './playback-panel'
 import { UpcomingPanel } from './upcoming-panel'
 
@@ -71,6 +73,14 @@ const SECTIONS: SectionDef[] = [
     lede: 'Saved titles, watch history and every episode you have ticked off.',
     Icon: LayoutGrid,
     Panel: LibraryPanel,
+  },
+  {
+    id: 'next-up',
+    label: 'Up next',
+    title: 'Up next',
+    lede: 'Every show you are in the middle of, and the exact episode you are up to.',
+    Icon: ListVideo,
+    Panel: NextUpPanel,
   },
   {
     id: 'lists',
