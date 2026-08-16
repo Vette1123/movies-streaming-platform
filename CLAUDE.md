@@ -24,6 +24,7 @@ pnpm deploy:full        # build:cf + deploy
 pnpm imdb:ratings       # regenerate public/imdb-ratings/*.json shards
 pnpm og:build           # regenerate the static OG image
 pnpm waf:apply          # push Cloudflare WAF + CDN cache rules
+pnpm bmc:probe          # end-to-end check of the live payment webhook (writes + deletes one throwaway row)
 ```
 
 - **Package manager is pnpm 10** (`packageManager` pin). Do not use npm/yarn.
@@ -58,6 +59,7 @@ Replaced OpenNext on 2026-08-03. Under OpenNext, prod was killing **25–40% of 
 - **Static-first**: homepage and browse/list pages are fully static (`revalidate: false` on their TMDB fetches) and refresh only on the deploy — every 6h on cron (`.github/workflows/deploy.yml`), plus every push. **Deploy cadence is the site's only freshness control**, so a page's data is only as fresh as the TMDB endpoint behind it: the hero reads `trending/all/day`, not `/week` (a 7-day window sits still for weeks and made redeploys look pointless). `fetchClient.get(..., revalidate)` — pass `false` for build-only/static, a number for time-based ISR (default 8h).
 - **`headers()` / `redirects()` do not exist under `output: 'export'`** — they live in `public/_headers` and `public/_redirects`, native to Workers Static Assets. **Cached paths must stay in sync with the CDN rule in `scripts/cf-waf-setup.mjs`.** `next.config.mjs` still defines them for the non-export build; `DEPLOY_TARGET=cloudflare` is what flips between the two configs.
 - **WAF** (`scripts/cf-waf-setup.mjs`): scraper-challenge + rate-limit rules. The rate-limit rule **excludes `/*/genre`** (genre infinite-scroll would otherwise trip it). Run `pnpm waf:apply` after changing rules.
+- **The payment webhook (`/api/billing/bmc`) is exempt from the UA challenge AND from the apex→www redirect**, and both exemptions are load-bearing: its callers are machines with no user-agent, and a 301 is not a 2xx, so a sender that does not follow redirects loses the delivery while the money still lands. `pnpm bmc:probe` proves the whole path against production (signature, WAF, both hosts, grant, revoke, replay) in ~10s — run it after touching WAF rules, `lib/billing/*`, or the offer names in `config/support.ts`.
 
 ### IMDb ratings (feature-flagged OFF)
 

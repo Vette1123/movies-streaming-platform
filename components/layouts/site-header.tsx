@@ -140,7 +140,6 @@ export function SiteHeader() {
               )}
             >
               <Heart className="size-5" />
-              <span className="sr-only">Support Reely</span>
             </SupportLink>
             <Popover>
               <PopoverTrigger

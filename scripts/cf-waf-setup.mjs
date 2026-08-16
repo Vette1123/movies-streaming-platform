@@ -448,7 +448,7 @@ const REDIRECT_APEX_RULE = {
 // The public, cacheable page paths. `/watch-history` is intentionally excluded
 // (personal + noindex). Keep in sync with next.config.mjs `headers()`.
 const CACHEABLE_PATHS =
-  '(http.request.uri.path eq "/") or (http.request.uri.path eq "/disclaimer") or (starts_with(http.request.uri.path, "/movies")) or (starts_with(http.request.uri.path, "/tv-shows"))'
+  '(http.request.uri.path eq "/") or (http.request.uri.path eq "/disclaimer") or (http.request.uri.path eq "/support") or (http.request.uri.path eq "/privacy") or (http.request.uri.path eq "/terms") or (starts_with(http.request.uri.path, "/movies")) or (starts_with(http.request.uri.path, "/tv-shows"))'
 
 // Only full-document navigations/crawls are cached — NOT React Server Component
 // requests. App Router prefetch + client navigation send `RSC: 1`; those hit
@@ -608,7 +608,7 @@ async function main() {
 
   // --- The edge cache: the actual CPU fix. Needs BOTH of the next two. ---
   const cacheOk = await step(
-    'Cache rule: edge-cache /, /disclaimer, /movies, /tv-shows (needs Zone Cache Rules: Edit)',
+    'Cache rule: edge-cache /, /disclaimer, /support, /privacy, /terms, /movies, /tv-shows (needs Zone Cache Rules: Edit)',
     async () => {
       const rs = await getOrCreatePhaseEntrypoint(
         zoneId,

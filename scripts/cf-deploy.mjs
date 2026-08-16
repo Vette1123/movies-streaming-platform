@@ -24,6 +24,12 @@
 // Worker invocation, no TMDB call — so it is cheap relative to shipping a build
 // nobody sees. Set CF_PURGE=false to skip it (e.g. a config-only redeploy).
 import { spawnSync } from 'node:child_process'
+import { setDefaultResultOrder } from 'node:dns'
+
+// See scripts/load-env.mjs: AAAA-first resolution turns the purge into a
+// `fetch failed` on any machine without a working IPv6 route, and a failed
+// purge pins the site to the previous build.
+setDefaultResultOrder('ipv4first')
 
 const SITE_HOST = 'www.reely.space'
 const ZONE_NAME = 'reely.space'

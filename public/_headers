@@ -96,6 +96,16 @@
   Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
 /disclaimer
   Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
+# Same deal, and all three are indexed: /support is the page every CTA on the
+# site points at, and the two policy pages are what Google's OAuth review
+# fetches. Prerendered shells with no per-visitor content — the supporter's view
+# of /support is swapped in on the client.
+/support
+  Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
+/privacy
+  Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
+/terms
+  Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
 
 # Personal and noindex — `private` is what keeps them out of every SHARED cache,
 # and that is the part that matters. `no-store` on top of it was doing something

@@ -258,6 +258,18 @@ Here is my direct line: <your WhatsApp / Telegram number>. Message me any time �
 **Name** — `Reely supporters`. **Endpoint URL** —
 `https://www.reely.space/api/billing/bmc`.
 
+Either host works — the apex is exempt from the `reely.space → www` redirect
+precisely because a 301 is not a 2xx and a sender that does not follow one would
+lose every delivery — but paste the `www` form anyway, since that is the URL the
+probe and the WAF exemptions are written against.
+
+After changing anything here, or anything in `lib/billing/`, `config/support.ts`
+or the WAF rules, run **`pnpm bmc:probe`**. It signs real payloads, POSTs them at
+production over both hosts, and asserts on the D1 row after each one — signature
+rejection, empty-user-agent delivery, grant, lifetime, revoke, replay and stale
+redelivery — then deletes the throwaway row it wrote. It is the only check that
+can see a secret mismatch between the dashboard and the Worker.
+
 ### Events to tick
 
 The dashboard shows friendly labels grouped by product; the payload carries a
