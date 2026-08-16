@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Palette,
   RefreshCw,
+  Server,
   Sparkles,
 } from 'lucide-react'
 
@@ -58,6 +59,11 @@ const UNLOCKS = [
     Icon: CalendarDays,
     title: 'Your watchlist, in your real calendar',
     body: 'Every dated episode and release day on one page — and a private link Google Calendar, Apple Calendar or Outlook subscribes to once. Save a show tonight and next season’s premiere appears in your calendar months from now, on its own, next to your actual life.',
+  },
+  {
+    Icon: Server,
+    title: 'Backup servers when a stream will not start',
+    body: 'Streams come from a third party, and third parties have bad days. Supporters get every backup server Reely has: one tap to switch, an automatic hop the moment one stops responding, and Reely remembers which server worked for which title so the same title never stalls twice.',
   },
   {
     Icon: ListMusic,
@@ -157,6 +163,10 @@ const FAQ = [
   {
     q: 'I paid and nothing switched on. Now what?',
     a: `Email ${SUPPORT_EMAIL} and say which address you paid with. It is almost always the two-addresses problem above, it takes me a minute to fix, and you are not the one who should be debugging it. There is no ticket system — the mail comes to me.`,
+  },
+  {
+    q: 'A stream would not play. Does support fix that?',
+    a: 'Often, yes — and that is the honest answer rather than a promise. Streams come from third-party servers Reely does not run. Everyone gets the main one; supporters get the backups, a one-tap switch, and an automatic hop when a server stops responding. If none of them carry a title, no plan can conjure it.',
   },
   {
     q: 'Can I cancel?',
@@ -259,12 +269,12 @@ export default function SupportPage() {
               <article
                 key={title}
                 className={
-                  // A rhythm rather than a grid of identical tiles: the one
-                  // feature that justifies the price on its own takes the full
-                  // width, and the rest sit in thirds underneath — which also
-                  // happens to divide evenly, so no row is left ragged.
-                  index === 0
-                    ? 'bg-card/50 rounded-lg border p-6 md:col-span-6'
+                  // A rhythm rather than a grid of identical tiles: the two
+                  // features that justify the price take half a row each, the
+                  // rest sit in thirds underneath. Keep the count at 2 + a
+                  // multiple of 3 or the last row is left ragged.
+                  index < 2
+                    ? 'bg-card/50 rounded-lg border p-6 md:col-span-3'
                     : 'bg-card/50 rounded-lg border p-6 md:col-span-2'
                 }
               >

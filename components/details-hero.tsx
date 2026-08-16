@@ -7,8 +7,10 @@ import { SeriesDetails } from '@/types/series-details'
 import { STREAM_EMBED_ALLOW } from '@/lib/embed-policy'
 import { getMediaTitle } from '@/lib/media'
 import { cn } from '@/lib/utils'
+import { type StreamSourceControl } from '@/hooks/use-stream-source'
 import { HeroImage } from '@/components/header/hero-image'
 import { PlayButton } from '@/components/play-button'
+import { SourceSwitcher } from '@/components/player/source-switcher'
 import { SaveButton } from '@/components/save-button'
 import { ShareButton } from '@/components/share-button'
 import { TrailerDialog } from '@/components/trailer-dialog'
@@ -48,6 +50,7 @@ export const DetailsHero = ({
   playTarget,
   isResume,
   resumeSlot,
+  sourceControl,
 }: {
   movie?: MovieDetails
   series?: SeriesDetails
@@ -55,6 +58,12 @@ export const DetailsHero = ({
   src?: string
   playVideo: () => void
   trailerKey?: string
+  /**
+   * Which server is playing, and how to move off one that will not. Rendered
+   * only while something is playing, because that is the only moment the
+   * question exists. See use-stream-source.
+   */
+  sourceControl?: StreamSourceControl
   // Series only. `playTarget` is the episode pressing play will start (a
   // ?season/?episode deep-link, else continue-watching) and retargets the
   // play button's event + watch-history write; `isResume` says that target
@@ -191,6 +200,17 @@ export const DetailsHero = ({
             // adding it back.
             allow={STREAM_EMBED_ALLOW}
           ></iframe>
+          {isIframeShown && sourceControl && (
+            // Above the frame, not below it. Two things already live along the
+            // bottom edge — the embed's own scrubber, and the install prompt,
+            // which measurably sat on top of these buttons and swallowed the
+            // click. The band above the frame is empty on every viewport,
+            // because the iframe is inset by py-20 — offset clear of the sticky header,
+            // which sits above this and was eating the click at top-4.
+            <div className="pointer-events-none absolute inset-x-0 top-20 z-50 flex justify-center px-4">
+              <SourceSwitcher control={sourceControl} loaded={iframeLoaded} />
+            </div>
+          )}
         </div>
       </div>
       <div className="pointer-events-none absolute -inset-4 rounded-md bg-gradient-to-b from-slate-900/45 via-slate-900/10 to-slate-900/40 shadow-[inset_0_1px_0_0_rgba(148,163,184,0.1)] transition motion-reduce:transition-none lg:-inset-x-6 lg:block lg:drop-shadow-lg" />

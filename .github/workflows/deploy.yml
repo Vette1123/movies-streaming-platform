@@ -144,6 +144,14 @@ jobs:
           NEXT_PUBLIC_TMDB_BASEURL: ${{ secrets.NEXT_PUBLIC_TMDB_BASEURL }}
           NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
           NEXT_PUBLIC_STREAMING_MOVIES_API_URL: ${{ secrets.NEXT_PUBLIC_STREAMING_MOVIES_API_URL }}
+          # The backup embed servers (config/sources.ts). Secrets rather than
+          # repo constants: this repository is public, and a checked-in list of
+          # embed hosts is both a maintenance trap and free advertising for
+          # somebody else's ad revenue. Absent, the site simply has one server
+          # and the switcher hides itself — so a missing secret degrades rather
+          # than breaks.
+          NEXT_PUBLIC_STREAM_SOURCE_2: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_2 }}
+          NEXT_PUBLIC_STREAM_SOURCE_3: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_3 }}
           NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE: ${{ secrets.NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE }}
           NEXT_PUBLIC_IMAGE_CACHE_HOST_URL: ${{ secrets.NEXT_PUBLIC_IMAGE_CACHE_HOST_URL }}
           NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
@@ -169,11 +177,21 @@ jobs:
       # Worker rollout. REQUIRES the token to carry Zone.Cache Rules +
       # Zone.Transform Rules + Zone WAF: Edit — if it lacks them this step fails
       # loudly (that's the point: a red step here means the cache rule isn't live).
+      #
+      # WAF_PERMISSIVE is read from a repository VARIABLE, not hard-coded. Set it
+      # to 1 (Settings → Secrets and variables → Actions → Variables) to hold the
+      # zone open — for an OAuth brand review, or any other automated reviewer
+      # that a managed challenge would show a challenge page instead of the site.
+      # It used to be a local-only env var, which meant a permissive run from a
+      # laptop was silently reverted by the very next push, with nothing on
+      # screen to say the posture had changed. Unset is the hardened default, so
+      # forgetting the variable can only ever leave the zone MORE protected.
       - name: Apply Cloudflare cache + WAF rules
         run: pnpm run waf:apply
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ZONE_NAME: reely.space
+          WAF_PERMISSIVE: ${{ vars.WAF_PERMISSIVE }}
 
       # Post-deploy smoke test = our 5xx alert. Curl the critical routes and FAIL
       # the job (→ GitHub emails on the red run) if any returns a 5xx. This is what

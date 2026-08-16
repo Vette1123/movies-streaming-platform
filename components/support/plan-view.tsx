@@ -37,10 +37,10 @@ function SupporterPanel() {
           Everything is already switched on.
         </h2>
         <p className="text-muted-foreground mt-3 max-w-[60ch] leading-relaxed">
-          Your library syncs across devices, lists are shareable, alerts are
-          running, your watchlist has a calendar feed, and the themes are yours.
-          Thank you — this is what keeps Reely online and free for everyone
-          else.
+          Your library syncs across devices, every backup server is open to you,
+          lists are shareable, alerts are running, your watchlist has a calendar
+          feed, and the themes are yours. Thank you — this is what keeps Reely
+          online and free for everyone else.
         </p>
 
         <div className="mt-8 grid gap-8 md:grid-cols-2">

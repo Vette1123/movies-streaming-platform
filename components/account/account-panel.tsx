@@ -108,7 +108,7 @@ const SECTIONS: SectionDef[] = [
     id: 'playback',
     label: 'Playback',
     title: 'Playback',
-    lede: 'What plays on its own, and what waits to be asked.',
+    lede: 'Which server streams come from, what plays on its own, and what waits to be asked.',
     Icon: PlayCircle,
     Panel: PlaybackPanel,
   },
@@ -488,9 +488,9 @@ function PlanSection({ account }: { account: AccountState }) {
         <p className="text-muted-foreground mt-2 max-w-[60ch] leading-relaxed">
           Nothing you use today depends on paying, and nothing ever will.
           Supporting Reely adds the things an account makes possible: your
-          library everywhere, your watchlist as a live feed in your own
-          calendar, lists worth sharing, alerts when a new episode lands, and a
-          say in what gets built.
+          library everywhere, backup servers when a stream will not start, your
+          watchlist as a live feed in your own calendar, lists worth sharing,
+          alerts when a new episode lands, and a say in what gets built.
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Link href="/support" className={buttonVariants()}>

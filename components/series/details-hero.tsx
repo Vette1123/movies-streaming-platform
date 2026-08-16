@@ -4,15 +4,16 @@ import React, { Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { SeriesDetails } from '@/types/series-details'
+import { seriesStreamUrl } from '@/config/sources'
 import {
   buildMediaEventBase,
   trackMediaDetailViewed,
   trackMediaPlayed,
 } from '@/lib/analytics'
-import { STREAMING_MOVIES_API_URL } from '@/lib/constants'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { useSeasonEpisodes } from '@/hooks/use-season-episodes'
 import { useSeriesProgress } from '@/hooks/use-series-progress'
+import { useStreamSource } from '@/hooks/use-stream-source'
 import { DetailsHero } from '@/components/details-hero'
 import { ContinueWatching } from '@/components/series/continue-watching'
 import { useSeriesPlayback } from '@/components/series/playback-context'
@@ -40,11 +41,6 @@ const SeriesDeepLinkReader = ({
   return null
 }
 
-const seriesStreamUrl = (seriesId?: number, deepLink?: DeepLink | null) => {
-  const base = `${STREAMING_MOVIES_API_URL}/tv/${seriesId}`
-  return deepLink ? `${base}/${deepLink.season}/${deepLink.episode}` : base
-}
-
 const playbackKey = (target: DeepLink | null) =>
   target ? `${target.season}:${target.episode}` : 'default'
 
@@ -55,9 +51,15 @@ export const SeriesDetailsHero = ({
   series: SeriesDetails
   trailerKey?: string
 }) => {
-  // The embed URL, empty until play is pressed — see the note on DetailsHero.
-  const [src, setSrc] = React.useState('')
+  // WHAT is playing, not the URL it produced. The URL is derived below, so
+  // switching server re-points the frame at the same episode instead of needing
+  // a second piece of state that could disagree with the chosen source.
+  // `undefined` means nothing has been started; `null` means the series root.
+  const [playingTarget, setPlayingTarget] = React.useState<
+    DeepLink | null | undefined
+  >(undefined)
   const [deepLink, setDeepLink] = React.useState<DeepLink | null>(null)
+  const sourceControl = useStreamSource(`series:${series?.id}`)
   const { registerPlayer, reportPlaying } = useSeriesPlayback()
   // Which episode we have already counted as played (see startPlayback).
   const playedKeyRef = React.useRef<string | null>(null)
@@ -119,7 +121,7 @@ export const SeriesDetailsHero = ({
   const startPlayback = React.useCallback(
     (target: DeepLink | null, options?: { track?: boolean }) => {
       reportPlaying(target)
-      setSrc(seriesStreamUrl(series?.id, target))
+      setPlayingTarget(target)
       const key = playbackKey(target)
       if (playedKeyRef.current === key) return
       playedKeyRef.current = key
@@ -158,6 +160,11 @@ export const SeriesDetailsHero = ({
     [registerPlayer, startPlayback]
   )
 
+  const src =
+    playingTarget === undefined || !series?.id
+      ? ''
+      : seriesStreamUrl(sourceControl.source, series.id, playingTarget)
+
   return (
     <>
       <Suspense fallback={null}>
@@ -166,6 +173,7 @@ export const SeriesDetailsHero = ({
       <DetailsHero
         series={series}
         src={src}
+        sourceControl={sourceControl}
         playVideo={playDefaultSeries}
         trailerKey={trailerKey}
         playTarget={playTarget}
