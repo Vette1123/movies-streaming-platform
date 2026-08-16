@@ -144,6 +144,18 @@ describe('seriesState', () => {
   it('says nothing about a series with no episodes at all', () => {
     expect(seriesState({ name: 'Unaired' }, null, '1', NOW).announce).toBeNull()
   })
+
+  it('takes the first episode runtime, and nothing when there is none', () => {
+    expect(
+      seriesState({ ...series, episode_run_time: [42, 60] }, null, '1', NOW)
+        .runtime
+    ).toBe(42)
+    expect(seriesState(series, null, '1', NOW).runtime).toBeNull()
+    // TMDB reports 0 for titles it has no figure for, which is not a runtime.
+    expect(
+      seriesState({ ...series, episode_run_time: [0] }, null, '1', NOW).runtime
+    ).toBeNull()
+  })
 })
 
 describe('computeStats', () => {

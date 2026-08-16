@@ -41,12 +41,15 @@ interface TmdbEpisode {
 
 interface TmdbSeries {
   name?: string
+  /** Minutes per episode. An array because anthologies vary; the first is typical. */
+  episode_run_time?: number[] | null
   next_episode_to_air?: TmdbEpisode | null
   last_episode_to_air?: TmdbEpisode | null
 }
 
 interface TmdbMovie {
   title?: string
+  runtime?: number | null
   release_date?: string | null
 }
 
@@ -54,8 +57,24 @@ export interface MediaState {
   name: string | null
   nextAirDate: string | null
   nextLabel: string | null
+  /**
+   * Minutes for one sitting — a film, or one episode of a series. Null when
+   * TMDB does not say, which it often does not for unreleased titles.
+   *
+   * Nothing reads this yet. It is stored because the sweep already holds the
+   * response it comes from, and collecting it from today means the history is
+   * there whenever hours-watched is worth answering; asking for it later would
+   * mean one TMDB request per title in somebody's library.
+   */
+  runtime: number | null
   /** Non-null when something has just become available. */
   announce: { key: string; title: string; body: string; url: string } | null
+}
+
+/** Minutes for one episode, or null if TMDB has not said. */
+const episodeRuntime = (series: TmdbSeries): number | null => {
+  const first = series.episode_run_time?.[0]
+  return typeof first === 'number' && first > 0 ? first : null
 }
 
 const episodeKey = (episode: TmdbEpisode): string =>
@@ -103,6 +122,7 @@ export function seriesState(
     name,
     nextAirDate: next?.air_date ?? null,
     nextLabel: next ? episodeLabel(next) : null,
+    runtime: episodeRuntime(series),
     announce: null,
   }
 
@@ -132,6 +152,10 @@ export function movieState(
     name,
     nextAirDate: movie.release_date ?? null,
     nextLabel: null,
+    runtime:
+      typeof movie.runtime === 'number' && movie.runtime > 0
+        ? movie.runtime
+        : null,
     announce: null,
   }
 
@@ -262,6 +286,9 @@ export async function runSweep(
       .prepare(
         `UPDATE watched_media
          SET name = ?, next_air_date = ?, next_label = ?, checked_at = ?,
+             -- Keep the last known runtime when TMDB stops reporting one, which
+             -- it does for titles that get re-listed as upcoming.
+             runtime = COALESCE(?, runtime),
              notified_key = COALESCE(?, notified_key)
          WHERE media_key = ?`
       )
@@ -270,6 +297,7 @@ export async function runSweep(
         state.nextAirDate,
         state.nextLabel,
         now,
+        state.runtime,
         state.announce?.key ?? null,
         row.media_key
       )

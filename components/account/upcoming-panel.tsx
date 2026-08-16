@@ -41,7 +41,12 @@ function whenLabel(date: string, todayStamp: number): string {
   if (days <= 0) return 'Today'
   if (days === 1) return 'Tomorrow'
   if (days < 7) return `In ${days} days`
-  if (days < 14) return 'Next week'
+  // 7 to 13 days used to read "Next week", which is a fortnight's worth of
+  // dates wearing one label — something 13 days out is not next week. The
+  // weekday is both shorter and true.
+  if (days < 14) {
+    return `Next ${new Date(stamp).toLocaleDateString(undefined, { weekday: 'long' })}`
+  }
   return new Date(stamp).toLocaleDateString(undefined, {
     day: 'numeric',
     month: 'long',

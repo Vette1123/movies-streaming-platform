@@ -1,0 +1,11 @@
+-- How long one sitting of a title is, in minutes.
+--
+-- Written by the hourly sweep, which already has the TMDB detail response in
+-- hand for every watchlisted title — it fetches it to find the next air date.
+-- Storing the runtime there costs one more field off a response that was going
+-- to be discarded, and it is the only piece missing before "hours watched" can
+-- be answered from the database alone, with no TMDB traffic at all.
+--
+-- Filled in as titles come round on the check cycle, so it is NULL until then
+-- and anything reading it must treat NULL as "not known yet" rather than zero.
+ALTER TABLE watched_media ADD COLUMN runtime INTEGER;

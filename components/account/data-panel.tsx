@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import { useAccount } from '@/hooks/use-account'
 import { readStore, writeStore } from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 /**
  * Everything about leaving.
@@ -175,7 +176,6 @@ function Row({
  * button that looks like it might delete a synced library is one nobody presses.
  */
 function ClearDevice({ pro }: { pro: boolean }) {
-  const [confirming, setConfirming] = useState(false)
   const [done, setDone] = useState(false)
 
   return (
@@ -187,71 +187,50 @@ function ClearDevice({ pro }: { pro: boolean }) {
           : 'Empties your saved titles, watch history and ticked-off episodes from this browser. There is no other copy, so this cannot be undone.'
       }
     >
-      <ClearDeviceAction
-        pro={pro}
-        done={done}
-        confirming={confirming}
-        onAsk={() => setConfirming(true)}
-        onCancel={() => setConfirming(false)}
-        onClear={() => {
-          for (const { key } of SYNCED_STORES) writeStore(key, [])
-          clearSyncState()
-          setDone(true)
-        }}
-      />
+      {done ? (
+        <p className="text-muted-foreground text-sm">
+          Cleared.{pro ? ' Your synced copy comes back on the next sync.' : ''}
+        </p>
+      ) : (
+        <ConfirmDialog
+          trigger={
+            <Button variant="outline">
+              <Trash2 className="mr-2 size-4" />
+              Clear browser data
+            </Button>
+          }
+          title="Clear this browser's copy?"
+          description={
+            pro
+              ? 'Your synced library is untouched and comes straight back on the next sync. This is the repair, not the delete.'
+              : 'Your saved titles, watch history and ticked-off episodes are removed from this browser. There is no other copy of them.'
+          }
+          confirmLabel="Yes, clear this device"
+          Icon={Trash2}
+          onConfirm={() => {
+            for (const { key } of SYNCED_STORES) writeStore(key, [])
+            clearSyncState()
+            setDone(true)
+          }}
+        />
+      )}
     </Row>
   )
 }
 
-/** The three states of the clear button, as early returns — no nested ternary. */
-function ClearDeviceAction({
-  pro,
-  done,
-  confirming,
-  onAsk,
-  onCancel,
-  onClear,
-}: {
-  pro: boolean
-  done: boolean
-  confirming: boolean
-  onAsk: () => void
-  onCancel: () => void
-  onClear: () => void
-}) {
-  if (done) {
-    return (
-      <p className="text-muted-foreground text-sm">
-        Cleared.{pro ? ' Your synced copy comes back on the next sync.' : ''}
-      </p>
-    )
-  }
-
-  if (confirming) {
-    return (
-      <div className="flex flex-wrap gap-3">
-        <Button variant="destructive" onClick={onClear}>
-          Yes, clear this device
-        </Button>
-        <Button variant="ghost" onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
-    )
-  }
-
-  return (
-    <Button variant="outline" onClick={onAsk}>
-      <Trash2 className="mr-2 size-4" />
-      Clear browser data
-    </Button>
-  )
-}
-
 function DeleteAccount({ email, pro }: { email: string | null; pro: boolean }) {
-  const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+
+  const remove = async () => {
+    setError(null)
+    const result = await deleteAccount()
+    if (!result.ok) {
+      setError(result.error ?? 'Could not delete the account.')
+      return
+    }
+    clearSyncState()
+    window.location.href = '/'
+  }
 
   return (
     <div className="border-destructive/30 space-y-3 rounded-lg border p-4">
@@ -268,39 +247,30 @@ function DeleteAccount({ email, pro }: { email: string | null; pro: boolean }) {
 
       {error && <p className="text-destructive text-sm">{error}</p>}
 
-      {confirming ? (
-        <div className="flex flex-wrap gap-3">
+      <ConfirmDialog
+        trigger={
           <Button
-            variant="destructive"
-            disabled={busy}
-            onClick={async () => {
-              setBusy(true)
-              const result = await deleteAccount()
-              setBusy(false)
-              if (!result.ok) {
-                setError(result.error ?? 'Could not delete the account.')
-                return
-              }
-              clearSyncState()
-              window.location.href = '/'
-            }}
+            variant="ghost"
+            className={cn('text-destructive hover:text-destructive')}
           >
-            {busy && <Loader2 className="mr-2 size-4 animate-spin" />}
-            Yes, delete it
+            Delete account
           </Button>
-          <Button variant="ghost" onClick={() => setConfirming(false)}>
-            Keep it
-          </Button>
-        </div>
-      ) : (
-        <Button
-          variant="ghost"
-          className={cn('text-destructive hover:text-destructive')}
-          onClick={() => setConfirming(true)}
-        >
-          Delete account
-        </Button>
-      )}
+        }
+        title="Delete this account?"
+        description={`${email ?? 'Your address'}, your synced library, your lists and every signed-in device go with it. This cannot be undone.`}
+        confirmLabel="Yes, delete it"
+        cancelLabel="Keep it"
+        Icon={Trash2}
+        onConfirm={remove}
+      >
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          What is in this browser stays: Reely keeps working exactly as it does
+          for anyone signed out.
+          {pro
+            ? ' Supporting is billed separately — cancel that on Buy Me a Coffee if you want it stopped.'
+            : ''}
+        </p>
+      </ConfirmDialog>
     </div>
   )
 }
