@@ -57,14 +57,21 @@ const CardComponent = ({
   const { isMovieCompleted } = useCompletedMedia()
   const watched = isMounted && itemType === 'movie' && isMovieCompleted(item.id)
 
-  // Everything below that exists only to serve a hover is gated on this, and it
-  // is a MOUNT gate, not a visibility one. These were previously rendered
-  // everywhere and hidden with CSS on touch — which still builds the Radix
-  // HoverCard, still creates a framer motion component, still lays the overlays
-  // out. The homepage mounts 72 of these cards. Measured on a 393px viewport at
-  // 6x CPU throttle, it spent 7-8s in long tasks while scrolling itself was
-  // nearly free, so the cost is mounting, and the only real fix is to not mount.
-  // A phone loses nothing: it cannot hover, so none of this could ever run.
+  // The JS-COMPONENT half of the hover is gated on this, and it is a MOUNT gate,
+  // not a visibility one: the framer spring and the Radix HoverCard. Those were
+  // once rendered everywhere and hidden with CSS on touch, which still builds a
+  // Radix HoverCard and still creates a framer motion component per card. The
+  // homepage mounts 72 of them. Measured on a 393px viewport at 6x CPU throttle
+  // it spent 7-8s in long tasks while scrolling itself was nearly free, so the
+  // cost is mounting, and the only real fix is to not mount. A phone loses
+  // nothing: it cannot hover, so neither could ever run.
+  //
+  // What is NOT gated on it any more is the CSS half — the scrim, the play
+  // badge, the rating strip, the poster zoom, the ring and the shadow. Those are
+  // opacity/transform rules Tailwind already scopes to `@media (hover:hover)`,
+  // so they cost a touch device nothing at runtime, and gating them on a
+  // post-hydration state meant a desktop had NO hover response at all until the
+  // client bundle had landed. That is what "the hover is gone" was.
   const hasHover = useHasHoverPointer()
 
   const href = `${itemRedirect(itemType)}/${item.id}`
@@ -100,27 +107,35 @@ const CardComponent = ({
         />
       )}
 
-      {hasHover && (
-        <>
-          {/* Hover scrim + play affordance. */}
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-black/35 opacity-0 transition-opacity duration-500 ease-out group-hover/card:opacity-100">
-            <span className="bg-primary-fill/90 text-primary-foreground grid size-12 translate-y-1 place-items-center rounded-full shadow-lg backdrop-blur-sm transition-transform duration-300 group-hover/card:translate-y-0">
-              {/* Sprite, not lucide: one per card in every rail and grid. */}
-              <SpriteIcon name="play" className="size-5 translate-x-0.5" />
-            </span>
-          </div>
+      {/* The pure-CSS half of the hover: scrim, play affordance, and the
+          rating/year strip. Rendered unconditionally and ON PURPOSE — every one
+          of these is opacity-0 until `group-hover/card`, and Tailwind emits that
+          variant inside `@media (hover:hover)`, so a touch device can never light
+          them up however long a finger rests on a poster. Gating them on the
+          `hasHover` MOUNT (as this did) meant desktop had no hover at all until
+          React had downloaded, parsed and hydrated — which is most of the reason
+          the hover looked "removed": on a slow load you hover a poster for a
+          second or two and nothing happens. CSS does not wait for hydration.
+          What stays behind the mount gate below is the genuinely expensive
+          machinery — the framer spring and the Radix HoverCard — which is what
+          the mobile measurement in 9e89605 was actually about. */}
+      {/* Hover scrim + play affordance. */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-black/35 opacity-0 transition-opacity duration-500 ease-out group-hover/card:opacity-100">
+        <span className="bg-primary-fill/90 text-primary-foreground grid size-12 translate-y-1 place-items-center rounded-full shadow-lg backdrop-blur-sm transition-transform duration-300 group-hover/card:translate-y-0">
+          {/* Sprite, not lucide: one per card in every rail and grid. */}
+          <SpriteIcon name="play" className="size-5 translate-x-0.5" />
+        </span>
+      </div>
 
-          {/* Bottom gradient with rating + year for at-a-glance context */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-2 rounded-b-lg bg-gradient-to-t from-black/85 to-transparent px-3 pt-8 pb-2.5 text-[11px] font-medium text-white opacity-0 transition-opacity duration-500 ease-out group-hover/card:opacity-100">
-            <ScoreChip
-              imdbRating={imdbRating}
-              voteAverage={item.vote_average}
-              size="sm"
-            />
-            {year && <span className="text-white/60">· {year}</span>}
-          </div>
-        </>
-      )}
+      {/* Bottom gradient with rating + year for at-a-glance context */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-2 rounded-b-lg bg-gradient-to-t from-black/85 to-transparent px-3 pt-8 pb-2.5 text-[11px] font-medium text-white opacity-0 transition-opacity duration-500 ease-out group-hover/card:opacity-100">
+        <ScoreChip
+          imdbRating={imdbRating}
+          voteAverage={item.vote_average}
+          size="sm"
+        />
+        {year && <span className="text-white/60">· {year}</span>}
+      </div>
     </>
   )
 
@@ -139,17 +154,14 @@ const CardComponent = ({
         })
       }
     >
-      {/* pointer-events-auto only where a hover can happen — NOT gated on width.
-          The old `lg:` gate killed the hover lift + details HoverCard on desktop
-          windows under 1024px (small laptops, non-maximized windows). Touch stays
-          clean (no sticky-hover overlay; the tap still navigates via the parent
-          Link). */}
-      <div
-        className={cn(
-          'group/card',
-          hasHover ? 'pointer-events-auto' : 'pointer-events-none'
-        )}
-      >
+      {/* No `pointer-events` branch here any more, and that is the fix, not a
+          simplification: `pointer-events: none` also switches off `:hover`
+          matching, so the whole CSS half of the hover was dead on the first
+          render — i.e. until hydration flipped `hasHover`. Sticky hover on touch
+          was the reason it existed, and `@media (hover:hover)` (which Tailwind
+          already wraps every `group-hover/card:` rule in) does that job without
+          costing desktop its hover. */}
+      <div className="group/card">
         {hasHover ? (
           /* Hover lift+scale via a warm, gently-underdamped framer spring (scale
              1.05, y -10; stiffness 200 / damping 21 / mass 1 → ζ≈0.74, ~0.45s

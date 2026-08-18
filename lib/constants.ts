@@ -2,7 +2,19 @@ const TOP_OFFSET = 60
 const STREAMING_MOVIES_API_URL =
   process.env.NEXT_PUBLIC_STREAMING_MOVIES_API_URL
 const SEARCH_ACTOR_GOOGLE = process.env.NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE
-const IMAGE_CACHE_HOST_URL = process.env.NEXT_PUBLIC_IMAGE_CACHE_HOST_URL
+// Forced to https, whatever the env says. Production's value arrived as
+// `http://ik.imagekit.io/...`, and on an HTTPS page a plain-http image is
+// BLOCKED as mixed content — measured on the live homepage: 213 dead requests,
+// zero bytes each, and every image then walking BlurredImage's error chain down
+// to wsrv (WebP instead of AVIF, a second host, after a failure the browser had
+// to wait for). The posters still appeared, which is why nothing looked broken;
+// they just all arrived late. One normalisation here is cheaper than trusting
+// every deploy secret to carry a scheme.
+const IMAGE_CACHE_HOST_URL =
+  process.env.NEXT_PUBLIC_IMAGE_CACHE_HOST_URL?.replace(
+    /^http:\/\//,
+    'https://'
+  )
 const SEARCH_DEBOUNCE = 400
 // How many items any poster rail carries: the homepage rows and the
 // similar/recommended rows on a detail page. They're horizontal scrollers, so
