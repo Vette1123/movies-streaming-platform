@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import { MultiMovieDetailsRequestProps } from '@/types/movie-details'
 import { MultiSeriesDetailsRequestProps } from '@/types/series-details'
+import { getJson } from '@/lib/api-client'
 import { useLocationPathname } from '@/hooks/use-location-pathname'
 import { MoviesDetailsContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
@@ -49,11 +50,7 @@ export default function MediaFallbackPage() {
     queryKey: ['media-fallback', target?.type, target?.id],
     enabled: Boolean(target),
     staleTime: 60 * 60 * 1000,
-    queryFn: async () => {
-      const res = await fetch(`/api/media/${target!.type}/${target!.id}`)
-      if (!res.ok) throw new Error(`media fetch failed: ${res.status}`)
-      return res.json()
-    },
+    queryFn: () => getJson<Payload>(`/api/media/${target!.type}/${target!.id}`),
   })
 
   // The Worker injects the real <title> into the served HTML, which is what

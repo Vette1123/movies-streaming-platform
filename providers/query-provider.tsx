@@ -9,7 +9,9 @@ import {
 
 import { trackApiError } from '@/lib/analytics'
 import {
+  apiErrorStatus,
   errorMessage,
+  isExpectedApiStatus,
   isStaleChunkError,
   isStaleDeployError,
   isTransportError,
@@ -27,15 +29,21 @@ export const QueryProvider = ({ children }: { children: React.ReactNode }) => {
           onError: (error, query) => {
             const message = errorMessage(error)
             const stale = isStaleDeployError(message)
+            const status = apiErrorStatus(error)
             trackApiError({
               source: 'react_query',
               query_key: JSON.stringify(query.queryKey),
               message,
-              // A dropped connection, an offline tab, or a bundle left behind by
-              // a deploy is not a code fault. Keep the api_error event so the
-              // failure rate stays measurable, but don't file it as an
-              // $exception — that noise buried the real regressions.
-              expected: stale || isTransportError(message),
+              status,
+              // A dropped connection, an offline tab, a bundle left behind by a
+              // deploy, or a 4xx answer to a made-up id is not a code fault.
+              // Keep the api_error event so the failure rate stays measurable,
+              // but don't file it as an $exception — that noise buried the real
+              // regressions.
+              expected:
+                stale ||
+                isTransportError(message) ||
+                isExpectedApiStatus(status),
             })
             if (stale) reloadForStaleDeploy()
           },
@@ -44,8 +52,11 @@ export const QueryProvider = ({ children }: { children: React.ReactNode }) => {
           queries: {
             refetchOnWindowFocus: false,
             // Transient Worker/TMDB hiccups should self-heal instead of leaving
-            // a blank UI. Exponential backoff, capped.
-            retry: 2,
+            // a blank UI. Exponential backoff, capped — but never for a 4xx,
+            // which will answer exactly the same three times and costs a Worker
+            // invocation each.
+            retry: (failureCount, error) =>
+              !isExpectedApiStatus(apiErrorStatus(error)) && failureCount < 2,
             retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
             staleTime: 60_000,
           },

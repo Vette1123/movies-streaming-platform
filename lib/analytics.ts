@@ -308,15 +308,18 @@ export function trackApiError(props: {
   if (!isClient()) return
   ph((posthog) => posthog.capture(EVENTS.API_ERROR, props))
   if (props.expected) return
+  // Built HERE, not inside the callback below. An Error captures its stack where
+  // it is constructed, and `ph()` may not run its callback until posthog-js has
+  // finished loading — which fingerprinted every one of these at
+  // lib/posthog-client.ts, the queue that replayed it, instead of the call site
+  // that actually failed.
+  const error = new Error(`[${props.source}] ${props.message}`)
   ph((posthog) => {
     try {
-      posthog.captureException(
-        new Error(`[${props.source}] ${props.message}`),
-        {
-          $exception_source: 'api',
-          ...props,
-        }
-      )
+      posthog.captureException(error, {
+        $exception_source: 'api',
+        ...props,
+      })
     } catch {
       // captureException must never itself throw and mask the original failure.
     }

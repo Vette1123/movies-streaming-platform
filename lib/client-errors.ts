@@ -9,6 +9,8 @@
 
 import { toast } from 'sonner'
 
+import { ApiError } from '@/lib/api-client'
+
 // A tab that outlived a deploy (we ship ~4x/day plus pushes) holds a client bundle whose
 // Server Action IDs no longer exist on the origin. The action call comes back
 // as a non-RSC response, so TanStack surfaces one of these. The only fix is to
@@ -63,6 +65,26 @@ export const isTransportError = (message: string) =>
 
 export const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : String(error)
+
+/**
+ * A 4xx from our own API is an answer, not a fault: the id does not exist, the
+ * slug was never published, the URL was made up by a crawler. Retrying it costs
+ * two more Worker invocations and changes nothing, and filing it as an
+ * $exception buries the failures that ARE ours.
+ *
+ * 408 and 429 are the exceptions — a timeout and a rate limit both mean "same
+ * request, later", so those keep the normal retry.
+ */
+export const isExpectedApiStatus = (status: number | undefined): boolean =>
+  status !== undefined &&
+  status >= 400 &&
+  status < 500 &&
+  status !== 408 &&
+  status !== 429
+
+/** The status behind a failed `getJson`, or undefined for any other error. */
+export const apiErrorStatus = (error: unknown): number | undefined =>
+  error instanceof ApiError ? error.status : undefined
 
 // Some of these arrive as a bare `ChunkLoadError` whose class name carries the
 // only usable signal — Turbopack puts the chunk URL in the message but not

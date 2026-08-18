@@ -4,6 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 
+import { getJson } from '@/lib/api-client'
 import type { PublicList } from '@/lib/lists/routes'
 import { useLocationPathname } from '@/hooks/use-location-pathname'
 import { buttonVariants } from '@/components/ui/button'
@@ -28,11 +29,11 @@ export default function ListFallbackPage() {
     staleTime: 5 * 60 * 1000,
     retry: false,
     queryFn: async () => {
-      const res = await fetch(`/api/list/${slug}`)
-      if (!res.ok) throw new Error(`list fetch failed: ${res.status}`)
-      const body = await res.json()
+      const body = await getJson<{ success?: boolean; list?: PublicList }>(
+        `/api/list/${slug}`
+      )
       if (!body?.success || !body.list) throw new Error('list missing')
-      return body.list as PublicList
+      return body.list
     },
   })
 

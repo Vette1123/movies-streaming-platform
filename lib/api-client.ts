@@ -13,7 +13,35 @@ import { SeasonDetails } from '@/types/season-details'
 // Every client caller goes through this module so the query-string contract
 // lives in exactly one place — the Worker's router is the other half of it.
 
-async function getJson<T>(path: string, params: Record<string, unknown>) {
+/**
+ * A non-2xx answer from our own Worker API.
+ *
+ * Carries the status, so a caller can tell an expected 4xx — a made-up id, a
+ * dead link, a crawler walking the TMDB id space — from a real failure. Without
+ * it every bad id was retried twice (three Worker invocations for one wrong
+ * URL) and filed as an $exception, which is what put "media fetch failed: 404"
+ * in Error Tracking next to the real regressions.
+ */
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    path: string
+  ) {
+    super(`${path} failed: ${status}`)
+    this.name = 'ApiError'
+  }
+}
+
+/**
+ * The one fetch every client call goes through. Exported because the fallback
+ * shells (app/*-fallback) hit endpoints that take no query string — they were
+ * each hand-rolling these same four lines, and only this one throws an
+ * `ApiError` the query layer can classify.
+ */
+export async function getJson<T>(
+  path: string,
+  params: Record<string, unknown> = {}
+) {
   const search = new URLSearchParams()
   for (const [key, value] of Object.entries(params)) {
     if (value === undefined || value === null || value === '') continue
@@ -21,7 +49,7 @@ async function getJson<T>(path: string, params: Record<string, unknown>) {
   }
   const qs = search.toString()
   const res = await fetch(`${path}${qs ? `?${qs}` : ''}`)
-  if (!res.ok) throw new Error(`${path} failed: ${res.status}`)
+  if (!res.ok) throw new ApiError(res.status, path)
   return (await res.json()) as T
 }
 

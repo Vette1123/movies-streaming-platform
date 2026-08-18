@@ -4,6 +4,7 @@ import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import { CollectionDetails } from '@/types/collection'
+import { getJson } from '@/lib/api-client'
 import { useLocationPathname } from '@/hooks/use-location-pathname'
 import { CollectionView } from '@/components/collection/collection-view'
 
@@ -26,11 +27,7 @@ export default function CollectionFallbackPage() {
     queryKey: ['collection-fallback', id],
     enabled: Boolean(id),
     staleTime: 60 * 60 * 1000,
-    queryFn: async () => {
-      const res = await fetch(`/api/collection/${id}`)
-      if (!res.ok) throw new Error(`collection fetch failed: ${res.status}`)
-      return res.json()
-    },
+    queryFn: () => getJson<CollectionDetails>(`/api/collection/${id}`),
   })
 
   // The Worker injects the real <title>, but hydration re-renders the shell's

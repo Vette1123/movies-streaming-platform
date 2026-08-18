@@ -9,11 +9,7 @@ import {
   trackPwaInstallable,
   trackPwaInstalled,
 } from '@/lib/analytics'
-import {
-  isStaleChunkError,
-  isStaleDeployError,
-  isTransportError,
-} from '@/lib/client-errors'
+import { shouldDropException } from '@/lib/error-noise'
 import { onIdle } from '@/lib/idle'
 import { enrichPersonProfile } from '@/lib/person'
 import { analyticsEnabled, loadPostHog, ph } from '@/lib/posthog-client'
@@ -60,85 +56,6 @@ function errorContext(): Record<string, unknown> {
 }
 
 /**
- * Unactionable $exception classes that flood error tracking with noise we can
- * never fix in app code. Dropped in before_send so real errors aren't buried:
- *
- * - React #418: a hydration mismatch. Overwhelmingly caused by browser
- *   extensions (Grammarly, translators, password managers) mutating the DOM
- *   before hydration — our components are all mount-gated / hydration-safe.
- * - "Script error.": a cross-origin script threw with no CORS header, so the
- *   browser gives us zero detail. Always third-party / extension code.
- * - removeChild on Node: an extension removed a node out from under React's
- *   reconciler. Not our tree.
- * - null 'document': fired from an injected `HTMLDocument.c` frame (not our
- *   source) — extension/bookmarklet code, never our bundle.
- * - ResizeObserver loop: the spec says a browser MAY report an undelivered
- *   resize notification; it's a benign frame-budget warning, not a failure —
- *   nothing observable breaks and no app code can prevent it.
- * - _internal_videoInjector*: a video-downloader extension's page script poking
- *   at a <video> it thinks exists. Not a symbol our bundle ever defines.
- * - "Hydration failed because…": the unminified twin of #418, same cause.
- * - `standardSelectors`: Brave's Shields cosmetic-filtering content script (the
- *   symbol is brave-core's, appears in no dependency of ours) throwing inside
- *   its own injected code on iOS. Arrives synthetic, unhandled, with zero stack
- *   frames from our bundle, and nothing on the page is actually broken.
- * - `<something>.data.split is not a function`: a `message` event handler that
- *   assumed a string payload got an object instead. We register no message
- *   listener anywhere (the YouTube embed is postMessage-out only), and these
- *   arrive with zero stack frames from our bundle — it's injected page script.
- */
-const NOISE_EXCEPTION_PATTERNS = [
-  /Minified React error #418\b/i,
-  /react\.dev\/errors\/418\b/i,
-  /Hydration failed because the server rendered HTML didn't match/i,
-  /^\s*Script error\.?\s*$/i,
-  /Failed to execute 'removeChild' on 'Node'/i,
-  /Cannot read properties of null \(reading 'document'\)/i,
-  /ResizeObserver loop/i,
-  /_internal_videoInjector/i,
-  /\bstandardSelectors\b/,
-  /\bdata\.split is not a function/i,
-]
-
-/** Collect every exception type/value string carried on a $exception event. */
-function exceptionStrings(event: CaptureResult): string[] {
-  const props = (event.properties ?? {}) as Record<string, unknown>
-  const out: string[] = []
-  const list = props.$exception_list
-  if (Array.isArray(list)) {
-    for (const ex of list) {
-      if (ex && typeof ex.value === 'string') out.push(ex.value)
-      if (ex && typeof ex.type === 'string') out.push(ex.type)
-    }
-  }
-  const values = props.$exception_values
-  if (Array.isArray(values)) {
-    for (const v of values) if (typeof v === 'string') out.push(v)
-  }
-  return out
-}
-
-/** True when an exception is a known-unactionable extension / cross-origin noise. */
-function isNoiseException(messages: string[]): boolean {
-  return messages.some((m) => NOISE_EXCEPTION_PATTERNS.some((re) => re.test(m)))
-}
-
-/**
- * Stale-bundle and transport failures reach Error Tracking by a second route:
- * PostHog autocaptures them as unhandled window errors / rejections, which never
- * pass through the react-query reporter that already classifies them as expected
- * (providers/query-provider.tsx). They aren't code faults — a tab that outlived
- * one of our ~4x/day deploys, or a connection that dropped — and the same event
- * already triggers reloadForStaleDeploy() to recover the user. Drop them so the
- * dashboard keeps showing only errors we can actually fix.
- */
-function isUnactionableFailure(messages: string[]): boolean {
-  return messages.some(
-    (m) => isStaleDeployError(m) || isStaleChunkError(m) || isTransportError(m)
-  )
-}
-
-/**
  * The full PostHog config — autocapture, dead-clicks, rageclick, web vitals,
  * heatmaps, exception tracking, session recording, person profiles. Every
  * feature is kept ON; nothing is dropped. This is just the config object,
@@ -170,12 +87,11 @@ const POSTHOG_CONFIG = {
   // Wrapped defensively so enrichment can never drop an exception event.
   before_send: (event: CaptureResult | null) => {
     if (event && event.event === '$exception') {
-      // Drop unactionable extension / cross-origin noise (React #418 &c.) and
-      // stale-bundle / transport failures, so neither buries the real, fixable
-      // errors in the dashboard.
-      const messages = exceptionStrings(event)
-      if (isNoiseException(messages) || isUnactionableFailure(messages))
-        return null
+      // Drop unactionable extension / cross-origin noise (React #418 &c.),
+      // stale-bundle / transport failures, and anything thrown by code that is
+      // not ours, so none of it buries the real, fixable errors in the
+      // dashboard. The rules live in lib/error-noise.ts, where they are tested.
+      if (shouldDropException(event)) return null
       event.properties = { ...event.properties, ...errorContext() }
     }
     return event
