@@ -49,6 +49,15 @@ HoverCard stay behind the mount gate — they are what the mobile measurement in
   `//` in `http://` and the regex escapes, and committed a broken
   `/^http:\/\//` → `/^http:///`. Use the `Edit` tool for anything containing
   slashes, backticks or `$`.
+- **Declared the hover fixed after verifying only the half I had touched.** The
+  probe checked poster scale, scrim opacity and the framer lift — all green —
+  and never asked whether the Radix details popover opened. It did not, and had
+  not for some time: `MediaLink` (the shared detail-route link) declares five
+  named props and drops the rest, so `HoverCardTrigger asChild` handed it
+  `data-state`, a ref and four pointer handlers that went nowhere. The user saw
+  it immediately in a screenshot. A hover has more than one moving part; probe
+  every one, and probe the ones you did not touch too. `data-state` on the
+  trigger would have caught it in the same call that read `scale`.
 
 ## What worked
 
@@ -77,6 +86,10 @@ HoverCard stay behind the mount gate — they are what the mobile measurement in
   (framer, Radix).
 - `pointer-events: none` also switches off `:hover` matching. It is not a
   visibility flag.
+- **A shared wrapper component takes every prop of the element it renders, or it
+  is a trap.** A named-prop allow-list silently swallows `asChild` injection —
+  refs, `data-*`, handlers — and the failure is invisible: no error, no warning,
+  just a feature that never happens.
 - Read `styleSheets` from the network, not from `document` — escapes and nested
   at-rules make the DOM API the wrong lens.
 - When two complaints arrive together, look for the one cause first. Late
