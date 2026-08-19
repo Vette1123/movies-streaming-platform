@@ -679,3 +679,17 @@ html[data-density='compact'] {
 body[data-list-has-more='true'] footer {
   display: none;
 }
+
+/* The tip jar stacks itself at z-index 9999 and up — its button, its prompt,
+   its backdrop and its iframe — which puts it over every dialog, sheet and
+   toast we own at z-50. Two of the nodes it appends to <body> carry no id and
+   no class, so the handle is the inline z-index it writes on them; sonner and
+   the Radix portals set theirs from classes, and are untouched.
+
+   40 keeps it above the page and under everything of ours. Raising our overlays
+   past 9999 instead would work once, then have to be repeated for the next one. */
+#bmc-wbtn,
+body > iframe[id^='bmc-'],
+body > div[style*='z-index: 9999'] {
+  z-index: 40 !important;
+}
