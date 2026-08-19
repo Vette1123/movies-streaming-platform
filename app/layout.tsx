@@ -261,6 +261,46 @@ export default function RootLayout({ children }: RootLayoutProps) {
           and it does nothing at all for everyone else. See lib/appearance.ts.
         */}
         <script dangerouslySetInnerHTML={{ __html: APPEARANCE_BOOT_SCRIPT }} />
+        {/*
+          Buy Me a Coffee's floating widget.
+
+          It has to be a real <script> in the document, not next/script: the
+          vendor bundle builds its button inside a DOMContentLoaded listener,
+          and every next/script strategy injects the tag AFTER that event has
+          already fired — measured, all three, the script downloads and then
+          does nothing. `defer` is what makes it safe to put here: deferred
+          scripts run in order right BEFORE DOMContentLoaded, so the listener
+          is registered in time without blocking the parser the way the
+          appearance boot script above deliberately does.
+
+          Bottom-LEFT, not the bottom-right the generator hands you: at z-9999
+          it lands on the hero trailer-autoplay toggle and swallows 42% of it.
+          The left corner is empty at every breakpoint.
+          Lower-case "left" on purpose: the vendor compares the attribute
+          against the literal "left", so the capitalised "Left" its own
+          generator would write silently falls through to the right edge.
+
+          It sells COFFEES, not the membership levels in config/support.ts, so
+          nothing bought here grants supporter status — including the panel’s
+          "make this monthly", which does fire a recurring event but carries no
+          level name we configured, and lib/billing/bmc.ts matches on that name
+          with `fallback: null`. The path that actually turns somebody into a
+          supporter is /support. This is a tip jar, and if a payer ever reports
+          buying here and getting nothing switched on, this comment is the why.
+        */}
+        <script
+          defer
+          src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js"
+          data-name="BMC-Widget"
+          data-cfasync="false"
+          data-id="vetteotp"
+          data-description="Support me on Buy me a coffee!"
+          data-message="Reely runs on TMDB and coffee. Supporters get server switching + calendar feed."
+          data-color="#5F7FFF"
+          data-position="left"
+          data-x_margin="18"
+          data-y_margin="18"
+        />
         <JsonLd data={websiteJsonLd} />
         <JsonLd data={organizationJsonLd} />
       </head>
