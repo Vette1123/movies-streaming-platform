@@ -5,11 +5,18 @@ import Link from 'next/link'
 import { Check, Copy, ImageDown, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { computeStats, type LibraryStats } from '@/lib/stats'
+import {
+  computeStats,
+  hoursLabel,
+  isExact,
+  runtimeSource,
+  type LibraryStats,
+} from '@/lib/stats'
 import { renderStatsCard } from '@/lib/stats-card'
 import { useAccount } from '@/hooks/use-account'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useMounted } from '@/hooks/use-mounted'
+import { useRuntimeBackfill } from '@/hooks/use-runtime-backfill'
 import { Button, buttonVariants } from '@/components/ui/button'
 
 const monthName = (key: string): string => {
@@ -26,9 +33,11 @@ export function StatsPanel() {
   const [watchlist] = useLocalStorage('watchlist', [])
   const [copied, setCopied] = useState(false)
 
+  const backfill = useRuntimeBackfill(pro, completed)
+
   const stats = useMemo(
-    () => computeStats(history, completed, watchlist.length),
-    [completed, history, watchlist.length]
+    () => computeStats(history, completed, watchlist.length, backfill),
+    [backfill, completed, history, watchlist.length]
   )
 
   // localStorage is unread on the server and on the first paint, so every number
@@ -54,7 +63,7 @@ export function StatsPanel() {
   }
 
   const summary = [
-    `About ${stats.hours} hours on Reely.`,
+    `${isExact(stats) ? '' : 'About '}${stats.hours} hours on Reely.`,
     `${stats.films} films, ${stats.episodes} episodes, ${stats.seriesStarted} shows.`,
     stats.streak > 1 ? `Longest streak: ${stats.streak} days.` : null,
   ]
@@ -64,7 +73,7 @@ export function StatsPanel() {
   return (
     <div className="space-y-10">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Figure value={`${stats.hours}`} label="hours, roughly" primary />
+        <Figure value={`${stats.hours}`} label={hoursLabel(stats)} primary />
         <Figure value={`${stats.films}`} label="films finished" />
         <Figure value={`${stats.episodes}`} label="episodes ticked off" />
         <Figure value={`${stats.seriesStarted}`} label="shows started" />
@@ -92,6 +101,7 @@ export function StatsPanel() {
           }
         />
         <Line term="Saved for later" value={`${stats.saved} titles`} />
+        <Line term="Runtimes" value={runtimeSource(stats)} />
       </dl>
 
       <div className="flex flex-wrap items-center gap-3">

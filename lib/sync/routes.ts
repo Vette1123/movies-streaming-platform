@@ -29,6 +29,13 @@ export const SYNC_STORES = [
   // Your own score and note per title. Same row shape as the rest; see the
   // rating/note fields on WatchedItem.
   'reviews',
+  // "Not interested" — titles to keep out of recommendations and rails.
+  //
+  // It rides the ordinary per-title sync rather than a table of its own, which
+  // also means lib/foryou/routes.ts excludes it for free: readLibrary() adds
+  // EVERY key from EVERY store to its exclusion set, so a hidden title stops
+  // being recommended the moment it syncs, with no change there at all.
+  'hidden',
 ]
 
 /**

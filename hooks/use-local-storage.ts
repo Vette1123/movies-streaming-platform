@@ -23,6 +23,20 @@ export interface WatchedItem {
    */
   rating?: number
   note?: string
+  /**
+   * Minutes for one sitting: the film's runtime, or one episode of the series.
+   *
+   * Captured here because this is the ONE moment it is free. The caller is on a
+   * detail page and already holds the TMDB payload it comes from, so writing it
+   * down costs nothing; asking for it later would be one TMDB request per title
+   * in somebody's library, which is exactly the shape of request that blew the
+   * 50-subrequest cap when IMDb ratings tried it.
+   *
+   * Optional because history recorded before this shipped does not have it.
+   * lib/stats.ts falls back to an average for those and says so on screen, and
+   * lib/stats/routes.ts backfills what the alert sweep happens to know.
+   */
+  runtime?: number
   added_at: string
   modified_at: string
 }
@@ -31,21 +45,54 @@ export interface WatchedItem {
 // completed. All three stored the same shape via near-identical inline objects;
 // centralizing keeps the field set and the movie-vs-series discrimination in one
 // place. `extra` carries series-only season/episode when the caller has it.
+/**
+ * Minutes for one sitting, or undefined when TMDB has not said.
+ *
+ * A series reports an ARRAY, because an anthology's episodes vary; the first
+ * entry is the typical one and is what every other consumer of this field in
+ * the codebase uses (see lib/push/sweep.ts). Zero is treated as absent: TMDB
+ * uses it for "unknown", and a zero stored as a real runtime would silently
+ * drag an hours-watched total down instead of falling back to the average.
+ */
+function runtimeOf(media: WatchedSource, isMovie: boolean): number | undefined {
+  const minutes = isMovie ? media.runtime : media.episode_run_time?.[0]
+  return typeof minutes === 'number' && minutes > 0 ? minutes : undefined
+}
+
+/**
+ * The least a thing can be and still become a WatchedItem.
+ *
+ * The two detail payloads satisfy it structurally, and so does a list card or
+ * anything else carrying an id and a name. It exists because "not interested"
+ * is triggered from a grid tile, which has never held a full TMDB detail
+ * payload — and the alternative was a cast at the call site, which is the same
+ * risk with the type checker switched off.
+ */
+export interface WatchedSource {
+  id: number
+  title?: string
+  name?: string
+  overview?: string | null
+  backdrop_path?: string | null
+  poster_path?: string | null
+  runtime?: number | null
+  episode_run_time?: number[] | null
+}
+
 export function buildWatchedItem(
-  media: MovieDetails | SeriesDetails,
+  media: WatchedSource,
   extra?: Pick<WatchedItem, 'season' | 'episode'>
 ): WatchedItem {
-  const isMovie = 'title' in media && !!(media as MovieDetails).title
+  const isMovie = !!media.title
   const now = new Date().toISOString()
   return {
+    runtime: runtimeOf(media, isMovie),
     id: media.id,
     type: isMovie ? 'movie' : 'series',
-    title: isMovie
-      ? (media as MovieDetails).title
-      : (media as SeriesDetails).name,
-    overview: media.overview,
-    backdrop_path: media.backdrop_path,
-    poster_path: media.poster_path,
+    title: (isMovie ? media.title : media.name) ?? '',
+    overview: media.overview ?? '',
+    backdrop_path: media.backdrop_path ?? '',
+    poster_path: media.poster_path ?? '',
     added_at: now,
     modified_at: now,
     ...extra,

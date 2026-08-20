@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Server } from 'lucide-react'
+import { EyeOff, Server } from 'lucide-react'
 
 import { HAS_FALLBACK_SOURCE, STREAM_SOURCES } from '@/config/sources'
 import { savePrefs } from '@/lib/account'
@@ -22,6 +22,38 @@ import { SupporterGate } from './supporter-gate'
  * subtitles — but which server it comes from is ours to choose, and that is the
  * one that matters when a stream will not start.
  */
+/**
+ * Episode titles, hidden until you have watched them.
+ *
+ * Supporter-only because it rides `prefs`, which is the account: the whole
+ * value is that it is already on when you open the next episode on the TV, and
+ * a device-local version of it would be a worse feature wearing the same name.
+ */
+function SpoilerSection() {
+  const { pro, prefs } = useAccount()
+  if (!pro) {
+    return (
+      <SupporterGate
+        title="Stop reading the next episode's title"
+        Icon={EyeOff}
+      >
+        The season list sits directly under the player, and every episode title
+        in it is a thing that has not happened to you yet. This hides the names
+        of episodes you have not ticked off, leaving them as &ldquo;Episode
+        4&rdquo; until you watch them, with one tap to show any of them anyway.
+      </SupporterGate>
+    )
+  }
+  return (
+    <SettingSwitch
+      label="Hide episode titles I have not watched"
+      description="Episodes you have not ticked off show as &ldquo;Episode 4&rdquo; instead of their name, with a Show control on each one. Episodes you have already watched, and whatever is playing, always show their real title."
+      checked={prefs.spoilerFree === true}
+      onChange={(next) => void savePrefs({ spoilerFree: next })}
+    />
+  )
+}
+
 export function PlaybackPanel() {
   const lowPower = useLowPowerDevice()
   const hasHover = useHasHoverPointer()
@@ -33,6 +65,8 @@ export function PlaybackPanel() {
   return (
     <div className="space-y-8">
       <ServerSection />
+
+      <SpoilerSection />
 
       <div className="space-y-4">
         <SettingSwitch

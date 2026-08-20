@@ -7,6 +7,7 @@ import {
   BellRing,
   CalendarDays,
   ExternalLink,
+  EyeOff,
   Heart,
   LayoutGrid,
   ListMusic,
@@ -22,9 +23,9 @@ import {
 
 import {
   SUPPORT_EMAIL,
-  SUPPORT_PRICES,
   SUPPORT_URL,
   supportMailto,
+  supportPriceRow,
 } from '@/config/support'
 import { signInHref, type AccountState } from '@/lib/account'
 import { cn } from '@/lib/utils'
@@ -38,6 +39,7 @@ import { AlertsPanel } from './alerts-panel'
 import { AppearancePanel } from './appearance-panel'
 import { DataPanel } from './data-panel'
 import { ForYouPanel } from './for-you-panel'
+import { HiddenPanel } from './hidden-panel'
 import { ImportPanel } from './import-panel'
 import { LibraryPanel } from './library-panel'
 import { ListsPanel } from './lists-panel'
@@ -93,6 +95,14 @@ const SECTIONS: SectionDef[] = [
     lede: 'What to watch next, worked out from what you actually finished.',
     Icon: Sparkles,
     Panel: ForYouPanel,
+  },
+  {
+    id: 'hidden',
+    label: 'Not interested',
+    title: 'Titles you hid',
+    lede: 'Everything you dismissed, and one tap to put any of it back.',
+    Icon: EyeOff,
+    Panel: HiddenPanel,
   },
   {
     id: 'lists',
@@ -527,8 +537,7 @@ function PlanSection({ account }: { account: AccountState }) {
             See what support unlocks
           </Link>
           <span className="text-muted-foreground text-sm">
-            ${SUPPORT_PRICES.monthly}/month · ${SUPPORT_PRICES.yearly}/year · $
-            {SUPPORT_PRICES.lifetime} once
+            {supportPriceRow()}
           </span>
         </div>
       </section>

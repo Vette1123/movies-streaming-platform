@@ -23,6 +23,7 @@ import { handleImportResolve } from '@/lib/import/routes'
 import { handleLists, loadPublicList } from '@/lib/lists/routes'
 import { handleNextUp } from '@/lib/nextup/routes'
 import { handlePushPending, handlePushSubscribe } from '@/lib/push/routes'
+import { handleStatsRuntimes } from '@/lib/stats/routes'
 import { handleSync } from '@/lib/sync/routes'
 import { handleCalendarFeed, handleUpcoming } from '@/lib/upcoming/routes'
 
@@ -73,6 +74,7 @@ const ROUTES: Record<string, 'GET' | 'POST' | 'GET|POST'> = {
   '/api/next-up': 'GET',
   '/api/for-you': 'GET',
   '/api/import/resolve': 'POST',
+  '/api/stats/runtimes': 'POST',
 }
 
 export function ownsPath(pathname: string): boolean {
@@ -168,6 +170,8 @@ export async function routeAccountApi(
       return handleForYou(request, db)
     case '/api/import/resolve':
       return handleImportResolve(request, db)
+    case '/api/stats/runtimes':
+      return handleStatsRuntimes(request, db)
     default:
       return null
   }

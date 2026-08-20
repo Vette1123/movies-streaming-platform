@@ -40,6 +40,7 @@ import {
 import { Slider } from '@/components/ui/slider'
 import { Icons } from '@/components/icons'
 import { CountBadge } from '@/components/media/filter-controls'
+import { SavedFilters } from '@/components/media/saved-filters'
 
 interface FilterSidebarProps {
   mediaType: 'movie' | 'tv'
@@ -298,6 +299,11 @@ export const FilterSidebar = ({
           </Button>
         )}
       </div>
+
+      {/* Above the scroll area, not inside it: the saved set is what somebody
+          opens this panel to reach, and burying it under nine accordions would
+          make it the one control you have to scroll to find. */}
+      <SavedFilters hasActiveFilters={hasActiveFilters} />
 
       <ScrollArea className="max-h-[78vh] overflow-y-auto pb-8 lg:max-h-[calc(100vh-8rem)] lg:pb-0">
         <div className="space-y-4 pr-3">

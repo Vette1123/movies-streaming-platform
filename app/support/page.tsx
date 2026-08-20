@@ -1,23 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
-import {
-  BadgeCheck,
-  BellRing,
-  CalendarDays,
-  Check,
-  Heart,
-  ListMusic,
-  ListVideo,
-  Mail,
-  MessageSquare,
-  Palette,
-  RefreshCw,
-  Server,
-  Sparkles,
-  Star,
-  Upload,
-  Wand2,
-} from 'lucide-react'
+import { Check, Mail } from 'lucide-react'
 
 import { siteConfig } from '@/config/site'
 import {
@@ -25,12 +8,13 @@ import {
   SUPPORT_LIFETIME,
   SUPPORT_MEMBERSHIP,
   SUPPORT_PRICES,
-  SUPPORT_URL,
   supportMailto,
 } from '@/config/support'
+import { FLAGSHIP_FEATURES, SUPPORT_FEATURES } from '@/config/support-features'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { PlanView } from '@/components/support/plan-view'
+import { SupportCta } from '@/components/support/support-cta'
 
 export const metadata: Metadata = {
   title: 'Support Reely',
@@ -52,75 +36,20 @@ export const metadata: Metadata = {
  * plan is stated as a promise near the top, the prices are printed rather than
  * hidden behind a click, and every claim below maps to something that actually
  * ships.
+ *
+ * Laid out as eight sections that deliberately do NOT share a shape. The page
+ * used to be thirteen identical bordered tiles followed by three more identical
+ * bordered tiles, which reads as a template rather than as a product: the eye
+ * finds no hierarchy, so nothing is emphasised and the flagship feature lands
+ * with exactly the weight of the accent colours. Now the three features
+ * somebody can understand from the title alone get room and a real screenshot,
+ * the other ten are a dense two-column list with no boxes at all, and no two
+ * sections below them repeat a layout.
+ *
+ * Every feature on it comes from config/support-features.ts, which is also what
+ * the supporter's own view of this page reads — the two used to be written out
+ * separately and had already drifted.
  */
-
-const UNLOCKS = [
-  {
-    Icon: RefreshCw,
-    title: 'One library, every screen, forever',
-    body: 'Saved titles, watch history and every episode you have ticked off, kept in step across your phone, your laptop and the browser on the TV — within seconds, in both directions, without a sync button. Start something in bed, finish it at your desk. Clear your browser, lose your phone, buy a new laptop: sign in and it is all still there, exactly as you left it. This is the one that makes everything below it worth having, because a library that lives in one browser is a library you are one accident away from losing.',
-  },
-  {
-    Icon: ListVideo,
-    title: 'Never ask “which episode was I on”',
-    body: 'A row across the top of the homepage with every show you have going — the exact episode you are up to, how far through you are, one tap from playing. Reely works it out from the episodes you have already ticked off, so there is nothing to set up and nothing to keep tidy.',
-  },
-  {
-    Icon: Star,
-    title: 'Your own score, on everything',
-    body: 'Rate anything out of ten and leave yourself a line about why. It sits with the title everywhere it appears and follows you to every device — so a watch history stops being a log and becomes something you can look back through. Which was it you gave a 9 to last spring?',
-  },
-  {
-    Icon: Wand2,
-    title: 'Suggestions that read your history',
-    body: 'Not “more like the page you are on” — what to watch tonight, worked out from the last films and shows you actually finished, with everything already on your watchlist or in your history taken back out. Each one tells you which of your titles it came from.',
-  },
-  {
-    Icon: Upload,
-    title: 'Bring your Letterboxd or IMDb library with you',
-    body: 'Years of ratings and a watchlist you have been adding to forever, read straight in from their CSV export and matched to real titles, with your scores carried onto the ten-point scale. The file is read on your own device and never uploaded — only the titles that need a lookup are sent, and never your ratings.',
-  },
-  {
-    Icon: CalendarDays,
-    title: 'Your watchlist, in your real calendar',
-    body: 'A private link Google Calendar, Apple Calendar or Outlook subscribes to once — then every dated episode and release day turns up in the calendar you already live in, with a reminder the morning before. Save a show tonight and next season’s premiere appears months from now, on its own, next to your dentist appointment.',
-  },
-  {
-    Icon: Server,
-    title: 'A stream that will not start is not the end of the night',
-    body: 'Streams come from a third party, and third parties have bad days. Supporters get every backup server Reely has: one tap to switch, an automatic hop the moment one stops responding, and a memory of which server worked for which title — so the same title never stalls on you twice.',
-  },
-  {
-    Icon: BellRing,
-    title: 'Told the day it lands',
-    body: 'A notification the day a new episode of something you follow is out, and the day a film you saved reaches its release date. No feed to check, no date to remember, nothing missed because it aired on a Tuesday.',
-  },
-  {
-    Icon: ListMusic,
-    title: 'Lists worth sharing',
-    body: 'Build collections out of your own library, put a note and a score on anything worth one, then publish a list as a real link that unfurls with poster art wherever you paste it. Unpublish and it is gone; publish again and the same link works.',
-  },
-  {
-    Icon: Sparkles,
-    title: 'Your year, as a card worth posting',
-    body: 'Hours watched, films finished, episodes ticked off, longest streak, busiest month — drawn into an image on your own device, ready for a story or a group chat. Counted across every device you use rather than whichever browser you happen to be in.',
-  },
-  {
-    Icon: Palette,
-    title: 'Six accents and a denser layout',
-    body: 'Small, and the thing you will see every single session. It rides on your account, so every device you sign in on already looks the way you like it.',
-  },
-  {
-    Icon: BadgeCheck,
-    title: 'Never asked again',
-    body: 'The moment support lands, Reely stops asking. No prompts, no banners, no reminders — the supporter badge goes on your account and the subject never comes up again.',
-  },
-  {
-    Icon: MessageSquare,
-    title: 'A direct line',
-    body: `Write to ${SUPPORT_EMAIL} about anything — a billing problem, a bug, or a feature you think should exist. It reaches one person and I answer it myself. Supporters are a short list, so this is a real promise rather than a nice sentence.`,
-  },
-] as const
 
 // The prices, and what each is worth against the others. Derived rather than
 // typed: the yearly saving is a fact about two numbers in config/support.ts, and
@@ -135,6 +64,7 @@ const PLANS: {
   price: number
   note: string
   badge?: string
+  featured?: boolean
 }[] = [
   {
     name: 'Monthly',
@@ -146,6 +76,7 @@ const PLANS: {
     price: SUPPORT_PRICES.yearly,
     note: 'Two months cheaper than paying monthly',
     badge: `Save $${YEARLY_SAVING}`,
+    featured: true,
   },
   {
     name: 'Lifetime',
@@ -215,10 +146,35 @@ const FAQ = [
 const FREE_FOREVER = [
   'The whole catalogue, every filter, and search',
   'The player, on everything',
-  'Watchlist, watch history and episode tracking, kept in this browser',
+  'Watchlist, history and episode tracking, kept in this browser',
   'The installable app, offline shell included',
   'No account required for any of it',
 ] as const
+
+/**
+ * The mechanics, as the three things that happen in order.
+ *
+ * Numbered because the order is the content: the most common support mail is
+ * from somebody who paid under one address and signed in with another, and it
+ * happens precisely because nobody told them the two had to match.
+ */
+const STEPS = [
+  {
+    title: 'Pick a level',
+    body: `${SUPPORT_MEMBERSHIP} or ${SUPPORT_LIFETIME}, on Buy Me a Coffee. They own the payment, the cycle and the cancellation.`,
+  },
+  {
+    title: 'Sign in with the same address',
+    body: 'Support switches on automatically for the email you paid with, usually within a minute or two. Paid under a different one? Email me and I will move it across the same day.',
+  },
+  {
+    title: 'Nothing else to do',
+    body: 'Every feature above is on, on every device you sign in on, and Reely never asks you for money again. Cancelling is one click, and it runs to the end of the period you have already paid for.',
+  },
+] as const
+
+/** Every section shares this measure, so the page has one left edge. */
+const SECTION = 'container max-w-(--breakpoint-xl)'
 
 export default function SupportPage() {
   return (
@@ -228,234 +184,278 @@ export default function SupportPage() {
           prerendered HTML is still the full pitch, so crawlers and automated
           reviewers read the complete description of the page. */}
       <PlanView>
-        <section className="container grid max-w-(--breakpoint-xl) gap-10 pt-24 pb-16 lg:grid-cols-[1.15fr_1fr] lg:items-center lg:gap-16 lg:pt-28">
-          <div className="space-y-6">
-            <h1 className="text-4xl font-bold tracking-tighter text-balance md:text-5xl lg:text-6xl">
-              Reely is free. Support is what keeps it that way.
-            </h1>
-            <p className="text-muted-foreground max-w-[52ch] text-lg leading-relaxed">
-              Everything on this site stays free for everyone. Supporting it
-              moves your library off this one browser and unlocks the rest.
-            </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <a
-                href={SUPPORT_URL}
-                target="_blank"
-                rel="noreferrer"
-                className={buttonVariants({ size: 'lg' })}
-              >
-                <Heart className="mr-2 size-4" />
-                Support Reely
-              </a>
-              <Link
-                href="/account"
-                className={buttonVariants({ size: 'lg', variant: 'outline' })}
-              >
-                Your account
-              </Link>
-            </div>
-          </div>
-
-          <div className="border-primary/25 from-primary/10 rounded-lg border bg-gradient-to-br to-transparent p-6 sm:p-8">
-            <p className="text-muted-foreground text-sm">Three ways to do it</p>
-            <div className="mt-5 space-y-5">
-              {PLANS.map(({ name, price, note, badge }, index) => (
-                <div
-                  key={name}
-                  className={cn(
-                    'flex items-baseline justify-between gap-4',
-                    index > 0 && 'border-t pt-5'
-                  )}
-                >
-                  <div>
-                    <p className="flex flex-wrap items-center gap-2 font-semibold">
-                      {name}
-                      {badge && (
-                        <span className="bg-primary/15 text-primary rounded-full px-2 py-0.5 text-xs font-semibold">
-                          {badge}
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-muted-foreground text-sm">{note}</p>
-                  </div>
-                  <p className="font-mono text-3xl font-semibold tabular-nums">
-                    ${price}
-                  </p>
-                </div>
-              ))}
-            </div>
-            <p className="text-muted-foreground mt-6 text-xs leading-relaxed">
-              Handled by Buy Me a Coffee. Reely never sees a card number.
-            </p>
-          </div>
-        </section>
-
-        <section className="container max-w-(--breakpoint-xl) py-16">
-          <h2 className="max-w-[20ch] text-3xl font-bold tracking-tight md:text-4xl">
-            What support unlocks
-          </h2>
-          <div className="mt-10 grid gap-4 md:grid-cols-6">
-            {UNLOCKS.map(({ Icon, title, body }, index) => (
-              <article
-                key={title}
-                className={
-                  // A rhythm rather than a grid of identical tiles: the one
-                  // feature that justifies the price on its own takes the whole
-                  // first row, the rest sit in thirds underneath. Keep the count
-                  // at 1 + a multiple of 3 or the last row is left ragged.
-                  index === 0
-                    ? 'bg-card/50 from-primary/10 rounded-lg border bg-linear-to-br to-transparent p-6 md:col-span-6 md:p-8'
-                    : 'bg-card/50 rounded-lg border p-6 md:col-span-2'
-                }
-              >
-                <Icon
-                  className={cn('text-primary size-5', index === 0 && 'size-7')}
-                />
-                <h3
-                  className={cn(
-                    'mt-4 text-lg font-semibold',
-                    index === 0 && 'text-2xl tracking-tight md:text-3xl'
-                  )}
-                >
-                  {title}
-                </h3>
-                <p
-                  className={cn(
-                    'text-muted-foreground mt-2 text-sm leading-relaxed',
-                    index === 0 && 'max-w-[70ch] text-base'
-                  )}
-                >
-                  {body}
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="container max-w-(--breakpoint-xl) py-16">
-          <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
-            <div className="space-y-4">
-              <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-                What stays free, permanently
-              </h2>
-              <p className="text-muted-foreground max-w-[52ch] leading-relaxed">
-                Not a trial, not a teaser, and not something that quietly
-                shrinks later. If you never pay a penny, Reely keeps doing
-                everything it does today.
-              </p>
-            </div>
-            <ul className="divide-y">
-              {FREE_FOREVER.map((line) => (
-                <li key={line} className="flex items-start gap-3 py-3">
-                  <Check className="text-primary mt-0.5 size-4 shrink-0" />
-                  <span className="text-sm leading-relaxed">{line}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section className="container max-w-(--breakpoint-xl) py-16">
-          <h2 className="max-w-[24ch] text-3xl font-bold tracking-tight md:text-4xl">
-            Where the money actually goes
-          </h2>
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {COSTS.map(({ title, body }) => (
-              <article key={title} className="bg-card/50 rounded-lg border p-6">
-                <h3 className="text-lg font-semibold">{title}</h3>
-                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                  {body}
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="container max-w-(--breakpoint-xl) py-16">
-          <div className="rounded-lg border p-6 sm:p-8">
-            <h2 className="text-2xl font-bold tracking-tight">
-              How it reaches your account
-            </h2>
-            <div className="mt-6 grid gap-8 md:grid-cols-2">
-              <div className="space-y-3">
-                <p className="text-sm leading-relaxed">
-                  Pick <span className="font-medium">{SUPPORT_MEMBERSHIP}</span>{' '}
-                  or <span className="font-medium">{SUPPORT_LIFETIME}</span> on
-                  Buy Me a Coffee. Support switches on automatically for the
-                  email address you pay with, usually within a minute or two.
-                  Sign in to Reely with that same address and it is already
-                  there.
-                </p>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  Paid under a different address? Email {SUPPORT_EMAIL} with the
-                  one you sign in with and I will move it across the same day.
-                </p>
-              </div>
-              <div className="space-y-3">
-                <p className="text-sm leading-relaxed">
-                  Cancelling is one click on Buy Me a Coffee, and it takes
-                  effect at the end of the period you have already paid for.
-                  Nothing you saved is deleted when support ends. Your library
-                  stays in this browser exactly as it does for everyone else.
-                </p>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  Everything else — a different email address, what the Lifetime
-                  covers, where card details go — is answered below.
-                </p>
-              </div>
-            </div>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <a
-                href={SUPPORT_URL}
-                target="_blank"
-                rel="noreferrer"
-                className={buttonVariants({ size: 'lg' })}
-              >
-                <Heart className="mr-2 size-4" />
-                Support Reely
-              </a>
-              <span className="text-muted-foreground text-sm">
-                ${SUPPORT_PRICES.monthly} a month, ${SUPPORT_PRICES.yearly} a
-                year, or ${SUPPORT_PRICES.lifetime} once.
-              </span>
-            </div>
-          </div>
-        </section>
-
-        <section className="container max-w-(--breakpoint-xl) py-16">
-          <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-            Questions worth asking first
-          </h2>
-          <dl className="mt-10 grid gap-x-12 gap-y-8 md:grid-cols-2">
-            {FAQ.map(({ q, a }) => (
-              <div key={q} className="space-y-2">
-                <dt className="font-semibold">{q}</dt>
-                <dd className="text-muted-foreground max-w-[60ch] text-sm leading-relaxed">
-                  {a}
-                </dd>
-              </div>
-            ))}
-          </dl>
-          <div className="mt-12 flex flex-wrap items-center gap-3">
-            <a
-              href={SUPPORT_URL}
-              target="_blank"
-              rel="noreferrer"
-              className={buttonVariants({ size: 'lg' })}
-            >
-              <Heart className="mr-2 size-4" />
-              Support Reely
-            </a>
-            <span className="text-muted-foreground text-sm">
-              ${SUPPORT_PRICES.monthly} a month, ${SUPPORT_PRICES.yearly} a
-              year, or ${SUPPORT_PRICES.lifetime} once. Cancel in one click.
-            </span>
-          </div>
-        </section>
-
+        <Hero />
+        <Flagships />
+        <TheRest />
+        <FreeForever />
+        <WhereTheMoneyGoes />
+        <HowItReachesYou />
+        <Faq />
         <ContactSection />
       </PlanView>
     </div>
+  )
+}
+
+/**
+ * Asymmetric split: the promise on the left, the three prices on the right.
+ *
+ * The prices are the hero's visual rather than an image, because the single
+ * question somebody arrives with is "how much", and a page that makes them
+ * scroll to answer it has already lost the ones who were only mildly inclined.
+ */
+function Hero() {
+  return (
+    <section
+      className={cn(
+        SECTION,
+        'grid gap-10 pt-24 pb-16 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16'
+      )}
+    >
+      <div className="space-y-6">
+        <h1 className="text-4xl font-bold tracking-tighter text-balance md:text-5xl lg:text-6xl">
+          Reely is free. Support is what keeps it that way.
+        </h1>
+        <p className="text-muted-foreground max-w-[46ch] text-lg leading-relaxed">
+          Everything here stays free for everyone. Supporting it moves your
+          library off this one browser and unlocks the rest.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <SupportCta note="none" />
+          <Link
+            href="/account"
+            className={buttonVariants({ size: 'lg', variant: 'outline' })}
+          >
+            Your account
+          </Link>
+        </div>
+      </div>
+
+      <PlanLadder />
+    </section>
+  )
+}
+
+/**
+ * The three levels, as a ladder rather than a row of cards.
+ *
+ * Stacked so the numbers land in one vertical column and can be compared in a
+ * glance, which three side-by-side pricing cards never allow. The yearly is the
+ * one lifted, because it is the one actually being recommended.
+ */
+function PlanLadder() {
+  return (
+    <div className="border-border/70 bg-card/30 divide-border/70 divide-y rounded-2xl border">
+      {PLANS.map(({ name, price, note, badge, featured }) => (
+        <div
+          key={name}
+          className={cn(
+            'flex items-start justify-between gap-6 p-6',
+            featured && 'from-primary/10 bg-linear-to-r to-transparent'
+          )}
+        >
+          <div className="min-w-0">
+            <p className="flex flex-wrap items-center gap-2 font-semibold">
+              {name}
+              {badge && (
+                <span className="bg-primary/15 text-primary rounded-full px-2 py-0.5 text-xs font-semibold">
+                  {badge}
+                </span>
+              )}
+            </p>
+            <p className="text-muted-foreground mt-1 max-w-[34ch] text-sm leading-relaxed">
+              {note}
+            </p>
+          </div>
+          <p className="font-mono text-4xl leading-none font-semibold tabular-nums">
+            <span className="text-muted-foreground align-super text-lg">$</span>
+            {price}
+          </p>
+        </div>
+      ))}
+      <p className="text-muted-foreground p-6 text-xs leading-relaxed">
+        Handled by Buy Me a Coffee. Reely never sees a card number.
+      </p>
+    </div>
+  )
+}
+
+/**
+ * The three features a stranger can understand from the title alone, given the
+ * room to be shown instead of listed. The first carries a real screenshot of
+ * the app, because "your library, on every screen" is a claim about a thing
+ * that has a picture.
+ */
+function Flagships() {
+  const [lead, ...rest] = FLAGSHIP_FEATURES
+  return (
+    <section className={cn(SECTION, 'py-16')}>
+      <h2 className="max-w-[20ch] text-3xl font-bold tracking-tight md:text-4xl">
+        What support unlocks
+      </h2>
+
+      <div className="mt-10 grid gap-4 lg:grid-cols-5">
+        <article className="border-primary/20 from-primary/10 relative col-span-full overflow-hidden rounded-2xl border bg-linear-to-br to-transparent lg:col-span-3">
+          <div className="max-w-[52ch] p-6 sm:p-8">
+            <lead.Icon className="text-primary size-7" />
+            <h3 className="mt-4 text-2xl font-semibold tracking-tight md:text-3xl">
+              {lead.title}
+            </h3>
+            <p className="text-muted-foreground mt-3 leading-relaxed">
+              {lead.body}
+            </p>
+          </div>
+          {/* Bled off the bottom rather than boxed: it is there to say "this is
+              the app", not to be studied. Lazy and dimensioned so it cannot
+              move the section while it loads. */}
+          <img
+            src="/screenshot-narrow.webp"
+            alt="The Reely homepage on a phone, showing a featured title and a trending row"
+            width={780}
+            height={1688}
+            loading="lazy"
+            decoding="async"
+            className="pointer-events-none mx-auto -mb-24 block h-auto w-56 rounded-t-2xl border-x border-t shadow-2xl sm:-mb-32 sm:w-64 lg:absolute lg:-right-8 lg:-bottom-20 lg:mx-0 lg:w-48 xl:w-56"
+          />
+        </article>
+
+        {rest.map(({ Icon, title, body }) => (
+          <article
+            key={title}
+            className="border-border/70 bg-card/40 col-span-full rounded-2xl border p-6 sm:p-8 lg:col-span-2"
+          >
+            <Icon className="text-primary size-5" />
+            <h3 className="mt-4 text-lg font-semibold">{title}</h3>
+            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+              {body}
+            </p>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/**
+ * The other ten, with no boxes at all.
+ *
+ * Ten more bordered cards after the three above is what made the old page read
+ * as a template. A two-column list separates them with space and one accent
+ * rule, which also lets the eye scan titles vertically instead of bouncing
+ * around a grid.
+ */
+function TheRest() {
+  return (
+    <section className={cn(SECTION, 'py-16')}>
+      <div className="grid gap-x-12 gap-y-10 sm:grid-cols-2">
+        {SUPPORT_FEATURES.map(({ Icon, title, body }) => (
+          <article key={title} className="border-primary/30 border-l pl-5">
+            <div className="flex items-center gap-2.5">
+              <Icon className="text-primary size-4 shrink-0" />
+              <h3 className="font-semibold">{title}</h3>
+            </div>
+            <p className="text-muted-foreground mt-2 max-w-[52ch] text-sm leading-relaxed">
+              {body}
+            </p>
+          </article>
+        ))}
+      </div>
+      <SupportCta className="mt-14" />
+    </section>
+  )
+}
+
+/** A full-width band, so the promise reads as a statement rather than a card. */
+function FreeForever() {
+  return (
+    <section className={cn(SECTION, 'py-16')}>
+      <div className="border-border/70 rounded-2xl border border-dashed p-6 sm:p-10">
+        <h2 className="max-w-[24ch] text-3xl font-bold tracking-tight md:text-4xl">
+          What stays free, permanently
+        </h2>
+        <p className="text-muted-foreground mt-4 max-w-[62ch] leading-relaxed">
+          Not a trial, not a teaser, and not something that quietly shrinks
+          later. If you never pay a penny, Reely keeps doing everything it does
+          today.
+        </p>
+        <ul className="mt-8 grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+          {FREE_FOREVER.map((line) => (
+            <li key={line} className="flex items-start gap-2.5">
+              <Check className="text-primary mt-0.5 size-4 shrink-0" />
+              <span className="text-sm leading-relaxed">{line}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )
+}
+
+/** Asymmetric: one statement on the left, the three answers stacked right. */
+function WhereTheMoneyGoes() {
+  return (
+    <section className={cn(SECTION, 'py-16')}>
+      <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+        <h2 className="text-3xl font-bold tracking-tight text-balance md:text-4xl">
+          Where the money actually goes
+        </h2>
+        <dl className="divide-border/70 divide-y">
+          {COSTS.map(({ title, body }, index) => (
+            <div key={title} className={cn('py-5', index === 0 && 'pt-0')}>
+              <dt className="font-semibold">{title}</dt>
+              <dd className="text-muted-foreground mt-2 max-w-[68ch] text-sm leading-relaxed">
+                {body}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
+  )
+}
+
+function HowItReachesYou() {
+  return (
+    <section className={cn(SECTION, 'py-16')}>
+      <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+        How it reaches your account
+      </h2>
+      <ol className="border-border/70 mt-10 grid gap-8 border-t pt-8 md:grid-cols-3 md:gap-10">
+        {STEPS.map(({ title, body }, index) => (
+          <li key={title}>
+            <span className="text-primary/40 font-mono text-4xl leading-none font-semibold tabular-nums">
+              {index + 1}
+            </span>
+            <h3 className="mt-3 font-semibold">{title}</h3>
+            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+              {body}
+            </p>
+          </li>
+        ))}
+      </ol>
+      <SupportCta className="mt-12" />
+    </section>
+  )
+}
+
+function Faq() {
+  return (
+    <section className={cn(SECTION, 'py-16')}>
+      <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+        Questions worth asking first
+      </h2>
+      <dl className="mt-10 grid gap-x-12 gap-y-8 md:grid-cols-2">
+        {FAQ.map(({ q, a }) => (
+          <div key={q} className="space-y-2">
+            <dt className="font-semibold">{q}</dt>
+            <dd className="text-muted-foreground max-w-[60ch] text-sm leading-relaxed">
+              {a}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <SupportCta className="mt-12" note="cancel" />
+    </section>
   )
 }
 
@@ -471,8 +471,8 @@ export default function SupportPage() {
  */
 function ContactSection() {
   return (
-    <section className="container max-w-(--breakpoint-xl) py-16">
-      <div className="border-primary/25 from-primary/5 rounded-lg border bg-gradient-to-br to-transparent p-6 sm:p-8">
+    <section className={cn(SECTION, 'py-16')}>
+      <div className="border-primary/25 from-primary/5 rounded-2xl border bg-linear-to-br to-transparent p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="min-w-0 space-y-3">
             <h2 className="text-2xl font-bold tracking-tight">

@@ -2,7 +2,7 @@
 <browserconfig>
     <msapplication>
         <tile>
-            <square150x150logo src="/mstile-150x150.png"/>
+            <square150x150logo src="/mstile-150x150.png?v=2"/>
             <!-- Matches siteConfig.theme.colors.tile. Was #da532c, the colour
                  realfavicongenerator writes by default — an orange plate behind
                  a blue mark. -->

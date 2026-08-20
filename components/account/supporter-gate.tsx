@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { Lock } from 'lucide-react'
 
-import { SUPPORT_PRICES } from '@/config/support'
+import { supportPriceLine } from '@/config/support'
 import { trackSupportCtaClicked } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
@@ -59,8 +59,7 @@ export function SupporterGate({
               {cta}
             </Link>
             <span className="text-muted-foreground text-xs">
-              ${SUPPORT_PRICES.monthly} a month, ${SUPPORT_PRICES.yearly} a
-              year, or ${SUPPORT_PRICES.lifetime} once.
+              {supportPriceLine()}
             </span>
           </div>
         </div>

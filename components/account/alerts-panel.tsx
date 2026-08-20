@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Bell, BellOff, Loader2 } from 'lucide-react'
 
+import { ALERT_REGIONS, DEFAULT_ALERT_REGION } from '@/config/regions'
 import { savePrefs } from '@/lib/account'
 import { base64UrlDecode } from '@/lib/token'
 import { useAccount } from '@/hooks/use-account'
@@ -167,6 +168,73 @@ export function AlertsPanel() {
       </div>
 
       {error && <p className="text-destructive text-sm">{error}</p>}
+
+      <RegionSection region={prefs.region} />
+    </div>
+  )
+}
+
+/**
+ * Which country "now streaming" alerts are about.
+ *
+ * It has to be asked rather than detected. A static export has no request-time
+ * geo, and a browser locale is not a country — `en-US` is the default on half
+ * the phones on earth. Guessing wrong here does not degrade the feature, it
+ * inverts it: somebody is told a title landed on a service they cannot buy.
+ *
+ * So the alert stays silent until this is set, and the sweep reads the answer
+ * (lib/push/sweep.ts, regionOf) rather than assuming one.
+ */
+function RegionSection({ region }: { region?: string }) {
+  const [saving, setSaving] = useState(false)
+  const [value, setValue] = useState(region ?? '')
+
+  const choose = async (next: string) => {
+    setValue(next)
+    setSaving(true)
+    await savePrefs({ region: next })
+    setSaving(false)
+  }
+
+  return (
+    <div className="space-y-3 border-t pt-6">
+      <div>
+        <p className="text-sm font-medium">Tell me when it starts streaming</p>
+        <p className="text-muted-foreground mt-1 max-w-[65ch] text-sm leading-relaxed">
+          A notification when something on your watchlist lands on a
+          subscription service you could already be paying for. It is per
+          country, so it needs one, and Reely will not guess: nothing is sent
+          until you pick.{' '}
+          {value
+            ? 'Rentals and purchases are never counted, because a film has been rentable since release and that is not news.'
+            : 'Rentals and purchases are never counted.'}
+        </p>
+      </div>
+      <label className="flex flex-wrap items-center gap-3 text-sm">
+        <span className="text-muted-foreground">Country</span>
+        <select
+          value={value}
+          disabled={saving}
+          onChange={(event) => void choose(event.target.value)}
+          className="border-input bg-background focus-visible:ring-ring rounded-md border px-3 py-1.5 text-sm focus-visible:ring-2 focus-visible:outline-hidden disabled:opacity-60"
+        >
+          <option value="" disabled>
+            Choose a country
+          </option>
+          {ALERT_REGIONS.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        {saving && <Loader2 className="size-4 animate-spin" aria-hidden />}
+      </label>
+      {!value && (
+        <p className="text-muted-foreground text-xs">
+          Most people here pick{' '}
+          {ALERT_REGIONS.find((r) => r.id === DEFAULT_ALERT_REGION)?.label}.
+        </p>
+      )}
     </div>
   )
 }

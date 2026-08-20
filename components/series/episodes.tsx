@@ -1,6 +1,6 @@
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, Loader, Play, Tv } from 'lucide-react'
+import { Check, Eye, Loader, Play, Tv } from 'lucide-react'
 
 import { EpisodeDetails } from '@/types/episode'
 import {
@@ -9,6 +9,7 @@ import {
 } from '@/lib/analytics'
 import { syncWatchStats } from '@/lib/person'
 import { cn, dateFormatter } from '@/lib/utils'
+import { useAccount } from '@/hooks/use-account'
 import { useCompletedMedia } from '@/hooks/use-completed-media'
 import { useLocalStorage, type WatchedItem } from '@/hooks/use-local-storage'
 import { useMounted } from '@/hooks/use-mounted'
@@ -82,6 +83,23 @@ function NowPlayingBars() {
   )
 }
 
+/**
+ * An episode title is a spoiler.
+ *
+ * "Ozymandias", "The Rains of Castamere", "Who Shot Mr. Burns?" — a season
+ * list is a list of things that are going to happen, sitting directly under
+ * the player, and there is no way to use the episode picker without reading
+ * it. That is the whole problem this solves, and it is why the mask is on the
+ * NAME rather than on a thumbnail: the name is the part that is always visible
+ * and always ahead of you.
+ *
+ * Only episodes you have not ticked off are masked, and only when the setting
+ * is on. Anything already watched shows its real title, because it cannot
+ * spoil what you have seen — and the episode currently playing keeps its name
+ * too, since you have just chosen to watch it.
+ */
+const maskedName = (episodeNumber: number): string => `Episode ${episodeNumber}`
+
 export const Episodes = ({
   episodes,
   selectedSeason,
@@ -98,6 +116,15 @@ export const Episodes = ({
   const { scrollToTop } = useScrollToTop()
   const { isEpisodeCompleted, toggleEpisodeCompleted, markEpisodesCompleted } =
     useCompletedMedia()
+  const { prefs } = useAccount()
+  const spoilerFree = prefs.spoilerFree === true
+  // Per-episode, and deliberately not persisted: revealing one title is a
+  // decision about one episode in one sitting, not a setting. It resets on
+  // navigation, which is the behaviour somebody who turned this on wants.
+  const [revealed, setRevealed] = React.useState<Set<number>>(new Set())
+  const reveal = React.useCallback((episodeNumber: number) => {
+    setRevealed((current) => new Set(current).add(episodeNumber))
+  }, [])
   // localStorage is client-only — gate the completed ticks on mount to stay
   // hydration-safe (same rule as NewBadgeWhenRecent).
   const isMounted = useMounted()
@@ -259,6 +286,16 @@ export const Episodes = ({
                 Number(selectedSeason),
                 episode.episode_number
               )
+            // isMounted, so the server and the first client pass render the
+            // real name and the markup matches. A crawler therefore still sees
+            // every episode title, which is what the SEO on these pages is
+            // built from.
+            const masked =
+              isMounted &&
+              spoilerFree &&
+              !completed &&
+              !isActive &&
+              !revealed.has(episode.episode_number)
 
             return (
               <button
@@ -286,11 +323,35 @@ export const Episodes = ({
                     <span
                       className={cn(
                         'text-sm leading-snug font-medium',
-                        isActive ? 'text-primary' : 'text-foreground/90'
+                        isActive ? 'text-primary' : 'text-foreground/90',
+                        masked && 'text-muted-foreground italic'
                       )}
                     >
-                      {episode.name}
+                      {masked
+                        ? maskedName(episode.episode_number)
+                        : episode.name}
                     </span>
+                    {masked && (
+                      // A span, not a button: this row is already a <button>
+                      // that starts the episode, and nesting one inside it is
+                      // invalid markup that browsers resolve by unnesting —
+                      // which puts the reveal control OUTSIDE the row. The
+                      // keyboard path is the row itself; this is a pointer
+                      // affordance, so role and tabIndex are deliberately
+                      // absent rather than faked.
+                      <span
+                        aria-hidden
+                        title="Show this episode title"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          reveal(episode.episode_number)
+                        }}
+                        className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer items-center gap-1 rounded px-1 text-[10px]"
+                      >
+                        <Eye className="size-3" />
+                        Show
+                      </span>
+                    )}
                     <NewBadgeWhenRecent
                       date={episode?.air_date}
                       withinDays={NEW_EPISODE_DAYS}

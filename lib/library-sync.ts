@@ -33,6 +33,7 @@ export const SYNCED_STORES = [
   { key: 'watchedItems', store: 'history', label: 'Watch history' },
   { key: 'completedItems', store: 'completed', label: 'Episodes ticked off' },
   { key: 'reviews', store: 'reviews', label: 'Ratings and notes' },
+  { key: 'hiddenItems', store: 'hidden', label: 'Titles you hid' },
 ] as const
 
 const MIRROR_KEY = 'reely_sync_mirror'

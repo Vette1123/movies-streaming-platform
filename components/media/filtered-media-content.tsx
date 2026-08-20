@@ -5,6 +5,7 @@ import { FilterX, SearchX } from 'lucide-react'
 import { useInView } from 'react-intersection-observer'
 
 import { MediaResponse, MediaType } from '@/types/media'
+import { useHiddenMedia } from '@/hooks/use-hidden-media'
 import { useMediaFilter } from '@/hooks/use-media-filter'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Card } from '@/components/card'
@@ -34,6 +35,10 @@ export const FilteredMediaContent = ({
 }: FilteredMediaContentProps) => {
   // Local state for filter open/close to prevent URL pollution and mobile refresh issues
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  // Titles marked "not interested". Empty on the server and until localStorage
+  // has been read, which is correct: the grid renders the same markup a crawler
+  // sees, then drops the hidden rows once the browser knows about them.
+  const { hiddenIds } = useHiddenMedia()
 
   const {
     filter,
@@ -237,14 +242,16 @@ export const FilteredMediaContent = ({
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                     {pages.map((page, index) => (
                       <React.Fragment key={index}>
-                        {page?.results?.map((item) => (
-                          <Card
-                            key={item.id}
-                            item={item as MediaType}
-                            isTruncateOverview={false}
-                            itemType={mediaType}
-                          />
-                        ))}
+                        {page?.results
+                          ?.filter((item) => !hiddenIds.has(item.id))
+                          .map((item) => (
+                            <Card
+                              key={item.id}
+                              item={item as MediaType}
+                              isTruncateOverview={false}
+                              itemType={mediaType}
+                            />
+                          ))}
                       </React.Fragment>
                     ))}
                     {isFetchingNextPage && <GridSkeletonCells count={10} />}

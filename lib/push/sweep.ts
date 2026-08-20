@@ -14,6 +14,15 @@
  */
 
 import { fetchClient } from '@/lib/fetch-client'
+import {
+  mergeAnnounced,
+  newProviders,
+  parseProviderMap,
+  providerAnnouncement,
+  providerMap,
+  type ProviderMap,
+  type TmdbWatchProviders,
+} from '@/lib/push/providers'
 
 import { sendPush } from './vapid'
 
@@ -41,6 +50,8 @@ interface TmdbEpisode {
 
 interface TmdbSeries {
   name?: string
+  /** From append_to_response, so it costs no extra subrequest. */
+  'watch/providers'?: TmdbWatchProviders | null
   /** Minutes per episode. An array because anthologies vary; the first is typical. */
   episode_run_time?: number[] | null
   next_episode_to_air?: TmdbEpisode | null
@@ -49,6 +60,7 @@ interface TmdbSeries {
 
 interface TmdbMovie {
   title?: string
+  'watch/providers'?: TmdbWatchProviders | null
   runtime?: number | null
   release_date?: string | null
 }
@@ -67,6 +79,8 @@ export interface MediaState {
    * mean one TMDB request per title in somebody's library.
    */
   runtime: number | null
+  /** Which subscription services carry it, per region. See providers.ts. */
+  providers: ProviderMap
   /** Non-null when something has just become available. */
   announce: { key: string; title: string; body: string; url: string } | null
 }
@@ -123,6 +137,7 @@ export function seriesState(
     nextAirDate: next?.air_date ?? null,
     nextLabel: next ? episodeLabel(next) : null,
     runtime: episodeRuntime(series),
+    providers: providerMap(series['watch/providers'] ?? null),
     announce: null,
   }
 
@@ -156,6 +171,7 @@ export function movieState(
       typeof movie.runtime === 'number' && movie.runtime > 0
         ? movie.runtime
         : null,
+    providers: providerMap(movie['watch/providers'] ?? null),
     announce: null,
   }
 
@@ -201,14 +217,41 @@ async function refreshCandidates(db: D1Database, now: number): Promise<void> {
   void now
 }
 
-/** Who asked to hear about this title, and can still be told. */
+/** Where a media_key points on the site. */
+const mediaHref = (mediaKey: string): string => {
+  const [kind, id] = mediaKey.split(':')
+  return kind === 'series' ? `/tv-shows/${id}` : `/movies/${id}`
+}
+
+/** The region a user chose for "now streaming", or null if they never did. */
+const regionOf = (prefs: string | null): string | null => {
+  if (!prefs) return null
+  try {
+    const parsed = JSON.parse(prefs)
+    const region = parsed?.region
+    return typeof region === 'string' && region ? region : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Who asked to hear about this title, and can still be told.
+ *
+ * Returns the region alongside the id because the streaming announcement is
+ * per-region: a title landing on a service in Germany is not news in Brazil,
+ * and telling everybody about every region is how a quiet feature becomes the
+ * reason people switch alerts off. `prefs` is parsed here rather than matched
+ * in SQL for the same reason `grants` is not - a LIKE against JSON is fine as
+ * a cheap prefilter, but the value itself has to be read properly.
+ */
 async function interestedUsers(
   db: D1Database,
   mediaKey: string
-): Promise<string[]> {
+): Promise<{ userId: string; region: string | null }[]> {
   const rows = await db
     .prepare(
-      `SELECT DISTINCT sync_items.user_id AS user_id
+      `SELECT DISTINCT sync_items.user_id AS user_id, users.prefs AS prefs
        FROM sync_items
        JOIN users ON users.id = sync_items.user_id
        WHERE sync_items.store = 'watchlist'
@@ -218,8 +261,11 @@ async function interestedUsers(
          AND COALESCE(users.prefs, '') LIKE '%"alerts":true%'`
     )
     .bind(mediaKey)
-    .all<{ user_id: string }>()
-  return (rows.results ?? []).map((row) => row.user_id)
+    .all<{ user_id: string; prefs: string | null }>()
+  return (rows.results ?? []).map((row) => ({
+    userId: row.user_id,
+    region: regionOf(row.prefs),
+  }))
 }
 
 /**
@@ -235,10 +281,14 @@ export async function runSweep(
 
   const due = await db
     .prepare(
-      `SELECT media_key, notified_key FROM watched_media
+      `SELECT media_key, notified_key, providers_notified FROM watched_media
        ORDER BY checked_at ASC LIMIT ${CHECK_PER_TICK}`
     )
-    .all<{ media_key: string; notified_key: string | null }>()
+    .all<{
+      media_key: string
+      notified_key: string | null
+      providers_notified: string | null
+    }>()
 
   let announced = 0
   let pushed = 0
@@ -255,7 +305,10 @@ export async function runSweep(
     try {
       if (kind === 'series') {
         const series = await fetchClient.get<TmdbSeries>(
-          `tv/${id}?language=en-US`,
+          // append_to_response, so "now streaming" costs zero extra
+          // subrequests. See lib/push/providers.ts and the
+          // 50-per-invocation cap that shapes this whole file.
+          `tv/${id}?language=en-US&append_to_response=watch/providers`,
           {},
           true,
           // Six hours: the sweep runs hourly, and an air date does not move
@@ -265,7 +318,7 @@ export async function runSweep(
         state = seriesState(series, row.notified_key, id, now)
       } else {
         const movie = await fetchClient.get<TmdbMovie>(
-          `movie/${id}?language=en-US`,
+          `movie/${id}?language=en-US&append_to_response=watch/providers`,
           {},
           true,
           6 * 60 * 60
@@ -282,6 +335,14 @@ export async function runSweep(
       continue
     }
 
+    // What is newly watchable, per region, measured against what was last
+    // announced. A row that has never been announced records its state and
+    // stays silent - otherwise shipping this would have fired every
+    // watchlist's entire backlog at once. See newProviders().
+    const alreadyAnnounced = parseProviderMap(row.providers_notified)
+    const fresh = newProviders(state.providers, alreadyAnnounced)
+    const nextAnnounced = mergeAnnounced(alreadyAnnounced, state.providers)
+
     await db
       .prepare(
         `UPDATE watched_media
@@ -289,6 +350,8 @@ export async function runSweep(
              -- Keep the last known runtime when TMDB stops reporting one, which
              -- it does for titles that get re-listed as upcoming.
              runtime = COALESCE(?, runtime),
+             providers = ?,
+             providers_notified = ?,
              notified_key = COALESCE(?, notified_key)
          WHERE media_key = ?`
       )
@@ -298,16 +361,47 @@ export async function runSweep(
         state.nextLabel,
         now,
         state.runtime,
+        JSON.stringify(state.providers),
+        JSON.stringify(nextAnnounced),
         state.announce?.key ?? null,
         row.media_key
       )
       .run()
 
-    if (!state.announce) continue
-    announced++
+    // Two independent announcements can come out of one title in one tick: it
+    // aired AND it landed on a service. They are queued separately because they
+    // are different sentences to different people - the release goes to
+    // everyone who follows it, the streaming line only to the regions it
+    // actually changed in.
+    const regions = Object.keys(fresh)
+    if (!state.announce && regions.length === 0) continue
 
-    for (const userId of await interestedUsers(db, row.media_key)) {
-      queued.push({ userId, announce: state.announce })
+    const interested = await interestedUsers(db, row.media_key)
+    if (state.announce) {
+      announced++
+      for (const { userId } of interested) {
+        queued.push({ userId, announce: state.announce })
+      }
+    }
+    for (const region of regions) {
+      const wording = providerAnnouncement(
+        state.name ?? 'A title you saved',
+        fresh[region],
+        region
+      )
+      for (const { userId, region: theirs } of interested) {
+        if (theirs !== region) continue
+        announced++
+        queued.push({
+          userId,
+          announce: {
+            key: 'providers',
+            title: wording.title,
+            body: wording.body,
+            url: mediaHref(row.media_key),
+          },
+        })
+      }
     }
   }
 

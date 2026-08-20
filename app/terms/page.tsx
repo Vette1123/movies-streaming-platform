@@ -2,7 +2,11 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 
 import { siteConfig } from '@/config/site'
-import { SUPPORT_EMAIL, SUPPORT_PRICES, supportMailto } from '@/config/support'
+import {
+  SUPPORT_EMAIL,
+  supportMailto,
+  supportPriceLine,
+} from '@/config/support'
 import { LegalPage } from '@/components/legal/legal-page'
 
 export const metadata: Metadata = {
@@ -52,11 +56,10 @@ export default function TermsPage() {
 
       <h2>Supporter memberships</h2>
       <p>
-        Supporting {siteConfig.name} is voluntary and never required. It costs $
-        {SUPPORT_PRICES.monthly} a month, ${SUPPORT_PRICES.yearly} a year, or $
-        {SUPPORT_PRICES.lifetime} once, and it is bought and billed through Buy
-        Me a Coffee, who are the merchant of record and whose terms apply to the
-        payment itself.
+        Supporting {siteConfig.name} is voluntary and never required. It costs{' '}
+        {supportPriceLine()} It is bought and billed through Buy Me a Coffee,
+        who are the merchant of record and whose terms apply to the payment
+        itself.
       </p>
       <ul>
         <li>

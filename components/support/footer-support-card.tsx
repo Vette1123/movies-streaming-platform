@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { Heart } from 'lucide-react'
 
-import { SUPPORT_PRICES } from '@/config/support'
+import { supportPriceRow } from '@/config/support'
 import { cn } from '@/lib/utils'
 import { useAccountIdentity } from '@/hooks/use-account'
 import { buttonVariants } from '@/components/ui/button'
@@ -63,10 +63,7 @@ export function FooterSupportCard() {
         alerts, a year-in-review card and themes. Everything free today stays
         free either way.
       </p>
-      <p className="text-foreground/90 font-medium">
-        ${SUPPORT_PRICES.monthly}/month · ${SUPPORT_PRICES.yearly}/year · $
-        {SUPPORT_PRICES.lifetime} once
-      </p>
+      <p className="text-foreground/90 font-medium">{supportPriceRow()}</p>
       <SupportLink
         surface="footer"
         className={cn(buttonVariants({ size: 'sm' }), 'w-full sm:w-auto')}

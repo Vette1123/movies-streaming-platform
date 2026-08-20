@@ -32,7 +32,7 @@ budget. Nobody re-read the two together.
 `buildMediaStaticParams` uses `Promise.allSettled` and falls back to `[]` on
 throw, deliberately, so a TMDB hiccup can never break a build. Correct — but it
 means a 429 that outlives `MAX_RETRIES` silently drops a whole list page: ~20
-ids gone from the prerender set *and* from the sitemap, since `app/sitemap.ts`
+ids gone from the prerender set _and_ from the sitemap, since `app/sitemap.ts`
 is built from the same helper. The build stayed green, the deploy succeeded, and
 the only evidence was one `console.error` in the middle of 400 lines of log.
 
@@ -71,7 +71,7 @@ the numbers.
   JSON-LD. A tail id (`/movies/47090`, not in the prerender set) carries the same
   markup via the Worker's `HTMLRewriter` pass. robots.txt is ours (not
   Cloudflare's managed one), the sitemap advertises 2,116 URLs, apex 301s to www.
-- `scripts/verify-icons.mjs` already measured the corner *radius*, not just
+- `scripts/verify-icons.mjs` already measured the corner _radius_, not just
   alpha, so the assertion only had to move lists and gain a `maxInset` ceiling.
 
 ## Rules

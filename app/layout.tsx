@@ -24,6 +24,7 @@ import { SiteHeader } from '@/components/layouts/site-header'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register'
 import { APPLE_SPLASH } from '@/app/_icons/apple-splash'
+import { versionedIcon } from '@/app/_icons/version'
 
 export const viewport: Viewport = {
   themeColor: [
@@ -51,7 +52,7 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   applicationName: siteConfig.seo.applicationName,
-  manifest: siteConfig.pwa.manifestPath,
+  manifest: versionedIcon(siteConfig.pwa.manifestPath),
   creator: siteConfig.author.name,
   publisher: siteConfig.seo.publisher,
   authors: [
@@ -80,23 +81,27 @@ export const metadata: Metadata = {
       // picking by size sees a 64 it has to downscale and reaches for the
       // 192 PNG instead, which is the wasteful version of the same choice.
       {
-        url: '/favicon.ico',
+        url: versionedIcon('/favicon.ico'),
         sizes: '16x16 32x32 48x48 64x64',
         type: 'image/x-icon',
       },
       {
-        url: '/android-chrome-192x192.png',
+        url: versionedIcon('/android-chrome-192x192.png'),
         sizes: '192x192',
         type: 'image/png',
       },
       {
-        url: '/android-chrome-512x512.png',
+        url: versionedIcon('/android-chrome-512x512.png'),
         sizes: '512x512',
         type: 'image/png',
       },
     ],
     apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      {
+        url: versionedIcon('/apple-touch-icon.png'),
+        sizes: '180x180',
+        type: 'image/png',
+      },
     ],
   },
 
@@ -184,7 +189,7 @@ export const metadata: Metadata = {
 
   other: {
     'msapplication-TileColor': siteConfig.theme.colors.tile,
-    'msapplication-config': siteConfig.icons.browserConfig,
+    'msapplication-config': versionedIcon(siteConfig.icons.browserConfig),
     'apple-mobile-web-app-title': siteConfig.name,
     'application-name': siteConfig.seo.applicationName,
   },
@@ -245,7 +250,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <link
             key={splash.file}
             rel="apple-touch-startup-image"
-            href={splash.file}
+            href={versionedIcon(splash.file)}
             media={splash.media}
           />
         ))}

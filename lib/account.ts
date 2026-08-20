@@ -14,6 +14,7 @@
  * its first frame instead of after a round trip.
  */
 import { HINT_COOKIE } from '@/lib/auth/cookies'
+import type { FilterPreset } from '@/lib/filter-presets'
 
 /** Refresh this far before expiry, so an action never races the deadline. */
 const REFRESH_MARGIN_MS = 30_000
@@ -34,6 +35,15 @@ export interface AccountPrefs {
   autoNext?: boolean
   alerts?: boolean
   source?: string
+  /** Hide the titles of episodes you have not ticked off yet. */
+  spoilerFree?: boolean
+  /**
+   * Which country "now streaming" alerts are about. See config/regions.ts —
+   * unset means the alert stays quiet rather than guessing a country wrong.
+   */
+  region?: string
+  /** Saved browse filters. See lib/filter-presets.ts for why they live here. */
+  presets?: FilterPreset[]
 }
 
 export interface AccountState {

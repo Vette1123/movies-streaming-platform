@@ -39,6 +39,10 @@ export const EVENTS = {
   // Watchlist (save for later — distinct from watch history)
   WATCHLIST_ADDED: 'watchlist_added',
   WATCHLIST_REMOVED: 'watchlist_removed',
+  NOT_INTERESTED: 'not_interested',
+  NOT_INTERESTED_UNDONE: 'not_interested_undone',
+  FILTER_PRESET_SAVED: 'filter_preset_saved',
+  FILTER_PRESET_APPLIED: 'filter_preset_applied',
   // Navigation health
   PAGE_NOT_FOUND: 'page_not_found',
   // Reliability — any caught API / data-fetch failure (server actions, TMDB,
@@ -251,6 +255,40 @@ export function trackWatchlistRemoved(props: {
   title?: string
 }): void {
   track(EVENTS.WATCHLIST_REMOVED, props)
+}
+
+// ---- Not interested ---------------------------------------------------------
+
+/**
+ * Worth capturing precisely because it is the one signal here that says what
+ * somebody does NOT want. If a title is hidden by a lot of people it is either
+ * badly recommended or badly presented, and neither is visible in any other
+ * event on this list.
+ */
+export function trackNotInterested(props: {
+  media_id: number
+  media_type: MediaKind
+  title?: string
+}): void {
+  track(EVENTS.NOT_INTERESTED, props)
+}
+
+export function trackNotInterestedUndone(props: {
+  media_id: number
+  media_type: MediaKind
+  title?: string
+}): void {
+  track(EVENTS.NOT_INTERESTED_UNDONE, props)
+}
+
+// ---- Saved filters ----------------------------------------------------------
+
+export function trackFilterPresetSaved(props: { preset_count: number }): void {
+  track(EVENTS.FILTER_PRESET_SAVED, props)
+}
+
+export function trackFilterPresetApplied(): void {
+  track(EVENTS.FILTER_PRESET_APPLIED, {})
 }
 
 // ---- Support / monetisation -------------------------------------------------

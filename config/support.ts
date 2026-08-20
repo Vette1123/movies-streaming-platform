@@ -82,3 +82,21 @@ export const SUPPORT_EMAIL = 'support@reely.space'
 /** A pre-addressed mail, so nobody has to explain which site they mean. */
 export const supportMailto = (subject: string): string =>
   `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`${SUPPORT_TAG} — ${subject}`)}`
+
+/**
+ * The prices as one sentence, and as one compact row.
+ *
+ * Written five times across the site before this existed — the support page,
+ * the supporter gate, the account panel, the footer card and the terms page all
+ * spelled the same three numbers out by hand, in two different formats. A price
+ * change had to be found in five files or one of them would quietly advertise
+ * the old number next to a checkout that charges the new one.
+ *
+ * Two shapes rather than one because two are genuinely needed: prose where
+ * there is room for a sentence, and the compact row where there is not.
+ */
+export const supportPriceLine = (): string =>
+  `$${SUPPORT_PRICES.monthly} a month, $${SUPPORT_PRICES.yearly} a year, or $${SUPPORT_PRICES.lifetime} once.`
+
+export const supportPriceRow = (): string =>
+  `$${SUPPORT_PRICES.monthly}/month · $${SUPPORT_PRICES.yearly}/year · $${SUPPORT_PRICES.lifetime} once`

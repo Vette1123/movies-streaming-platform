@@ -7,8 +7,10 @@
  * Worker's traffic today.
  */
 
+import { ALERT_REGION_IDS } from '@/config/regions'
 import { claimSupporterGrants } from '@/lib/billing/bmc'
 import { isEntitled, isProAt } from '@/lib/billing/entitlement'
+import { normalisePresets } from '@/lib/filter-presets'
 import { ACCESS_TOKEN_TTL_MS, signToken } from '@/lib/token'
 
 import {
@@ -481,6 +483,21 @@ export function normalisePrefs(value: unknown): Record<string, unknown> | null {
   }
   if (typeof input.autoNext === 'boolean') out.autoNext = input.autoNext
   if (typeof input.alerts === 'boolean') out.alerts = input.alerts
+  if (typeof input.spoilerFree === 'boolean')
+    out.spoilerFree = input.spoilerFree
+  if (
+    typeof input.region === 'string' &&
+    ALERT_REGION_IDS.includes(input.region)
+  ) {
+    out.region = input.region
+  }
+  // Dropped rather than rejected when malformed, and capped hard: this is the
+  // only pref that is a list, so it is the only one that could grow the column
+  // without bound. See lib/filter-presets.ts.
+  if (input.presets !== undefined) {
+    const presets = normalisePresets(input.presets)
+    if (presets.length > 0) out.presets = presets
+  }
   if (typeof input.source === 'string' && input.source.length <= 40) {
     out.source = input.source
   }

@@ -1,4 +1,4 @@
-import type { LibraryStats } from '@/lib/stats'
+import { hoursLabel, type LibraryStats } from '@/lib/stats'
 
 /**
  * Your year, as an image worth posting.
@@ -117,7 +117,7 @@ export async function renderStatsCard(
   const hoursWidth = context.measureText(String(stats.hours)).width
   context.fillStyle = MUTED
   context.font = `600 42px ${SANS}`
-  context.fillText('hours, roughly', margin + hoursWidth + 24, 560)
+  context.fillText(hoursLabel(stats), margin + hoursWidth + 24, 560)
 
   // Two by two, because four numbers in a row at this width are unreadable on a
   // phone-sized thumbnail — which is the only size most people will see it.

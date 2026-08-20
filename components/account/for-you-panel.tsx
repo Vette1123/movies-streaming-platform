@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Loader2, Sparkles, Star } from 'lucide-react'
+import { Loader2, Sparkles, Star, X } from 'lucide-react'
 
 import type { ForYouItem } from '@/lib/foryou/routes'
 import { getPosterImageURL } from '@/lib/utils'
 import { useAccount } from '@/hooks/use-account'
+import { useHiddenMedia } from '@/hooks/use-hidden-media'
 import { buttonVariants } from '@/components/ui/button'
 import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
 import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
@@ -26,6 +27,7 @@ type State = 'loading' | 'ready' | 'failed'
  */
 export function ForYouPanel() {
   const { pro } = useAccount()
+  const { hide, hiddenIds } = useHiddenMedia()
   const [items, setItems] = useState<ForYouItem[]>([])
   const [seeds, setSeeds] = useState<string[]>([])
   const [state, setState] = useState<State>('loading')
@@ -114,11 +116,36 @@ export function ForYouPanel() {
         </p>
       )}
       <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">
-        {items.map((item) => (
-          <li key={`${item.type}-${item.id}`}>
-            <Tile item={item} />
-          </li>
-        ))}
+        {/* Filtered here as well as on the server. The server excludes hidden
+            titles from the NEXT response; this is what makes the tile you just
+            dismissed disappear now, without a refetch. */}
+        {items
+          .filter((item) => !hiddenIds.has(item.id))
+          .map((item) => (
+            <li key={`${item.type}-${item.id}`} className="relative">
+              <Tile item={item} />
+              <button
+                type="button"
+                aria-label={`Not interested in ${item.title}`}
+                title="Not interested"
+                onClick={() =>
+                  hide({
+                    id: item.id,
+                    // A ForYouItem has one title field, and which of the two
+                    // WatchedSource slots it goes in is what decides movie vs
+                    // series downstream.
+                    ...(item.type === 'movie'
+                      ? { title: item.title }
+                      : { name: item.title }),
+                    poster_path: item.poster_path,
+                  })
+                }
+                className="bg-background/80 text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute top-1.5 left-1.5 grid size-6 place-items-center rounded-full opacity-0 backdrop-blur-sm transition-opacity focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden group-hover/tile:opacity-100 max-md:opacity-100"
+              >
+                <X className="size-3.5" />
+              </button>
+            </li>
+          ))}
       </ul>
     </div>
   )
@@ -132,7 +159,7 @@ function listOf(titles: string[]): string {
 
 function Tile({ item }: { item: ForYouItem }) {
   return (
-    <Link href={item.href} className="group block space-y-2">
+    <Link href={item.href} className="group/tile group block space-y-2">
       <div className="relative overflow-hidden rounded-lg">
         {item.poster_path ? (
           <BlurredImage
