@@ -162,7 +162,14 @@ const BUILD_ID = typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'dev'
 // Sorted, because the Cache API keys on the literal URL: `?page=2&mediaType=tv`
 // and `?mediaType=tv&page=2` are the same query and were two entries, so one of
 // them always paid full price. nuqs does not promise a stable param order.
+//
+// The no-query case skips the URL round trip. That is not a micro-optimisation
+// looking for a home: it is the branch the tail-id fallback takes, which is 96%
+// of this Worker's invocations, and parsing plus re-serialising a URL to append
+// one fixed parameter is work with no question behind it. A given href always
+// takes the same branch, so the two cannot disagree about a key.
 const cacheKeyUrl = (href) => {
+  if (!href.includes('?')) return `${href}?__b=${BUILD_ID}`
   const url = new URL(href)
   url.searchParams.set('__b', BUILD_ID)
   url.searchParams.sort()
@@ -200,6 +207,36 @@ async function cached(request, ctx, compute, keyHref = request.url) {
     }
   }
   return response
+}
+
+/**
+ * `cached`, for the two callers that want the object rather than the response.
+ *
+ * Both fallback pages need the payload's fields to build meta tags, and both
+ * used to get them by serialising what they had just computed into a Response,
+ * handing it to `cached`, and then parsing that same Response straight back —
+ * a stringify and a parse of something already in hand, on every cache miss.
+ * On a hit there is no way around parsing, because a hit is bytes.
+ *
+ * Returns null for "no such id", which both callers turn into the 404 asset.
+ */
+async function cachedJson(request, ctx, compute, keyHref) {
+  let computed
+  const response = await cached(
+    request,
+    ctx,
+    async () => {
+      computed = await compute()
+      // A 404 keeps `cached` from storing it: an id TMDB does not know must not
+      // be pinned for 8h on the strength of one possibly-transient failure.
+      if (!computed?.id) return json({ error: 'not found' }, { status: 404 })
+      return json(computed)
+    },
+    keyHref
+  )
+
+  if (!response.ok) return null
+  return computed ?? (await response.json())
 }
 
 /**
@@ -459,12 +496,14 @@ async function handleApi(pathname, url, request, ctx) {
   return json({ error: 'not found' }, { status: 404 })
 }
 
+// One pass, not four. Identical output to the chained `.replace()` calls this
+// replaces — `&` is still handled first, because a single scan can never
+// re-escape an entity it just wrote. Every fallback page calls this on its
+// heading and description twice each, plus once per link in the directory, and
+// the fallback path is 96% of this Worker's invocations.
+const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }
 const escapeHtml = (value) =>
-  String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
+  String(value ?? '').replace(/[&<>"]/g, (char) => HTML_ESCAPES[char])
 
 /**
  * Metadata for a tail id, shaped like what the prerendered page's
@@ -739,26 +778,19 @@ async function handleDetailFallback(match, request, env, ctx, url) {
   //
   // Assembling the page from the pre-split shell afterwards is a handful of
   // string concatenations, so it is cheaper to redo than to store.
-  const summary = await cached(
+  const details = await cachedJson(
     request,
     ctx,
-    async () => {
-      // The SUMMARY, not the full detail payload. This path only writes meta
-      // tags; it used to pull `append_to_response=credits,similar,
-      // recommendations,videos` (98KB for a movie) and read six fields out of
-      // it. See services/media-summary.ts. The shell fetches the full payload
-      // from /api/media/:id once it boots, which is where that cost belongs.
-      const details = await loadSummary(type, id)
-      // A 404 keeps `cached` from storing it: an id TMDB does not know must not
-      // be pinned for 8h on the strength of one possibly-transient failure.
-      if (!details?.id) return json({ error: 'not found' }, { status: 404 })
-      return json(details)
-    },
+    // The SUMMARY, not the full detail payload. This path only writes meta
+    // tags; it used to pull `append_to_response=credits,similar,
+    // recommendations,videos` (98KB for a movie) and read six fields out of
+    // it. See services/media-summary.ts. The shell fetches the full payload
+    // from /api/media/:id once it boots, which is where that cost belongs.
+    () => loadSummary(type, id),
     `${url.origin}/__summary/${type}/${id}`
   )
 
-  if (!summary.ok) return notFoundAsset(env, url)
-  const details = await summary.json()
+  if (!details) return notFoundAsset(env, url)
 
   const meta = buildMeta(type, id, details, siteUrlOf(url))
   const jsonLd = {
@@ -787,19 +819,14 @@ async function handleCollectionFallback(match, request, env, ctx, url) {
 
   // Same shape as handleDetailFallback: cache the TMDB payload under its own
   // key, assemble the page fresh. See the note there.
-  const cachedCollection = await cached(
+  const collection = await cachedJson(
     request,
     ctx,
-    async () => {
-      const data = await loadCollection(id)
-      if (!data?.id) return json({ error: 'not found' }, { status: 404 })
-      return json(data)
-    },
+    () => loadCollection(id),
     `${url.origin}/__summary/collection/${id}`
   )
 
-  if (!cachedCollection.ok) return notFoundAsset(env, url)
-  const collection = await cachedCollection.json()
+  if (!collection) return notFoundAsset(env, url)
 
   const siteUrl = siteUrlOf(url)
   const description =
