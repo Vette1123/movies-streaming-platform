@@ -2,7 +2,7 @@
 
 import { LogIn, LogOut } from 'lucide-react'
 
-import { signOut } from '@/lib/account'
+import { signInHref, signOut } from '@/lib/account'
 import { useAccountIdentity } from '@/hooks/use-account'
 import {
   AccountAvatar,
@@ -41,7 +41,7 @@ export function AccountDrawerSection({
           Icon={LogIn}
           label="Sign in with Google"
           tone="accent"
-          href="/account"
+          href={signInHref('/account')}
           onClick={onNavigate}
         />
         <p className="text-muted-foreground px-1 text-xs leading-relaxed">

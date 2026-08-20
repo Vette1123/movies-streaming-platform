@@ -59,11 +59,28 @@ export function DrawerAction({
   )
 
   if (href) {
+    // A Worker route is not a page. `next/link` would try to client-navigate to
+    // /api/auth/google and land on the 404 asset instead of starting the
+    // sign-in, so anything that is not an app route is a plain document
+    // navigation.
+    if (external || !href.startsWith('/') || href.startsWith('/api/')) {
+      return (
+        <a
+          href={href}
+          target={external ? '_blank' : undefined}
+          rel={external ? 'noreferrer' : undefined}
+          aria-label={ariaLabel ?? label}
+          onClick={onClick}
+          className={className}
+        >
+          {content}
+        </a>
+      )
+    }
+
     return (
       <Link
         href={href}
-        target={external ? '_blank' : undefined}
-        rel={external ? 'noreferrer' : undefined}
         aria-label={ariaLabel ?? label}
         onClick={onClick}
         className={className}

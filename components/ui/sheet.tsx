@@ -34,7 +34,7 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName
 
 const sheetVariants = cva(
-  'fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500',
+  'fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-dragging:transition-none data-dragging:duration-0',
   {
     variants: {
       side: {
@@ -55,27 +55,120 @@ const sheetVariants = cva(
 interface SheetContentProps
   extends
     React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
-    VariantProps<typeof sheetVariants> {}
+    VariantProps<typeof sheetVariants> {
+  /** Bottom sheets only: a grab handle that can be dragged or flicked away. */
+  dragToClose?: boolean
+}
+
+/**
+ * How far the sheet has to be dragged, or how fast it has to be flicked, before
+ * letting go dismisses it instead of springing back. Both are needed: a slow
+ * drag halfway down is a dismissal, and so is a quick flick that never got
+ * there.
+ */
+const DRAG_CLOSE_PX = 120
+const DRAG_CLOSE_VELOCITY = 0.6 // px per ms
+
+/**
+ * A grab handle, and the pointer maths behind it.
+ *
+ * Only a bottom sheet gets one, and the drag only ever starts on the handle
+ * itself — starting it anywhere in the body would mean every list inside a
+ * sheet has to fight the sheet for the same vertical gesture, and the list
+ * loses in ways nobody can predict. The handle is a big enough target to be the
+ * obvious place to grab.
+ */
+function useSheetDrag(enabled: boolean) {
+  const closeRef = React.useRef<HTMLButtonElement | null>(null)
+  const start = React.useRef({ y: 0, t: 0 })
+  const [offset, setOffset] = React.useState(0)
+  const [dragging, setDragging] = React.useState(false)
+
+  const onPointerDown = (event: React.PointerEvent) => {
+    if (!enabled || event.button !== 0) return
+    event.currentTarget.setPointerCapture(event.pointerId)
+    start.current = { y: event.clientY, t: event.timeStamp }
+    setDragging(true)
+  }
+
+  const onPointerMove = (event: React.PointerEvent) => {
+    if (!dragging) return
+    // Down only. Dragging a bottom sheet upward is not a gesture it has an
+    // answer for, and rubber-banding one that is already at its max height
+    // just looks broken.
+    setOffset(Math.max(0, event.clientY - start.current.y))
+  }
+
+  const onPointerUp = (event: React.PointerEvent) => {
+    if (!dragging) return
+    setDragging(false)
+    const travelled = Math.max(0, event.clientY - start.current.y)
+    const elapsed = Math.max(1, event.timeStamp - start.current.t)
+    const flicked = travelled / elapsed > DRAG_CLOSE_VELOCITY && travelled > 24
+    if (travelled > DRAG_CLOSE_PX || flicked) {
+      // Let Radix run its own exit animation from wherever the finger left it.
+      setOffset(0)
+      closeRef.current?.click()
+      return
+    }
+    setOffset(0)
+  }
+
+  return {
+    closeRef,
+    offset,
+    dragging,
+    handlers: {
+      onPointerDown,
+      onPointerMove,
+      onPointerUp,
+      onPointerCancel: onPointerUp,
+    },
+  }
+}
 
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = 'right', className, children, ...props }, ref) => (
-  <SheetPortal>
-    <SheetOverlay />
-    <SheetPrimitive.Content
-      ref={ref}
-      className={cn(sheetVariants({ side }), className)}
-      {...props}
-    >
-      {children}
-      <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </SheetPrimitive.Close>
-    </SheetPrimitive.Content>
-  </SheetPortal>
-))
+>(({ side = 'right', className, children, dragToClose, ...props }, ref) => {
+  const draggable = dragToClose === true && side === 'bottom'
+  const { closeRef, offset, dragging, handlers } = useSheetDrag(draggable)
+
+  return (
+    <SheetPortal>
+      <SheetOverlay />
+      <SheetPrimitive.Content
+        ref={ref}
+        className={cn(sheetVariants({ side }), className)}
+        style={
+          offset ? { transform: `translate3d(0, ${offset}px, 0)` } : undefined
+        }
+        // No transition while the finger is down — the sheet has to track it
+        // exactly — and a short one on release so a spring-back is not a jump.
+        data-dragging={dragging ? '' : undefined}
+        {...props}
+      >
+        {draggable && (
+          <div
+            {...handlers}
+            aria-hidden
+            className="absolute inset-x-0 top-0 flex h-8 cursor-grab touch-none items-center justify-center active:cursor-grabbing"
+          >
+            <span className="bg-muted-foreground/40 h-1 w-10 rounded-full" />
+          </div>
+        )}
+        {children}
+        <SheetPrimitive.Close
+          ref={closeRef}
+          className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
+        >
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </SheetPrimitive.Close>
+      </SheetPrimitive.Content>
+    </SheetPortal>
+  )
+})
 SheetContent.displayName = SheetPrimitive.Content.displayName
 
 const SheetHeader = ({

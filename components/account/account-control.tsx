@@ -1,9 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import { LogOut, User2 } from 'lucide-react'
 
-import { signOut } from '@/lib/account'
+import { signInHref, signOut } from '@/lib/account'
 import { cn } from '@/lib/utils'
 import { useAccountIdentity, useAccountSession } from '@/hooks/use-account'
 import { buttonVariants } from '@/components/ui/button'
@@ -47,8 +46,11 @@ export function AccountControl() {
 
   if (!signedIn) {
     return (
-      <Link
-        href="/account"
+      // Straight to Google. /account signed out is a pitch for a thing this
+      // button already says yes to, and making somebody read it first is one
+      // tap of nothing.
+      <a
+        href={signInHref('/account')}
         className={cn(
           buttonVariants({ size: 'icon', variant: 'ghost' }),
           'shrink-0'
@@ -56,7 +58,7 @@ export function AccountControl() {
       >
         <User2 className="size-5" />
         <span className="sr-only">Sign in</span>
-      </Link>
+      </a>
     )
   }
 

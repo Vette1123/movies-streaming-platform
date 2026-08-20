@@ -251,7 +251,18 @@ export function AccountPanel() {
   }
 
   if (!account.signedIn) {
-    return <SignedOut error={signInError} failed={account.failed} />
+    return (
+      <SignedOut
+        error={signInError}
+        failed={account.failed}
+        // Nothing here is worth reading before signing in, so a visitor who
+        // came to sign in is sent straight to Google — unless the last attempt
+        // came back with something to say, or this browser has already been
+        // sent once (see AUTO_SIGNIN_KEY): bouncing somebody who cancelled
+        // straight back into the same consent screen is a trap, not a shortcut.
+        auto={!signInError && !account.failed}
+      />
+    )
   }
 
   const open = SECTIONS.find((item) => item.id === section)
@@ -388,9 +399,10 @@ function SectionPicker({
 
       <SheetContent
         side="bottom"
-        className="max-h-[85svh] overflow-y-auto rounded-t-2xl border-white/10 p-4 pb-8"
+        dragToClose
+        className="max-h-[85svh] overflow-y-auto rounded-t-2xl border-white/10 p-4 pt-6 pb-8"
       >
-        <SheetHeader className="mb-3 text-left">
+        <SheetHeader className="mt-2 mb-3 text-left">
           <SheetTitle className="text-base">Go to</SheetTitle>
         </SheetHeader>
         <div className="grid gap-2 sm:grid-cols-2">
@@ -499,13 +511,50 @@ function Tile({ value, label }: { value: number; label: string }) {
   )
 }
 
+/** Once per tab. sessionStorage, so a new tab is a fresh chance to be helped. */
+const AUTO_SIGNIN_KEY = 'reely_auto_signin'
+
 function SignedOut({
   error,
   failed,
+  auto,
 }: {
   error: string | null
   failed: boolean
+  auto?: boolean
 }) {
+  const [redirecting, setRedirecting] = useState(false)
+
+  useEffect(() => {
+    if (!auto) return
+    try {
+      if (window.sessionStorage.getItem(AUTO_SIGNIN_KEY)) return
+      window.sessionStorage.setItem(AUTO_SIGNIN_KEY, '1')
+    } catch {
+      // Private mode. One hop is still better than a page nobody reads; the
+      // guard above is what stops it repeating, and a browser without storage
+      // gets the page back the moment it returns from a cancelled sign-in.
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRedirecting(true)
+    window.location.href = signInHref('/account')
+  }, [auto])
+
+  if (redirecting) {
+    return (
+      <div className="flex min-h-[50svh] flex-col items-center justify-center gap-4 text-center">
+        <Icons.google className="size-8 animate-pulse" />
+        <p className="text-muted-foreground text-sm">Taking you to Google…</p>
+        <a
+          href={signInHref('/account')}
+          className={buttonVariants({ variant: 'outline', size: 'sm' })}
+        >
+          Continue
+        </a>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-2xl space-y-8">
       {error && (
