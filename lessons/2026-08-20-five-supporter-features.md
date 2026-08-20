@@ -101,3 +101,36 @@ use one.
   test named after the storm it prevents.
 - A control inside a row that is already a `<button>` cannot be a `<button>`.
 - Large file writes go through the Write tool, not a heredoc.
+
+## Addendum — what the browser found (same day)
+
+The unit tests were green and the features were correct; three defects only a
+real browser surfaced, all of them in the part no test covers:
+
+- The `/support` flagship grid left a ~600px void in the right column at `lg`.
+  Fixed with an explicit `lg:grid-rows-2` / `lg:row-span-2` and a
+  `flex flex-col justify-center` on the short tile — an implicit grid was
+  sizing rows off the tall card alone.
+- Two feature cards shipped with near-identical titles ("Told the day it lands
+  on something you already pay for" vs. the new-episode alert). Reading the
+  list in a browser is what made the collision obvious; reading the config file
+  never did.
+- `/stats` said "1 titles". A plural bug in `stats-panel.tsx`.
+
+Verification needed a signed-in **pro** browser against a dev server that
+serves no `/api/*` at all. A `Page.addScriptToEvaluateOnNewDocument` fetch stub
+covering `/api/auth/refresh`, `/api/account`, `/api/for-you`,
+`/api/season-details`, `/api/filter` and `/api/stats/runtimes` did it. Two
+traps worth remembering:
+
+- The stub must return `prefs` as a **JSON string**, because `parsePrefs`
+  reads the raw D1 TEXT column. Returning an object silently drops every
+  preference, which reads exactly like a product bug.
+- CDP's `addScriptToEvaluateOnNewDocument` binds to **one target**, and
+  `new_tab()` creates a new one. Add the script after `new_tab`, then navigate
+  with an in-page `location.href` assignment.
+
+Also: filter state URL keys are the nuqs parser names (`selectedGenres`,
+`sortBy`), not TMDB's (`sort_by`). A hand-typed `?sort_by=` URL leaves
+`hasActiveFilters` false and the save control disabled, which looks like a
+broken feature and is not.

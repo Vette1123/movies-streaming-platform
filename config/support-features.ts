@@ -92,7 +92,7 @@ export const SUPPORT_FEATURES: SupportFeature[] = [
   },
   {
     Icon: MonitorPlay,
-    title: 'Told the day it lands on something you already pay for',
+    title: 'The day it lands on a service you pay for',
     short: 'An alert when a saved title reaches a service in your country',
     body: 'Save a film that is not streaming anywhere yet, and hear about it the day it arrives on Netflix, Max, Disney+ or anything else with a subscription, in the country you picked. Rentals and purchases never count — a film has been rentable since release, and that is not news.',
   },

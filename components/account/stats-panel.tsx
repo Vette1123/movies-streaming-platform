@@ -100,7 +100,10 @@ export function StatsPanel() {
               : 'Not yet'
           }
         />
-        <Line term="Saved for later" value={`${stats.saved} titles`} />
+        <Line
+          term="Saved for later"
+          value={`${stats.saved} ${stats.saved === 1 ? 'title' : 'titles'}`}
+        />
         <Line term="Runtimes" value={runtimeSource(stats)} />
       </dl>
 

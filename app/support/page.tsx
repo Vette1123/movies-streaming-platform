@@ -294,8 +294,8 @@ function Flagships() {
         What support unlocks
       </h2>
 
-      <div className="mt-10 grid gap-4 lg:grid-cols-5">
-        <article className="border-primary/20 from-primary/10 relative col-span-full overflow-hidden rounded-2xl border bg-linear-to-br to-transparent lg:col-span-3">
+      <div className="mt-10 grid gap-4 lg:grid-cols-5 lg:grid-rows-2">
+        <article className="border-primary/20 from-primary/10 relative col-span-full overflow-hidden rounded-2xl border bg-linear-to-br to-transparent lg:col-span-3 lg:row-span-2">
           <div className="max-w-[52ch] p-6 sm:p-8">
             <lead.Icon className="text-primary size-7" />
             <h3 className="mt-4 text-2xl font-semibold tracking-tight md:text-3xl">
@@ -322,7 +322,7 @@ function Flagships() {
         {rest.map(({ Icon, title, body }) => (
           <article
             key={title}
-            className="border-border/70 bg-card/40 col-span-full rounded-2xl border p-6 sm:p-8 lg:col-span-2"
+            className="border-border/70 bg-card/40 col-span-full flex flex-col justify-center rounded-2xl border p-6 sm:p-8 lg:col-span-2"
           >
             <Icon className="text-primary size-5" />
             <h3 className="mt-4 text-lg font-semibold">{title}</h3>
