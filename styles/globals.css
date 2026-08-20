@@ -686,10 +686,89 @@ body[data-list-has-more='true'] footer {
    no class, so the handle is the inline z-index it writes on them; sonner and
    the Radix portals set theirs from classes, and are untouched.
 
-   40 keeps it above the page and under everything of ours. Raising our overlays
-   past 9999 instead would work once, then have to be repeated for the next one. */
-#bmc-wbtn,
+   The widget is two things at two moments, and they want opposite answers.
+   Closed, it is a 64px button in a corner, which must sit under every dialog,
+   sheet and toast. Open below 480px, it is the entire screen — and then it must
+   sit above them, or our own fixed chrome draws on top of the provider's
+   payment form.
+
+   So the band goes to 60, above every overlay of ours, and the button alone is
+   pulled back to 39 below. The nodes this rule lands on are 0x0 until the panel
+   opens, so ranking them above everything costs nothing while closed, and the
+   only way to open the panel is to reach the button — which is under our
+   overlays, so it cannot be tapped while one is up.
+
+   Raising our overlays past 9999 instead would work once, then have to be
+   repeated for the next one. */
 body > iframe[id^='bmc-'],
 body > div[style*='z-index: 9999'] {
-  z-index: 40 !important;
+  z-index: 60 !important;
+}
+
+/* ...with the button as the exception, and it is the whole reason the widget
+   can be closed at all.
+
+   The vendor's button handler only ever *opens*: it swaps the cup for a chevron
+   and keeps the same open-again onclick. There is no toggle in the bundle.
+   Closing is the backdrop's job — the class-less <div> it inflates to fill the
+   screen at 9999999, above the button's 9999, so the click that looks like it
+   lands on the chevron lands on the backdrop, whose onclick closes.
+
+   Flattening both onto one band destroys that: same z-index, and the button is
+   appended after the backdrop, so DOM order lifts it on top and the chevron
+   re-runs "open". On a phone that leaves the bundle's own close button as the
+   only way out of a full-screen iframe.
+
+   39 is below the backdrop, restoring the vendor's ordering, and below every
+   overlay of ours, which is the constraint the band above was written for and
+   the button is now the only node that still needs. The backdrop is 0x0 while
+   closed, so it never blocks the opening click. */
+#bmc-wbtn {
+  z-index: 39 !important;
+}
+
+/* Where the close control lives on a phone.
+
+   On a narrow screen the widget's panel is the whole screen — the iframe is
+   100vw wide and, because the bundle sets an explicit height on top of its
+   `bottom`, tall enough to reach the bottom edge too. The button and its
+   chevron are behind all of it, so the only way out is the bundle's own close
+   button, which it parks at `top: 16px; right: 16px` as a 16px grey x on
+   nothing — over the avatar and pin the provider's page draws in that same
+   corner, and in an installed PWA, where there is no browser chrome and the
+   panel starts at the true top of the display, under the status bar. On screen
+   the whole time and impossible to see.
+
+   So: bottom left, matching `data-position`, so the control sits in the corner
+   the widget's own button occupies when closed and does not travel between
+   states. On a dark disc, because the panel behind it is white.
+
+   Lifted clear of two things rather than one. `env(safe-area-inset-bottom)`
+   keeps it off the home indicator, and the 64px on top of that clears the
+   provider's own `buymeacoffee.com/…` pill, which is pinned to the bottom of
+   its page and runs nearly the full width — so there is no sideways position
+   that avoids it, only a higher one. The strip in between is empty at every
+   scroll position, because the pill is pinned and the content stops short of
+   it. `env()` resolves because the viewport is `viewport-fit: cover`.
+
+   The button carries an empty onclick and closes only because the click bubbles
+   to the backdrop, so nothing here may stop propagation. The bundle leaves it
+   `visibility: hidden` above 480px, where the panel is a corner card and
+   clicking beside it closes — untouched here. */
+#bmc-close-btn {
+  top: auto !important;
+  right: auto !important;
+  left: calc(18px + env(safe-area-inset-left)) !important;
+  bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+  width: 48px !important;
+  height: 48px !important;
+  background: #0d0c22 !important;
+  box-shadow: 0 6px 20px rgb(13 12 34 / 0.35) !important;
+}
+#bmc-close-btn svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+#bmc-close-btn svg path {
+  fill: #fff !important;
 }

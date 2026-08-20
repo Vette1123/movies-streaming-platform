@@ -25,7 +25,17 @@
  *
  * Bottom-LEFT, and lower-case: the bundle compares `data-position` against the
  * literal 'left' and treats everything else as the right edge, where the button
- * lands on the hero's trailer-autoplay toggle and swallows 42% of it.
+ * lands on the hero's trailer-autoplay toggle and swallows 42% of it. The
+ * snippet the dashboard generates says `Right`, capitalised; taking it verbatim
+ * would move the button back onto the toggle and, capitalised, only reach the
+ * right edge by accident of that same comparison.
+ *
+ * `message` is empty on purpose. The bubble used to promise "supporters get
+ * server switching + calendar feed", and nothing bought through this panel
+ * grants either: it sells coffees, and lib/billing/bmc.ts matches on the level
+ * names in config/support.ts alone. The bubble was the only surface that could
+ * make that promise, so it now says nothing at all — /pro is the path that
+ * turns somebody into a supporter.
  *
  * The same loader runs in the downloader project, kept in step by hand — the
  * two share no package, and this is small enough that a shared one would cost
@@ -35,7 +45,7 @@ export const BMC_WIDGET_SCRIPT = `(function(){try{
 var n=navigator;if(n.connection&&n.connection.saveData){return;}
 var a={name:'BMC-Widget',cfasync:'false',id:'vetteotp',
 description:'Support me on Buy me a coffee!',
-message:'Reely runs on TMDB and coffee. Supporters get server switching + calendar feed.',
+message:'',
 color:'#5F7FFF',position:'left',x_margin:'18',y_margin:'18'};
 function load(){var s=document.createElement('script');s.async=true;
 s.src='https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js';
