@@ -75,3 +75,27 @@ So the change was reverted. What shipped from this round is the by-colo breakdow
 - A cold-start theory needs a measurement that isolates evaluation from parse. `NODE_COMPILE_CACHE` is the cheap way to do it; without it, node's import time is mostly parse and will mislead.
 - Build the four-line experiment before the hundred-line change.
 - "No measurable improvement" is a complete answer. Revert and say so.
+
+---
+
+## Round three: what was left on the hot path, and how to tell if it helped
+
+Three passes removed from the tail-id fallback — the route that is 96% of invocations and whose warm floor measured 1.36ms:
+
+- **`cachedJson`.** Both fallback pages computed a payload, serialised it into a `Response` so `cached()` could store it, then parsed that same `Response` back to read four fields off it. A hit still parses, because a hit is bytes. A miss no longer parses what it just built.
+- **`escapeHtml` scans once, not four times.** Same output: `&` is still handled first, and a single scan cannot re-escape an entity it just wrote. Every fallback page calls it four times, plus once per link on `/lists`.
+- **`cacheKeyUrl` skips the URL round trip when there is no query string to sort** — which is the branch the fallback path takes on every request.
+
+None of them is worth a millisecond alone, and the CPU field in Workers Logs is **whole milliseconds**, so they can only ever show up in a route average. That is worth knowing before optimising anything here: a change that saves 200µs per request is invisible per-request and only visible across thousands.
+
+`pnpm cf:cpu` grew a third section for exactly that: the busiest route broken down **by deploy**, newest first, using the versions API for the timestamps. It answers "did the thing I just shipped change anything" inside one window instead of waiting for the old code to age out.
+
+### Mistakes
+
+- **Verified the wrong URL first.** The local check of the fallback path fetched `/movies/550` — which is prerendered, so wrangler served the asset and the Worker never ran. 291 KB and no `<h1>` was the tell; a real fallback is 83 KB. Had to diff the exported id list to find a genuine tail id (`8467`). When testing the path that only runs for ids the build does not have, first prove the id is one the build does not have.
+- **Reached for a deferred measurement before checking whether the data could answer it.** The by-deploy comparison is the right tool, but eighteen requests on a ten-minute-old version cannot resolve a sub-millisecond change, and printing `2.28ms vs 2.17ms` next to each other invites reading noise as a regression. The section now says so in its own header comment.
+
+### Rules
+
+- The CPU field is whole milliseconds. Optimise in aggregate or not at all, and never claim a per-request improvement smaller than the unit of measurement.
+- Before testing a fallback, confirm the id actually falls back. A 200 with the right title proves nothing about which half of the stack served it.

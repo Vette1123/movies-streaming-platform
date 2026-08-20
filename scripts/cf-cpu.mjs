@@ -150,6 +150,33 @@ async function query(filters, groupBys) {
   }
 }
 
+/**
+ * The last few deploys, newest first, as `{ id, at }`.
+ *
+ * Soft-fails to an empty list: this is the only call in the script that needs
+ * Workers Scripts read rather than observability, and a token without it should
+ * lose one section, not the whole report.
+ */
+async function deployedVersions() {
+  const scriptName = wrangler.match(/"name":\s*"([^"]+)"/)?.[1]
+  try {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/workers/scripts/${scriptName}/versions?per_page=10`,
+      { headers: { Authorization: `Bearer ${TOKEN}` } }
+    )
+    const body = await res.json()
+    return (body.result?.items ?? [])
+      .filter((item) => item.id && item.metadata?.created_on)
+      .map((item) => ({
+        id: item.id,
+        // Minute precision: what matters is which deploy, not when to the second.
+        at: item.metadata.created_on.slice(0, 16).replace('T', ' '),
+      }))
+  } catch {
+    return []
+  }
+}
+
 const urlFilter = (value) => [
   {
     key: '$workers.event.request.url',
@@ -236,6 +263,34 @@ if (busiest) {
     console.log(
       `  ${label.padEnd(10)} ${String(b.colos).padStart(3)} colos  ${String(b.n).padStart(6)} req  ${b.cpu.toFixed(2)}ms`
     )
+  }
+}
+
+// Did the last deploy change anything?
+//
+// Every log line carries the script version that served it, and the versions
+// API knows when each one went out — so the same route can be compared across
+// deploys inside one window, without waiting for the old code to age out of it.
+// This is the check to run after shipping a Worker change, and the one that
+// stops "it feels faster" from becoming a commit message.
+//
+// Read it with the sample size in view: a version deployed ten minutes ago has
+// served a few dozen requests, and the CPU field is whole milliseconds, so a
+// difference under a few hundred microseconds is not visible yet.
+if (busiest) {
+  const versions = await deployedVersions()
+  if (versions.length > 0) {
+    const byVersion = await query(urlFilter(busiest.route), [
+      { type: 'string', value: '$workers.scriptVersion.id' },
+    ])
+    console.log(`\n${busiest.route} by deploy (newest first)`)
+    for (const version of versions.slice(0, 5)) {
+      const stats = byVersion[version.id]
+      if (!stats?.n) continue
+      console.log(
+        `  ${version.at}  ${version.id.slice(0, 8)}  ${String(stats.n).padStart(6)} req  ${stats.avg.toFixed(2)}ms  p99 ${stats.p99.toFixed(2)}ms`
+      )
+    }
   }
 }
 
