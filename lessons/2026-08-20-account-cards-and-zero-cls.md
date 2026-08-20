@@ -27,8 +27,10 @@ browser-harness, 4x CPU throttle, desktop 1280x900 and mobile 390x844:
 | `/tv-shows` | 0.0045 | 0 |
 | `/` | 0.0025 | 0 |
 
-Remaining: `/movies/<id>` on mobile only, ~0.008, from a 44px element inside the
-hero that is gone by the time the observer is read. Not chased further.
+The last ~0.008 on `/movies/<id>` at mobile width turned out to be **the Next.js
+dev overlay**: probing the shifted rect at the moment of the entry named
+`NEXTJS-PORTAL` (366x44, bottom-left, sliding into place). It does not exist in
+the export, so every route is 0.
 
 ## Mistakes
 
@@ -80,3 +82,8 @@ hero that is gone by the time the observer is read. Not chased further.
 - **Animating anything but `transform`/`opacity` shows up as CLS.** If a
   measured shift has a `GONE` node and a moving `top`, look for an animation
   before looking for a data load.
+- **Identify the shifted node inside the observer callback, not after.** By the
+  time the run is read back, `entry.sources[].node` is often detached and prints
+  as null. `document.elementsFromPoint()` on the entry rect, called synchronously
+  in the callback, is what named the dev overlay — and a dev-only shift is worth
+  ruling out before writing any code.
