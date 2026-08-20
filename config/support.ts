@@ -100,3 +100,17 @@ export const supportPriceLine = (): string =>
 
 export const supportPriceRow = (): string =>
   `$${SUPPORT_PRICES.monthly}/month · $${SUPPORT_PRICES.yearly}/year · $${SUPPORT_PRICES.lifetime} once`
+
+/**
+ * The yearly price said the way people actually compare prices.
+ *
+ * $50 against $5 is not a comparison anybody does in their head at a glance,
+ * and the one that matters — it is cheaper per month — is invisible until
+ * somebody divides. Two decimal places because $4.16 rounded to $4 would
+ * advertise a price that does not exist.
+ */
+export const monthlyEquivalent = (yearly: number): string =>
+  `$${(yearly / 12).toFixed(2)}`
+
+export const yearlyAnchor = (): string =>
+  `${monthlyEquivalent(SUPPORT_PRICES.yearly)} a month, paid once a year`

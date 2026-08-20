@@ -88,6 +88,9 @@ async function shellTemplates() {
     // The shared-list shell. Same treatment for the same reason: /l/<slug> is
     // assembled per request and has to unfurl like a real page.
     '/list-fallback.html': 'list-fallback.html',
+    // Not a fallback: the real /lists page, decorated in place with the
+    // directory's own links so a crawler sees them without running the fetch.
+    '/lists.html': 'lists.html',
   }
   const templates = {}
 

@@ -2,6 +2,7 @@ import React from 'react'
 import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { RescueBanner } from '@/components/account/rescue-banner'
 import { SupportPrompt } from '@/components/support/support-prompt'
 import { WatchlistContainer } from '@/components/watchlist/watchlist'
 
@@ -26,6 +27,7 @@ function Watchlist() {
   return (
     <section className="container h-full min-h-svh py-20 lg:py-36">
       <h1 className="mb-6 text-2xl font-bold lg:text-3xl">My Watchlist</h1>
+      <RescueBanner />
       <WatchlistContainer />
       <SupportPrompt
         icon="sync"

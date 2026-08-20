@@ -126,6 +126,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 1.0,
     },
+    // Two entry pages that exist to be found: one answers "what should I watch"
+    // for somebody with no account, the other indexes what people published.
+    {
+      url: `${baseUrl}/start`,
+      lastModified: SITE_LAUNCH_DATE,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/lists`,
+      lastModified: SITE_LAUNCH_DATE,
+      changeFrequency: 'daily',
+      priority: 0.7,
+    },
     {
       url: `${baseUrl}/movies`,
       lastModified: SITE_LAUNCH_DATE,

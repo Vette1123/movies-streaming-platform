@@ -28,7 +28,10 @@
     // between the tail-detail fallback and serving out/404.html itself.
     "not_found_handling": "none",
     // Assets must never swallow an API call.
-    "run_worker_first": ["/api/*"],
+    // /lists is a real exported page, but its contents are rows written after
+    // the build — the Worker answers it so the directory links are in the HTML
+    // a crawler receives. See handleListsDirectory.
+    "run_worker_first": ["/api/*", "/lists"],
   },
   "observability": {
     "enabled": true,

@@ -47,6 +47,7 @@ import {
 import { fetchWatchProviders } from '@/services/watch-providers'
 
 import { ownsPath, routeAccountApi } from '@/lib/api/account-router'
+import { loadDirectory } from '@/lib/community/routes'
 import { smartQuery } from '@/lib/filter-query'
 import { loadPublicList } from '@/lib/lists/routes'
 import { getMediaHeroImageUrl } from '@/lib/media'
@@ -82,6 +83,11 @@ const SHELL_MEDIA = '/media-fallback.html'
 const SHELL_COLLECTION = '/collection-fallback.html'
 const SHELL_LIST = '/list-fallback.html'
 const SHELL_PROFILE = '/profile-fallback.html'
+/**
+ * The directory shell is not a fallback at all — it is the real exported
+ * /lists page, which the Worker decorates in place (see handleListsDirectory).
+ */
+const SHELL_LISTS = '/lists.html'
 
 /**
  * A public profile: /u/gado.
@@ -93,6 +99,15 @@ const SHELL_PROFILE = '/profile-fallback.html'
  * never be a handle never reaches the database.
  */
 const PROFILE_PATH = /^\/u\/([a-z0-9-]{3,20})\/?$/
+
+/**
+ * The public directory.
+ *
+ * Unlike every other path here this one IS a prerendered page — it is in
+ * `run_worker_first` so the Worker can write the directory's links into it
+ * before it goes out. See handleListsDirectory.
+ */
+const LISTS_PATH = /^\/lists\/?$/
 
 /**
  * The secrets live on the Worker, but the services read `process.env` (they are
@@ -462,7 +477,25 @@ const headBlock = (meta, ogType, jsonLd) =>
 // from sighted users because the client render paints the real page over it a
 // moment later.
 const seoBlock = (meta) =>
-  `<div hidden data-fallback-seo><h1>${escapeHtml(meta.heading)}</h1><p>${escapeHtml(meta.description)}</p></div>`
+  `<div hidden data-fallback-seo><h1>${escapeHtml(meta.heading)}</h1><p>${escapeHtml(meta.description)}</p>${linkBlock(meta.links)}</div>`
+
+/**
+ * The directory's own links, for a crawler that never runs the fetch.
+ *
+ * `/lists` indexes rows written after the build, so without this the only thing
+ * a crawler can see on it is a heading — and every published list stays
+ * unreachable except by someone pasting the URL. Real anchors, in the document,
+ * on the first byte.
+ */
+const linkBlock = (links) =>
+  Array.isArray(links) && links.length > 0
+    ? `<ul>${links
+        .map(
+          (link) =>
+            `<li><a href="${escapeHtml(link.href)}">${escapeHtml(link.text)}</a></li>`
+        )
+        .join('')}</ul>`
+    : ''
 
 /**
  * The shells, pre-split at build time by scripts/build-worker.mjs, or null on a
@@ -878,6 +911,88 @@ async function handleProfilePage(match, env, url) {
   )
 }
 
+/**
+ * The public directory at /lists.
+ *
+ * The one page on the site that is BOTH a real exported page and answered by
+ * the Worker: `/lists` is in `run_worker_first`, so this runs instead of the
+ * asset being served directly, and what it serves is that same asset with the
+ * directory's links written into it. A crawler needs anchors in the first byte
+ * — the rows here were written by people after the build, so nothing else can
+ * put them there.
+ *
+ * Cached in `caches.default`, unlike /l/<slug> and /u/<handle>: nothing on this
+ * page belongs to one person, and a list that appears ten minutes late in an
+ * index is not the same problem as a page somebody unpublished still being up.
+ */
+async function handleListsDirectory(request, env, ctx, url) {
+  const db = env.DB
+  if (!db) return notFoundAsset(env, url)
+
+  return cached(
+    request,
+    ctx,
+    async () => {
+      const directory = await loadDirectory(db, Date.now())
+      const siteUrl = siteUrlOf(url)
+      const lists = directory.lists
+      const links = [
+        ...lists.map((list) => ({
+          href: `${siteUrl}/l/${list.slug}`,
+          text: list.name,
+        })),
+        ...directory.people.map((person) => ({
+          href: `${siteUrl}/u/${person.handle}`,
+          text: `${person.name || person.handle} on Reely`,
+        })),
+      ]
+
+      const meta = {
+        heading: 'Lists and people on Reely',
+        description: lists.length
+          ? `${lists.length} film and TV lists published by people who keep their library on Reely, and the public pages behind them.`
+          : 'Film and TV lists published by people who keep their library on Reely.',
+        // The newest list's posters, as the same composed card a single list
+        // unfurls with — so the directory looks like what it indexes.
+        image:
+          mosaicUrl({
+            title: 'Lists on Reely',
+            subtitle: 'Shelves people published, free to steal from',
+            posters: lists.flatMap((list) => list.posters).slice(0, 5),
+          }) || '',
+        canonical: `${siteUrl}/lists`,
+        links,
+      }
+      meta.imageWidth = meta.image ? OG_WIDTH : null
+      meta.imageHeight = meta.image ? OG_HEIGHT : null
+
+      const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: meta.heading,
+        description: meta.description,
+        url: meta.canonical,
+        mainEntity: {
+          '@type': 'ItemList',
+          numberOfItems: lists.length,
+          itemListElement: lists.map((list, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: list.name,
+            url: `${siteUrl}/l/${list.slug}`,
+          })),
+        },
+      }
+
+      return (
+        serveShellFromTemplate(SHELL_LISTS, meta, 'website', jsonLd) ??
+        (await serveShell(SHELL_LISTS, meta, 'website', jsonLd, env, url))
+      )
+    },
+    `${url.origin}/lists`
+  )
+}
+
 export default {
   /**
    * The hourly sweep for new-episode alerts. Imported lazily so its TMDB and
@@ -938,6 +1053,10 @@ export default {
       const list = pathname.match(LIST_PATH)
       if (list) {
         return await handleListPage(list, env, url)
+      }
+
+      if (LISTS_PATH.test(pathname)) {
+        return await handleListsDirectory(request, env, ctx, url)
       }
 
       const profile = pathname.match(PROFILE_PATH)

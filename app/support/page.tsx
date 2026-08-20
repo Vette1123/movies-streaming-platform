@@ -9,12 +9,14 @@ import {
   SUPPORT_MEMBERSHIP,
   SUPPORT_PRICES,
   supportMailto,
+  yearlyAnchor,
 } from '@/config/support'
 import { FLAGSHIP_FEATURES, SUPPORT_FEATURES } from '@/config/support-features'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { PlanView } from '@/components/support/plan-view'
 import { SupportCta } from '@/components/support/support-cta'
+import { SupporterCount } from '@/components/support/supporter-count'
 
 export const metadata: Metadata = {
   title: 'Support Reely',
@@ -74,7 +76,7 @@ const PLANS: {
   {
     name: 'Yearly',
     price: SUPPORT_PRICES.yearly,
-    note: 'Two months cheaper than paying monthly',
+    note: `${yearlyAnchor()} — two months cheaper than paying monthly`,
     badge: `Save $${YEARLY_SAVING}`,
     featured: true,
   },
@@ -229,6 +231,7 @@ function Hero() {
             Your account
           </Link>
         </div>
+        <SupporterCount />
       </div>
 
       <PlanLadder />

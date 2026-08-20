@@ -12,6 +12,8 @@ import { PlayStoreLink } from '../play-store-link'
 import { buttonVariants } from '../ui/button'
 
 const SITE_LINKS = [
+  { href: '/start', label: 'What should I watch?' },
+  { href: '/lists', label: 'Lists and people' },
   { href: '/people', label: 'Actors and directors' },
   { href: '/support', label: 'Support Reely' },
   { href: '/account', label: 'Account' },
