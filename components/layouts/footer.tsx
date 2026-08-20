@@ -12,6 +12,7 @@ import { PlayStoreLink } from '../play-store-link'
 import { buttonVariants } from '../ui/button'
 
 const SITE_LINKS = [
+  { href: '/people', label: 'Actors and directors' },
   { href: '/support', label: 'Support Reely' },
   { href: '/account', label: 'Account' },
   { href: '/stats', label: 'Your year in Reely' },
@@ -60,6 +61,14 @@ function ExternalLink({ href, label }: { href: string; label: string }) {
 
 export function Footer() {
   const year = new Date().getFullYear()
+  // The year hubs are built from the same clock the pages are, so the link is
+  // always to a year that exists. Kept out of SITE_LINKS because that list is a
+  // module constant and this one depends on when the build ran.
+  const siteLinks = [
+    { href: `/movies/year/${year}`, label: `Movies by year` },
+    { href: `/tv-shows/year/${year}`, label: `TV shows by year` },
+    ...SITE_LINKS,
+  ]
 
   return (
     <footer className="text-muted-foreground border-border/60 mt-8 border-t text-sm">
@@ -94,7 +103,7 @@ export function Footer() {
             Site
           </p>
           <ul className="space-y-2">
-            {SITE_LINKS.map(({ href, label }) => (
+            {siteLinks.map(({ href, label }) => (
               <li key={href}>
                 <Link href={href} className={linkClass}>
                   {label}

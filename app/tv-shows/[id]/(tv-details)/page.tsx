@@ -10,9 +10,12 @@ import {
 } from '@/services/series'
 
 import { PageDetailsProps } from '@/types/page-details'
+import { castNames } from '@/lib/credits'
 import { getMediaHeroImageUrl } from '@/lib/media'
 import { buildDetailsMetadata, buildMediaStaticParams } from '@/lib/media-page'
+import { linkablePersonIds } from '@/lib/person-links'
 import { breadcrumbJsonLd, JsonLd, tvSeriesJsonLd } from '@/lib/structured-data'
+import { WhereToWatch } from '@/components/media/where-to-watch'
 import { SeriesDetailsContent } from '@/components/series/details-content'
 import { SeriesDetailsHero } from '@/components/series/details-hero'
 import { SeriesPlaybackProvider } from '@/components/series/playback-context'
@@ -85,8 +88,14 @@ const TVSeries = async (props: PageDetailsProps) => {
     similarSeries,
     recommendedSeries,
     trailerKey,
+    trailerPublishedAt,
+    availability,
   } = result!
   if (!seriesDetails?.id) notFound()
+
+  const linkedPersonIds = await linkablePersonIds(
+    (seriesCredits?.cast ?? []).slice(0, 10).map((person) => person.id)
+  )
 
   const jsonLd = tvSeriesJsonLd({
     id: seriesDetails.id,
@@ -104,6 +113,10 @@ const TVSeries = async (props: PageDetailsProps) => {
     voteAverage: seriesDetails.vote_average,
     voteCount: seriesDetails.vote_count,
     tagline: seriesDetails.tagline,
+    cast: castNames(seriesCredits),
+    creators: seriesDetails.created_by?.map((person) => person.name),
+    trailerKey,
+    trailerPublishedAt,
   })
 
   return (
@@ -121,11 +134,13 @@ const TVSeries = async (props: PageDetailsProps) => {
           through, so the page stays server-rendered. */}
       <SeriesPlaybackProvider>
         <SeriesDetailsHero series={seriesDetails} trailerKey={trailerKey} />
+        <WhereToWatch title={seriesDetails.name} availability={availability} />
         <SeriesDetailsContent
           series={seriesDetails}
           seriesCredits={seriesCredits}
           similarSeries={similarSeries}
           recommendedSeries={recommendedSeries}
+          linkedPersonIds={linkedPersonIds}
         />
       </SeriesPlaybackProvider>
     </header>

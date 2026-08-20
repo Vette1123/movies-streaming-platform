@@ -21,8 +21,10 @@ import {
 import { HERO_LIMIT, RAIL_LIMIT } from '@/lib/constants'
 import { fetchClient, isNotFoundError } from '@/lib/fetch-client'
 import { capListOverviews } from '@/lib/media'
+import { detailAppend, WATCH_PROVIDERS_KEY } from '@/lib/tmdb-append'
 import { movieType } from '@/lib/tmdbConfig'
-import { pickTrailerKey } from '@/lib/videos'
+import { pickTrailer } from '@/lib/videos'
+import { titleAvailability } from '@/lib/watch-availability'
 
 const getNowPlayingMovies = async (params: Param = {}) => {
   const url = `movie/${movieType.now_playing}`
@@ -161,7 +163,15 @@ const populateHomePageData = async (): Promise<MultiRequestProps> => {
 const getMovieWithExtras = cache(async (id: string, params: Param = {}) => {
   // `videos` rides along on the same append_to_response — still ONE TMDB
   // request / one KV write — and powers the "Watch Trailer" CTA.
-  const url = `movie/${id}?language=en-US&append_to_response=credits,similar,recommendations,videos`
+  //
+  // `watch/providers` rides along ONLY where a page is being rendered (see
+  // IS_PRERENDER). It is what makes the crawlable "where to watch" block cost
+  // zero extra TMDB requests at build — but TMDB answers it for every country
+  // it knows, which is 10-20KB of JSON, and the Worker parses this exact
+  // payload on /api/media/*, its most CPU-expensive route, against a 10ms
+  // budget. So the two callers deliberately fetch two different URLs: the
+  // build gets the block, the Worker's payload is byte-for-byte what it was.
+  const url = `movie/${id}?language=en-US&append_to_response=${detailAppend()}`
   return fetchClient.get<MovieDetailsWithExtras>(url, params, true)
 })
 
@@ -198,7 +208,15 @@ const populateMovieDetailsPage = async (
     // a second time. That was 16 KB of the 28 KB payload: half the JSON the
     // Worker stringifies on /api/media/*, its most expensive route, and half of
     // what every prerendered detail page carries in its flight data.
-    const { credits, similar, recommendations, videos, ...details } = data
+    const {
+      credits,
+      similar,
+      recommendations,
+      videos,
+      [WATCH_PROVIDERS_KEY]: providers,
+      ...details
+    } = data
+    const trailer = pickTrailer(videos?.results)
     return {
       movieDetails: {
         ...details,
@@ -207,7 +225,12 @@ const populateMovieDetailsPage = async (
       movieCredits: credits ?? { id: data.id, cast: [], crew: [] },
       similarMovies: (similar?.results ?? []).slice(0, RAIL_LIMIT),
       recommendedMovies: (recommendations?.results ?? []).slice(0, RAIL_LIMIT),
-      trailerKey: pickTrailerKey(videos?.results),
+      trailerKey: trailer?.key,
+      trailerPublishedAt: trailer?.published_at,
+      // Trimmed to one region here rather than in the page: peeled off the same
+      // way as the blocks above, so the untrimmed country list never reaches
+      // the payload — undefined in the Worker, which never asked for it.
+      availability: titleAvailability(providers) ?? undefined,
     }
   } catch (error: any) {
     // An unknown id is not a fault: cloudflare/worker.js turns it into a 404 and

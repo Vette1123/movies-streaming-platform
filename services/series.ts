@@ -10,8 +10,10 @@ import {
 import { SeriesResponse } from '@/types/series-result'
 import { RAIL_LIMIT } from '@/lib/constants'
 import { fetchClient, isNotFoundError } from '@/lib/fetch-client'
+import { detailAppend, WATCH_PROVIDERS_KEY } from '@/lib/tmdb-append'
 import { tvType } from '@/lib/tmdbConfig'
-import { pickTrailerKey } from '@/lib/videos'
+import { pickTrailer } from '@/lib/videos'
+import { titleAvailability } from '@/lib/watch-availability'
 
 const getLatestTrendingSeries = async (params: Param = {}) => {
   const url = `${tvType.trending}/tv/day?language=en-US`
@@ -61,7 +63,11 @@ const getAllTimeTopRatedSeries = async (params: Param = {}) => {
 const getSeriesWithExtras = cache(async (id: string, params: Param = {}) => {
   // `videos` rides along on the same append_to_response — still ONE TMDB
   // request / one KV write — and powers the "Watch Trailer" CTA.
-  const url = `tv/${id}?language=en-US&append_to_response=credits,similar,recommendations,videos,external_ids`
+  //
+  // `watch/providers` rides along ONLY where a page is being rendered — see
+  // lib/tmdb-append.ts. The Worker parses this same payload on /api/media/*
+  // and must not pay for a country list it never reads.
+  const url = `tv/${id}?language=en-US&append_to_response=${detailAppend(['external_ids'])}`
   return fetchClient.get<SeriesDetailsWithExtras>(url, params, true)
 })
 
@@ -84,7 +90,15 @@ const populateSeriesDetailsPageData = async (
     // Same peel as populateMovieDetailsPage — see the note there. `external_ids`
     // stays on seriesDetails: unlike the others it is not re-exposed in a
     // sibling field, and it is what imdbRating is derived from.
-    const { credits, similar, recommendations, videos, ...details } = data
+    const {
+      credits,
+      similar,
+      recommendations,
+      videos,
+      [WATCH_PROVIDERS_KEY]: providers,
+      ...details
+    } = data
+    const trailer = pickTrailer(videos?.results)
     return {
       seriesDetails: {
         ...details,
@@ -99,7 +113,9 @@ const populateSeriesDetailsPageData = async (
         ? seriesDTO(recommendations).results
         : []
       ).slice(0, RAIL_LIMIT),
-      trailerKey: pickTrailerKey(videos?.results),
+      trailerKey: trailer?.key,
+      trailerPublishedAt: trailer?.published_at,
+      availability: titleAvailability(providers) ?? undefined,
     }
   } catch (error: any) {
     // Same as populateMovieDetailsPage — an unknown id is a normal answer, not a

@@ -12,7 +12,7 @@ const TYPE_RANK: Record<string, number> = {
   Featurette: 3,
 }
 
-export function pickTrailerKey(videos?: Video[]): string | undefined {
+export function pickTrailer(videos?: Video[]): Video | undefined {
   const youtube = (videos ?? []).filter((v) => v.site === 'YouTube' && !!v.key)
   if (!youtube.length) return undefined
 
@@ -28,5 +28,16 @@ export function pickTrailerKey(videos?: Video[]): string | undefined {
     )
   })[0]
 
-  return best?.key
+  return best
 }
+
+/**
+ * The same pick, as the key the embed needs.
+ *
+ * Kept as its own export because seventeen files ask for the key and one — the
+ * VideoObject in lib/structured-data.tsx — needs the clip's real publish date.
+ * Widening the shape everybody already destructures would have been a
+ * seventeen-file diff for one field.
+ */
+export const pickTrailerKey = (videos?: Video[]): string | undefined =>
+  pickTrailer(videos)?.key

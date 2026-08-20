@@ -10,11 +10,14 @@ import {
 } from '@/services/movies'
 
 import { PageDetailsProps } from '@/types/page-details'
+import { castNames, crewNamesByJob } from '@/lib/credits'
 import { getMediaHeroImageUrl } from '@/lib/media'
 import { buildDetailsMetadata, buildMediaStaticParams } from '@/lib/media-page'
+import { linkablePersonIds } from '@/lib/person-links'
 import { breadcrumbJsonLd, JsonLd, movieJsonLd } from '@/lib/structured-data'
 import { MoviesDetailsContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
+import { WhereToWatch } from '@/components/media/where-to-watch'
 
 // 24h: movie metadata is essentially static and CI redeploys twice daily,
 // repopulating the site with fresh data. A shorter window buys no freshness —
@@ -85,8 +88,16 @@ const MoviePage = async (props: PageDetailsProps) => {
     similarMovies,
     recommendedMovies,
     trailerKey,
+    trailerPublishedAt,
+    availability,
   } = result!
   if (!movieDetails?.id) notFound()
+
+  // Which of this film's cast have a page on this site. Resolved on the
+  // server so the client only ever receives the handful that do.
+  const linkedPersonIds = await linkablePersonIds(
+    (movieCredits?.cast ?? []).slice(0, 10).map((person) => person.id)
+  )
 
   const jsonLd = movieJsonLd({
     id: movieDetails.id,
@@ -102,6 +113,10 @@ const MoviePage = async (props: PageDetailsProps) => {
     voteAverage: movieDetails.vote_average,
     voteCount: movieDetails.vote_count,
     tagline: movieDetails.tagline,
+    cast: castNames(movieCredits),
+    directors: crewNamesByJob(movieCredits, 'Director'),
+    trailerKey,
+    trailerPublishedAt,
   })
 
   return (
@@ -115,11 +130,13 @@ const MoviePage = async (props: PageDetailsProps) => {
         ])}
       />
       <MovieDetailsHero movie={movieDetails} trailerKey={trailerKey} />
+      <WhereToWatch title={movieDetails.title} availability={availability} />
       <MoviesDetailsContent
         movie={movieDetails}
         movieCredits={movieCredits}
         similarMovies={similarMovies}
         recommendedMovies={recommendedMovies}
+        linkedPersonIds={linkedPersonIds}
       />
     </header>
   )

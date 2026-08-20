@@ -398,6 +398,10 @@ const CHALLENGE_DETAIL_SCRAPERS_RULE = {
   expression: [
     '(starts_with(http.request.uri.path, "/movies/") or starts_with(http.request.uri.path, "/tv-shows/") or starts_with(http.request.uri.path, "/collection/"))',
     'not (starts_with(http.request.uri.path, "/movies/genre") or starts_with(http.request.uri.path, "/tv-shows/genre"))',
+    // Year hubs (/movies/year/2019) are prerendered assets that never reach the
+    // Worker. Challenging a crawler on one buys nothing and costs the ranking
+    // the page exists for.
+    'not (starts_with(http.request.uri.path, "/movies/year") or starts_with(http.request.uri.path, "/tv-shows/year"))',
     'not cf.client.bot',
     `not (${orExpr(BROWSER_UAS)})`,
   ].join(' and '),
@@ -416,7 +420,7 @@ const RATELIMIT_RULE = {
   // limit and silently kill "load more" on scroll. Exclude genre paths (still
   // just starts_with, so free-plan compatible).
   expression:
-    '(starts_with(http.request.uri.path, "/movies/") or starts_with(http.request.uri.path, "/tv-shows/")) and not (starts_with(http.request.uri.path, "/movies/genre") or starts_with(http.request.uri.path, "/tv-shows/genre"))',
+    '(starts_with(http.request.uri.path, "/movies/") or starts_with(http.request.uri.path, "/tv-shows/")) and not (starts_with(http.request.uri.path, "/movies/genre") or starts_with(http.request.uri.path, "/tv-shows/genre")) and not (starts_with(http.request.uri.path, "/movies/year") or starts_with(http.request.uri.path, "/tv-shows/year"))',
   // Free plan only allows `block` for rate limits (no managed_challenge).
   action: 'block',
   // Free plan caps period to 10s and only lets the expression match on Path /
@@ -472,7 +476,7 @@ const REDIRECT_APEX_RULE = {
 // The public, cacheable page paths. `/watch-history` is intentionally excluded
 // (personal + noindex). Keep in sync with next.config.mjs `headers()`.
 const CACHEABLE_PATHS =
-  '(http.request.uri.path eq "/") or (http.request.uri.path eq "/disclaimer") or (http.request.uri.path eq "/support") or (http.request.uri.path eq "/privacy") or (http.request.uri.path eq "/terms") or (starts_with(http.request.uri.path, "/movies")) or (starts_with(http.request.uri.path, "/tv-shows"))'
+  '(http.request.uri.path eq "/") or (http.request.uri.path eq "/disclaimer") or (http.request.uri.path eq "/support") or (http.request.uri.path eq "/privacy") or (http.request.uri.path eq "/terms") or (http.request.uri.path eq "/people") or (http.request.uri.path eq "/rss.xml") or (starts_with(http.request.uri.path, "/person/")) or (starts_with(http.request.uri.path, "/movies")) or (starts_with(http.request.uri.path, "/tv-shows"))'
 
 // Only full-document navigations/crawls are cached — NOT React Server Component
 // requests. App Router prefetch + client navigation send `RSC: 1`; those hit

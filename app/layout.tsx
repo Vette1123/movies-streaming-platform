@@ -183,6 +183,16 @@ export const metadata: Metadata = {
       'en-US': siteConfig.websiteURL,
       'x-default': siteConfig.websiteURL,
     },
+    // Discoverable from the document rather than only by guessing the path —
+    // this is how a reader finds the feed at all.
+    types: {
+      'application/rss+xml': [
+        {
+          url: `${siteConfig.websiteURL}/rss.xml`,
+          title: `${siteConfig.name} — what is trending`,
+        },
+      ],
+    },
   },
 
   category: siteConfig.seo.category as 'entertainment',

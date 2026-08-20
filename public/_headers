@@ -96,6 +96,17 @@
   Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
 /disclaimer
   Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
+# Cast and crew pages and their index. Prerendered documents like every other
+# route above; without a line here they fall through to the asset default and
+# spend a conditional request per visit.
+/people
+  Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
+/person/*
+  Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
+# The feed. A reader polls this on its own schedule, so the shared TTL is the
+# only thing standing between a few thousand subscribers and a request each.
+/rss.xml
+  Cache-Control: public, max-age=0, s-maxage=21600, stale-while-revalidate=3600
 # Same deal, and all three are indexed: /support is the page every CTA on the
 # site points at, and the two policy pages are what Google's OAuth review
 # fetches. Prerendered shells with no per-visitor content — the supporter's view

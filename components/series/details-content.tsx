@@ -19,6 +19,8 @@ interface SeriesDetailsContentProps {
   seriesCredits: Credit
   similarSeries: MediaType[]
   recommendedSeries: MediaType[]
+  /** Cast ids with a person page — see lib/person-links.ts. */
+  linkedPersonIds?: number[]
 }
 
 export const SeriesDetailsContent = ({
@@ -26,6 +28,7 @@ export const SeriesDetailsContent = ({
   seriesCredits,
   similarSeries,
   recommendedSeries,
+  linkedPersonIds,
 }: SeriesDetailsContentProps) => {
   const director = seriesCredits?.crew?.find(
     (crew) => crew.job === 'Director'
@@ -37,7 +40,10 @@ export const SeriesDetailsContent = ({
           <DetailsPoster path={series.poster_path} alt={series.name} />
           <section className="flex flex-1 flex-col gap-4">
             <SeriesDetailsExtraInfo series={series} director={director} />
-            <DetailsCredits movieCredits={seriesCredits} />
+            <DetailsCredits
+              movieCredits={seriesCredits}
+              linkedPersonIds={linkedPersonIds}
+            />
           </section>
           {/* Own Suspense boundary: the selector reads ?season during render,
               and without this the bailout would take the entire page

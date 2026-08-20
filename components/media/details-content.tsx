@@ -15,11 +15,14 @@ export const MoviesDetailsContent = ({
   movieCredits,
   similarMovies,
   recommendedMovies,
+  linkedPersonIds,
 }: {
   movie: MovieDetails
   movieCredits: Credit
   similarMovies: Movie[]
   recommendedMovies: Movie[]
+  /** Cast ids with a person page — see lib/person-links.ts. */
+  linkedPersonIds?: number[]
 }) => {
   const director = movieCredits?.crew?.find(
     (crew) => crew.job === 'Director'
@@ -31,7 +34,10 @@ export const MoviesDetailsContent = ({
           <DetailsPoster path={movie.poster_path} alt={movie.title} />
           <section className="flex flex-col gap-4">
             <DetailsExtraInfo movie={movie} director={director} />
-            <DetailsCredits movieCredits={movieCredits} />
+            <DetailsCredits
+              movieCredits={movieCredits}
+              linkedPersonIds={linkedPersonIds}
+            />
           </section>
         </div>
         <CollectionBanner movie={movie} />

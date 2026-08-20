@@ -5,6 +5,8 @@ import { MovieGenre } from '@/types/movie-genre'
 import { ProductionCompany, ProductionCountry } from '@/types/production'
 import { SeriesResponse } from '@/types/series-result'
 import { VideosResponse } from '@/types/video'
+import type { TmdbWatchProviders } from '@/lib/push/providers'
+import type { TitleAvailability } from '@/lib/watch-availability'
 
 type Season = {
   air_date: string
@@ -72,6 +74,11 @@ interface MultiSeriesDetailsRequestProps {
   recommendedSeries: MediaType[]
   // Best YouTube trailer/teaser key, if any (see lib/videos.ts).
   trailerKey?: string
+  // That clip's real publish date, for the VideoObject in the page's JSON-LD.
+  trailerPublishedAt?: string
+  // Where it streams, in ONE region, and only where a page is being rendered —
+  // see lib/tmdb-append.ts for why the Worker never fetches this.
+  availability?: TitleAvailability
 }
 
 // Shape of a single `tv/{id}?append_to_response=credits,similar,recommendations,videos`
@@ -81,6 +88,9 @@ interface SeriesDetailsWithExtras extends SeriesDetails {
   similar?: SeriesResponse
   recommendations?: SeriesResponse
   videos?: VideosResponse
+  // TMDB names an appended block after its endpoint path, slash included. Only
+  // ever present on a build/dev fetch — see lib/tmdb-append.ts.
+  'watch/providers'?: TmdbWatchProviders
   // TV details don't include imdb_id at the top level — it rides along on
   // external_ids (appended to the same request). See services/series.ts.
   external_ids?: { imdb_id?: string | null }

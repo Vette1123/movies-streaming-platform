@@ -2,6 +2,8 @@ import { Credit } from '@/types/credit'
 import { MovieGenre } from '@/types/movie-genre'
 import { Movie, MovieResponse } from '@/types/movie-result'
 import { VideosResponse } from '@/types/video'
+import type { TmdbWatchProviders } from '@/lib/push/providers'
+import type { TitleAvailability } from '@/lib/watch-availability'
 
 interface MovieDetails {
   adult: boolean
@@ -56,6 +58,11 @@ interface MultiMovieDetailsRequestProps {
   recommendedMovies: Movie[]
   // Best YouTube trailer/teaser key, if any (see lib/videos.ts).
   trailerKey?: string
+  // That clip's real publish date, for the VideoObject in the page's JSON-LD.
+  trailerPublishedAt?: string
+  // Where it streams, in ONE region, and only where a page is being rendered —
+  // see lib/tmdb-append.ts for why the Worker never fetches this.
+  availability?: TitleAvailability
 }
 
 // Shape of a single `movie/{id}?append_to_response=credits,similar,recommendations,videos`
@@ -65,6 +72,9 @@ interface MovieDetailsWithExtras extends MovieDetails {
   similar?: MovieResponse
   recommendations?: MovieResponse
   videos?: VideosResponse
+  // TMDB names an appended block after its endpoint path, slash included. Only
+  // ever present on a build/dev fetch — see lib/tmdb-append.ts.
+  'watch/providers'?: TmdbWatchProviders
 }
 
 export type {

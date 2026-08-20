@@ -149,11 +149,11 @@ const LIST_DEPTH = {
 // cold-render on the Worker. allSettled (not all) so a single TMDB hiccup drops
 // just that page, not the whole set; fail-soft to [] so a build never breaks
 // (empty = all-dynamic, no regression).
-export async function buildMediaStaticParams(fetchers: {
+export async function buildMediaSitemapEntries(fetchers: {
   popular: PagedFetcher
   topRated: PagedFetcher
   trending: PagedFetcher
-}): Promise<{ id: string }[]> {
+}): Promise<{ id: string; posterPath?: string }[]> {
   try {
     const requests = [
       ...Array.from({ length: LIST_DEPTH.popular }, (_, i) =>
@@ -167,15 +167,37 @@ export async function buildMediaStaticParams(fetchers: {
       ),
     ]
     const responses = await Promise.allSettled(requests)
-    const ids = new Set<string>()
+    const ids = new Map<string, string | undefined>()
     for (const res of responses) {
       if (res.status !== 'fulfilled') continue
-      for (const item of res.value?.results ?? []) ids.add(String(item.id))
+      for (const item of res.value?.results ?? []) {
+        const id = String(item.id)
+        // First sighting wins; a title appears on several of these lists and
+        // the poster is the same either way.
+        if (!ids.has(id)) ids.set(id, item.poster_path || undefined)
+      }
     }
-    return Array.from(ids, (id) => ({ id }))
+    return Array.from(ids, ([id, posterPath]) => ({ id, posterPath }))
   } catch {
     return []
   }
+}
+
+/**
+ * The same set, as `generateStaticParams` wants it.
+ *
+ * Next hands whatever this returns straight to the route as params, so it gets
+ * the id and nothing else — an extra key here becomes an extra param there.
+ * app/sitemap.ts calls the wide version instead and picks up the poster, which
+ * is free: both go through the same TMDB list requests and Next's build fetch
+ * cache serves the second reader.
+ */
+export async function buildMediaStaticParams(fetchers: {
+  popular: PagedFetcher
+  topRated: PagedFetcher
+  trending: PagedFetcher
+}): Promise<{ id: string }[]> {
+  return (await buildMediaSitemapEntries(fetchers)).map(({ id }) => ({ id }))
 }
 
 // Collection (franchise) pages were the last dynamic route on the site, and the

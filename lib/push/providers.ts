@@ -1,4 +1,5 @@
 import { ALERT_REGION_IDS, regionLabel } from '@/config/regions'
+import { listSentence } from '@/lib/utils'
 
 /**
  * "Now streaming on X" — the pure half.
@@ -145,10 +146,7 @@ export function providerAnnouncement(
   names: string[],
   region: string
 ): { title: string; body: string } {
-  const list =
-    names.length === 1
-      ? names[0]
-      : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+  const list = listSentence(names)
   return {
     title: `${title} is streaming`,
     body: `Now on ${list} in ${regionLabel(region)}.`,

@@ -5,6 +5,7 @@ import {
   getMovieDetailsById,
   getPopularMovies,
 } from '@/services/movies'
+import { getPopularPeople } from '@/services/people'
 import {
   getAllTimeTopRatedSeries,
   getLatestTrendingSeries,
@@ -15,8 +16,10 @@ import { siteConfig } from '@/config/site'
 import { MOVIE_GENRES_WITH_SLUG, TV_GENRES_WITH_SLUG } from '@/lib/genres'
 import {
   buildCollectionStaticParams,
-  buildMediaStaticParams,
+  buildMediaSitemapEntries,
 } from '@/lib/media-page'
+import { getPosterImageURL } from '@/lib/utils'
+import { yearRange } from '@/components/media/year-page'
 
 export const revalidate = 86400
 
@@ -25,8 +28,6 @@ export const revalidate = 86400
 export const dynamic = 'force-static'
 
 const baseUrl = siteConfig.websiteURL
-
-const buildDate = (): string => new Date().toISOString()
 
 // The sitemap is built from the SAME helper that decides what gets prerendered,
 // not from its own hand-picked list of TMDB pages.
@@ -38,17 +39,29 @@ const buildDate = (): string => new Date().toISOString()
 // baked. Sharing the helper means the two sets cannot drift again, and it is
 // close to free at build time: the detail routes already issue these exact
 // requests, so Next's build fetch cache serves the second read.
+//
+// NO `lastModified` on these.
+//
+// They used to carry the build timestamp, which told Google that all ~2,100
+// detail pages changed every six hours — every deploy, forever. That is not
+// true (a film's page is the same page it was last year), and an untrustworthy
+// lastmod is worse than none: Google stops believing the field across the whole
+// sitemap and crawl budget goes to re-fetching pages that did not change. The
+// static routes below keep a date because theirs is real and fixed.
+//
+// The poster IS worth advertising. These pages are one large image each and
+// Google Images is a discovery channel this site was not in; the URL comes free
+// with the list request the prerender already makes.
 const mediaSitemapUrls = async (
   pathPrefix: string,
-  params: () => Promise<{ id: string }[]>
+  params: () => Promise<{ id: string; posterPath?: string }[]>
 ): Promise<MetadataRoute.Sitemap> => {
   try {
-    const lastModified = buildDate()
-    return (await params()).map(({ id }) => ({
+    return (await params()).map(({ id, posterPath }) => ({
       url: `${baseUrl}${pathPrefix}/${id}`,
-      lastModified,
       changeFrequency: 'monthly' as const,
       priority: 0.7,
+      ...(posterPath ? { images: [getPosterImageURL(posterPath)] } : {}),
     }))
   } catch (error) {
     console.error(`Error generating ${pathPrefix} URLs for sitemap:`, error)
@@ -56,30 +69,51 @@ const mediaSitemapUrls = async (
   }
 }
 
-const movieParams = () =>
-  buildMediaStaticParams({
+const movieEntries = () =>
+  buildMediaSitemapEntries({
     popular: getPopularMovies,
     topRated: getAllTimeTopRatedMovies,
     trending: getLatestTrendingMovies,
   })
 
 const generateMovieUrls = (): Promise<MetadataRoute.Sitemap> =>
-  mediaSitemapUrls('/movies', movieParams)
+  mediaSitemapUrls('/movies', movieEntries)
 
 const generateTVShowUrls = (): Promise<MetadataRoute.Sitemap> =>
   mediaSitemapUrls('/tv-shows', () =>
-    buildMediaStaticParams({
+    buildMediaSitemapEntries({
       popular: getPopularSeries,
       topRated: getAllTimeTopRatedSeries,
       trending: getLatestTrendingSeries,
     })
   )
 
+// Cast and crew pages. Same treatment as a title: no lastmod, and the portrait
+// advertised as an image — a person page is one large photo and a grid.
+const generatePersonUrls = async (): Promise<MetadataRoute.Sitemap> => {
+  try {
+    return (await getPopularPeople()).map((person) => ({
+      url: `${baseUrl}/person/${person.id}`,
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+      ...(person.profile_path
+        ? { images: [getPosterImageURL(person.profile_path)] }
+        : {}),
+    }))
+  } catch (error) {
+    console.error('Error generating person URLs for sitemap:', error)
+    return []
+  }
+}
+
 // Franchise pages were in no sitemap at all, despite being prerendered and
 // linked from every movie that belongs to one.
 const generateCollectionUrls = (): Promise<MetadataRoute.Sitemap> =>
   mediaSitemapUrls('/collection', () =>
-    buildCollectionStaticParams(movieParams, getMovieDetailsById)
+    buildCollectionStaticParams(
+      () => movieEntries().then((entries) => entries.map(({ id }) => ({ id }))),
+      getMovieDetailsById
+    )
   )
 
 const SITE_LAUNCH_DATE = '2024-01-01T00:00:00.000Z'
@@ -145,20 +179,43 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     })),
+    {
+      url: `${baseUrl}/people`,
+      lastModified: SITE_LAUNCH_DATE,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    },
+    // Year hubs. Weekly for the current year (it keeps filling up), yearly for
+    // the ones that are finished — the honest answer in both cases.
+    ...yearRange().flatMap((year) => {
+      const isCurrentYear = year === new Date().getFullYear()
+      const changeFrequency = isCurrentYear
+        ? ('weekly' as const)
+        : ('yearly' as const)
+      return ['/movies', '/tv-shows'].map((basePath) => ({
+        url: `${baseUrl}${basePath}/year/${year}`,
+        lastModified: SITE_LAUNCH_DATE,
+        changeFrequency,
+        priority: isCurrentYear ? 0.7 : 0.5,
+      }))
+    }),
   ]
 
   try {
-    const [movieUrls, tvShowUrls, collectionUrls] = await Promise.all([
-      generateMovieUrls(),
-      generateTVShowUrls(),
-      generateCollectionUrls(),
-    ])
+    const [movieUrls, tvShowUrls, collectionUrls, personUrls] =
+      await Promise.all([
+        generateMovieUrls(),
+        generateTVShowUrls(),
+        generateCollectionUrls(),
+        generatePersonUrls(),
+      ])
 
     return [
       ...staticRoutes,
       ...movieUrls,
       ...tvShowUrls,
       ...collectionUrls,
+      ...personUrls,
     ].sort((a, b) => {
       const diff = (b.priority || 0) - (a.priority || 0)
       return diff !== 0 ? diff : a.url.localeCompare(b.url)

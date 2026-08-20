@@ -4,7 +4,8 @@ import { Layers } from 'lucide-react'
 import { CollectionDetails } from '@/types/collection'
 import { MediaType } from '@/types/media'
 import { Movie } from '@/types/movie-result'
-import { breadcrumbJsonLd, JsonLd } from '@/lib/structured-data'
+import { toListEntries } from '@/lib/media'
+import { breadcrumbJsonLd, itemListJsonLd, JsonLd } from '@/lib/structured-data'
 import { getImageURL, pluralize } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
 import { Card } from '@/components/card'
@@ -42,6 +43,15 @@ export function CollectionView({
           { name: 'Movies', url: '/movies' },
           { name: collection.name, url: `/collection/${collection.id}` },
         ])}
+      />
+      {/* The films in the franchise, in the order the page shows them — a
+          collection page that does not say what it collects is a list Google
+          has to guess at. */}
+      <JsonLd
+        data={itemListJsonLd(toListEntries(parts, 'movie'), {
+          name: collection.name,
+          url: `/collection/${collection.id}`,
+        })}
       />
 
       {/* Backdrop header: fixed pixel heights (NOT dvh/aspect-ratio — those

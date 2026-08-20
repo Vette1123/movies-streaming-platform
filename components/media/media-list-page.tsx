@@ -1,17 +1,26 @@
 import React, { Suspense } from 'react'
+import Link from 'next/link'
 
 import { MediaResponse } from '@/types/media'
 import { siteConfig } from '@/config/site'
+import { toListEntries } from '@/lib/media'
 import { MediaListPageConfig } from '@/lib/media-page'
 import { QUERY_KEYS } from '@/lib/queryKeys'
 import {
   breadcrumbJsonLd,
   collectionPageJsonLd,
+  itemListJsonLd,
   JsonLd,
 } from '@/lib/structured-data'
+import { cn } from '@/lib/utils'
+import { chipVariants } from '@/components/ui/chip'
 import { MediaContent } from '@/components/media/media-content'
 import { MediaListFallback } from '@/components/media/media-list-fallback'
+import { yearRange } from '@/components/media/year-page'
 import { SectionErrorBoundary } from '@/components/section-error-boundary'
+
+/** Recent enough to be worth a link from the hub; the rest chain from there. */
+const YEARS_LINKED = 8
 
 interface MediaListPageProps {
   media: MediaResponse
@@ -49,12 +58,43 @@ export const MediaListPage = ({
           { name: config.title, url: config.path },
         ])}
       />
+      {/* What the page is actually listing. CollectionPage above says "this is
+          a list"; only ItemList says what is in it, which is what a carousel
+          result is built from. */}
+      <JsonLd
+        data={itemListJsonLd(toListEntries(media?.results ?? [], mediaType), {
+          name: config.ogTitle,
+          url: config.path,
+        })}
+      />
       <div className="mb-6 space-y-2">
         <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
           {config.title}
         </h1>
         <p className="text-muted-foreground max-w-2xl">{config.description}</p>
       </div>
+
+      {/* The year hubs, linked from the page that owns them. The filter
+          sidebar can express the same query, but it renders client-side into a
+          URL robots.txt disallows — these are prerendered documents a crawler
+          can follow. Recent years only; the rest chain off any one of them. */}
+      <nav
+        aria-label={`${config.title} by year`}
+        className="mb-8 flex flex-wrap items-center gap-2 text-sm"
+      >
+        <span className="text-muted-foreground">By year:</span>
+        {yearRange()
+          .slice(0, YEARS_LINKED)
+          .map((year) => (
+            <Link
+              key={year}
+              href={`${config.path}/year/${year}`}
+              className={cn(chipVariants({ variant: 'neutral' }), 'text-sm')}
+            >
+              {year}
+            </Link>
+          ))}
+      </nav>
       {/* The filter sidebar + infinite grid is the most failure-prone island in
           the app: it hydrates on the client (nuqs), calls Server Actions on
           every filter change, and lazy-loads chunks as you scroll. Keep those

@@ -6,17 +6,37 @@ import { SEARCH_ACTOR_GOOGLE } from '@/lib/constants'
 import { getPosterImageURL } from '@/lib/utils'
 import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
 
-export const DetailsCredits = ({ movieCredits }: { movieCredits: Credit }) => {
+/**
+ * A cast name goes to this site's own page for that person when there is one,
+ * and to a Google search when there is not.
+ *
+ * Only a bounded set of people is prerendered (see services/people.ts), so the
+ * caller resolves which of THESE names have a page and passes the ids down —
+ * an internal link that 404s is worse than the external one it replaced.
+ */
+const castHref = (id: number, name: string, linked: Set<number>) =>
+  linked.has(id) ? `/person/${id}` : `${SEARCH_ACTOR_GOOGLE}${name}`
+
+export const DetailsCredits = ({
+  movieCredits,
+  linkedPersonIds = [],
+}: {
+  movieCredits: Credit
+  /** Cast ids this build prerendered a person page for. */
+  linkedPersonIds?: number[]
+}) => {
+  const linked = new Set(linkedPersonIds)
   return (
     <>
       <h2 className="text-base font-semibold md:text-xl lg:text-2xl">Cast</h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5">
         {movieCredits?.cast?.slice(0, 10)?.map((cast) => (
           <Link
-            href={`${SEARCH_ACTOR_GOOGLE}${cast.name}`}
+            href={castHref(cast.id, cast.name, linked)}
             key={cast.id}
-            target="_blank"
-            rel="noopener noreferrer"
+            {...(linked.has(cast.id)
+              ? {}
+              : { target: '_blank', rel: 'noopener noreferrer' })}
             className="flex flex-col transition-all duration-300 ease-in-out hover:scale-105"
           >
             {cast.profile_path ? (

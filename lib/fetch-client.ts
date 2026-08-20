@@ -59,10 +59,21 @@ const MAX_RETRIES = 6
 // NEXT_PHASE alone was not enough: the export build fanned out across 11
 // workers with the governor disengaged and TMDB answered 429 during "Collecting
 // page data", before a single page was written.
-const GOVERN =
+/**
+ * True wherever React actually renders: the export build and the dev server.
+ *
+ * False in exactly one place — the production Worker, which never runs React
+ * and only ever calls these services to answer /api/*. Exported because that is
+ * also the right gate for "fetch this extra block only where a page is being
+ * built": see the watch-providers append in services/movies.ts, which must not
+ * grow the payload the Worker parses on its most CPU-expensive route.
+ */
+export const IS_PRERENDER =
   process.env.DEPLOY_TARGET === 'cloudflare' ||
   process.env.NEXT_PHASE === 'phase-production-build' ||
   process.env.NEXT_PHASE === 'phase-development-server'
+
+const GOVERN = IS_PRERENDER
 
 // Hard ceiling on how long a caller will wait for a slot. A lost wake or a wave
 // of stalled holders must NEVER block a caller forever (on Workers that becomes

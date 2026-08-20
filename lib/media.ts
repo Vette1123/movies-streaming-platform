@@ -83,3 +83,33 @@ export function getMediaHeroImageUrl(
   if (posterPath) return getPosterImageURL(posterPath)
   return null
 }
+
+/**
+ * A list of TMDB items as schema.org ListItem inputs.
+ *
+ * Every browse, genre and franchise page renders the same shape and now
+ * publishes the same ItemList from it, so the mapping lives here rather than
+ * three times in three page components. `fallbackType` covers the endpoints
+ * that omit `media_type` because the whole response is one kind (a genre
+ * discover, a collection's parts).
+ */
+export function toListEntries(
+  items: (TitledMedia & TypedMedia & { id: number; poster_path?: string })[],
+  fallbackType?: ItemType
+): { id: number; name: string; path: string; image?: string | null }[] {
+  return items
+    .map((item) => {
+      const name = getMediaTitle(item)
+      if (!name) return null
+      const type = item.media_type
+        ? resolveMediaType(item)
+        : (fallbackType ?? 'movie')
+      return {
+        id: item.id,
+        name,
+        path: mediaDetailHref(type, item.id),
+        image: item.poster_path ? getPosterImageURL(item.poster_path) : null,
+      }
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
+}

@@ -14,9 +14,11 @@ import {
   MOVIE_GENRES_WITH_SLUG,
   TV_GENRES_WITH_SLUG,
 } from '@/lib/genres'
+import { toListEntries } from '@/lib/media'
 import {
   breadcrumbJsonLd,
   collectionPageJsonLd,
+  itemListJsonLd,
   JsonLd,
 } from '@/lib/structured-data'
 import { cn } from '@/lib/utils'
@@ -129,6 +131,12 @@ export async function GenrePage({
     <section className="container h-full py-20 lg:py-36">
       <JsonLd
         data={collectionPageJsonLd({ name: heading, description, url })}
+      />
+      <JsonLd
+        data={itemListJsonLd(
+          toListEntries(initialData?.results ?? [], config.mediaType),
+          { name: heading, url: canonicalPath }
+        )}
       />
       <JsonLd
         data={breadcrumbJsonLd([
