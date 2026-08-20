@@ -22,13 +22,14 @@ export function AccountSkeleton() {
         </div>
       </div>
 
-      <div className="grid gap-10 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-12">
-        {/* Rail: a scrolling row of chips on a phone, a stack on a laptop. */}
-        <div className="-mx-4 flex gap-1 overflow-hidden px-4 lg:mx-0 lg:flex-col lg:px-0">
-          {Array.from({ length: 11 }).map((_, i) => (
+      <div className="grid gap-6 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-12">
+        {/* One picker button on a phone, the twelve-row rail on a laptop. */}
+        <Skeleton className="h-[3.75rem] w-full rounded-xl lg:hidden" />
+        <div className="hidden lg:flex lg:flex-col lg:gap-1">
+          {Array.from({ length: 12 }).map((_, i) => (
             <Skeleton
               key={i}
-              className="h-9 w-28 shrink-0 rounded-lg lg:w-full"
+              className="h-9 w-full rounded-lg"
               style={{ animationDelay: `${i * 60}ms` }}
             />
           ))}

@@ -17,7 +17,6 @@ import { linkablePersonIds } from '@/lib/person-links'
 import { breadcrumbJsonLd, JsonLd, movieJsonLd } from '@/lib/structured-data'
 import { MoviesDetailsContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
-import { WhereToWatch } from '@/components/media/where-to-watch'
 
 // 24h: movie metadata is essentially static and CI redeploys twice daily,
 // repopulating the site with fresh data. A shorter window buys no freshness —
@@ -89,7 +88,6 @@ const MoviePage = async (props: PageDetailsProps) => {
     recommendedMovies,
     trailerKey,
     trailerPublishedAt,
-    availability,
   } = result!
   if (!movieDetails?.id) notFound()
 
@@ -130,7 +128,6 @@ const MoviePage = async (props: PageDetailsProps) => {
         ])}
       />
       <MovieDetailsHero movie={movieDetails} trailerKey={trailerKey} />
-      <WhereToWatch title={movieDetails.title} availability={availability} />
       <MoviesDetailsContent
         movie={movieDetails}
         movieCredits={movieCredits}

@@ -4,83 +4,7 @@ import type { Credit } from '@/types/credit'
 import { castNames, crewNamesByJob } from '@/lib/credits'
 import { itemListJsonLd, movieJsonLd } from '@/lib/structured-data'
 import { listSentence } from '@/lib/utils'
-import { titleAvailability } from '@/lib/watch-availability'
 import { FIRST_YEAR, isValidYear } from '@/components/media/year-page'
-
-// ---------------------------------------------------------------------------
-// Where to watch. The failure mode is a page that claims a title is streaming
-// somewhere it is not — the one thing this section exists to get right.
-// ---------------------------------------------------------------------------
-
-const payload = (results: Record<string, unknown>) => ({ results }) as never
-
-describe('title availability', () => {
-  it('keeps subscription and free, drops rent and buy', () => {
-    const out = titleAvailability(
-      payload({
-        US: {
-          flatrate: [{ provider_id: 8, provider_name: 'Netflix' }],
-          free: [{ provider_id: 73, provider_name: 'Tubi' }],
-          rent: [{ provider_id: 2, provider_name: 'Apple TV' }],
-          buy: [{ provider_id: 10, provider_name: 'Amazon' }],
-        },
-      })
-    )
-    expect(out?.subscription.map((p) => p.name)).toEqual(['Netflix'])
-    expect(out?.free.map((p) => p.name)).toEqual(['Tubi'])
-  })
-
-  it('folds free-with-ads in with free', () => {
-    const out = titleAvailability(
-      payload({
-        US: {
-          free: [{ provider_id: 1, provider_name: 'Plex' }],
-          ads: [{ provider_id: 2, provider_name: 'Pluto TV' }],
-        },
-      })
-    )
-    expect(out?.free.map((p) => p.name)).toEqual(['Plex', 'Pluto TV'])
-  })
-
-  it('is null when the region has only rent and buy', () => {
-    expect(
-      titleAvailability(
-        payload({
-          US: { rent: [{ provider_id: 2, provider_name: 'Apple TV' }] },
-        })
-      )
-    ).toBeNull()
-  })
-
-  it('is null for a region TMDB did not answer for', () => {
-    expect(
-      titleAvailability(
-        payload({
-          GB: { flatrate: [{ provider_id: 1, provider_name: 'Now' }] },
-        })
-      )
-    ).toBeNull()
-  })
-
-  it('survives a missing payload and a malformed entry', () => {
-    expect(titleAvailability(null)).toBeNull()
-    expect(titleAvailability(undefined)).toBeNull()
-    expect(
-      titleAvailability(
-        payload({ US: { flatrate: [{ provider_name: 'No id' }] } })
-      )
-    ).toBeNull()
-  })
-
-  it('de-duplicates and caps, so the sentence stays a sentence', () => {
-    const many = Array.from({ length: 12 }, (_, i) => ({
-      provider_id: i % 2, // only two distinct ids
-      provider_name: `P${i % 2}`,
-    }))
-    const out = titleAvailability(payload({ US: { flatrate: many } }))
-    expect(out?.subscription).toHaveLength(2)
-  })
-})
 
 describe('listSentence', () => {
   it('reads for one, two and three', () => {
@@ -194,21 +118,5 @@ describe('year hubs', () => {
     expect(isValidYear('20o5')).toBe(false)
     expect(isValidYear('2005a')).toBe(false)
     expect(isValidYear('')).toBe(false)
-  })
-})
-
-describe('reseller channels', () => {
-  it('names the service, not the add-on that resells it', () => {
-    const out = titleAvailability(
-      payload({
-        US: {
-          flatrate: [
-            { provider_id: 1, provider_name: 'HBO Max Amazon Channel' },
-            { provider_id: 2, provider_name: 'HBO Max' },
-          ],
-        },
-      })
-    )
-    expect(out?.subscription.map((p) => p.name)).toEqual(['HBO Max'])
   })
 })

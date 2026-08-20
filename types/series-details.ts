@@ -6,7 +6,6 @@ import { ProductionCompany, ProductionCountry } from '@/types/production'
 import { SeriesResponse } from '@/types/series-result'
 import { VideosResponse } from '@/types/video'
 import type { TmdbWatchProviders } from '@/lib/push/providers'
-import type { TitleAvailability } from '@/lib/watch-availability'
 
 type Season = {
   air_date: string
@@ -78,7 +77,6 @@ interface MultiSeriesDetailsRequestProps {
   trailerPublishedAt?: string
   // Where it streams, in ONE region, and only where a page is being rendered —
   // see lib/tmdb-append.ts for why the Worker never fetches this.
-  availability?: TitleAvailability
 }
 
 // Shape of a single `tv/{id}?append_to_response=credits,similar,recommendations,videos`

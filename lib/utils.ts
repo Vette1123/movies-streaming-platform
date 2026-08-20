@@ -167,9 +167,9 @@ function seasonsFormatter(seasons: Season[]) {
  * A list of names as a sentence reads it: "Max", "Max and Hulu",
  * "Max, Hulu and Netflix".
  *
- * Two callers already needed this — the "now streaming" push notification and
- * the crawlable "where to watch" block — and a second hand-rolled join is how
- * the two start disagreeing about the Oxford comma in the same product.
+ * The "now streaming" push notification needs it, and so does anything else
+ * that prints a list of service names, so the join lives in one place rather
+ * than two that disagree about the Oxford comma in the same product.
  */
 const listSentence = (names: string[]): string => {
   if (names.length <= 1) return names[0] ?? ''

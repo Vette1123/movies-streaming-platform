@@ -15,7 +15,6 @@ import { getMediaHeroImageUrl } from '@/lib/media'
 import { buildDetailsMetadata, buildMediaStaticParams } from '@/lib/media-page'
 import { linkablePersonIds } from '@/lib/person-links'
 import { breadcrumbJsonLd, JsonLd, tvSeriesJsonLd } from '@/lib/structured-data'
-import { WhereToWatch } from '@/components/media/where-to-watch'
 import { SeriesDetailsContent } from '@/components/series/details-content'
 import { SeriesDetailsHero } from '@/components/series/details-hero'
 import { SeriesPlaybackProvider } from '@/components/series/playback-context'
@@ -89,7 +88,6 @@ const TVSeries = async (props: PageDetailsProps) => {
     recommendedSeries,
     trailerKey,
     trailerPublishedAt,
-    availability,
   } = result!
   if (!seriesDetails?.id) notFound()
 
@@ -134,7 +132,6 @@ const TVSeries = async (props: PageDetailsProps) => {
           through, so the page stays server-rendered. */}
       <SeriesPlaybackProvider>
         <SeriesDetailsHero series={seriesDetails} trailerKey={trailerKey} />
-        <WhereToWatch title={seriesDetails.name} availability={availability} />
         <SeriesDetailsContent
           series={seriesDetails}
           seriesCredits={seriesCredits}

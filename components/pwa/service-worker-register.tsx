@@ -38,10 +38,11 @@ const unregisterAll = async () => {
  *   - sw.js is byte-identical between deploys unless something stamps the build
  *     into it, and an identical worker is not an update. scripts/build-worker.mjs
  *     stamps the build id into out/sw.js for exactly this.
- * The reload itself is deferred to the NEXT foregrounding rather than fired the
- * moment the new worker claims the page: a deploy lands while someone is halfway
- * through a trailer or a stream, and yanking the document out from under them is
- * worse than being one build behind for another minute.
+ * It never reloads the page. It used to, on the foregrounding after a new worker
+ * took over — and that is what an app switch felt like: you come back and the
+ * document has thrown your place away. Nothing about a deploy is worth that. The
+ * worker updates in the background and the fresh build is what the next ordinary
+ * navigation renders.
  */
 export function ServiceWorkerRegister() {
   React.useEffect(() => {
@@ -52,51 +53,22 @@ export function ServiceWorkerRegister() {
       return
     }
 
-    // Set once a newer worker has taken control; consumed on the next
-    // foreground. `reloading` keeps a slow reload from queueing a second one.
-    let pendingUpdate = false
-    let reloading = false
     let registration: ServiceWorkerRegistration | undefined
 
+    // Check for a newer worker when the app is foregrounded, and stop there.
+    // This deliberately does NOT reload the page: an app that reloads itself
+    // while you are away is the app losing your place, and no update is worth
+    // that. The new worker installs and takes over; the fresh build is what the
+    // next real navigation renders. If a page that has been open across a
+    // deploy does reach for a chunk the deploy deleted, lib/client-errors.ts
+    // still recovers it — that is error recovery, not a background refresh.
     const onForeground = () => {
       if (document.visibilityState !== 'visible') return
-      if (pendingUpdate) {
-        if (reloading) return
-        reloading = true
-        window.location.reload()
-        return
-      }
       void registration?.update().catch(() => {
         // Offline or the check 404s — the next foreground tries again.
       })
     }
 
-    // Fires when a new worker calls skipWaiting() + clients.claim(). A first
-    // install claims an uncontrolled page too, and there is nothing stale about
-    // that page, so only an existing controller being replaced counts.
-    const onControllerChange = () => {
-      pendingUpdate = true
-      // If nobody is looking, take the update NOW. Waiting for the next
-      // foreground was costing a whole extra app-switch: foregrounding is what
-      // calls update(), the new worker takes over a few seconds later while the
-      // app is still open, and the reload then waited for the foreground AFTER
-      // that — so seeing a deploy took two open-close cycles, not one. Reloading
-      // a hidden document is free and invisible; the next time it's opened it's
-      // already the new build. The visible case still defers, deliberately: a
-      // deploy lands while someone is halfway through a stream, and yanking the
-      // document out from under them is worse than being one build behind.
-      if (document.visibilityState === 'hidden' && !reloading) {
-        reloading = true
-        window.location.reload()
-      }
-    }
-    const hadController = Boolean(navigator.serviceWorker.controller)
-    if (hadController) {
-      navigator.serviceWorker.addEventListener(
-        'controllerchange',
-        onControllerChange
-      )
-    }
     document.addEventListener('visibilitychange', onForeground)
 
     const register = () => {
@@ -119,10 +91,6 @@ export function ServiceWorkerRegister() {
     return () => {
       window.removeEventListener('load', register)
       document.removeEventListener('visibilitychange', onForeground)
-      navigator.serviceWorker.removeEventListener(
-        'controllerchange',
-        onControllerChange
-      )
     }
   }, [])
 

@@ -12,7 +12,7 @@ export const revalidate = 86400
 
 const TITLE = 'Actors and directors'
 const DESCRIPTION =
-  'The people behind the films and series on Reely — every title they have been in, with ratings and where to watch.'
+  'The people behind the films and series on Reely — every title they have been in, with ratings and where to stream them.'
 
 export const metadata: Metadata = {
   title: TITLE,

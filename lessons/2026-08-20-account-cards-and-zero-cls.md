@@ -87,3 +87,44 @@ the export, so every route is 0.
   as null. `document.elementsFromPoint()` on the entry rect, called synchronously
   in the callback, is what named the dev overlay — and a dev-only shift is worth
   ruling out before writing any code.
+
+## Follow-up, same day
+
+Three things came out of using the result.
+
+**The mobile section rail was unusable.** Twelve sections in a horizontal
+scroller showed three of them, and the scrollbar drew a grey bar across the page
+that read as a broken progress indicator. Replaced below `lg` with one control:
+a button that says which section you are in, opening a bottom sheet listing all
+twelve. Same `items` array, same `onSelect` — the rail is still one definition,
+it just has two shapes.
+
+**"Where to watch" is gone.** It shipped the day before as an SEO surface: the
+crawlable list of services a title streams on. On a site that streams the title
+itself, it is a signpost to a competitor under our own player. Removed the
+section, the component, `lib/watch-availability.ts`, the `availability` field on
+both detail payloads, its tests, and the `watch/providers` append that fed it —
+which also takes 10-20KB of country-list JSON back off every build-time detail
+fetch. The browse filter's provider picker stays: that one narrows what you are
+shown here, it does not send anybody away.
+
+**The app reloaded itself while you were away.** `ServiceWorkerRegister` watched
+for `controllerchange` and called `window.location.reload()` — deferred to the
+next foregrounding if the tab was visible, immediately if hidden. It was written
+to solve a real problem (a standalone PWA can sit on a retired build until it
+asks for a deleted chunk) but the cost is the thing a user actually feels:
+leaving the app and coming back to a document that threw your place away. The
+update check on foreground stays; the reload is gone entirely. A page that does
+hit the stale-deploy boundary is still recovered by `lib/client-errors.ts`,
+which is error recovery rather than a background refresh.
+
+### Rules
+
+- **Nothing reloads the page on its own.** Not for a deploy, not for a service
+  worker, not while the tab is hidden. Recovery from an actual error is the only
+  exception.
+- **A horizontal scroller is not navigation when the list is long.** Three
+  visible labels out of twelve is a menu the user cannot see; give it one control
+  and a sheet.
+- **Do not build a feature that points at a competitor for the thing this site
+  already does.** SEO value does not outrank that.

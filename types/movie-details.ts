@@ -3,7 +3,6 @@ import { MovieGenre } from '@/types/movie-genre'
 import { Movie, MovieResponse } from '@/types/movie-result'
 import { VideosResponse } from '@/types/video'
 import type { TmdbWatchProviders } from '@/lib/push/providers'
-import type { TitleAvailability } from '@/lib/watch-availability'
 
 interface MovieDetails {
   adult: boolean
@@ -62,7 +61,6 @@ interface MultiMovieDetailsRequestProps {
   trailerPublishedAt?: string
   // Where it streams, in ONE region, and only where a page is being rendered —
   // see lib/tmdb-append.ts for why the Worker never fetches this.
-  availability?: TitleAvailability
 }
 
 // Shape of a single `movie/{id}?append_to_response=credits,similar,recommendations,videos`

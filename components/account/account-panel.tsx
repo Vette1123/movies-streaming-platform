@@ -6,6 +6,8 @@ import {
   AlertTriangle,
   BellRing,
   CalendarDays,
+  Check,
+  ChevronDown,
   ChevronRight,
   ExternalLink,
   EyeOff,
@@ -32,6 +34,13 @@ import { cn } from '@/lib/utils'
 import { useAccountSession } from '@/hooks/use-account'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { buttonVariants } from '@/components/ui/button'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
 import { AccountAvatar } from '@/components/account/account-identity'
 import { AccountSkeleton } from '@/components/account/account-skeleton'
 import { Icons } from '@/components/icons'
@@ -251,7 +260,7 @@ export function AccountPanel() {
     <div className="space-y-10">
       <Identity account={account} />
 
-      <div className="grid gap-10 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-12">
+      <div className="grid gap-6 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-12">
         <SectionRail current={section} onSelect={go} />
 
         <div className="min-w-0">
@@ -293,30 +302,130 @@ function SectionRail({
   ]
 
   return (
-    <nav
-      aria-label="Account sections"
-      // The row scrolls on a phone rather than wrapping to three lines; the rail
-      // sticks under the 64px header on a laptop.
-      className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 lg:sticky lg:top-24 lg:mx-0 lg:h-fit lg:flex-col lg:overflow-visible lg:px-0"
-    >
-      {items.map(({ id, label, Icon }) => (
-        <button
-          key={id}
-          type="button"
-          aria-current={current === id ? 'page' : undefined}
-          onClick={() => onSelect(id)}
-          className={cn(
-            'focus-visible:ring-ring flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-hidden lg:w-full',
-            current === id
-              ? 'bg-accent text-foreground font-medium'
-              : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-          )}
-        >
-          <Icon className="size-4 shrink-0" />
-          {label}
-        </button>
-      ))}
-    </nav>
+    <>
+      <SectionPicker items={items} current={current} onSelect={onSelect} />
+
+      {/* The rail sticks under the 64px header on a laptop. Below `lg` it does
+          not exist at all: twelve sections in a horizontal scroller meant three
+          of them were visible, the rest were a swipe nobody takes, and the
+          scrollbar sat across the page like a stray progress bar. */}
+      <nav
+        aria-label="Account sections"
+        className="hidden lg:sticky lg:top-24 lg:flex lg:h-fit lg:flex-col lg:gap-1"
+      >
+        {items.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            type="button"
+            aria-current={current === id ? 'page' : undefined}
+            onClick={() => onSelect(id)}
+            className={cn(
+              'focus-visible:ring-ring group flex w-full shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
+              current === id
+                ? 'bg-accent text-foreground font-medium'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+            )}
+          >
+            <Icon
+              className={cn(
+                'size-4 shrink-0 transition-colors',
+                current === id ? 'text-primary' : 'group-hover:text-foreground'
+              )}
+            />
+            {label}
+          </button>
+        ))}
+      </nav>
+    </>
+  )
+}
+
+/**
+ * The same twelve sections on a phone, as one control.
+ *
+ * A button that says where you are, and a sheet that shows everywhere you can
+ * go — every section reachable in one tap from a list you can read, instead of
+ * three labels and a horizontal swipe. Same `items`, same `onSelect`: there is
+ * still one definition of what a section is.
+ */
+function SectionPicker({
+  items,
+  current,
+  onSelect,
+}: {
+  items: { id: string; label: string; Icon: SectionDef['Icon'] }[]
+  current: string
+  onSelect: (id: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const active = items.find((item) => item.id === current) ?? items[0]
+  const ActiveIcon = active.Icon
+
+  const go = (id: string) => {
+    setOpen(false)
+    onSelect(id)
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger
+        aria-label={`Section: ${active.label}. Change section`}
+        className="focus-visible:ring-ring flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:border-white/20 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:outline-hidden lg:hidden"
+      >
+        <span className="bg-primary-fill/10 text-primary grid size-9 shrink-0 place-items-center rounded-lg ring-1 ring-white/10">
+          <ActiveIcon className="size-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="text-muted-foreground block text-[11px]">
+            Account
+          </span>
+          <span className="block truncate text-sm font-medium">
+            {active.label}
+          </span>
+        </span>
+        <ChevronDown className="text-muted-foreground size-4 shrink-0" />
+      </SheetTrigger>
+
+      <SheetContent
+        side="bottom"
+        className="max-h-[85svh] overflow-y-auto rounded-t-2xl border-white/10 p-4 pb-8"
+      >
+        <SheetHeader className="mb-3 text-left">
+          <SheetTitle className="text-base">Go to</SheetTitle>
+        </SheetHeader>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {items.map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              type="button"
+              aria-current={current === id ? 'page' : undefined}
+              onClick={() => go(id)}
+              className={cn(
+                'focus-visible:ring-ring flex items-center gap-3 rounded-xl border p-3 text-left text-sm transition focus-visible:ring-2 focus-visible:outline-hidden',
+                current === id
+                  ? 'border-primary/40 bg-primary/10 font-medium'
+                  : 'border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.06]'
+              )}
+            >
+              <span
+                className={cn(
+                  'grid size-8 shrink-0 place-items-center rounded-lg ring-1 ring-white/10',
+                  current === id
+                    ? 'bg-primary-fill/20 text-primary'
+                    : 'bg-primary-fill/10 text-primary/90'
+                )}
+              >
+                <Icon className="size-4" />
+              </span>
+              <span className="min-w-0 flex-1 truncate">{label}</span>
+              {current === id && (
+                <Check className="text-primary size-4 shrink-0" />
+              )}
+            </button>
+          ))}
+        </div>
+      </SheetContent>
+    </Sheet>
   )
 }
 

@@ -69,7 +69,7 @@ export async function generateMetadata(props: {
   // The description is what a search result shows, so it answers the query
   // somebody actually typed: what this person has been in.
   const description = known
-    ? `Every film and series ${person.name} has been in, including ${known}. Ratings, where to watch, and what to watch next.`
+    ? `Every film and series ${person.name} has been in, including ${known}. Ratings, streaming, and what to watch next.`
     : `Films and series featuring ${person.name} on ${siteConfig.name}.`
 
   return {

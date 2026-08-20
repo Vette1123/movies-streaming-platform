@@ -84,7 +84,7 @@ const headingFor = (config: YearPageConfig, year: string) =>
   `The best ${config.bodyPlural} of ${year}`
 
 const descriptionFor = (config: YearPageConfig, year: string) =>
-  `The ${config.bodyPlural} released in ${year} that people actually rated — ranked by how many votes they have, with scores and where to watch.`
+  `The ${config.bodyPlural} released in ${year} that people actually rated — ranked by how many votes they have, with scores and one tap to stream.`
 
 export const yearMetadata = (
   config: YearPageConfig,
