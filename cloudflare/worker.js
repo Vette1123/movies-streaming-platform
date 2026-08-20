@@ -50,6 +50,7 @@ import { ownsPath, routeAccountApi } from '@/lib/api/account-router'
 import { smartQuery } from '@/lib/filter-query'
 import { loadPublicList } from '@/lib/lists/routes'
 import { getMediaHeroImageUrl } from '@/lib/media'
+import { mosaicUrl, OG_HEIGHT, OG_WIDTH } from '@/lib/og/mosaic'
 import { loadPublicProfile } from '@/lib/profile/routes'
 import { getImageURL } from '@/lib/utils'
 
@@ -405,7 +406,10 @@ function buildMeta(type, id, details, siteUrl) {
   return { heading, description, image, canonical, title }
 }
 
-function metaTags({ heading, description, image, canonical }, ogType) {
+function metaTags(
+  { heading, description, image, imageWidth, imageHeight, canonical },
+  ogType
+) {
   const tags = [
     `<meta name="description" content="${escapeHtml(description)}">`,
     `<link rel="canonical" href="${escapeHtml(canonical)}">`,
@@ -425,6 +429,13 @@ function metaTags({ heading, description, image, canonical }, ogType) {
   if (image) {
     tags.push(`<meta property="og:image" content="${escapeHtml(image)}">`)
     tags.push(`<meta name="twitter:image" content="${escapeHtml(image)}">`)
+  }
+  // Only ever set for the composed mosaic, whose size we know exactly. Stating
+  // it lets an unfurler lay the card out before the image lands — and stating
+  // it wrongly for a poster of unknown dimensions would be worse than silence.
+  if (image && imageWidth && imageHeight) {
+    tags.push(`<meta property="og:image:width" content="${imageWidth}">`)
+    tags.push(`<meta property="og:image:height" content="${imageHeight}">`)
   }
   return tags.join('')
 }
@@ -766,16 +777,25 @@ async function handleListPage(match, env, url) {
     : list.items
   const count = items.length
   const owner = list.owner ? ` by ${list.owner}` : ''
+  const shelf = `${count} ${count === 1 ? 'title' : 'titles'}${owner} on Reely`
+  // The list's own posters, composed into one 1200x630 card by the image CDN —
+  // see lib/og/mosaic.ts. A single portrait poster as og:image was the previous
+  // behaviour and unfurled as a centre-cropped band of one poster; it stays as
+  // the fallback for a list whose first titles have no artwork at all.
+  const mosaic = mosaicUrl({
+    title: list.name,
+    subtitle: shelf,
+    posters: items.map((item) => item.poster_path),
+  })
   const meta = {
     heading: list.name,
     title: list.name,
-    description:
-      list.description ||
-      `${count} ${count === 1 ? 'title' : 'titles'}${owner} on Reely.`,
-    // The first poster is the list's face. `getImageURL` is the same helper the
-    // rest of the site builds image URLs with, so a shared link and the page it
-    // opens show the same artwork.
-    image: items[0]?.poster_path ? getImageURL(items[0].poster_path) : '',
+    description: list.description || `${shelf}.`,
+    image:
+      mosaic ||
+      (items[0]?.poster_path ? getImageURL(items[0].poster_path) : ''),
+    imageWidth: mosaic ? OG_WIDTH : null,
+    imageHeight: mosaic ? OG_HEIGHT : null,
     canonical: `${siteUrl}/l/${slug}`,
   }
   const jsonLd = {
@@ -817,6 +837,14 @@ async function handleProfilePage(match, env, url) {
 
   const siteUrl = siteUrlOf(url)
   const who = profile.name || profile.handle
+  // The titles somebody rated highest, as the same composed card the lists use.
+  // A profile whose owner has rated nothing keeps the avatar: a face is a
+  // better unfurl than an empty shelf, and it is the only picture there is.
+  const mosaic = mosaicUrl({
+    title: who,
+    subtitle: `${profile.counts.finished} films, ${profile.counts.episodes} episodes, ${profile.counts.lists} lists on Reely`,
+    posters: profile.topRated.map((title) => title.poster_path),
+  })
   const meta = {
     // The heading is what becomes <title>, og:title and the crawlable <h1>
     // (see metaTags/seoBlock) — so it carries the site name here rather than
@@ -825,9 +853,9 @@ async function handleProfilePage(match, env, url) {
     description:
       profile.bio ||
       `${profile.counts.finished} films finished, ${profile.counts.episodes} episodes ticked off, ${profile.counts.lists} lists worth stealing.`,
-    // The avatar, not a poster: this page is about a person, and an unfurl that
-    // shows their face is the one that gets opened.
-    image: profile.picture || '',
+    image: mosaic || profile.picture || '',
+    imageWidth: mosaic ? OG_WIDTH : null,
+    imageHeight: mosaic ? OG_HEIGHT : null,
     canonical: `${siteUrl}/u/${profile.handle}`,
   }
   const jsonLd = {

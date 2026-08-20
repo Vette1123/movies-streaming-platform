@@ -66,6 +66,9 @@ export function GiftsPanel() {
 
   useEffect(() => {
     if (signedIn !== true) return
+    // Fetch-on-mount: the codes live on the server and there is nothing to show
+    // until they arrive. The rule fires on the synchronous failure branch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load()
   }, [load, signedIn])
 

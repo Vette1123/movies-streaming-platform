@@ -184,3 +184,49 @@ export function runtimeSource(stats: LibraryStats): string {
   const share = Math.round((stats.exactRuntimes / stats.countedRuntimes) * 100)
   return `${share}% exact, the rest averaged`
 }
+
+/**
+ * The year a row belongs to, read off the stamp the rest of this file sorts by.
+ *
+ * The string is ISO and therefore UTC, so a title finished at 11pm on the 31st
+ * of December in a western timezone counts as the following year. That is the
+ * same slice `dayOf` and the busiest-month key already take, and being
+ * consistent with them matters more here than being right about four hours.
+ */
+const yearOf = (item: WatchedItem): number | null => {
+  const year = Number((item.modified_at || item.added_at || '').slice(0, 4))
+  return Number.isFinite(year) && year > 1900 ? year : null
+}
+
+/**
+ * Narrow a store to one year, or hand it back whole.
+ *
+ * `null` means all time and is not a special case anywhere else: every figure
+ * on the stats page is `computeStats` over whatever rows it is given, so
+ * scoping the input is the entire feature. Nothing downstream knows a year
+ * exists.
+ */
+export function inYear(
+  items: WatchedItem[],
+  year: number | null
+): WatchedItem[] {
+  if (year === null) return items
+  return items.filter((item) => yearOf(item) === year)
+}
+
+/**
+ * Which years this library actually has something in, newest first.
+ *
+ * Offering a year with nothing in it would be a picker that leads to an empty
+ * card, so the choices come from the rows rather than from a range.
+ */
+export function libraryYears(...stores: WatchedItem[][]): number[] {
+  const years = new Set<number>()
+  for (const store of stores) {
+    for (const item of store) {
+      const year = yearOf(item)
+      if (year !== null) years.add(year)
+    }
+  }
+  return [...years].sort((a, b) => b - a)
+}

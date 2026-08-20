@@ -58,6 +58,28 @@ function fitText(
   return size
 }
 
+/** The small line above the headline. Says which year, when there is one. */
+export const eyebrow = (year: number | null): string =>
+  year === null ? 'MY YEAR ON REELY' : `MY ${year} ON REELY`
+
+/**
+ * The headline, from whichever of the two facts we have.
+ *
+ * Four cases rather than a nested ternary, and none of them says "undefined" or
+ * leaves an apostrophe hanging — this is the biggest text on an image people
+ * post somewhere public.
+ */
+export function headlineOf(name: string | null, year: number | null): string {
+  if (name && year !== null) return `${name}'s ${year}`
+  if (name) return `${name}'s viewing`
+  if (year !== null) return `Everything in ${year}`
+  return 'A year of viewing'
+}
+
+/** What the file is called once it leaves the browser. */
+export const cardFileName = (year: number | null): string =>
+  year === null ? 'reely-year.png' : `reely-${year}.png`
+
 /**
  * Draw the card and hand back a PNG blob.
  *
@@ -67,7 +89,9 @@ function fitText(
  */
 export async function renderStatsCard(
   stats: LibraryStats,
-  name: string | null
+  name: string | null,
+  /** The year the figures cover, or null for a whole library. */
+  year: number | null = null
 ): Promise<Blob | null> {
   const canvas = document.createElement('canvas')
   canvas.width = WIDTH
@@ -99,11 +123,11 @@ export async function renderStatsCard(
   context.fillStyle = ACCENT
   context.font = `600 30px ${SANS}`
   context.letterSpacing = '6px'
-  context.fillText('MY YEAR ON REELY', margin, 168)
+  context.fillText(eyebrow(year), margin, 168)
   context.letterSpacing = '0px'
 
   context.fillStyle = INK
-  const headline = name ? `${name}'s viewing` : 'A year of viewing'
+  const headline = headlineOf(name, year)
   const headlineSize = fitText(context, headline, WIDTH - margin * 2, 84)
   context.font = `700 ${headlineSize}px ${SANS}`
   context.fillText(headline, margin, 268)

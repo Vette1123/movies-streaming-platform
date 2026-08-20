@@ -8,16 +8,19 @@ import { toast } from 'sonner'
 import {
   computeStats,
   hoursLabel,
+  inYear,
   isExact,
+  libraryYears,
   runtimeSource,
   type LibraryStats,
 } from '@/lib/stats'
-import { renderStatsCard } from '@/lib/stats-card'
+import { cardFileName, renderStatsCard } from '@/lib/stats-card'
 import { useAccount } from '@/hooks/use-account'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useMounted } from '@/hooks/use-mounted'
 import { useRuntimeBackfill } from '@/hooks/use-runtime-backfill'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { chipVariants } from '@/components/ui/chip'
 import { Skeleton, SkeletonRows } from '@/components/ui/skeleton'
 
 const monthName = (key: string): string => {
@@ -33,12 +36,26 @@ export function StatsPanel() {
   const [completed] = useLocalStorage('completedItems', [])
   const [watchlist] = useLocalStorage('watchlist', [])
   const [copied, setCopied] = useState(false)
+  // null is all time, and is the default: the whole library is the honest
+  // answer to "how much have I watched", and a year is the thing you post.
+  const [year, setYear] = useState<number | null>(null)
 
   const backfill = useRuntimeBackfill(pro, completed)
 
+  const years = useMemo(
+    () => libraryYears(history, completed),
+    [completed, history]
+  )
+
   const stats = useMemo(
-    () => computeStats(history, completed, watchlist.length, backfill),
-    [backfill, completed, history, watchlist.length]
+    () =>
+      computeStats(
+        inYear(history, year),
+        inYear(completed, year),
+        inYear(watchlist, year).length,
+        backfill
+      ),
+    [backfill, completed, history, watchlist, year]
   )
 
   // localStorage is unread on the server and on the first paint, so every number
@@ -62,13 +79,14 @@ export function StatsPanel() {
   }
 
   const nothingYet = stats.episodes === 0 && stats.films === 0
+  const picker = <YearPicker years={years} selected={year} onSelect={setYear} />
 
   if (nothingYet) {
     return (
       <div className="max-w-[60ch] space-y-4">
+        {picker}
         <p className="text-muted-foreground leading-relaxed">
-          Nothing to count yet. Tick an episode off or finish a film and this
-          page starts keeping score.
+          {emptyLine(year)}
         </p>
         <Link href="/movies" className={buttonVariants({ variant: 'outline' })}>
           Find something to watch
@@ -78,7 +96,7 @@ export function StatsPanel() {
   }
 
   const summary = [
-    `${isExact(stats) ? '' : 'About '}${stats.hours} hours on Reely.`,
+    `${isExact(stats) ? '' : 'About '}${stats.hours} hours${year === null ? '' : ` in ${year}`} on Reely.`,
     `${stats.films} films, ${stats.episodes} episodes, ${stats.seriesStarted} shows.`,
     stats.streak > 1 ? `Longest streak: ${stats.streak} days.` : null,
   ]
@@ -87,6 +105,8 @@ export function StatsPanel() {
 
   return (
     <div className="space-y-10">
+      {picker}
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Figure value={`${stats.hours}`} label={hoursLabel(stats)} primary />
         <Figure value={`${stats.films}`} label="films finished" />
@@ -139,7 +159,7 @@ export function StatsPanel() {
           {copied ? 'Copied' : 'Copy your summary'}
         </Button>
         {pro ? (
-          <ShareCard stats={stats} name={name} />
+          <ShareCard stats={stats} name={name} year={year} />
         ) : (
           <p className="text-muted-foreground max-w-[52ch] text-sm leading-relaxed">
             These numbers come from this browser alone, and they stop at this
@@ -168,16 +188,18 @@ export function StatsPanel() {
 function ShareCard({
   stats,
   name,
+  year,
 }: {
   stats: LibraryStats
   name: string | null
+  year: number | null
 }) {
   const [busy, setBusy] = useState(false)
 
   const make = async (): Promise<File | null> => {
-    const blob = await renderStatsCard(stats, name)
+    const blob = await renderStatsCard(stats, name, year)
     if (!blob) return null
-    return new File([blob], 'reely-year.png', { type: 'image/png' })
+    return new File([blob], cardFileName(year), { type: 'image/png' })
   }
 
   const share = async () => {
@@ -193,7 +215,10 @@ function ShareCard({
       // canShare with the file, not just a share check: desktop Chrome has
       // navigator.share and refuses files, and calling share anyway throws.
       if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'My year on Reely' })
+        await navigator.share({
+          files: [file],
+          title: year === null ? 'My year on Reely' : `My ${year} on Reely`,
+        })
         return
       }
       const url = URL.createObjectURL(file)
@@ -217,8 +242,65 @@ function ShareCard({
       ) : (
         <ImageDown className="mr-2 size-4" />
       )}
-      Get your card
+      {year === null ? 'Get your card' : `Get your ${year} card`}
     </Button>
+  )
+}
+
+/** What to say when the scope somebody picked has nothing in it. */
+const emptyLine = (year: number | null): string =>
+  year === null
+    ? 'Nothing to count yet. Tick an episode off or finish a film and this page starts keeping score.'
+    : `Nothing finished in ${year}. Saved titles and part-watched shows still count towards everything else.`
+
+/**
+ * All time, or one year.
+ *
+ * A row of pills rather than a select: there are rarely more than three or four
+ * choices, and the whole point of the feature is that the year is one tap away
+ * from the numbers it changes. Hidden entirely for a library that has only ever
+ * seen one year — a picker with one real option is furniture.
+ */
+function YearPicker({
+  years,
+  selected,
+  onSelect,
+}: {
+  years: number[]
+  selected: number | null
+  onSelect: (year: number | null) => void
+}) {
+  if (years.length < 2) return null
+
+  const choices: Array<{ key: string; label: string; value: number | null }> = [
+    { key: 'all', label: 'All time', value: null },
+    ...years.map((year) => ({
+      key: String(year),
+      label: String(year),
+      value: year,
+    })),
+  ]
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {choices.map((choice) => {
+        const active = choice.value === selected
+        return (
+          <button
+            key={choice.key}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onSelect(choice.value)}
+            className={chipVariants({
+              variant: active ? 'primary' : 'neutral',
+              interactive: !active,
+            })}
+          >
+            {choice.label}
+          </button>
+        )
+      })}
+    </div>
   )
 }
 
