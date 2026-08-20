@@ -24,8 +24,16 @@ const buildUrl = (url: string, query: Record<string, unknown>): string => {
 //      a throttle degrades to a slower request instead of a surfaced error.
 // At runtime this is nearly free: reads are served from cache, so few TMDB
 // calls are ever in flight and the retry only fires on the rare live miss.
-const MAX_CONCURRENT = 10
-const MAX_RETRIES = 4
+// NOTE: this is a PER-PROCESS cap and the build is not one process. Next
+// prerenders with a worker pool ('Collecting page data using 3 workers'), each
+// with its own copy of this module — so the real ceiling is MAX_CONCURRENT x
+// workers. At 10 that was 30 in flight, and buildMediaStaticParams alone fires
+// 55 list requests at once from every one of them. TMDB answered 429 for longer
+// than MAX_RETRIES could ride out, and allSettled then swallowed it: a whole
+// list page (~20 ids) silently missing from the prerender set AND the sitemap.
+// 6 x 3 = 18 keeps the pool inside TMDB's tolerance.
+const MAX_CONCURRENT = 6
+const MAX_RETRIES = 6
 
 // The concurrency governor exists ONLY for `next build`: generateStaticParams
 // prerenders ~1800 detail pages, each firing several TMDB calls — hundreds of
@@ -218,7 +226,11 @@ export const fetchClient = {
           const wait =
             Number.isFinite(retryAfter) && retryAfter > 0
               ? retryAfter * 1000
-              : Math.min(500 * 2 ** attempt, 8000)
+              : // Jitter the backoff. Without it every throttled request in the
+                // pool sleeps for the same duration and wakes together, so the
+                // retry wave is exactly as concurrent as the wave that was
+                // throttled — and gets throttled again.
+                Math.min(500 * 2 ** attempt, 8000) * (0.5 + Math.random())
           // Drain the throttle response before looping. An unread body keeps its
           // HTTP request "in flight"; enough stranded (retries × concurrency) hit
           // the Workers in-flight cap and the runtime cancels responses to break
