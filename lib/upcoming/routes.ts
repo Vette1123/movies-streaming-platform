@@ -18,6 +18,7 @@ import { loadSession, sessionCookieOf, USER_COLUMNS } from '@/lib/auth/session'
 import { isEntitled, type BillingRow } from '@/lib/billing/entitlement'
 
 import { buildIcs, type UpcomingItem } from './ics'
+import { buildRss } from './rss'
 
 /** A season's worth of dates. Beyond that TMDB rarely knows, and nobody plans. */
 const HORIZON_DAYS = 180
@@ -160,6 +161,11 @@ export async function handleUpcoming(
     // because nothing had ever been saved, and the copy gave no way to tell.
     watchlist,
     feedPath: `/api/calendar/${token}.ics`,
+    // The same rows, for a feed reader instead of a calendar. Same token and
+    // the same prefix on purpose: the WAF exemptions that keep a machine
+    // poller from being challenged are written against /api/calendar/, and a
+    // second prefix would be a second rule to forget.
+    rssPath: `/api/calendar/${token}.xml`,
   })
 }
 
@@ -175,6 +181,18 @@ async function watchlistSize(db: D1Database, userId: string): Promise<number> {
   return row?.n ?? 0
 }
 
+const feed = (body: string, contentType: string, status = 200) =>
+  new Response(body, {
+    status,
+    headers: {
+      'Content-Type': contentType,
+      // Behind an unguessable token and specific to one person, so it must never
+      // land in a shared cache. Pollers come back on their own schedule — hours
+      // apart — and honour nothing finer than this anyway.
+      'Cache-Control': 'private, no-store',
+    },
+  })
+
 const calendar = (body: string, status = 200) =>
   new Response(body, {
     status,
@@ -189,7 +207,8 @@ const calendar = (body: string, status = 200) =>
   })
 
 /**
- * GET /api/calendar/<token>.ics — the subscribable feed.
+ * GET /api/calendar/<token>.ics — the subscribable calendar.
+ * GET /api/calendar/<token>.xml — the same schedule, as RSS.
  *
  * The one authenticated endpoint here with no session behind it. Three
  * consequences, all deliberate:
@@ -209,32 +228,46 @@ export async function handleCalendarFeed(
   db: D1Database
 ): Promise<Response> {
   const now = Date.now()
-  const token = pathname
-    .slice('/api/calendar/'.length)
-    .replace(/\.ics$/i, '')
-    .trim()
+  const tail = pathname.slice('/api/calendar/'.length).trim()
+  const rss = /\.xml$/i.test(tail)
+  const token = tail.replace(/\.(ics|xml)$/i, '')
+
+  // A refusal has to be a valid, empty document of the format that was asked
+  // for. Both a calendar client and a feed reader treat an error status as a
+  // broken subscription and warn about it until a human intervenes; an empty
+  // document is the quiet, honest state, and it fills again on its own the
+  // moment there is something to say.
+  const empty = (status = 200) =>
+    rss
+      ? feed(
+          buildRss([], feedOrigin(), now, pathname),
+          'application/rss+xml; charset=utf-8',
+          status
+        )
+      : calendar(buildIcs([], feedOrigin(), now), status)
 
   // Shape-checked before it reaches the database: this path is public, so the
   // cheapest possible rejection of a scan is worth having.
-  if (!/^[0-9a-f]{32}$/.test(token)) {
-    return calendar(buildIcs([], feedOrigin(), now), 404)
-  }
+  if (!/^[0-9a-f]{32}$/.test(token)) return empty(404)
 
   const user = await db
     .prepare(`SELECT ${USER_COLUMNS} FROM users WHERE calendar_token = ?`)
     .bind(token)
     .first<BillingRow & { id: string }>()
 
-  if (!user || !isEntitled(user, now)) {
-    return calendar(buildIcs([], feedOrigin(), now))
-  }
+  if (!user || !isEntitled(user, now)) return empty()
 
   // The feed reaches a week back; the panel does not. A calendar that opens on
   // an empty month looks broken, and "this aired on Tuesday and you missed it"
   // is exactly what somebody wants from a calendar. The panel is a schedule of
   // what is coming, so the past has no business in it.
   const items = await loadUpcoming(db, user.id, now, FEED_BACKFILL_DAYS)
-  return calendar(buildIcs(items, feedOrigin(), now))
+  return rss
+    ? feed(
+        buildRss(items, feedOrigin(), now, pathname),
+        'application/rss+xml; charset=utf-8'
+      )
+    : calendar(buildIcs(items, feedOrigin(), now))
 }
 
 /**

@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   Sparkles,
   Upload,
+  UserRound,
 } from 'lucide-react'
 
 import {
@@ -55,6 +56,7 @@ import { LibraryPanel } from './library-panel'
 import { ListsPanel } from './lists-panel'
 import { NextUpPanel } from './next-up-panel'
 import { PlaybackPanel } from './playback-panel'
+import { ProfilePanel } from './profile-panel'
 import { UpcomingPanel } from './upcoming-panel'
 
 const SIGN_IN_ERRORS: Record<string, string> = {
@@ -121,6 +123,14 @@ const SECTIONS: SectionDef[] = [
     lede: 'Collections you build from your own library, with a note and a score on anything worth one.',
     Icon: ListMusic,
     Panel: ListsPanel,
+  },
+  {
+    id: 'profile',
+    label: 'Public page',
+    title: 'Your public page',
+    lede: 'One address worth sending: what you have finished, what you rated highest, and the lists you published.',
+    Icon: UserRound,
+    Panel: ProfilePanel,
   },
   {
     id: 'upcoming',

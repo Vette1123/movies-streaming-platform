@@ -22,6 +22,10 @@ import { handleForYou } from '@/lib/foryou/routes'
 import { handleImportResolve } from '@/lib/import/routes'
 import { handleLists, loadPublicList } from '@/lib/lists/routes'
 import { handleNextUp } from '@/lib/nextup/routes'
+import {
+  handleProfileSettings,
+  handlePublicProfile,
+} from '@/lib/profile/routes'
 import { handlePushPending, handlePushSubscribe } from '@/lib/push/routes'
 import { handleStatsRuntimes } from '@/lib/stats/routes'
 import { handleSync } from '@/lib/sync/routes'
@@ -75,13 +79,15 @@ const ROUTES: Record<string, 'GET' | 'POST' | 'GET|POST'> = {
   '/api/for-you': 'GET',
   '/api/import/resolve': 'POST',
   '/api/stats/runtimes': 'POST',
+  '/api/profile': 'GET|POST',
 }
 
 export function ownsPath(pathname: string): boolean {
   return (
     pathname in ROUTES ||
     pathname.startsWith('/api/list/') ||
-    pathname.startsWith('/api/calendar/')
+    pathname.startsWith('/api/calendar/') ||
+    pathname.startsWith('/api/profile/')
   )
 }
 
@@ -109,6 +115,17 @@ export async function routeAccountApi(
     const db = requireDb(env)
     if (db instanceof Response) return db
     return handleCalendarFeed(pathname, db)
+  }
+
+  // A public profile, like the public list below: a prefix rather than a fixed
+  // path, reachable by a stranger, and cacheable. Its own 404 covers an
+  // unclaimed handle, an unpublished profile and a lapsed supporter alike.
+  if (pathname.startsWith('/api/profile/')) {
+    if (request.method !== 'GET') return methodNotAllowed()
+    const handle = decodeURIComponent(pathname.slice('/api/profile/'.length))
+    const db = requireDb(env)
+    if (db instanceof Response) return db
+    return handlePublicProfile(handle, db, Date.now())
   }
 
   // The public list read is the one path here a stranger can reach, and the only
@@ -172,6 +189,8 @@ export async function routeAccountApi(
       return handleImportResolve(request, db)
     case '/api/stats/runtimes':
       return handleStatsRuntimes(request, db)
+    case '/api/profile':
+      return handleProfileSettings(request, db)
     default:
       return null
   }

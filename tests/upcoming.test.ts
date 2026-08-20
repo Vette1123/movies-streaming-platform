@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildIcs, foldLine, type UpcomingItem } from '@/lib/upcoming/ics'
+import { buildRss, rfc822 } from '@/lib/upcoming/rss'
 
 /**
  * iCalendar fails silently. A malformed file does not error — a calendar client
@@ -131,5 +132,81 @@ describe('foldLine', () => {
     const folded = foldLine(line)
     expect(folded).not.toContain('�')
     expect(folded.replace(/\r\n /g, '')).toBe(line)
+  })
+})
+
+/**
+ * RSS fails as silently as iCalendar: a reader given a date it cannot parse
+ * treats every item as new on every poll, and one unescaped ampersand takes the
+ * whole document with it. Both are pinned here.
+ */
+describe('buildRss', () => {
+  const SELF = '/api/calendar/deadbeef.xml'
+
+  it('dates an item by the day it airs, not by the build', () => {
+    const xml = buildRss([item()], ORIGIN, STAMP, SELF)
+    // 2026-09-01, not the 2026-08-16 stamp: a reader sorts by pubDate, so this
+    // is what puts the next episode at the top on the morning it airs.
+    expect(xml).toContain('<pubDate>Tue, 01 Sep 2026 09:00:00 GMT</pubDate>')
+    expect(xml).toContain('<lastBuildDate>Sun, 16 Aug 2026 10:30:00 GMT')
+  })
+
+  it('gives every item a stable non-URL guid', () => {
+    const xml = buildRss([item()], ORIGIN, STAMP, SELF)
+    expect(xml).toContain(
+      '<guid isPermaLink="false">reely:series:1399:2026-09-01</guid>'
+    )
+  })
+
+  it('links a series to its show page and a film to its own', () => {
+    const xml = buildRss(
+      [item(), item({ key: 'movie:550', name: 'Fight Club', label: null })],
+      ORIGIN,
+      STAMP,
+      SELF
+    )
+    expect(xml).toContain('<link>https://www.reely.space/tv-shows/1399</link>')
+    expect(xml).toContain('<link>https://www.reely.space/movies/550</link>')
+    // No label is a release day, and it is said that way rather than left blank.
+    expect(xml).toContain('Fight Club (release day)')
+  })
+
+  it('escapes the five characters that would break the document', () => {
+    const xml = buildRss(
+      [item({ name: 'Tom & Jerry <"best" of>' })],
+      ORIGIN,
+      STAMP,
+      SELF
+    )
+    expect(xml).toContain('Tom &amp; Jerry &lt;&quot;best&quot; of&gt;')
+    // The ampersand is escaped once, never twice.
+    expect(xml).not.toContain('&amp;amp;')
+  })
+
+  it('points the self link at the URL the reader actually polls', () => {
+    const xml = buildRss([], ORIGIN, STAMP, SELF)
+    expect(xml).toContain(`href="${ORIGIN}${SELF}"`)
+  })
+
+  it('is a valid, empty document when there is nothing to say', () => {
+    const xml = buildRss([], ORIGIN, STAMP, SELF)
+    expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true)
+    expect(xml.trimEnd().endsWith('</rss>')).toBe(true)
+    expect(xml).not.toContain('<item>')
+    // A blank line where the items would be is what a strict parser chokes on.
+    expect(xml).not.toMatch(/\n\n/)
+  })
+
+  it('skips a row the sweep has dated badly rather than emitting it', () => {
+    const xml = buildRss([item({ date: 'soon' })], ORIGIN, STAMP, SELF)
+    expect(xml).not.toContain('<item>')
+  })
+})
+
+describe('rfc822', () => {
+  it('pads every field to the width the format requires', () => {
+    expect(rfc822(Date.parse('2026-01-05T04:03:02Z'))).toBe(
+      'Mon, 05 Jan 2026 04:03:02 GMT'
+    )
   })
 })

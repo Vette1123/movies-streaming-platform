@@ -16,6 +16,7 @@ import {
   Star,
   ThumbsDown,
   Upload,
+  UserRound,
   Wand2,
 } from 'lucide-react'
 
@@ -131,6 +132,12 @@ export const SUPPORT_FEATURES: SupportFeature[] = [
     title: 'Bring your Letterboxd or IMDb library with you',
     short: 'Letterboxd and IMDb CSV import, read on your own device',
     body: 'Years of ratings and a watchlist you have been adding to forever, read straight in from their CSV export and matched to real titles, with your scores carried onto the ten-point scale. The file is read on your own device and never uploaded.',
+  },
+  {
+    Icon: UserRound,
+    title: 'A page of your own',
+    short: 'reely.space/u/you — your films, at one address you can send',
+    body: 'One address — reely.space/u/your-name — with everything you have finished, the titles you rated highest and every list you published, under your name and your photo. It unfurls properly wherever you paste it, and a switch takes it down again. Your watchlist, your history and your email never appear on it.',
   },
   {
     Icon: ListMusic,

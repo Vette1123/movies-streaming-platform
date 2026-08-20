@@ -23,10 +23,11 @@ export function AccountSkeleton() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-12">
-        {/* One picker button on a phone, the twelve-row rail on a laptop. */}
+        {/* One picker button on a phone, the full rail on a laptop. Count
+            tracks SECTIONS in account-panel.tsx, plus the Overview row. */}
         <Skeleton className="h-[3.75rem] w-full rounded-xl lg:hidden" />
         <div className="hidden lg:flex lg:flex-col lg:gap-1">
-          {Array.from({ length: 12 }).map((_, i) => (
+          {Array.from({ length: 13 }).map((_, i) => (
             <Skeleton
               key={i}
               className="h-9 w-full rounded-lg"

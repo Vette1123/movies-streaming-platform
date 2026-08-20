@@ -49,6 +49,7 @@ import { fetchWatchProviders } from '@/services/watch-providers'
 import { ownsPath, routeAccountApi } from '@/lib/api/account-router'
 import { loadPublicList } from '@/lib/lists/routes'
 import { getMediaHeroImageUrl } from '@/lib/media'
+import { loadPublicProfile } from '@/lib/profile/routes'
 import { getImageURL } from '@/lib/utils'
 
 /** 6h, matching the deploy cadence that refreshes the static half of the site. */
@@ -78,6 +79,18 @@ const LIST_PATH = /^\/l\/([A-Za-z0-9-]{1,64})\/?$/
 const SHELL_MEDIA = '/media-fallback.html'
 const SHELL_COLLECTION = '/collection-fallback.html'
 const SHELL_LIST = '/list-fallback.html'
+const SHELL_PROFILE = '/profile-fallback.html'
+
+/**
+ * A public profile: /u/gado.
+ *
+ * Same shape as the list above, for the same reason: the page is a person
+ * sharing themselves, so it has to unfurl properly wherever it is pasted, and
+ * it cannot be prerendered because the handle did not exist at build time. The
+ * pattern matches exactly what normaliseHandle accepts, so a request that could
+ * never be a handle never reaches the database.
+ */
+const PROFILE_PATH = /^\/u\/([a-z0-9-]{3,20})\/?$/
 
 /**
  * The secrets live on the Worker, but the services read `process.env` (they are
@@ -759,6 +772,57 @@ async function handleListPage(match, env, url) {
   )
 }
 
+/**
+ * A public profile at /u/<handle>.
+ *
+ * Not stored in `caches.default`, for the same reason as the list page above:
+ * unpublishing has to take the page down at once, and a cached copy would keep
+ * serving somebody's library for the rest of its TTL. What it costs is three
+ * indexed D1 reads, which is I/O and no CPU.
+ */
+async function handleProfilePage(match, env, url) {
+  const [, handle] = match
+  const db = env.DB
+  if (!db) return notFoundAsset(env, url)
+
+  const profile = await loadPublicProfile(db, handle, Date.now())
+  if (!profile) return notFoundAsset(env, url)
+
+  const siteUrl = siteUrlOf(url)
+  const who = profile.name || profile.handle
+  const meta = {
+    // The heading is what becomes <title>, og:title and the crawlable <h1>
+    // (see metaTags/seoBlock) — so it carries the site name here rather than
+    // leaving a shared link reading as a bare personal name with no context.
+    heading: `${who} on Reely`,
+    description:
+      profile.bio ||
+      `${profile.counts.finished} films finished, ${profile.counts.episodes} episodes ticked off, ${profile.counts.lists} lists worth stealing.`,
+    // The avatar, not a poster: this page is about a person, and an unfurl that
+    // shows their face is the one that gets opened.
+    image: profile.picture || '',
+    canonical: `${siteUrl}/u/${profile.handle}`,
+  }
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    dateCreated: new Date(profile.since).toISOString(),
+    mainEntity: {
+      '@type': 'Person',
+      name: who,
+      alternateName: profile.handle,
+      description: profile.bio || undefined,
+      image: profile.picture || undefined,
+      url: meta.canonical,
+    },
+  }
+
+  return (
+    serveShellFromTemplate(SHELL_PROFILE, meta, 'profile', jsonLd) ??
+    serveShell(SHELL_PROFILE, meta, 'profile', jsonLd, env, url)
+  )
+}
+
 export default {
   /**
    * The hourly sweep for new-episode alerts. Imported lazily so its TMDB and
@@ -819,6 +883,11 @@ export default {
       const list = pathname.match(LIST_PATH)
       if (list) {
         return await handleListPage(list, env, url)
+      }
+
+      const profile = pathname.match(PROFILE_PATH)
+      if (profile) {
+        return await handleProfilePage(profile, env, url)
       }
 
       const detail = pathname.match(DETAIL_PATH)

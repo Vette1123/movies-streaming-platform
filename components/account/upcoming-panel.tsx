@@ -8,6 +8,7 @@ import {
   Check,
   Copy,
   RefreshCw,
+  Rss,
   ShieldAlert,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -76,6 +77,7 @@ interface Feed {
   success?: boolean
   items?: UpcomingItem[]
   feedPath?: string
+  rssPath?: string
   /** Synced watchlist size — see the empty state, which needs it to tell the truth. */
   watchlist?: number
 }
@@ -98,6 +100,7 @@ export function UpcomingPanel() {
   const { pro } = useAccount()
   const [items, setItems] = useState<UpcomingItem[]>([])
   const [feedPath, setFeedPath] = useState<string | null>(null)
+  const [rssPath, setRssPath] = useState<string | null>(null)
   const [watchlist, setWatchlist] = useState(0)
   const [state, setState] = useState<State>('loading')
 
@@ -113,6 +116,7 @@ export function UpcomingPanel() {
       }
       setItems(body.items ?? [])
       setFeedPath(body.feedPath ?? null)
+      setRssPath(body.rssPath ?? null)
       setWatchlist(body.watchlist ?? 0)
       setState('ready')
       return true
@@ -219,6 +223,7 @@ export function UpcomingPanel() {
 
       <FeedSection
         feedPath={feedPath}
+        rssPath={rssPath}
         items={items}
         onRotate={() => load(true)}
       />
@@ -237,14 +242,16 @@ export function UpcomingPanel() {
  */
 function FeedSection({
   feedPath,
+  rssPath,
   items,
   onRotate,
 }: {
   feedPath: string | null
+  rssPath: string | null
   items: UpcomingItem[]
   onRotate: () => Promise<boolean>
 }) {
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState<'ics' | 'rss' | null>(null)
 
   if (!feedPath) return null
 
@@ -270,7 +277,8 @@ function FeedSection({
           A private link your calendar app checks on its own. Anything you add
           to your watchlist from now on turns up in it without another import,
           with a reminder the morning before it airs, and the past week stays in
-          there so you can see what you missed.
+          there so you can see what you missed. The same schedule is an RSS feed
+          too, if a reader is where you would rather see it.
         </p>
       </div>
 
@@ -283,16 +291,16 @@ function FeedSection({
           size="sm"
           onClick={() => {
             void navigator.clipboard?.writeText(url)
-            setCopied(true)
-            setTimeout(() => setCopied(false), 2000)
+            setCopied('ics')
+            setTimeout(() => setCopied(null), 2000)
           }}
         >
-          {copied ? (
+          {copied === 'ics' ? (
             <Check className="mr-2 size-4" />
           ) : (
             <Copy className="mr-2 size-4" />
           )}
-          {copied ? 'Copied' : 'Copy link'}
+          {copied === 'ics' ? 'Copied' : 'Copy link'}
         </Button>
         <a
           href={webcal}
@@ -310,6 +318,26 @@ function FeedSection({
           <CalendarPlus className="mr-2 size-4" />
           Download once
         </Button>
+        {rssPath && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              void navigator.clipboard?.writeText(
+                `${window.location.origin}${rssPath}`
+              )
+              setCopied('rss')
+              setTimeout(() => setCopied(null), 2000)
+            }}
+          >
+            {copied === 'rss' ? (
+              <Check className="mr-2 size-4" />
+            ) : (
+              <Rss className="mr-2 size-4" />
+            )}
+            {copied === 'rss' ? 'Copied' : 'Copy RSS link'}
+          </Button>
+        )}
         <ConfirmDialog
           trigger={
             <Button size="sm" variant="ghost">

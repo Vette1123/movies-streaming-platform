@@ -318,6 +318,8 @@ export interface PublicList {
   name: string
   description: string | null
   owner: string | null
+  /** Whether the owner's support is live right now — drives the badge. */
+  owner_pro: boolean
   items: ListItem[]
   updated_at: number
 }
@@ -332,12 +334,14 @@ export interface PublicList {
  */
 export async function loadPublicList(
   db: D1Database,
-  slug: string
+  slug: string,
+  now: number = Date.now()
 ): Promise<PublicList | null> {
   const row = await db
     .prepare(
       `SELECT lists.name, lists.description, lists.items, lists.updated_at,
-              users.name AS owner
+              users.name AS owner, users.grants, users.sub_status,
+              users.sub_ends_at, users.sub_past_due_since
        FROM lists JOIN users ON users.id = lists.user_id
        WHERE lists.slug = ? AND lists.published = 1`
     )
@@ -348,6 +352,10 @@ export async function loadPublicList(
       items: string
       updated_at: number
       owner: string | null
+      grants: string | null
+      sub_status: string | null
+      sub_ends_at: number | null
+      sub_past_due_since: number | null
     }>()
 
   if (!row) return null
@@ -355,6 +363,10 @@ export async function loadPublicList(
     name: row.name,
     description: row.description,
     owner: row.owner,
+    // The list stays up if support lapses — taking somebody's shared link down
+    // over a missed payment would be a punishment, not a paywall. The badge is
+    // what goes away.
+    owner_pro: isEntitled(row, now),
     items: safeItems(row.items),
     updated_at: row.updated_at,
   }
