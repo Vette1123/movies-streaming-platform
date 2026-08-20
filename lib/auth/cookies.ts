@@ -29,3 +29,14 @@ export const HINT_COOKIE = 'reely_account'
 /** Short-lived, single-use, and gone by the time the callback returns. */
 export const OAUTH_STATE_COOKIE = 'reely_oauth_state'
 export const OAUTH_VERIFIER_COOKIE = 'reely_oauth_verifier'
+
+/**
+ * Who sent this visitor, as a handle, written by a public profile page.
+ *
+ * A cookie rather than a parameter carried through OAuth: somebody reads a
+ * profile, wanders the site for ten minutes and signs in from the header, and
+ * a `?ref=` on the page they landed on is long gone by then. It is read exactly
+ * once, when an account is CREATED, and it is not a credential — the worst a
+ * forged one does is credit the wrong supporter with a sign-up.
+ */
+export const REFERRAL_COOKIE = 'reely_ref'

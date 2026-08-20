@@ -18,6 +18,7 @@ import {
   handleRefresh,
 } from '@/lib/auth/routes'
 import { handleBmcWebhook } from '@/lib/billing/bmc'
+import { handleGifts } from '@/lib/billing/gifts'
 import { handleForYou } from '@/lib/foryou/routes'
 import { handleImportResolve } from '@/lib/import/routes'
 import { handleLists, loadPublicList } from '@/lib/lists/routes'
@@ -80,6 +81,7 @@ const ROUTES: Record<string, 'GET' | 'POST' | 'GET|POST'> = {
   '/api/import/resolve': 'POST',
   '/api/stats/runtimes': 'POST',
   '/api/profile': 'GET|POST',
+  '/api/gifts': 'GET|POST',
 }
 
 export function ownsPath(pathname: string): boolean {
@@ -191,6 +193,8 @@ export async function routeAccountApi(
       return handleStatsRuntimes(request, db)
     case '/api/profile':
       return handleProfileSettings(request, db)
+    case '/api/gifts':
+      return handleGifts(request, db)
     default:
       return null
   }

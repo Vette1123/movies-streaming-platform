@@ -11,6 +11,7 @@ import {
   ChevronRight,
   ExternalLink,
   EyeOff,
+  Gift,
   Heart,
   LayoutGrid,
   ListMusic,
@@ -50,6 +51,7 @@ import { AlertsPanel } from './alerts-panel'
 import { AppearancePanel } from './appearance-panel'
 import { DataPanel } from './data-panel'
 import { ForYouPanel } from './for-you-panel'
+import { GiftsPanel } from './gifts-panel'
 import { HiddenPanel } from './hidden-panel'
 import { ImportPanel } from './import-panel'
 import { LibraryPanel } from './library-panel'
@@ -171,6 +173,14 @@ const SECTIONS: SectionDef[] = [
     lede: 'Years of Letterboxd or IMDb ratings, read straight in from their CSV export.',
     Icon: Upload,
     Panel: ImportPanel,
+  },
+  {
+    id: 'gifts',
+    label: 'Gifts',
+    title: 'Gifts and referrals',
+    lede: 'Hand somebody a month, redeem one you were given, and earn one for every three people who join from your page.',
+    Icon: Gift,
+    Panel: GiftsPanel,
   },
   {
     id: 'data',

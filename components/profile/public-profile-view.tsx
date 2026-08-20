@@ -9,6 +9,8 @@ import { PosterTile } from '@/components/media/poster-tile'
 import { StrangerPitch } from '@/components/support/stranger-pitch'
 import { SupporterBadge } from '@/components/support/supporter-badge'
 
+import { ReferralCookie } from './referral-cookie'
+
 /**
  * Somebody's profile, as a stranger sees it.
  *
@@ -30,6 +32,7 @@ export function PublicProfileView({ profile }: { profile: PublicProfile }) {
 
   return (
     <div className="container max-w-5xl py-20 lg:py-28">
+      <ReferralCookie handle={profile.handle} />
       <header className="flex flex-col gap-6 sm:flex-row sm:items-center">
         <Avatar picture={profile.picture} who={who} />
         <div className="min-w-0 flex-1 space-y-2">

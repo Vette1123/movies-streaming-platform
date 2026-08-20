@@ -9,6 +9,7 @@ import { useLibrarySync } from '@/hooks/use-library-sync'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 
+import { LibrarySearch } from './library-search'
 import { SupporterGate } from './supporter-gate'
 
 /**
@@ -82,6 +83,8 @@ export function LibraryPanel() {
         titles you save and tick off yourself, and deleting your account takes
         all of it with you.
       </p>
+
+      <LibrarySearch />
     </div>
   )
 }

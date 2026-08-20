@@ -10,10 +10,14 @@
 import { ALERT_REGION_IDS } from '@/config/regions'
 import { claimSupporterGrants } from '@/lib/billing/bmc'
 import { isEntitled, isProAt } from '@/lib/billing/entitlement'
+import { REFERRALS_PER_MONTH } from '@/lib/billing/gifts'
+import { grantMonths } from '@/lib/billing/months'
 import { normalisePresets } from '@/lib/filter-presets'
+import { normaliseHandle } from '@/lib/profile/routes'
 import { normaliseQuietHours } from '@/lib/push/quiet'
 import { ACCESS_TOKEN_TTL_MS, signToken } from '@/lib/token'
 
+import { REFERRAL_COOKIE } from './cookies'
 import {
   createAuthorizationUrl,
   decodeIdToken,
@@ -331,9 +335,11 @@ export async function handleAuthCallback(
     .run()
 
   const user = await db
-    .prepare('SELECT id FROM users WHERE google_sub = ?')
+    .prepare(
+      'SELECT id, created_at, referred_by FROM users WHERE google_sub = ?'
+    )
     .bind(claims.sub)
-    .first<{ id: string }>()
+    .first<{ id: string; created_at: number; referred_by: string | null }>()
 
   if (!user) {
     return json(
@@ -354,6 +360,18 @@ export async function handleAuthCallback(
     console.error('auth: could not claim supporter grants', String(error))
   }
 
+  // Only on the sign-in that created the account: `created_at` is stamped by
+  // the INSERT above and left alone by the ON CONFLICT, so this is true exactly
+  // once. Someone who reads a profile years later must not re-credit anybody.
+  if (user.created_at === now && user.referred_by === null) {
+    try {
+      await creditReferrer(db, user.id, request.headers.get('Cookie'), now)
+    } catch (error) {
+      // A referral is a bonus, never a reason a sign-in fails.
+      console.error('auth: could not credit referrer', String(error))
+    }
+  }
+
   const raw = await createSession(db, user.id, now)
   const target = safeRedirect(requestedTarget, origin)
 
@@ -362,6 +380,44 @@ export async function handleAuthCallback(
     oauthTempCookie(OAUTH_STATE_COOKIE, '', origin),
     oauthTempCookie(OAUTH_VERIFIER_COOKIE, '', origin),
   ])
+}
+
+/**
+ * Credit whoever's public page sent this person here.
+ *
+ * The handle in the cookie is resolved to an account, the new row is stamped
+ * with it, and if that took the referrer over the line they are given a month.
+ * The count is read back from the table rather than incremented, so two
+ * sign-ups landing at once cannot both think they were the third.
+ */
+async function creditReferrer(
+  db: D1Database,
+  newUserId: string,
+  cookieHeader: string | null,
+  now: number
+): Promise<void> {
+  const handle = normaliseHandle(readNamed(cookieHeader, REFERRAL_COOKIE))
+  if (!handle) return
+
+  const referrer = await db
+    .prepare('SELECT id FROM users WHERE handle = ?')
+    .bind(handle)
+    .first<{ id: string }>()
+  if (!referrer || referrer.id === newUserId) return
+
+  await db
+    .prepare('UPDATE users SET referred_by = ? WHERE id = ?')
+    .bind(referrer.id, newUserId)
+    .run()
+
+  const count = await db
+    .prepare('SELECT COUNT(*) AS n FROM users WHERE referred_by = ?')
+    .bind(referrer.id)
+    .first<{ n: number }>()
+
+  if ((count?.n ?? 0) % REFERRALS_PER_MONTH === 0) {
+    await grantMonths(db, referrer.id, 1, now)
+  }
 }
 
 // Local readers, so google.ts owns the cookie names and this file does not
