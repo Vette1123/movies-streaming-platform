@@ -32,6 +32,7 @@
     "waf:apply": "node scripts/cf-waf-setup.mjs",
     "dns:harden": "node scripts/cf-dns-hardening.mjs",
     "cf:health": "node scripts/cf-health.mjs",
+    "cf:cpu": "node scripts/cf-cpu.mjs",
     "bmc:probe": "node scripts/bmc-probe.mjs",
     "test": "vitest run",
     "test:watch": "vitest"

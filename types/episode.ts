@@ -39,9 +39,12 @@ type Crew = {
 
 interface EpisodeDetails {
   air_date: string
-  crew: Crew[]
+  // Optional because services/season-details.ts strips both before the episode
+  // list leaves the server: TMDB sends them on every episode, nothing on the
+  // site reads either, and together they were 95% of the season payload.
+  crew?: Crew[]
   episode_number: number
-  guest_stars: GuestStar[]
+  guest_stars?: GuestStar[]
   name: string
   overview: string
   show_id: number

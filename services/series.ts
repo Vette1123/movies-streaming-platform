@@ -9,6 +9,7 @@ import {
 } from '@/types/series-details'
 import { SeriesResponse } from '@/types/series-result'
 import { RAIL_LIMIT } from '@/lib/constants'
+import { trimCredits } from '@/lib/credits'
 import { fetchClient, isNotFoundError } from '@/lib/fetch-client'
 import { detailAppend } from '@/lib/tmdb-append'
 import { tvType } from '@/lib/tmdbConfig'
@@ -92,7 +93,7 @@ const populateSeriesDetailsPageData = async (
         ...details,
         imdbRating: await getImdbRating(data.external_ids?.imdb_id),
       },
-      seriesCredits: credits ?? { id: data.id, cast: [], crew: [] },
+      seriesCredits: trimCredits(credits, data.id),
       similarSeries: (similar ? seriesDTO(similar).results : []).slice(
         0,
         RAIL_LIMIT

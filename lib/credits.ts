@@ -36,3 +36,36 @@ export const crewNamesByJob = (
     .map((person) => person.name)
   return [...new Set(names)].slice(0, limit)
 }
+
+/**
+ * The credits block reduced to what the site actually renders.
+ *
+ * TMDB's `credits` append is 71 KB of the 100 KB it answers for a film — 50 KB
+ * of that is a 188-person crew, of which the pages read exactly one job. The
+ * cast rail and the schema.org list both stop at ten.
+ *
+ * This does NOT change a prerendered page: both detail pages render credits on
+ * the server, so the extra people never reached a browser from there (measured
+ * — the HTML is byte-for-byte the same size). What it changes is /api/media/*,
+ * which is how the tail-id shell gets its payload and, at 3.66ms average, the
+ * most expensive route the Worker serves: it parses TMDB's 100 KB, then used to
+ * re-serialize 28 KB of it, cache that, and send it. Twenty-one of those 28 KB
+ * were people nothing renders.
+ *
+ * Sorted by billing order, because both readers of the trimmed list assume it:
+ * the rail slices the first ten as given, `castNames` sorts before it slices,
+ * and they must not disagree about who the tenth person is.
+ */
+export const trimCredits = (
+  credits: Credit | undefined,
+  id: number
+): Credit => ({
+  id: credits?.id ?? id,
+  cast: (credits?.cast ?? [])
+    .slice()
+    .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
+    .slice(0, CAST_LIMIT),
+  // The only job either detail page looks up. Keep every match rather than the
+  // first: a co-directed film names both, and crewNamesByJob dedupes anyway.
+  crew: (credits?.crew ?? []).filter((person) => person.job === 'Director'),
+})

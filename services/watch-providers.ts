@@ -32,8 +32,19 @@ export const fetchWatchProviders = async (
       false
     )
     const list = data?.results ?? []
-    // Copy before sort — never mutate a cached array in place.
-    return [...list].sort((a, b) => a.display_priority - b.display_priority)
+    // Map before sort: the map already copies, so this never mutates a cached
+    // array in place, AND it drops `display_priorities` — a per-country priority
+    // map TMDB attaches to every one of the 292 providers, which is 47 KB of the
+    // 84 KB response and is read by nothing. The interface above always said
+    // four fields; only the runtime object disagreed.
+    return list
+      .map(({ provider_id, provider_name, logo_path, display_priority }) => ({
+        provider_id,
+        provider_name,
+        logo_path,
+        display_priority,
+      }))
+      .sort((a, b) => a.display_priority - b.display_priority)
   } catch {
     return []
   }

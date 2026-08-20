@@ -25,6 +25,7 @@ pnpm imdb:ratings       # regenerate public/imdb-ratings/*.json shards
 pnpm og:build           # regenerate the static OG image
 pnpm waf:apply          # push Cloudflare WAF + CDN cache rules
 pnpm bmc:probe          # end-to-end check of the live payment webhook (writes + deletes one throwaway row)
+pnpm cf:cpu [hours]     # production Worker CPU broken down BY ROUTE (Workers Logs); cf:health has the kills
 ```
 
 - **Package manager is pnpm 10** (`packageManager` pin). Do not use npm/yarn.

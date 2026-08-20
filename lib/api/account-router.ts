@@ -10,6 +10,7 @@
  * siblings, or from the tail-id fallback: those paths never call this function.
  */
 
+import { ROUTES } from '@/lib/api/account-paths'
 import {
   handleAccount,
   handleAuthCallback,
@@ -63,37 +64,6 @@ function requireDb(env: WorkerEnv): D1Database | Response {
 
 const methodNotAllowed = () =>
   json({ success: false, error: 'Method not allowed' }, 405)
-
-/** Which method each path takes. Anything else is a 405 rather than a 404. */
-const ROUTES: Record<string, 'GET' | 'POST' | 'GET|POST'> = {
-  '/api/auth/google': 'GET',
-  '/api/auth/callback': 'GET',
-  '/api/auth/refresh': 'POST',
-  '/api/auth/logout': 'POST',
-  '/api/account': 'POST',
-  '/api/billing/bmc': 'POST',
-  '/api/sync': 'POST',
-  '/api/lists': 'GET|POST',
-  '/api/push/subscribe': 'POST',
-  '/api/push/pending': 'GET',
-  '/api/upcoming': 'GET|POST',
-  '/api/next-up': 'GET',
-  '/api/for-you': 'GET',
-  '/api/import/resolve': 'POST',
-  '/api/stats/runtimes': 'POST',
-  '/api/profile': 'GET|POST',
-  '/api/gifts': 'GET|POST',
-  '/api/community': 'GET',
-}
-
-export function ownsPath(pathname: string): boolean {
-  return (
-    pathname in ROUTES ||
-    pathname.startsWith('/api/list/') ||
-    pathname.startsWith('/api/calendar/') ||
-    pathname.startsWith('/api/profile/')
-  )
-}
 
 /**
  * Dispatch, or `null` if this is not one of ours.

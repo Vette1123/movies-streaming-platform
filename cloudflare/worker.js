@@ -46,7 +46,7 @@ import {
 } from '@/services/series'
 import { fetchWatchProviders } from '@/services/watch-providers'
 
-import { ownsPath, routeAccountApi } from '@/lib/api/account-router'
+import { ownsPath } from '@/lib/api/account-paths'
 import { loadDirectory } from '@/lib/community/routes'
 import { smartQuery } from '@/lib/filter-query'
 import { loadPublicList } from '@/lib/lists/routes'
@@ -291,13 +291,43 @@ async function loadCollection(id) {
   }
 }
 
+/**
+ * The cache key for an /api/* answer: the route plus the values it actually
+ * used, and nothing else.
+ *
+ * `cached()` otherwise keys on the raw request URL, which means anything on the
+ * query string is part of the key — including the parameters FILTER_PARAMS
+ * already refuses to forward to TMDB. `?with_genres=28&x=1`, `&x=2`, `&x=3`
+ * were three separate misses of one identical result: three TMDB round trips,
+ * three JSON parses, and three entries evicting real ones. The allowlist closed
+ * that hole for the upstream request and left it open for the cache.
+ *
+ * It also collapses the honest duplicates: a different parameter order, a page
+ * written `01`, a search typed with a different capitalisation.
+ */
+const apiKey = (url, params) => {
+  const key = new URL(url.pathname, url.origin)
+  for (const [name, value] of Object.entries(params)) {
+    if (value === undefined || value === null) continue
+    key.searchParams.set(name, String(value))
+  }
+  return key.toString()
+}
+
 async function handleApi(pathname, url, request, ctx) {
   const q = url.searchParams
 
   if (pathname === '/api/search') {
     const query = (q.get('query') || '').trim()
     if (!query) return json({ page: 1, results: [] })
-    return cached(request, ctx, async () => json(await searchMedia({ query })))
+    return cached(
+      request,
+      ctx,
+      async () => json(await searchMedia({ query })),
+      // Lower-cased in the KEY only — TMDB's search is case-insensitive, so
+      // "Batman" and "batman" are one answer that used to be cached twice.
+      apiKey(url, { query: query.toLowerCase() })
+    )
   }
 
   if (pathname === '/api/filter') {
@@ -305,8 +335,11 @@ async function handleApi(pathname, url, request, ctx) {
     const page = pageParam(q.get('page'))
     const filters = filterParams(q)
     const discover = mediaType === 'tv' ? discoverSeries : discoverMovies
-    return cached(request, ctx, async () =>
-      json(await discover(filters, { page }))
+    return cached(
+      request,
+      ctx,
+      async () => json(await discover(filters, { page })),
+      apiKey(url, { ...filters, mediaType, page })
     )
   }
 
@@ -315,21 +348,32 @@ async function handleApi(pathname, url, request, ctx) {
     const mediaType = isTv(q.get('mediaType')) ? 'tv' : 'movie'
     const page = pageParam(q.get('page'))
     const getPopular = mediaType === 'tv' ? getPopularSeries : getPopularMovies
-    return cached(request, ctx, async () => json(await getPopular({ page })))
+    return cached(
+      request,
+      ctx,
+      async () => json(await getPopular({ page })),
+      apiKey(url, { mediaType, page })
+    )
   }
 
   if (pathname === '/api/genres') {
     const mediaType = isTv(q.get('mediaType')) ? 'tv' : 'movie'
-    return cached(request, ctx, async () =>
-      json(await fetchGenreList(mediaType))
+    return cached(
+      request,
+      ctx,
+      async () => json(await fetchGenreList(mediaType)),
+      apiKey(url, { mediaType })
     )
   }
 
   if (pathname === '/api/watch-providers') {
     const mediaType = isTv(q.get('mediaType')) ? 'tv' : 'movie'
     const region = q.get('region') || 'US'
-    return cached(request, ctx, async () =>
-      json(await fetchWatchProviders(mediaType, region))
+    return cached(
+      request,
+      ctx,
+      async () => json(await fetchWatchProviders(mediaType, region)),
+      apiKey(url, { mediaType, region })
     )
   }
 
@@ -344,8 +388,11 @@ async function handleApi(pathname, url, request, ctx) {
         { status: 400 }
       )
     }
-    return cached(request, ctx, async () =>
-      json(await getSeasonEpisodes(seasonId, seasonNumber))
+    return cached(
+      request,
+      ctx,
+      async () => json(await getSeasonEpisodes(seasonId, seasonNumber)),
+      apiKey(url, { seasonId, seasonNumber: Number(seasonNumber) })
     )
   }
 
@@ -355,16 +402,22 @@ async function handleApi(pathname, url, request, ctx) {
     if (!id || !/^\d+$/.test(id)) {
       return json({ error: 'invalid id' }, { status: 400 })
     }
-    return cached(request, ctx, async () => {
-      try {
-        const { trailerKey, logoPath } = await getHeroExtras(type, id)
-        return json({ trailerKey, logoPath })
-      } catch {
-        // Enrichment is non-critical — a slide works without a trailer or logo.
-        // Not cached: a transient miss must not pin an empty result for 8h.
-        return Response.json({ trailerKey: null, logoPath: null })
-      }
-    })
+    return cached(
+      request,
+      ctx,
+      async () => {
+        try {
+          const { trailerKey, logoPath } = await getHeroExtras(type, id)
+          return json({ trailerKey, logoPath })
+        } catch {
+          // Enrichment is non-critical — a slide works without a trailer or
+          // logo. Not cached: a transient miss must not pin an empty result
+          // for 8h.
+          return Response.json({ trailerKey: null, logoPath: null })
+        }
+      },
+      apiKey(url, { id, type })
+    )
   }
 
   // Powers the tail fallback shell. Same payload shape the prerendered detail
@@ -372,22 +425,35 @@ async function handleApi(pathname, url, request, ctx) {
   const media = pathname.match(/^\/api\/media\/(movie|tv)\/(\d+)$/)
   if (media) {
     const [, type, id] = media
-    return cached(request, ctx, async () => {
-      const data = await loadDetails(type, id)
-      if (!data) return json({ error: 'not found' }, { status: 404 })
-      return json(data)
-    })
+    return cached(
+      request,
+      ctx,
+      async () => {
+        const data = await loadDetails(type, id)
+        if (!data) return json({ error: 'not found' }, { status: 404 })
+        return json(data)
+      },
+      // No parameters, so the key is the path — which also drops any query
+      // string appended to it. This is the route it matters most on: it is the
+      // most expensive one the Worker serves.
+      apiKey(url, {})
+    )
   }
 
   // Powers the collection fallback shell.
   const collection = pathname.match(/^\/api\/collection\/(\d+)$/)
   if (collection) {
     const [, id] = collection
-    return cached(request, ctx, async () => {
-      const data = await loadCollection(id)
-      if (!data?.id) return json({ error: 'not found' }, { status: 404 })
-      return json(data)
-    })
+    return cached(
+      request,
+      ctx,
+      async () => {
+        const data = await loadCollection(id)
+        if (!data?.id) return json({ error: 'not found' }, { status: 404 })
+        return json(data)
+      },
+      apiKey(url, {})
+    )
   }
 
   return json({ error: 'not found' }, { status: 404 })
@@ -1021,6 +1087,12 @@ export default {
     // and this dispatcher does its own per-path method table.
     if (ownsPath(pathname)) {
       try {
+        // Imported here, not at the top: esbuild keeps a module reached only
+        // through `import()` behind a lazy initialiser, so the seventeen route
+        // modules the router pulls in are evaluated in the isolates that serve
+        // an account request and in no others. 96% of this Worker's traffic is
+        // tail-id page fallbacks, and they used to pay that startup cost too.
+        const { routeAccountApi } = await import('@/lib/api/account-router')
         const response = await routeAccountApi(pathname, request, env, ctx)
         if (response) return response
       } catch (error) {

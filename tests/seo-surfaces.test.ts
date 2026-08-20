@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Credit } from '@/types/credit'
-import { castNames, crewNamesByJob } from '@/lib/credits'
+import { castNames, crewNamesByJob, trimCredits } from '@/lib/credits'
 import { itemListJsonLd, movieJsonLd } from '@/lib/structured-data'
 import { listSentence } from '@/lib/utils'
 import { FIRST_YEAR, isValidYear } from '@/components/media/year-page'
@@ -47,6 +47,41 @@ describe('credits', () => {
   it('is empty rather than undefined for a title with no credits', () => {
     expect(castNames(undefined)).toEqual([])
     expect(crewNamesByJob(undefined, 'Director')).toEqual([])
+  })
+})
+
+describe('trimCredits', () => {
+  it('keeps ten cast in billed order and drops the rest', () => {
+    const many = {
+      id: 7,
+      cast: Array.from({ length: 40 }, (_, index) => ({
+        id: index,
+        name: `Actor ${index}`,
+        order: 39 - index,
+      })),
+      crew: [],
+    } as unknown as Credit
+    const trimmed = trimCredits(many, 7)
+    expect(trimmed.cast).toHaveLength(10)
+    expect(trimmed.cast[0].name).toBe('Actor 39')
+    // The rail slices the first ten as given and castNames sorts before it
+    // slices. They have to agree about who the tenth person is.
+    expect(trimmed.cast.map((person) => person.name)).toEqual(
+      castNames(many, 10)
+    )
+  })
+
+  it('keeps every director and no other job', () => {
+    const trimmed = trimCredits(credits, 1)
+    expect(trimmed.crew.map((person) => person.job)).toEqual([
+      'Director',
+      'Director',
+    ])
+    expect(crewNamesByJob(trimmed, 'Director')).toEqual(['Dee Rector'])
+  })
+
+  it('survives a title TMDB returned no credits block for', () => {
+    expect(trimCredits(undefined, 42)).toEqual({ id: 42, cast: [], crew: [] })
   })
 })
 

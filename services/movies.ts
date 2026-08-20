@@ -19,6 +19,7 @@ import {
   Param,
 } from '@/types/movie-result'
 import { HERO_LIMIT, RAIL_LIMIT } from '@/lib/constants'
+import { trimCredits } from '@/lib/credits'
 import { fetchClient, isNotFoundError } from '@/lib/fetch-client'
 import { capListOverviews } from '@/lib/media'
 import { detailAppend } from '@/lib/tmdb-append'
@@ -206,7 +207,7 @@ const populateMovieDetailsPage = async (
         ...details,
         imdbRating: await getImdbRating(data.imdb_id),
       },
-      movieCredits: credits ?? { id: data.id, cast: [], crew: [] },
+      movieCredits: trimCredits(credits, data.id),
       similarMovies: (similar?.results ?? []).slice(0, RAIL_LIMIT),
       recommendedMovies: (recommendations?.results ?? []).slice(0, RAIL_LIMIT),
       trailerKey: trailer?.key,
