@@ -9,19 +9,19 @@ The ask was "reduce CPU so we never hit a limit". `pnpm cf:health` could only sa
 
 `observability.enabled` in `wrangler.jsonc` turns out to store `$workers.cpuTimeMs` alongside the request URL for every invocation, and the Workers Logs query API will group on it. `pnpm cf:cpu [hours]` is that query. The first run, over six hours of real traffic:
 
-| route | n | share | avg | max |
-| --- | --- | --- | --- | --- |
-| `/movies/` (tail fallback) | 7,553 | 57.9% | 1.65ms | 9ms |
-| `/tv-shows/` (tail fallback) | 4,972 | 38.1% | 1.81ms | 13ms |
-| `/api/season-details` | 103 | 0.8% | 3.23ms | **19ms** |
-| `/api/media/` | 65 | 0.5% | 3.66ms | 7ms |
-| `/api/watch-providers` | 19 | 0.1% | 4.58ms | 6ms |
+| route                        | n     | share | avg    | max      |
+| ---------------------------- | ----- | ----- | ------ | -------- |
+| `/movies/` (tail fallback)   | 7,553 | 57.9% | 1.65ms | 9ms      |
+| `/tv-shows/` (tail fallback) | 4,972 | 38.1% | 1.81ms | 13ms     |
+| `/api/season-details`        | 103   | 0.8%  | 3.23ms | **19ms** |
+| `/api/media/`                | 65    | 0.5%  | 3.66ms | 7ms      |
+| `/api/watch-providers`       | 19    | 0.1%  | 4.58ms | 6ms      |
 
 Four fixes, all of them "stop carrying what nothing reads":
 
 - **`/api/season-details`: 97 KB → 5.6 KB.** TMDB attaches `crew` and `guest_stars` to every episode. `guest_stars` appeared in exactly one place on the site — the type. That is 95% of the payload, parsed, re-serialized, cloned into `caches.default` and sent, per season.
 - **`/api/watch-providers`: 84 KB → 37 KB.** Every one of the 292 providers carries `display_priorities`, a per-country priority map. The `WatchProvider` interface always said four fields; only the runtime object disagreed.
-- **`/api/media/*`: ~28 KB → ~7 KB.** The credits append is 71 KB of TMDB's 100 KB, 50 KB of it a 188-person crew of which the pages read one job (`Director`), and a 76-person cast of which both readers take ten.
+- **`/api/media/*`: 88,962 B → 20,499 B** (measured against production on `/movies/550`). The credits append is 71 KB of TMDB's 100 KB, 50 KB of it a 188-person crew of which the pages read one job (`Director`), and a 76-person cast of which both readers take ten.
 - **Cold isolates stopped evaluating the account half.** `ownsPath` moved to a zero-import module (`lib/api/account-paths.ts`) so the router — seventeen route modules: auth, billing, push, sync, calendar — loads behind a dynamic `import()`. 96% of this Worker's traffic never touches any of it.
 
 Plus the cache keys: `/api/*` answers are now keyed on the values the route actually used, not the raw request URL.
@@ -31,6 +31,7 @@ Plus the cache keys: `/api/*` answers are now keyed on the values the route actu
 - **Started optimising before measuring, and the first three candidates were all wrong.** The plan was cold-start bundle size (92 KB of code — a rounding error), pass-through streaming for `/api/filter` (impossible, the services transform), and the double JSON round-trip in the fallback path (1.7 KB, already made cheap by an earlier fix). The one route actually running at 19ms was not on the list. Ten minutes on the observability API replaced the whole plan.
 - **Wrote a claim into a comment and only then checked it.** `trimCredits` was documented as also shrinking "every prerendered detail page's flight data". It does not: both detail pages render credits in server components, so those people never reached a browser from there. Measured by stashing the change and re-fetching the same page — byte-for-byte identical. The comment was rewritten to say what is true, which is the narrower `/api/media/*` win.
 - **The allowlist that was supposed to close the cache-key hole only closed half of it.** `FILTER_PARAMS` stops junk query parameters reaching TMDB, and its own comment says they "became part of the Cache API key" — in the past tense. They still were: `cached()` keys on `request.url`, so `?with_genres=28&x=1`, `&x=2`, `&x=3` remained three misses of one result. A fix is not done because the comment says it is.
+- **Shipped the commit message with an estimate in it instead of a measurement.** It claims `/api/media/*` went from "~28KB to ~7KB". The 28 KB came from an existing comment in `services/movies.ts` and is simply wrong for a film with a full crew; the real before/after, curled from production once the deploy landed, is 88,962 → 20,499 bytes. Both halves of the estimate were off, in opposite directions, and the true number is the better story. Measure first, then write the number down.
 - **Trusted a two-second HMR window for a before/after measurement.** The stash/pop comparison was run against a Turbopack dev server that had had two seconds to recompile. The number happened to be right, but nothing in the method guaranteed it — that is how the ledger's earlier "believed the browser over the build" entry started.
 
 ## What worked

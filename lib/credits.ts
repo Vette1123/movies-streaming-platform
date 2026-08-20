@@ -48,9 +48,12 @@ export const crewNamesByJob = (
  * the server, so the extra people never reached a browser from there (measured
  * — the HTML is byte-for-byte the same size). What it changes is /api/media/*,
  * which is how the tail-id shell gets its payload and, at 3.66ms average, the
- * most expensive route the Worker serves: it parses TMDB's 100 KB, then used to
- * re-serialize 28 KB of it, cache that, and send it. Twenty-one of those 28 KB
- * were people nothing renders.
+ * most expensive route the Worker serves: it parses TMDB's 100 KB, then
+ * re-serializes what is left, caches that, and sends it. Measured on
+ * /api/media/movie/550 against production: 88,962 bytes before, 20,499 after.
+ * (An older comment in services/movies.ts puts that payload at 28 KB — that
+ * number is wrong for a film with a full crew; the 71 KB credits block is most
+ * of it.)
  *
  * Sorted by billing order, because both readers of the trimmed list assume it:
  * the rail slices the first ten as given, `castNames` sorts before it slices,
