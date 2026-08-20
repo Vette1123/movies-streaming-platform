@@ -25,7 +25,7 @@ button in a corner, false of the same widget open on a phone, where it is a
 full-screen overlay and has to outrank our dialogs and toasts instead.
 
 Worse, flattening the button and the backdrop onto one layer breaks closing
-outright. The vendor's button handler only ever *opens*: it swaps the cup for a
+outright. The vendor's button handler only ever _opens_: it swaps the cup for a
 chevron and keeps the same onclick. Closing is the backdrop's job, and it works
 only because the backdrop sits above the button at 9999999 vs 9999 and swallows
 the click. Equal z-index hands it back to DOM order, the button is appended

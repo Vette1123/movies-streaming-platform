@@ -74,8 +74,22 @@ try {
   // are drawn as given, so they take the rounder SOFT_RADIUS that still reads
   // as rounded at favicon sizes.
   //
-  // Still square: the maskable pair (Android draws them through an adaptive
-  // mask sized for the safe zone) and the Windows tile (square by design).
+  // The maskable pair is rounded too, which sounds like it contradicts the
+  // word 'maskable' and does not. Android maps a maskable icon onto the
+  // 108dp adaptive-icon canvas and only ever DISPLAYS the central 72dp — the
+  // outer ~16.7% of every edge is cropped by every launcher shape there is.
+  // A SOFT_RADIUS corner cuts inward to about 0.58 of the half-diagonal,
+  // while the widest mask (a rounded square) reaches ~0.43, so the rounding
+  // lives entirely inside the band nothing draws. Nothing changes on a home
+  // screen.
+  //
+  // What DOES change is the Android splash. Chrome composes its own launch
+  // screen from the manifest and picks the MASKABLE icon for it, drawn raw —
+  // no mask — so a square file is a hard square floating on black for the
+  // whole launch, which is exactly what it looked like. Same radius as the
+  // 'any' icons so the splash and the home-screen icon read as one mark.
+  //
+  // Still square: only the Windows tile (square by design).
   const TARGETS = [
     { file: 'android-chrome-192x192.png', size: 192, radius: SOFT_RADIUS },
     { file: 'android-chrome-512x512.png', size: 512, radius: SOFT_RADIUS },
@@ -85,11 +99,13 @@ try {
     {
       file: 'android-chrome-192x192-maskable.png',
       size: 192,
+      radius: SOFT_RADIUS,
       glyphScale: MASKABLE_GLYPH_SCALE,
     },
     {
       file: 'android-chrome-512x512-maskable.png',
       size: 512,
+      radius: SOFT_RADIUS,
       glyphScale: MASKABLE_GLYPH_SCALE,
     },
     { file: 'apple-touch-icon.png', size: 180, radius: DEFAULT_RADIUS },

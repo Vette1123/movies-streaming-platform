@@ -126,8 +126,23 @@ const ROUNDED = [
   // screen, and overshooting the mask leaves transparent corner slivers.
   { path: '/apple-touch-icon.png', minInset: 0.06 },
   { path: '/apple-touch-icon-precomposed.png', minInset: 0.06 },
+  // Rounded AND capped. Chrome draws the maskable icon unmasked on the Android
+  // splash screen, so it has to be rounded like every other unmasked surface;
+  // but it is still the adaptive-icon source, so the rounding must stay inside
+  // the outer ~16.7% band that every launcher mask crops. maxInset is that
+  // ceiling — overshoot it and the corners start showing through the mask.
+  {
+    path: '/android-chrome-192x192-maskable.png',
+    minInset: 0.08,
+    maxInset: 0.16,
+  },
+  {
+    path: '/android-chrome-512x512-maskable.png',
+    minInset: 0.08,
+    maxInset: 0.16,
+  },
 ]
-for (const { path, minInset } of ROUNDED) {
+for (const { path, minInset, maxInset } of ROUNDED) {
   const { alpha, insetRatio } = await cornerGeometry(path)
   check(
     `rounded (corner transparent)  ${path}`,
@@ -139,12 +154,14 @@ for (const { path, minInset } of ROUNDED) {
     insetRatio >= minInset,
     `diagonal inset=${(insetRatio * 100).toFixed(1)}% of side, need >=${(minInset * 100).toFixed(1)}%`
   )
+  if (maxInset === undefined) continue
+  check(
+    `radius stays inside the mask  ${path}`,
+    insetRatio <= maxInset,
+    `diagonal inset=${(insetRatio * 100).toFixed(1)}% of side, need <=${(maxInset * 100).toFixed(1)}%`
+  )
 }
-for (const path of [
-  '/android-chrome-192x192-maskable.png',
-  '/android-chrome-512x512-maskable.png',
-  '/mstile-150x150.png',
-]) {
+for (const path of ['/mstile-150x150.png']) {
   const { alpha } = await cornerGeometry(path)
   check(
     `square (platform masks it)  ${path}`,
