@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Loader2, Play, PlayCircle } from 'lucide-react'
+import { Play, PlayCircle } from 'lucide-react'
 
 import type { NextUpItem } from '@/lib/nextup/routes'
 import { getPosterImageURL } from '@/lib/utils'
 import { useAccount } from '@/hooks/use-account'
 import { buttonVariants } from '@/components/ui/button'
+import { SkeletonMediaRows } from '@/components/ui/skeleton'
 import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
 import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
 
@@ -78,11 +79,7 @@ export function NextUpPanel() {
   }
 
   if (state === 'loading') {
-    return (
-      <div className="text-muted-foreground flex items-center gap-2 py-8 text-sm">
-        <Loader2 className="size-4 animate-spin" /> Working out where you are
-      </div>
-    )
+    return <SkeletonMediaRows rows={4} />
   }
 
   if (state === 'failed') {

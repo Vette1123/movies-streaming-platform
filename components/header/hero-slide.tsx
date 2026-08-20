@@ -447,7 +447,13 @@ export function HeroSlide({
                   the badge (or the badge, at z-10, painted over the wordmark).
                   Out here it can't collide with either treatment, and the badge
                   and title markup exist once instead of once per branch. */}
-              <div className="mb-3 flex flex-col items-start lg:mb-4">
+              {/* The row is reserved whether or not a badge lands in it: the
+                  badge is decided after mount (it reads the clock, see
+                  NewBadgeWhenRecent) and without the reservation every hero
+                  nudged the title down a row a beat after paint — and every
+                  carousel slide without a badge sat 32px higher than the one
+                  before it. */}
+              <div className="mb-3 flex min-h-8 flex-col items-start lg:mb-4">
                 <NewBadgeWhenRecent
                   date={movie.release_date || movie.first_air_date}
                   className="relative top-0 left-0 mb-2 px-2.5 py-1 text-[11px] lg:text-xs"

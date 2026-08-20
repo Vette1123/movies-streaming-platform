@@ -1,16 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import {
-  Check,
-  Copy,
-  Globe,
-  Loader2,
-  Plus,
-  Star,
-  Trash2,
-  X,
-} from 'lucide-react'
+import { Check, Copy, Globe, Plus, Star, Trash2, X } from 'lucide-react'
 
 import type { ListItem, StoredList } from '@/lib/lists/routes'
 import { useAccount } from '@/hooks/use-account'
@@ -18,6 +9,7 @@ import { useLocalStorage, type WatchedItem } from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { SkeletonRows } from '@/components/ui/skeleton'
 
 import { SupporterGate } from './supporter-gate'
 
@@ -98,11 +90,7 @@ export function ListsPanel() {
   }
 
   if (lists === null) {
-    return (
-      <div className="text-muted-foreground flex items-center gap-2 text-sm">
-        <Loader2 className="size-4 animate-spin" /> Loading your lists
-      </div>
-    )
+    return <SkeletonRows rows={3} />
   }
 
   const open = lists.find((list) => list.id === editing) ?? null

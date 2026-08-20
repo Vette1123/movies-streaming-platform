@@ -18,6 +18,7 @@ import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useMounted } from '@/hooks/use-mounted'
 import { useRuntimeBackfill } from '@/hooks/use-runtime-backfill'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { Skeleton, SkeletonRows } from '@/components/ui/skeleton'
 
 const monthName = (key: string): string => {
   const [year, month] = key.split('-')
@@ -43,7 +44,21 @@ export function StatsPanel() {
   // localStorage is unread on the server and on the first paint, so every number
   // below would otherwise be a zero that flickers into the real value.
   if (!mounted) {
-    return <div aria-hidden className="h-64" />
+    return (
+      <div aria-hidden className="space-y-10">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton
+              key={i}
+              className="h-28 w-full rounded-lg"
+              style={{ animationDelay: `${i * 80}ms` }}
+            />
+          ))}
+        </div>
+        <Skeleton className="h-48 w-full rounded-lg" />
+        <SkeletonRows rows={3} rowClassName="h-16 rounded-lg" />
+      </div>
+    )
   }
 
   const nothingYet = stats.episodes === 0 && stats.films === 0

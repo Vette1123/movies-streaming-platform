@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function StatsPage() {
   return (
-    <section className="container max-w-4xl py-20 lg:py-28">
+    <section className="container max-w-4xl min-h-svh py-20 lg:py-28">
       <div className="mb-10 space-y-2">
         <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
           Your year in Reely

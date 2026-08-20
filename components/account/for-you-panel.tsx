@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Loader2, Sparkles, Star, X } from 'lucide-react'
+import { Sparkles, Star, X } from 'lucide-react'
 
 import type { ForYouItem } from '@/lib/foryou/routes'
 import { getPosterImageURL } from '@/lib/utils'
 import { useAccount } from '@/hooks/use-account'
 import { useHiddenMedia } from '@/hooks/use-hidden-media'
 import { buttonVariants } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
 import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
 
@@ -74,8 +75,24 @@ export function ForYouPanel() {
 
   if (state === 'loading') {
     return (
-      <div className="text-muted-foreground flex items-center gap-2 py-8 text-sm">
-        <Loader2 className="size-4 animate-spin" /> Reading your taste
+      <div className="space-y-5">
+        <Skeleton className="h-4 w-2/3 max-w-sm" />
+        <ul
+          aria-hidden
+          className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5"
+        >
+          {Array.from({ length: 10 }).map((_, i) => (
+            <li
+              key={i}
+              className="space-y-2"
+              style={{ animationDelay: `${i * 70}ms` }}
+            >
+              <Skeleton className="aspect-2/3 w-full rounded-lg" />
+              <Skeleton className="h-3 w-4/5" />
+              <Skeleton className="h-2.5 w-1/2" />
+            </li>
+          ))}
+        </ul>
       </div>
     )
   }

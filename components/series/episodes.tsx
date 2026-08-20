@@ -1,6 +1,6 @@
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, Eye, Loader, Play, Tv } from 'lucide-react'
+import { Check, Eye, Play, Tv } from 'lucide-react'
 
 import { EpisodeDetails } from '@/types/episode'
 import {
@@ -16,6 +16,7 @@ import { useMounted } from '@/hooks/use-mounted'
 import { useScrollToTop } from '@/hooks/use-scroll-to-top'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { type ResumePoint } from '@/hooks/use-series-progress'
+import { SkeletonRows } from '@/components/ui/skeleton'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 import { useSeriesPlayback } from '@/components/series/playback-context'
 
@@ -260,9 +261,11 @@ export const Episodes = ({
   return (
     <section className="space-y-1 p-2 sm:p-2.5">
       {!episodes?.length && isEpisodesLoading && (
-        <div className="flex items-center justify-center py-10">
-          <Loader className="size-6 shrink-0 animate-spin opacity-80" />
-        </div>
+        <SkeletonRows
+          rows={8}
+          rowClassName="h-12 rounded-lg"
+          className="space-y-1.5 py-1"
+        />
       )}
       {!episodes?.length && !isEpisodesLoading && (
         <div

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { BookmarkPlus, Check, X } from 'lucide-react'
 
-import { savePrefs } from '@/lib/account'
+import { cachedProfile, hasAccountHint, savePrefs } from '@/lib/account'
 import {
   trackFilterPresetApplied,
   trackFilterPresetSaved,
@@ -21,6 +21,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAccount } from '@/hooks/use-account'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 
 /**
  * Saved filters, at the top of the browse sidebar.
@@ -50,6 +51,15 @@ export function SavedFilters({
   const [busy, setBusy] = React.useState(false)
 
   const presets = prefs.presets ?? []
+
+  // Before the session has answered, hold the room the settled block will
+  // need. The hint cookie says whether there is a session at all and the
+  // profile cache says whether it pays and how many filters it has saved, both
+  // synchronously — so a reserved slot is exact rather than a guess, and the
+  // nine accordions below it never jump once the answer lands. A visitor with
+  // no session reserves nothing, because nothing is what they will get.
+  if (signedIn === undefined)
+    return <SavedFiltersPlaceholder className={className} />
 
   // Signed out, this section is noise on top of the control somebody came here
   // to use. The pitch for it lives on /support and in the account console,
@@ -170,6 +180,37 @@ export function SavedFilters({
             : 'Save this filter'}
         </button>
       )}
+    </div>
+  )
+}
+
+/**
+ * The same block, at the same height, drawn from what this device already
+ * knows. Kept next to the real thing so the two cannot drift apart.
+ */
+function SavedFiltersPlaceholder({ className }: { className?: string }) {
+  if (!hasAccountHint()) return null
+  const cached = cachedProfile()
+
+  if (!cached?.pro) {
+    return (
+      <div aria-hidden className={cn('space-y-2 px-1 pb-4', className)}>
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-3.5 w-40" />
+      </div>
+    )
+  }
+
+  return (
+    <div aria-hidden className={cn('space-y-3 px-1 pb-4', className)}>
+      {cached.presets > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {Array.from({ length: cached.presets }).map((_, i) => (
+            <Skeleton key={i} className="h-[26px] w-24 rounded-full" />
+          ))}
+        </div>
+      )}
+      <Skeleton className="h-4 w-32" />
     </div>
   )
 }

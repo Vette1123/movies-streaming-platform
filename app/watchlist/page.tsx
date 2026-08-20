@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 function Watchlist() {
   return (
-    <section className="container h-full py-20 lg:py-36">
+    <section className="container h-full min-h-svh py-20 lg:py-36">
       <h1 className="mb-6 text-2xl font-bold lg:text-3xl">My Watchlist</h1>
       <WatchlistContainer />
       <SupportPrompt

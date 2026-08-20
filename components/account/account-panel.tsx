@@ -6,13 +6,13 @@ import {
   AlertTriangle,
   BellRing,
   CalendarDays,
+  ChevronRight,
   ExternalLink,
   EyeOff,
   Heart,
   LayoutGrid,
   ListMusic,
   ListVideo,
-  Loader2,
   Monitor,
   Palette,
   PlayCircle,
@@ -33,6 +33,7 @@ import { useAccountSession } from '@/hooks/use-account'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { buttonVariants } from '@/components/ui/button'
 import { AccountAvatar } from '@/components/account/account-identity'
+import { AccountSkeleton } from '@/components/account/account-skeleton'
 import { Icons } from '@/components/icons'
 
 import { AlertsPanel } from './alerts-panel'
@@ -237,11 +238,7 @@ export function AccountPanel() {
   }, [])
 
   if (account.signedIn === undefined) {
-    return (
-      <div className="text-muted-foreground flex items-center gap-2 py-16 text-sm">
-        <Loader2 className="size-4 animate-spin" /> Checking your account
-      </div>
-    )
+    return <AccountSkeleton />
   }
 
   if (!account.signedIn) {
@@ -357,15 +354,18 @@ function Overview({
               key={id}
               type="button"
               onClick={() => onSelect(id)}
-              className="hover:bg-accent/50 focus-visible:ring-ring flex items-start gap-3 rounded-lg border p-4 text-left transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+              className="group focus-visible:ring-ring relative flex items-start gap-3.5 rounded-xl border border-white/10 bg-white/[0.03] p-4 pr-9 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.06] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_10px_30px_-12px_rgba(0,0,0,0.7)] focus-visible:ring-2 focus-visible:outline-hidden motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:[&:last-child:nth-child(odd)]:col-span-2"
             >
-              <Icon className="text-muted-foreground mt-0.5 size-4 shrink-0" />
+              <span className="bg-primary-fill/10 text-primary/90 group-hover:bg-primary-fill/20 group-hover:text-primary grid size-9 shrink-0 place-items-center rounded-lg ring-1 ring-white/10 transition-colors">
+                <Icon className="size-4" />
+              </span>
               <span className="min-w-0">
                 <span className="block text-sm font-medium">{label}</span>
                 <span className="text-muted-foreground mt-1 block text-xs leading-relaxed">
                   {lede}
                 </span>
               </span>
+              <ChevronRight className="text-muted-foreground/50 group-hover:text-primary absolute top-4.5 right-3 size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" />
             </button>
           ))}
         </div>

@@ -7,7 +7,6 @@ import {
   CalendarPlus,
   Check,
   Copy,
-  Loader2,
   RefreshCw,
   ShieldAlert,
 } from 'lucide-react'
@@ -17,6 +16,7 @@ import { buildIcs, type UpcomingItem } from '@/lib/upcoming/ics'
 import { useAccount } from '@/hooks/use-account'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { SkeletonRows } from '@/components/ui/skeleton'
 
 import { SupporterGate } from './supporter-gate'
 
@@ -160,11 +160,7 @@ export function UpcomingPanel() {
   }
 
   if (state === 'loading') {
-    return (
-      <div className="text-muted-foreground flex items-center gap-2 py-8 text-sm">
-        <Loader2 className="size-4 animate-spin" /> Reading your schedule
-      </div>
-    )
+    return <SkeletonRows rows={5} rowClassName="h-16 rounded-lg" />
   }
 
   if (state === 'failed') {

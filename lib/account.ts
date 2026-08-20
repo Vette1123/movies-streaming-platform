@@ -90,6 +90,13 @@ export interface CachedProfile {
    */
   accent: string | null
   density: string | null
+  /**
+   * How many saved filters this account has. Not the presets themselves — the
+   * count is all the filter sidebar needs to reserve the right amount of room
+   * before the session answers, and reserving it is what keeps the panel from
+   * shifting under the cursor. See components/media/saved-filters.tsx.
+   */
+  presets: number
 }
 
 const PROFILE_CACHE_KEY = 'reely_profile'
@@ -108,6 +115,7 @@ export function cachedProfile(): CachedProfile | null {
       pro: parsed.pro === true,
       accent: typeof parsed.accent === 'string' ? parsed.accent : null,
       density: typeof parsed.density === 'string' ? parsed.density : null,
+      presets: typeof parsed.presets === 'number' ? parsed.presets : 0,
     }
   } catch {
     return null
@@ -123,6 +131,7 @@ function cacheFromState(next: AccountState): CachedProfile {
     pro: next.pro,
     accent: next.prefs.accent ?? null,
     density: next.prefs.density ?? null,
+    presets: next.prefs.presets?.length ?? 0,
   }
 }
 
