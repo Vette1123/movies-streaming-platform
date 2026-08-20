@@ -47,3 +47,31 @@ Plus the cache keys: `/api/*` answers are now keyed on the values the route actu
 - When a payload is expensive, ask what reads it before asking how to make it faster. Three of the four fixes here were deletions.
 - A comment claiming a fix is in place is not the fix. Check the key, the call, the byte count.
 - Measure a before/after against a build you know is current — a stash and a two-second wait is not one.
+
+---
+
+## Follow-up, same day: the second round found nothing, and that is the result
+
+Asked to take CPU down further. The remaining picture, measured over eight hours:
+
+- The tail-id fallback is 96% of invocations and its **warm floor is 1.36ms** — 2,814 requests in the two colos that carry the traffic.
+- The same route costs **2.8–3.5ms in colos that saw fewer than a hundred requests**, where nearly every request starts a cold isolate. That gap is `pnpm cf:cpu`'s new by-colo section: there is no cold-start flag in the dataset, but colo volume is a good proxy for one.
+- Wall time on that route averages ~140ms against ~1.4ms of CPU, so it is a TMDB round trip with a small amount of string work stapled to it. Crawlers walk unique ids, so the summary cache almost never hits.
+
+That pointed at isolate startup, so I built the change: every `@/services/*` import moved inside the `cached()` compute callback that uses it, and the four pre-split shells given one esbuild define each instead of a single 359 KB object at module scope — so a cold isolate would evaluate only what a fallback page needs.
+
+**Then I measured it, and it does nothing.** Evaluating the bundle in node, seven runs each, before 13.47–14.73ms and after 13.81–14.90ms. Repeated with `NODE_COMPILE_CACHE` warm — which is the shape of what Workers actually pays, since Cloudflare compiles a script once per deploy and caches the code — before 8.65–8.95ms, after 9.23–9.79ms. The lazy version is if anything a hair slower. The 6ms that stripping the shells appeared to save in the first measurement was **parse**, not evaluation, and parse is paid once per deploy rather than once per isolate.
+
+So the change was reverted. What shipped from this round is the by-colo breakdown in `pnpm cf:cpu`, and the knowledge that the tail path's 1.36ms warm floor is not module-init.
+
+### Mistakes
+
+- **Measured a proxy and believed it for an hour.** "12.5ms with the shells inlined, 6.5ms without" was a real measurement of the wrong quantity. It only became obvious when the A/B — same source size, different evaluation — showed nothing. A before/after that changes two variables (source size AND evaluation) cannot attribute the difference to either.
+- **Wrote the whole change before testing the hypothesis it rested on.** Thirteen dynamic imports and a new build contract, then the measurement. The measurement is four lines and could have come first.
+- **Nearly kept it anyway** on the grounds that it is "directionally right". It is more code, a second place shells can silently stop being inlined, and no measured gain — three good reasons not to have it.
+
+### Rules
+
+- A cold-start theory needs a measurement that isolates evaluation from parse. `NODE_COMPILE_CACHE` is the cheap way to do it; without it, node's import time is mostly parse and will mislead.
+- Build the four-line experiment before the hundred-line change.
+- "No measurable improvement" is a complete answer. Revert and say so.

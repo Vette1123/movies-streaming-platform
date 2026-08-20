@@ -78,7 +78,7 @@ const ROUTES = [
   '/u/',
 ]
 
-async function query(filters) {
+async function query(filters, groupBys) {
   const res = await fetch(
     `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/workers/observability/telemetry/query`,
     {
@@ -90,11 +90,12 @@ async function query(filters) {
       body: JSON.stringify({
         queryId: 'cf-cpu',
         timeframe: { from, to },
-        limit: 1,
+        limit: groupBys ? 200 : 1,
         dry: false,
         parameters: {
           datasets: ['cloudflare-workers'],
           filters,
+          groupBys,
           calculations: [
             { operator: 'count', alias: 'n' },
             {
@@ -127,6 +128,18 @@ async function query(filters) {
     )
   }
   const calculations = body.result?.calculations ?? []
+  if (groupBys) {
+    // One row per group, keyed by the group's value.
+    const rows = {}
+    for (const entry of calculations) {
+      for (const aggregate of entry.aggregates) {
+        const key = (aggregate.groups ?? []).map((g) => g.value).join('|')
+        rows[key] ??= {}
+        rows[key][entry.alias] = Number(aggregate.value ?? 0)
+      }
+    }
+    return rows
+  }
   const value = (alias) =>
     calculations.find((entry) => entry.alias === alias)?.aggregates?.[0]?.value
   return {
@@ -187,6 +200,43 @@ results.sort((a, b) => b.avg * b.n - a.avg * a.n)
 for (const stats of results) {
   const share = all.n ? `${((stats.n / all.n) * 100).toFixed(1)}%` : '—'
   console.log(row(stats.route, stats, share))
+}
+
+// How much of the busiest route's CPU is isolate startup rather than the work.
+//
+// There is no cold-start flag in the dataset, but there is a colo, and traffic
+// is wildly uneven across them: a colo that saw two requests all window served
+// both from a cold isolate, one that saw thousands served almost all of them
+// warm. Bucketing by colo volume is the closest thing to a cold/warm split
+// this data allows, and it answers the question that decides what to optimise —
+// whether the CPU is in the handler or in getting the isolate up.
+const busiest = results[0]
+if (busiest) {
+  const byColo = await query(urlFilter(busiest.route), [
+    { type: 'string', value: '$workers.event.request.cf.colo' },
+  ])
+  const colos = Object.values(byColo)
+  const bucket = (min, max) => {
+    const slice = colos.filter((c) => c.n >= min && c.n < max)
+    const n = slice.reduce((total, c) => total + c.n, 0)
+    const cpu = slice.reduce((total, c) => total + c.avg * c.n, 0) / (n || 1)
+    return { colos: slice.length, n, cpu }
+  }
+  console.log(
+    `\n${busiest.route} by colo volume (cold isolates are the small ones)`
+  )
+  for (const [min, max, label] of [
+    [1, 3, 'saw 1-2'],
+    [3, 10, 'saw 3-9'],
+    [10, 100, 'saw 10-99'],
+    [100, Infinity, 'saw 100+'],
+  ]) {
+    const b = bucket(min, max)
+    if (b.n === 0) continue
+    console.log(
+      `  ${label.padEnd(10)} ${String(b.colos).padStart(3)} colos  ${String(b.n).padStart(6)} req  ${b.cpu.toFixed(2)}ms`
+    )
+  }
 }
 
 const hot = results.filter((stats) => stats.max >= CPU_LIMIT_MS)
