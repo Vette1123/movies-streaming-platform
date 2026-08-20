@@ -29,6 +29,16 @@ export interface FilterPreset {
   name: string
   /** The browse URL's query string, without the leading `?`. */
   query: string
+  /**
+   * Which browse page it was saved on — '/movies' or '/tv-shows'.
+   *
+   * The filters are identical on both, so the query string alone does not say
+   * whether "2020s, 8+, horror" means films or shows. Applying a preset never
+   * needed it (the page you are on IS the answer); a smart list, which has no
+   * page, does. Optional because every preset saved before this existed has
+   * none, and those are read as films.
+   */
+  path?: string
 }
 
 /** Short, URL-safe, and unique enough for a dozen rows on one account. */
@@ -50,7 +60,7 @@ const cleanName = (value: unknown): string | null => {
  * also normalises `?a=1&a=1` style duplication, so two saves of the same filter
  * state compare equal.
  */
-const cleanQuery = (value: unknown): string | null => {
+export const cleanQuery = (value: unknown): string | null => {
   if (typeof value !== 'string' || value.length > MAX_PRESET_QUERY) return null
   const params = new URLSearchParams(
     value.startsWith('?') ? value.slice(1) : value
@@ -58,6 +68,14 @@ const cleanQuery = (value: unknown): string | null => {
   const out = params.toString()
   return out.length > 0 && out.length <= MAX_PRESET_QUERY ? out : null
 }
+
+/** One of the two browse pages, or nothing. Never an arbitrary path. */
+const cleanPath = (value: unknown): string | null =>
+  value === '/movies' || value === '/tv-shows' ? value : null
+
+/** Which discover endpoint a preset's filters were written against. */
+export const presetMediaType = (preset: { path?: string }): 'movie' | 'tv' =>
+  preset.path === '/tv-shows' ? 'tv' : 'movie'
 
 const cleanId = (value: unknown): string | null => {
   if (typeof value !== 'string') return null
@@ -89,7 +107,8 @@ export function normalisePresets(value: unknown): FilterPreset[] {
     if (!id || !name || !query || seen.has(id)) continue
 
     seen.add(id)
-    out.push({ id, name, query })
+    const path = cleanPath(input.path)
+    out.push(path ? { id, name, query, path } : { id, name, query })
   }
 
   return out

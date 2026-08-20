@@ -1,8 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Check, Copy, Globe, Plus, Star, Trash2, X } from 'lucide-react'
+import { Check, Copy, Globe, Plus, Star, Trash2, Wand2, X } from 'lucide-react'
 
+import { presetMediaType, type FilterPreset } from '@/lib/filter-presets'
 import type { ListItem, StoredList } from '@/lib/lists/routes'
 import { useAccount } from '@/hooks/use-account'
 import { useLocalStorage, type WatchedItem } from '@/hooks/use-local-storage'
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SkeletonRows } from '@/components/ui/skeleton'
+import { SmartListGrid } from '@/components/media/smart-list-grid'
 
 import { SupporterGate } from './supporter-gate'
 
@@ -22,7 +24,7 @@ import { SupporterGate } from './supporter-gate'
  * library is the palette.
  */
 export function ListsPanel() {
-  const { pro } = useAccount()
+  const { pro, prefs } = useAccount()
   const [lists, setLists] = useState<StoredList[] | null>(null)
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<string | null>(null)
@@ -138,8 +140,7 @@ export function ListsPanel() {
                       )}
                     </span>
                     <span className="text-muted-foreground mt-1 block text-xs">
-                      {list.items.length}{' '}
-                      {list.items.length === 1 ? 'title' : 'titles'}
+                      {summaryOf(list)}
                       {list.slug ? ' · public' : ''}
                     </span>
                   </button>
@@ -150,8 +151,14 @@ export function ListsPanel() {
 
           <NewList
             busy={busy}
-            onCreate={async (name) => {
-              const created = await send({ action: 'save', name, items: [] })
+            presets={prefs.presets ?? []}
+            onCreate={async (name, smart) => {
+              const created = await send({
+                action: 'save',
+                name,
+                items: [],
+                smart_query: smart ?? null,
+              })
               if (created?.id) setEditing(created.id)
             }}
           />
@@ -161,12 +168,20 @@ export function ListsPanel() {
   )
 }
 
+/** What a row says it holds. A smart list has no fixed count to report. */
+const summaryOf = (list: StoredList): string => {
+  if (list.smart_query) return 'follows a filter'
+  return `${list.items.length} ${list.items.length === 1 ? 'title' : 'titles'}`
+}
+
 function NewList({
   busy,
+  presets,
   onCreate,
 }: {
   busy: boolean
-  onCreate: (name: string) => void
+  presets: FilterPreset[]
+  onCreate: (name: string, smart?: string) => void
 }) {
   const [name, setName] = useState('')
   return (
@@ -194,6 +209,34 @@ function NewList({
         <Plus className="mr-2 size-4" />
         Create
       </Button>
+
+      {presets.length > 0 && (
+        <div className="w-full space-y-2 pt-2">
+          <p className="text-muted-foreground text-sm">
+            Or start one from a filter you saved — a smart list keeps itself up
+            to date instead of holding the titles you put in it.
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {presets.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                disabled={busy}
+                onClick={() =>
+                  onCreate(
+                    preset.name,
+                    `${preset.query}&mediaType=${presetMediaType(preset)}`
+                  )
+                }
+                className="border-border/70 hover:bg-accent flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors"
+              >
+                <Wand2 className="size-3" />
+                {preset.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </form>
   )
 }
@@ -206,6 +249,7 @@ interface EditorProps {
     name: string
     description: string | null
     items: ListItem[]
+    smart_query: string | null
   }) => Promise<unknown>
   onPublish: (publish: boolean) => Promise<unknown>
   onDelete: () => void
@@ -229,6 +273,9 @@ function ListEditor({
       name: name.trim() || list.name,
       description: description.trim() || null,
       items,
+      // Sent back unchanged: the save is one UPDATE of the whole row, so
+      // omitting it would turn a smart list into an empty ordinary one.
+      smart_query: list.smart_query,
     })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -263,12 +310,28 @@ function ListEditor({
         </Button>
       </div>
 
-      <ListItems items={items} onChange={setItems} />
+      {list.smart_query ? (
+        <section className="space-y-3">
+          <p className="text-muted-foreground max-w-[62ch] text-sm leading-relaxed">
+            This list follows a saved filter. Nothing is added or removed by
+            hand — what it holds is whatever matches right now, here and on the
+            public page. Below is what that is at this moment.
+          </p>
+          <SmartListGrid
+            query={list.smart_query}
+            sizes="(min-width: 1024px) 10rem, (min-width: 640px) 24vw, 45vw"
+          />
+        </section>
+      ) : (
+        <>
+          <ListItems items={items} onChange={setItems} />
 
-      <AddFromLibrary
-        items={items}
-        onAdd={(item) => setItems((current) => [...current, item])}
-      />
+          <AddFromLibrary
+            items={items}
+            onAdd={(item) => setItems((current) => [...current, item])}
+          />
+        </>
+      )}
 
       <div className="flex flex-wrap items-center gap-3 border-t pt-4">
         <Button onClick={() => void save()} disabled={busy}>

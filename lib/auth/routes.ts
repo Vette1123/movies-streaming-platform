@@ -11,6 +11,7 @@ import { ALERT_REGION_IDS } from '@/config/regions'
 import { claimSupporterGrants } from '@/lib/billing/bmc'
 import { isEntitled, isProAt } from '@/lib/billing/entitlement'
 import { normalisePresets } from '@/lib/filter-presets'
+import { normaliseQuietHours } from '@/lib/push/quiet'
 import { ACCESS_TOKEN_TTL_MS, signToken } from '@/lib/token'
 
 import {
@@ -497,6 +498,13 @@ export function normalisePrefs(value: unknown): Record<string, unknown> | null {
   if (input.presets !== undefined) {
     const presets = normalisePresets(input.presets)
     if (presets.length > 0) out.presets = presets
+  }
+  // Alert pacing. Both only decide whether a device makes a NOISE — the
+  // notification row is written either way, so neither can lose an alert.
+  if (typeof input.digest === 'boolean') out.digest = input.digest
+  if (input.quiet !== undefined) {
+    const quiet = normaliseQuietHours(input.quiet)
+    if (quiet) out.quiet = quiet
   }
   if (typeof input.source === 'string' && input.source.length <= 40) {
     out.source = input.source

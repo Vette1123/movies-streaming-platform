@@ -101,6 +101,10 @@ export function SavedFilters({
       id: newPresetId(),
       name: trimmed,
       query,
+      // Which of the two browse pages this is. The filters are the same on
+      // both, so without it a preset cannot say whether it means films or
+      // shows — which is exactly what a smart list built from it has to know.
+      path: pathname === '/tv-shows' ? '/tv-shows' : '/movies',
     })
     setNaming(false)
     setName('')

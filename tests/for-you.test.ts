@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { dedupe, interleave, type ForYouItem } from '@/lib/foryou/routes'
+import {
+  chooseSeeds,
+  dedupe,
+  interleave,
+  type ForYouItem,
+  type SeedCandidate,
+} from '@/lib/foryou/routes'
 
 const item = (id: number, because = 'Heat'): ForYouItem => ({
   id,
@@ -9,7 +15,20 @@ const item = (id: number, because = 'Heat'): ForYouItem => ({
   poster_path: null,
   vote_average: null,
   because,
+  because_rating: null,
   href: `/movies/${id}`,
+})
+
+const candidate = (
+  id: number,
+  rating: number | null,
+  rank: number
+): SeedCandidate => ({
+  id: String(id),
+  type: 'movie',
+  title: `Film ${id}`,
+  rating,
+  rank,
 })
 
 describe('interleave', () => {
@@ -50,5 +69,49 @@ describe('dedupe', () => {
     const series: ForYouItem = { ...item(550), type: 'series' }
     const out = dedupe([item(550), series], new Set(), 10)
     expect(out).toHaveLength(2)
+  })
+})
+
+/**
+ * The seeds ARE the feature: everything downstream is one fetch per seed. A
+ * wrong order here shows up as a row of recommendations that quietly reads
+ * somebody's background noise instead of their taste, which no screenshot
+ * catches.
+ */
+describe('chooseSeeds', () => {
+  it('prefers what was rated highly over what was watched last', () => {
+    const seeds = chooseSeeds(
+      [
+        candidate(1, null, 0), // finished most recently, never rated
+        candidate(2, 9, 5),
+        candidate(3, 7, 9),
+      ],
+      3
+    )
+    expect(seeds.map((seed) => seed.id)).toEqual(['2', '3', '1'])
+  })
+
+  it('drops anything rated at or below the like threshold', () => {
+    // Not ranked last — excluded. "More like the film you gave a 3" is worse
+    // than a shorter row.
+    const seeds = chooseSeeds([candidate(1, 3, 0), candidate(2, 6, 1)], 3)
+    expect(seeds).toEqual([])
+  })
+
+  it('keeps unrated titles, which are merely silent rather than negative', () => {
+    const seeds = chooseSeeds([candidate(1, null, 0)], 3)
+    expect(seeds.map((seed) => seed.id)).toEqual(['1'])
+  })
+
+  it('breaks a tie on recency, newest first', () => {
+    const seeds = chooseSeeds(
+      [candidate(1, 8, 4), candidate(2, 8, 1), candidate(3, 8, 7)],
+      2
+    )
+    expect(seeds.map((seed) => seed.id)).toEqual(['2', '1'])
+  })
+
+  it('carries the score through, so the row can say why', () => {
+    expect(chooseSeeds([candidate(1, 9.5, 0)], 1)[0].rating).toBe(9.5)
   })
 })

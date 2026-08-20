@@ -5,10 +5,12 @@ import { Bell, BellOff, Loader2 } from 'lucide-react'
 
 import { ALERT_REGIONS, DEFAULT_ALERT_REGION } from '@/config/regions'
 import { savePrefs } from '@/lib/account'
+import type { QuietHours } from '@/lib/push/quiet'
 import { base64UrlDecode } from '@/lib/token'
 import { useAccount } from '@/hooks/use-account'
 import { Button } from '@/components/ui/button'
 
+import { SettingSwitch } from './controls'
 import { SupporterGate } from './supporter-gate'
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ''
@@ -170,7 +172,135 @@ export function AlertsPanel() {
       {error && <p className="text-destructive text-sm">{error}</p>}
 
       <RegionSection region={prefs.region} />
+
+      <PacingSection quiet={prefs.quiet} digest={prefs.digest === true} />
     </div>
+  )
+}
+
+/** Whole hours only. Nobody sets a do-not-disturb window to 22:47. */
+const HOURS = Array.from({ length: 24 }, (_, hour) => hour)
+
+const hourLabel = (hour: number): string =>
+  `${String(hour).padStart(2, '0')}:00`
+
+/**
+ * When to be quiet, and how often to be interrupted.
+ *
+ * Both of these only decide whether a device makes a noise. The alert itself is
+ * written by the sweep regardless and is waiting in the app afterwards — which
+ * is what makes this safe to offer at all, and is worth saying on screen,
+ * because "quiet hours" reads like "lose the ones that happen overnight".
+ *
+ * The zone is taken from the browser rather than asked for: it is the one thing
+ * here the device already knows for certain, and a Worker has no timezone
+ * database to resolve a name with anyway.
+ */
+function PacingSection({
+  quiet,
+  digest,
+}: {
+  quiet?: QuietHours
+  digest: boolean
+}) {
+  const [saving, setSaving] = useState(false)
+  const [from, setFrom] = useState(quiet?.from ?? 23)
+  const [to, setTo] = useState(quiet?.to ?? 8)
+  const enabled = Boolean(quiet)
+
+  const save = async (next: Record<string, unknown>) => {
+    setSaving(true)
+    await savePrefs(next)
+    setSaving(false)
+  }
+
+  const writeWindow = (nextFrom: number, nextTo: number) => {
+    setFrom(nextFrom)
+    setTo(nextTo)
+    if (nextFrom === nextTo) return
+    void save({
+      quiet: {
+        from: nextFrom,
+        to: nextTo,
+        tz: -new Date().getTimezoneOffset(),
+      },
+    })
+  }
+
+  return (
+    <div className="space-y-4 border-t pt-6">
+      <div>
+        <p className="text-sm font-medium">Quiet hours</p>
+        <p className="text-muted-foreground mt-1 max-w-[65ch] text-sm leading-relaxed">
+          Nothing buzzes between these two times. The alerts still arrive — they
+          are waiting in Reely when you next open it — your phone just does not
+          make a noise about an episode at 3am.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <label className="flex items-center gap-2">
+          <span className="text-muted-foreground">From</span>
+          <HourSelect
+            value={from}
+            disabled={saving}
+            onChange={(hour) => writeWindow(hour, to)}
+          />
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted-foreground">until</span>
+          <HourSelect
+            value={to}
+            disabled={saving}
+            onChange={(hour) => writeWindow(from, hour)}
+          />
+        </label>
+        {enabled && (
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={saving}
+            onClick={() => void save({ quiet: null })}
+          >
+            Turn off
+          </Button>
+        )}
+        {saving && <Loader2 className="size-4 animate-spin" aria-hidden />}
+      </div>
+
+      <SettingSwitch
+        label="One notification a day"
+        description="Instead of one per episode. Everything that happened is collected in Reely and your phone is rung at most once in twenty hours — the right setting for a watchlist with a lot on it."
+        checked={digest}
+        disabled={saving}
+        onChange={(next) => void save({ digest: next })}
+      />
+    </div>
+  )
+}
+
+function HourSelect({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: number
+  disabled: boolean
+  onChange: (hour: number) => void
+}) {
+  return (
+    <select
+      value={value}
+      disabled={disabled}
+      onChange={(event) => onChange(Number(event.target.value))}
+      className="border-input bg-background focus-visible:ring-ring rounded-md border px-3 py-1.5 text-sm focus-visible:ring-2 focus-visible:outline-hidden disabled:opacity-60"
+    >
+      {HOURS.map((hour) => (
+        <option key={hour} value={hour}>
+          {hourLabel(hour)}
+        </option>
+      ))}
+    </select>
   )
 }
 

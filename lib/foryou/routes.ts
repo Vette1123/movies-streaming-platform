@@ -10,6 +10,13 @@
  * Costs SEED_COUNT subrequests and two D1 reads. Nothing is stored: the answer
  * changes every time the history does, and a cached row would be stale the
  * moment somebody ticks anything off.
+ *
+ * The seeds are chosen by SCORE, not by recency. Somebody's own ratings are the
+ * strongest signal in the account and they were being ignored: the last three
+ * things finished included whatever was put on in the background, while a film
+ * rated 10 sat two rows down. Anything scored below LIKED is not a seed at all —
+ * "you finished it" and "you liked it" are different claims, and only one of
+ * them is worth being asked to watch more of.
  */
 
 import { loadSession, sessionCookieOf } from '@/lib/auth/session'
@@ -18,6 +25,15 @@ import { fetchClient } from '@/lib/fetch-client'
 
 /** How many finished titles seed the list. Each one is a subrequest. */
 const SEED_COUNT = 3
+/**
+ * The score at which a title stops being evidence of taste.
+ *
+ * Six out of ten, because that is where people stop recommending things.
+ * Anything at or below it is excluded from the seeds entirely rather than
+ * merely ranked last — a row of "more like the film you gave a 3" is worse than
+ * a shorter row.
+ */
+const LIKED = 6
 /** Rows read to find those seeds and to know what to exclude. */
 const ROW_LIMIT = 500
 /** What comes back. Two rows of five on a wide screen. */
@@ -42,6 +58,8 @@ export interface ForYouItem {
   vote_average: number | null
   /** The title this was suggested from, so the row can say why it is here. */
   because: string
+  /** And what they scored it, when that is why it was picked. */
+  because_rating: number | null
   href: string
 }
 
@@ -54,10 +72,66 @@ const json = (body: unknown, status = 200) =>
     },
   })
 
-interface Seed {
+export interface Seed {
   id: string
   type: 'movie' | 'series'
   title: string
+  /** What this account scored it, if it scored it. Drives the "because" line. */
+  rating: number | null
+}
+
+/** A finished title, before it is known whether it is one of the seeds. */
+export interface SeedCandidate extends Seed {
+  /** Position in the account's history, newest first. The recency tiebreak. */
+  rank: number
+}
+
+/**
+ * The few titles worth asking TMDB about.
+ *
+ * A rated title always beats an unrated one, a higher score beats a lower one,
+ * and recency only breaks a tie. Rated at or below LIKED is dropped: it is not
+ * a weaker signal, it is the opposite signal.
+ *
+ * Pure, because the whole feature is this ordering — everything around it is
+ * one fetch per result — and because getting it wrong is invisible in a
+ * screenshot. See tests/for-you.test.ts.
+ */
+export function chooseSeeds(
+  candidates: SeedCandidate[],
+  count: number
+): Seed[] {
+  return candidates
+    .filter((seed) => seed.rating === null || seed.rating > LIKED)
+    .sort((a, b) => {
+      if (a.rating !== b.rating) {
+        // Nulls sort last: a score is a statement, an absence is not.
+        if (a.rating === null) return 1
+        if (b.rating === null) return -1
+        return b.rating - a.rating
+      }
+      return a.rank - b.rank
+    })
+    .slice(0, count)
+    .map(({ id, type, title, rating }) => ({ id, type, title, rating }))
+}
+
+const safePayload = (raw: string): Record<string, unknown> => {
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object'
+      ? (parsed as Record<string, unknown>)
+      : {}
+  } catch {
+    // A row written by an older shape. The id is what matters here.
+    return {}
+  }
+}
+
+const titleOf = (payload: Record<string, unknown>): string => {
+  if (typeof payload.title === 'string' && payload.title) return payload.title
+  if (typeof payload.name === 'string' && payload.name) return payload.name
+  return 'something you watched'
 }
 
 /** The base media key, with any season/episode suffix removed. */
@@ -85,7 +159,11 @@ async function readLibrary(
     .all<{ store: string; item_key: string; payload: string }>()
 
   const exclude = new Set<string>()
-  const seeds: Seed[] = []
+  const candidates: SeedCandidate[] = []
+  const seen = new Set<string>()
+  // Ratings arrive in the same pass and in no particular order relative to the
+  // history rows they belong to, so they are stitched on after the loop.
+  const ratings = new Map<string, number>()
 
   for (const row of rows.results ?? []) {
     const key = baseKey(row.item_key)
@@ -94,29 +172,37 @@ async function readLibrary(
     // fastest way to look like the feature is not reading their account.
     exclude.add(key)
 
-    if (seeds.length >= SEED_COUNT) continue
+    const payload = safePayload(row.payload)
+
+    if (row.store === 'reviews') {
+      const rating = Number(payload.rating)
+      if (Number.isFinite(rating) && rating > 0) ratings.set(key, rating)
+      continue
+    }
+
     // Seeded from things finished, not from things merely opened: a title
     // abandoned after four minutes is not a statement of taste.
     if (row.store !== 'history' && row.store !== 'completed') continue
-    if (seeds.some((seed) => `${seed.type}:${seed.id}` === key)) continue
+    if (seen.has(key)) continue
 
     const [kind, id] = key.split(':')
     if (!/^\d+$/.test(id ?? '')) continue
 
-    let title = 'something you watched'
-    try {
-      const payload = JSON.parse(row.payload) as { title?: string }
-      if (typeof payload.title === 'string' && payload.title) {
-        title = payload.title
-      }
-    } catch {
-      // A row written by an older shape. The id is what matters here.
-    }
-
-    seeds.push({ id, type: kind === 'series' ? 'series' : 'movie', title })
+    seen.add(key)
+    candidates.push({
+      id,
+      type: kind === 'series' ? 'series' : 'movie',
+      title: titleOf(payload),
+      rating: null,
+      rank: candidates.length,
+    })
   }
 
-  return { seeds, exclude }
+  for (const candidate of candidates) {
+    candidate.rating = ratings.get(`${candidate.type}:${candidate.id}`) ?? null
+  }
+
+  return { seeds: chooseSeeds(candidates, SEED_COUNT), exclude }
 }
 
 /** TMDB's recommendations for one seed, already shaped for the client. */
@@ -159,6 +245,7 @@ function shape(result: TmdbResult, seed: Seed): ForYouItem | null {
         ? Math.round(result.vote_average * 10) / 10
         : null,
     because: seed.title,
+    because_rating: seed.rating,
     href: isSeries ? `/tv-shows/${id}` : `/movies/${id}`,
   }
 }

@@ -15,6 +15,7 @@
  */
 import { HINT_COOKIE } from '@/lib/auth/cookies'
 import type { FilterPreset } from '@/lib/filter-presets'
+import type { QuietHours } from '@/lib/push/quiet'
 
 /** Refresh this far before expiry, so an action never races the deadline. */
 const REFRESH_MARGIN_MS = 30_000
@@ -44,6 +45,14 @@ export interface AccountPrefs {
   region?: string
   /** Saved browse filters. See lib/filter-presets.ts for why they live here. */
   presets?: FilterPreset[]
+  /**
+   * Hours not to be buzzed in, and one buzz a day instead of one per event.
+   *
+   * Neither drops an alert: the notification row is written by the sweep either
+   * way and is waiting when the app is next opened. See lib/push/quiet.ts.
+   */
+  quiet?: QuietHours
+  digest?: boolean
 }
 
 export interface AccountState {

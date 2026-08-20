@@ -18,10 +18,8 @@ import {
   trackLoadMore,
 } from '@/lib/analytics'
 import { discoverApi } from '@/lib/api-client'
-import {
-  CERTIFICATION_COUNTRY,
-  DEFAULT_WATCH_REGION,
-} from '@/lib/filter-options'
+import { DEFAULT_WATCH_REGION } from '@/lib/filter-options'
+import { FILTER_DEFAULTS, toDiscoverParams } from '@/lib/filter-query'
 import { QUERY_KEYS } from '@/lib/queryKeys'
 
 interface UseMediaFilterProps {
@@ -29,25 +27,15 @@ interface UseMediaFilterProps {
   initialData?: MediaResponse
 }
 
-// Default values for filters. NOTE: accordion open/closed state used to live here
-// (and in the URL) — it's now local component state in the sidebar, so a shared
-// filter URL carries only real filters, not UI chrome.
-const defaultValues = {
-  selectedGenres: [] as number[],
-  excludedGenres: [] as number[],
-  sortBy: 'popularity.desc' as SortOption,
-  minRating: 0,
-  maxRating: 10,
-  minVotes: 0,
-  fromDate: '',
-  toDate: '',
-  minRuntime: 0,
-  maxRuntime: 300,
-  originalLanguage: '',
-  certification: '',
-  watchProviders: [] as number[],
-  watchRegion: DEFAULT_WATCH_REGION,
-}
+// NOTE: accordion open/closed state used to live here (and in the URL) — it's
+// now local component state in the sidebar, so a shared filter URL carries only
+// real filters, not UI chrome.
+//
+// The default VALUES live in lib/filter-query.ts, next to the parser that has to
+// read a missing key as exactly that default: `clearOnDefault` keeps a
+// defaulted filter out of the URL entirely, so the two halves have to agree or
+// a saved query quietly means something else.
+const defaultValues = FILTER_DEFAULTS
 
 // URL state parsers
 const filterParsers = {
@@ -103,77 +91,12 @@ export const useMediaFilter = ({
     [urlState]
   )
 
-  // Convert MediaFilter to API FilterParams
-  const filterParams = useMemo((): FilterParams => {
-    const params: FilterParams = {
-      sort_by: filter.sortBy,
-    }
-
-    // Genre filters
-    if (filter.selectedGenres.length > 0) {
-      params.with_genres = filter.selectedGenres.join(',')
-    }
-    if (filter.excludedGenres.length > 0) {
-      params.without_genres = filter.excludedGenres.join(',')
-    }
-
-    // Date filters (mediaType-aware; the action also remaps as a safety net)
-    if (filter.fromDate) {
-      if (mediaType === 'movie') {
-        params['release_date.gte'] = filter.fromDate
-      } else {
-        params['first_air_date.gte'] = filter.fromDate
-      }
-    }
-    if (filter.toDate) {
-      if (mediaType === 'movie') {
-        params['release_date.lte'] = filter.toDate
-      } else {
-        params['first_air_date.lte'] = filter.toDate
-      }
-    }
-
-    // Rating filters
-    if (filter.minRating && filter.minRating > 0) {
-      params['vote_average.gte'] = filter.minRating
-    }
-    if (filter.maxRating && filter.maxRating < 10) {
-      params['vote_average.lte'] = filter.maxRating
-    }
-    if (filter.minVotes && filter.minVotes > 0) {
-      params['vote_count.gte'] = filter.minVotes
-    }
-
-    // Runtime filters (movies only)
-    if (mediaType === 'movie') {
-      if (filter.minRuntime && filter.minRuntime > 0) {
-        params.with_runtime_gte = filter.minRuntime
-      }
-      if (filter.maxRuntime && filter.maxRuntime < 300) {
-        params.with_runtime_lte = filter.maxRuntime
-      }
-    }
-
-    // Language filter
-    if (filter.originalLanguage) {
-      params.with_original_language = filter.originalLanguage
-    }
-
-    // Age rating (movies only — TV discover has no certification param)
-    if (mediaType === 'movie' && filter.certification) {
-      params.certification = filter.certification
-      params.certification_country = CERTIFICATION_COUNTRY
-    }
-
-    // Where to watch. `|` = OR (available on ANY picked provider); pairs with
-    // watch_region so ids resolve against the right regional catalog.
-    if (filter.watchProviders.length > 0) {
-      params.with_watch_providers = filter.watchProviders.join('|')
-      params.watch_region = filter.watchRegion
-    }
-
-    return params
-  }, [filter, mediaType])
+  // Convert MediaFilter to API FilterParams. Shared with smart lists and with
+  // the Worker that renders a published one — see lib/filter-query.ts.
+  const filterParams = useMemo(
+    (): FilterParams => toDiscoverParams(filter, mediaType),
+    [filter, mediaType]
+  )
 
   // Check if any filters are active (not default values). Region alone is not a
   // filter — it only bites when providers are picked, so it's excluded here.

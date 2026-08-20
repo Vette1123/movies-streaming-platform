@@ -81,18 +81,36 @@ const DRAG_CLOSE_VELOCITY = 0.6 // px per ms
 function useSheetDrag(enabled: boolean) {
   const closeRef = React.useRef<HTMLButtonElement | null>(null)
   const start = React.useRef({ y: 0, t: 0 })
+  // The live drag state, as a ref rather than the state below.
+  //
+  // A pointer gesture ends with pointerup AND, immediately after it, a
+  // pointercancel — the browser fires one when capture is released and the
+  // element under the finger goes away, which is exactly what closing the sheet
+  // does. Both handlers run in the same tick, so both saw `dragging` still true
+  // from the render they were created in, and both clicked Close: the sheet
+  // shut, and the click that landed after it took the next thing with it. The
+  // ref settles synchronously, so the second event finds the gesture already
+  // over and does nothing.
+  const active = React.useRef(false)
   const [offset, setOffset] = React.useState(0)
   const [dragging, setDragging] = React.useState(false)
+
+  const end = React.useCallback(() => {
+    active.current = false
+    setDragging(false)
+    setOffset(0)
+  }, [])
 
   const onPointerDown = (event: React.PointerEvent) => {
     if (!enabled || event.button !== 0) return
     event.currentTarget.setPointerCapture(event.pointerId)
     start.current = { y: event.clientY, t: event.timeStamp }
+    active.current = true
     setDragging(true)
   }
 
   const onPointerMove = (event: React.PointerEvent) => {
-    if (!dragging) return
+    if (!active.current) return
     // Down only. Dragging a bottom sheet upward is not a gesture it has an
     // answer for, and rubber-banding one that is already at its max height
     // just looks broken.
@@ -100,18 +118,22 @@ function useSheetDrag(enabled: boolean) {
   }
 
   const onPointerUp = (event: React.PointerEvent) => {
-    if (!dragging) return
-    setDragging(false)
+    if (!active.current) return
     const travelled = Math.max(0, event.clientY - start.current.y)
     const elapsed = Math.max(1, event.timeStamp - start.current.t)
     const flicked = travelled / elapsed > DRAG_CLOSE_VELOCITY && travelled > 24
+    // Before the click, so the pointercancel that follows finds it settled.
+    end()
     if (travelled > DRAG_CLOSE_PX || flicked) {
       // Let Radix run its own exit animation from wherever the finger left it.
-      setOffset(0)
       closeRef.current?.click()
-      return
     }
-    setOffset(0)
+  }
+
+  // A cancelled pointer is not a decision. It springs back; it never closes.
+  const onPointerCancel = () => {
+    if (!active.current) return
+    end()
   }
 
   return {
@@ -122,7 +144,7 @@ function useSheetDrag(enabled: boolean) {
       onPointerDown,
       onPointerMove,
       onPointerUp,
-      onPointerCancel: onPointerUp,
+      onPointerCancel,
     },
   }
 }

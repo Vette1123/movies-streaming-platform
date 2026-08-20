@@ -10,6 +10,7 @@
 
 import { loadSession, sessionCookieOf } from '@/lib/auth/session'
 import { isEntitled } from '@/lib/billing/entitlement'
+import { cleanQuery } from '@/lib/filter-presets'
 
 const MAX_BODY_BYTES = 128 * 1024
 const MAX_LISTS = 200
@@ -31,6 +32,17 @@ export interface StoredList {
   id: string
   name: string
   description: string | null
+  /**
+   * A smart list: the browse query its contents come from, instead of a fixed
+   * set of them. NULL on an ordinary list, which is every list that existed
+   * before this column did.
+   *
+   * The titles are resolved wherever the list is rendered — the panel and the
+   * public page both run it through /api/filter, which is the same cached
+   * discover call the browse pages make. Nothing is stored, so the list is as
+   * current as the browse page it came from and cannot go stale.
+   */
+  smart_query: string | null
   /** Minted on the first publish and kept for good. See migration 0001. */
   slug: string | null
   published: boolean
@@ -144,12 +156,14 @@ const parseRow = (row: {
   slug: string | null
   published: number
   items: string
+  smart_query: string | null
   created_at: number
   updated_at: number
 }): StoredList => ({
   id: row.id,
   name: row.name,
   description: row.description,
+  smart_query: row.smart_query,
   // A slug on an unpublished list is history, not a live URL. Reporting it as
   // null keeps the client from offering a link that 404s.
   slug: row.published ? row.slug : null,
@@ -208,7 +222,8 @@ export async function handleLists(
   if (request.method === 'GET') {
     const rows = await db
       .prepare(
-        `SELECT id, name, description, slug, published, items, created_at, updated_at
+        `SELECT id, name, description, slug, published, items, smart_query,
+                created_at, updated_at
          FROM lists WHERE user_id = ? ORDER BY updated_at DESC LIMIT ${MAX_LISTS}`
       )
       .bind(user.id)
@@ -272,14 +287,19 @@ export async function handleLists(
   if (!name) return json({ success: false, error: 'A list needs a name' }, 400)
   const description = text(body.description, MAX_DESCRIPTION)
   const items = normaliseItems(body.items)
+  // Round-tripped through URLSearchParams by the same helper the saved filters
+  // use, so what is stored is a query string this site could have produced and
+  // nothing else — it ends up in a URL the browser navigates to.
+  const smart = cleanQuery(body.smart_query)
 
   if (id) {
     const result = await db
       .prepare(
-        `UPDATE lists SET name = ?, description = ?, items = ?, updated_at = ?
+        `UPDATE lists SET name = ?, description = ?, items = ?, smart_query = ?,
+                          updated_at = ?
          WHERE id = ? AND user_id = ?`
       )
-      .bind(name, description, JSON.stringify(items), now, id, user.id)
+      .bind(name, description, JSON.stringify(items), smart, now, id, user.id)
       .run()
     // A save for an id this account does not own writes nothing and says so,
     // rather than silently reporting success.
@@ -305,10 +325,20 @@ export async function handleLists(
   const newId = crypto.randomUUID()
   await db
     .prepare(
-      `INSERT INTO lists (id, user_id, name, description, slug, items, created_at, updated_at)
-       VALUES (?, ?, ?, ?, NULL, ?, ?, ?)`
+      `INSERT INTO lists (id, user_id, name, description, slug, items, smart_query,
+                          created_at, updated_at)
+       VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?)`
     )
-    .bind(newId, user.id, name, description, JSON.stringify(items), now, now)
+    .bind(
+      newId,
+      user.id,
+      name,
+      description,
+      JSON.stringify(items),
+      smart,
+      now,
+      now
+    )
     .run()
 
   return json({ success: true, id: newId })
@@ -318,6 +348,8 @@ export interface PublicList {
   name: string
   description: string | null
   owner: string | null
+  /** See StoredList.smart_query — the public page resolves it the same way. */
+  smart_query: string | null
   /** Whether the owner's support is live right now — drives the badge. */
   owner_pro: boolean
   items: ListItem[]
@@ -339,9 +371,9 @@ export async function loadPublicList(
 ): Promise<PublicList | null> {
   const row = await db
     .prepare(
-      `SELECT lists.name, lists.description, lists.items, lists.updated_at,
-              users.name AS owner, users.grants, users.sub_status,
-              users.sub_ends_at, users.sub_past_due_since
+      `SELECT lists.name, lists.description, lists.items, lists.smart_query,
+              lists.updated_at, users.name AS owner, users.grants,
+              users.sub_status, users.sub_ends_at, users.sub_past_due_since
        FROM lists JOIN users ON users.id = lists.user_id
        WHERE lists.slug = ? AND lists.published = 1`
     )
@@ -350,6 +382,7 @@ export async function loadPublicList(
       name: string
       description: string | null
       items: string
+      smart_query: string | null
       updated_at: number
       owner: string | null
       grants: string | null
@@ -363,6 +396,7 @@ export async function loadPublicList(
     name: row.name,
     description: row.description,
     owner: row.owner,
+    smart_query: row.smart_query,
     // The list stays up if support lapses — taking somebody's shared link down
     // over a missed payment would be a punishment, not a paywall. The badge is
     // what goes away.

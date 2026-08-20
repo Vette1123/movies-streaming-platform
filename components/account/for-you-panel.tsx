@@ -168,6 +168,19 @@ export function ForYouPanel() {
   )
 }
 
+/**
+ * Why this is here, in the strongest form the data supports.
+ *
+ * "Because you rated X 9" is a far better line than "Because of X": it says the
+ * recommendation came from something the person actually told us, not from
+ * whatever happened to be on last. It only appears when a score is what picked
+ * the seed — see chooseSeeds in lib/foryou/routes.ts.
+ */
+const becauseLine = (item: ForYouItem): string =>
+  item.because_rating === null
+    ? `Because of ${item.because}`
+    : `Because you rated ${item.because} ${item.because_rating}`
+
 /** "A, B and C" — an Oxford-less list, because it is prose, not data. */
 function listOf(titles: string[]): string {
   if (titles.length === 1) return titles[0]
@@ -209,7 +222,7 @@ function Tile({ item }: { item: ForYouItem }) {
           {item.title}
         </p>
         <p className="text-muted-foreground truncate text-[11px]">
-          Because of {item.because}
+          {becauseLine(item)}
         </p>
       </div>
     </Link>

@@ -1,0 +1,16 @@
+-- When this account's devices were last rung.
+--
+-- Only the digest reads it: "at most one buzz a day" needs to know when the
+-- last one was, and there was nowhere to look. Not derivable from
+-- `notifications.created_at`, which records when an alert was WRITTEN — during
+-- quiet hours or under a digest, rows are written and no push is sent, so the
+-- two are deliberately different facts.
+--
+-- One integer on `users` rather than a table: it is written at most once per
+-- sweep per account, read in the same query that decides whether to ring, and
+-- has no history worth keeping.
+--
+-- Applied with:
+--   pnpm exec wrangler d1 migrations apply reely            (local)
+--   pnpm exec wrangler d1 migrations apply reely --remote   (production)
+ALTER TABLE users ADD COLUMN last_push_at INTEGER;

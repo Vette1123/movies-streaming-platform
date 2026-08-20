@@ -257,7 +257,7 @@ export function AccountPanel() {
   }, [])
 
   if (account.signedIn === undefined) {
-    return <AccountSkeleton />
+    return <AccountSkeleton sections={SECTIONS.length} />
   }
 
   if (!account.signedIn) {

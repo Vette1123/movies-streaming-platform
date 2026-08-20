@@ -47,6 +47,7 @@ import {
 import { fetchWatchProviders } from '@/services/watch-providers'
 
 import { ownsPath, routeAccountApi } from '@/lib/api/account-router'
+import { smartQuery } from '@/lib/filter-query'
 import { loadPublicList } from '@/lib/lists/routes'
 import { getMediaHeroImageUrl } from '@/lib/media'
 import { loadPublicProfile } from '@/lib/profile/routes'
@@ -719,6 +720,27 @@ async function handleCollectionFallback(match, request, env, ctx, url) {
 }
 
 /**
+ * The titles a smart list currently resolves to, in the shape the page's
+ * metadata expects. An empty array on any failure: a list whose filter TMDB
+ * cannot answer right now is still a page, and it must not 500.
+ */
+async function resolveSmartList(query) {
+  try {
+    const { mediaType, params } = smartQuery(query)
+    const discover = mediaType === 'tv' ? discoverSeries : discoverMovies
+    const page = await discover(params, { page: 1 })
+    return (page.results ?? []).slice(0, 20).map((result) => ({
+      id: result.id,
+      type: mediaType === 'tv' ? 'series' : 'movie',
+      title: result.title || result.name || 'Untitled',
+      poster_path: result.poster_path ?? null,
+    }))
+  } catch {
+    return []
+  }
+}
+
+/**
  * A published list at /l/<slug>.
  *
  * Deliberately NOT stored in `caches.default`: unpublishing has to take the page
@@ -735,7 +757,14 @@ async function handleListPage(match, env, url) {
   if (!list) return notFoundAsset(env, url)
 
   const siteUrl = siteUrlOf(url)
-  const count = list.items.length
+  // A smart list holds a filter, not titles, so the ones to name in the unfurl
+  // and the ItemList have to be fetched. One discover call — the same one the
+  // browse pages make, through the same governed client — and only for a smart
+  // list; an ordinary one still costs zero TMDB traffic.
+  const items = list.smart_query
+    ? await resolveSmartList(list.smart_query)
+    : list.items
+  const count = items.length
   const owner = list.owner ? ` by ${list.owner}` : ''
   const meta = {
     heading: list.name,
@@ -746,9 +775,7 @@ async function handleListPage(match, env, url) {
     // The first poster is the list's face. `getImageURL` is the same helper the
     // rest of the site builds image URLs with, so a shared link and the page it
     // opens show the same artwork.
-    image: list.items[0]?.poster_path
-      ? getImageURL(list.items[0].poster_path)
-      : '',
+    image: items[0]?.poster_path ? getImageURL(items[0].poster_path) : '',
     canonical: `${siteUrl}/l/${slug}`,
   }
   const jsonLd = {
@@ -758,7 +785,7 @@ async function handleListPage(match, env, url) {
     description: meta.description,
     url: meta.canonical,
     numberOfItems: count,
-    itemListElement: list.items.slice(0, 20).map((item, index) => ({
+    itemListElement: items.slice(0, 20).map((item, index) => ({
       '@type': 'ListItem',
       position: index + 1,
       name: item.title,

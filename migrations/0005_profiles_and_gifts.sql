@@ -1,4 +1,4 @@
--- Public profiles, smart lists, trials, referrals and gift codes.
+-- Public profiles, smart lists, referrals and gift codes.
 --
 -- One migration for the whole supporter wave: every column here is read by
 -- something that ships in the same deploy, and splitting them into five files
@@ -24,11 +24,6 @@ ALTER TABLE users ADD COLUMN profile_public INTEGER NOT NULL DEFAULT 0;
 --                   from an allowlist, so a bio living there would be wiped
 --                   the next time somebody changed their accent colour.
 ALTER TABLE users ADD COLUMN profile_bio TEXT;
-
--- When this account started its one free trial. Set once, never cleared: it is
--- what makes "one per account" enforceable, and a NULL is the only thing that
--- lets a trial start. Entitlement itself still comes from sub_ends_at.
-ALTER TABLE users ADD COLUMN trial_started_at INTEGER;
 
 -- Who sent this person here, as the referrer's user id. Written once, at sign-up
 -- only, from the handle in the /u/<handle> link they arrived through.

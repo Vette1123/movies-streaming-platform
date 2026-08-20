@@ -24,6 +24,7 @@ import {
   type TmdbWatchProviders,
 } from '@/lib/push/providers'
 
+import { normaliseQuietHours, shouldRing } from './quiet'
 import { sendPush } from './vapid'
 
 /**
@@ -422,14 +423,70 @@ export async function runSweep(
         )
       )
     )
-    pushed = await wake(
-      db,
-      [...new Set(queued.map((item) => item.userId))],
-      now
-    )
+    // Everybody who has something waiting, minus everybody whose phone should
+    // not make a noise about it right now. The rows above are already written,
+    // so a silenced account still finds its alerts when it next opens the app —
+    // being quiet costs nothing but the buzz.
+    const audience = [...new Set(queued.map((item) => item.userId))]
+    const ringing = await ringable(db, audience, now)
+    if (ringing.length > 0) {
+      pushed = await wake(db, ringing, now)
+      await db
+        .prepare(
+          `UPDATE users SET last_push_at = ?
+           WHERE id IN (${ringing.map(() => '?').join(', ')})`
+        )
+        .bind(now, ...ringing)
+        .run()
+    }
   }
 
   return { checked: (due.results ?? []).length, announced, pushed }
+}
+
+/**
+ * Which of these accounts want to be rung at this moment.
+ *
+ * One query, because the sweep is already the most expensive thing this Worker
+ * does and this is a filter, not a feature of its own. `prefs` is parsed here
+ * rather than matched in SQL for the same reason it is in interestedUsers: a
+ * LIKE against JSON is a prefilter, never a read.
+ */
+async function ringable(
+  db: D1Database,
+  userIds: string[],
+  now: number
+): Promise<string[]> {
+  const rows = await db
+    .prepare(
+      `SELECT id, prefs, last_push_at FROM users
+       WHERE id IN (${userIds.map(() => '?').join(', ')})`
+    )
+    .bind(...userIds)
+    .all<{ id: string; prefs: string | null; last_push_at: number | null }>()
+
+  const out: string[] = []
+  for (const row of rows.results ?? []) {
+    let prefs: Record<string, unknown> = {}
+    try {
+      const parsed = JSON.parse(row.prefs ?? '{}')
+      if (parsed && typeof parsed === 'object') {
+        prefs = parsed as Record<string, unknown>
+      }
+    } catch {
+      // Unreadable preferences mean the defaults, which are to ring.
+    }
+    const ring = shouldRing(
+      {
+        quiet: normaliseQuietHours(prefs.quiet),
+        digest: prefs.digest === true,
+        lastPushAt: row.last_push_at,
+      },
+      now
+    )
+    if (ring) out.push(row.id)
+  }
+  return out
 }
 
 /**
