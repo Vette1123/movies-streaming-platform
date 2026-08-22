@@ -25,7 +25,10 @@
  * a fallback, it is a second way to fail. See lib/embed-policy.ts for why the
  * frame carries no `sandbox` and what that costs.
  */
-import { STREAMING_MOVIES_API_URL } from '@/lib/constants'
+import {
+  STREAMING_MOVIES_API_QUERY,
+  STREAMING_MOVIES_API_URL,
+} from '@/lib/constants'
 
 /**
  * The house player's stable key. Its playback does not go through `base` at
@@ -41,6 +44,13 @@ export interface StreamSource {
   label: string
   /** Everything before `/movie/<id>`, no trailing slash. */
   base: string
+  /**
+   * Extra query string appended to every playback URL, from the paired
+   * NEXT_PUBLIC_STREAM_SOURCE_N_QUERY env var. How a slot carries player
+   * customisation (brand colors, autoplay) for providers that accept it.
+   * Empty by default — never append junk to a provider whose URLs are signed.
+   */
+  query?: string
 }
 
 /**
@@ -52,10 +62,22 @@ export interface StreamSource {
  * identifiers — `process.env[name]` in a loop resolves to nothing at build time
  * and every fallback would silently vanish.
  */
-const SLOTS: { label: string; base: string | undefined }[] = [
-  { label: 'Server 1', base: STREAMING_MOVIES_API_URL },
-  { label: 'Server 2', base: process.env.NEXT_PUBLIC_STREAM_SOURCE_2 },
-  { label: 'Server 3', base: process.env.NEXT_PUBLIC_STREAM_SOURCE_3 },
+const SLOTS: { label: string; base: string | undefined; query?: string }[] = [
+  {
+    label: 'Server 1',
+    base: STREAMING_MOVIES_API_URL,
+    query: STREAMING_MOVIES_API_QUERY,
+  },
+  {
+    label: 'Server 2',
+    base: process.env.NEXT_PUBLIC_STREAM_SOURCE_2,
+    query: process.env.NEXT_PUBLIC_STREAM_SOURCE_2_QUERY,
+  },
+  {
+    label: 'Server 3',
+    base: process.env.NEXT_PUBLIC_STREAM_SOURCE_3,
+    query: process.env.NEXT_PUBLIC_STREAM_SOURCE_3_QUERY,
+  },
 ]
 
 /**
@@ -87,7 +109,12 @@ function buildSources(): StreamSource[] {
     const id = hostOf(trimmed)
     if (seen.has(id)) continue
     seen.add(id)
-    built.push({ id, label: slot.label, base: trimmed })
+    built.push({
+      id,
+      label: slot.label,
+      base: trimmed,
+      ...(slot.query?.trim() ? { query: slot.query.trim() } : {}),
+    })
   }
 
   // Lead with the default so it is position 0 — free visitors get only the
@@ -108,12 +135,46 @@ export const DEFAULT_SOURCE_ID: string = STREAM_SOURCES[0]?.id ?? ''
 /** True only when there is somewhere else to go. The UI hides itself otherwise. */
 export const HAS_FALLBACK_SOURCE = STREAM_SOURCES.length > 1
 
+/**
+ * The opt-in surface for supporters, from NEXT_PUBLIC_STREAM_SOURCE_PRO
+ * (+ _PRO_QUERY). Deliberately NOT part of STREAM_SOURCES: it does not exist
+ * for anyone who has not switched it on from their account, so the default
+ * journey is untouched down to the URL — and a deployment that never sets the
+ * var ships a site where this whole feature is absent rather than broken.
+ */
+const PRO_BASE = process.env.NEXT_PUBLIC_STREAM_SOURCE_PRO?.trim().replace(
+  /\/$/,
+  ''
+)
+
+export const RICH_SOURCE: StreamSource | null =
+  PRO_BASE && PRO_BASE.length > 0
+    ? {
+        id: hostOf(PRO_BASE),
+        label: 'Reely Beta',
+        base: PRO_BASE,
+        ...(process.env.NEXT_PUBLIC_STREAM_SOURCE_PRO_QUERY?.trim()
+          ? { query: process.env.NEXT_PUBLIC_STREAM_SOURCE_PRO_QUERY.trim() }
+          : {}),
+      }
+    : null
+
+/**
+ * The list a given visitor may choose between. Everyone gets STREAM_SOURCES;
+ * a supporter who opted in also gets the rich surface, offered first because
+ * it is the one they asked to try. Callers must treat the result as the
+ * validation set for stored source ids — an id remembered while opted in has
+ * to resolve to nothing once opted out.
+ */
+export const visibleSourcesFor = (richOptedIn: boolean): StreamSource[] =>
+  richOptedIn && RICH_SOURCE ? [RICH_SOURCE, ...STREAM_SOURCES] : STREAM_SOURCES
+
 export const sourceById = (id: string | null | undefined): StreamSource =>
   STREAM_SOURCES.find((source) => source.id === id) ?? STREAM_SOURCES[0]
 
 /** The film URL. Every provider on the list takes this shape. */
 export const movieStreamUrl = (source: StreamSource, id: number): string =>
-  `${source.base}/movie/${id}`
+  withSourceQuery(`${source.base}/movie/${id}`, source)
 
 /**
  * The episode URL, or the series root when no episode is named.
@@ -128,5 +189,10 @@ export const seriesStreamUrl = (
   target?: { season: number; episode: number } | null
 ): string => {
   const base = `${source.base}/tv/${id}`
-  return target ? `${base}/${target.season}/${target.episode}` : base
+  const url = target ? `${base}/${target.season}/${target.episode}` : base
+  return withSourceQuery(url, source)
 }
+
+/** Append the slot's configured query, if any. Never touches signed params. */
+const withSourceQuery = (url: string, source: StreamSource): string =>
+  source.query ? `${url}${url.includes('?') ? '&' : '?'}${source.query}` : url

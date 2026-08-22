@@ -39,6 +39,12 @@ export interface AccountPrefs {
   /** Hide the titles of episodes you have not ticked off yet. */
   spoilerFree?: boolean
   /**
+   * Opted in to the supporters-only player trial (config/sources.ts
+   * RICH_SOURCE). Honoured only while the account is entitled, so lapsed
+   * supporters fall back to the standard servers with nothing to undo.
+   */
+  richPlayer?: boolean
+  /**
    * Which country "now streaming" alerts are about. See config/regions.ts —
    * unset means the alert stays quiet rather than guessing a country wrong.
    */

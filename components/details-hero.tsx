@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { type StreamSourceControl } from '@/hooks/use-stream-source'
 import { HeroImage } from '@/components/header/hero-image'
 import { PlayButton } from '@/components/play-button'
+import { EmbedProgressBridge } from '@/components/player/embed-progress-bridge'
 import { ReelyPlayer } from '@/components/player/reely-player'
 import { SourceSwitcher } from '@/components/player/source-switcher'
 import { RateButton } from '@/components/rate-button'
@@ -101,9 +102,7 @@ export const DetailsHero = ({
   // third-party embed otherwise. The embed's `src` is still set by the caller
   // in reely mode (it is meaningless there and never used as a frame URL).
   const useReely =
-    isIframeShown &&
-    !!selfHost &&
-    sourceControl?.source.id === REELY_SOURCE_ID
+    isIframeShown && !!selfHost && sourceControl?.source.id === REELY_SOURCE_ID
 
   // If the house player cannot start — ticket refused once PRO_PLAYER_OPEN is
   // lifted, or the worker not configured — fall back to the first embed and
@@ -123,6 +122,8 @@ export const DetailsHero = ({
   // fewer and one less way for the two to disagree.
   const [loadedSrc, setLoadedSrc] = React.useState<string | null>(null)
   const iframeLoaded = !!src && loadedSrc === src
+  // The embed frame, for the progress bridge's source-window identity check.
+  const iframeRef = React.useRef<HTMLIFrameElement>(null)
   // The reely surface reports readiness with its own pseudo-src so the stall
   // detector and the spinner treat both surfaces identically.
   const key = `${selfHost?.type ?? ''}:${selfHost?.id ?? ''}:${selfHost?.season ?? ''}:${selfHost?.episode ?? ''}`
@@ -238,6 +239,7 @@ export const DetailsHero = ({
                 </div>
               )}
               <iframe
+                ref={iframeRef}
                 className={cn('size-full py-20', {
                   hidden: !isIframeShown,
                 })}
@@ -262,6 +264,19 @@ export const DetailsHero = ({
                 // adding it back.
                 allow={STREAM_EMBED_ALLOW}
               ></iframe>
+              {isIframeShown && (
+                // Progress out of embeds that publish it. Mounted only while
+                // playing; trusts the frame URL's own origin (never a
+                // hard-coded host) and the frame's own window.
+                <EmbedProgressBridge
+                  src={src}
+                  type={isMovie ? 'movie' : 'tv'}
+                  id={media.id}
+                  season={selfHost?.season}
+                  episode={selfHost?.episode}
+                  frameRef={iframeRef}
+                />
+              )}
             </>
           )}
           {isIframeShown && sourceControl && !useReely && (

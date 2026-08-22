@@ -565,13 +565,20 @@ export function normalisePrefs(value: unknown): Record<string, unknown> | null {
   if (typeof input.source === 'string' && input.source.length <= 40) {
     out.source = input.source
   }
+  // The opt-in for the supporters-only player trial. A boolean, so it cannot
+  // grow the column or carry anything but its own meaning; whether it grants
+  // anything is decided by entitlement at read time, never by this flag.
+  if (typeof input.richPlayer === 'boolean') out.richPlayer = input.richPlayer
   // Reely Player preferences. Both values are from closed sets, so neither
   // can grow the column or smuggle markup into the player URL.
   if (input.playback !== undefined && input.playback !== null) {
     if (typeof input.playback === 'object' && !Array.isArray(input.playback)) {
       const pb = input.playback as Record<string, unknown>
       const playback: Record<string, unknown> = {}
-      if (pb.sub === 'off' || (typeof pb.sub === 'string' && /^[a-z]{2}$/.test(pb.sub))) {
+      if (
+        pb.sub === 'off' ||
+        (typeof pb.sub === 'string' && /^[a-z]{2}$/.test(pb.sub))
+      ) {
         playback.sub = pb.sub
       }
       if (pb.subSize === 's' || pb.subSize === 'm' || pb.subSize === 'l') {
