@@ -27,6 +27,13 @@
  */
 import { STREAMING_MOVIES_API_URL } from '@/lib/constants'
 
+/**
+ * The house player's stable key. Its playback does not go through `base` at
+ * all — see components/player/reely-player.tsx — but it rides the same
+ * source list, switcher and per-title memory as every embed.
+ */
+export const REELY_SOURCE_ID = 'reely'
+
 export interface StreamSource {
   /** Stable key. Derived from the host, and never shown. */
   id: string
@@ -64,13 +71,22 @@ function buildSources(): StreamSource[] {
   const seen = new Set<string>()
   const out: StreamSource[] = []
 
+  // The house player leads the list. It is not an embed: `base` is empty and
+  // playback goes through ReelyPlayer, which exchanges a signed ticket with
+  // our own worker for a direct HLS stream — no third-party page, no ads.
+  // Position 0 means it is what every visitor gets without choosing; when
+  // PRO_PLAYER_OPEN is lifted it becomes the supporter default (the ticket
+  // endpoint enforces that server-side) while these embeds remain the
+  // everyone fallback.
+  out.push({ id: REELY_SOURCE_ID, label: 'Reely Player', base: '' })
+
   for (const base of BASES) {
     const trimmed = base?.trim().replace(/\/$/, '')
     if (!trimmed) continue
     const id = hostOf(trimmed)
     if (seen.has(id)) continue
     seen.add(id)
-    out.push({ id, label: `Server ${out.length + 1}`, base: trimmed })
+    out.push({ id, label: `Server ${out.length}`, base: trimmed })
   }
 
   return out

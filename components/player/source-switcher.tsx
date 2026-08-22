@@ -2,9 +2,9 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { AlertTriangle, Server } from 'lucide-react'
+import { AlertTriangle, Server, Sparkles } from 'lucide-react'
 
-import { HAS_FALLBACK_SOURCE } from '@/config/sources'
+import { HAS_FALLBACK_SOURCE, REELY_SOURCE_ID } from '@/config/sources'
 import { trackSupportCtaClicked } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 import { type StreamSourceControl } from '@/hooks/use-stream-source'
@@ -129,22 +129,58 @@ export function SourceSwitcher({
       )}
 
       <div className="flex flex-wrap items-center gap-1.5">
-        {sources.map((entry) => (
-          <button
-            key={entry.id}
-            type="button"
-            aria-pressed={entry.id === source.id}
-            onClick={() => select(entry.id)}
-            className={cn(
-              'focus-visible:ring-primary rounded-full px-3 py-1.5 font-medium backdrop-blur-sm transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
-              entry.id === source.id
-                ? 'bg-white text-black'
-                : 'bg-black/50 text-white/80 hover:bg-black/70 hover:text-white'
-            )}
-          >
-            {entry.label}
-          </button>
-        ))}
+        {sources.map((entry) => {
+          // The house player is not "another server" — it is the product.
+          // Give it a look nothing else on this bar can be confused with:
+          // signature gradient, spark, and a PRO mark. Active or not, it
+          // always reads premium so supporters see what they are paying for
+          // and free visitors see what they are missing.
+          const isReely = entry.id === REELY_SOURCE_ID
+          const isActive = entry.id === source.id
+
+          if (isReely) {
+            return (
+              <button
+                key={entry.id}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => select(entry.id)}
+                className={cn(
+                  'group focus-visible:ring-primary inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-semibold text-white transition-all focus-visible:ring-2 focus-visible:outline-hidden',
+                  'bg-gradient-to-r from-amber-500 via-rose-500 to-fuchsia-600',
+                  'shadow-[0_0_0_1px_rgba(255,255,255,0.25),0_4px_14px_-2px_rgba(244,63,94,0.55)]',
+                  'hover:shadow-[0_0_0_1px_rgba(255,255,255,0.45),0_6px_20px_-2px_rgba(244,63,94,0.75)]',
+                  !isActive && 'opacity-80 hover:opacity-100',
+                  isActive &&
+                    'ring-2 ring-white/90 ring-offset-2 ring-offset-black/60'
+                )}
+              >
+                <Sparkles className="size-3.5 shrink-0" />
+                {entry.label}
+                <span className="rounded-full bg-black/30 px-1.5 py-px text-[9px] leading-tight font-bold tracking-wider">
+                  PRO
+                </span>
+              </button>
+            )
+          }
+
+          return (
+            <button
+              key={entry.id}
+              type="button"
+              aria-pressed={isActive}
+              onClick={() => select(entry.id)}
+              className={cn(
+                'focus-visible:ring-primary rounded-full px-3 py-1.5 font-medium backdrop-blur-sm transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
+                isActive
+                  ? 'bg-white text-black'
+                  : 'bg-black/50 text-white/80 hover:bg-black/70 hover:text-white'
+              )}
+            >
+              {entry.label}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

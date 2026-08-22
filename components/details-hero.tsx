@@ -4,13 +4,14 @@ import { Loader2 } from 'lucide-react'
 
 import { MovieDetails } from '@/types/movie-details'
 import { SeriesDetails } from '@/types/series-details'
+import { REELY_SOURCE_ID } from '@/config/sources'
 import { STREAM_EMBED_ALLOW } from '@/lib/embed-policy'
 import { getMediaTitle } from '@/lib/media'
 import { cn } from '@/lib/utils'
 import { type StreamSourceControl } from '@/hooks/use-stream-source'
 import { HeroImage } from '@/components/header/hero-image'
 import { PlayButton } from '@/components/play-button'
-import { SelfHostedPlayer } from '@/components/player/self-hosted-player'
+import { ReelyPlayer } from '@/components/player/reely-player'
 import { SourceSwitcher } from '@/components/player/source-switcher'
 import { RateButton } from '@/components/rate-button'
 import { SaveButton } from '@/components/save-button'
@@ -28,12 +29,6 @@ import { WatchedButton } from '@/components/watched-button'
 // cannot be tuned for an image nobody chose.
 const captionClass =
   'w-14 text-center text-[10px] leading-tight font-medium text-white/90 [text-shadow:0_1px_3px_rgba(0,0,0,0.85)] sm:hidden'
-
-// The `?player=self` snapshot, for the selfHost gate below.
-const subscribeToNothing = () => () => {}
-const readPlayerParam = () =>
-  new URLSearchParams(window.location.search).get('player') === 'self'
-const returnFalse = () => false
 
 // The embed is driven by a `src` STRING, not by writing `.src` on a ref.
 //
@@ -83,10 +78,10 @@ export const DetailsHero = ({
   isResume?: boolean
   resumeSlot?: React.ReactNode
   /**
-   * What the self-hosted player would play, when it is active at all. POC
-   * gate: only a URL carrying `?player=self` switches off the embed iframe;
-   * without the param this prop renders nothing and the page behaves exactly
-   * as shipped. Title/year ride along for external-subtitle catalogs.
+   * What the Reely Player would play. Title/year ride along for the
+   * external-subtitle catalogs; season/episode for shows. Rendered whenever
+   * the active source is `reely` — no query param involved, the source
+   * switcher is what decides.
    */
   selfHost?: {
     type: 'movie' | 'tv'
@@ -102,16 +97,22 @@ export const DetailsHero = ({
   const isMovie = !!movie
   const isIframeShown = !!src
 
-  // The POC switch. An external value (the URL) read through
-  // useSyncExternalStore rather than a mount effect: the store snapshot stays
-  // `false` through prerender and hydration paint, then reflects reality on
-  // the next client pass — with no setState-in-effect render cascade.
-  const selfHostRequested = React.useSyncExternalStore(
-    subscribeToNothing,
-    readPlayerParam,
-    returnFalse
-  )
-  const showSelfHost = selfHostRequested && !!selfHost && isIframeShown
+  // Which surface is playing: our player when the active source says so, the
+  // third-party embed otherwise. The embed's `src` is still set by the caller
+  // in reely mode (it is meaningless there and never used as a frame URL).
+  const useReely =
+    isIframeShown &&
+    !!selfHost &&
+    sourceControl?.source.id === REELY_SOURCE_ID
+
+  // If the house player cannot start — ticket refused once PRO_PLAYER_OPEN is
+  // lifted, or the worker not configured — fall back to the first embed and
+  // let the switcher reflect it, exactly like a stalled server would.
+  const onReelyUnavailable = React.useCallback(() => {
+    if (!sourceControl) return
+    const fallback = sourceControl.sources.find((s) => s.id !== REELY_SOURCE_ID)
+    if (fallback) sourceControl.select(fallback.id)
+  }, [sourceControl])
 
   // Bridge the blank gap between "Watch" click and the streaming iframe painting
   // its first frame: show a spinner while the iframe is shown but hasn't loaded.
@@ -122,6 +123,11 @@ export const DetailsHero = ({
   // fewer and one less way for the two to disagree.
   const [loadedSrc, setLoadedSrc] = React.useState<string | null>(null)
   const iframeLoaded = !!src && loadedSrc === src
+  // The reely surface reports readiness with its own pseudo-src so the stall
+  // detector and the spinner treat both surfaces identically.
+  const key = `${selfHost?.type ?? ''}:${selfHost?.id ?? ''}:${selfHost?.season ?? ''}:${selfHost?.episode ?? ''}`
+  const reelyLoaded = useReely && loadedSrc === `reely:${key}`
+  const shownLoaded = useReely ? reelyLoaded : iframeLoaded
 
   // Hero fills exactly one viewport and never exceeds it — the whole hero is
   // visible on load with no scroll to see the buttons, and no oversized band
@@ -208,12 +214,21 @@ export const DetailsHero = ({
               </motion.div>
             )}
           </AnimatePresence>
-          {showSelfHost && selfHost ? (
-            // Same centered slot the iframe occupies; inset by py-20 for the
+          {useReely && selfHost ? (
+            // Same centered slot the embed occupies; inset by py-20 for the
             // same reason — clear of the sticky header above and the install
             // prompt's contested bottom edge.
-            <div className="size-full py-20">
-              <SelfHostedPlayer target={selfHost} />
+            <div className="relative size-full py-20">
+              <ReelyPlayer
+                target={selfHost}
+                onReady={() => setLoadedSrc(`reely:${key}`)}
+                onUnavailable={onReelyUnavailable}
+              />
+              {!reelyLoaded && (
+                <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
+                  <Loader2 className="size-12 animate-spin text-white/80" />
+                </div>
+              )}
             </div>
           ) : (
             <>
@@ -249,7 +264,7 @@ export const DetailsHero = ({
               ></iframe>
             </>
           )}
-          {isIframeShown && sourceControl && !showSelfHost && (
+          {isIframeShown && sourceControl && !useReely && (
             // Above the frame, not below it. Two things already live along the
             // bottom edge — the embed's own scrubber, and the install prompt,
             // which measurably sat on top of these buttons and swallowed the
@@ -257,7 +272,7 @@ export const DetailsHero = ({
             // because the iframe is inset by py-20 — offset clear of the sticky header,
             // which sits above this and was eating the click at top-4.
             <div className="pointer-events-none absolute inset-x-0 top-20 z-50 flex justify-center px-4">
-              <SourceSwitcher control={sourceControl} loaded={iframeLoaded} />
+              <SourceSwitcher control={sourceControl} loaded={shownLoaded} />
             </div>
           )}
         </div>

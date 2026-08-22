@@ -53,11 +53,14 @@ import { loadPublicList } from '@/lib/lists/routes'
 import { getMediaHeroImageUrl } from '@/lib/media'
 import { mosaicUrl, OG_HEIGHT, OG_WIDTH } from '@/lib/og/mosaic'
 import { loadPublicProfile } from '@/lib/profile/routes'
+import { signEntryTicket } from '@/lib/pro/playback-ticket'
 import {
-  externalSubtitleLanguages,
-  fetchExternalSubtitlesVtt,
-} from '@/lib/stream/subdl'
-import { resolveDirectStream } from '@/lib/stream/vixsrc'
+  isEntitled,
+} from '@/lib/billing/entitlement'
+import {
+  loadSession,
+  sessionCookieOf,
+} from '@/lib/auth/session'
 import { getImageURL } from '@/lib/utils'
 
 /** 6h, matching the deploy cadence that refreshes the static half of the site. */
@@ -140,9 +143,11 @@ function copyEnv(env) {
     'VAPID_PUBLIC_KEY',
     'VAPID_PRIVATE_KEY',
     'VAPID_SUBJECT',
-    // Self-hosted player. Not secrets — base URLs, kept out of the repo by
+    // Private playback worker. Not a secret — a URL, kept out of the repo by
     // the same discipline as the embed providers (see config/sources.ts).
-    'STREAM_RESOLVER_BASE',
+    // The ticket secret itself stays out of process.env entirely: the ticket
+    // route reads it straight off `env.PLAYBACK_TICKET_SECRET`.
+    'PLAYBACK_WORKER_URL',
   ]) {
     if (env[key] !== undefined) process.env[key] = env[key]
   }
@@ -462,131 +467,6 @@ async function handleApi(pathname, url, request, ctx) {
         }
       },
       apiKey(url, { id, type })
-    )
-  }
-
-  // Self-hosted player: a TMDB id becomes a direct HLS master manifest. The
-  // browser's hls.js plays the returned URL straight from the provider CDN —
-  // verified CORS-open end to end (segments and AES key included) — so this
-  // route costs ~3 small upstream requests per cache miss and zero media
-  // bytes ever flow through here. See lib/stream-resolver.ts for why that
-  // split matters on the free plan.
-  if (pathname === '/api/stream/resolve') {
-    const type = isTv(q.get('type')) ? 'tv' : 'movie'
-    const id = q.get('id')
-    if (!id || !/^\d+$/.test(id)) {
-      return json({ error: 'invalid id' }, { status: 400 })
-    }
-    const season = Number(q.get('season'))
-    const episode = Number(q.get('episode'))
-    if (type === 'tv' && (!season || !episode)) {
-      return json({ error: 'season and episode are required' }, { status: 400 })
-    }
-    // Not a secret — a base URL kept out of the repo like every embed host.
-    const base = process.env.STREAM_RESOLVER_BASE?.trim().replace(/\/$/, '')
-    if (!base) {
-      return json(
-        { error: 'self-hosted streaming not configured' },
-        { status: 501 }
-      )
-    }
-    return cached(
-      request,
-      ctx,
-      async () => {
-        try {
-          const result = await resolveDirectStream(base, {
-            type,
-            id,
-            season,
-            episode,
-          })
-          // Advertises what /api/stream/subtitles.vtt can actually serve, so
-          // the player never shows an option that would 501. Keyless: the
-          // catalog path is SubDL's public site (see lib/stream/subdl.ts).
-          return json({
-            ...result,
-            externalSubtitleLangs: externalSubtitleLanguages(),
-          })
-        } catch (error) {
-          // Not stored: `cached` only keeps ok responses, so an upstream
-          // rotation or outage cannot pin a dead URL for the default TTL.
-          console.error('stream resolve failed', String(error))
-          return json(
-            { error: 'resolve failed' },
-            { status: 502, headers: { 'Cache-Control': 'no-store' } }
-          )
-        }
-      },
-      apiKey(url, {
-        type,
-        id,
-        season: type === 'tv' ? season : undefined,
-        episode: type === 'tv' ? episode : undefined,
-      })
-    )
-  }
-
-  // External subtitles for the self-hosted player, as a ready-to-use VTT
-  // file. Keyless: SubDL's public site lists every subtitle with its
-  // language and a direct download link (lib/stream/subdl.ts walks it).
-  // Small text, cached hard — one upstream chain per title+language per day
-  // per colo, no matter how many people press play.
-  if (pathname === '/api/stream/subtitles.vtt') {
-    const type = isTv(q.get('type')) ? 'tv' : 'movie'
-    const id = q.get('id')
-    if (!id || !/^\d+$/.test(id)) {
-      return json({ error: 'invalid id' }, { status: 400 })
-    }
-    const season = Number(q.get('season'))
-    const episode = Number(q.get('episode'))
-    if (type === 'tv' && (!season || !episode)) {
-      return json({ error: 'season and episode are required' }, { status: 400 })
-    }
-    const lang = q.get('lang') || ''
-    const title = (q.get('title') || '').trim()
-    if (!lang || !title) {
-      return json({ error: 'lang and title are required' }, { status: 400 })
-    }
-    return cached(
-      request,
-      ctx,
-      async () => {
-        try {
-          const vtt = await fetchExternalSubtitlesVtt(
-            { type, id: Number(id), season, episode },
-            lang,
-            { title, year: Number(q.get('year')) || undefined }
-          )
-          if (!vtt) {
-            // The catalog has nothing for this title — honest 404, and not
-            // cached so a later upload can succeed without waiting out a TTL.
-            return json(
-              { error: 'no subtitle found for this title' },
-              { status: 404, headers: { 'Cache-Control': 'no-store' } }
-            )
-          }
-          return new Response(vtt, {
-            headers: {
-              'Content-Type': 'text/vtt; charset=utf-8',
-              'Cache-Control': 'public, max-age=3600, s-maxage=86400',
-            },
-          })
-        } catch (error) {
-          console.error('subtitle fetch failed', String(error))
-          return json(
-            { error: 'subtitle fetch failed' },
-            { status: 502, headers: { 'Cache-Control': 'no-store' } }
-          )
-        }
-      },
-      apiKey(url, {
-        type,
-        id,
-        season: type === 'tv' ? season : undefined,
-        episode: type === 'tv' ? episode : undefined,
-        lang,
-      })
     )
   }
 
@@ -1219,6 +1099,110 @@ async function handleListsDirectory(request, env, ctx, url) {
   )
 }
 
+/**
+ * POST /api/pro/ticket — mint one 90-second playback ticket for the private
+ * player worker.
+ *
+ * This is the whole "only us" anchor. The private player verifies nothing but
+ * this signature (shared PLAYBACK_TICKET_SECRET/TICKET_SECRET), so whoever can
+ * get a ticket here can play — and nobody else:
+ *
+ *   - A session in THIS database is required, always. Sessions come from this
+ *     site's Google OAuth and live in this D1; a fork of the open-source repo
+ *     cannot create rows here, so a cloner's deployment can never mint tickets
+ *     our player accepts.
+ *   - While PRO_PLAYER_OPEN is set, every signed-in visitor gets one: the
+ *     player is the site default for everyone while it proves itself.
+ *   - Without that var, entitlement is enforced exactly like every other
+ *     supporter feature (402), and flipping is removing one wrangler var.
+ */
+async function handleProTicket(request, env, url) {
+  const now = Date.now()
+  const user = await loadSession(env.DB, sessionCookieOf(request), now)
+  if (!user) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Not signed in' }),
+      { status: 401, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
+    )
+  }
+  // The open-for-everyone testing window. Remove PRO_PLAYER_OPEN from
+  // wrangler.jsonc (or `wrangler secret/var delete`) to lock the player to
+  // supporters only — no client change involved.
+  if (!env.PRO_PLAYER_OPEN && !isEntitled(user, now)) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'The Reely Player is a supporter feature.',
+      }),
+      { status: 402, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
+    )
+  }
+
+  let body
+  try {
+    body = await request.json()
+  } catch {
+    body = null
+  }
+  const type = body && isTv(body.type) ? 'tv' : 'movie'
+  const id = Number(body?.id)
+  if (!Number.isFinite(id) || id <= 0 || !body?.title) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Bad request' }),
+      { status: 400, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
+    )
+  }
+  const season = Number(body.season)
+  const episode = Number(body.episode)
+  const start = Math.max(0, Number(body.start) || 0)
+  const year = Number(body.year)
+
+  const base = env.PLAYBACK_WORKER_URL?.trim().replace(/\/$/, '')
+  const ticket = await signEntryTicket(env.PLAYBACK_TICKET_SECRET, {
+    type,
+    id,
+    ...(type === 'tv' ? { season, episode } : {}),
+  })
+  if (!base || !ticket) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Playback not configured' }),
+      { status: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
+    )
+  }
+
+  // `o` tells the player which parent origin it may postMessage progress to —
+  // and doubles as its embed allowlist check.
+  const params = new URLSearchParams({
+    type,
+    id: String(id),
+    t: ticket,
+    o: url.origin,
+    start: String(Math.floor(start)),
+    title: String(body.title).slice(0, 120),
+  })
+  if (type === 'tv') {
+    params.set('season', String(Number.isFinite(season) ? season : 1))
+    params.set('episode', String(Number.isFinite(episode) ? episode : 1))
+  }
+  if (Number.isFinite(year) && year > 1900) params.set('year', String(year))
+  // Playback prefs ride along so the player applies them on boot without a
+  // round trip of its own. See lib/playback-prefs.ts for where they come from.
+  const prefs = body.playback
+  if (prefs && typeof prefs === 'object') {
+    if (typeof prefs.sub === 'string' && prefs.sub.length <= 5) {
+      params.set('sub', prefs.sub)
+    }
+    if (prefs.subSize === 's' || prefs.subSize === 'm' || prefs.subSize === 'l') {
+      params.set('subs', prefs.subSize)
+    }
+  }
+
+  return new Response(JSON.stringify({ success: true, url: `${base}/play?${params}` }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+  })
+}
+
 export default {
   /**
    * The hourly sweep for new-episode alerts. Imported lazily so its TMDB and
@@ -1245,6 +1229,10 @@ export default {
 
     // Before the method check below: every mutating account route is a POST,
     // and this dispatcher does its own per-path method table.
+    if (pathname === '/api/pro/ticket' && request.method === 'POST') {
+      return await handleProTicket(request, env, url)
+    }
+
     if (ownsPath(pathname)) {
       try {
         // Imported here, not at the top: esbuild keeps a module reached only
