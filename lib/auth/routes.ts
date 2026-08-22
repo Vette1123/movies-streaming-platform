@@ -565,6 +565,21 @@ export function normalisePrefs(value: unknown): Record<string, unknown> | null {
   if (typeof input.source === 'string' && input.source.length <= 40) {
     out.source = input.source
   }
+  // Reely Player preferences. Both values are from closed sets, so neither
+  // can grow the column or smuggle markup into the player URL.
+  if (input.playback !== undefined && input.playback !== null) {
+    if (typeof input.playback === 'object' && !Array.isArray(input.playback)) {
+      const pb = input.playback as Record<string, unknown>
+      const playback: Record<string, unknown> = {}
+      if (pb.sub === 'off' || (typeof pb.sub === 'string' && /^[a-z]{2}$/.test(pb.sub))) {
+        playback.sub = pb.sub
+      }
+      if (pb.subSize === 's' || pb.subSize === 'm' || pb.subSize === 'l') {
+        playback.subSize = pb.subSize
+      }
+      if (Object.keys(playback).length > 0) out.playback = playback
+    }
+  }
   return out
 }
 

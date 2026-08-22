@@ -1,10 +1,19 @@
 'use client'
 
 import Link from 'next/link'
-import { EyeOff, Server } from 'lucide-react'
+import { EyeOff, Languages, Server, Sparkles } from 'lucide-react'
 
-import { HAS_FALLBACK_SOURCE, STREAM_SOURCES } from '@/config/sources'
+import {
+  HAS_FALLBACK_SOURCE,
+  REELY_SOURCE_ID,
+  STREAM_SOURCES,
+} from '@/config/sources'
 import { savePrefs } from '@/lib/account'
+import {
+  readPlaybackPrefs,
+  writePlaybackPrefs,
+  type PlaybackPrefs,
+} from '@/lib/playback-prefs'
 import { cn } from '@/lib/utils'
 import { useAccount } from '@/hooks/use-account'
 import { useHasHoverPointer, useLowPowerDevice } from '@/hooks/use-device-tier'
@@ -64,6 +73,8 @@ export function PlaybackPanel() {
 
   return (
     <div className="space-y-8">
+      <ReelySection />
+
       <ServerSection />
 
       <SpoilerSection />
@@ -77,13 +88,12 @@ export function PlaybackPanel() {
         />
 
         <p className="text-muted-foreground max-w-[65ch] text-sm leading-relaxed">
-          Playback itself comes from a third-party embed that Reely does not
-          host or control, which is why there is nothing here about quality or
-          subtitles. See the{' '}
+          Embed servers come from third parties that Reely does not host or
+          control. The Reely Player above is ours — see the{' '}
           <Link href="/disclaimer" className="hover:text-foreground underline">
             disclaimer
           </Link>{' '}
-          for what that means.
+          for what each of them means.
         </p>
 
         <p className="text-muted-foreground max-w-[65ch] text-sm leading-relaxed">
@@ -91,6 +101,126 @@ export function PlaybackPanel() {
           the right answer is different on a laptop and on a phone on cellular
           data.
         </p>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The Reely Player: our own playback surface, and the headline supporter
+ * feature. Two settings — subtitle language and subtitle text size — applied
+ * on boot of every title, on every device, because they ride the account
+ * (`prefs.playback`) with a localStorage mirror for the player iframe to read
+ * without a round trip (lib/playback-prefs.ts).
+ */
+const SUB_LANGUAGES: { value: string; label: string }[] = [
+  { value: 'off', label: 'Off' },
+  { value: 'ar', label: 'العربية' },
+  { value: 'en', label: 'English' },
+  { value: 'fr', label: 'Français' },
+  { value: 'de', label: 'Deutsch' },
+  { value: 'es', label: 'Español' },
+  { value: 'tr', label: 'Türkçe' },
+  { value: 'pt', label: 'Português' },
+  { value: 'ru', label: 'Русский' },
+  { value: 'it', label: 'Italiano' },
+  { value: 'id', label: 'Indonesia' },
+]
+
+const SUB_SIZES: { value: NonNullable<PlaybackPrefs['subSize']>; label: string }[] =
+  [
+    { value: 's', label: 'Small' },
+    { value: 'm', label: 'Medium' },
+    { value: 'l', label: 'Large' },
+  ]
+
+function ReelySection() {
+  const { pro, prefs } = useAccount()
+
+  if (!pro) {
+    return (
+      <SupporterGate
+        title="Your subtitles, on every title"
+        Icon={Languages}
+        surface="playback"
+        cta="Unlock the Reely Player"
+      >
+        The Reely Player is Reely&rsquo;s own player: it loads faster than the embed
+        servers, picks up where you left off automatically, and pulls real
+        subtitles in your language — Arabic, English, French, Turkish and more —
+        even when a title ships with none. Set your language once here and every
+        title you open plays with it already on, at the size you like.
+      </SupporterGate>
+    )
+  }
+
+  const current: PlaybackPrefs = readPlaybackPrefs(prefs.playback ?? null)
+
+  const setPref = (patch: PlaybackPrefs) => {
+    void writePlaybackPrefs({ ...current, ...patch })
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-1">
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold">
+          <Sparkles className="size-3.5 shrink-0" />
+          Reely Player
+          <span className="rounded-full bg-gradient-to-r from-amber-500 via-rose-500 to-fuchsia-600 px-1.5 py-px text-[9px] leading-tight font-bold tracking-wider text-white">
+            PRO
+          </span>
+        </h3>
+        <p className="text-muted-foreground max-w-[65ch] text-sm leading-relaxed">
+          Our own player — faster to start, resumes where you stopped, and puts
+          subtitles in your language on titles that ship with none. These
+          settings follow your account onto every device.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <p className="text-sm font-medium">Subtitles</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {SUB_LANGUAGES.map((lang) => (
+              <button
+                key={lang.value}
+                type="button"
+                aria-pressed={current.sub === lang.value}
+                onClick={() => setPref({ sub: lang.value })}
+                className={cn(
+                  'focus-visible:ring-ring rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
+                  current.sub === lang.value
+                    ? 'border-primary bg-primary/10 text-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                )}
+              >
+                {lang.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <p className="text-sm font-medium">Subtitle size</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {SUB_SIZES.map((size) => (
+              <button
+                key={size.value}
+                type="button"
+                aria-pressed={current.subSize === size.value}
+                onClick={() => setPref({ subSize: size.value })}
+                className={cn(
+                  'focus-visible:ring-ring rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
+                  current.subSize === size.value
+                    ? 'border-primary bg-primary/10 text-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                )}
+              >
+                {size.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -144,22 +274,32 @@ function ServerSection() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {STREAM_SOURCES.map((source) => (
-          <button
-            key={source.id}
-            type="button"
-            aria-pressed={source.id === current}
-            onClick={() => void savePrefs({ source: source.id })}
-            className={cn(
-              'focus-visible:ring-ring rounded-lg border px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
-              source.id === current
-                ? 'border-primary bg-primary/10 text-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-            )}
-          >
-            {source.label}
-          </button>
-        ))}
+        {STREAM_SOURCES.map((source) => {
+          const isReely = source.id === REELY_SOURCE_ID
+          return (
+            <button
+              key={source.id}
+              type="button"
+              aria-pressed={source.id === current}
+              onClick={() => void savePrefs({ source: source.id })}
+              className={cn(
+                'focus-visible:ring-ring rounded-lg border px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
+                isReely
+                  ? cn(
+                      'inline-flex items-center gap-1.5 border-transparent text-white shadow-[0_4px_14px_-2px_rgba(244,63,94,0.55)]',
+                      'bg-gradient-to-r from-amber-500 via-rose-500 to-fuchsia-600 hover:shadow-[0_6px_20px_-2px_rgba(244,63,94,0.75)]',
+                      source.id !== current && 'opacity-80'
+                    )
+                  : source.id === current
+                    ? 'border-primary bg-primary/10 text-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+              )}
+            >
+              {isReely && <Sparkles className="size-3.5 shrink-0" />}
+              {source.label}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

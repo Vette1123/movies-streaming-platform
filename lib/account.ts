@@ -45,6 +45,11 @@ export interface AccountPrefs {
   region?: string
   /** Saved browse filters. See lib/filter-presets.ts for why they live here. */
   presets?: FilterPreset[]
+  /** Reely Player preferences. See lib/playback-prefs.ts. */
+  playback?: {
+    sub?: string
+    subSize?: 's' | 'm' | 'l'
+  }
   /**
    * Hours not to be buzzed in, and one buzz a day instead of one per event.
    *
