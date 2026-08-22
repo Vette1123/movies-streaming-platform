@@ -129,7 +129,7 @@ const FAQ = [
   },
   {
     q: 'A stream would not play. Does support fix that?',
-    a: 'Often, yes — and that is the honest answer rather than a promise. Streams come from third-party servers Reely does not run. Everyone gets the main one; supporters get the backups, a one-tap switch, and an automatic hop when a server stops responding. If none of them carry a title, no plan can conjure it.',
+    a: 'Often, yes — and that is the honest answer rather than a promise. The Reely Player, Reely’s own player, is now where streams start; behind it sit third-party servers Reely does not run. Supporters get one-tap switching between every backup and an automatic hop when one stops responding. If nothing carries a title, no plan can conjure it.',
   },
   {
     q: 'Can I cancel?',
@@ -297,8 +297,8 @@ function Flagships() {
         What support unlocks
       </h2>
 
-      <div className="mt-10 grid gap-4 lg:grid-cols-5 lg:grid-rows-2">
-        <article className="border-primary/20 from-primary/10 relative col-span-full overflow-hidden rounded-2xl border bg-linear-to-br to-transparent lg:col-span-3 lg:row-span-2">
+      <div className="mt-10 grid gap-4 lg:grid-cols-5">
+        <article className="border-primary/20 from-primary/10 relative overflow-hidden rounded-2xl border bg-linear-to-br to-transparent lg:col-span-3">
           <div className="max-w-[52ch] p-6 sm:p-8">
             <lead.Icon className="text-primary size-7" />
             <h3 className="mt-4 text-2xl font-semibold tracking-tight md:text-3xl">
@@ -308,32 +308,35 @@ function Flagships() {
               {lead.body}
             </p>
           </div>
-          {/* Bled off the bottom rather than boxed: it is there to say "this is
-              the app", not to be studied. Lazy and dimensioned so it cannot
-              move the section while it loads. */}
-          <img
-            src="/screenshot-narrow.webp"
-            alt="The Reely homepage on a phone, showing a featured title and a trending row"
-            width={780}
-            height={1688}
-            loading="lazy"
-            decoding="async"
-            className="pointer-events-none mx-auto -mb-24 block h-auto w-56 rounded-t-2xl border-x border-t shadow-2xl sm:-mb-32 sm:w-64 lg:absolute lg:-right-8 lg:-bottom-20 lg:mx-0 lg:w-48 xl:w-56"
-          />
         </article>
 
-        {rest.map(({ Icon, title, body }) => (
-          <article
-            key={title}
-            className="border-border/70 bg-card/40 col-span-full flex flex-col justify-center rounded-2xl border p-6 sm:p-8 lg:col-span-2"
-          >
-            <Icon className="text-primary size-5" />
-            <h3 className="mt-4 text-lg font-semibold">{title}</h3>
-            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-              {body}
-            </p>
-          </article>
-        ))}
+        {/* The screenshot belongs to the library feature (first of the rest):
+            it is the claim that has a picture. */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:col-span-2">
+          {rest.map(({ Icon, title, body }, index) => (
+            <article
+              key={title}
+              className="border-border/70 bg-card/40 relative flex flex-col justify-center rounded-2xl border p-6 sm:p-8"
+            >
+              {index === 0 && (
+                <img
+                  src="/screenshot-narrow.webp"
+                  alt="The Reely homepage on a phone, showing a featured title and a trending row"
+                  width={780}
+                  height={1688}
+                  loading="lazy"
+                  decoding="async"
+                  className="pointer-events-none absolute -top-16 -right-10 hidden h-auto w-32 rotate-6 rounded-t-xl border shadow-xl lg:block"
+                />
+              )}
+              <Icon className="text-primary size-5" />
+              <h3 className="mt-4 text-lg font-semibold">{title}</h3>
+              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                {body}
+              </p>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   )

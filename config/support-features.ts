@@ -52,6 +52,12 @@ export interface SupportFeature {
  */
 export const FLAGSHIP_FEATURES: SupportFeature[] = [
   {
+    Icon: Sparkles,
+    title: 'The Reely Player',
+    short: 'Our own player — faster starts, resume, subtitles in your language',
+    body: 'A player Reely builds and runs itself, instead of borrowing someone else’s. It starts faster than the embed servers, picks up where you stopped — even mid-episode, on another device — and pulls real subtitles onto titles that ship with none: Arabic, English, French, Turkish and more, sized the way you like. Set your language once and every title you open already has it on.',
+  },
+  {
     Icon: RefreshCw,
     title: 'One library, every screen, forever',
     short: 'Library, history and episodes synced across every device',
