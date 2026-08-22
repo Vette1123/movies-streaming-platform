@@ -44,17 +44,27 @@ export interface StreamSource {
 }
 
 /**
- * Every base worth trying, most-preferred first, all from the environment.
+ * Every embed base, paired with the fixed label a visitor sees, all from the
+ * environment. The label is pinned to the env slot (not derived from position)
+ * so "Server 2" always means NEXT_PUBLIC_STREAM_SOURCE_2 regardless of ordering.
  *
  * Next inlines `NEXT_PUBLIC_*` textually, so these must be read as whole
  * identifiers — `process.env[name]` in a loop resolves to nothing at build time
  * and every fallback would silently vanish.
  */
-const BASES: (string | undefined)[] = [
-  STREAMING_MOVIES_API_URL,
-  process.env.NEXT_PUBLIC_STREAM_SOURCE_2,
-  process.env.NEXT_PUBLIC_STREAM_SOURCE_3,
+const SLOTS: { label: string; base: string | undefined }[] = [
+  { label: 'Server 1', base: STREAMING_MOVIES_API_URL },
+  { label: 'Server 2', base: process.env.NEXT_PUBLIC_STREAM_SOURCE_2 },
+  { label: 'Server 3', base: process.env.NEXT_PUBLIC_STREAM_SOURCE_3 },
 ]
+
+/**
+ * What every visitor gets without choosing. Free visitors only ever get this
+ * one entry, so it must be a working embed — the self-host Reely Player is
+ * intentionally off the list (its provider binds each playlist token to the
+ * resolving IP, so a server-resolved stream is unplayable in the browser).
+ */
+const DEFAULT_LABEL = 'Server 1'
 
 const hostOf = (base: string): string => {
   try {
@@ -69,27 +79,26 @@ const hostOf = (base: string): string => {
 
 function buildSources(): StreamSource[] {
   const seen = new Set<string>()
-  const out: StreamSource[] = []
+  const built: StreamSource[] = []
 
-  // The house player leads the list. It is not an embed: `base` is empty and
-  // playback goes through ReelyPlayer, which exchanges a signed ticket with
-  // our own worker for a direct HLS stream — no third-party page, no ads.
-  // Position 0 means it is what every visitor gets without choosing; when
-  // PRO_PLAYER_OPEN is lifted it becomes the supporter default (the ticket
-  // endpoint enforces that server-side) while these embeds remain the
-  // everyone fallback.
-  out.push({ id: REELY_SOURCE_ID, label: 'Reely Player', base: '' })
-
-  for (const base of BASES) {
-    const trimmed = base?.trim().replace(/\/$/, '')
+  for (const slot of SLOTS) {
+    const trimmed = slot.base?.trim().replace(/\/$/, '')
     if (!trimmed) continue
     const id = hostOf(trimmed)
     if (seen.has(id)) continue
     seen.add(id)
-    out.push({ id, label: `Server ${out.length}`, base: trimmed })
+    built.push({ id, label: slot.label, base: trimmed })
   }
 
-  return out
+  // Lead with the default so it is position 0 — free visitors get only the
+  // first entry, and everyone starts here. Stable sort keeps the rest in slot
+  // order.
+  built.sort(
+    (a, b) =>
+      Number(b.label === DEFAULT_LABEL) - Number(a.label === DEFAULT_LABEL)
+  )
+
+  return built
 }
 
 export const STREAM_SOURCES: StreamSource[] = buildSources()
