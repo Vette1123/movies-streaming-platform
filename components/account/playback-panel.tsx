@@ -5,8 +5,9 @@ import { EyeOff, Languages, Server, Sparkles } from 'lucide-react'
 
 import {
   HAS_FALLBACK_SOURCE,
-  REELY_SOURCE_ID,
+  RICH_SOURCE,
   STREAM_SOURCES,
+  visibleSourcesFor,
 } from '@/config/sources'
 import { savePrefs } from '@/lib/account'
 import {
@@ -75,6 +76,8 @@ export function PlaybackPanel() {
     <div className="space-y-8">
       <ReelySection />
 
+      <RichSourceSection />
+
       <ServerSection />
 
       <SpoilerSection />
@@ -127,12 +130,14 @@ const SUB_LANGUAGES: { value: string; label: string }[] = [
   { value: 'id', label: 'Indonesia' },
 ]
 
-const SUB_SIZES: { value: NonNullable<PlaybackPrefs['subSize']>; label: string }[] =
-  [
-    { value: 's', label: 'Small' },
-    { value: 'm', label: 'Medium' },
-    { value: 'l', label: 'Large' },
-  ]
+const SUB_SIZES: {
+  value: NonNullable<PlaybackPrefs['subSize']>
+  label: string
+}[] = [
+  { value: 's', label: 'Small' },
+  { value: 'm', label: 'Medium' },
+  { value: 'l', label: 'Large' },
+]
 
 function ReelySection() {
   const { pro, prefs } = useAccount()
@@ -145,8 +150,8 @@ function ReelySection() {
         surface="playback"
         cta="Unlock the Reely Player"
       >
-        The Reely Player is Reely&rsquo;s own player: it loads faster than the embed
-        servers, picks up where you left off automatically, and pulls real
+        The Reely Player is Reely&rsquo;s own player: it loads faster than the
+        embed servers, picks up where you left off automatically, and pulls real
         subtitles in your language — Arabic, English, French, Turkish and more —
         even when a title ships with none. Set your language once here and every
         title you open plays with it already on, at the size you like.
@@ -227,6 +232,38 @@ function ReelySection() {
 }
 
 /**
+ * The opt-in for the supporters-only player trial. A deployment without
+ * NEXT_PUBLIC_STREAM_SOURCE_PRO configured offers nothing here — the section
+ * is absent rather than a switch that cannot do anything — so the feature
+ * exists exactly where the environment says it does.
+ */
+function RichSourceSection() {
+  const { pro, prefs } = useAccount()
+
+  if (!RICH_SOURCE) return null
+
+  if (!pro) {
+    return (
+      <SupporterGate title="Try our new player first" Icon={Sparkles}>
+        A new playback experience is on its way — it starts faster, remembers
+        where you stopped down to the second, and carries Reely&rsquo;s own
+        look. It is in testing with supporters right now: switch it on, and
+        every stream opens in it until you turn it off.
+      </SupporterGate>
+    )
+  }
+
+  return (
+    <SettingSwitch
+      label="Try the new player experience"
+      description="Opens streams in Reely Beta — our new player look, with resume tracked to the second. Every backup server stays one tap away in the switcher while you watch, and turning this off puts everything back exactly as it was."
+      checked={prefs.richPlayer === true}
+      onChange={(next) => void savePrefs({ richPlayer: next })}
+    />
+  )
+}
+
+/**
  * Which server streams play from.
  *
  * The account preference, which is the one that follows somebody between
@@ -261,6 +298,10 @@ function ServerSection() {
   }
 
   const current = prefs.source ?? STREAM_SOURCES[0]?.id
+  // The same list the player's switcher resolves for this account: the rich
+  // surface appears here only while it is switched on, so a stored choice for
+  // it never dangles after opt-out.
+  const choosable = visibleSourcesFor(pro === true && prefs.richPlayer === true)
 
   return (
     <div className="space-y-4">
@@ -274,8 +315,8 @@ function ServerSection() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {STREAM_SOURCES.map((source) => {
-          const isReely = source.id === REELY_SOURCE_ID
+        {choosable.map((source) => {
+          const isRich = source.id === RICH_SOURCE?.id
           return (
             <button
               key={source.id}
@@ -284,7 +325,7 @@ function ServerSection() {
               onClick={() => void savePrefs({ source: source.id })}
               className={cn(
                 'focus-visible:ring-ring rounded-lg border px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
-                isReely
+                isRich
                   ? cn(
                       'inline-flex items-center gap-1.5 border-transparent text-white shadow-[0_4px_14px_-2px_rgba(244,63,94,0.55)]',
                       'bg-gradient-to-r from-amber-500 via-rose-500 to-fuchsia-600 hover:shadow-[0_6px_20px_-2px_rgba(244,63,94,0.75)]',
@@ -295,7 +336,7 @@ function ServerSection() {
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
               )}
             >
-              {isReely && <Sparkles className="size-3.5 shrink-0" />}
+              {isRich && <Sparkles className="size-3.5 shrink-0" />}
               {source.label}
             </button>
           )

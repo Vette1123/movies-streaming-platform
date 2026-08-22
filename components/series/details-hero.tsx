@@ -163,7 +163,14 @@ export const SeriesDetailsHero = ({
   const src =
     playingTarget === undefined || !series?.id
       ? ''
-      : seriesStreamUrl(sourceControl.source, series.id, playingTarget)
+      : // A "series root" play normalizes to the first episode. Providers used
+        // to pick one themselves off /tv/{id}, but a URL that names the episode
+        // works on every provider on the list and cannot be second-guessed.
+        seriesStreamUrl(
+          sourceControl.source,
+          series.id,
+          playingTarget ?? { season: 1, episode: 1 }
+        )
 
   return (
     <>

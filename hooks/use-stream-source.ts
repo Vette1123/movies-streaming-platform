@@ -4,8 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
   DEFAULT_SOURCE_ID,
-  sourceById,
-  STREAM_SOURCES,
+  visibleSourcesFor,
   type StreamSource,
 } from '@/config/sources'
 import { savePrefs } from '@/lib/account'
@@ -77,10 +76,13 @@ function trim(map: ByTitle): ByTitle {
 }
 
 /** The next server along, or null on the last one. */
-function sourceAfter(currentId: string): StreamSource | null {
-  const index = STREAM_SOURCES.findIndex((entry) => entry.id === currentId)
+function sourceAfter(
+  sources: StreamSource[],
+  currentId: string
+): StreamSource | null {
+  const index = sources.findIndex((entry) => entry.id === currentId)
   if (index < 0) return null
-  return STREAM_SOURCES[index + 1] ?? null
+  return sources[index + 1] ?? null
 }
 
 export interface StreamSourceControl {
@@ -135,7 +137,18 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
   // the choice made on this device.
   const accountPreference = pro ? (prefs.source ?? '') : ''
 
-  const canSwitch = pro === true && STREAM_SOURCES.length > 1
+  /**
+   * The servers THIS visitor may choose between. The opt-in flag is honoured
+   * only while the account is entitled, so a lapsed supporter drops back to
+   * exactly the list everyone else sees — and any stored id pointing at the
+   * rich surface then fails validation below and resolves like never chosen.
+   */
+  const sources = useMemo(
+    () => visibleSourcesFor(pro === true && prefs.richPlayer === true),
+    [pro, prefs.richPlayer]
+  )
+
+  const canSwitch = pro === true && sources.length > 1
 
   const currentId = useMemo(() => {
     // Not supporting: the single server the site has always used, and no stored
@@ -144,20 +157,33 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
     // change.
     if (!canSwitch) return DEFAULT_SOURCE_ID
     const remembered = byTitle[mediaKey]
-    if (remembered && STREAM_SOURCES.some((s) => s.id === remembered)) {
+    if (remembered && sources.some((s) => s.id === remembered)) {
       return remembered
     }
-    if (accountPreference) return accountPreference
-    if (devicePreference) return devicePreference
+    if (accountPreference && sources.some((s) => s.id === accountPreference)) {
+      return accountPreference
+    }
+    if (devicePreference && sources.some((s) => s.id === devicePreference)) {
+      return devicePreference
+    }
     return DEFAULT_SOURCE_ID
-  }, [accountPreference, byTitle, canSwitch, devicePreference, mediaKey])
+  }, [
+    accountPreference,
+    byTitle,
+    canSwitch,
+    devicePreference,
+    mediaKey,
+    sources,
+  ])
 
-  const source = sourceById(currentId)
+  // Resolve within the visitor's own list; an id that is not in it (a source
+  // remembered before opting out) falls to the site default.
+  const source = sources.find((entry) => entry.id === currentId) ?? sources[0]
 
   const select = useCallback(
     (id: string) => {
       if (!canSwitch) return
-      if (!STREAM_SOURCES.some((entry) => entry.id === id)) return
+      if (!sources.some((entry) => entry.id === id)) return
       setSwitched(true)
       // Computed from the state this render already holds rather than inside the
       // updater: an updater has to be pure, and React may run it twice.
@@ -175,10 +201,10 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
       // while the network decides.
       void savePrefs({ source: id })
     },
-    [byTitle, canSwitch, mediaKey]
+    [byTitle, canSwitch, mediaKey, sources]
   )
 
-  const next = canSwitch ? sourceAfter(source.id) : null
+  const next = canSwitch ? sourceAfter(sources, source.id) : null
 
   const advance = useCallback(() => {
     if (next) select(next.id)
@@ -187,8 +213,9 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
   return {
     source,
     // One entry for everyone else, so a caller that maps over this cannot paint
-    // a chooser with nothing to choose.
-    sources: canSwitch ? STREAM_SOURCES : STREAM_SOURCES.slice(0, 1),
+    // a chooser with nothing to choose. Opted-in supporters see the rich
+    // surface first, then every fallback server.
+    sources: canSwitch ? sources : sources.slice(0, 1),
     select,
     next,
     advance,

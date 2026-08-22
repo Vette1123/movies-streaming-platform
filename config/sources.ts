@@ -135,6 +135,40 @@ export const DEFAULT_SOURCE_ID: string = STREAM_SOURCES[0]?.id ?? ''
 /** True only when there is somewhere else to go. The UI hides itself otherwise. */
 export const HAS_FALLBACK_SOURCE = STREAM_SOURCES.length > 1
 
+/**
+ * The opt-in surface for supporters, from NEXT_PUBLIC_STREAM_SOURCE_PRO
+ * (+ _PRO_QUERY). Deliberately NOT part of STREAM_SOURCES: it does not exist
+ * for anyone who has not switched it on from their account, so the default
+ * journey is untouched down to the URL — and a deployment that never sets the
+ * var ships a site where this whole feature is absent rather than broken.
+ */
+const PRO_BASE = process.env.NEXT_PUBLIC_STREAM_SOURCE_PRO?.trim().replace(
+  /\/$/,
+  ''
+)
+
+export const RICH_SOURCE: StreamSource | null =
+  PRO_BASE && PRO_BASE.length > 0
+    ? {
+        id: hostOf(PRO_BASE),
+        label: 'Reely Beta',
+        base: PRO_BASE,
+        ...(process.env.NEXT_PUBLIC_STREAM_SOURCE_PRO_QUERY?.trim()
+          ? { query: process.env.NEXT_PUBLIC_STREAM_SOURCE_PRO_QUERY.trim() }
+          : {}),
+      }
+    : null
+
+/**
+ * The list a given visitor may choose between. Everyone gets STREAM_SOURCES;
+ * a supporter who opted in also gets the rich surface, offered first because
+ * it is the one they asked to try. Callers must treat the result as the
+ * validation set for stored source ids — an id remembered while opted in has
+ * to resolve to nothing once opted out.
+ */
+export const visibleSourcesFor = (richOptedIn: boolean): StreamSource[] =>
+  richOptedIn && RICH_SOURCE ? [RICH_SOURCE, ...STREAM_SOURCES] : STREAM_SOURCES
+
 export const sourceById = (id: string | null | undefined): StreamSource =>
   STREAM_SOURCES.find((source) => source.id === id) ?? STREAM_SOURCES[0]
 
