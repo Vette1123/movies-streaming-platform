@@ -33,7 +33,7 @@ perfectly plausible in the HTML.
 
 **The obvious way to fetch watch providers would have cost Worker CPU.**
 `append_to_response=watch/providers` on the detail call is free at build — but
-`cloudflare/worker.js` serves `/api/media/*` from that *same* service function,
+`cloudflare/worker.js` serves `/api/media/*` from that _same_ service function,
 TMDB answers watch/providers for every country it knows (10-20KB), and that
 route's CPU has already been an outage on this site. The fix was to make the two
 callers fetch two different URLs, gated on `IS_PRERENDER` (the existing GOVERN

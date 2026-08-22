@@ -53,6 +53,11 @@ import { loadPublicList } from '@/lib/lists/routes'
 import { getMediaHeroImageUrl } from '@/lib/media'
 import { mosaicUrl, OG_HEIGHT, OG_WIDTH } from '@/lib/og/mosaic'
 import { loadPublicProfile } from '@/lib/profile/routes'
+import {
+  externalSubtitleLanguages,
+  fetchExternalSubtitlesVtt,
+} from '@/lib/stream/subdl'
+import { resolveDirectStream } from '@/lib/stream/vixsrc'
 import { getImageURL } from '@/lib/utils'
 
 /** 6h, matching the deploy cadence that refreshes the static half of the site. */
@@ -135,6 +140,9 @@ function copyEnv(env) {
     'VAPID_PUBLIC_KEY',
     'VAPID_PRIVATE_KEY',
     'VAPID_SUBJECT',
+    // Self-hosted player. Not secrets — base URLs, kept out of the repo by
+    // the same discipline as the embed providers (see config/sources.ts).
+    'STREAM_RESOLVER_BASE',
   ]) {
     if (env[key] !== undefined) process.env[key] = env[key]
   }
@@ -454,6 +462,131 @@ async function handleApi(pathname, url, request, ctx) {
         }
       },
       apiKey(url, { id, type })
+    )
+  }
+
+  // Self-hosted player: a TMDB id becomes a direct HLS master manifest. The
+  // browser's hls.js plays the returned URL straight from the provider CDN —
+  // verified CORS-open end to end (segments and AES key included) — so this
+  // route costs ~3 small upstream requests per cache miss and zero media
+  // bytes ever flow through here. See lib/stream-resolver.ts for why that
+  // split matters on the free plan.
+  if (pathname === '/api/stream/resolve') {
+    const type = isTv(q.get('type')) ? 'tv' : 'movie'
+    const id = q.get('id')
+    if (!id || !/^\d+$/.test(id)) {
+      return json({ error: 'invalid id' }, { status: 400 })
+    }
+    const season = Number(q.get('season'))
+    const episode = Number(q.get('episode'))
+    if (type === 'tv' && (!season || !episode)) {
+      return json({ error: 'season and episode are required' }, { status: 400 })
+    }
+    // Not a secret — a base URL kept out of the repo like every embed host.
+    const base = process.env.STREAM_RESOLVER_BASE?.trim().replace(/\/$/, '')
+    if (!base) {
+      return json(
+        { error: 'self-hosted streaming not configured' },
+        { status: 501 }
+      )
+    }
+    return cached(
+      request,
+      ctx,
+      async () => {
+        try {
+          const result = await resolveDirectStream(base, {
+            type,
+            id,
+            season,
+            episode,
+          })
+          // Advertises what /api/stream/subtitles.vtt can actually serve, so
+          // the player never shows an option that would 501. Keyless: the
+          // catalog path is SubDL's public site (see lib/stream/subdl.ts).
+          return json({
+            ...result,
+            externalSubtitleLangs: externalSubtitleLanguages(),
+          })
+        } catch (error) {
+          // Not stored: `cached` only keeps ok responses, so an upstream
+          // rotation or outage cannot pin a dead URL for the default TTL.
+          console.error('stream resolve failed', String(error))
+          return json(
+            { error: 'resolve failed' },
+            { status: 502, headers: { 'Cache-Control': 'no-store' } }
+          )
+        }
+      },
+      apiKey(url, {
+        type,
+        id,
+        season: type === 'tv' ? season : undefined,
+        episode: type === 'tv' ? episode : undefined,
+      })
+    )
+  }
+
+  // External subtitles for the self-hosted player, as a ready-to-use VTT
+  // file. Keyless: SubDL's public site lists every subtitle with its
+  // language and a direct download link (lib/stream/subdl.ts walks it).
+  // Small text, cached hard — one upstream chain per title+language per day
+  // per colo, no matter how many people press play.
+  if (pathname === '/api/stream/subtitles.vtt') {
+    const type = isTv(q.get('type')) ? 'tv' : 'movie'
+    const id = q.get('id')
+    if (!id || !/^\d+$/.test(id)) {
+      return json({ error: 'invalid id' }, { status: 400 })
+    }
+    const season = Number(q.get('season'))
+    const episode = Number(q.get('episode'))
+    if (type === 'tv' && (!season || !episode)) {
+      return json({ error: 'season and episode are required' }, { status: 400 })
+    }
+    const lang = q.get('lang') || ''
+    const title = (q.get('title') || '').trim()
+    if (!lang || !title) {
+      return json({ error: 'lang and title are required' }, { status: 400 })
+    }
+    return cached(
+      request,
+      ctx,
+      async () => {
+        try {
+          const vtt = await fetchExternalSubtitlesVtt(
+            { type, id: Number(id), season, episode },
+            lang,
+            { title, year: Number(q.get('year')) || undefined }
+          )
+          if (!vtt) {
+            // The catalog has nothing for this title — honest 404, and not
+            // cached so a later upload can succeed without waiting out a TTL.
+            return json(
+              { error: 'no subtitle found for this title' },
+              { status: 404, headers: { 'Cache-Control': 'no-store' } }
+            )
+          }
+          return new Response(vtt, {
+            headers: {
+              'Content-Type': 'text/vtt; charset=utf-8',
+              'Cache-Control': 'public, max-age=3600, s-maxage=86400',
+            },
+          })
+        } catch (error) {
+          console.error('subtitle fetch failed', String(error))
+          return json(
+            { error: 'subtitle fetch failed' },
+            { status: 502, headers: { 'Cache-Control': 'no-store' } }
+          )
+        }
+      },
+      apiKey(url, {
+        type,
+        id,
+        season: type === 'tv' ? season : undefined,
+        episode: type === 'tv' ? episode : undefined,
+        lang,
+      })
     )
   }
 

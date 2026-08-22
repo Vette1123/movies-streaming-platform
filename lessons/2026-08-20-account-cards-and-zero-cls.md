@@ -18,14 +18,14 @@ reserved on every page whose content is client-rendered.
 Measured with a `PerformanceObserver({type:'layout-shift'})` driven from
 browser-harness, 4x CPU throttle, desktop 1280x900 and mobile 390x844:
 
-| Route | Before | After |
-| --- | --- | --- |
-| `/account` | 0.4789 | 0 |
-| `/stats` | 0.0595 | 0 |
-| `/movies` | 0.0416 | 0 |
-| `/watch-history` | 0.0279 | 0 |
-| `/tv-shows` | 0.0045 | 0 |
-| `/` | 0.0025 | 0 |
+| Route            | Before | After |
+| ---------------- | ------ | ----- |
+| `/account`       | 0.4789 | 0     |
+| `/stats`         | 0.0595 | 0     |
+| `/movies`        | 0.0416 | 0     |
+| `/watch-history` | 0.0279 | 0     |
+| `/tv-shows`      | 0.0045 | 0     |
+| `/`              | 0.0025 | 0     |
 
 The last ~0.008 on `/movies/<id>` at mobile width turned out to be **the Next.js
 dev overlay**: probing the shifted rect at the moment of the entry named
@@ -40,7 +40,7 @@ the export, so every route is 0.
   machine before styling the cards would have found both at once.
 - **Assumed the sticky footer meant a short page could not shift.** The shell is
   `min-h-svh` with the footer as a sibling, so a short page pins the footer to
-  the bottom of the viewport — which is exactly why it was *in* the viewport and
+  the bottom of the viewport — which is exactly why it was _in_ the viewport and
   the growth counted. A sticky footer makes CLS worse for a client-rendered
   page, not better.
 - **Chased the `/movies` sidebar shift through three probes before checking who
@@ -62,7 +62,7 @@ the export, so every route is 0.
 - One skeleton vocabulary in `components/ui/skeleton.tsx` (`Skeleton` now
   carries the sheen, plus `SkeletonRows` / `SkeletonMediaRows`), so a panel that
   loads looks like every other panel that loads and nothing is hand-rolled.
-- The hint cookie + profile cache as a *layout* input, not just an avatar input:
+- The hint cookie + profile cache as a _layout_ input, not just an avatar input:
   `hasAccountHint()` says whether to reserve at all, `cachedProfile()` says how
   much. A visitor with no session reserves nothing and still shifts nothing.
 - Measuring every route at 4x CPU throttle on two viewports. The desktop-only

@@ -5,6 +5,10 @@ import { MediaResponse } from '@/types/media'
 import { MovieGenre } from '@/types/movie-genre'
 import { ItemType, Param } from '@/types/movie-result'
 import { SeasonDetails } from '@/types/season-details'
+import {
+  type SelfHostTarget,
+  type StreamResolveResult,
+} from '@/lib/stream-resolver'
 
 // The browser's half of what used to be Server Actions.
 //
@@ -84,3 +88,16 @@ export const getSeasonEpisodesApi = (
   seasonNumber: string
 ): Promise<SeasonDetails> =>
   getJson('/api/season-details', { seasonId, seasonNumber })
+
+// The self-hosted player. Asks our Worker to walk the provider's resolve
+// chain; the answer is a master m3u8 the browser then plays directly from the
+// provider's CDN — no media bytes touch us (see lib/stream-resolver.ts).
+export const resolveStreamApi = (
+  target: SelfHostTarget
+): Promise<StreamResolveResult> =>
+  getJson('/api/stream/resolve', {
+    type: target.type,
+    id: target.id,
+    season: target.season,
+    episode: target.episode,
+  })

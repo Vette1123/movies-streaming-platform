@@ -18,6 +18,11 @@
  * laptop forever.
  */
 import {
+  readPositionMap,
+  writePositionMap,
+  type PlaybackPosition,
+} from '@/lib/playback-positions'
+import {
   readStore,
   subscribeStore,
   type WatchedItem,
@@ -38,6 +43,16 @@ export const SYNCED_STORES = [
 
 const MIRROR_KEY = 'reely_sync_mirror'
 const CURSOR_KEY = 'reely_sync_since'
+
+/**
+ * The playback-position store, synced as `resume`.
+ *
+ * Same mirror/diff/tombstone rules as every array store, but the rows come
+ * from a MAP (`reely:playback`) rather than an array of WatchedItem, so it is
+ * handled beside them with its own read/apply adapters and never appears in
+ * SYNCED_STORES — nothing in the app reads positions through that table.
+ */
+const RESUME_STORE = 'resume'
 
 /**
  * The identity of one row.
@@ -82,7 +97,11 @@ function writeJson(key: string, value: unknown): void {
 export interface OutboundChange {
   store: string
   key: string
-  payload: WatchedItem | null
+  /**
+   * The item itself, or null for a tombstone. Array stores send WatchedItem;
+   * the position store sends a PlaybackPosition. The server serialises either.
+   */
+  payload: WatchedItem | PlaybackPosition | null
   updated_at: number
 }
 
@@ -182,6 +201,112 @@ export function applyChanges(
   return [...byKey.values()]
 }
 
+/**
+ * Diff the local position map against the mirror — same rules as
+ * `collectChanges`, map-shaped: a key present locally and newer than the
+ * mirror is an upload; present in the mirror only (the player cleared it) is
+ * a tombstone; an empty mirror on first run suppresses tombstones so signing
+ * in on a second device cannot wipe the positions it just pulled.
+ *
+ * Pure: the caller owns reading and writing the localStorage map.
+ */
+export function collectResumeChanges(
+  positions: Record<string, PlaybackPosition>,
+  previous: Record<string, number>,
+  now: number
+): { changes: OutboundChange[]; current: Record<string, number> } {
+  const changes: OutboundChange[] = []
+  const current: Record<string, number> = {}
+  const firstRun = Object.keys(previous).length === 0
+
+  for (const [key, position] of Object.entries(positions)) {
+    const stamp =
+      position && typeof position === 'object'
+        ? Date.parse(position.updated_at || '')
+        : NaN
+    if (!Number.isFinite(stamp)) {
+      // A row we cannot date is not a deleted row. Carry the mirror's stamp
+      // across untouched so this device neither re-sends it nor tombstones
+      // what every other device still holds.
+      if (previous[key] !== undefined) current[key] = previous[key]
+      continue
+    }
+    current[key] = stamp
+    if (previous[key] === undefined || previous[key] < stamp) {
+      changes.push({
+        store: RESUME_STORE,
+        key,
+        // The object itself, like every array store sends — the server
+        // serialises outbound payloads in one place.
+        payload: position,
+        updated_at: stamp,
+      })
+    }
+  }
+
+  if (!firstRun) {
+    for (const key of Object.keys(previous)) {
+      if (current[key] !== undefined) continue
+      changes.push({ store: RESUME_STORE, key, payload: null, updated_at: now })
+      current[key] = now
+    }
+  }
+
+  return { changes, current }
+}
+
+/**
+ * Apply pulled position rows to one map. Last write wins per key, by the
+ * row's own stamp; a tombstone removes the entry so "watched to the end" on
+ * one device clears it everywhere. Returns the same reference when nothing
+ * changed, like `applyChanges`.
+ */
+export function applyResumeRows(
+  map: Record<string, PlaybackPosition>,
+  incoming: InboundChange[]
+): Record<string, PlaybackPosition> {
+  let dirty = false
+
+  for (const change of incoming) {
+    if (change.payload === null) {
+      if (change.key in map) {
+        delete map[change.key]
+        dirty = true
+      }
+      continue
+    }
+    try {
+      const parsed = JSON.parse(change.payload) as PlaybackPosition
+      const stamp = Date.parse(parsed.updated_at || '')
+      if (
+        !Number.isFinite(stamp) ||
+        typeof parsed.position_seconds !== 'number'
+      ) {
+        continue
+      }
+      const existing = map[change.key]
+      if (
+        existing &&
+        Date.parse(existing.updated_at || '') >= change.updated_at
+      ) {
+        continue
+      }
+      map[change.key] = parsed
+      dirty = true
+    } catch {
+      // A corrupt row from an older client. Skipping it beats failing the sync.
+    }
+  }
+
+  return dirty ? map : { ...map }
+}
+
+/** The same two steps against real storage, inside the sync round trip. */
+function applyResumeChanges(incoming: InboundChange[]): void {
+  if (incoming.length === 0) return
+  writePositionMap(applyResumeRows(readPositionMap(), incoming))
+}
+
 export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline'
 
 interface SyncResult {
@@ -206,13 +331,47 @@ export async function syncOnce(
   // replace and upload the same rows twice. Joining the run in flight is both
   // correct and one request cheaper.
   if (inFlightSync) return inFlightSync
-  inFlightSync = runSync(write).finally(() => {
-    inFlightSync = null
-  })
+  inFlightSync = runSync(write)
+    .then((result) => {
+      notifySyncSettled(result.ok)
+      return result
+    })
+    .finally(() => {
+      inFlightSync = null
+    })
   return inFlightSync
 }
 
 let inFlightSync: Promise<SyncResult> | null = null
+
+/**
+ * Fired after every sync attempt settles — success or failure.
+ *
+ * This is what makes pro data feel live: a surface that reads from the server
+ * (the home queue) cannot learn about a change it did not make until the sync
+ * that carried it has landed. Anything that needs to re-read after that moment
+ * subscribes here rather than guessing at timers.
+ */
+const settledListeners = new Set<(ok: boolean) => void>()
+
+export function subscribeSyncSettled(
+  listener: (ok: boolean) => void
+): () => void {
+  settledListeners.add(listener)
+  return () => {
+    settledListeners.delete(listener)
+  }
+}
+
+function notifySyncSettled(ok: boolean): void {
+  for (const listener of [...settledListeners]) {
+    try {
+      listener(ok)
+    } catch {
+      // A broken listener must never break the sync it observed.
+    }
+  }
+}
 
 async function runSync(
   write: (key: string, items: WatchedItem[]) => void
@@ -227,6 +386,16 @@ async function runSync(
     mirror,
     now
   )
+
+  // Positions ride the same round trip on a longer fuse (see
+  // use-library-sync's debounce), but they are one diff like everything else.
+  const resumeDiff = collectResumeChanges(
+    readPositionMap(),
+    next[RESUME_STORE] ?? {},
+    now
+  )
+  changes.push(...resumeDiff.changes)
+  next[RESUME_STORE] = resumeDiff.current
 
   let response: Response
   try {
@@ -267,6 +436,18 @@ async function runSync(
     next[store] = mine
   }
 
+  // The map store applies beside the array ones: same pull, same mirror fold.
+  const forResume = inbound.filter((change) => change.store === RESUME_STORE)
+  if (forResume.length > 0) {
+    applyResumeChanges(forResume)
+    const mine = next[RESUME_STORE] ?? {}
+    for (const change of forResume) {
+      if (change.payload === null) delete mine[change.key]
+      else mine[change.key] = change.updated_at
+    }
+    next[RESUME_STORE] = mine
+  }
+
   writeJson(MIRROR_KEY, next)
   writeJson(CURSOR_KEY, data.now ?? now)
   return { ok: true, more: data.more === true }
@@ -282,8 +463,8 @@ export function clearSyncState(): void {
   }
 }
 
-/** Subscribe to every synced store at once. */
-export function subscribeLibrary(listener: () => void): () => void {
+/** Subscribe to every synced store at once. The listener learns WHICH key moved. */
+export function subscribeLibrary(listener: (key: string) => void): () => void {
   const unsubscribes = SYNCED_STORES.map(({ key }) =>
     subscribeStore(key, listener)
   )

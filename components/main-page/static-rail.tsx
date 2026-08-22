@@ -9,6 +9,7 @@ import { getPosterImageURL, itemRedirect } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
 import { MediaLink } from '@/components/media/media-link'
 import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
+import { SeeAllLink } from '@/components/see-all-link'
 
 interface StaticRailProps {
   title: string
@@ -36,20 +37,26 @@ export function StaticRail({
 }: StaticRailProps) {
   return (
     <nav className="cv-auto px-5 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10 xl:px-16 2xl:px-20">
-      <Link
-        href={itemRedirect(itemType)}
-        // Same two section routes as every other rail heading — see the note in
-        // components/list.tsx. Deduped by the router, prerendered assets.
-        className="mb-4 flex w-fit items-center gap-2"
-      >
-        <h2 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight">
-          <span
-            aria-hidden
-            className="h-5 w-[3px] origin-center rounded-full bg-gradient-to-b from-cyan-300 to-cyan-500 shadow-[0_0_8px_rgba(103,232,249,0.5)]"
-          />
-          {title}
-        </h2>
-      </Link>
+      {/* Identical resting heading to components/list.tsx (title left, See all
+          chip right) — this component renders before the interactive List
+          hydrates, and any difference would jump at the swap. */}
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <Link
+          href={itemRedirect(itemType)}
+          // Same two section routes as every other rail heading — see the note in
+          // components/list.tsx. Deduped by the router, prerendered assets.
+          className="flex w-fit min-w-0 items-center gap-2"
+        >
+          <h2 className="flex min-w-0 items-center gap-2.5 text-2xl font-bold tracking-tight">
+            <span
+              aria-hidden
+              className="h-5 w-[3px] shrink-0 origin-center rounded-full bg-gradient-to-b from-cyan-300 to-cyan-500 shadow-[0_0_8px_rgba(103,232,249,0.5)]"
+            />
+            <span className="truncate">{title}</span>
+          </h2>
+        </Link>
+        <SeeAllLink href={itemRedirect(itemType)} label={title} />
+      </div>
 
       {items.length === 0 && (
         <div

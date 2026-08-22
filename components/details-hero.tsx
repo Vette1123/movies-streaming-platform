@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import { type StreamSourceControl } from '@/hooks/use-stream-source'
 import { HeroImage } from '@/components/header/hero-image'
 import { PlayButton } from '@/components/play-button'
+import { SelfHostedPlayer } from '@/components/player/self-hosted-player'
 import { SourceSwitcher } from '@/components/player/source-switcher'
 import { RateButton } from '@/components/rate-button'
 import { SaveButton } from '@/components/save-button'
@@ -27,6 +28,12 @@ import { WatchedButton } from '@/components/watched-button'
 // cannot be tuned for an image nobody chose.
 const captionClass =
   'w-14 text-center text-[10px] leading-tight font-medium text-white/90 [text-shadow:0_1px_3px_rgba(0,0,0,0.85)] sm:hidden'
+
+// The `?player=self` snapshot, for the selfHost gate below.
+const subscribeToNothing = () => () => {}
+const readPlayerParam = () =>
+  new URLSearchParams(window.location.search).get('player') === 'self'
+const returnFalse = () => false
 
 // The embed is driven by a `src` STRING, not by writing `.src` on a ref.
 //
@@ -52,6 +59,7 @@ export const DetailsHero = ({
   isResume,
   resumeSlot,
   sourceControl,
+  selfHost,
 }: {
   movie?: MovieDetails
   series?: SeriesDetails
@@ -74,11 +82,36 @@ export const DetailsHero = ({
   playTarget?: { season: number; episode: number } | null
   isResume?: boolean
   resumeSlot?: React.ReactNode
+  /**
+   * What the self-hosted player would play, when it is active at all. POC
+   * gate: only a URL carrying `?player=self` switches off the embed iframe;
+   * without the param this prop renders nothing and the page behaves exactly
+   * as shipped. Title/year ride along for external-subtitle catalogs.
+   */
+  selfHost?: {
+    type: 'movie' | 'tv'
+    id: number
+    season?: number
+    episode?: number
+    title?: string
+    year?: number
+  } | null
 }) => {
   const media = (movie || series) as MovieDetails & SeriesDetails
   const title = getMediaTitle(media)
   const isMovie = !!movie
   const isIframeShown = !!src
+
+  // The POC switch. An external value (the URL) read through
+  // useSyncExternalStore rather than a mount effect: the store snapshot stays
+  // `false` through prerender and hydration paint, then reflects reality on
+  // the next client pass — with no setState-in-effect render cascade.
+  const selfHostRequested = React.useSyncExternalStore(
+    subscribeToNothing,
+    readPlayerParam,
+    returnFalse
+  )
+  const showSelfHost = selfHostRequested && !!selfHost && isIframeShown
 
   // Bridge the blank gap between "Watch" click and the streaming iframe painting
   // its first frame: show a spinner while the iframe is shown but hasn't loaded.
@@ -175,37 +208,48 @@ export const DetailsHero = ({
               </motion.div>
             )}
           </AnimatePresence>
-          {isIframeShown && !iframeLoaded && (
-            <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
-              <Loader2 className="size-12 animate-spin text-white/80" />
+          {showSelfHost && selfHost ? (
+            // Same centered slot the iframe occupies; inset by py-20 for the
+            // same reason — clear of the sticky header above and the install
+            // prompt's contested bottom edge.
+            <div className="size-full py-20">
+              <SelfHostedPlayer target={selfHost} />
             </div>
+          ) : (
+            <>
+              {isIframeShown && !iframeLoaded && (
+                <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
+                  <Loader2 className="size-12 animate-spin text-white/80" />
+                </div>
+              )}
+              <iframe
+                className={cn('size-full py-20', {
+                  hidden: !isIframeShown,
+                })}
+                allowFullScreen
+                // Left undefined until play, so the embed is never requested on
+                // load. Re-rendering with the SAME string is a no-op for React,
+                // which is what keeps pressing play on the already-playing episode
+                // from restarting it.
+                src={src || undefined}
+                autoFocus
+                onLoad={() => setLoadedSrc(src ?? null)}
+                content="noindex,nofollow"
+                autoSave={title?.toLowerCase().trim()}
+                id={title}
+                name={title}
+                title={title}
+                about={media?.overview}
+                key={media?.id}
+                // The embed is a third party we do not control, funded by ads.
+                // There is deliberately NO `sandbox` here — the provider refuses
+                // to load inside one at all. See lib/embed-policy.ts before
+                // adding it back.
+                allow={STREAM_EMBED_ALLOW}
+              ></iframe>
+            </>
           )}
-          <iframe
-            className={cn('size-full py-20', {
-              hidden: !isIframeShown,
-            })}
-            allowFullScreen
-            // Left undefined until play, so the embed is never requested on
-            // load. Re-rendering with the SAME string is a no-op for React,
-            // which is what keeps pressing play on the already-playing episode
-            // from restarting it.
-            src={src || undefined}
-            autoFocus
-            onLoad={() => setLoadedSrc(src ?? null)}
-            content="noindex,nofollow"
-            autoSave={title?.toLowerCase().trim()}
-            id={title}
-            name={title}
-            title={title}
-            about={media?.overview}
-            key={media?.id}
-            // The embed is a third party we do not control, funded by ads.
-            // There is deliberately NO `sandbox` here — the provider refuses
-            // to load inside one at all. See lib/embed-policy.ts before
-            // adding it back.
-            allow={STREAM_EMBED_ALLOW}
-          ></iframe>
-          {isIframeShown && sourceControl && (
+          {isIframeShown && sourceControl && !showSelfHost && (
             // Above the frame, not below it. Two things already live along the
             // bottom edge — the embed's own scrubber, and the install prompt,
             // which measurably sat on top of these buttons and swallowed the

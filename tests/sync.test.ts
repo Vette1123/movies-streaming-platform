@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   applyChanges,
+  applyResumeRows,
   collectChanges,
+  collectResumeChanges,
   itemKey,
   SYNCED_STORES,
 } from '@/lib/library-sync'
@@ -285,5 +287,114 @@ describe('itemKey', () => {
   it('is the title for a title and the episode for an episode', () => {
     expect(itemKey(item())).toBe('series:1399')
     expect(itemKey(item({ season: 2, episode: 5 }))).toBe('series:1399:2:5')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Playback positions, synced as the `resume` store. The failure modes here are
+// cross-device and invisible in any single-device test: a position that never
+// leaves the phone it was made on, or a "watched to the end" that resurrects
+// itself from another device.
+// ---------------------------------------------------------------------------
+
+const position = (seconds: number, at: number) =>
+  JSON.stringify({
+    position_seconds: seconds,
+    updated_at: new Date(at).toISOString(),
+  })
+
+describe('collectResumeChanges', () => {
+  const stored = (seconds: number, at: number) => ({
+    position_seconds: seconds,
+    updated_at: new Date(at).toISOString(),
+  })
+
+  it('uploads what is newer than the mirror', () => {
+    const { changes } = collectResumeChanges(
+      { 'movie:550': stored(1200, NOW) },
+      {},
+      NOW
+    )
+    // Empty mirror = first run: uploads everything, invents no tombstones.
+    expect(changes).toEqual([
+      {
+        store: 'resume',
+        key: 'movie:550',
+        payload: stored(1200, NOW),
+        updated_at: NOW,
+      },
+    ])
+  })
+
+  it('tombstones a position the player cleared, but only after first run', () => {
+    const previous = { 'movie:550': NOW - 1000 }
+    const { changes } = collectResumeChanges({}, previous, NOW)
+    expect(changes).toEqual([
+      { store: 'resume', key: 'movie:550', payload: null, updated_at: NOW },
+    ])
+    expect(collectResumeChanges({}, {}, NOW).changes).toEqual([])
+  })
+
+  it('skips rows with unreadable stamps without declaring them deleted', () => {
+    const previous = { 'movie:550': NOW }
+    const { changes, current } = collectResumeChanges(
+      { 'movie:550': { position_seconds: 5, updated_at: 'not a date' } },
+      previous,
+      NOW
+    )
+    expect(changes).toEqual([])
+    // The mirror keeps the key, so no later sync reads it as a deletion.
+    expect(current).toEqual(previous)
+  })
+})
+
+describe('applyResumeRows', () => {
+  it('applies a pulled position and keeps the newer of two', () => {
+    const map = { 'movie:550': JSON.parse(position(100, NOW - 5000)) }
+    const merged = applyResumeRows(map, [
+      {
+        store: 'resume',
+        key: 'movie:550',
+        payload: position(1400, NOW),
+        updated_at: NOW,
+      },
+    ])
+    expect(merged['movie:550'].position_seconds).toBe(1400)
+
+    const stale = applyResumeRows(merged, [
+      {
+        store: 'resume',
+        key: 'movie:550',
+        payload: position(50, NOW - 9000),
+        updated_at: NOW - 9000,
+      },
+    ])
+    expect(stale['movie:550'].position_seconds).toBe(1400)
+  })
+
+  it('removes on tombstone — finished on one device is finished everywhere', () => {
+    const merged = applyResumeRows(
+      { 'tv:1396:1:4': JSON.parse(position(600, NOW)) },
+      [{ store: 'resume', key: 'tv:1396:1:4', payload: null, updated_at: NOW }]
+    )
+    expect(merged).toEqual({})
+  })
+
+  it('survives a corrupt row without losing the batch', () => {
+    const merged = applyResumeRows({}, [
+      {
+        store: 'resume',
+        key: 'movie:1',
+        payload: '{not json',
+        updated_at: NOW,
+      },
+      {
+        store: 'resume',
+        key: 'movie:550',
+        payload: position(30, NOW),
+        updated_at: NOW,
+      },
+    ])
+    expect(Object.keys(merged)).toEqual(['movie:550'])
   })
 })

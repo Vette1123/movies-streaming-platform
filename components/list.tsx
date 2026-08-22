@@ -8,7 +8,7 @@ import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
 import { cn, itemRedirect } from '@/lib/utils'
 import { Card } from '@/components/card'
-import { Icons } from '@/components/icons'
+import { SeeAllLink } from '@/components/see-all-link'
 
 interface ListProps {
   title: string
@@ -127,38 +127,29 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
     // wrap this in a narrow `container`, which made the row a different width than
     // home and clipped the scroll region).
     <nav className="cv-auto px-5 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10 xl:px-16 2xl:px-20">
-      {/* Heading hover, in CSS instead of a framer variant orchestrator.
-          Identical motion (accent bar scaleY 1 → 1.35 with a touch of overshoot,
-          title to cyan-200, "Explore All" + arrow sliding in from ±50px), but
-          the homepage stacks ~8 of these rails and each one was FIVE motion
-          components propagating rest/hover — 40 instances, all for a hover the
-          compositor can do on its own. `motion-reduce:` keeps the
-          prefers-reduced-motion opt-out the variants got from framer.
-          Note: the reveals animate opacity + translate, not `display`, so the
-          text no longer pops in without a transition on the first frame. */}
-      <div className="group/heading w-fit">
+      {/* Heading row: title left, See all right. The chip is ALWAYS visible —
+          the old "Explore All" was a hover reveal, which on touch screens (most
+          of the audience) meant the row had no way forward at all. The accent
+          bar keeps its small hover flourish; the destination is no longer a
+          secret handshake. */}
+      <div className="group/heading mb-4 flex items-center justify-between gap-4">
         <Link
           href={itemRedirect(itemType)}
           // Prefetched: every heading on the page points at one of the same two
           // section routes (/movies, /tv-shows), so the router dedupes them into
           // two prerendered-asset fetches for the whole homepage — not the
           // per-card storm the card links below still have to avoid.
-          className="mb-4 flex w-fit items-center gap-2"
+          className="flex w-fit min-w-0 items-center gap-2"
         >
-          <h2 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight transition-colors duration-200 ease-in group-hover/heading:text-cyan-200">
+          <h2 className="flex min-w-0 items-center gap-2.5 text-2xl font-bold tracking-tight transition-colors duration-200 ease-in group-hover/heading:text-cyan-200">
             <span
               aria-hidden
-              className="h-5 w-[3px] origin-center rounded-full bg-gradient-to-b from-cyan-300 to-cyan-500 opacity-85 shadow-[0_0_8px_rgba(103,232,249,0.5)] transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/heading:scale-y-[1.35] group-hover/heading:opacity-100 motion-reduce:transition-none"
+              className="h-5 w-[3px] shrink-0 origin-center rounded-full bg-gradient-to-b from-cyan-300 to-cyan-500 opacity-85 shadow-[0_0_8px_rgba(103,232,249,0.5)] transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/heading:scale-y-[1.35] group-hover/heading:opacity-100 motion-reduce:transition-none"
             />
-            {title}
+            <span className="truncate">{title}</span>
           </h2>
-          <div className="mt-1 -translate-x-12 text-base text-cyan-200 opacity-0 transition-[transform,opacity] duration-300 ease-in group-hover/heading:translate-x-0 group-hover/heading:opacity-100 motion-reduce:transition-none">
-            <span className="font-sans text-sm font-medium">Explore All</span>
-          </div>
-          <span className="mt-1 translate-x-12 text-base text-cyan-200 opacity-0 transition-[transform,opacity] duration-300 ease-in group-hover/heading:translate-x-0 group-hover/heading:opacity-100 motion-reduce:transition-none">
-            <Icons.arrowRight className="ml-1 inline-block h-4 w-4" />
-          </span>
         </Link>
+        <SeeAllLink href={itemRedirect(itemType)} label={title} />
       </div>
 
       {items.length === 0 && (

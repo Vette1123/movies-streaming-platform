@@ -178,6 +178,18 @@ export const SeriesDetailsHero = ({
         trailerKey={trailerKey}
         playTarget={playTarget}
         isResume={Boolean(resumeTarget)}
+        selfHost={
+          playingTarget === undefined || !series?.id
+            ? undefined
+            : {
+                type: 'tv',
+                id: series.id,
+                season: playingTarget?.season ?? 1,
+                episode: playingTarget?.episode ?? 1,
+                title: series.name,
+                year: Number(series.first_air_date?.slice(0, 4)) || undefined,
+              }
+        }
         resumeSlot={
           <ContinueWatching
             progress={progress}

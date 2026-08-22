@@ -9,17 +9,19 @@ import type { NextUpItem } from '@/lib/nextup/routes'
 import { getPosterImageURL } from '@/lib/utils'
 import { useAccountIdentity } from '@/hooks/use-account'
 import { readStore } from '@/hooks/use-local-storage'
+import { useNextUp } from '@/hooks/use-next-up'
 import { buttonVariants } from '@/components/ui/button'
 import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
 import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
+import { SeeAllLink } from '@/components/see-all-link'
 
 /**
  * Where you left off, at the top of the homepage.
  *
  * The queue is computed by `/api/next-up` — see lib/nextup — and this is the
- * surface that makes it worth having. A feature that lives at
- * `/account#next-up` is a feature nobody opens; the same rows on the page
- * everybody lands on are the reason to open Reely rather than the other tab.
+ * surface that makes it worth having. A feature that lives at `/next-up` is a
+ * feature nobody opens; the same rows on the page everybody lands on are the
+ * reason to open Reely rather than the other tab.
  *
  * Three things keep it honest on a static homepage:
  *
@@ -31,10 +33,14 @@ import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
  *  - **Everyone else sees the offer at most once, and only if they have
  *    progress worth carrying.** Somebody with no episodes ticked off is not
  *    shown a pitch for a queue they would have nothing in.
+ *
+ * And one thing keeps it alive: `useNextUp` re-reads whenever a sync settles or
+ * attention returns, so pressing play anywhere — this device or another —
+ * reshuffles this row without a reload.
  */
 export function ContinueWatching() {
   const { pro, ready } = useAccountIdentity()
-  const [items, setItems] = useState<NextUpItem[]>([])
+  const { items } = useNextUp(pro && ready)
   const [localProgress, setLocalProgress] = useState(false)
 
   useEffect(() => {
@@ -47,23 +53,6 @@ export function ContinueWatching() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalProgress(readStore('completedItems').length > 0)
       return
-    }
-
-    let live = true
-    void (async () => {
-      try {
-        const response = await fetch('/api/next-up')
-        const body = await response.json()
-        if (!live || !response.ok || !body?.success) return
-        setItems(body.items ?? [])
-      } catch {
-        // The homepage is not the place to report that a rail could not load.
-        // It simply does not appear, exactly as it does for someone with an
-        // empty queue.
-      }
-    })()
-    return () => {
-      live = false
     }
   }, [pro, ready])
 
@@ -87,12 +76,7 @@ export function ContinueWatching() {
           />
           Pick up where you left off
         </h2>
-        <Link
-          href="/account#next-up"
-          className="text-muted-foreground hover:text-foreground shrink-0 text-sm underline-offset-4 hover:underline"
-        >
-          See all
-        </Link>
+        <SeeAllLink href="/next-up" label="Your queue" />
       </div>
 
       {/* A scroller rather than a grid, for the same reason as every other rail:
@@ -108,7 +92,23 @@ export function ContinueWatching() {
   )
 }
 
+const pad = (value: number) => String(value).padStart(2, '0')
+
+/** The one line under the title. A show says where it will land; a film says how much is behind you. */
+function tileMeta(item: NextUpItem): string {
+  if (
+    item.kind === 'series' &&
+    item.season !== undefined &&
+    item.episode !== undefined
+  ) {
+    return `S${pad(item.season)}E${pad(item.episode)}`
+  }
+  if (typeof item.percent === 'number') return `${item.percent}% · resume`
+  return 'Resume'
+}
+
 function Tile({ item }: { item: NextUpItem }) {
+  const isSeries = item.kind === 'series'
   return (
     <Link href={item.href} className="group block space-y-2">
       <div className="relative overflow-hidden rounded-lg">
@@ -125,28 +125,35 @@ function Tile({ item }: { item: NextUpItem }) {
             className="aspect-2/3 w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <MediaPosterFallback itemType="tv" title={item.name} />
+          <MediaPosterFallback
+            itemType={isSeries ? 'tv' : 'movie'}
+            title={item.name}
+          />
         )}
 
         {/* Over the poster, not under it: the row is about resuming, and the
-            play affordance has to be the thing the eye lands on. */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/40">
-          <Play className="size-8 text-white opacity-0 drop-shadow-lg transition-opacity group-hover:opacity-100" />
+            play affordance has to be the thing the eye lands on. On touch there
+            is no hover, so the scrim keeps the tile legible instead of relying
+            on it appearing. */}
+        <div className="absolute inset-0 flex items-center justify-center bg-linear-to-t from-black/45 via-transparent to-transparent transition-colors group-hover:bg-black/40">
+          <Play className="size-8 text-white opacity-90 drop-shadow-lg transition-opacity lg:opacity-0 lg:group-hover:opacity-100" />
         </div>
 
-        <div
-          className="absolute inset-x-0 bottom-0 h-1 bg-black/50"
-          role="progressbar"
-          aria-valuenow={item.percent}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={`${item.percent}% of ${item.name} watched`}
-        >
+        {typeof item.percent === 'number' && (
           <div
-            className="bg-primary h-full"
-            style={{ width: `${item.percent}%` }}
-          />
-        </div>
+            className="absolute inset-x-0 bottom-0 h-1 bg-black/50"
+            role="progressbar"
+            aria-valuenow={item.percent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${item.percent}% of ${item.name} watched`}
+          >
+            <div
+              className="bg-primary h-full transition-[width] duration-700 ease-out"
+              style={{ width: `${item.percent}%` }}
+            />
+          </div>
+        )}
       </div>
 
       <div className="space-y-0.5">
@@ -154,8 +161,7 @@ function Tile({ item }: { item: NextUpItem }) {
           {item.name}
         </p>
         <p className="text-muted-foreground font-mono text-xs">
-          S{String(item.season).padStart(2, '0')}E
-          {String(item.episode).padStart(2, '0')}
+          {tileMeta(item)}
         </p>
       </div>
     </Link>
@@ -177,9 +183,9 @@ function CarryItOver() {
           <span className="text-foreground font-medium">
             You are part-way through something.
           </span>{' '}
-          Supporters get that as a row right here — every show they have going,
-          the exact episode they are up to, one tap from playing, on every
-          device they sign in on.
+          Supporters get that as a row right here — everything they have going,
+          the exact spot they stopped, one tap from playing, on every device
+          they sign in on.
         </p>
         <Link
           href="/support"

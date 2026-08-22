@@ -8,8 +8,9 @@ import {
   syncOnce,
   type SyncStatus,
 } from '@/lib/library-sync'
+import { PLAYBACK_STORAGE_KEY } from '@/lib/playback-positions'
 import { useAccount } from '@/hooks/use-account'
-import { writeStore } from '@/hooks/use-local-storage'
+import { subscribeStore, writeStore } from '@/hooks/use-local-storage'
 
 /**
  * How long after the last change a sync fires.
@@ -20,6 +21,30 @@ import { writeStore } from '@/hooks/use-local-storage'
  * picking up another device immediately still finds the change.
  */
 const DEBOUNCE_MS = 2000
+
+/**
+ * How long a playback position waits before it is pushed.
+ *
+ * The player writes its position every ~5 seconds while something plays. Those
+ * intermediate ticks are worthless on their own — only the newest position
+ * matters — so they ride a longer fuse than library edits and still land the
+ * moment attention leaves the page (the visibilitychange flush below). One
+ * push per ~30s of continuous watching keeps a binge from turning into a
+ * request every five seconds against the invocation budget.
+ */
+const RESUME_DEBOUNCE_MS = 30_000
+
+/**
+ * How often an open tab pulls while somebody is actually looking at it.
+ *
+ * This is the other half of "real time": the debounces above ship THIS device's
+ * changes, but a change made on your phone reaches your laptop only when the
+ * laptop asks. While the document is visible it asks this often; hidden tabs
+ * ask never. Bounded by attention, not by wall-clock — nobody pays for a tab
+ * left open overnight, and returning to a tab is answered instantly by the
+ * visibilitychange handler below rather than by waiting out the interval.
+ */
+const PULL_INTERVAL_MS = 20_000
 
 /**
  * Drive library sync for the whole app.
@@ -61,30 +86,48 @@ export function useLibrarySync(): {
   useEffect(() => {
     if (!signedIn || !pro) return
 
-    // Once on mount: this is what restores the library on a new device, and it
-    // is the only request this hook makes without a change to send.
+    const schedule = (delay: number) => {
+      if (timer.current) clearTimeout(timer.current)
+      timer.current = setTimeout(() => void run(), delay)
+    }
+    // Library edits ship fast; position ticks wait out the long fuse. The key
+    // comes from the store layer, which knows which localStorage key moved.
+    const onChanged = (key: string) =>
+      schedule(key === PLAYBACK_STORAGE_KEY ? RESUME_DEBOUNCE_MS : DEBOUNCE_MS)
+
+    // Once on mount: this restores the library on a new device, picks up what
+    // other devices pushed since, and is the only request made without a local
+    // change to send.
     void run()
 
-    const schedule = () => {
-      if (timer.current) clearTimeout(timer.current)
-      timer.current = setTimeout(() => void run(), DEBOUNCE_MS)
-    }
+    const unsubscribeStores = subscribeLibrary(onChanged)
+    const unsubscribePlayback = subscribeStore(PLAYBACK_STORAGE_KEY, onChanged)
 
-    const unsubscribe = subscribeLibrary(schedule)
-
-    // Leaving the tab is the last chance to ship a pending change before the
-    // browser may freeze or discard the page. `visibilitychange` rather than
+    // Both directions of attention matter. Leaving the tab is the last chance
+    // to ship a pending change before the browser may freeze or discard the
+    // page; coming back answers "what happened on my other device" instantly,
+    // without waiting out the poll interval. `visibilitychange` rather than
     // `beforeunload`, which mobile browsers do not reliably fire.
-    const onHidden = () => {
-      if (document.visibilityState !== 'hidden') return
+    const onVisibility = () => {
       if (timer.current) clearTimeout(timer.current)
       void run()
     }
-    document.addEventListener('visibilitychange', onHidden)
+
+    // While somebody is actually reading, keep pulling on a slow tick so another
+    // device's activity arrives without them touching anything. The running
+    // guard collapses this into the single-flight path every trigger shares,
+    // and a poll that finds nothing changed costs one cheap request.
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') void run()
+    }, PULL_INTERVAL_MS)
+
+    document.addEventListener('visibilitychange', onVisibility)
 
     return () => {
-      unsubscribe()
-      document.removeEventListener('visibilitychange', onHidden)
+      unsubscribeStores()
+      unsubscribePlayback()
+      document.removeEventListener('visibilitychange', onVisibility)
+      clearInterval(interval)
       if (timer.current) clearTimeout(timer.current)
     }
   }, [pro, run, signedIn])

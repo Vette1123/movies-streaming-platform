@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import {
   groupProgress,
+  mergeQueue,
   nextEpisode,
   percentWatched,
+  type QueueRow,
 } from '@/lib/nextup/progress'
 
 /**
@@ -18,6 +20,13 @@ const SEASONS = [
 ]
 
 const watched = (...keys: string[]) => new Set(keys)
+
+const row = (
+  store: string,
+  item_key: string,
+  updated_at: number,
+  payload: QueueRow['payload'] = null
+): QueueRow => ({ store, item_key, payload, updated_at })
 
 describe('groupProgress', () => {
   it('groups episode keys by series, newest show first', () => {
@@ -39,6 +48,82 @@ describe('groupProgress', () => {
       { item_key: 'series:abc:1:1', updated_at: 3 },
     ])
     expect(groups).toEqual([])
+  })
+})
+
+describe('mergeQueue — anything you played is in the queue', () => {
+  const filmPayload = JSON.stringify({
+    title: 'Fight Club',
+    poster_path: '/pB8BM7pdsp6BbAiNkPWmdFsnf4s.jpg',
+  })
+
+  it('turns a played film from history into a queue entry', () => {
+    const entries = mergeQueue([row('history', 'movie:550', 100, filmPayload)])
+    expect(entries).toHaveLength(1)
+    expect(entries[0]).toMatchObject({
+      id: '550',
+      kind: 'movie',
+      title: 'Fight Club',
+      posterPath: '/pB8BM7pdsp6BbAiNkPWmdFsnf4s.jpg',
+    })
+  })
+
+  it('keeps a show started at S01E01 alive even with nothing ticked off', () => {
+    // The old queue dropped these entirely: pressing play on the first
+    // episode marks nothing "completed", so the show did not exist.
+    const entries = mergeQueue([row('history', 'series:1396:1:1', 100)])
+    expect(entries).toHaveLength(1)
+    expect(entries[0].kind).toBe('series')
+    expect([...entries[0].watched]).toEqual(['1:1'])
+    // And the walk answers E2, not "no such show".
+    expect(nextEpisode(entries[0].watched, SEASONS)).toEqual({
+      season: 1,
+      episode: 2,
+    })
+  })
+
+  it('merges history and completion for the same show instead of listing it twice', () => {
+    const entries = mergeQueue([
+      row('completed', 'series:1399:1:1', 50),
+      row('completed', 'series:1399:1:2', 60),
+      row('completed', 'series:1399:1:3', 70),
+      // Pressed play on the season-two opener afterwards (hero resume).
+      row('history', 'series:1399:2:1', 200),
+    ])
+    expect(entries).toHaveLength(1)
+    expect(entries[0].lastAt).toBe(200)
+    expect([...entries[0].watched]).toEqual(['1:1', '1:2', '1:3'])
+    expect(nextEpisode(entries[0].watched, SEASONS)).toEqual({
+      season: 2,
+      episode: 1,
+    })
+  })
+
+  it('does not resurface a film that has been ticked off as completed', () => {
+    const entries = mergeQueue([
+      row('history', 'movie:550', 300, filmPayload),
+      row('completed', 'movie:550', 400),
+    ])
+    expect(entries).toEqual([])
+  })
+
+  it('sorts films and shows together by last touch', () => {
+    const entries = mergeQueue([
+      row('history', 'series:1399:1:1', 100),
+      row('history', 'movie:550', 500, filmPayload),
+      row('history', 'series:66732:1:1', 250),
+    ])
+    expect(entries.map((entry) => entry.id)).toEqual(['550', '66732', '1399'])
+  })
+
+  it('skips unparseable payloads and non-episode keys rather than guessing', () => {
+    const entries = mergeQueue([
+      row('history', 'movie:550', 100, '{not json'),
+      row('history', 'series:1399', 110),
+      row('watchlist', 'movie:603', 120, filmPayload),
+      row('resume', 'movie:27205', 130, '{"position_seconds":600}'),
+    ])
+    expect(entries).toEqual([])
   })
 })
 

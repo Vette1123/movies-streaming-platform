@@ -118,8 +118,11 @@ const EMPTY: WatchedItem[] = []
 interface KeyStore {
   value: WatchedItem[]
   loaded: boolean
-  listeners: Set<() => void>
+  listeners: Set<Listener>
 }
+
+/** Listeners learn WHICH key changed, so one subscriber can rate-limit per key. */
+type Listener = (key: string) => void
 
 const stores = new Map<string, KeyStore>()
 
@@ -155,7 +158,7 @@ function commit(key: string, next: WatchedItem[]) {
   } catch {
     // ignore write failures (quota / private mode)
   }
-  store.listeners.forEach((notify) => notify())
+  store.listeners.forEach((notify) => notify(key))
 }
 
 // Keep tabs in sync for free: another tab writing the same key updates this
@@ -166,14 +169,15 @@ function bindStorage() {
   storageBound = true
   window.addEventListener('storage', (event) => {
     if (!event.key) return
-    const store = stores.get(event.key)
+    const changedKey = event.key
+    const store = stores.get(changedKey)
     if (!store) return
     try {
       store.value = event.newValue ? JSON.parse(event.newValue) : EMPTY
     } catch {
       return
     }
-    store.listeners.forEach((notify) => notify())
+    store.listeners.forEach((notify) => notify(changedKey))
   })
 }
 
@@ -199,7 +203,10 @@ export function writeStore(key: string, next: WatchedItem[]): void {
 }
 
 /** Notify on any change to one key, including one made by another tab. */
-export function subscribeStore(key: string, listener: () => void): () => void {
+export function subscribeStore(
+  key: string,
+  listener: (changedKey: string) => void
+): () => void {
   bindStorage()
   load(key)
   const store = getStore(key)

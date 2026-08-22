@@ -38,6 +38,16 @@ export const MovieDetailsHero = ({
       playVideo={() => setPlaying(true)}
       trailerKey={trailerKey}
       sourceControl={sourceControl}
+      selfHost={
+        movie?.id
+          ? {
+              type: 'movie',
+              id: movie.id,
+              title: movie.title,
+              year: Number(movie.release_date?.slice(0, 4)) || undefined,
+            }
+          : undefined
+      }
     />
   )
 }
