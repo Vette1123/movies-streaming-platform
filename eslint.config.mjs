@@ -16,6 +16,9 @@ export default [
       '.next/**',
       '.open-next/**',
       '.wrangler/**',
+      // The bundled Worker (scripts/build-worker.mjs output). Same class as
+      // the generated dirs above — it only exists after `pnpm build:cf`.
+      '.cloudflare/**',
       '**/*.esm.js',
     ],
   },
