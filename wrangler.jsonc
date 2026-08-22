@@ -90,5 +90,9 @@
   "vars": {
     "ENVIRONMENT": "production",
     "NODE_ENV": "production",
+    // The open-for-everyone window for the Reely Player: while set,
+    // /api/pro/ticket mints tickets with no account at all. DELETE this var
+    // to lock the player behind supporter entitlement - no code change.
+    "PRO_PLAYER_OPEN": "1",
   },
 }

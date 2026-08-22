@@ -1118,24 +1118,27 @@ async function handleListsDirectory(request, env, ctx, url) {
  */
 async function handleProTicket(request, env, url) {
   const now = Date.now()
-  const user = await loadSession(env.DB, sessionCookieOf(request), now)
-  if (!user) {
-    return new Response(
-      JSON.stringify({ success: false, error: 'Not signed in' }),
-      { status: 401, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
-    )
-  }
-  // The open-for-everyone testing window. Remove PRO_PLAYER_OPEN from
-  // wrangler.jsonc (or `wrangler secret/var delete`) to lock the player to
-  // supporters only — no client change involved.
-  if (!env.PRO_PLAYER_OPEN && !isEntitled(user, now)) {
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: 'The Reely Player is a supporter feature.',
-      }),
-      { status: 402, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
-    )
+  // The open-for-everyone window: NO account required at all - the Reely
+  // Player is the default source for every visitor. Removing PRO_PLAYER_OPEN
+  // flips these checks back on and locks tickets to signed-in supporters,
+  // with no client change involved.
+  if (!env.PRO_PLAYER_OPEN) {
+    const user = await loadSession(env.DB, sessionCookieOf(request), now)
+    if (!user) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Not signed in' }),
+        { status: 401, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
+      )
+    }
+    if (!isEntitled(user, now)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'The Reely Player is a supporter feature.',
+        }),
+        { status: 402, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
+      )
+    }
   }
 
   let body
