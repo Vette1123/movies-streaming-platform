@@ -1,6 +1,8 @@
 const TOP_OFFSET = 60
 const STREAMING_MOVIES_API_URL =
   process.env.NEXT_PUBLIC_STREAMING_MOVIES_API_URL
+const STREAMING_MOVIES_API_QUERY =
+  process.env.NEXT_PUBLIC_STREAMING_MOVIES_API_QUERY
 const SEARCH_ACTOR_GOOGLE = process.env.NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE
 // Forced to https, whatever the env says. Production's value arrived as
 // `http://ik.imagekit.io/...`, and on an HTTPS page a plain-http image is
@@ -37,6 +39,7 @@ const HERO_LIMIT = 12
 export {
   TOP_OFFSET,
   STREAMING_MOVIES_API_URL,
+  STREAMING_MOVIES_API_QUERY,
   SEARCH_ACTOR_GOOGLE,
   SEARCH_DEBOUNCE,
   IMAGE_CACHE_HOST_URL,
