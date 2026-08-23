@@ -243,7 +243,6 @@ export const DetailsHero = ({
                 className={cn('size-full py-20', {
                   hidden: !isIframeShown,
                 })}
-                allowFullScreen
                 // Left undefined until play, so the embed is never requested on
                 // load. Re-rendering with the SAME string is a no-op for React,
                 // which is what keeps pressing play on the already-playing episode
