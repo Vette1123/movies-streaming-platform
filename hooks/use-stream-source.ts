@@ -4,32 +4,28 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
   DEFAULT_SOURCE_ID,
+  RICH_SOURCE,
   visibleSourcesFor,
   type StreamSource,
 } from '@/config/sources'
 import { savePrefs } from '@/lib/account'
-import { useAccount, useAccountIdentity } from '@/hooks/use-account'
+import { useAccountIdentity } from '@/hooks/use-account'
 
 /**
  * Which provider plays this title, and how to move off one that will not.
  *
- * Three preferences, most specific first:
+ * Switching requires a signed-in account. Within that:
  *
  *  1. **What worked for THIS title.** Providers differ per title far more than
  *     they differ overall — one carries a show the other has never had — so the
  *     memory that actually saves time is per title, and it is written the moment
  *     somebody switches rather than asked for.
- *  2. **The account's provider.** It rides in `prefs`, which already syncs, so
- *     the server chosen on the laptop is the one the phone starts on.
- *  3. **This device's provider**, in localStorage, for a browser that has not
- *     synced yet.
+ *  2. **This device's provider**, in localStorage, for every other title.
+ *  3. **The tier's default underneath**: our own player for supporters, the
+ *     environment's default embed for everyone else.
  *
- * Falling back to the environment's default underneath all three.
- *
- * The whole mechanism is a supporter feature — `canSwitch` below. Nothing is
- * taken away by that: a visitor who is not supporting gets the single server
- * this site has always used, on the same URL, behaving exactly as before. What
- * support adds is somewhere to go when that server is the one having a bad day.
+ * The supporter difference is the DEFAULT, not a locked door: free accounts
+ * switch freely between the embed servers; supporters start on ours.
  */
 const BY_TITLE_KEY = 'reely_stream_source_by_title'
 const DEVICE_KEY = 'reely_stream_source'
@@ -98,25 +94,23 @@ export interface StreamSourceControl {
   /** True once a switch has happened, so the UI can explain itself. */
   switched: boolean
   /**
-   * Whether this visitor has more than one server.
+   * Whether this visitor has more than one server to choose between.
    *
-   * False for everyone who is not supporting, and the gate is enforced HERE
-   * rather than in the component: a control that renders nothing but still
-   * answers `next` would let a caller hop servers with no UI to show for it.
-   *
-   * Nothing is taken away by this. A free visitor gets exactly the single
-   * server the site has always used, on the same URL, with the same behaviour.
+   * Requires a signed-in account — choice is an account feature, so anonymous
+   * visitors always get exactly the default server, on the same URL, with the
+   * same behaviour as always. The gate is enforced HERE rather than in the
+   * component: a control that renders nothing but still answers `next` would
+   * let a caller hop servers with no UI to show for it.
    */
   canSwitch: boolean
 }
 
 export function useStreamSource(mediaKey: string): StreamSourceControl {
-  const { prefs } = useAccount()
   // The cache-backed identity, not the raw store: a supporter arriving on a cold
   // page is `pro: false` for as long as the account refresh takes, and the cost
   // of that gap here is the player silently pinning them to the default server
   // for the title they just opened. Same reason the header paints from it.
-  const { pro } = useAccountIdentity()
+  const { signedIn, pro } = useAccountIdentity()
   const [devicePreference, setDevicePreference] = useState('')
   const [byTitle, setByTitle] = useState<ByTitle>({})
   const [switched, setSwitched] = useState(false)
@@ -131,50 +125,38 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
     setDevicePreference(readJson<string>(DEVICE_KEY, ''))
   }, [])
 
-  // Only a supporter's account preference is honoured, because only a supporter
-  // has one: `prefs` is written by savePrefs, which the settings panel gates the
-  // same way. A stale value on a lapsed account would otherwise quietly outrank
-  // the choice made on this device.
-  const accountPreference = pro ? (prefs.source ?? '') : ''
-
   /**
-   * The servers THIS visitor may choose between. The opt-in flag is honoured
-   * only while the account is entitled, so a lapsed supporter drops back to
-   * exactly the list everyone else sees — and any stored id pointing at the
-   * rich surface then fails validation below and resolves like never chosen.
+   * The servers THIS visitor may choose between. Switching costs an account:
+   * anonymous visitors always get the single default server. Supporters
+   * additionally get our own player as their AUTOMATIC default — a fresh
+   * title opens in it with no toggle needed.
    */
   const sources = useMemo(
-    () => visibleSourcesFor(pro === true && prefs.richPlayer === true),
-    [pro, prefs.richPlayer]
+    () => visibleSourcesFor(signedIn === true, pro === true),
+    [signedIn, pro]
   )
 
-  const canSwitch = pro === true && sources.length > 1
+  const canSwitch = signedIn === true && sources.length > 1
 
   const currentId = useMemo(() => {
-    // Not supporting: the single server the site has always used, and no stored
-    // preference is consulted. Somebody whose support lapses lands back exactly
-    // where a first-time visitor does rather than on a server they can no longer
-    // change.
-    if (!canSwitch) return DEFAULT_SOURCE_ID
+    // Per-title memory first, for every tier: it is written only by an
+    // explicit switch on that title, so it is always the most recent intent.
     const remembered = byTitle[mediaKey]
     if (remembered && sources.some((s) => s.id === remembered)) {
       return remembered
     }
-    if (accountPreference && sources.some((s) => s.id === accountPreference)) {
-      return accountPreference
+    if (!pro) {
+      if (devicePreference && sources.some((s) => s.id === devicePreference))
+        return devicePreference
+      return DEFAULT_SOURCE_ID
     }
-    if (devicePreference && sources.some((s) => s.id === devicePreference)) {
-      return devicePreference
-    }
+    // Supporters: the self-host player IS the default. Stored account/device
+    // server choices predate it, so honouring them here would silently pin
+    // supporters to an embed; a deliberate switch writes per-title memory,
+    // which is honoured above.
+    if (RICH_SOURCE) return RICH_SOURCE.id
     return DEFAULT_SOURCE_ID
-  }, [
-    accountPreference,
-    byTitle,
-    canSwitch,
-    devicePreference,
-    mediaKey,
-    sources,
-  ])
+  }, [byTitle, devicePreference, mediaKey, pro, sources])
 
   // Resolve within the visitor's own list; an id that is not in it (a source
   // remembered before opting out) falls to the site default.

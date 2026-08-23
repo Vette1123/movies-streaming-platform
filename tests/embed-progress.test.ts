@@ -128,8 +128,9 @@ describe('source query passthrough', () => {
     expect(seriesStreamUrl(branded, 94605, { season: 2, episode: 1 })).toBe(
       'https://embed.example/tv/94605/2/1?primaryColor=63b8bc&autoplay=true'
     )
+    // Series roots normalize to the first episode.
     expect(seriesStreamUrl(branded, 94605, null)).toBe(
-      'https://embed.example/tv/94605?primaryColor=63b8bc&autoplay=true'
+      'https://embed.example/tv/94605/1/1?primaryColor=63b8bc&autoplay=true'
     )
   })
 

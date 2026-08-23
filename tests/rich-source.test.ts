@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // config/sources.ts reads its env at module init, so each scenario re-imports
 // it under a fresh process.env. Next inlines these textually for the app build
-// — what is under test here is the PARSING and the opt-in list contract.
+// — what is under test here is the PARSING and the tier/list contract.
 async function importWithEnv(env: Record<string, string | undefined>) {
   vi.resetModules()
   const saved: Record<string, string | undefined> = {}
@@ -26,68 +26,101 @@ const BASE_ENV = {
   NEXT_PUBLIC_STREAM_SOURCE_2: 'https://b.example/embed',
 }
 
-describe('RICH_SOURCE (the supporters-only self-host trial)', () => {
-  afterEach(() => {
-    vi.resetModules()
-  })
+describe('slot defaults and labels', () => {
+  afterEach(() => vi.resetModules())
 
-  it('is null when the trial flag is unset', async () => {
+  it('defaults to slot 2 (the more resilient embed)', async () => {
     const mod = await importWithEnv(BASE_ENV)
-    expect(mod.RICH_SOURCE).toBeNull()
+    expect(mod.DEFAULT_SOURCE_ID).toBe('b.example')
+    expect(mod.STREAM_SOURCES[0].id).toBe('b.example')
   })
 
-  it('is null unless the flag is exactly true', async () => {
+  it('honours NEXT_PUBLIC_STREAM_DEFAULT_SLOT', async () => {
     const mod = await importWithEnv({
       ...BASE_ENV,
-      NEXT_PUBLIC_PRO_TRIAL_SELFHOST: '1',
+      NEXT_PUBLIC_STREAM_DEFAULT_SLOT: '1',
     })
-    expect(mod.RICH_SOURCE).toBeNull()
+    expect(mod.DEFAULT_SOURCE_ID).toBe('a.example')
   })
 
-  it('is our own player surface when enabled', async () => {
+  it('falls back to the first configured slot when the default is absent', async () => {
+    const mod = await importWithEnv({
+      NEXT_PUBLIC_STREAM_SOURCE_2: 'https://b.example/embed',
+    })
+    expect(mod.DEFAULT_SOURCE_ID).toBe('b.example')
+  })
+
+  it('labels come from env overrides', async () => {
     const mod = await importWithEnv({
       ...BASE_ENV,
-      NEXT_PUBLIC_PRO_TRIAL_SELFHOST: 'true',
+      NEXT_PUBLIC_STREAM_SOURCE_2_LABEL: 'Turbo',
     })
-    expect(mod.RICH_SOURCE?.id).toBe(mod.REELY_SOURCE_ID)
-    expect(mod.RICH_SOURCE?.label).toBe('Reely Beta')
+    expect(mod.STREAM_SOURCES.find((s) => s.id === 'b.example')?.label).toBe(
+      'Turbo'
+    )
   })
 })
 
-describe('visibleSourcesFor', () => {
-  afterEach(() => {
-    vi.resetModules()
-  })
+describe('path templates (non-vidsrc-shaped providers)', () => {
+  afterEach(() => vi.resetModules())
 
-  it('offers exactly STREAM_SOURCES to anyone not opted in', async () => {
+  it('fills {id}/{s}/{e} in custom movie and tv paths', async () => {
     const mod = await importWithEnv({
       ...BASE_ENV,
-      NEXT_PUBLIC_PRO_TRIAL_SELFHOST: 'true',
+      NEXT_PUBLIC_STREAM_SOURCE_4: 'https://c.example',
+      NEXT_PUBLIC_STREAM_SOURCE_4_MOVIE_PATH: '/embed/{id}',
+      NEXT_PUBLIC_STREAM_SOURCE_4_TV_PATH: '/embedtv/{id}?s={s}&e={e}',
     })
-    expect(mod.visibleSourcesFor(false)).toEqual(mod.STREAM_SOURCES)
+    const src = mod.STREAM_SOURCES.find((s) => s.id === 'c.example')!
+    expect(mod.movieStreamUrl(src, 550)).toBe('https://c.example/embed/550')
+    expect(mod.seriesStreamUrl(src, 1396, { season: 2, episode: 7 })).toBe(
+      'https://c.example/embedtv/1396?s=2&e=7'
+    )
   })
 
-  it('leads with our player first for opted-in supporters', async () => {
-    const mod = await importWithEnv({
-      ...BASE_ENV,
-      NEXT_PUBLIC_PRO_TRIAL_SELFHOST: 'true',
-    })
-    const list = mod.visibleSourcesFor(true)
+  it('keeps the vidsrc shape as the default path', async () => {
+    const mod = await importWithEnv(BASE_ENV)
+    const src = mod.STREAM_SOURCES.find((s) => s.id === 'a.example')!
+    expect(mod.movieStreamUrl(src, 550)).toBe(
+      'https://a.example/embed/movie/550'
+    )
+    expect(mod.seriesStreamUrl(src, 1396, { season: 1, episode: 7 })).toBe(
+      'https://a.example/embed/tv/1396/1/7'
+    )
+  })
+})
+
+describe('visibleSourcesFor tiers', () => {
+  afterEach(() => vi.resetModules())
+
+  const TRIAL_ENV = { ...BASE_ENV, NEXT_PUBLIC_PRO_TRIAL_SELFHOST: 'true' }
+
+  it('anonymous: the default server only', async () => {
+    const mod = await importWithEnv(TRIAL_ENV)
+    const list = mod.visibleSourcesFor(false, false)
+    expect(list).toHaveLength(1)
+    expect(list[0].id).toBe('b.example')
+  })
+
+  it('signed-in free: every embed, no self-host, default first', async () => {
+    const mod = await importWithEnv(TRIAL_ENV)
+    const list = mod.visibleSourcesFor(true, false)
+    expect(list.some((s) => s.id === mod.REELY_SOURCE_ID)).toBe(false)
+    expect(list.map((s) => s.id)).toEqual(['b.example', 'a.example'])
+  })
+
+  it('supporters: our player first, then every embed', async () => {
+    const mod = await importWithEnv(TRIAL_ENV)
+    const list = mod.visibleSourcesFor(true, true)
     expect(list[0].id).toBe(mod.REELY_SOURCE_ID)
     expect(list.slice(1)).toEqual(mod.STREAM_SOURCES)
   })
 
-  it('falls back to the plain list when opted in but unconfigured', async () => {
-    const mod = await importWithEnv(BASE_ENV)
-    expect(mod.visibleSourcesFor(true)).toEqual(mod.STREAM_SOURCES)
-  })
-
-  it('leaves the default journey untouched by the trial', async () => {
-    const mod = await importWithEnv({
-      ...BASE_ENV,
-      NEXT_PUBLIC_PRO_TRIAL_SELFHOST: 'true',
-    })
-    expect(mod.STREAM_SOURCES[0].id).toBe('a.example')
-    expect(mod.DEFAULT_SOURCE_ID).toBe('a.example')
+  it('lapsed supporters drop back exactly to the signed-in free list', async () => {
+    const mod = await importWithEnv(TRIAL_ENV)
+    expect(mod.visibleSourcesFor(true, false)).toEqual(
+      mod.visibleSourcesFor(true, false)
+    )
+    expect(mod.visibleSourcesFor(true, false).some((s) => s.id === mod.REELY_SOURCE_ID)).toBe(false)
   })
 })

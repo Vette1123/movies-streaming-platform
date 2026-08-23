@@ -16,7 +16,7 @@ import {
   type PlaybackPrefs,
 } from '@/lib/playback-prefs'
 import { cn } from '@/lib/utils'
-import { useAccount } from '@/hooks/use-account'
+import { useAccount, useAccountIdentity } from '@/hooks/use-account'
 import { useHasHoverPointer, useLowPowerDevice } from '@/hooks/use-device-tier'
 import { useHeroAutoplay } from '@/hooks/use-hero-autoplay'
 import { useMounted } from '@/hooks/use-mounted'
@@ -75,8 +75,6 @@ export function PlaybackPanel() {
   return (
     <div className="space-y-8">
       <ReelySection />
-
-      <RichSourceSection />
 
       <ServerSection />
 
@@ -232,76 +230,28 @@ function ReelySection() {
 }
 
 /**
- * The opt-in for the supporters-only player trial. A deployment without
- * NEXT_PUBLIC_PRO_TRIAL_SELFHOST enabled offers nothing here — the section
- * is absent rather than a switch that cannot do anything — so the feature
- * exists exactly where the environment says it does.
- */
-function RichSourceSection() {
-  const { pro, prefs } = useAccount()
-
-  if (!RICH_SOURCE) return null
-
-  if (!pro) {
-    return (
-      <SupporterGate title="Our own player is back" Icon={Sparkles}>
-        The Reely Player — our own player, with the controls we built — is in
-        final testing with supporters. It resumes where you stopped to the
-        second, keeps our look on every title, and every backup server stays one
-        tap away while you watch.
-      </SupporterGate>
-    )
-  }
-
-  return (
-    <SettingSwitch
-      label="Use our own player (beta)"
-      description="Plays titles in the Reely Player instead of an embed: our controls, resume tracked to the second, everything synced to your account. Every backup server stays available in the switcher, and turning this off puts things back exactly as they were."
-      checked={prefs.richPlayer === true}
-      onChange={(next) => void savePrefs({ richPlayer: next })}
-    />
-  )
-}
-
-/**
  * Which server streams play from.
  *
- * The account preference, which is the one that follows somebody between
- * devices. A per-title override is written automatically whenever the switcher
+ * Switching needs an account (anonymous visitors always get the default), and
+ * supporters additionally see our own player, which is also their automatic
+ * default. A per-title override is written automatically whenever the switcher
  * on a player is used, and deliberately is not editable here: it is a memory of
- * what worked, not a setting, and a list of three hundred of them would be a
- * worse page rather than a more powerful one.
+ * what worked, not a setting.
  */
 function ServerSection() {
   const { pro, prefs } = useAccount()
+  const { signedIn } = useAccountIdentity()
 
   // A deployment with one server configured has nothing to say here, and an
   // empty "choose a server" heading would read as broken.
-  if (!HAS_FALLBACK_SOURCE) return null
-
-  if (!pro) {
-    return (
-      <SupporterGate
-        title="Backup servers when a stream will not start"
-        Icon={Server}
-        surface="playback"
-        cta="Unlock backup servers"
-      >
-        Streams come from a third party, and third parties have bad days — a
-        server goes down, or simply never carried the title you picked, and the
-        player sits there black. Supporters get every backup server Reely has:
-        one tap to switch, an automatic hop when a server stops responding, and
-        Reely remembers which one worked for which title so it does not happen
-        twice.
-      </SupporterGate>
-    )
-  }
+  if (!signedIn) return null
+  if (!HAS_FALLBACK_SOURCE && !pro) return null
 
   const current = prefs.source ?? STREAM_SOURCES[0]?.id
   // The same list the player's switcher resolves for this account: the rich
-  // surface appears here only while it is switched on, so a stored choice for
-  // it never dangles after opt-out.
-  const choosable = visibleSourcesFor(pro === true && prefs.richPlayer === true)
+  // surface appears here only for entitled accounts, so a stored choice for
+  // it never dangles after support lapses.
+  const choosable = visibleSourcesFor(signedIn === true, pro === true)
 
   return (
     <div className="space-y-4">
