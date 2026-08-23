@@ -49,10 +49,8 @@ describe('RICH_SOURCE (the supporters-only self-host trial)', () => {
       ...BASE_ENV,
       NEXT_PUBLIC_PRO_TRIAL_SELFHOST: 'true',
     })
-    expect(mod.RICH_SOURCE).toEqual({
-      id: mod.REELY_SOURCE_ID,
-      label: 'Reely Beta',
-    })
+    expect(mod.RICH_SOURCE?.id).toBe(mod.REELY_SOURCE_ID)
+    expect(mod.RICH_SOURCE?.label).toBe('Reely Beta')
   })
 })
 

@@ -148,7 +148,14 @@ export const HAS_FALLBACK_SOURCE = STREAM_SOURCES.length > 1
 const SELFHOST_TRIAL = process.env.NEXT_PUBLIC_PRO_TRIAL_SELFHOST === 'true'
 
 export const RICH_SOURCE: StreamSource | null = SELFHOST_TRIAL
-  ? { id: REELY_SOURCE_ID, label: 'Reely Beta' }
+  ? {
+      id: REELY_SOURCE_ID,
+      label: 'Reely Beta',
+      // Never fetched: every hero routes this id to ReelyPlayer before any
+      // URL is built. The placeholder keeps StreamSource's shape honest — if
+      // something DID try, .invalid fails fast instead of leaking a provider.
+      base: 'https://reely-beta.invalid',
+    }
   : null
 
 /**
