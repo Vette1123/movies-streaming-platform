@@ -55,7 +55,7 @@ as matches. Anonymous by design; rooms swept after 12h.
 
 | Piece | Status | Notes |
 | --- | --- | --- |
-| Migration `0008_match_together.sql` (match_rooms, match_swipes, together_beats) | ⬜ **not applied to remote D1 yet** — CF API timed out 3×; retry before/at deploy | |
+| Migration `0008_match_together.sql` (match_rooms, match_swipes, together_beats) | ✅ | applied to remote D1 and local |
 | Worker routes: `/api/match/room`, `/api/match/swipe`, `/api/match/matches` (matches derived in SQL, never stored) | 🔶 | |
 | `lib/match-night.ts` pure core (`resolveMatches`, `interleave`) + 8 unit tests | ✅ | 330/330 green |
 | `hooks/use-match-room.ts` (useSyncExternalStore, no setState-in-effect lint debt) | ✅ | |
@@ -77,12 +77,20 @@ postMessage into the player frame.
 
 ---
 
-## Before this can ship
+## Ship state (2026-08-23)
 
-1. Apply `0008_match_together.sql` to remote D1 (`pnpm exec wrangler d1 migrations apply reely --remote`) — blocked on CF API timeouts, retried until it lands.
-2. Final `pnpm build:cf` (green as of last run) → commit → push → CI deploys.
-3. Browser pass on production: reels (focus/share/crop), mood, match-night two-tab match, watch-together two-tab drift correction.
-4. Lessons file + index row for the whole unit.
+1. Deployed: `ce31913` (features) + `8effed9` (env-into-handleApi + POST
+   pass-through fix) — both CI-green. Player bridge live via
+   reely-pro-player `5972dbd`.
+2. D1 migration `0008_match_together.sql` applied remote + local.
+3. Production-verified by curl: `/reels` + `/api/reels` live, `/mood`
+   `/match-night` `/watch-together` all 200, match room → two swipes → match
+   derived (`{"matches":[{"media_id":123,...,"likers":2}]}`), together room →
+   beat → state round-trips positions.
+4. Lessons written (`lessons/2026-08-23-reels-mood-match-together.md`).
+5. Still worth one manual browser pass: reels focus mode / share sheet /
+   cover-crop on real hardware, and the two-tab match + together flows
+   (API-verified, UI not yet driven end-to-end).
 
 ## Deliberately deferred
 
