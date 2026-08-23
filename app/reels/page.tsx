@@ -400,7 +400,11 @@ function ReelSlide({
 export default function ReelsPage() {
   const [root, setRoot] = React.useState<HTMLDivElement | null>(null)
   const [activeIndex, setActiveIndex] = React.useState(0)
-  const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null)
+  // Focus is a property of the FEED, not of one slide. It used to be the index
+  // of the focused slide, and `onActive` cleared it whenever the active index
+  // moved - so swiping to the next trailer dropped you straight back out of
+  // full-screen, which is the opposite of what a full-screen mode is for.
+  const [focused, setFocused] = React.useState(false)
   // Mute is a feed-wide preference. Per-slide state meant every scroll silently
   // re-muted the trailer you had just turned the sound on for.
   const [muted, setMuted] = React.useState(true)
@@ -440,7 +444,7 @@ export default function ReelsPage() {
   // Keyboard control: arrows page the feed, Escape leaves focus mode, M mutes.
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setFocusedIndex(null)
+      if (e.key === 'Escape') setFocused(false)
       if (e.key === 'm' || e.key === 'M') setMuted((m) => !m)
       const step = (() => {
         if (e.key === 'ArrowDown' || e.key === 'PageDown') return 1
@@ -455,10 +459,7 @@ export default function ReelsPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [root])
 
-  const onActive = React.useCallback((index: number) => {
-    setActiveIndex(index)
-    setFocusedIndex((current) => (current === index ? current : null))
-  }, [])
+  const onActive = React.useCallback((index: number) => setActiveIndex(index), [])
 
   if (error) {
     return (
@@ -475,7 +476,7 @@ export default function ReelsPage() {
   return (
     <div
       className={`reels-viewport h-dvh overflow-hidden bg-black ${
-        focusedIndex !== null ? 'reels-focus' : ''
+        focused ? 'reels-focus' : ''
       }`}
     >
       <div
@@ -499,13 +500,11 @@ export default function ReelsPage() {
                 root={root}
                 active={index === activeIndex}
                 near={Math.abs(index - activeIndex) <= NEAR_SLIDES}
-                focused={focusedIndex === index}
+                focused={focused && index === activeIndex}
                 muted={muted}
                 onActive={onActive}
                 onToggleMute={() => setMuted((m) => !m)}
-                onToggleFocus={() =>
-                  setFocusedIndex((cur) => (cur === index ? null : index))
-                }
+                onToggleFocus={() => setFocused((f) => !f)}
                 showHint={index === 0 && activeIndex === 0}
               />
             </div>
