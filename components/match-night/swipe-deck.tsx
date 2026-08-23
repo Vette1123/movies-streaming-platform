@@ -151,6 +151,23 @@ function TopCard({
   )
 }
 
+/** One shape for all three actions: a pill with an icon and a word. The tones
+ * differ, the geometry does not. */
+const ACTION_BASE =
+  'inline-flex select-none items-center justify-center gap-2 rounded-full font-semibold transition active:scale-95'
+
+const ACTION_TONE = {
+  pass: 'h-13 border border-rose-400/40 bg-rose-500/10 px-5 text-sm text-rose-300 hover:border-rose-400/70 hover:bg-rose-500/20 sm:px-6 sm:text-base',
+  info: 'text-muted-foreground hover:text-foreground h-13 border border-white/10 px-4 text-sm hover:border-white/25',
+  like: 'h-13 bg-emerald-500 px-5 text-sm text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 sm:px-6 sm:text-base',
+} as const
+
+const Kbd = ({ children }: { children: React.ReactNode }) => (
+  <kbd className="rounded border border-white/15 bg-white/5 px-1.5 py-0.5 font-sans text-[10px] leading-none">
+    {children}
+  </kbd>
+)
+
 interface SwipeDeckProps {
   cards: MatchCard[]
   onDecide: (card: MatchCard, liked: boolean) => void
@@ -205,10 +222,12 @@ export function SwipeDeck({
 
   return (
     <div className="flex w-full flex-col items-center">
-      {/* Sized from the viewport HEIGHT, not the width: the deck plus its
-          buttons has to fit on one screen without scrolling, and a 2:3 card
-          driven by width blows past that on a short laptop. */}
-      <div className="relative aspect-2/3 w-[min(20rem,41svh)] max-w-full">
+      {/* Driven by HEIGHT, not width. The card, the three buttons and the meta
+          line have to sit on one screen together: sizing a 2:3 card off the
+          column width pushed the actions below the fold on a laptop, which is
+          how the first pass shipped a deck whose buttons you had to scroll to.
+          `min()` keeps it sane on a tall phone and a short laptop alike. */}
+      <div className="relative aspect-2/3 h-[min(56svh,28rem)] max-w-full">
         {/* The stack behind the top card. Static, non-interactive, and the
             reason the next poster is already decoded when it arrives. */}
         {behind.map((card, i) => (
@@ -234,49 +253,59 @@ export function SwipeDeck({
         </AnimatePresence>
       </div>
 
-      <div className="mt-6 flex items-center gap-5">
+      {/* Labelled actions. The first pass shipped three bare circles, and on a
+          poster you have never seen a red X and a green heart are still a
+          guess - the middle one (details) read as decoration. Words cost one
+          line and remove the guess. */}
+      <div className="mt-6 flex w-full items-center justify-center gap-2.5 sm:gap-3">
         <button
           type="button"
-          aria-label="Pass"
           data-testid="match-pass"
           onClick={() => decide(false)}
-          className="grid size-16 place-items-center rounded-full border border-white/10 bg-white/5 text-rose-400 transition hover:border-rose-400/50 hover:bg-rose-500/15 active:scale-95"
+          className={`${ACTION_BASE} ${ACTION_TONE.pass}`}
         >
-          <X className="size-7" />
+          <X className="size-5" aria-hidden />
+          Nope
         </button>
 
         <Link
           href={matchCardHref(top)}
-          aria-label={`Open ${top.title}`}
-          className="text-muted-foreground hover:text-foreground grid size-11 place-items-center rounded-full border border-white/10 transition hover:border-white/25 active:scale-95"
+          className={`${ACTION_BASE} ${ACTION_TONE.info}`}
         >
-          <Info className="size-4" />
+          <Info className="size-4" aria-hidden />
+          Details
         </Link>
 
         <button
           type="button"
-          aria-label="Like"
           data-testid="match-like"
           onClick={() => decide(true)}
-          className="grid size-16 place-items-center rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400 active:scale-95"
+          className={`${ACTION_BASE} ${ACTION_TONE.like}`}
         >
-          <Heart className="size-7 fill-current" />
+          <Heart className="size-5 fill-current" aria-hidden />
+          Like
         </button>
       </div>
 
-      <div className="text-muted-foreground mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
-        <span>{remaining} left in the deck</span>
-        <span aria-hidden>·</span>
-        <span className="hidden sm:inline">Drag, or use the arrow keys</span>
-        <span className="sm:hidden">Drag a card either way</span>
+      <div className="text-muted-foreground mt-5 flex flex-wrap items-center justify-center gap-2 text-xs">
+        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 font-medium">
+          {remaining} left
+        </span>
+        <span className="hidden items-center gap-1.5 sm:inline-flex">
+          <Kbd>←</Kbd>
+          nope
+          <Kbd>→</Kbd>
+          like
+        </span>
+        <span className="sm:hidden">Or drag the card either way</span>
         {onUndo ? (
           <button
             type="button"
             onClick={onUndo}
             disabled={!canUndo}
-            className="hover:text-foreground inline-flex items-center gap-1 underline underline-offset-4 disabled:pointer-events-none disabled:opacity-40"
+            className="hover:text-foreground inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 transition hover:border-white/25 disabled:pointer-events-none disabled:opacity-40"
           >
-            <Undo2 className="size-3" />
+            <Undo2 className="size-3" aria-hidden />
             Undo
           </button>
         ) : null}

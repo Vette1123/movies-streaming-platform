@@ -133,18 +133,22 @@ function useYouTubeMute(
 // with the same twelve classes copy-pasted between them.
 function ActionButton({
   label,
+  caption,
   pressed,
   testId,
   onClick,
   children,
 }: {
   label: string
+  /** The word under the glyph. A rail of unlabelled circles is a guessing
+   * game; the caption is what turns it into a menu. */
+  caption?: string
   pressed?: boolean
   testId?: string
   onClick: () => void
   children: React.ReactNode
 }) {
-  return (
+  const button = (
     <button
       type="button"
       onClick={onClick}
@@ -155,6 +159,18 @@ function ActionButton({
     >
       {children}
     </button>
+  )
+  if (!caption) return button
+  return (
+    <span className="flex flex-col items-center gap-1">
+      {button}
+      <span
+        aria-hidden
+        className="text-[11px] leading-none font-medium text-white/70 drop-shadow"
+      >
+        {caption}
+      </span>
+    </span>
   )
 }
 
@@ -279,9 +295,10 @@ function ReelSlide({
       ) : (
         <>
           {/* Right action rail */}
-          <div className="absolute right-3 bottom-28 z-10 flex flex-col items-center gap-4">
+          <div className="absolute right-3 bottom-28 z-10 flex flex-col items-center gap-3.5">
             <ActionButton
               label={saved ? 'Remove from watchlist' : 'Add to watchlist'}
+              caption={saved ? 'Saved' : 'Save'}
               pressed={saved}
               testId="reel-save"
               onClick={toggleSave}
@@ -292,6 +309,7 @@ function ReelSlide({
             </ActionButton>
             <ActionButton
               label={muted ? 'Unmute trailer' : 'Mute trailer'}
+              caption={muted ? 'Sound' : 'Mute'}
               pressed={!muted}
               testId="reel-mute"
               onClick={onToggleMute}
@@ -304,6 +322,7 @@ function ReelSlide({
             </ActionButton>
             <ActionButton
               label={`Share ${reel.title}`}
+              caption="Share"
               testId="reel-share"
               onClick={() =>
                 void share({ title: reel.title, path: mediaHref(reel) })
@@ -313,6 +332,7 @@ function ReelSlide({
             </ActionButton>
             <ActionButton
               label="Focus on this reel"
+              caption="Expand"
               testId="reel-focus"
               onClick={onToggleFocus}
             >

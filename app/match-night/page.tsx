@@ -378,7 +378,7 @@ export default function MatchNightPage() {
   const hits = matchState?.matches ?? []
 
   return (
-    <section className="container min-h-svh py-24 lg:py-28">
+    <section className="container min-h-svh pt-20 pb-12 lg:pt-24">
       <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div className="flex items-center gap-2 sm:gap-3">
           <span className="text-muted-foreground text-sm">Room</span>
@@ -421,7 +421,7 @@ export default function MatchNightPage() {
         </div>
       </header>
 
-      <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16">
+      <div className="mt-6 grid items-start gap-10 lg:mt-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
         <SwipeDeck
           cards={cards}
           onDecide={decide}

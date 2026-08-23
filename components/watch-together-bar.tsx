@@ -1,7 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import { Users } from 'lucide-react'
+import { Copy, Users } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { togetherBeatApi, togetherStateApi } from '@/lib/api-client'
 
@@ -114,9 +115,11 @@ export function WatchTogetherBar({
         type="button"
         onClick={() => {
           void navigator.clipboard?.writeText(location.href)
+          toast('Invite link copied')
         }}
-        className="underline"
+        className="hover:border-primary/60 inline-flex items-center gap-1 rounded-full border border-white/15 px-2 py-0.5 font-medium transition"
       >
+        <Copy className="size-3" aria-hidden />
         Copy link
       </button>
     </div>
