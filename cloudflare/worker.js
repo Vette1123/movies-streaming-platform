@@ -376,7 +376,7 @@ const apiKey = (url, params) => {
   return key.toString()
 }
 
-async function handleApi(pathname, url, request, ctx) {
+async function handleApi(pathname, url, request, ctx, env) {
   const q = url.searchParams
 
   // Reely Reels — the trailer feed. One batch per trending page; the client
@@ -1383,6 +1383,18 @@ export default {
       return await handleProTicket(request, env, url)
     }
 
+    // Same story for the party features: their writes are POSTs inside
+    // handleApi, which the GET/HEAD guard below would never reach.
+    if (
+      request.method === 'POST' &&
+      (pathname === '/api/match/room' ||
+        pathname === '/api/match/swipe' ||
+        pathname === '/api/together/room' ||
+        pathname === '/api/together/beat')
+    ) {
+      return await handleApi(pathname, url, request, ctx, env)
+    }
+
     if (ownsPath(pathname)) {
       try {
         // Imported here, not at the top: esbuild keeps a module reached only
@@ -1417,7 +1429,7 @@ export default {
 
     try {
       if (pathname.startsWith('/api/')) {
-        return await handleApi(pathname, url, request, ctx)
+        return await handleApi(pathname, url, request, ctx, env)
       }
 
       const list = pathname.match(LIST_PATH)
@@ -1467,3 +1479,4 @@ export default {
     }
   },
 }
+
