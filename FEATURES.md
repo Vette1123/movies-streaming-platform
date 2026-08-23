@@ -39,6 +39,24 @@ because trending ignores `append_to_response` — measured, not guessed).
 - Nav entry + sitemap entry. **Live**: `/reels` 200, `/api/reels` returning
   real trending data in production.
 
+**Reworked 2026-08-23 (second pass).** The first version stuttered and the
+mute button restarted the trailer:
+
+- Active slide comes from an **IntersectionObserver**, not an `onScroll`
+  handler. The old handler ran `setActiveIndex` on every scroll tick, which
+  re-rendered every mounted slide per frame.
+- **Mute is a `postMessage`** to the player (`enablejsapi=1`), not a new
+  `src`. Rewriting the src tore the iframe down and restarted playback from
+  zero. Mute is also feed-wide now: scrolling no longer silently re-mutes.
+- The still behind the trailer is the **portrait poster at w500**, not the
+  landscape backdrop at w-2560, and only slides within one of the active one
+  mount it at all.
+- `getNextPageParam` terminates on a short page. It used to return
+  `pages.length + 1` unconditionally, so the feed kept asking for pages that
+  could only come back empty — 11 TMDB subrequests each.
+- Keyboard control (arrows page the feed, `M` mutes, Escape leaves focus),
+  an error state with retry, and a first-run swipe affordance.
+
 ## 2. Mood picker (`/mood`)
 
 Eight curated moods → discover presets. No new backend: each mood compiles
@@ -52,21 +70,45 @@ to the existing `/api/filter` discover call (genre cocktail + rating floor
 
 ## 3. Match Night (`/match-night`)
 
-Two people, one 6-char room code, one trending deck; mutual likes light up
-as matches. Anonymous by design — the room code is the credential, rooms
-swept after 12h.
+Two people, one 6-char room code, one deck; mutual likes light up as matches.
+Anonymous by design — the room code is the credential, rooms swept after 12h.
 
 - Migration `0008_match_together.sql` — applied to remote D1 and local.
 - Worker routes: `/api/match/room`, `/api/match/swipe`, `/api/match/matches`.
   Matches are derived in SQL (`COUNT(DISTINCT swiper) >= 2`), never stored —
   nothing to reconcile.
-- Pure core `lib/match-night.ts` (`resolveMatches`, `interleave`) + 8 unit
-  tests (suite: 330/330 green). Room state via `hooks/use-match-room.ts`
-  (useSyncExternalStore).
-- Page: create/join room, button + arrow-key swiping, live match panel,
-  invite copy. Nav entry + sitemap entry.
+- Pure core `lib/match-night.ts` (`resolveMatches`, `interleave`,
+  `toMatchCard`, `dedupeCards`) + unit tests (suite: 330/330 green). Room
+  state via `hooks/use-match-room.ts` (useSyncExternalStore).
+- Nav entry + sitemap entry.
 - **Prod-verified end-to-end by curl**: room `YJVSGL` → alice likes 123 →
   bob likes 123 → `{"matches":[{"media_id":123,"likers":2}]}`.
+
+**Redesigned 2026-08-23 (second pass).** Reported as "so bad, laggy" with no
+way to search. All three causes were client-side:
+
+- **A swipe no longer awaits its POST.** The deck advances immediately and the
+  swipe is reported in the background. Matches are derived on read, so the
+  client was never the source of truth and the await bought nothing.
+- **Posters go through `getPosterImageURL` (w500)**, not `getImageURL`
+  (`tr:w-2560`), and three cards are mounted at once — the two behind the top
+  card ARE the preloader for the next two posters.
+- **The keyboard effect has a dependency array.** It had none, so it
+  re-attached a window listener on every render, including the poll's.
+- **Search shipped** (`components/match-night/deck-search.tsx`): any title
+  from `/api/search` is queued as the NEXT card. Same endpoint the command
+  menu uses, no new TMDB traffic.
+- **The match panel shows posters**, resolved from this browser's own likes (a
+  match requires your like, so the artwork is always already local — zero extra
+  requests), plus a presence line from a distinct-swiper count returned in the
+  same `db.batch` as the matches.
+- **Drag to swipe** (framer-motion) with live Yes/Nope verdict stamps, plus
+  buttons and arrow keys. **Undo** works because `/api/match/swipe` now
+  upserts last-verdict-wins; `DO NOTHING` had made a vote unchangeable.
+- Deck is ~80 titles (two pages each of popular movies and series), the invite
+  is a `?room=CODE` link through the native share sheet, and the match poll is
+  paced by activity (4s swiping / 15s idle, parked entirely in a background
+  tab) to keep Worker invocations down.
 
 ## 4. Watch Together beta (`/watch-together`)
 
@@ -97,8 +139,11 @@ via postMessage into the player frame.
   405'd every new POST route, and `handleApi` had no `env` parameter (D1
   routes crashed). Both fixed in `8effed9`.
 - Lessons: `lessons/2026-08-23-reels-mood-match-together.md` + index row.
-- Known lint debt: one Tailwind class-order warning in `app/reels/page.tsx`
-  (cosmetic, auto-fixable with `pnpm exec eslint --fix`).
+- Watch Together's two 4s loops now skip hidden tabs, and the host skips a beat
+  identical to the last one — a paused film in an open tab used to write the
+  same D1 row every four seconds forever.
+- Lint is clean on all four feature surfaces (the old Tailwind class-order
+  warning in `app/reels/page.tsx` is gone with the rewrite).
 
 ## The one remaining manual pass (nice-to-have, not blocking)
 

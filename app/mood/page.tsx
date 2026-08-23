@@ -76,7 +76,7 @@ export default function MoodPage() {
         What are you in the mood for?
       </h1>
       <p className="text-muted-foreground mt-2 max-w-xl text-sm">
-        Skip the scrolling. Pick the feeling, get a stack tuned for it — every
+        Skip the scrolling. Pick the feeling, get a stack tuned for it. Every
         pick is rated 6.5+ by people who watched it.
       </p>
 
@@ -109,7 +109,7 @@ export default function MoodPage() {
           <MoodResults mood={mood} />
         ) : (
           <div className="border-border/60 text-muted-foreground rounded-xl border border-dashed p-10 text-center text-sm">
-            Tap a mood above — the stack appears here.
+            Tap a mood above and the stack appears here.
             <div className="mt-4">
               <Link href="/reels" className={buttonVariants({ size: 'sm' })}>
                 Or swipe trailers in Reels

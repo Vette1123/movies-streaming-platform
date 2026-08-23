@@ -43,11 +43,27 @@ export function WatchTogetherBar({
     return () => window.removeEventListener('message', onMessage)
   }, [])
 
+  // Both loops below are the only recurring Worker traffic on a detail page, so
+  // they skip the two cases that cost an invocation and buy nothing: a hidden
+  // tab (nobody is watching it), and a position that has not moved since the
+  // last beat (a paused film would otherwise write the same row every 4s for as
+  // long as the tab stayed open).
+  const sent = React.useRef<{ position: number; playing: boolean } | null>(null)
+
   React.useEffect(() => {
     if (!isHost) return
     const id = setInterval(() => {
       const beat = latest.current
-      if (!beat) return
+      if (!beat || document.hidden) return
+      const last = sent.current
+      if (
+        last &&
+        last.playing === beat.playing &&
+        Math.abs(last.position - beat.position) < 0.5
+      ) {
+        return
+      }
+      sent.current = beat
       void togetherBeatApi({
         code,
         position: beat.position,
@@ -70,6 +86,7 @@ export function WatchTogetherBar({
       )
     }
     const sync = async () => {
+      if (document.hidden) return
       try {
         const beat = await togetherStateApi(code)
         const drift = Math.abs(beat.position - (latest.current?.position ?? 0))
@@ -91,7 +108,7 @@ export function WatchTogetherBar({
       <Users className="size-3.5" />
       <span>
         Watch Together · <span className="font-mono font-bold">{code}</span>
-        {isHost ? ' — you control playback' : ' — following the host'}
+        {isHost ? ' · you control playback' : ' · following the host'}
       </span>
       <button
         type="button"

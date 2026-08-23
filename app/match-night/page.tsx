@@ -1,102 +1,354 @@
 'use client'
 
 import * as React from 'react'
-import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
-import { Heart, PartyPopper, X } from 'lucide-react'
+import { Clapperboard, LogOut, Share2, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { Movie } from '@/types/movie-result'
 import {
   createMatchRoomApi,
   getPopularApi,
   matchHitsApi,
   swipeApi,
-  type MatchHit,
 } from '@/lib/api-client'
-import { interleave, swiperIdentity } from '@/lib/match-night'
-import { getImageURL } from '@/lib/utils'
+import {
+  dedupeCards,
+  interleave,
+  swiperIdentity,
+  toMatchCard,
+  type MatchCard,
+} from '@/lib/match-night'
+import { getPosterImageURL } from '@/lib/utils'
 import { useMatchRoom } from '@/hooks/use-match-room'
-import { buttonVariants } from '@/components/ui/button'
+import { useShare } from '@/hooks/use-share'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DeckSearch } from '@/components/match-night/deck-search'
+import { MatchPanel } from '@/components/match-night/match-panel'
+import { SwipeDeck } from '@/components/match-night/swipe-deck'
 
-// Match Night: two people (or a whole couch), one room code, one deck of
-// trending titles. Every like POSTs to the room; a 4s poll derives matches
-// (two different swipers liked the same media). No accounts - the room code is
-// the credential, rooms die after 12h.
+// Match Night: two people, one room code, one deck. Both like the same title
+// and it lights up as a match.
+//
+// The three things that made the first version feel broken, and where they are
+// fixed:
+//  - every swipe awaited the POST before the card moved. A decision now lands
+//    on screen immediately and the swipe is reported in the background (`decide`
+//    below); the room is eventually consistent either way, since matches are
+//    derived in SQL on read.
+//  - the deck was 30 fixed trending titles with no way to put a specific film
+//    in front of the room. `DeckSearch` queues any title as the next card.
+//  - the match panel showed a count and nothing else. It shows the posters now,
+//    resolved from this browser's own likes - a match requires your like, so the
+//    artwork is always already here and costs no request.
 
-const useDeck = (enabled: boolean) =>
+/** Two pages of each type. ~80 cards is more than one night of swiping, and it
+ * is four edge-cached Worker calls, made once per session. */
+const DECK_PAGES = [1, 2]
+
+/** Poll cadence while someone is swiping, and once the room goes quiet. */
+const ACTIVE_POLL_MS = 4000
+const IDLE_POLL_MS = 15000
+const ACTIVE_WINDOW_MS = 90000
+
+const likedStorageKey = (room: string) => `match-night-history-${room}`
+
+interface Decision {
+  card: MatchCard
+  liked: boolean
+}
+
+const readHistory = (room: string): Decision[] => {
+  try {
+    const raw = localStorage.getItem(likedStorageKey(room))
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+const writeHistory = (room: string, history: Decision[]) => {
+  try {
+    localStorage.setItem(likedStorageKey(room), JSON.stringify(history))
+  } catch {
+    // A full or blocked localStorage costs the session its place in the deck,
+    // never the session itself.
+  }
+}
+
+const useDeck = () =>
   useQuery({
     queryKey: ['match-deck'],
-    enabled,
     staleTime: Infinity,
     queryFn: async () => {
-      const [movies, shows] = await Promise.all([
-        getPopularApi('movie', 1),
-        getPopularApi('tv', 1),
+      const responses = await Promise.all([
+        ...DECK_PAGES.map((page) => getPopularApi('movie', page)),
+        ...DECK_PAGES.map((page) => getPopularApi('tv', page)),
       ])
-      const deck = interleave<Movie>(
-        (movies.results ?? []).filter((m) => m.poster_path),
-        (shows.results ?? []).filter((m) => m.poster_path)
-      )
-      return deck.slice(0, 30)
+      const half = DECK_PAGES.length
+      const withPoster = (index: number, type: 'movie' | 'tv') =>
+        (responses[index].results ?? [])
+          .filter((item) => item.poster_path)
+          .map((item) => toMatchCard(item, type))
+      const movies = DECK_PAGES.flatMap((_, i) => withPoster(i, 'movie'))
+      const shows = DECK_PAGES.flatMap((_, i) => withPoster(half + i, 'tv'))
+      return dedupeCards(interleave<MatchCard>(movies, shows))
     },
   })
 
+/** A fanned trio of tonight's real posters. Gives the empty state something to
+ * look at that is actually the deck you are about to swipe. */
+function DeckPreview({ cards }: { cards: MatchCard[] }) {
+  const trio = cards.slice(0, 3)
+  if (trio.length < 3) {
+    return <div className="hidden aspect-4/3 lg:block" aria-hidden />
+  }
+  const tilts = [
+    '-rotate-12 -translate-x-8',
+    'z-10 scale-110',
+    'rotate-12 translate-x-8',
+  ]
+  return (
+    <div
+      aria-hidden
+      className="relative hidden items-center justify-center lg:flex"
+    >
+      <div className="bg-primary/15 absolute size-72 rounded-full blur-3xl" />
+      {trio.map((card, i) => (
+        <div
+          key={card.id}
+          className={`relative w-40 overflow-hidden rounded-2xl border border-white/10 shadow-2xl ${tilts[i]}`}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={getPosterImageURL(card.poster ?? '')}
+            alt=""
+            loading="lazy"
+            className="aspect-2/3 w-full object-cover"
+          />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function StartScreen({
+  deck,
+  onCreate,
+  onJoin,
+  creating,
+}: {
+  deck: MatchCard[]
+  onCreate: () => void
+  onJoin: (code: string) => void
+  creating: boolean
+}) {
+  const [code, setCode] = React.useState('')
+
+  return (
+    <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_28rem]">
+      <div>
+        <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl">
+          Settle it in
+          <span className="text-primary"> six swipes</span>
+        </h1>
+        <p className="text-muted-foreground mt-4 max-w-md leading-relaxed">
+          Open a room, send the code, and swipe the same deck. Anything you both
+          like lights up instantly.
+        </p>
+
+        <div className="mt-8 flex max-w-md flex-col gap-3">
+          <Button
+            size="lg"
+            data-testid="match-create"
+            disabled={creating}
+            onClick={onCreate}
+            className="gap-2 rounded-full"
+          >
+            <Sparkles className="size-4" aria-hidden />
+            {creating ? 'Opening a room…' : 'Start a room'}
+          </Button>
+
+          <form
+            className="flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault()
+              onJoin(code)
+            }}
+          >
+            <label htmlFor="match-join" className="sr-only">
+              Room code
+            </label>
+            <Input
+              id="match-join"
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              placeholder="Have a code? ABC123"
+              maxLength={6}
+              autoComplete="off"
+              className="font-mono tracking-[0.2em] uppercase placeholder:tracking-normal placeholder:normal-case"
+              data-testid="match-join-input"
+            />
+            <Button
+              type="submit"
+              variant="secondary"
+              className="shrink-0 rounded-full px-6"
+            >
+              Join
+            </Button>
+          </form>
+        </div>
+
+        <p className="text-muted-foreground mt-8 max-w-md text-sm leading-relaxed">
+          No account, nothing saved to a profile. The code is the whole
+          credential and the room clears itself after 12 hours.
+        </p>
+      </div>
+
+      <DeckPreview cards={deck} />
+    </div>
+  )
+}
+
 export default function MatchNightPage() {
   const [room, setRoom] = useMatchRoom()
-  const [joinCode, setJoinCode] = React.useState('')
-  const [index, setIndex] = React.useState(0)
-  const { data: deck } = useDeck(true)
+  const [creating, setCreating] = React.useState(false)
+  const [history, setHistory] = React.useState<Decision[]>([])
+  const [queued, setQueued] = React.useState<MatchCard[]>([])
+  const { data: deck } = useDeck()
+  const { share } = useShare()
 
-  // Poll for mutual likes while a room is live.
-  const { data: matchData } = useQuery({
+  // A shared link carries the code, so the second person never types it. Read
+  // from window.location rather than useSearchParams: this route is exported
+  // statically and a search-params hook would bail the whole page to CSR.
+  React.useEffect(() => {
+    const code = new URLSearchParams(window.location.search)
+      .get('room')
+      ?.trim()
+      .toUpperCase()
+    if (code?.length !== 6) return
+    setRoom(code)
+    // Drop the parameter once it has been used, so leaving the room and
+    // reloading does not silently drop you back into it.
+    window.history.replaceState(null, '', window.location.pathname)
+  }, [setRoom])
+
+  // Your place in the deck survives a reload, and so do the likes the match
+  // panel resolves its posters from. Adjusted during render rather than in an
+  // effect: an effect would paint one frame of the previous room's deck first,
+  // and React re-runs this render before committing anything.
+  const [loadedRoom, setLoadedRoom] = React.useState<string | null>(null)
+  if (loadedRoom !== room) {
+    setLoadedRoom(room)
+    setHistory(room ? readHistory(room) : [])
+    setQueued([])
+  }
+
+  // The match poll is the only thing on this page that costs a Worker
+  // invocation per tick, so it is paced by whether anyone is actually swiping.
+  // A room left open on a second tab used to burn 900 invocations an hour
+  // against a 100k/day account cap; idle rooms now cost a quarter of that, and
+  // TanStack already parks the interval entirely while the tab is in the
+  // background.
+  const lastSwipeAt = React.useRef(0)
+
+  const { data: matchState } = useQuery({
     queryKey: ['match-hits', room],
     enabled: !!room,
-    refetchInterval: 4000,
+    refetchInterval: () =>
+      Date.now() - lastSwipeAt.current < ACTIVE_WINDOW_MS
+        ? ACTIVE_POLL_MS
+        : IDLE_POLL_MS,
     queryFn: () => matchHitsApi(room!),
   })
 
-  const swipe = async (liked: boolean) => {
-    const current = deck?.[index]
-    if (!room || !current) return
-    try {
-      await swipeApi({
-        code: room,
-        swiper: swiperIdentity(),
-        mediaId: current.id,
-        mediaType: current.media_type === 'tv' ? 'tv' : 'movie',
-        liked,
-      })
-    } catch {
-      toast('Could not record that swipe — check your connection')
-    }
-    setIndex((i) => i + 1)
-  }
-
-  // Keyboard swiping: arrows are the whole interaction on a laptop.
+  // A match is the whole point of the page, and the panel can be off screen on
+  // a phone. Announce each new one once.
+  const announced = React.useRef<Set<number>>(new Set())
   React.useEffect(() => {
     if (!room) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') void swipe(true)
-      if (e.key === 'ArrowLeft') void swipe(false)
+    for (const hit of matchState?.matches ?? []) {
+      if (announced.current.has(hit.media_id)) continue
+      announced.current.add(hit.media_id)
+      toast('It is a match', { description: 'You both want to watch this one' })
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  })
+  }, [matchState, room])
+
+  const decidedIds = React.useMemo(
+    () => new Set(history.map((entry) => entry.card.id)),
+    [history]
+  )
+
+  const cards = React.useMemo(() => {
+    const all = dedupeCards([...queued, ...(deck ?? [])])
+    return all.filter((card) => !decidedIds.has(card.id))
+  }, [queued, deck, decidedIds])
+
+  const likedById = React.useMemo(() => {
+    const map: Record<number, MatchCard> = {}
+    for (const entry of history) {
+      if (entry.liked) map[entry.card.id] = entry.card
+    }
+    return map
+  }, [history])
+
+  const report = React.useCallback(
+    (code: string, card: MatchCard, liked: boolean) => {
+      // Fire and forget. The deck has already moved; a failed swipe costs one
+      // vote, and the toast says so rather than freezing the card.
+      void swipeApi({
+        code,
+        swiper: swiperIdentity(),
+        mediaId: card.id,
+        mediaType: card.mediaType,
+        liked,
+      }).catch(() => toast('That swipe did not reach the room'))
+    },
+    []
+  )
+
+  const decide = React.useCallback(
+    (card: MatchCard, liked: boolean) => {
+      if (!room) return
+      lastSwipeAt.current = Date.now()
+      const next = [...history, { card, liked }]
+      writeHistory(room, next)
+      setHistory(next)
+      setQueued((prev) => prev.filter((item) => item.id !== card.id))
+      report(room, card, liked)
+    },
+    [room, history, report]
+  )
+
+  const undo = React.useCallback(() => {
+    const last = history[history.length - 1]
+    if (!room || !last) return
+    const next = history.slice(0, -1)
+    writeHistory(room, next)
+    setHistory(next)
+    // Taking back a like has to reach the room too, or an undone title can
+    // still light up as a match on the other phone.
+    if (last.liked) report(room, last.card, false)
+    const inDeck = (deck ?? []).some((card) => card.id === last.card.id)
+    if (!inDeck) setQueued((prev) => dedupeCards([last.card, ...prev]))
+  }, [room, history, deck, report])
 
   const createRoom = async () => {
+    setCreating(true)
     try {
       const { code } = await createMatchRoomApi()
       setRoom(code)
-      toast(`Room ${code} — share it with your match`)
+      toast(`Room ${code} is open — send the invite`)
     } catch {
-      toast('Could not open a room — try again')
+      toast('Could not open a room. Try again in a moment')
+    } finally {
+      setCreating(false)
     }
   }
 
-  const joinRoom = () => {
-    const code = joinCode.trim().toUpperCase()
+  const joinRoom = (raw: string) => {
+    const code = raw.trim().toUpperCase()
     if (code.length !== 6) {
       toast('Room codes are 6 characters')
       return
@@ -104,151 +356,111 @@ export default function MatchNightPage() {
     setRoom(code)
   }
 
-  const current = deck?.[index]
-  const hits = matchData?.matches ?? []
-  const matchedNow = hits.length > 0
+  const leaveRoom = () => {
+    setRoom(null)
+    setHistory([])
+    setQueued([])
+  }
+
+  if (!room) {
+    return (
+      <section className="container flex min-h-svh flex-col justify-center py-24">
+        <StartScreen
+          deck={deck ?? []}
+          onCreate={() => void createRoom()}
+          onJoin={joinRoom}
+          creating={creating}
+        />
+      </section>
+    )
+  }
+
+  const hits = matchState?.matches ?? []
 
   return (
-    <section className="container min-h-svh py-20 lg:py-32">
-      <h1 className="text-2xl font-bold lg:text-3xl">Match Night</h1>
-      <p className="text-muted-foreground mt-2 max-w-xl text-sm">
-        Two people, one deck. Both like the same title and it lights up as a
-        match — the tonight-argument, settled.
-      </p>
-
-      {!room ? (
-        <div className="mt-8 flex max-w-md flex-col gap-4">
+    <section className="container min-h-svh py-24 lg:py-28">
+      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <span className="text-muted-foreground text-sm">Room</span>
           <button
             type="button"
-            data-testid="match-create"
-            onClick={() => void createRoom()}
-            className={buttonVariants()}
+            onClick={() => {
+              void navigator.clipboard?.writeText(room)
+              toast('Code copied')
+            }}
+            className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 font-mono text-base font-bold tracking-[0.2em] transition hover:border-white/25 sm:px-3 sm:py-1.5 sm:text-lg sm:tracking-[0.3em]"
+            aria-label={`Room code ${room.split('').join(' ')}, copy`}
           >
-            Start a room
+            {room}
           </button>
-          <div className="flex gap-2">
-            <Input
-              value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value)}
-              placeholder="Or join with a code"
-              maxLength={6}
-              className="uppercase"
-              data-testid="match-join-input"
-            />
-            <button
-              type="button"
-              onClick={joinRoom}
-              className={buttonVariants({ variant: 'secondary' })}
-            >
-              Join
-            </button>
-          </div>
         </div>
-      ) : (
-        <>
-          <div className="text-muted-foreground mt-4 flex items-center gap-3 text-sm">
-            <span>
-              Room{' '}
-              <span className="font-mono font-bold text-foreground">
-                {room}
-              </span>
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                void navigator.clipboard?.writeText(
-                  `${location.origin}/match-night`
-                )
-                toast(
-                  'Match Night link copied — your match joins with the code'
-                )
-              }}
-              className="hover:text-foreground underline"
-            >
-              Copy invite
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setRoom(null)
-                setIndex(0)
-              }}
-              className="hover:text-foreground underline"
-            >
-              Leave
-            </button>
-          </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="gap-2 rounded-full"
+            onClick={() =>
+              void share({
+                title: 'Match Night on Reely',
+                path: `/match-night?room=${room}`,
+              })
+            }
+          >
+            <Share2 className="size-4" aria-hidden />
+            Invite
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground gap-2 rounded-full"
+            onClick={leaveRoom}
+          >
+            <LogOut className="size-4" aria-hidden />
+            Leave
+          </Button>
+        </div>
+      </header>
 
-          {matchedNow ? (
-            <div
-              data-testid="match-hit"
-              className="border-primary bg-primary/10 mt-6 rounded-xl border p-6"
-            >
-              <p className="flex items-center gap-2 font-semibold">
-                <PartyPopper className="text-primary size-5" />
-                It&apos;s a match — {hits.length} title
-                {hits.length > 1 ? 's' : ''} you both want
+      <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16">
+        <SwipeDeck
+          cards={cards}
+          onDecide={decide}
+          onUndo={undo}
+          canUndo={history.length > 0}
+          remaining={cards.length}
+          emptyState={
+            <div className="border-border/60 text-muted-foreground w-full max-w-sm rounded-2xl border border-dashed p-10 text-center">
+              <Clapperboard className="mx-auto size-8 opacity-60" aria-hidden />
+              <p className="text-foreground mt-4 font-medium">
+                {deck ? 'That is the whole deck' : 'Dealing the deck…'}
               </p>
-              <div className="text-muted-foreground mt-2 text-xs">
-                Keep swiping — more matches light up as you both agree.
-              </div>
+              {deck ? (
+                <p className="mt-2 text-sm leading-relaxed">
+                  Search a title to keep going, or check what you have already
+                  agreed on.
+                </p>
+              ) : null}
             </div>
-          ) : null}
+          }
+        />
 
-          <div className="mt-8 flex flex-col items-center gap-6">
-            {current ? (
-              <>
-                <div
-                  data-testid="match-card"
-                  className="relative w-64 overflow-hidden rounded-xl shadow-xl"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={getImageURL(current.poster_path ?? '')}
-                    alt={current.title ?? current.name ?? ''}
-                    className="aspect-[2/3] w-full object-cover"
-                  />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black to-transparent p-3">
-                    <p className="font-semibold text-white">
-                      {current.title ?? current.name}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-muted-foreground text-xs">
-                  ← / → to swipe · {index + 1} of {deck?.length ?? 0}
-                </p>
-                <div className="flex gap-6">
-                  <button
-                    type="button"
-                    aria-label="Pass"
-                    data-testid="match-pass"
-                    onClick={() => void swipe(false)}
-                    className="border-border/60 flex size-14 items-center justify-center rounded-full border transition hover:bg-red-500/10"
-                  >
-                    <X className="text-red-500" />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Like"
-                    data-testid="match-like"
-                    onClick={() => void swipe(true)}
-                    className="flex size-14 items-center justify-center rounded-full bg-emerald-600 transition hover:bg-emerald-500"
-                  >
-                    <Heart className="text-white" />
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="text-muted-foreground border-border/60 rounded-xl border border-dashed p-10 text-center text-sm">
-                Deck done. Waiting on your match…
-                <p className="mt-2 text-xs">
-                  Matches light up the moment you both like the same title.
-                </p>
-              </div>
-            )}
+        <aside className="space-y-8 lg:sticky lg:top-28 lg:self-start">
+          <MatchPanel
+            hits={hits}
+            swipers={matchState?.swipers ?? 0}
+            cardsById={likedById}
+          />
+          <div className="border-border/60 border-t pt-6">
+            <DeckSearch
+              onQueue={(card) => {
+                setQueued((prev) => dedupeCards([card, ...prev]))
+                toast(`${card.title} is up next`)
+              }}
+              queuedIds={new Set([...queued.map((c) => c.id), ...decidedIds])}
+            />
           </div>
-        </>
-      )}
+        </aside>
+      </div>
     </section>
   )
 }

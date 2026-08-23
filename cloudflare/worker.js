@@ -33,12 +33,12 @@ import { fetchGenreList } from '@/services/genres'
 import { getHeroExtras } from '@/services/hero-extras'
 import { setImdbAssetsBinding } from '@/services/imdb'
 import { getMediaSummary } from '@/services/media-summary'
-import { getReels } from '@/services/reels'
 import {
   getCollectionById,
   getPopularMovies,
   populateMovieDetailsPage,
 } from '@/services/movies'
+import { getReels } from '@/services/reels'
 import { searchMedia } from '@/services/search'
 import { getSeasonEpisodes } from '@/services/season-details'
 import {
@@ -48,20 +48,15 @@ import {
 import { fetchWatchProviders } from '@/services/watch-providers'
 
 import { ownsPath } from '@/lib/api/account-paths'
+import { loadSession, sessionCookieOf } from '@/lib/auth/session'
+import { isEntitled } from '@/lib/billing/entitlement'
 import { loadDirectory } from '@/lib/community/routes'
 import { smartQuery } from '@/lib/filter-query'
 import { loadPublicList } from '@/lib/lists/routes'
 import { getMediaHeroImageUrl } from '@/lib/media'
 import { mosaicUrl, OG_HEIGHT, OG_WIDTH } from '@/lib/og/mosaic'
-import { loadPublicProfile } from '@/lib/profile/routes'
 import { signEntryTicket } from '@/lib/pro/playback-ticket'
-import {
-  isEntitled,
-} from '@/lib/billing/entitlement'
-import {
-  loadSession,
-  sessionCookieOf,
-} from '@/lib/auth/session'
+import { loadPublicProfile } from '@/lib/profile/routes'
 import { getImageURL } from '@/lib/utils'
 
 /** 6h, matching the deploy cadence that refreshes the static half of the site. */
@@ -160,6 +155,20 @@ const json = (body, init = {}) =>
     ...init,
     headers: { 'Cache-Control': CACHE_CONTROL, ...(init.headers || {}) },
   })
+
+/**
+ * The same JSON, explicitly NOT cacheable. Every route that reads live room
+ * state has to use this.
+ *
+ * `CACHE_CONTROL` is right for TMDB reads and catastrophic for a poll: it puts
+ * the answer in the BROWSER's cache for an hour, so the client's fetch never
+ * leaves the machine and the room appears frozen. Measured 2026-08-23 - Match
+ * Night's four-second poll fired on schedule and returned the same empty
+ * payload every time, while curl (which has no cache) showed the match. That is
+ * exactly why "verified by curl" was not verification.
+ */
+const liveJson = (body, init = {}) =>
+  json(body, { ...init, headers: { 'Cache-Control': 'no-store' } })
 
 /**
  * The Next build id, stamped in by scripts/build-worker.mjs.
@@ -312,7 +321,9 @@ const isTv = (value) => value === 'tv'
 const ROOM_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
 const roomCode = () => {
   const bytes = crypto.getRandomValues(new Uint8Array(6))
-  return Array.from(bytes, (b) => ROOM_ALPHABET[b % ROOM_ALPHABET.length]).join('')
+  return Array.from(bytes, (b) => ROOM_ALPHABET[b % ROOM_ALPHABET.length]).join(
+    ''
+  )
 }
 
 /**
@@ -458,7 +469,7 @@ async function handleApi(pathname, url, request, ctx, env) {
 
   if (pathname === '/api/match/room' && request.method === 'POST') {
     const db = env.DB
-    if (!db) return json({ error: 'unavailable' }, { status: 503 })
+    if (!db) return liveJson({ error: 'unavailable' }, { status: 503 })
     const now = Date.now()
     // Sweep: rooms die after 12h; the index on created_at is not worth it at
     // this scale - a full scan of a table that holds hours of rooms is free.
@@ -475,12 +486,12 @@ async function handleApi(pathname, url, request, ctx, env) {
       .prepare('INSERT INTO match_rooms (code, created_at) VALUES (?, ?)')
       .bind(code, now)
       .run()
-    return json({ code })
+    return liveJson({ code })
   }
 
   if (pathname === '/api/match/swipe' && request.method === 'POST') {
     const db = env.DB
-    if (!db) return json({ error: 'unavailable' }, { status: 503 })
+    if (!db) return liveJson({ error: 'unavailable' }, { status: 503 })
     const body = await request.json().catch(() => null)
     const { code, swiper, mediaId, mediaType, liked } = body ?? {}
     if (
@@ -490,43 +501,70 @@ async function handleApi(pathname, url, request, ctx, env) {
       (mediaType !== 'movie' && mediaType !== 'tv') ||
       typeof liked !== 'boolean'
     ) {
-      return json({ error: 'code, swiper, mediaId, mediaType, liked' }, { status: 400 })
+      return liveJson(
+        { error: 'code, swiper, mediaId, mediaType, liked' },
+        { status: 400 }
+      )
     }
-    // Upsert: re-swiping the same title just re-affirms the first choice.
+    // Upsert, last verdict wins. DO NOTHING froze the first swipe forever,
+    // which made the client's undo a lie: the card came back on screen while
+    // the like it had already recorded stayed in the room and could still
+    // light up as a match.
     await db
       .prepare(
         `INSERT INTO match_swipes (room_code, swiper, media_id, media_type, liked, created_at)
          VALUES (?, ?, ?, ?, ?, ?)
-         ON CONFLICT (room_code, swiper, media_id) DO NOTHING`
+         ON CONFLICT (room_code, swiper, media_id)
+         DO UPDATE SET liked = excluded.liked, created_at = excluded.created_at`
       )
-      .bind(String(code), String(swiper).slice(0, 64), mediaId, mediaType, liked ? 1 : 0, Date.now())
+      .bind(
+        String(code),
+        String(swiper).slice(0, 64),
+        mediaId,
+        mediaType,
+        liked ? 1 : 0,
+        Date.now()
+      )
       .run()
-    return json({ ok: true })
+    return liveJson({ ok: true })
   }
 
   if (pathname === '/api/match/matches') {
     const db = env.DB
-    if (!db) return json({ error: 'unavailable' }, { status: 503 })
+    if (!db) return liveJson({ error: 'unavailable' }, { status: 503 })
     const code = q.get('code')
-    if (!code) return json({ error: 'code required' }, { status: 400 })
+    if (!code) return liveJson({ error: 'code required' }, { status: 400 })
     // A match is two liked rows for the same media from two different
     // swipers - derived, never stored, so it can not drift.
-    const { results } = await db
-      .prepare(
-        `SELECT media_id, media_type, COUNT(DISTINCT swiper) AS likers
-         FROM match_swipes
-         WHERE room_code = ? AND liked = 1
-         GROUP BY media_id, media_type
-         HAVING likers >= 2`
-      )
-      .bind(code)
-      .all()
-    return json({ matches: results ?? [] })
+    // One round trip, two answers: the matches themselves, and how many people
+    // have swiped in this room at all. The client needs the second to tell
+    // 'nobody has joined yet' apart from 'you two disagree on everything' - one
+    // without the other says the same nothing in both cases.
+    const [hits, party] = await db.batch([
+      db
+        .prepare(
+          `SELECT media_id, media_type, COUNT(DISTINCT swiper) AS likers
+           FROM match_swipes
+           WHERE room_code = ? AND liked = 1
+           GROUP BY media_id, media_type
+           HAVING likers >= 2`
+        )
+        .bind(code),
+      db
+        .prepare(
+          'SELECT COUNT(DISTINCT swiper) AS swipers FROM match_swipes WHERE room_code = ?'
+        )
+        .bind(code),
+    ])
+    return liveJson({
+      matches: hits.results ?? [],
+      swipers: party.results?.[0]?.swipers ?? 0,
+    })
   }
 
   if (pathname === '/api/together/room' && request.method === 'POST') {
     const db = env.DB
-    if (!db) return json({ error: 'unavailable' }, { status: 503 })
+    if (!db) return liveJson({ error: 'unavailable' }, { status: 503 })
     const now = Date.now()
     await db
       .prepare('DELETE FROM together_beats WHERE updated_at < ?')
@@ -539,16 +577,16 @@ async function handleApi(pathname, url, request, ctx, env) {
       )
       .bind(code, now)
       .run()
-    return json({ code })
+    return liveJson({ code })
   }
 
   if (pathname === '/api/together/beat' && request.method === 'POST') {
     const db = env.DB
-    if (!db) return json({ error: 'unavailable' }, { status: 503 })
+    if (!db) return liveJson({ error: 'unavailable' }, { status: 503 })
     const body = await request.json().catch(() => null)
     const { code, position, playing } = body ?? {}
     if (!code || typeof position !== 'number' || typeof playing !== 'boolean') {
-      return json({ error: 'code, position, playing' }, { status: 400 })
+      return liveJson({ error: 'code, position, playing' }, { status: 400 })
     }
     await db
       .prepare(
@@ -558,20 +596,22 @@ async function handleApi(pathname, url, request, ctx, env) {
       )
       .bind(String(code), Math.max(0, position), playing ? 1 : 0, Date.now())
       .run()
-    return json({ ok: true })
+    return liveJson({ ok: true })
   }
 
   if (pathname === '/api/together/state') {
     const db = env.DB
-    if (!db) return json({ error: 'unavailable' }, { status: 503 })
+    if (!db) return liveJson({ error: 'unavailable' }, { status: 503 })
     const code = q.get('code')
-    if (!code) return json({ error: 'code required' }, { status: 400 })
+    if (!code) return liveJson({ error: 'code required' }, { status: 400 })
     const beat = await db
-      .prepare('SELECT position, playing, updated_at FROM together_beats WHERE code = ?')
+      .prepare(
+        'SELECT position, playing, updated_at FROM together_beats WHERE code = ?'
+      )
       .bind(code)
       .first()
-    if (!beat) return json({ error: 'room not found' }, { status: 404 })
-    return json(beat)
+    if (!beat) return liveJson({ error: 'room not found' }, { status: 404 })
+    return liveJson(beat)
   }
 
   if (pathname === '/api/season-details') {
@@ -1274,7 +1314,13 @@ async function handleProTicket(request, env, url) {
     if (!user) {
       return new Response(
         JSON.stringify({ success: false, error: 'Not signed in' }),
-        { status: 401, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
+        {
+          status: 401,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+          },
+        }
       )
     }
     if (!isEntitled(user, now)) {
@@ -1283,7 +1329,13 @@ async function handleProTicket(request, env, url) {
           success: false,
           error: 'The Reely Player is a supporter feature.',
         }),
-        { status: 402, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
+        {
+          status: 402,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+          },
+        }
       )
     }
   }
@@ -1299,7 +1351,13 @@ async function handleProTicket(request, env, url) {
   if (!Number.isFinite(id) || id <= 0 || !body?.title) {
     return new Response(
       JSON.stringify({ success: false, error: 'Bad request' }),
-      { status: 400, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
+      {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+        },
+      }
     )
   }
   const season = Number(body.season)
@@ -1316,7 +1374,13 @@ async function handleProTicket(request, env, url) {
   if (!base || !ticket) {
     return new Response(
       JSON.stringify({ success: false, error: 'Playback not configured' }),
-      { status: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
+      {
+        status: 503,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+        },
+      }
     )
   }
 
@@ -1342,15 +1406,25 @@ async function handleProTicket(request, env, url) {
     if (typeof prefs.sub === 'string' && prefs.sub.length <= 5) {
       params.set('sub', prefs.sub)
     }
-    if (prefs.subSize === 's' || prefs.subSize === 'm' || prefs.subSize === 'l') {
+    if (
+      prefs.subSize === 's' ||
+      prefs.subSize === 'm' ||
+      prefs.subSize === 'l'
+    ) {
       params.set('subs', prefs.subSize)
     }
   }
 
-  return new Response(JSON.stringify({ success: true, url: `${base}/play?${params}` }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-  })
+  return new Response(
+    JSON.stringify({ success: true, url: `${base}/play?${params}` }),
+    {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+      },
+    }
+  )
 }
 
 export default {
@@ -1479,4 +1553,3 @@ export default {
     }
   },
 }
-

@@ -122,7 +122,14 @@ export const swipeApi = (input: {
   liked: boolean
 }): Promise<{ ok: boolean }> => postJson('/api/match/swipe', input)
 
-export const matchHitsApi = (code: string): Promise<{ matches: MatchHit[] }> =>
+export interface MatchState {
+  matches: MatchHit[]
+  /** Distinct people who have swiped in this room, so the UI can say whether
+   * anyone has joined yet rather than showing an empty panel either way. */
+  swipers: number
+}
+
+export const matchHitsApi = (code: string): Promise<MatchState> =>
   getJson('/api/match/matches', { code })
 
 export const createTogetherRoomApi = (): Promise<{ code: string }> =>
