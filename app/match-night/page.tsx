@@ -12,6 +12,7 @@ import {
   swipeApi,
 } from '@/lib/api-client'
 import {
+  cardKey,
   dedupeCards,
   interleave,
   swiperIdentity,
@@ -275,20 +276,20 @@ export default function MatchNightPage() {
     }
   }, [matchState, room])
 
-  const decidedIds = React.useMemo(
-    () => new Set(history.map((entry) => entry.card.id)),
+  const decidedKeys = React.useMemo(
+    () => new Set(history.map((entry) => cardKey(entry.card))),
     [history]
   )
 
   const cards = React.useMemo(() => {
     const all = dedupeCards([...queued, ...(deck ?? [])])
-    return all.filter((card) => !decidedIds.has(card.id))
-  }, [queued, deck, decidedIds])
+    return all.filter((card) => !decidedKeys.has(cardKey(card)))
+  }, [queued, deck, decidedKeys])
 
-  const likedById = React.useMemo(() => {
-    const map: Record<number, MatchCard> = {}
+  const likedByKey = React.useMemo(() => {
+    const map: Record<string, MatchCard> = {}
     for (const entry of history) {
-      if (entry.liked) map[entry.card.id] = entry.card
+      if (entry.liked) map[cardKey(entry.card)] = entry.card
     }
     return map
   }, [history])
@@ -427,6 +428,12 @@ export default function MatchNightPage() {
           onDecide={decide}
           onUndo={undo}
           canUndo={history.length > 0}
+          onFind={() => {
+            const input = document.getElementById('match-search')
+            input?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            // A focus during a smooth scroll fights it on iOS; let it land.
+            window.setTimeout(() => input?.focus({ preventScroll: true }), 400)
+          }}
           remaining={cards.length}
           emptyState={
             <div className="border-border/60 text-muted-foreground w-full max-w-sm rounded-2xl border border-dashed p-10 text-center">
@@ -448,7 +455,7 @@ export default function MatchNightPage() {
           <MatchPanel
             hits={hits}
             swipers={matchState?.swipers ?? 0}
-            cardsById={likedById}
+            cardsByKey={likedByKey}
           />
           <div className="border-border/60 border-t pt-6">
             <DeckSearch
@@ -456,7 +463,7 @@ export default function MatchNightPage() {
                 setQueued((prev) => dedupeCards([card, ...prev]))
                 toast(`${card.title} is up next`)
               }}
-              queuedIds={new Set([...queued.map((c) => c.id), ...decidedIds])}
+              queuedKeys={new Set([...queued.map(cardKey), ...decidedKeys])}
             />
           </div>
         </aside>

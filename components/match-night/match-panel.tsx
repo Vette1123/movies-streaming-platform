@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { PartyPopper, Users } from 'lucide-react'
 
 import type { MatchHit } from '@/lib/api-client'
-import { matchCardHref, type MatchCard } from '@/lib/match-night'
+import { cardKey, matchCardHref, type MatchCard } from '@/lib/match-night'
 import { getThumbPosterURL } from '@/lib/utils'
 
 // What the room has agreed on. A match can only exist because YOU liked the
@@ -36,18 +36,21 @@ function Presence({ swipers }: { swipers: number }) {
 export function MatchPanel({
   hits,
   swipers,
-  cardsById,
+  cardsByKey,
 }: {
   hits: MatchHit[]
   swipers: number
-  cardsById: Record<number, MatchCard>
+  cardsByKey: Record<string, MatchCard>
 }) {
   const matched = React.useMemo(
     () =>
       hits
-        .map((hit) => cardsById[hit.media_id])
+        .map(
+          (hit) =>
+            cardsByKey[cardKey({ id: hit.media_id, mediaType: hit.media_type })]
+        )
         .filter((card): card is MatchCard => Boolean(card)),
-    [hits, cardsById]
+    [hits, cardsByKey]
   )
 
   return (

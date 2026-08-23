@@ -6,7 +6,7 @@ import { Loader2, Plus, Search } from 'lucide-react'
 import { useDebounce } from 'use-debounce'
 
 import { searchMediaApi } from '@/lib/api-client'
-import { toMatchCard, type MatchCard } from '@/lib/match-night'
+import { cardKey, toMatchCard, type MatchCard } from '@/lib/match-night'
 import { getThumbPosterURL } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 
@@ -23,10 +23,10 @@ const RESULT_LIMIT = 6
 
 export function DeckSearch({
   onQueue,
-  queuedIds,
+  queuedKeys,
 }: {
   onQueue: (card: MatchCard) => void
-  queuedIds: Set<number>
+  queuedKeys: Set<string>
 }) {
   const [term, setTerm] = React.useState('')
   const [debounced] = useDebounce(term.trim(), 300)
@@ -87,7 +87,7 @@ export function DeckSearch({
       {results.length > 0 ? (
         <ul className="mt-3 space-y-1">
           {results.map((card) => {
-            const queued = queuedIds.has(card.id)
+            const queued = queuedKeys.has(cardKey(card))
             return (
               <li key={`${card.mediaType}-${card.id}`}>
                 <button

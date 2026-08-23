@@ -10,7 +10,7 @@ import {
   useTransform,
   type PanInfo,
 } from 'framer-motion'
-import { Heart, Info, Undo2, X } from 'lucide-react'
+import { Heart, Info, Search, Undo2, X } from 'lucide-react'
 
 import { matchCardHref, type MatchCard } from '@/lib/match-night'
 import { getPosterImageURL } from '@/lib/utils'
@@ -162,6 +162,11 @@ const ACTION_TONE = {
   like: 'h-13 bg-emerald-500 px-5 text-sm text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 sm:px-6 sm:text-base',
 } as const
 
+/** One pill for everything on the meta line under the deck. */
+const META_CHIP =
+  'inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 font-medium transition'
+const META_CHIP_BUTTON = `${META_CHIP} hover:text-foreground hover:border-white/25 disabled:pointer-events-none disabled:opacity-40`
+
 const Kbd = ({ children }: { children: React.ReactNode }) => (
   <kbd className="rounded border border-white/15 bg-white/5 px-1.5 py-0.5 font-sans text-[10px] leading-none">
     {children}
@@ -173,6 +178,9 @@ interface SwipeDeckProps {
   onDecide: (card: MatchCard, liked: boolean) => void
   onUndo?: () => void
   canUndo?: boolean
+  /** Jump to the deck search. It lives under the deck on a phone, which is
+   * below the fold - without a way in from here you have to know it is there. */
+  onFind?: () => void
   remaining: number
   emptyState: React.ReactNode
 }
@@ -182,6 +190,7 @@ export function SwipeDeck({
   onDecide,
   onUndo,
   canUndo,
+  onFind,
   remaining,
   emptyState,
 }: SwipeDeckProps) {
@@ -288,27 +297,39 @@ export function SwipeDeck({
       </div>
 
       <div className="text-muted-foreground mt-5 flex flex-wrap items-center justify-center gap-2 text-xs">
-        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 font-medium">
-          {remaining} left
-        </span>
+        <span className={`${META_CHIP} bg-white/5`}>{remaining} left</span>
+        {onFind ? (
+          <button
+            type="button"
+            onClick={onFind}
+            className={`${META_CHIP_BUTTON} lg:hidden`}
+          >
+            <Search className="size-3" aria-hidden />
+            Search a title
+          </button>
+        ) : null}
         <span className="hidden items-center gap-1.5 sm:inline-flex">
           <Kbd>←</Kbd>
           nope
           <Kbd>→</Kbd>
           like
         </span>
-        <span className="sm:hidden">Or drag the card either way</span>
         {onUndo ? (
           <button
             type="button"
             onClick={onUndo}
             disabled={!canUndo}
-            className="hover:text-foreground inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 transition hover:border-white/25 disabled:pointer-events-none disabled:opacity-40"
+            className={META_CHIP_BUTTON}
           >
             <Undo2 className="size-3" aria-hidden />
             Undo
           </button>
         ) : null}
+        {/* Last, so it is the line that wraps: the gesture is worth teaching
+            once, but it is not what you look at on the tenth card. */}
+        <span className="basis-full text-center sm:hidden">
+          Or drag the card either way
+        </span>
       </div>
     </div>
   )

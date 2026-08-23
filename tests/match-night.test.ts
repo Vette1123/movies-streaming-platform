@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { interleave, resolveMatches, type SwipeRecord } from '@/lib/match-night'
+import {
+  dedupeCards,
+  interleave,
+  resolveMatches,
+  type MatchCard,
+  type SwipeRecord,
+} from '@/lib/match-night'
 
 const swipe = (
   swiper: string,
@@ -81,5 +87,29 @@ describe('interleave', () => {
   it('handles empty sides', () => {
     expect(interleave([], ['t1', 't2'])).toEqual(['t1', 't2'])
     expect(interleave([], [])).toEqual([])
+  })
+})
+
+describe('dedupeCards', () => {
+  const card = (id: number, mediaType: 'movie' | 'tv'): MatchCard => ({
+    id,
+    mediaType,
+    title: `${mediaType} ${id}`,
+    poster: null,
+    year: '2020',
+    rating: 7,
+  })
+
+  it('keeps a film and a series that share a TMDB id', () => {
+    // TMDB numbers movies and series in separate namespaces, so 1399 is both
+    // a film and a series. Keying on the id alone dropped one of them.
+    const out = dedupeCards([card(1399, 'movie'), card(1399, 'tv')])
+    expect(out).toHaveLength(2)
+  })
+
+  it('still drops a true repeat, first occurrence winning', () => {
+    const first = card(42, 'movie')
+    const out = dedupeCards([first, card(42, 'movie')])
+    expect(out).toEqual([first])
   })
 })

@@ -16,6 +16,16 @@ export interface MatchedMedia {
 }
 
 /**
+ * The identity of a card. NOT the TMDB id on its own: movie 1399 and series
+ * 1399 are different titles, so an id-keyed set silently drops one of them
+ * from the deck and can resolve a match to the wrong artwork.
+ */
+export const cardKey = (card: {
+  id: number
+  mediaType: 'movie' | 'tv'
+}): string => `${card.mediaType}:${card.id}`
+
+/**
  * The matches inside a swipe list: media liked by two or more DIFFERENT
  * people. A single super-user liking everything must not match themselves.
  */
@@ -25,7 +35,7 @@ export const resolveMatches = (swipes: SwipeRecord[]): MatchedMedia[] => {
 
   for (const swipe of swipes) {
     if (!swipe.liked) continue
-    const key = `${swipe.mediaType}:${swipe.mediaId}`
+    const key = cardKey({ id: swipe.mediaId, mediaType: swipe.mediaType })
     const set = likes.get(key) ?? new Set<string>()
     set.add(swipe.swiper)
     likes.set(key, set)
@@ -111,9 +121,9 @@ export const matchCardHref = (card: MatchCard): string =>
 /** First occurrence of each id wins, so an injected search hit is never
  * swiped twice because it also sits somewhere in the trending deck. */
 export const dedupeCards = (cards: MatchCard[]): MatchCard[] => {
-  const seen = new Set<number>()
+  const seen = new Set<string>()
   return cards.filter((card) => {
-    const key = card.id
+    const key = cardKey(card)
     if (seen.has(key)) return false
     seen.add(key)
     return true
