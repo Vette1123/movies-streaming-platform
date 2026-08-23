@@ -233,7 +233,7 @@ function ReelySection() {
 
 /**
  * The opt-in for the supporters-only player trial. A deployment without
- * NEXT_PUBLIC_STREAM_SOURCE_PRO configured offers nothing here — the section
+ * NEXT_PUBLIC_PRO_TRIAL_SELFHOST enabled offers nothing here — the section
  * is absent rather than a switch that cannot do anything — so the feature
  * exists exactly where the environment says it does.
  */
@@ -244,19 +244,19 @@ function RichSourceSection() {
 
   if (!pro) {
     return (
-      <SupporterGate title="Try our new player first" Icon={Sparkles}>
-        A new playback experience is on its way — it starts faster, remembers
-        where you stopped down to the second, and carries Reely&rsquo;s own
-        look. It is in testing with supporters right now: switch it on, and
-        every stream opens in it until you turn it off.
+      <SupporterGate title="Our own player is back" Icon={Sparkles}>
+        The Reely Player — our own player, with the controls we built — is in
+        final testing with supporters. It resumes where you stopped to the
+        second, keeps our look on every title, and every backup server stays one
+        tap away while you watch.
       </SupporterGate>
     )
   }
 
   return (
     <SettingSwitch
-      label="Try the new player experience"
-      description="Opens streams in Reely Beta — our new player look, with resume tracked to the second. Every backup server stays one tap away in the switcher while you watch, and turning this off puts everything back exactly as it was."
+      label="Use our own player (beta)"
+      description="Plays titles in the Reely Player instead of an embed: our controls, resume tracked to the second, everything synced to your account. Every backup server stays available in the switcher, and turning this off puts things back exactly as they were."
       checked={prefs.richPlayer === true}
       onChange={(next) => void savePrefs({ richPlayer: next })}
     />

@@ -136,28 +136,20 @@ export const DEFAULT_SOURCE_ID: string = STREAM_SOURCES[0]?.id ?? ''
 export const HAS_FALLBACK_SOURCE = STREAM_SOURCES.length > 1
 
 /**
- * The opt-in surface for supporters, from NEXT_PUBLIC_STREAM_SOURCE_PRO
- * (+ _PRO_QUERY). Deliberately NOT part of STREAM_SOURCES: it does not exist
- * for anyone who has not switched it on from their account, so the default
- * journey is untouched down to the URL — and a deployment that never sets the
- * var ships a site where this whole feature is absent rather than broken.
+ * The opt-in surface for supporters: OUR OWN player, back in testing.
+ *
+ * Enabled deployment-wide by NEXT_PUBLIC_PRO_TRIAL_SELFHOST=true — it needs
+ * the playback worker plus a gado-proxy tier behind it (see the
+ * reely-resolver-relay repo) to serve bytes, since no provider hands out
+ * origin-open segments. Deliberately NOT part of STREAM_SOURCES: it does not
+ * exist for anyone who has not switched it on from their account, so the
+ * default journey is untouched down to the URL.
  */
-const PRO_BASE = process.env.NEXT_PUBLIC_STREAM_SOURCE_PRO?.trim().replace(
-  /\/$/,
-  ''
-)
+const SELFHOST_TRIAL = process.env.NEXT_PUBLIC_PRO_TRIAL_SELFHOST === 'true'
 
-export const RICH_SOURCE: StreamSource | null =
-  PRO_BASE && PRO_BASE.length > 0
-    ? {
-        id: hostOf(PRO_BASE),
-        label: 'Reely Beta',
-        base: PRO_BASE,
-        ...(process.env.NEXT_PUBLIC_STREAM_SOURCE_PRO_QUERY?.trim()
-          ? { query: process.env.NEXT_PUBLIC_STREAM_SOURCE_PRO_QUERY.trim() }
-          : {}),
-      }
-    : null
+export const RICH_SOURCE: StreamSource | null = SELFHOST_TRIAL
+  ? { id: REELY_SOURCE_ID, label: 'Reely Beta' }
+  : null
 
 /**
  * The list a given visitor may choose between. Everyone gets STREAM_SOURCES;

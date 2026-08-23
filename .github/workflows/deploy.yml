@@ -152,11 +152,9 @@ jobs:
           # than breaks.
           NEXT_PUBLIC_STREAM_SOURCE_2: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_2 }}
           NEXT_PUBLIC_STREAM_SOURCE_3: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_3 }}
-          # The supporters-only opt-in surface (config/sources.ts RICH_SOURCE).
-          # Missing here it is not a degraded site but an ABSENT feature — the
-          # account toggle renders only when this is set at build time.
-          NEXT_PUBLIC_STREAM_SOURCE_PRO: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_PRO }}
-          NEXT_PUBLIC_STREAM_SOURCE_PRO_QUERY: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_PRO_QUERY }}
+          # The supporters-only opt-in for OUR player. Needs the playback
+          # worker + gado-proxy tier live, or the toggle only advertises.
+          NEXT_PUBLIC_PRO_TRIAL_SELFHOST: ${{ secrets.NEXT_PUBLIC_PRO_TRIAL_SELFHOST }}
           NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE: ${{ secrets.NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE }}
           NEXT_PUBLIC_IMAGE_CACHE_HOST_URL: ${{ secrets.NEXT_PUBLIC_IMAGE_CACHE_HOST_URL }}
           NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
