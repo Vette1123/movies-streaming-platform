@@ -33,6 +33,7 @@ import { fetchGenreList } from '@/services/genres'
 import { getHeroExtras } from '@/services/hero-extras'
 import { setImdbAssetsBinding } from '@/services/imdb'
 import { getMediaSummary } from '@/services/media-summary'
+import { getReels } from '@/services/reels'
 import {
   getCollectionById,
   getPopularMovies,
@@ -304,6 +305,17 @@ const pageParam = (value) => {
 const isTv = (value) => value === 'tv'
 
 /**
+ * A party code humans can read aloud: 6 unambiguous characters, no 0/O/1/I.
+ * 32^6 is over a billion rooms - collisions are swept up by the primary-key
+ * constraint, and a retry is one line away (not needed at this volume).
+ */
+const ROOM_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
+const roomCode = () => {
+  const bytes = crypto.getRandomValues(new Uint8Array(6))
+  return Array.from(bytes, (b) => ROOM_ALPHABET[b % ROOM_ALPHABET.length]).join('')
+}
+
+/**
  * The detail payload for an id, or null if TMDB does not know it.
  *
  * TMDB answers an unknown id with a 404, which fetch-client raises. That is a
@@ -367,6 +379,18 @@ const apiKey = (url, params) => {
 async function handleApi(pathname, url, request, ctx) {
   const q = url.searchParams
 
+  // Reely Reels — the trailer feed. One batch per trending page; the client
+  // scrolls, the cursor is just the TMDB page number.
+  if (pathname === '/api/reels') {
+    const page = pageParam(q.get('page'))
+    return cached(
+      request,
+      ctx,
+      async () => json(await getReels(page)),
+      apiKey(url, { page })
+    )
+  }
+
   if (pathname === '/api/search') {
     const query = (q.get('query') || '').trim()
     if (!query) return json({ page: 1, results: [] })
@@ -425,6 +449,129 @@ async function handleApi(pathname, url, request, ctx) {
       async () => json(await fetchWatchProviders(mediaType, region)),
       apiKey(url, { mediaType, region })
     )
+  }
+
+  // ---- Match Night + Watch Together --------------------------------------
+  // Ephemeral D1 rooms, no TMDB traffic, no auth - a party code is the whole
+  // credential. Both features sweep their own dead rooms on every create, so
+  // nothing accumulates on the free plan.
+
+  if (pathname === '/api/match/room' && request.method === 'POST') {
+    const db = env.DB
+    if (!db) return json({ error: 'unavailable' }, { status: 503 })
+    const now = Date.now()
+    // Sweep: rooms die after 12h; the index on created_at is not worth it at
+    // this scale - a full scan of a table that holds hours of rooms is free.
+    await db
+      .prepare('DELETE FROM match_rooms WHERE created_at < ?')
+      .bind(now - 12 * 3600 * 1000)
+      .run()
+    await db
+      .prepare('DELETE FROM match_swipes WHERE created_at < ?')
+      .bind(now - 12 * 3600 * 1000)
+      .run()
+    const code = roomCode()
+    await db
+      .prepare('INSERT INTO match_rooms (code, created_at) VALUES (?, ?)')
+      .bind(code, now)
+      .run()
+    return json({ code })
+  }
+
+  if (pathname === '/api/match/swipe' && request.method === 'POST') {
+    const db = env.DB
+    if (!db) return json({ error: 'unavailable' }, { status: 503 })
+    const body = await request.json().catch(() => null)
+    const { code, swiper, mediaId, mediaType, liked } = body ?? {}
+    if (
+      !code ||
+      !swiper ||
+      !Number.isInteger(mediaId) ||
+      (mediaType !== 'movie' && mediaType !== 'tv') ||
+      typeof liked !== 'boolean'
+    ) {
+      return json({ error: 'code, swiper, mediaId, mediaType, liked' }, { status: 400 })
+    }
+    // Upsert: re-swiping the same title just re-affirms the first choice.
+    await db
+      .prepare(
+        `INSERT INTO match_swipes (room_code, swiper, media_id, media_type, liked, created_at)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT (room_code, swiper, media_id) DO NOTHING`
+      )
+      .bind(String(code), String(swiper).slice(0, 64), mediaId, mediaType, liked ? 1 : 0, Date.now())
+      .run()
+    return json({ ok: true })
+  }
+
+  if (pathname === '/api/match/matches') {
+    const db = env.DB
+    if (!db) return json({ error: 'unavailable' }, { status: 503 })
+    const code = q.get('code')
+    if (!code) return json({ error: 'code required' }, { status: 400 })
+    // A match is two liked rows for the same media from two different
+    // swipers - derived, never stored, so it can not drift.
+    const { results } = await db
+      .prepare(
+        `SELECT media_id, media_type, COUNT(DISTINCT swiper) AS likers
+         FROM match_swipes
+         WHERE room_code = ? AND liked = 1
+         GROUP BY media_id, media_type
+         HAVING likers >= 2`
+      )
+      .bind(code)
+      .all()
+    return json({ matches: results ?? [] })
+  }
+
+  if (pathname === '/api/together/room' && request.method === 'POST') {
+    const db = env.DB
+    if (!db) return json({ error: 'unavailable' }, { status: 503 })
+    const now = Date.now()
+    await db
+      .prepare('DELETE FROM together_beats WHERE updated_at < ?')
+      .bind(now - 6 * 3600 * 1000)
+      .run()
+    const code = roomCode()
+    await db
+      .prepare(
+        'INSERT INTO together_beats (code, position, playing, updated_at) VALUES (?, 0, 0, ?)'
+      )
+      .bind(code, now)
+      .run()
+    return json({ code })
+  }
+
+  if (pathname === '/api/together/beat' && request.method === 'POST') {
+    const db = env.DB
+    if (!db) return json({ error: 'unavailable' }, { status: 503 })
+    const body = await request.json().catch(() => null)
+    const { code, position, playing } = body ?? {}
+    if (!code || typeof position !== 'number' || typeof playing !== 'boolean') {
+      return json({ error: 'code, position, playing' }, { status: 400 })
+    }
+    await db
+      .prepare(
+        `INSERT INTO together_beats (code, position, playing, updated_at)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT (code) DO UPDATE SET position = excluded.position, playing = excluded.playing, updated_at = excluded.updated_at`
+      )
+      .bind(String(code), Math.max(0, position), playing ? 1 : 0, Date.now())
+      .run()
+    return json({ ok: true })
+  }
+
+  if (pathname === '/api/together/state') {
+    const db = env.DB
+    if (!db) return json({ error: 'unavailable' }, { status: 503 })
+    const code = q.get('code')
+    if (!code) return json({ error: 'code required' }, { status: 400 })
+    const beat = await db
+      .prepare('SELECT position, playing, updated_at FROM together_beats WHERE code = ?')
+      .bind(code)
+      .first()
+    if (!beat) return json({ error: 'room not found' }, { status: 404 })
+    return json(beat)
   }
 
   if (pathname === '/api/season-details') {

@@ -173,6 +173,37 @@
     display: none; /* Chrome / Safari / WebKit */
   }
 
+  /* Reels is a full-bleed vertical feed: the fixed header overlays it, and the
+     sticky footer would push the document taller than one viewport - window
+     scroll would then fight the feed's snap scroll and a scrollbar would
+     reflect footer space, not content. The footer yields while a reel viewport
+     is mounted. */
+  body:has(.reels-viewport) .site-footer {
+    display: none;
+  }
+
+  /* Focus mode: the reel is the whole screen - header joins the footer off
+     stage so nothing competes with the trailer. Toggled by the expand button
+     on each slide; Escape leaves it. */
+  body:has(.reels-focus) .site-header {
+    display: none;
+  }
+
+  /* The trailer iframe is 16:9 but the reel is portrait: rendered inset-0 the
+     video letterboxes and YouTube's title overlay sits stranded in the dead
+     band at the top. Scaled to COVER the viewport instead (the img
+     object-fit trick, by hand for an iframe), the video fills every pixel and
+     the overlay crops offscreen. */
+  .reel-frame {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: max(100vw, 177.78dvh);
+    height: max(56.25vw, 100dvh);
+    border: 0;
+  }
+
   /* Skip layout+paint for offscreen content until it scrolls near the viewport.
      The homepage stacks many poster rails; only the first couple are above the
      fold, so the rest cost nothing to render initially. `contain-intrinsic-size`

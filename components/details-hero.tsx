@@ -18,6 +18,7 @@ import { RateButton } from '@/components/rate-button'
 import { SaveButton } from '@/components/save-button'
 import { ShareButton } from '@/components/share-button'
 import { TrailerDialog } from '@/components/trailer-dialog'
+import { WatchTogetherBar } from '@/components/watch-together-bar'
 import { WatchedButton } from '@/components/watched-button'
 
 // Caption under each action button; mobile-only (buttons show their own text
@@ -124,6 +125,19 @@ export const DetailsHero = ({
   const iframeLoaded = !!src && loadedSrc === src
   // The embed frame, for the progress bridge's source-window identity check.
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
+
+  // Watch Together rides along when the URL carries the room (?watch=CODE).
+  // Read at render with a window guard, not useSearchParams: this hero
+  // prerenders ~1000 times at build, and a searchParams read at render would
+  // deopt every one of them. The bar only mounts after a client-side play
+  // click, so the server/client snapshot difference never reaches the DOM.
+  const together = React.useMemo(() => {
+    if (typeof window === 'undefined') return null
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('watch')
+    return code ? { code, isHost: params.get('host') === '1' } : null
+  }, [])
+
   // The reely surface reports readiness with its own pseudo-src so the stall
   // detector and the spinner treat both surfaces identically.
   const key = `${selfHost?.type ?? ''}:${selfHost?.id ?? ''}:${selfHost?.season ?? ''}:${selfHost?.episode ?? ''}`
@@ -277,6 +291,13 @@ export const DetailsHero = ({
                 />
               )}
             </>
+          )}
+          {isIframeShown && together && (
+            <WatchTogetherBar
+              code={together.code}
+              isHost={together.isHost}
+              frameRef={iframeRef}
+            />
           )}
           {isIframeShown && sourceControl && !useReely && (
             // Above the frame, not below it. Two things already live along the

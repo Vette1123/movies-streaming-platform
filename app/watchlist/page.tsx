@@ -1,5 +1,7 @@
 import React from 'react'
 import { Metadata } from 'next'
+import Link from 'next/link'
+import { History } from 'lucide-react'
 
 import { siteConfig } from '@/config/site'
 import { RescueBanner } from '@/components/account/rescue-banner'
@@ -26,7 +28,19 @@ export const metadata: Metadata = {
 function Watchlist() {
   return (
     <section className="container h-full min-h-svh py-20 lg:py-36">
-      <h1 className="mb-6 text-2xl font-bold lg:text-3xl">My Watchlist</h1>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold lg:text-3xl">My Watchlist</h1>
+        {/* Watch history lives one click from its sibling personal page: it
+            left the main nav to keep the header lean, but "what was I
+            watching?" still needs an obvious door. */}
+        <Link
+          href="/watch-history"
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition"
+        >
+          <History className="size-4" />
+          Watch history
+        </Link>
+      </div>
       <RescueBanner />
       <WatchlistContainer />
       <SupportPrompt

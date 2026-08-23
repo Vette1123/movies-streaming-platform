@@ -111,13 +111,23 @@ export const siteConfig = {
       scroll: true,
     },
     {
-      title: 'Watchlist',
-      href: '/watchlist',
+      title: 'Reels',
+      href: '/reels',
       scroll: true,
     },
     {
-      title: 'Watch History',
-      href: '/watch-history',
+      title: 'Mood',
+      href: '/mood',
+      scroll: true,
+    },
+    {
+      title: 'Match Night',
+      href: '/match-night',
+      scroll: true,
+    },
+    {
+      title: 'Watchlist',
+      href: '/watchlist',
       scroll: true,
     },
     {

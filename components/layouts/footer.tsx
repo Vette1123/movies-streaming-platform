@@ -73,7 +73,7 @@ export function Footer() {
   ]
 
   return (
-    <footer className="text-muted-foreground border-border/60 mt-8 border-t text-sm">
+    <footer className="site-footer text-muted-foreground border-border/60 mt-8 border-t text-sm">
       <div className="container grid gap-10 py-12 lg:grid-cols-[1.6fr_1fr_1.1fr] lg:gap-12">
         {/* The app named and explained on every page, not only the homepage:
             anyone who lands deep in the catalogue should be able to tell what

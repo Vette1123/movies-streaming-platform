@@ -1,3 +1,4 @@
+import { ReelItem } from '@/services/reels'
 import { WatchProvider } from '@/services/watch-providers'
 
 import { FilterParams } from '@/types/filter'
@@ -84,3 +85,60 @@ export const getSeasonEpisodesApi = (
   seasonNumber: string
 ): Promise<SeasonDetails> =>
   getJson('/api/season-details', { seasonId, seasonNumber })
+
+// Reely Reels — one batch of the trailer feed per TMDB trending page.
+export const getReelsApi = (page: number): Promise<ReelItem[]> =>
+  getJson('/api/reels', { page })
+
+// ---- Match Night + Watch Together (ephemeral D1 rooms on the Worker) -----
+
+export async function postJson<T>(
+  path: string,
+  body: Record<string, unknown> = {}
+) {
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new ApiError(res.status, path)
+  return (await res.json()) as T
+}
+
+export interface MatchHit {
+  media_id: number
+  media_type: 'movie' | 'tv'
+  likers: number
+}
+
+export const createMatchRoomApi = (): Promise<{ code: string }> =>
+  postJson('/api/match/room')
+
+export const swipeApi = (input: {
+  code: string
+  swiper: string
+  mediaId: number
+  mediaType: 'movie' | 'tv'
+  liked: boolean
+}): Promise<{ ok: boolean }> => postJson('/api/match/swipe', input)
+
+export const matchHitsApi = (code: string): Promise<{ matches: MatchHit[] }> =>
+  getJson('/api/match/matches', { code })
+
+export const createTogetherRoomApi = (): Promise<{ code: string }> =>
+  postJson('/api/together/room')
+
+export interface TogetherBeat {
+  position: number
+  playing: number
+  updated_at: number
+}
+
+export const togetherBeatApi = (input: {
+  code: string
+  position: number
+  playing: boolean
+}): Promise<{ ok: boolean }> => postJson('/api/together/beat', input)
+
+export const togetherStateApi = (code: string): Promise<TogetherBeat> =>
+  getJson('/api/together/state', { code })

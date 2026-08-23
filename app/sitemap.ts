@@ -167,6 +167,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.6,
     },
+    // The trailer feed: same content for every visitor, and a discovery
+    // surface worth crawling.
+    {
+      url: `${baseUrl}/reels`,
+      changeFrequency: 'daily',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/mood`,
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/match-night`,
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/watch-together`,
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    },
     // Google's OAuth brand review fetches both of these directly, and a page a
     // reviewer has to be able to read is a page worth being in the sitemap.
     {

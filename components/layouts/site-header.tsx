@@ -46,7 +46,7 @@ export function SiteHeader() {
   return (
     <header
       className={cn(
-        'fixed inset-x-0 top-0 z-40 w-full transition duration-200',
+        'site-header fixed inset-x-0 top-0 z-40 w-full transition duration-200',
         {
           'bg-background/80': isShowNavBackground,
         }
