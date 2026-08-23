@@ -157,12 +157,15 @@ jobs:
           # mapped here, and an empty "bake it" rebuild could never bake them).
           NEXT_PUBLIC_STREAMING_MOVIES_API_LABEL: ${{ secrets.NEXT_PUBLIC_STREAMING_MOVIES_API_LABEL }}
           NEXT_PUBLIC_STREAM_SOURCE_2: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_2 }}
+          NEXT_PUBLIC_STREAM_SOURCE_2_LABEL: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_2_LABEL }}
           NEXT_PUBLIC_STREAM_SOURCE_3: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_3 }}
+          NEXT_PUBLIC_STREAM_SOURCE_3_LABEL: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_3_LABEL }}
           NEXT_PUBLIC_STREAM_SOURCE_4: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_4 }}
           NEXT_PUBLIC_STREAM_SOURCE_4_LABEL: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_4_LABEL }}
           NEXT_PUBLIC_STREAM_SOURCE_4_MOVIE_PATH: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_4_MOVIE_PATH }}
           NEXT_PUBLIC_STREAM_SOURCE_4_TV_PATH: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_4_TV_PATH }}
           NEXT_PUBLIC_STREAM_SOURCE_5: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_5 }}
+          NEXT_PUBLIC_STREAM_SOURCE_5_LABEL: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_5_LABEL }}
           NEXT_PUBLIC_STREAM_SOURCE_5_MOVIE_PATH: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_5_MOVIE_PATH }}
           NEXT_PUBLIC_STREAM_SOURCE_5_TV_PATH: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_5_TV_PATH }}
           # Optional per-slot query strings + which slot is the public default.
@@ -171,6 +174,15 @@ jobs:
           NEXT_PUBLIC_STREAM_SOURCE_2_QUERY: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_2_QUERY }}
           NEXT_PUBLIC_STREAM_SOURCE_3_QUERY: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_3_QUERY }}
           NEXT_PUBLIC_STREAM_SOURCE_4_QUERY: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_4_QUERY }}
+          NEXT_PUBLIC_STREAM_SOURCE_5_QUERY: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_5_QUERY }}
+          # Optional search-engine verification meta tags (layout.tsx) — absent,
+          # the tags simply don't render.
+          NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${{ secrets.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }}
+          NEXT_PUBLIC_YANDEX_VERIFICATION: ${{ secrets.NEXT_PUBLIC_YANDEX_VERIFICATION }}
+          NEXT_PUBLIC_BING_VERIFICATION: ${{ secrets.NEXT_PUBLIC_BING_VERIFICATION }}
+          # Stamp PostHog events with the exact deploy (lib/person.ts), so an
+          # anomaly can be pinned to the release that introduced it.
+          NEXT_PUBLIC_APP_VERSION: ${{ github.sha }}
           # The supporters-only opt-in for OUR player. Needs the playback
           # worker + gado-proxy tier live, or the toggle only advertises.
           NEXT_PUBLIC_PRO_TRIAL_SELFHOST: ${{ secrets.NEXT_PUBLIC_PRO_TRIAL_SELFHOST }}
