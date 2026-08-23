@@ -1,12 +1,18 @@
 'use client'
 
 import React from 'react'
+import { usePathname } from 'next/navigation'
 import { Download, Share, X } from 'lucide-react'
 
 import { useMounted } from '@/hooks/use-mounted'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
 
 const DISMISS_KEY = 'reely-pwa-install-dismissed'
+
+/** Routes that own the whole viewport. A floating bar over a full-bleed reel
+ * is not "unobtrusive" - it sits on the video, and in focus mode it is the
+ * only thing on screen that is not the film. */
+const IMMERSIVE_ROUTES = ['/reels']
 
 // Reads through a guard: localStorage throws in private mode / when storage is
 // blocked, and a nudge is never worth taking the page down over.
@@ -35,6 +41,7 @@ export function InstallPrompt() {
   // render identical (both render nothing) without syncing storage into state
   // through an effect, which cost an extra render pass on every page.
   const isMounted = useMounted()
+  const pathname = usePathname()
 
   const remember = React.useCallback(() => {
     setDismissedNow(true)
@@ -51,6 +58,7 @@ export function InstallPrompt() {
   }, [promptInstall, remember])
 
   if (!isMounted) return null
+  if (IMMERSIVE_ROUTES.some((route) => pathname?.startsWith(route))) return null
   if (dismissedNow || wasDismissed()) return null
   if (!canPrompt && !needsIosHint) return null
 

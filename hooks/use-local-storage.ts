@@ -79,17 +79,37 @@ export interface WatchedSource {
   episode_run_time?: number[] | null
 }
 
+const isBuiltItem = (
+  media: WatchedSource
+): media is WatchedSource & Pick<WatchedItem, 'type'> => {
+  const candidate = media as Partial<WatchedItem>
+  return (
+    typeof candidate.added_at === 'string' &&
+    (candidate.type === 'movie' || candidate.type === 'series')
+  )
+}
+
 export function buildWatchedItem(
   media: WatchedSource,
   extra?: Pick<WatchedItem, 'season' | 'episode'>
 ): WatchedItem {
-  const isMovie = !!media.title
+  // A raw TMDB payload says what it is by which of title/name it carries. An
+  // item that has already been through here carries BOTH a type and a title (a
+  // series' name is stored as `title`), so re-deriving from the title alone
+  // turns every series into a movie - which is exactly what happened to every
+  // series saved from a reel, because that rail pre-built its item and handed
+  // it to `toggle`, which builds again. Building twice is now idempotent.
+  //
+  // The marker is `added_at`, not `type`: TMDB's own series payload has a
+  // `type` field of its own ("Scripted", "Miniseries"), so that one proves
+  // nothing.
+  const isMovie = isBuiltItem(media) ? media.type === 'movie' : !!media.title
   const now = new Date().toISOString()
   return {
     runtime: runtimeOf(media, isMovie),
     id: media.id,
     type: isMovie ? 'movie' : 'series',
-    title: (isMovie ? media.title : media.name) ?? '',
+    title: (isMovie ? media.title : (media.name ?? media.title)) ?? '',
     overview: media.overview ?? '',
     backdrop_path: media.backdrop_path ?? '',
     poster_path: media.poster_path ?? '',

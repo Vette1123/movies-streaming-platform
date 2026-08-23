@@ -20,7 +20,6 @@ import { useInView } from 'react-intersection-observer'
 import { getReelsApi } from '@/lib/api-client'
 import { QUERY_KEYS } from '@/lib/queryKeys'
 import { getImageURL, getPosterImageURL } from '@/lib/utils'
-import { buildWatchedItem } from '@/hooks/use-local-storage'
 import { useShare } from '@/hooks/use-share'
 import { useWatchlist } from '@/hooks/use-watchlist'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -216,20 +215,18 @@ function ReelSlide({
   useYouTubeMute(frameRef, active, muted)
 
   const saved = isSaved(reel.id)
-  // The watchlist toggle re-derives its stored shape via buildWatchedItem; the
-  // reel already carries every field that derivation reads, so the cast is
-  // only about the full-details types it declares.
+  // `toggle` builds the stored shape itself, so this hands it the raw fields
+  // rather than a pre-built item - building twice is what turned every series
+  // saved from a reel into a movie.
   const toggleSave = () =>
-    toggle(
-      buildWatchedItem({
-        id: reel.id,
-        title: reel.mediaType === 'tv' ? undefined : reel.title,
-        name: reel.mediaType === 'tv' ? reel.title : undefined,
-        overview: reel.overview,
-        backdrop_path: reel.backdrop,
-        poster_path: reel.poster,
-      }) as unknown as Parameters<typeof toggle>[0]
-    )
+    toggle({
+      id: reel.id,
+      title: reel.mediaType === 'tv' ? undefined : reel.title,
+      name: reel.mediaType === 'tv' ? reel.title : undefined,
+      overview: reel.overview,
+      backdrop_path: reel.backdrop,
+      poster_path: reel.poster,
+    } as unknown as Parameters<typeof toggle>[0])
 
   const still = stillSrc(reel)
 
@@ -459,7 +456,10 @@ export default function ReelsPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [root])
 
-  const onActive = React.useCallback((index: number) => setActiveIndex(index), [])
+  const onActive = React.useCallback(
+    (index: number) => setActiveIndex(index),
+    []
+  )
 
   if (error) {
     return (
