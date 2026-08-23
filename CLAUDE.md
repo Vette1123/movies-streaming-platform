@@ -68,7 +68,7 @@ Replaced OpenNext on 2026-08-03. Under OpenNext, prod was killing **25–40% of 
 
 ### Streaming servers
 
-The embed provider list lives in `config/sources.ts` and comes **entirely from the environment** — `NEXT_PUBLIC_STREAMING_MOVIES_API_URL` plus `NEXT_PUBLIC_STREAM_SOURCE_2/3`, mirrored as GitHub secrets. No provider host is checked in (this repo is public) and the UI labels them "Server 1/2/3". Screen any candidate with `pnpm embed:probe` before adding it. Switching, the one automatic hop after a 9s stall, and the per-title memory are **supporter-only** (`canSwitch` in `hooks/use-stream-source.ts`); everyone else gets the default server exactly as before. Both detail heroes hold _what_ is playing and derive the URL from the chosen server — never store the URL.
+The embed provider list lives in `config/sources.ts` and comes **entirely from the environment** — `NEXT_PUBLIC_STREAMING_MOVIES_API_URL` plus `NEXT_PUBLIC_STREAM_SOURCE_2/3/4/5`, mirrored as GitHub secrets **and mapped into the build step of `.github/workflows/deploy.yml`** — a secret added to GitHub without a workflow mapping is silently absent from prod (Turbopack only inlines what exists at build time). No provider host is checked in (this repo is public) and the UI labels them "Server N". Screen any candidate with `pnpm embed:probe` before adding it. Switching, the one automatic hop after a 9s stall, and the per-title memory are **supporter-only** (`canSwitch` in `hooks/use-stream-source.ts`); everyone else gets the default server exactly as before. Both detail heroes hold _what_ is playing and derive the URL from the chosen server — never store the URL.
 
 ### IMDb ratings (feature-flagged OFF)
 

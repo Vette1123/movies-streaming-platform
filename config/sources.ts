@@ -114,7 +114,9 @@ const SLOTS: Slot[] = [
  * resilient embed. Overridable per deployment without touching code; falls
  * back to the first configured slot otherwise.
  */
-const DEFAULT_SLOT = Number(process.env.NEXT_PUBLIC_STREAM_DEFAULT_SLOT ?? '2')
+const DEFAULT_SLOT = Number(
+  process.env.NEXT_PUBLIC_STREAM_DEFAULT_SLOT?.trim() || '2'
+)
 
 const hostOf = (base: string): string => {
   try {

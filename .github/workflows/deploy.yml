@@ -144,14 +144,33 @@ jobs:
           NEXT_PUBLIC_TMDB_BASEURL: ${{ secrets.NEXT_PUBLIC_TMDB_BASEURL }}
           NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
           NEXT_PUBLIC_STREAMING_MOVIES_API_URL: ${{ secrets.NEXT_PUBLIC_STREAMING_MOVIES_API_URL }}
-          # The backup embed servers (config/sources.ts). Secrets rather than
-          # repo constants: this repository is public, and a checked-in list of
+          # The embed slots (config/sources.ts). Secrets rather than repo
+          # constants: this repository is public, and a checked-in list of
           # embed hosts is both a maintenance trap and free advertising for
-          # somebody else's ad revenue. Absent, the site simply has one server
-          # and the switcher hides itself — so a missing secret degrades rather
-          # than breaks.
+          # somebody else's ad revenue. Absent/empty, a slot simply does not
+          # exist — so a missing secret degrades rather than breaks.
+          #
+          # EVERY slot var must be forwarded here or the slot silently vanishes
+          # from prod: Turbopack only inlines env vars that exist at build time,
+          # leaving the rest as runtime lookups that are always undefined in the
+          # browser (2026-08-23: Server 4's secrets were added to GitHub but not
+          # mapped here, and an empty "bake it" rebuild could never bake them).
+          NEXT_PUBLIC_STREAMING_MOVIES_API_LABEL: ${{ secrets.NEXT_PUBLIC_STREAMING_MOVIES_API_LABEL }}
           NEXT_PUBLIC_STREAM_SOURCE_2: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_2 }}
           NEXT_PUBLIC_STREAM_SOURCE_3: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_3 }}
+          NEXT_PUBLIC_STREAM_SOURCE_4: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_4 }}
+          NEXT_PUBLIC_STREAM_SOURCE_4_LABEL: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_4_LABEL }}
+          NEXT_PUBLIC_STREAM_SOURCE_4_MOVIE_PATH: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_4_MOVIE_PATH }}
+          NEXT_PUBLIC_STREAM_SOURCE_4_TV_PATH: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_4_TV_PATH }}
+          NEXT_PUBLIC_STREAM_SOURCE_5: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_5 }}
+          NEXT_PUBLIC_STREAM_SOURCE_5_MOVIE_PATH: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_5_MOVIE_PATH }}
+          NEXT_PUBLIC_STREAM_SOURCE_5_TV_PATH: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_5_TV_PATH }}
+          # Optional per-slot query strings + which slot is the public default.
+          NEXT_PUBLIC_STREAM_DEFAULT_SLOT: ${{ secrets.NEXT_PUBLIC_STREAM_DEFAULT_SLOT }}
+          NEXT_PUBLIC_STREAMING_MOVIES_API_QUERY: ${{ secrets.NEXT_PUBLIC_STREAMING_MOVIES_API_QUERY }}
+          NEXT_PUBLIC_STREAM_SOURCE_2_QUERY: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_2_QUERY }}
+          NEXT_PUBLIC_STREAM_SOURCE_3_QUERY: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_3_QUERY }}
+          NEXT_PUBLIC_STREAM_SOURCE_4_QUERY: ${{ secrets.NEXT_PUBLIC_STREAM_SOURCE_4_QUERY }}
           # The supporters-only opt-in for OUR player. Needs the playback
           # worker + gado-proxy tier live, or the toggle only advertises.
           NEXT_PUBLIC_PRO_TRIAL_SELFHOST: ${{ secrets.NEXT_PUBLIC_PRO_TRIAL_SELFHOST }}

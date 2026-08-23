@@ -50,6 +50,16 @@ describe('slot defaults and labels', () => {
     expect(mod.DEFAULT_SOURCE_ID).toBe('b.example')
   })
 
+  // CI resolves an absent GitHub secret to '' — and Number('') is 0, which
+  // would silently move the public default off Server 2.
+  it('treats an empty NEXT_PUBLIC_STREAM_DEFAULT_SLOT as unset', async () => {
+    const mod = await importWithEnv({
+      ...BASE_ENV,
+      NEXT_PUBLIC_STREAM_DEFAULT_SLOT: '',
+    })
+    expect(mod.DEFAULT_SOURCE_ID).toBe('b.example')
+  })
+
   it('labels come from env overrides', async () => {
     const mod = await importWithEnv({
       ...BASE_ENV,
@@ -121,6 +131,10 @@ describe('visibleSourcesFor tiers', () => {
     expect(mod.visibleSourcesFor(true, false)).toEqual(
       mod.visibleSourcesFor(true, false)
     )
-    expect(mod.visibleSourcesFor(true, false).some((s) => s.id === mod.REELY_SOURCE_ID)).toBe(false)
+    expect(
+      mod
+        .visibleSourcesFor(true, false)
+        .some((s) => s.id === mod.REELY_SOURCE_ID)
+    ).toBe(false)
   })
 })
