@@ -39,17 +39,47 @@ export default function MoodPage() {
   const mood = moodById(activeId)
   const resultsRef = React.useRef<HTMLDivElement>(null)
 
+  // The pick lives in the URL, so "scare me, series" is a link you can send and
+  // a reload you can survive. Written with history.replaceState and read from
+  // window.location on mount rather than through nuqs: a useSearchParams read
+  // bails the whole route to client-side rendering under `output: 'export'`,
+  // and this page's heading is the only thing a crawler gets.
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const fromUrl = params.get('mood')
+    if (moodById(fromUrl)) setActiveId(fromUrl)
+    if (params.get('type') === 'tv') setMediaType('tv')
+  }, [])
+
+  const syncUrl = (id: string | null, type: MoodMedia) => {
+    const params = new URLSearchParams()
+    if (id) params.set('mood', id)
+    if (id && type === 'tv') params.set('type', 'tv')
+    const query = params.toString()
+    window.history.replaceState(
+      null,
+      '',
+      query ? `${window.location.pathname}?${query}` : window.location.pathname
+    )
+  }
+
   // On a phone the eight mood cards fill the screen, so a pick used to change
   // something entirely below the fold and read as "nothing happened".
   const pick = (id: string) => {
     const next = id === activeId ? null : id
     setActiveId(next)
+    syncUrl(next, mediaType)
     if (next) {
       window.setTimeout(
         () => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }),
         60
       )
     }
+  }
+
+  const selectMedia = (type: MoodMedia) => {
+    setMediaType(type)
+    syncUrl(activeId, type)
   }
 
   return (
@@ -101,7 +131,7 @@ export default function MoodPage() {
                   key={tab.id}
                   type="button"
                   data-testid={`mood-media-${tab.id}`}
-                  onClick={() => setMediaType(tab.id)}
+                  onClick={() => selectMedia(tab.id)}
                   aria-pressed={mediaType === tab.id}
                   className={cn(
                     'rounded-full px-4 py-1.5 text-sm font-medium transition',
