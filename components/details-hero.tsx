@@ -94,6 +94,7 @@ export const DetailsHero = ({
     episode?: number
     title?: string
     year?: number
+    imdb?: string
   } | null
 }) => {
   const media = (movie || series) as MovieDetails & SeriesDetails

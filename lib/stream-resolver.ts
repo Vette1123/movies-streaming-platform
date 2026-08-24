@@ -17,4 +17,10 @@ export interface SelfHostTarget {
   title?: string
   /** Release year — disambiguates remakes in those catalogs. */
   year?: number
+  /**
+   * IMDb id (tt…). The deepest subtitle catalog the player can reach is keyed
+   * by it and nothing else; detail pages already hold one, because the TMDB
+   * request that renders them appends external_ids.
+   */
+  imdb?: string
 }

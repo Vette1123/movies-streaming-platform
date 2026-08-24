@@ -45,6 +45,7 @@ export const MovieDetailsHero = ({
               id: movie.id,
               title: movie.title,
               year: Number(movie.release_date?.slice(0, 4)) || undefined,
+              imdb: movie.imdb_id || undefined,
             }
           : undefined
       }

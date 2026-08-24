@@ -40,6 +40,10 @@ interface SeriesDetails {
   homepage: string
   id: number
   imdb_id?: string
+  // TV details do not carry imdb_id at the top level — it rides along on
+  // external_ids, appended to the same request and kept through the peel in
+  // services/series.ts, so the detail page (and the player ticket) can read it.
+  external_ids?: { imdb_id?: string | null }
   in_production: boolean
   languages: string[]
   last_air_date: string
@@ -89,9 +93,6 @@ interface SeriesDetailsWithExtras extends SeriesDetails {
   // TMDB names an appended block after its endpoint path, slash included. Only
   // ever present on a build/dev fetch — see lib/tmdb-append.ts.
   'watch/providers'?: TmdbWatchProviders
-  // TV details don't include imdb_id at the top level — it rides along on
-  // external_ids (appended to the same request). See services/series.ts.
-  external_ids?: { imdb_id?: string | null }
 }
 
 export type {

@@ -114,19 +114,65 @@ export function PlaybackPanel() {
  * (`prefs.playback`) with a localStorage mirror for the player iframe to read
  * without a round trip (lib/playback-prefs.ts).
  */
+/**
+ * Every language the player can actually fetch, in its own script — the same
+ * fifty the picker inside the player offers, because they come from the same
+ * table there (reely-pro-player src/languages.mjs). A language is listed only
+ * once a catalog was measured to answer for it; a row that never resolves is
+ * worse than no row, because it is picked, waited on, and empty.
+ */
 const SUB_LANGUAGES: { value: string; label: string }[] = [
   { value: 'off', label: 'Off' },
   { value: 'ar', label: 'العربية' },
   { value: 'en', label: 'English' },
+  { value: 'es', label: 'Español' },
   { value: 'fr', label: 'Français' },
   { value: 'de', label: 'Deutsch' },
-  { value: 'es', label: 'Español' },
-  { value: 'tr', label: 'Türkçe' },
+  { value: 'it', label: 'Italiano' },
   { value: 'pt', label: 'Português' },
   { value: 'ru', label: 'Русский' },
-  { value: 'it', label: 'Italiano' },
+  { value: 'tr', label: 'Türkçe' },
   { value: 'id', label: 'Indonesia' },
   { value: 'fa', label: 'فارسی' },
+  { value: 'nl', label: 'Nederlands' },
+  { value: 'pl', label: 'Polski' },
+  { value: 'sv', label: 'Svenska' },
+  { value: 'da', label: 'Dansk' },
+  { value: 'no', label: 'Norsk' },
+  { value: 'fi', label: 'Suomi' },
+  { value: 'cs', label: 'Čeština' },
+  { value: 'sk', label: 'Slovenčina' },
+  { value: 'hu', label: 'Magyar' },
+  { value: 'ro', label: 'Română' },
+  { value: 'el', label: 'Ελληνικά' },
+  { value: 'he', label: 'עברית' },
+  { value: 'uk', label: 'Українська' },
+  { value: 'bg', label: 'Български' },
+  { value: 'sr', label: 'Srpski' },
+  { value: 'hr', label: 'Hrvatski' },
+  { value: 'bs', label: 'Bosanski' },
+  { value: 'sl', label: 'Slovenščina' },
+  { value: 'mk', label: 'Македонски' },
+  { value: 'sq', label: 'Shqip' },
+  { value: 'et', label: 'Eesti' },
+  { value: 'lv', label: 'Latviešu' },
+  { value: 'lt', label: 'Lietuvių' },
+  { value: 'is', label: 'Íslenska' },
+  { value: 'vi', label: 'Tiếng Việt' },
+  { value: 'th', label: 'ไทย' },
+  { value: 'ms', label: 'Melayu' },
+  { value: 'zh', label: '中文' },
+  { value: 'ja', label: '日本語' },
+  { value: 'ko', label: '한국어' },
+  { value: 'hi', label: 'हिन्दी' },
+  { value: 'bn', label: 'বাংলা' },
+  { value: 'ta', label: 'தமிழ்' },
+  { value: 'te', label: 'తెలుగు' },
+  { value: 'ml', label: 'മലയാളം' },
+  { value: 'ur', label: 'اردو' },
+  { value: 'si', label: 'සිංහල' },
+  { value: 'km', label: 'ខ្មែរ' },
+  { value: 'my', label: 'မြန်မာ' },
 ]
 
 const SUB_SIZES: {
@@ -166,7 +212,14 @@ function PrefChips<T>({
       {hint ? (
         <p className="text-muted-foreground mt-0.5 text-xs">{hint}</p>
       ) : null}
-      <div className="mt-2 flex flex-wrap gap-2">
+      {/* Long lists (the fifty subtitle languages) scroll in place rather
+          than pushing every setting under them off the screen. */}
+      <div
+        className={cn(
+          'mt-2 flex flex-wrap gap-2',
+          options.length > 16 && 'max-h-48 overflow-y-auto pr-1'
+        )}
+      >
         {options.map((option) => (
           <button
             key={String(option.value)}

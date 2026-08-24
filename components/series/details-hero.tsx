@@ -195,6 +195,7 @@ export const SeriesDetailsHero = ({
                 episode: playingTarget?.episode ?? 1,
                 title: series.name,
                 year: Number(series.first_air_date?.slice(0, 4)) || undefined,
+                imdb: series.external_ids?.imdb_id || undefined,
               }
         }
         resumeSlot={

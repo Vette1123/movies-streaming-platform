@@ -45,6 +45,7 @@ const mintTicket = async (target: SelfHostTarget): Promise<string | null> => {
         : {}),
       title: target.title ?? '',
       ...(target.year ? { year: target.year } : {}),
+      ...(target.imdb ? { imdb: target.imdb } : {}),
       start,
       // Applied by the player on boot; read synchronously from the local
       // mirror so no account round trip delays first play.

@@ -1399,6 +1399,12 @@ async function handleProTicket(request, env, url) {
     params.set('episode', String(Number.isFinite(episode) ? episode : 1))
   }
   if (Number.isFinite(year) && year > 1900) params.set('year', String(year))
+  // The IMDb id the detail page already had. The player's first subtitle
+  // source is addressable by it alone, so without this the deepest catalog is
+  // simply unreachable — it is not a nice-to-have.
+  if (typeof body.imdb === 'string' && /^ttd{5,12}$/.test(body.imdb)) {
+    params.set('im', body.imdb)
+  }
   // Playback prefs ride along so the player applies them on boot without a
   // round trip of its own. See lib/playback-prefs.ts for where they come from.
   const prefs = body.playback
