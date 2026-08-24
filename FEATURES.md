@@ -156,7 +156,7 @@ Supporter-only house player. **2026-08-24**, all measured:
   Measured end-to-end through the worker's own route (self-signed ticket, all
   fifty languages): **43/50 Dune: Part Two, 46/50 Breaking Bad S3E1, 43/50
   Parasite**, median 164-351ms cold — against 11 languages offered before. Every code, slug and label lives in one table
-  (`src/languages.mjs`) read by both providers, the resolve endpoint and the
+  (`src/languages.mjs`) read by all four providers, the resolve endpoint and the
   client bundle. A candidate must clear a media-aware cue floor (250 film / 100
   episode) so forced tracks and sign-and-song files stop counting as
   translations.
