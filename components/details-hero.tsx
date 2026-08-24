@@ -137,6 +137,9 @@ export const DetailsHero = ({
   const iframeLoaded = !!src && loadedSrc === src
   // The embed frame, for the progress bridge's source-window identity check.
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
+  // The house player's frame. Watch Together has to steer whichever of the two
+  // is actually on screen.
+  const reelyFrameRef = React.useRef<HTMLIFrameElement>(null)
 
   // Watch Together rides along when the URL carries the room (?watch=CODE).
   // Read at render with a window guard, not useSearchParams: this hero
@@ -250,6 +253,7 @@ export const DetailsHero = ({
                 target={selfHost}
                 onReady={() => setLoadedSrc(`reely:${key}`)}
                 onUnavailable={onReelyUnavailable}
+                frameRef={reelyFrameRef}
               />
               {!reelyLoaded && (
                 <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
@@ -312,7 +316,7 @@ export const DetailsHero = ({
             <WatchTogetherBar
               code={together.code}
               isHost={together.isHost}
-              frameRef={iframeRef}
+              frameRef={useReely ? reelyFrameRef : iframeRef}
             />
           )}
           {isIframeShown && sourceControl && !useReely && (

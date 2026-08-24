@@ -35,15 +35,21 @@ export function ReelyPlayer({
   target,
   onReady,
   onUnavailable,
+  frameRef: exposedRef,
 }: {
   target: SelfHostTarget
   onReady: () => void
   onUnavailable: () => void
+  /** Handed out so a Watch Together room can steer THIS frame. The house
+   * player is the default source, so without it the guest half of a room was
+   * posting into an embed iframe that is not on screen. */
+  frameRef?: React.RefObject<HTMLIFrameElement | null>
 }) {
   const [url, setUrl] = React.useState<string | null>(null)
   const requested = React.useRef(false)
   const failed = React.useRef(false)
-  const frameRef = React.useRef<HTMLIFrameElement>(null)
+  const ownRef = React.useRef<HTMLIFrameElement>(null)
+  const frameRef = exposedRef ?? ownRef
 
   const key = `${target.type}:${target.id}:${target.season ?? ''}:${target.episode ?? ''}`
 
@@ -51,7 +57,12 @@ export function ReelyPlayer({
     if (requested.current) return
     requested.current = true
 
-    const pKey = playbackKey(target.type, target.id, target.season, target.episode)
+    const pKey = playbackKey(
+      target.type,
+      target.id,
+      target.season,
+      target.episode
+    )
     const start = resumableSeconds(readPosition(pKey))
 
     void (async () => {
@@ -101,20 +112,19 @@ export function ReelyPlayer({
       if (event.origin !== playerOrigin) return
       if (event.source !== frameRef.current?.contentWindow) return
       const data = event.data as
-        | { source?: string; kind?: string; t?: number; dur?: number }
-        | undefined
+        { source?: string; kind?: string; t?: number; dur?: number } | undefined
       if (!data || data.source !== 'reely-player') return
       const pKey = playbackKey(
         target.type,
         target.id,
         target.season,
-        target.episode,
+        target.episode
       )
       if (data.kind === 'progress' && Number.isFinite(data.t)) {
         writePosition(
           pKey,
           data.t as number,
-          Number.isFinite(data.dur) ? (data.dur as number) : undefined,
+          Number.isFinite(data.dur) ? (data.dur as number) : undefined
         )
       } else if (data.kind === 'ended') {
         clearPosition(pKey)
