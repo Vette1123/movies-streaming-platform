@@ -140,6 +140,36 @@ playing:true}` → state round-trips exactly.
 
 ---
 
+## 5. The Reely Player (private worker, `reely-pro-player`)
+
+Supporter-only house player. **2026-08-24**, all measured:
+
+- **Subtitles work now.** The chain is OpenSubtitles' keyless REST search
+  first (one JSON hop + one gzipped .srt, ranked by season/episode, year and
+  downloads) then SubDL's website walk. Four faults were emptying the selector:
+  an uppercase path 302s to a `Location` whose host is literally `_`; SubDL's
+  search 404s on a colon; series pages hold no entries (they live one page per
+  season behind an ordinal-word link); and the module read `target.type/season`
+  while the worker passes `ty/s/ep`, so episode scoping had never run. Matrix
+  went **11/55 -> 55/55**, and 88/88 on a harder set, median ~400ms per
+  language. A candidate must clear a media-aware cue floor (250 film / 100
+  episode) so forced tracks and sign-and-song files stop counting as
+  translations.
+- **One row per language** in both pickers, keyed on the language a track is
+  in rather than its label — no more "English, English, English", and never a
+  numbered "Subtitle 2".
+- **Account prefs actually arrive.** They were read from Reely's localStorage
+  from inside a cross-origin iframe (always null); they ride the ticket query.
+- **Progress bar in full screen**: off by default, switchable in the player
+  (per device) and in the account panel (synced, `mini` on the ticket).
+- **One round trip less to first frame**: read routes accept the entry ticket
+  as well as the play token, so the token exchange and the stream lookup leave
+  together (measured: both at t+55ms).
+- Finished VTTs are cached 30 days at the edge, keyed without the credentials,
+  so the first viewer in a colo pays for the walk and nobody after them does.
+  Every source is keyless on purpose — a shared free-tier key is a daily quota,
+  not a supply.
+
 ## Deploy & verification state
 
 - Main repo deploys: `ce31913` (features) → `8effed9` (fix: pass `env` into
@@ -159,7 +189,10 @@ playing:true}` → state round-trips exactly.
 
 Drive these on real hardware / a real browser tab pair:
 
-1. Reels: focus mode toggle, native share sheet on a phone, cover-crop look.
+1. Reels: native share sheet on a phone. ~~focus mode toggle~~ (done
+   2026-08-24: real touch taps enter and leave it, and the phone back gesture
+   now leaves full screen and lands on the feed instead of leaving Reels),
+   ~~cover-crop look~~ (done: the trailer fills the frame, no letterbox).
 2. ~~Match Night: two devices, one code, watch the match light up in the
    UI.~~ **Done 2026-08-24** — a browser room plus a curl second swiper:
    the panel lit up with the poster and "2 people swiping", a toast fired
