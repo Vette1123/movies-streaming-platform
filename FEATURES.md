@@ -144,17 +144,27 @@ playing:true}` → state round-trips exactly.
 
 Supporter-only house player. **2026-08-24**, all measured:
 
-- **Subtitles work now.** The chain is OpenSubtitles' keyless REST search
-  first (one JSON hop + one gzipped .srt, ranked by season/episode, year and
-  downloads) then SubDL's website walk. Four faults were emptying the selector:
-  an uppercase path 302s to a `Location` whose host is literally `_`; SubDL's
-  search 404s on a colon; series pages hold no entries (they live one page per
-  season behind an ordinal-word link); and the module read `target.type/season`
-  while the worker passes `ty/s/ep`, so episode scoping had never run. Matrix
-  went **11/55 -> 55/55**, and 88/88 on a harder set, median ~400ms per
-  language. A candidate must clear a media-aware cue floor (250 film / 100
+- **Subtitles work, and there are fifty of them.** Measured from the Cloudflare
+  edge (a throwaway worker under `wrangler dev --remote`): every OpenSubtitles
+  download host answers a Worker with **401 "Making sure you're not a bot"**,
+  whatever the user-agent, while search answers 200 — so the provider that led
+  the chain could search perfectly and never return a file. The chain is now
+  **Stremio's OpenSubtitles v3 addon** (one JSON call + one UTF-8 .srt, the
+  whole OpenSubtitles catalog, served from a host that answers), then SubDL's
+  website walk, then Podnapisi. **42/50, 32/50 and 38/50 languages resolve**
+  across Dune: Part Two, Breaking Bad S3E1 and Parasite — against 11 languages
+  offered before. Every code, slug and label lives in one table
+  (`src/languages.mjs`) read by both providers, the resolve endpoint and the
+  client bundle. A candidate must clear a media-aware cue floor (250 film / 100
   episode) so forced tracks and sign-and-song files stop counting as
   translations.
+- **The IMDb id rides the ticket** (`im=tt…`). The deepest catalog is keyed by
+  it and nothing else; Reely's detail pages already hold one because their TMDB
+  request appends `external_ids`, so it costs no extra upstream call.
+- **The play ticket is warmed on intent.** Hover, focus or touch on the play
+  control mints it and opens the connection to the player origin, so the tap
+  itself pays for neither (`lib/pro/ticket-cache.ts`; 45s freshness against a
+  ~90s ticket, promise cached so a fast tap shares the one request).
 - **One row per language** in both pickers, keyed on the language a track is
   in rather than its label — no more "English, English, English", and never a
   numbered "Subtitle 2".
