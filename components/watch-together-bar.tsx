@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { togetherBeatApi, togetherStateApi } from '@/lib/api-client'
 import { parseEmbedProgress } from '@/lib/embed-progress'
+import { formatPlaybackTime } from '@/lib/playback-positions'
 import { followHost } from '@/lib/watch-together'
 
 // The Watch Together sync loop, mounted inside the player area of a detail
@@ -72,6 +73,11 @@ export function WatchTogetherBar({
   // long as the tab stayed open).
   const sent = React.useRef<{ position: number; playing: boolean } | null>(null)
 
+  // Where the host is, in words, for the guest. On an embed we can read the
+  // room but not steer it — the provider accepts nothing back — so the number
+  // IS the feature there: you can match it by hand.
+  const [hostAt, setHostAt] = React.useState<number | null>(null)
+
   React.useEffect(() => {
     if (!isHost) return
     const id = setInterval(() => {
@@ -113,6 +119,7 @@ export function WatchTogetherBar({
       if (document.hidden || !frameRef.current) return
       try {
         const beat = await togetherStateApi(code)
+        setHostAt(beat.position)
         const follow = followHost(
           {
             position: beat.position,
@@ -144,6 +151,14 @@ export function WatchTogetherBar({
         Watch Together · <span className="font-mono font-bold">{code}</span>
         {isHost ? ' · you control playback' : ' · following the host'}
       </span>
+      {/* Outside the truncating span on purpose: on a phone this is the first
+          thing the line would eat, and for a guest on an embed - which takes no
+          steering - it is the only way to match the room by hand. */}
+      {!isHost && hostAt !== null ? (
+        <span className="shrink-0 font-mono opacity-80">
+          {formatPlaybackTime(hostAt)}
+        </span>
+      ) : null}
       <button
         type="button"
         onClick={() => {
