@@ -57,6 +57,35 @@ const mintTicket = async (target: SelfHostTarget): Promise<string | null> => {
   return data.url
 }
 
+/**
+ * Open the connection to the player origin the moment a ticket names it.
+ *
+ * The player lives on its own worker, so the iframe's first byte costs a DNS
+ * lookup, a TCP handshake and a TLS negotiation that no earlier request on the
+ * page has paid for. Warming happens on intent, which is typically a second or
+ * more before the tap — long enough for all three to finish off the clock.
+ */
+const preconnected = new Set<string>()
+
+const preconnect = (url: string) => {
+  if (typeof document === 'undefined') return
+  let origin = ''
+  try {
+    origin = new URL(url).origin
+  } catch {
+    return
+  }
+  if (origin === location.origin || preconnected.has(origin)) return
+  preconnected.add(origin)
+  const link = document.createElement('link')
+  link.rel = 'preconnect'
+  link.href = origin
+  // The iframe navigation is a document request, not a credentialed subresource
+  // fetch, so the anonymous socket is the one it will actually reuse.
+  link.crossOrigin = ''
+  document.head.appendChild(link)
+}
+
 /** The play URL for this title, minting one only when nothing fresh is held. */
 export const ticketFor = (target: SelfHostTarget): Promise<string | null> => {
   const key = ticketKey(target)
@@ -64,9 +93,14 @@ export const ticketFor = (target: SelfHostTarget): Promise<string | null> => {
   if (warm && Date.now() - warm.at < TICKET_FRESH_MS) return warm.url
   const url = mintTicket(target)
   tickets.set(key, { at: Date.now(), url })
-  // A rejected promise left in the map would be re-thrown at every later
-  // caller; drop it so the next real attempt can try again.
-  void url.catch(() => tickets.delete(key))
+  // One chain for both side effects: open the socket the ticket names, and —
+  // because a rejected promise left in the map is re-thrown at every later
+  // caller — drop the entry so the next real attempt can try again.
+  void url
+    .then((minted) => {
+      if (minted) preconnect(minted)
+    })
+    .catch(() => tickets.delete(key))
   return url
 }
 

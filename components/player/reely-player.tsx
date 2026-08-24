@@ -5,11 +5,8 @@ import * as React from 'react'
 import {
   clearPosition,
   playbackKey,
-  readPosition,
-  resumableSeconds,
   writePosition,
 } from '@/lib/playback-positions'
-import { readPlaybackPrefs } from '@/lib/playback-prefs'
 import { ticketFor } from '@/lib/pro/ticket-cache'
 import { type SelfHostTarget } from '@/lib/stream-resolver'
 
