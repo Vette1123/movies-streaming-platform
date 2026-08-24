@@ -47,8 +47,13 @@ export default function MoodPage() {
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const fromUrl = params.get('mood')
+    // After mount on purpose: the prerendered HTML knows no query string, so
+    // reading it during render would hydrate into markup the server never
+    // produced.
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (moodById(fromUrl)) setActiveId(fromUrl)
     if (params.get('type') === 'tv') setMediaType('tv')
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [])
 
   const syncUrl = (id: string | null, type: MoodMedia) => {

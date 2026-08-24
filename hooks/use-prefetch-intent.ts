@@ -24,6 +24,21 @@ import { useRouter } from 'next/navigation'
 //
 // Fires once per href: router.prefetch is idempotent but not free, and a card
 // can see many pointerenters.
+/**
+ * The three events that mean "this visitor is about to commit", as one stable
+ * props object. Routes are not the only thing worth paying for early — the
+ * house player's entry ticket is a round trip that can be spent while a thumb
+ * is still travelling — so the intent half lives on its own.
+ */
+export function useIntentProps(warm: () => void) {
+  // One stable object so spreading it onto an element doesn't hand it three
+  // fresh handler props on every render.
+  return useMemo(
+    () => ({ onMouseEnter: warm, onFocus: warm, onTouchStart: warm }),
+    [warm]
+  )
+}
+
 export function usePrefetchIntent(href: string) {
   const router = useRouter()
   const warmed = useRef<string | null>(null)
@@ -34,10 +49,5 @@ export function usePrefetchIntent(href: string) {
     router.prefetch(href)
   }, [href, router])
 
-  // One stable object so spreading it onto a Link doesn't hand it three fresh
-  // handler props on every render.
-  return useMemo(
-    () => ({ onMouseEnter: warm, onFocus: warm, onTouchStart: warm }),
-    [warm]
-  )
+  return useIntentProps(warm)
 }

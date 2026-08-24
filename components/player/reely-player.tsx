@@ -10,6 +10,7 @@ import {
   writePosition,
 } from '@/lib/playback-positions'
 import { readPlaybackPrefs } from '@/lib/playback-prefs'
+import { ticketFor } from '@/lib/pro/ticket-cache'
 import { type SelfHostTarget } from '@/lib/stream-resolver'
 
 /**
@@ -57,37 +58,11 @@ export function ReelyPlayer({
     if (requested.current) return
     requested.current = true
 
-    const pKey = playbackKey(
-      target.type,
-      target.id,
-      target.season,
-      target.episode
-    )
-    const start = resumableSeconds(readPosition(pKey))
-
     void (async () => {
       try {
-        const res = await fetch('/api/pro/ticket', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: target.type,
-            id: target.id,
-            ...(target.type === 'tv'
-              ? { season: target.season ?? 1, episode: target.episode ?? 1 }
-              : {}),
-            title: target.title ?? '',
-            ...(target.year ? { year: target.year } : {}),
-            start,
-            // Applied by the player on boot; read synchronously from the
-            // local mirror so no account round trip delays first play.
-            playback: readPlaybackPrefs(),
-          }),
-        })
-        if (!res.ok) throw new Error(`ticket ${res.status}`)
-        const data = (await res.json()) as { url?: string }
-        if (!data.url) throw new Error('no url')
-        setUrl(data.url)
+        const warmed = await ticketFor(target)
+        if (!warmed) throw new Error('no url')
+        setUrl(warmed)
       } catch {
         if (!failed.current) {
           failed.current = true

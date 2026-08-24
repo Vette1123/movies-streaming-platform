@@ -7,7 +7,9 @@ import { SeriesDetails } from '@/types/series-details'
 import { REELY_SOURCE_ID } from '@/config/sources'
 import { STREAM_EMBED_ALLOW } from '@/lib/embed-policy'
 import { getMediaTitle } from '@/lib/media'
+import { warmReelyTicket } from '@/lib/pro/ticket-cache'
 import { cn } from '@/lib/utils'
+import { useIntentProps } from '@/hooks/use-prefetch-intent'
 import { type StreamSourceControl } from '@/hooks/use-stream-source'
 import { HeroImage } from '@/components/header/hero-image'
 import { PlayButton } from '@/components/play-button'
@@ -114,8 +116,17 @@ export const DetailsHero = ({
   // Which surface is playing: our player when the active source says so, the
   // third-party embed otherwise. The embed's `src` is still set by the caller
   // in reely mode (it is meaningless there and never used as a frame URL).
-  const useReely =
-    isIframeShown && !!selfHost && sourceControl?.source.id === REELY_SOURCE_ID
+  const reelyIsTheSource =
+    !!selfHost && sourceControl?.source.id === REELY_SOURCE_ID
+  const useReely = isIframeShown && reelyIsTheSource
+
+  // The ticket is the one link in the chain that can be paid for BEFORE the
+  // tap: mint it while the thumb is still travelling and the player boots
+  // straight into the shell instead of waiting on a round trip of ours first.
+  const warmTicket = React.useCallback(() => {
+    if (reelyIsTheSource && selfHost) warmReelyTicket(selfHost)
+  }, [reelyIsTheSource, selfHost])
+  const playIntent = useIntentProps(warmTicket)
 
   // If the house player cannot start — ticket refused once PRO_PLAYER_OPEN is
   // lifted, or the worker not configured — fall back to the first embed and
@@ -193,6 +204,9 @@ export const DetailsHero = ({
                 // appears, and the exit animates over the top of it — the video
                 // never moves.
                 className="absolute inset-0 flex flex-col items-center justify-center gap-4 sm:gap-5"
+                // On the stack, not the button: a touch anywhere in it bubbles
+                // up here, and the resume control leads to the same player.
+                {...playIntent}
               >
                 <PlayButton
                   onClick={playVideo}
