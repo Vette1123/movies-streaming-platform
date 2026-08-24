@@ -11,17 +11,31 @@ import { DiscoverGrid } from '@/components/media/discover-grid'
 // The mood picker compiles a feeling down to the same discover call the genre
 // pages make, so it renders through the same grid — see DiscoverGrid.
 
-const MoodResults = ({ mood }: { mood: Mood }) => (
+type MoodMedia = 'movie' | 'tv'
+
+const MoodResults = ({
+  mood,
+  mediaType,
+}: {
+  mood: Mood
+  mediaType: MoodMedia
+}) => (
   <DiscoverGrid
-    mediaType="movie"
-    filters={moodToFilters(mood)}
-    cacheKey={['mood', mood.id]}
+    mediaType={mediaType}
+    filters={moodToFilters(mood, mediaType)}
+    cacheKey={['mood', mood.id, mediaType]}
     emptyMessage="Nothing matched this mood — try another."
   />
 )
 
+const MEDIA_TABS: { id: MoodMedia; label: string }[] = [
+  { id: 'movie', label: 'Films' },
+  { id: 'tv', label: 'Series' },
+]
+
 export default function MoodPage() {
   const [activeId, setActiveId] = React.useState<string | null>(null)
+  const [mediaType, setMediaType] = React.useState<MoodMedia>('movie')
   const mood = moodById(activeId)
   const resultsRef = React.useRef<HTMLDivElement>(null)
 
@@ -77,7 +91,31 @@ export default function MoodPage() {
 
       <div ref={resultsRef} className="mt-10 scroll-mt-24">
         {mood ? (
-          <MoodResults mood={mood} />
+          <>
+            {/* A mood is a feeling, not a format — "make me laugh" is as much a
+                sitcom as a comedy film. The genre ids differ per type, which is
+                why the mood carries both sets. */}
+            <div className="mb-5 inline-flex rounded-full border p-1">
+              {MEDIA_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  data-testid={`mood-media-${tab.id}`}
+                  onClick={() => setMediaType(tab.id)}
+                  aria-pressed={mediaType === tab.id}
+                  className={cn(
+                    'rounded-full px-4 py-1.5 text-sm font-medium transition',
+                    mediaType === tab.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <MoodResults mood={mood} mediaType={mediaType} />
+          </>
         ) : (
           <div className="border-border/60 text-muted-foreground rounded-xl border border-dashed p-10 text-center text-sm">
             Tap a mood above and the stack appears here.
