@@ -101,6 +101,13 @@ export function WatchTogetherBar({
     return () => clearInterval(id)
   }, [code, isHost])
 
+  // The last host beat this guest actually acted on. A player that reports
+  // nothing back (an embed, or the house player before its first tick) leaves
+  // `latest` null forever, so every poll re-decides to follow and re-seeks the
+  // frame to the same spot every four seconds. Acting once per beat is enough:
+  // a playing host stamps a new one every 4s, so drift correction is unchanged.
+  const acted = React.useRef<number>(0)
+
   React.useEffect(() => {
     if (isHost) return
     const push = (position: number, playing: boolean) => {
@@ -129,7 +136,10 @@ export function WatchTogetherBar({
           latest.current,
           Date.now()
         )
-        if (follow) push(follow.position, follow.playing)
+        if (follow && beat.updated_at !== acted.current) {
+          acted.current = beat.updated_at
+          push(follow.position, follow.playing)
+        }
       } catch {
         // A 404 means the room was swept - guests just stop syncing.
       }

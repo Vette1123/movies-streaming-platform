@@ -71,3 +71,30 @@ changes without the clock moving", which is false for exactly the pause case.
 Hosting from an embed could not be exercised locally: the embed never starts
 under the harness, so it emits no `PLAYER_EVENT` to relay. The parser it goes
 through is covered by `tests/embed-progress.test.ts`.
+
+## Follow-up, same day: the guest half, actually driven
+
+The guest was finally exercised for real — a browser tab in a room, a spy
+wrapped around `HTMLIFrameElement.prototype.contentWindow` so every
+`postMessage` into the player frame is recorded, and `curl` playing the part of
+the host. That is what a two-ended feature needs and what the earlier
+"prod-verified by curl" was not.
+
+It found a fifth defect immediately. A guest whose player reports nothing back —
+an embed always, the house player until its first tick — leaves `latest` null,
+so `followHost` re-decided to follow the _same_ beat on every poll and re-seeked
+the frame every four seconds. Two identical `{kind:'play',t:1200}` pushes in
+consecutive cycles, forever. The fix is one ref: act on a beat once, keyed by
+its `updated_at`. A playing host stamps a new one every 4s, so drift correction
+is untouched; verified by sending a later `pause` beat and watching exactly one
+new push arrive.
+
+**Mistake:** the pure function got tests and the loop around it did not. The bug
+is not in `followHost` — every one of its six tests is still right. It is in
+"how often do I ask it, and what do I do when the answer has not changed",
+which lives in the effect and was never looked at. Extracting the decision made
+the decision testable and made the schedule invisible.
+
+**Rule:** a poll loop needs an "act once per input" rule as much as it needs a
+decision rule. A pure predicate that returns true every 4s is not a bug in the
+predicate.

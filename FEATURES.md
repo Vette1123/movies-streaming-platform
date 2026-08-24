@@ -11,12 +11,12 @@ Status legend: ✅ done & live · 🔶 built & live, needs one manual look
 
 ## Shipped earlier this sprint
 
-| Item | Status | Where |
-| --- | --- | --- |
-| Deploy plumbing: every stream-slot env var forwarded into the CI build | ✅ live | `49f6e35`, `93b13e2` |
-| Server slots 3 (vidlink.pro) + 5 (vidfast.pro) filled after HTTP screening | ✅ live | `6a534f8` |
-| Player control suite: quality/speed/audio popovers, seek fixes, double-tap ±10s, click-anywhere dismiss | ✅ live | reely-pro-player `71713aa`, `246b483` |
-| Header slimmed: Watch History out of the nav (link lives inside the Watchlist page) | ✅ live | `config/site.ts`, `app/watchlist/page.tsx` |
+| Item                                                                                                    | Status  | Where                                      |
+| ------------------------------------------------------------------------------------------------------- | ------- | ------------------------------------------ |
+| Deploy plumbing: every stream-slot env var forwarded into the CI build                                  | ✅ live | `49f6e35`, `93b13e2`                       |
+| Server slots 3 (vidlink.pro) + 5 (vidfast.pro) filled after HTTP screening                              | ✅ live | `6a534f8`                                  |
+| Player control suite: quality/speed/audio popovers, seek fixes, double-tap ±10s, click-anywhere dismiss | ✅ live | reely-pro-player `71713aa`, `246b483`      |
+| Header slimmed: Watch History out of the nav (link lives inside the Watchlist page)                     | ✅ live | `config/site.ts`, `app/watchlist/page.tsx` |
 
 ---
 
@@ -61,12 +61,13 @@ mute button restarted the trailer:
 
 Eight curated moods → discover presets. No new backend: each mood compiles
 to the existing `/api/filter` discover call (genre cocktail + rating floor
-+ vote-count floor).
 
-- `lib/moods.ts`: cozy, adrenaline, mind-bending, laugh, cry, scare,
+- vote-count floor).
+
+* `lib/moods.ts`: cozy, adrenaline, mind-bending, laugh, cry, scare,
   true story, escape.
-- Page: mood chips, infinite grid. Nav entry + sitemap entry. **Live**: 200.
-- **2026-08-24**: the grid is `components/media/discover-grid.tsx`, now
+* Page: mood chips, infinite grid. Nav entry + sitemap entry. **Live**: 200.
+* **2026-08-24**: the grid is `components/media/discover-grid.tsx`, now
   shared with the genre pages instead of copied from them — two columns on
   a phone like every other list, and TMDB's cross-page duplicates deduped.
   Mood cards align (`flex-col`; a button centres its content when the grid
@@ -135,7 +136,7 @@ via postMessage into the player frame.
   host can send the invite before pressing play and a guest can see the
   room exists. The guest poll idles while there is no frame to steer.
 - **Prod-verified by curl**: room `U5LDD3` → beat `{position:742.5,
-  playing:true}` → state round-trips exactly.
+playing:true}` → state round-trips exactly.
 
 ---
 
@@ -164,8 +165,12 @@ Drive these on real hardware / a real browser tab pair:
    the panel lit up with the poster and "2 people swiping", a toast fired
    for each new match (one film, one series, proving the type+id key), and
    a reload announced neither of them again.
-3. Watch Together: two devices, host seeks, guest follows (API round-trip
-   already proven; needs a playing stream to see the drift correction).
+3. Watch Together: **guest half done 2026-08-24** — a real guest tab with a
+   spy on the player frame took `{kind:'play',t:1200}` and then
+   `{kind:'pause',t:1500}` from curl'd host beats, showed the host clock,
+   and pushed each beat exactly once across three poll cycles. What is left
+   is the host half on a real playing stream (an embed emits nothing under
+   automation).
 
 ## Deliberately deferred
 
