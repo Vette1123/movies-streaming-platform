@@ -132,7 +132,7 @@ via postMessage into the player frame.
   carrying the code (`components/media-search-picker.tsx`, shared with
   Match Night; the pasted-link flow is gone — you were on Reely to begin
   with). Sitemap entry; deliberately not in the nav.
-- **2026-08-24**: the bar mounts with the page, not with the player, so the
+- **2026-08-24**: a guest polls the room from page load (only a hidden tab skips a poll), shows where the host is, acts on each beat exactly once, and stops for good on a 404 with "the room has ended". The bar mounts with the page, not with the player, so the
   host can send the invite before pressing play and a guest can see the
   room exists. The guest poll idles while there is no frame to steer.
 - **Prod-verified by curl**: room `U5LDD3` → beat `{position:742.5,

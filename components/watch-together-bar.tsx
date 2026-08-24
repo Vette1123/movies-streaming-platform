@@ -4,7 +4,7 @@ import * as React from 'react'
 import { Copy, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { togetherBeatApi, togetherStateApi } from '@/lib/api-client'
+import { ApiError, togetherBeatApi, togetherStateApi } from '@/lib/api-client'
 import { parseEmbedProgress } from '@/lib/embed-progress'
 import { formatPlaybackTime } from '@/lib/playback-positions'
 import { followHost } from '@/lib/watch-together'
@@ -24,6 +24,12 @@ import { followHost } from '@/lib/watch-together'
 // and stays where they are. Hosting from one works fine.
 
 export const TOGETHER_SOURCE = 'reely-together'
+
+const hostRoleLabel = (isHost: boolean, ended: boolean) => {
+  if (isHost) return ' · you control playback'
+  if (ended) return ' · the room has ended'
+  return ' · following the host'
+}
 
 interface WatchTogetherBarProps {
   code: string
@@ -78,6 +84,11 @@ export function WatchTogetherBar({
   // IS the feature there: you can match it by hand.
   const [hostAt, setHostAt] = React.useState<number | null>(null)
 
+  // Rooms are swept, so a guest can outlive one. Polling a 404 every four
+  // seconds forever is a Worker invocation buying nothing, and the guest is
+  // left reading "following the host" about a room that no longer exists.
+  const [ended, setEnded] = React.useState(false)
+
   React.useEffect(() => {
     if (!isHost) return
     const id = setInterval(() => {
@@ -109,7 +120,8 @@ export function WatchTogetherBar({
   const acted = React.useRef<number>(0)
 
   React.useEffect(() => {
-    if (isHost) return
+    if (isHost || ended) return
+    // Steering needs a player; knowing where the room is does not.
     const push = (position: number, playing: boolean) => {
       frameRef.current?.contentWindow?.postMessage(
         {
@@ -121,9 +133,11 @@ export function WatchTogetherBar({
       )
     }
     const sync = async () => {
-      // Nothing to steer until the player is on screen, and a poll that can
-      // only be discarded is a Worker invocation spent on nothing.
-      if (document.hidden || !frameRef.current) return
+      // A hidden tab is nobody watching, so it is the one poll worth
+      // skipping. A guest who has not pressed play still polls: the host's
+      // position and "the room has ended" are the whole reason they opened the
+      // invite, and gating on the player meant neither ever appeared.
+      if (document.hidden) return
       try {
         const beat = await togetherStateApi(code)
         setHostAt(beat.position)
@@ -140,14 +154,16 @@ export function WatchTogetherBar({
           acted.current = beat.updated_at
           push(follow.position, follow.playing)
         }
-      } catch {
-        // A 404 means the room was swept - guests just stop syncing.
+      } catch (error) {
+        // A 404 is the room being gone for good; anything else is one bad poll
+        // (offline, a 503 from D1) and the next one can still succeed.
+        if (error instanceof ApiError && error.status === 404) setEnded(true)
       }
     }
     void sync()
     const id = setInterval(() => void sync(), 4000)
     return () => clearInterval(id)
-  }, [code, isHost, frameRef])
+  }, [code, isHost, frameRef, ended])
 
   return (
     <div
@@ -159,12 +175,12 @@ export function WatchTogetherBar({
           right edge of a phone - which is where the invite lives. */}
       <span className="min-w-0 truncate">
         Watch Together · <span className="font-mono font-bold">{code}</span>
-        {isHost ? ' · you control playback' : ' · following the host'}
+        {hostRoleLabel(isHost, ended)}
       </span>
       {/* Outside the truncating span on purpose: on a phone this is the first
           thing the line would eat, and for a guest on an embed - which takes no
           steering - it is the only way to match the room by hand. */}
-      {!isHost && hostAt !== null ? (
+      {!isHost && !ended && hostAt ? (
         <span className="shrink-0 font-mono opacity-80">
           {formatPlaybackTime(hostAt)}
         </span>

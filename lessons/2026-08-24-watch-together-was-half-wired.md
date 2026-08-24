@@ -98,3 +98,24 @@ the decision testable and made the schedule invisible.
 **Rule:** a poll loop needs an "act once per input" rule as much as it needs a
 decision rule. A pure predicate that returns true every 4s is not a bug in the
 predicate.
+
+## And a sixth: the guest loop idled itself out of existence
+
+The guest poll skipped every cycle where the player frame was not mounted —
+written as an invocation saving, and it read as an obviously good one. It is
+not: a guest opens an invite link to find out whether the host is there and
+where they are, which is exactly the moment before they press play. Gated that
+way, the host clock never appeared until the guest had already started watching
+alone, and the "this room is gone" state added in the same pass could never fire
+at all.
+
+Now only a hidden tab skips a poll. Steering still needs a frame — that check
+moved to `push`, where it belongs.
+
+**Mistake:** an optimisation was placed by what it saved rather than by what it
+cost. The saving was real (one D1 read per 4s per idle guest) and the cost was
+the feature.
+
+**Rule:** when a guard makes a surface show nothing, it is not an optimisation,
+it is the absence of the surface. Put the cheap check on the expensive action
+(the postMessage needs a frame), not on the whole loop.
