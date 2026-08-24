@@ -75,6 +75,8 @@ const embedSrc = (key: string) =>
  */
 const PLAYER_ID = 1
 const HANDSHAKE_MS = 300
+/** How long the still holds before the frame is shown regardless. */
+const REVEAL_MS = 3000
 
 const post = (frame: HTMLIFrameElement | null, message: object) => {
   frame?.contentWindow?.postMessage(
@@ -86,14 +88,23 @@ const post = (frame: HTMLIFrameElement | null, message: object) => {
 const sendMute = (frame: HTMLIFrameElement | null, muted: boolean) =>
   post(frame, { event: 'command', func: muted ? 'mute' : 'unMute', args: [] })
 
-/** Keeps the active slide's player in step with the feed-wide mute setting. */
-function useYouTubeMute(
+/**
+ * Keeps the active slide's player in step with the feed-wide mute setting, and
+ * reports when that player has answered at all.
+ *
+ * The answer is the only signal we get that the trailer is about to paint: an
+ * iframe is opaque black from the moment it mounts, so it covered the poster
+ * still for the whole load and every slide opened on a black screen with a
+ * spinner. The still is what the viewer should see until there is a frame.
+ */
+function useYouTubePlayer(
   frameRef: React.RefObject<HTMLIFrameElement | null>,
   active: boolean,
   muted: boolean
 ) {
   const mutedRef = React.useRef(muted)
   const readyRef = React.useRef(false)
+  const [ready, setReady] = React.useState(false)
 
   React.useEffect(() => {
     mutedRef.current = muted
@@ -103,11 +114,13 @@ function useYouTubeMute(
   React.useEffect(() => {
     const frame = frameRef.current
     readyRef.current = false
+    setReady(false)
     if (!active || !frame) return
 
     const onMessage = (event: MessageEvent) => {
       if (event.source !== frame.contentWindow || readyRef.current) return
       readyRef.current = true
+      setReady(true)
       clearInterval(timer)
       sendMute(frame, mutedRef.current)
     }
@@ -115,10 +128,15 @@ function useYouTubeMute(
     const knock = () => post(frame, { event: 'listening' })
     const timer = setInterval(knock, HANDSHAKE_MS)
     knock()
+    // A player that never answers (blocked host, dead network) must not leave
+    // the trailer invisible forever - show the frame anyway and let it be
+    // whatever it is. Ready-for-painting, not ready-for-commands.
+    const reveal = setTimeout(() => setReady(true), REVEAL_MS)
 
     return () => {
       window.removeEventListener('message', onMessage)
       clearInterval(timer)
+      clearTimeout(reveal)
     }
   }, [active, frameRef])
 
@@ -126,6 +144,8 @@ function useYouTubeMute(
   React.useEffect(() => {
     if (active && readyRef.current) sendMute(frameRef.current, muted)
   }, [active, muted, frameRef])
+
+  return ready
 }
 
 // Every glass control in the feed is this button. It existed four times over
@@ -212,7 +232,7 @@ function ReelSlide({
     },
   })
 
-  useYouTubeMute(frameRef, active, muted)
+  const playerReady = useYouTubePlayer(frameRef, active, muted)
 
   const saved = isSaved(reel.id)
   // `toggle` builds the stored shape itself, so this hands it the raw fields
@@ -257,7 +277,9 @@ function ReelSlide({
           src={embedSrc(reel.trailerKey)}
           title={`${reel.title} trailer`}
           allow="autoplay; encrypted-media"
-          className="reel-frame"
+          className={`reel-frame transition-opacity duration-500 ${
+            playerReady ? 'opacity-100' : 'opacity-0'
+          }`}
         />
       ) : null}
 

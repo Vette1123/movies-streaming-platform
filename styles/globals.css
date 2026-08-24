@@ -182,6 +182,14 @@
     display: none;
   }
 
+  /* The tip-jar button is fixed to the bottom-left corner, which on the feed is
+     the corner the title, the rating and Watch now already occupy. It steps
+     aside for the duration, like the footer and the install nudge. The widget
+     is a third party that styles itself inline, hence !important. */
+  body:has(.reels-viewport) #bmc-wbtn {
+    display: none !important;
+  }
+
   /* Focus mode: the reel is the whole screen - header joins the footer off
      stage so nothing competes with the trailer. Toggled by the expand button
      on each slide; Escape leaves it. */
