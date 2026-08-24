@@ -126,6 +126,7 @@ const SUB_LANGUAGES: { value: string; label: string }[] = [
   { value: 'ru', label: 'Русский' },
   { value: 'it', label: 'Italiano' },
   { value: 'id', label: 'Indonesia' },
+  { value: 'fa', label: 'فارسی' },
 ]
 
 const SUB_SIZES: {
@@ -136,6 +137,56 @@ const SUB_SIZES: {
   { value: 'm', label: 'Medium' },
   { value: 'l', label: 'Large' },
 ]
+
+const MINI_BAR: { value: boolean; label: string }[] = [
+  { value: false, label: 'Hidden' },
+  { value: true, label: 'Shown' },
+]
+
+/**
+ * A labelled row of chips where exactly one is chosen. Three settings use it;
+ * the first two used to be the same twenty lines written twice.
+ */
+function PrefChips<T>({
+  label,
+  options,
+  current,
+  onPick,
+  hint,
+}: {
+  label: string
+  options: { value: T; label: string }[]
+  current: T
+  onPick: (value: T) => void
+  hint?: string
+}) {
+  return (
+    <div>
+      <p className="text-sm font-medium">{label}</p>
+      {hint ? (
+        <p className="text-muted-foreground mt-0.5 text-xs">{hint}</p>
+      ) : null}
+      <div className="mt-2 flex flex-wrap gap-2">
+        {options.map((option) => (
+          <button
+            key={String(option.value)}
+            type="button"
+            aria-pressed={current === option.value}
+            onClick={() => onPick(option.value)}
+            className={cn(
+              'focus-visible:ring-ring rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
+              current === option.value
+                ? 'border-primary bg-primary/10 text-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 function ReelySection() {
   const { pro, prefs } = useAccount()
@@ -181,49 +232,25 @@ function ReelySection() {
       </div>
 
       <div className="space-y-3">
-        <div>
-          <p className="text-sm font-medium">Subtitles</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {SUB_LANGUAGES.map((lang) => (
-              <button
-                key={lang.value}
-                type="button"
-                aria-pressed={current.sub === lang.value}
-                onClick={() => setPref({ sub: lang.value })}
-                className={cn(
-                  'focus-visible:ring-ring rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
-                  current.sub === lang.value
-                    ? 'border-primary bg-primary/10 text-foreground'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-                )}
-              >
-                {lang.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <p className="text-sm font-medium">Subtitle size</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {SUB_SIZES.map((size) => (
-              <button
-                key={size.value}
-                type="button"
-                aria-pressed={current.subSize === size.value}
-                onClick={() => setPref({ subSize: size.value })}
-                className={cn(
-                  'focus-visible:ring-ring rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
-                  current.subSize === size.value
-                    ? 'border-primary bg-primary/10 text-foreground'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-                )}
-              >
-                {size.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <PrefChips
+          label="Subtitles"
+          options={SUB_LANGUAGES}
+          current={current.sub ?? 'off'}
+          onPick={(sub) => setPref({ sub })}
+        />
+        <PrefChips
+          label="Subtitle size"
+          options={SUB_SIZES}
+          current={current.subSize ?? 'm'}
+          onPick={(subSize) => setPref({ subSize })}
+        />
+        <PrefChips
+          label="Progress bar in full screen"
+          hint="The thin line that stays lit at the bottom of the picture once the controls fade."
+          options={MINI_BAR}
+          current={current.miniBar ?? false}
+          onPick={(miniBar) => setPref({ miniBar })}
+        />
       </div>
     </div>
   )

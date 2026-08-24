@@ -1413,6 +1413,9 @@ async function handleProTicket(request, env, url) {
     ) {
       params.set('subs', prefs.subSize)
     }
+    // Only the "on" case travels: the player's default is off, and a device
+    // that was told directly overrides whatever the account says.
+    if (prefs.miniBar === true) params.set('mini', '1')
   }
 
   return new Response(

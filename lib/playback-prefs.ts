@@ -22,13 +22,19 @@ export interface PlaybackPrefs {
   sub?: string
   /** Subtitle text size. */
   subSize?: 's' | 'm' | 'l'
+  /**
+   * Keep ArtPlayer's thin progress line lit in full screen once the controls
+   * hide. Off by default: in a window it is orientation, filling a phone
+   * screen it is a bright strip across the picture for the whole film.
+   */
+  miniBar?: boolean
 }
 
 const KEY = 'reely_playback_prefs'
 
 /** What the player should apply right now: mirror first, then account. */
 export function readPlaybackPrefs(
-  accountPrefs?: PlaybackPrefs | null,
+  accountPrefs?: PlaybackPrefs | null
 ): PlaybackPrefs {
   let local: PlaybackPrefs = {}
   if (typeof window !== 'undefined') {
@@ -42,16 +48,18 @@ export function readPlaybackPrefs(
   return {
     sub: local.sub ?? accountPrefs?.sub,
     subSize: local.subSize ?? accountPrefs?.subSize,
+    miniBar: local.miniBar ?? accountPrefs?.miniBar,
   }
 }
 
 /** Persist everywhere the preference lives, and return what was written. */
 export async function writePlaybackPrefs(
-  prefs: PlaybackPrefs,
+  prefs: PlaybackPrefs
 ): Promise<PlaybackPrefs> {
   const clean: PlaybackPrefs = {
     ...(prefs.sub ? { sub: prefs.sub } : { sub: 'off' }),
     ...(prefs.subSize ? { subSize: prefs.subSize } : {}),
+    ...(prefs.miniBar ? { miniBar: true } : {}),
   }
   try {
     window.localStorage.setItem(KEY, JSON.stringify(clean))

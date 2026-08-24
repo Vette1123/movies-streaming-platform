@@ -113,8 +113,10 @@ function useYouTubePlayer(
   // Knock until the player answers, then apply whatever the setting is by then.
   React.useEffect(() => {
     const frame = frameRef.current
+    // The handshake starts over, but what has already been painted stays
+    // painted: this slide's iframe never changes, so re-hiding it on the way
+    // back would flash a black frame over a trailer that is already there.
     readyRef.current = false
-    setReady(false)
     if (!active || !frame) return
 
     const onMessage = (event: MessageEvent) => {
@@ -459,6 +461,25 @@ export default function ReelsPage() {
     isFetchingNextPage,
     fetchNextPage,
   ])
+
+  // Full screen is a mode, and on a phone the way out of a mode is the back
+  // gesture. Without an entry of its own, that gesture left Reels entirely
+  // from full screen — the trailer you were watching was gone and so was the
+  // feed. Entering pushes one entry; back pops it and lands on the list.
+  // The router's own state is carried over: Next keeps its fields in
+  // history.state and replacing them breaks its back handling.
+  React.useEffect(() => {
+    if (!focused) return
+    window.history.pushState({ ...window.history.state, reelsFocus: true }, '')
+    const onPop = () => setFocused(false)
+    window.addEventListener('popstate', onPop)
+    return () => {
+      window.removeEventListener('popstate', onPop)
+      // Left by Escape or the exit button instead: our entry is still on the
+      // stack, so drop it or the next back would walk into full screen again.
+      if (window.history.state?.reelsFocus) window.history.back()
+    }
+  }, [focused])
 
   // Keyboard control: arrows page the feed, Escape leaves focus mode, M mutes.
   React.useEffect(() => {
