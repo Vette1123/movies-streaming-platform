@@ -5,15 +5,22 @@ import { Copy, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { togetherBeatApi, togetherStateApi } from '@/lib/api-client'
+import { parseEmbedProgress } from '@/lib/embed-progress'
 import { followHost } from '@/lib/watch-together'
 
 // The Watch Together sync loop, mounted inside the player area of a detail
 // page when the URL carries ?watch=CODE.
 //
-// Host: the player frame ticks `time` messages out (reely-player); this bar
-// relays the newest one to D1 every 4s.
-// Guest: polls D1 every 4s and pushes the host's position INTO the player
-// frame (reely-parent seek/play/pause) when it drifts more than 3s.
+// Host: whichever surface is playing ticks its position out — the house
+// player as `reely-player` messages, a third-party embed in the envelope
+// lib/embed-progress.ts already knows how to read — and this bar relays the
+// newest one to D1 every 4s.
+// Guest: polls D1 every 4s and steers the player frame (seek/play/pause) when
+// lib/watch-together.ts says to.
+//
+// Only the house player takes steering: an embed publishes its position but
+// accepts nothing back, so a guest watching on an embed sees the room's state
+// and stays where they are. Hosting from one works fine.
 
 export const TOGETHER_SOURCE = 'reely-together'
 
@@ -35,10 +42,23 @@ export function WatchTogetherBar({
   React.useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       const data = e.data
-      if (!data || data.source !== 'reely-player') return
+      if (data && data.source === 'reely-player') {
+        latest.current = {
+          position: typeof data.t === 'number' ? data.t : 0,
+          playing: !!data.playing,
+        }
+        return
+      }
+      // The embed's own stream, through the parser the progress bridge uses.
+      // Without this branch a host watching on an embed sent no beats at all
+      // and the room simply never moved.
+      const progress = parseEmbedProgress(data)
+      if (!progress) return
       latest.current = {
-        position: typeof data.t === 'number' ? data.t : 0,
-        playing: !!data.playing,
+        position: progress.positionSeconds,
+        // A clock that is moving is a film that is playing; `ended` is the
+        // only stop these envelopes carry.
+        playing: progress.kind === 'progress',
       }
     }
     window.addEventListener('message', onMessage)
