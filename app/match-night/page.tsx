@@ -265,13 +265,24 @@ export default function MatchNightPage() {
   })
 
   // A match is the whole point of the page, and the panel can be off screen on
-  // a phone. Announce each new one once.
-  const announced = React.useRef<Set<number>>(new Set())
+  // a phone. Announce each new one once - keyed by type AND id, because a film
+  // and a series share id space.
+  //
+  // The first payload for a room is history rather than news: rejoining a room
+  // you had already matched in fired a toast per old match, all at once.
+  const announced = React.useRef<{ room: string | null; keys: Set<string> }>({
+    room: null,
+    keys: new Set(),
+  })
   React.useEffect(() => {
-    if (!room) return
-    for (const hit of matchState?.matches ?? []) {
-      if (announced.current.has(hit.media_id)) continue
-      announced.current.add(hit.media_id)
+    if (!room || !matchState) return
+    const seeding = announced.current.room !== room
+    if (seeding) announced.current = { room, keys: new Set() }
+    for (const hit of matchState.matches) {
+      const key = cardKey({ id: hit.media_id, mediaType: hit.media_type })
+      if (announced.current.keys.has(key)) continue
+      announced.current.keys.add(key)
+      if (seeding) continue
       toast('It is a match', { description: 'You both want to watch this one' })
     }
   }, [matchState, room])
@@ -316,7 +327,9 @@ export default function MatchNightPage() {
       const next = [...history, { card, liked }]
       writeHistory(room, next)
       setHistory(next)
-      setQueued((prev) => prev.filter((item) => item.id !== card.id))
+      setQueued((prev) =>
+        prev.filter((item) => cardKey(item) !== cardKey(card))
+      )
       report(room, card, liked)
     },
     [room, history, report]
@@ -331,7 +344,9 @@ export default function MatchNightPage() {
     // Taking back a like has to reach the room too, or an undone title can
     // still light up as a match on the other phone.
     if (last.liked) report(room, last.card, false)
-    const inDeck = (deck ?? []).some((card) => card.id === last.card.id)
+    const inDeck = (deck ?? []).some(
+      (card) => cardKey(card) === cardKey(last.card)
+    )
     if (!inDeck) setQueued((prev) => dedupeCards([last.card, ...prev]))
   }, [room, history, deck, report])
 

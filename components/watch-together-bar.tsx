@@ -87,7 +87,9 @@ export function WatchTogetherBar({
       )
     }
     const sync = async () => {
-      if (document.hidden) return
+      // Nothing to steer until the player is on screen, and a poll that can
+      // only be discarded is a Worker invocation spent on nothing.
+      if (document.hidden || !frameRef.current) return
       try {
         const beat = await togetherStateApi(code)
         const drift = Math.abs(beat.position - (latest.current?.position ?? 0))

@@ -304,7 +304,11 @@ export const DetailsHero = ({
               )}
             </>
           )}
-          {isIframeShown && together && (
+          {/* Mounted whether or not the player is open: the room is what the
+              URL says, and a host who has not pressed play yet still needs the
+              invite to send. Before play the guest loop has no frame to steer
+              and simply idles. */}
+          {together && (
             <WatchTogetherBar
               code={together.code}
               isHost={together.isHost}
