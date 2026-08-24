@@ -12,6 +12,10 @@ interface ShareInput {
   path: string
 }
 
+/** The only rejection that means "the user decided". */
+const isDismissal = (error: unknown) =>
+  error instanceof DOMException && error.name === 'AbortError'
+
 /**
  * Native share sheet where the platform has one (every mobile browser, desktop
  * Safari/Chrome/Edge), clipboard + toast everywhere else. Returns whether the
@@ -28,10 +32,14 @@ export const useShare = () => {
         setNativeShared(true)
         return true
       }
-    } catch {
-      // A dismissed share sheet is not an error — fall through to copy only
-      // when the API itself was missing.
-      return false
+    } catch (error) {
+      // Dismissing the sheet is the user saying no — that is the one failure
+      // that must NOT be second-guessed with a clipboard write.
+      if (isDismissal(error)) return false
+      // Everything else means the sheet never opened: the API exists but the
+      // platform cannot service it (desktop Chrome outside a share target,
+      // a page without transient activation, a locked-down webview). Before
+      // this, the tap did nothing at all and said nothing.
     }
     await navigator.clipboard?.writeText(url)
     toast('Link copied — share it anywhere')
