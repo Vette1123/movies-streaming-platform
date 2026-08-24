@@ -65,8 +65,12 @@ to the existing `/api/filter` discover call (genre cocktail + rating floor
 
 - `lib/moods.ts`: cozy, adrenaline, mind-bending, laugh, cry, scare,
   true story, escape.
-- Page: mood chips, infinite grid reusing `Card` + the GenreMediaGrid
-  scroll pattern. Nav entry + sitemap entry. **Live**: 200.
+- Page: mood chips, infinite grid. Nav entry + sitemap entry. **Live**: 200.
+- **2026-08-24**: the grid is `components/media/discover-grid.tsx`, now
+  shared with the genre pages instead of copied from them — two columns on
+  a phone like every other list, and TMDB's cross-page duplicates deduped.
+  Mood cards align (`flex-col`; a button centres its content when the grid
+  stretches it) and picking one scrolls its results into view.
 
 ## 3. Match Night (`/match-night`)
 
@@ -123,8 +127,13 @@ via postMessage into the player frame.
   URL carries `?watch=CODE` — host relays, guest corrects. Read from
   `window.location` in a useMemo, never `useSearchParams` (would deopt
   ~1000 prerendered detail heroes).
-- Start page: paste a Reely link → mint a room → land on the detail page
-  carrying the code. Sitemap entry; deliberately not in the nav.
+- Start page: search a title → mint a room → land on the detail page
+  carrying the code (`components/media-search-picker.tsx`, shared with
+  Match Night; the pasted-link flow is gone — you were on Reely to begin
+  with). Sitemap entry; deliberately not in the nav.
+- **2026-08-24**: the bar mounts with the page, not with the player, so the
+  host can send the invite before pressing play and a guest can see the
+  room exists. The guest poll idles while there is no frame to steer.
 - **Prod-verified by curl**: room `U5LDD3` → beat `{position:742.5,
   playing:true}` → state round-trips exactly.
 
@@ -150,8 +159,11 @@ via postMessage into the player frame.
 Drive these on real hardware / a real browser tab pair:
 
 1. Reels: focus mode toggle, native share sheet on a phone, cover-crop look.
-2. Match Night: two devices, one code, watch the match light up in the UI
-   (API flow already proven).
+2. ~~Match Night: two devices, one code, watch the match light up in the
+   UI.~~ **Done 2026-08-24** — a browser room plus a curl second swiper:
+   the panel lit up with the poster and "2 people swiping", a toast fired
+   for each new match (one film, one series, proving the type+id key), and
+   a reload announced neither of them again.
 3. Watch Together: two devices, host seeks, guest follows (API round-trip
    already proven; needs a playing stream to see the drift correction).
 
