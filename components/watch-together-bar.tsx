@@ -5,6 +5,7 @@ import { Copy, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { togetherBeatApi, togetherStateApi } from '@/lib/api-client'
+import { followHost } from '@/lib/watch-together'
 
 // The Watch Together sync loop, mounted inside the player area of a detail
 // page when the URL carries ?watch=CODE.
@@ -92,8 +93,16 @@ export function WatchTogetherBar({
       if (document.hidden || !frameRef.current) return
       try {
         const beat = await togetherStateApi(code)
-        const drift = Math.abs(beat.position - (latest.current?.position ?? 0))
-        if (drift > 3) push(beat.position, !!beat.playing)
+        const follow = followHost(
+          {
+            position: beat.position,
+            playing: !!beat.playing,
+            updatedAt: beat.updated_at,
+          },
+          latest.current,
+          Date.now()
+        )
+        if (follow) push(follow.position, follow.playing)
       } catch {
         // A 404 means the room was swept - guests just stop syncing.
       }
