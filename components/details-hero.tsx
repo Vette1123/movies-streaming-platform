@@ -99,6 +99,18 @@ export const DetailsHero = ({
   const isMovie = !!movie
   const isIframeShown = !!src
 
+  // While something is playing, the page is the player. The PWA nudge is
+  // fixed to the bottom of the viewport and measurably sat on top of the
+  // embed's own scrubber and our source buttons, so it steps aside for the
+  // duration - one attribute, read by a CSS rule next to the prompt itself.
+  React.useEffect(() => {
+    if (!isIframeShown) return
+    document.body.dataset.playerOpen = '1'
+    return () => {
+      delete document.body.dataset.playerOpen
+    }
+  }, [isIframeShown])
+
   // Which surface is playing: our player when the active source says so, the
   // third-party embed otherwise. The embed's `src` is still set by the caller
   // in reely mode (it is meaningless there and never used as a frame URL).

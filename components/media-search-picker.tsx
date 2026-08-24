@@ -10,29 +10,41 @@ import { cardKey, toMatchCard, type MatchCard } from '@/lib/match-night'
 import { getThumbPosterURL } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 
-// Search inside Match Night. The deck is trending, which is fine until one of
-// you has a specific title in mind - before this there was no way to put it in
-// front of the room at all, so the answer to "what about that one?" was to
-// leave the page. A hit is queued as the NEXT card rather than appended, so it
-// is voted on while it is still the thing being talked about.
+// Search a title and pick one. Written once because two rooms need exactly
+// this: Match Night queues the pick as the next card, Watch Together opens a
+// room on it. Both used to be a different answer to "what do you want to
+// watch?" - one a bespoke list, the other a box asking you to paste a URL.
 //
 // The same /api/search the header's command menu uses. No new endpoint, no new
 // TMDB traffic pattern, and the Worker already edge-caches the query.
 
 const RESULT_LIMIT = 6
 
-export function DeckSearch({
-  onQueue,
-  queuedKeys,
-}: {
-  onQueue: (card: MatchCard) => void
-  queuedKeys: Set<string>
-}) {
+export interface MediaSearchPickerProps {
+  label: string
+  placeholder: string
+  onPick: (card: MatchCard) => void
+  /** Cards already spoken for, by `cardKey`. Their rows render disabled. */
+  takenKeys?: Set<string>
+  /** What a taken row says instead of the add icon. */
+  takenLabel?: string
+  /** id of the input, so a caller can focus it from elsewhere on the page. */
+  inputId?: string
+}
+
+export function MediaSearchPicker({
+  label,
+  placeholder,
+  onPick,
+  takenKeys,
+  takenLabel = 'Queued',
+  inputId = 'media-search',
+}: MediaSearchPickerProps) {
   const [term, setTerm] = React.useState('')
   const [debounced] = useDebounce(term.trim(), 300)
 
   const { data, isFetching } = useQuery({
-    queryKey: ['match-search', debounced],
+    queryKey: ['media-search', debounced],
     enabled: debounced.length > 1,
     staleTime: 5 * 60 * 1000,
     queryFn: () => searchMediaApi(debounced),
@@ -51,10 +63,10 @@ export function DeckSearch({
   return (
     <div>
       <label
-        htmlFor="match-search"
+        htmlFor={inputId}
         className="text-muted-foreground text-xs font-medium"
       >
-        Something specific in mind?
+        {label}
       </label>
       <div className="relative mt-2">
         <Search
@@ -62,11 +74,11 @@ export function DeckSearch({
           aria-hidden
         />
         <Input
-          id="match-search"
-          data-testid="match-search"
+          id={inputId}
+          data-testid="media-search"
           value={term}
           onChange={(e) => setTerm(e.target.value)}
-          placeholder="Search any film or series"
+          placeholder={placeholder}
           className="pl-9"
           autoComplete="off"
         />
@@ -87,14 +99,14 @@ export function DeckSearch({
       {results.length > 0 ? (
         <ul className="mt-3 space-y-1">
           {results.map((card) => {
-            const queued = queuedKeys.has(cardKey(card))
+            const taken = takenKeys?.has(cardKey(card)) ?? false
             return (
-              <li key={`${card.mediaType}-${card.id}`}>
+              <li key={cardKey(card)}>
                 <button
                   type="button"
-                  disabled={queued}
+                  disabled={taken}
                   onClick={() => {
-                    onQueue(card)
+                    onPick(card)
                     setTerm('')
                   }}
                   className="hover:bg-muted/60 flex w-full items-center gap-3 rounded-lg p-1.5 text-left transition disabled:opacity-50"
@@ -120,10 +132,10 @@ export function DeckSearch({
                     </span>
                   </span>
                   <span className="text-muted-foreground shrink-0 text-xs">
-                    {queued ? (
-                      'Queued'
+                    {taken ? (
+                      takenLabel
                     ) : (
-                      <Plus className="size-4" aria-label="Add to the deck" />
+                      <Plus className="size-4" aria-label="Pick this title" />
                     )}
                   </span>
                 </button>

@@ -803,3 +803,11 @@ body > div[style*='z-index: 9999'] {
 #bmc-close-btn svg path {
   fill: #fff !important;
 }
+
+/* The PWA install nudge is fixed to the bottom of the viewport, which is also
+   where an embed keeps its scrubber and where the server switcher sits. While
+   a player is open the page IS the player, so the nudge steps aside; the
+   attribute is set by components/details-hero.tsx for the duration. */
+body[data-player-open] .pwa-install-prompt {
+  display: none;
+}

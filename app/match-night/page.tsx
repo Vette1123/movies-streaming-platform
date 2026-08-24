@@ -24,9 +24,9 @@ import { useMatchRoom } from '@/hooks/use-match-room'
 import { useShare } from '@/hooks/use-share'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { DeckSearch } from '@/components/match-night/deck-search'
 import { MatchPanel } from '@/components/match-night/match-panel'
 import { SwipeDeck } from '@/components/match-night/swipe-deck'
+import { MediaSearchPicker } from '@/components/media-search-picker'
 
 // Match Night: two people, one room code, one deck. Both like the same title
 // and it lights up as a match.
@@ -458,12 +458,15 @@ export default function MatchNightPage() {
             cardsByKey={likedByKey}
           />
           <div className="border-border/60 border-t pt-6">
-            <DeckSearch
-              onQueue={(card) => {
+            <MediaSearchPicker
+              inputId="match-search"
+              label="Something specific in mind?"
+              placeholder="Search any film or series"
+              takenKeys={new Set([...queued.map(cardKey), ...decidedKeys])}
+              onPick={(card) => {
                 setQueued((prev) => dedupeCards([card, ...prev]))
                 toast(`${card.title} is up next`)
               }}
-              queuedKeys={new Set([...queued.map(cardKey), ...decidedKeys])}
             />
           </div>
         </aside>

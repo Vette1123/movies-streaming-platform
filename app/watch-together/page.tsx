@@ -5,42 +5,28 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
 import { createTogetherRoomApi } from '@/lib/api-client'
-import { buttonVariants } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { matchCardHref, type MatchCard } from '@/lib/match-night'
+import { MediaSearchPicker } from '@/components/media-search-picker'
 
 // Watch Together, step one: pick a title, mint a room, land on the detail
 // page carrying ?watch=CODE&host=1. The sync itself lives in the player bar
 // (components/watch-together-bar.tsx).
-
-/** Accepts a full Reely URL or a bare /movies/123 path. */
-export const parseMediaLink = (link: string): { path: string } | null => {
-  try {
-    const url = new URL(link.trim())
-    return { path: url.pathname }
-  } catch {
-    // Not an absolute URL - accept a bare path if it looks like one.
-    if (/^\/(movies|tv-shows)\/\d+/.test(link.trim())) {
-      return { path: link.trim() }
-    }
-    return null
-  }
-}
+//
+// This used to ask for a pasted Reely URL, which is a strange thing to ask of
+// someone who is on Reely: to get the link you search the title, so the page
+// searches the title. Same picker as the Match Night room.
 
 export default function WatchTogetherPage() {
   const router = useRouter()
-  const [link, setLink] = React.useState('')
   const [busy, setBusy] = React.useState(false)
 
-  const start = async () => {
-    const parsed = parseMediaLink(link)
-    if (!parsed) {
-      toast('Paste a Reely movie or TV link')
-      return
-    }
+  const start = async (card: MatchCard) => {
+    if (busy) return
     setBusy(true)
+    toast(`Opening a room for ${card.title}…`)
     try {
       const { code } = await createTogetherRoomApi()
-      router.push(`${parsed.path}?watch=${code}&host=1`)
+      router.push(`${matchCardHref(card)}?watch=${code}&host=1`)
     } catch {
       toast('Could not open a room — try again')
       setBusy(false)
@@ -56,27 +42,19 @@ export default function WatchTogetherPage() {
       </p>
 
       <ol className="text-muted-foreground mt-6 max-w-md list-decimal space-y-1 pl-5 text-sm">
-        <li>Paste the Reely link of what you want to watch</li>
-        <li>You get a code — send it to your people</li>
-        <li>They open the same page with the code and hit play</li>
+        <li>Search the film or series you want to watch</li>
+        <li>Picking it opens a room and takes you to the player</li>
+        <li>Send the invite from the bar — anyone who opens it follows you</li>
       </ol>
 
-      <div className="mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
-        <Input
-          value={link}
-          onChange={(e) => setLink(e.target.value)}
-          placeholder="https://www.reely.space/movies/…"
-          data-testid="together-link"
+      <div className="mt-8 max-w-md">
+        <MediaSearchPicker
+          inputId="together-search"
+          label="What are you watching?"
+          placeholder="Search any film or series"
+          takenLabel="Opening…"
+          onPick={(card) => void start(card)}
         />
-        <button
-          type="button"
-          data-testid="together-start"
-          onClick={() => void start()}
-          disabled={busy}
-          className={buttonVariants()}
-        >
-          {busy ? 'Opening…' : 'Start together'}
-        </button>
       </div>
 
       <p className="text-muted-foreground mt-8 text-xs">
