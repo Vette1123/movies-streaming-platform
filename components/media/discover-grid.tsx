@@ -4,6 +4,7 @@ import React from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useInView } from 'react-intersection-observer'
 
+import { FilterParams } from '@/types/filter'
 import { MediaResponse, MediaType } from '@/types/media'
 import { discoverApi } from '@/lib/api-client'
 import { Card } from '@/components/card'
@@ -11,17 +12,30 @@ import { MediaGridSkeleton } from '@/components/loaders/media-grid-skeleton'
 
 import { ListLoadError } from './list-load-error'
 
-interface GenreMediaGridProps {
+// One infinite discover grid, used by every surface that is "a filter set,
+// paginated": genre pages and the mood picker so far. Both had their own copy
+// of the same query + sentinel + error branches, and the copies had already
+// drifted (different column counts, one of them missing the duplicate-id
+// guard). The differences that matter are props; everything else is shared.
+
+interface DiscoverGridProps {
   mediaType: 'movie' | 'tv'
-  genreId: number
-  initialData: MediaResponse
+  /** Discover query params, exactly as /api/filter takes them. */
+  filters: FilterParams
+  /** What makes this grid's cache distinct from another grid's. */
+  cacheKey: (string | number)[]
+  /** Prerendered page 1, when the caller has one. */
+  initialData?: MediaResponse
+  emptyMessage?: string
 }
 
-export const GenreMediaGrid = ({
+export const DiscoverGrid = ({
   mediaType,
-  genreId,
+  filters,
+  cacheKey,
   initialData,
-}: GenreMediaGridProps) => {
+  emptyMessage = 'Nothing here yet — try another filter.',
+}: DiscoverGridProps) => {
   const [sentinelRef, inView] = useInView({
     threshold: 0,
     // Prefetch a full viewport early (matches the browse list) so the next page
@@ -40,35 +54,29 @@ export const GenreMediaGrid = ({
     isError,
     refetch,
   } = useInfiniteQuery({
-    // Genre-scoped key so each genre keeps its own cache (the shared browse
-    // hook keys only on media type and would collide across genres).
-    queryKey: ['genre-discover', mediaType, genreId],
+    queryKey: ['discover', mediaType, ...cacheKey],
     initialPageParam: 1,
     queryFn: ({ pageParam }) =>
-      discoverApi(
-        mediaType,
-        { with_genres: String(genreId), sort_by: 'popularity.desc' },
-        { page: pageParam }
-      ),
+      discoverApi(mediaType, filters, { page: pageParam }),
     getNextPageParam: (lastPage, pages) => {
-      // Don't gate on `total_pages`: the runtime discover response (server
-      // action, Cloudflare) can come back without it — or `initialData` can
-      // ship empty from a build-time TMDB hiccup — which pins total_pages at 0
-      // and freezes pagination at page 1. Instead paginate until a page returns
-      // no results, matching the resilient browse hook. TMDB caps discover at
-      // 500 pages, so an empty page is the natural stop.
+      // Don't gate on `total_pages`: the runtime discover response (Worker) can
+      // come back without it — or `initialData` can ship empty from a
+      // build-time TMDB hiccup — which pins total_pages at 0 and freezes
+      // pagination at page 1. Paginate until a page returns no results
+      // instead. TMDB caps discover at 500 pages, so that is the other stop.
       if (!lastPage?.results?.length) return undefined
       if (pages.length >= 500) return undefined
       return pages.length + 1
     },
-    initialData: { pages: [initialData], pageParams: [1] },
+    initialData: initialData
+      ? { pages: [initialData], pageParams: [1] }
+      : undefined,
   })
 
   // Auto-load the next page when the sentinel scrolls into view. Skip while a
   // fetch is in flight and — crucially — while in an error state: otherwise a
-  // failed page (e.g. a Cloudflare challenge blocking the server-action POST on
-  // privacy browsers) would keep the sentinel in view and hammer fetchNextPage
-  // in a tight retry loop. On error we stop and surface a manual retry instead.
+  // failed page would keep the sentinel in view and hammer fetchNextPage in a
+  // tight retry loop. On error we stop and surface a manual retry instead.
   React.useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage && !isError) {
       // Small debounce (matches the browse list) so a fling-scroll that flickers
@@ -78,26 +86,36 @@ export const GenreMediaGrid = ({
     }
   }, [inView, hasNextPage, isFetchingNextPage, isError, fetchNextPage])
 
-  const items = (data?.pages ?? []).flatMap((page) => page?.results ?? [])
+  // TMDB's discover pages overlap: the same title can come back on page 2 and
+  // again on page 3 as popularity shifts under the cursor. Unguarded that is a
+  // duplicate React key and a card rendered twice.
+  const items = React.useMemo(() => {
+    const seen = new Set<number>()
+    return (data?.pages ?? [])
+      .flatMap((page) => page?.results ?? [])
+      .filter((item) => {
+        if (seen.has(item.id)) return false
+        seen.add(item.id)
+        return true
+      })
+  }, [data])
 
-  // The page ships with empty initialData when TMDB hiccups at build time, then
-  // refetches on mount. Show the skeleton during that refetch instead of the
-  // "empty genre" message, which would otherwise flash for a loaded genre.
+  // A page can ship empty initialData when TMDB hiccups at build time, then
+  // refetch on mount. Show the skeleton during that refetch instead of the
+  // empty message, which would otherwise flash for a perfectly full list.
   if (items.length === 0 && isFetching) {
     return <MediaGridSkeleton count={10} />
   }
 
   // An errored page 1 has no results either, so it must be told apart from a
-  // genuinely empty genre — otherwise a failed fetch reads as "no titles here".
+  // genuinely empty filter — otherwise a failed fetch reads as "no titles".
   if (items.length === 0 && isError) {
     return <ListLoadError isEmpty onRetry={refetch} />
   }
 
   if (items.length === 0) {
     return (
-      <p className="text-muted-foreground py-20 text-center">
-        Nothing here yet — try another genre.
-      </p>
+      <p className="text-muted-foreground py-20 text-center">{emptyMessage}</p>
     )
   }
 
@@ -116,8 +134,8 @@ export const GenreMediaGrid = ({
 
       {isFetchingNextPage && <MediaGridSkeleton count={10} />}
 
-      {/* Auto-load failed (network, or a CF challenge blocking the server action
-          on privacy browsers). Don't dead-end the list — let the user retry. */}
+      {/* Auto-load failed (network, or a CF challenge on privacy browsers).
+          Don't dead-end the list — let the user retry. */}
       {isError && !isFetchingNextPage && (
         <ListLoadError isEmpty={false} onRetry={fetchNextPage} />
       )}

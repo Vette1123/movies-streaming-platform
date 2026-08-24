@@ -2,73 +2,41 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { useInfiniteQuery } from '@tanstack/react-query'
-import { useInView } from 'react-intersection-observer'
 
-import { MediaType } from '@/types/media'
-import { discoverApi } from '@/lib/api-client'
 import { Mood, moodById, MOODS, moodToFilters } from '@/lib/moods'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
-import { Card } from '@/components/card'
-import { MediaGridSkeleton } from '@/components/loaders/media-grid-skeleton'
-import { ListLoadError } from '@/components/media/list-load-error'
+import { DiscoverGrid } from '@/components/media/discover-grid'
 
-// The mood grid mirrors GenreMediaGrid's infinite pattern (same prefetch
-// margin, same empty-page stop) but keyed per mood so switching moods keeps
-// each cache warm.
+// The mood picker compiles a feeling down to the same discover call the genre
+// pages make, so it renders through the same grid — see DiscoverGrid.
 
-function MoodResults({ mood }: { mood: Mood }) {
-  const [sentinelRef, inView] = useInView({ rootMargin: '0px 0px 900px 0px' })
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isError,
-    refetch,
-  } = useInfiniteQuery({
-    queryKey: ['mood', mood.id],
-    initialPageParam: 1,
-    queryFn: ({ pageParam }) =>
-      discoverApi('movie', moodToFilters(mood), {
-        page: pageParam,
-      }),
-    getNextPageParam: (lastPage, pages) =>
-      !lastPage?.results?.length || pages.length >= 500
-        ? undefined
-        : pages.length + 1,
-  })
-
-  React.useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage && !isError) {
-      const t = setTimeout(() => fetchNextPage(), 100)
-      return () => clearTimeout(t)
-    }
-  }, [inView, hasNextPage, isFetchingNextPage, isError, fetchNextPage])
-
-  const items = (data?.pages ?? []).flatMap((page) => page?.results ?? [])
-
-  if (isError && items.length === 0) {
-    return <ListLoadError isEmpty={false} onRetry={() => refetch()} />
-  }
-  if (items.length === 0) return <MediaGridSkeleton count={12} />
-
-  return (
-    <>
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-        {items.map((item) => (
-          <Card key={item.id} item={item} />
-        ))}
-      </div>
-      <div ref={sentinelRef} className="h-1" />
-    </>
-  )
-}
+const MoodResults = ({ mood }: { mood: Mood }) => (
+  <DiscoverGrid
+    mediaType="movie"
+    filters={moodToFilters(mood)}
+    cacheKey={['mood', mood.id]}
+    emptyMessage="Nothing matched this mood — try another."
+  />
+)
 
 export default function MoodPage() {
   const [activeId, setActiveId] = React.useState<string | null>(null)
   const mood = moodById(activeId)
+  const resultsRef = React.useRef<HTMLDivElement>(null)
+
+  // On a phone the eight mood cards fill the screen, so a pick used to change
+  // something entirely below the fold and read as "nothing happened".
+  const pick = (id: string) => {
+    const next = id === activeId ? null : id
+    setActiveId(next)
+    if (next) {
+      window.setTimeout(
+        () => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }),
+        60
+      )
+    }
+  }
 
   return (
     <section className="container min-h-svh py-20 lg:py-32">
@@ -86,10 +54,13 @@ export default function MoodPage() {
             key={entry.id}
             type="button"
             data-testid={`mood-${entry.id}`}
-            onClick={() => setActiveId(entry.id === activeId ? null : entry.id)}
+            onClick={() => pick(entry.id)}
             aria-pressed={entry.id === activeId}
             className={cn(
-              'rounded-xl border p-4 text-left transition',
+              // flex-col, because a <button> vertically CENTRES its content
+              // when the grid stretches it taller than that content - which is
+              // why the titles in one row did not line up with each other.
+              'flex flex-col items-start rounded-xl border p-4 text-left transition',
               entry.id === activeId
                 ? 'border-primary bg-primary/10'
                 : 'hover:border-foreground/30'
@@ -104,7 +75,7 @@ export default function MoodPage() {
         ))}
       </div>
 
-      <div className="mt-10">
+      <div ref={resultsRef} className="mt-10 scroll-mt-24">
         {mood ? (
           <MoodResults mood={mood} />
         ) : (

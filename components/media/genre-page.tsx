@@ -23,7 +23,7 @@ import {
 } from '@/lib/structured-data'
 import { cn } from '@/lib/utils'
 import { chipVariants } from '@/components/ui/chip'
-import { GenreMediaGrid } from '@/components/media/genre-media-grid'
+import { DiscoverGrid } from '@/components/media/discover-grid'
 import { SectionErrorBoundary } from '@/components/section-error-boundary'
 
 // One config per media type drives the two genre landing routes. The routes
@@ -180,10 +180,15 @@ export async function GenrePage({
         section={`${config.mediaType}_genre_grid`}
         title="This genre didn't load"
       >
-        <GenreMediaGrid
+        <DiscoverGrid
           mediaType={config.mediaType}
-          genreId={genre.id}
+          filters={{
+            with_genres: String(genre.id),
+            sort_by: 'popularity.desc',
+          }}
+          cacheKey={['genre', genre.id]}
           initialData={initialData}
+          emptyMessage="Nothing here yet — try another genre."
         />
       </SectionErrorBoundary>
     </section>
