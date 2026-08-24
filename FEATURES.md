@@ -151,13 +151,21 @@ Supporter-only house player. **2026-08-24**, all measured:
   the chain could search perfectly and never return a file. The chain is now
   **Stremio's OpenSubtitles v3 addon** (one JSON call + one UTF-8 .srt, the
   whole OpenSubtitles catalog, served from a host that answers), then SubDL's
-  website walk, then Podnapisi. **42/50, 32/50 and 38/50 languages resolve**
-  across Dune: Part Two, Breaking Bad S3E1 and Parasite — against 11 languages
-  offered before. Every code, slug and label lives in one table
+  website walk, then **SubtitleCat** — the one source that machine-translates,
+  which is how languages no uploader covers resolve at all — then Podnapisi.
+  Measured end-to-end through the worker's own route (self-signed ticket, all
+  fifty languages): **43/50 Dune: Part Two, 46/50 Breaking Bad S3E1, 43/50
+  Parasite**, median 164-351ms cold — against 11 languages offered before. Every code, slug and label lives in one table
   (`src/languages.mjs`) read by both providers, the resolve endpoint and the
   client bundle. A candidate must clear a media-aware cue floor (250 film / 100
   episode) so forced tracks and sign-and-song files stop counting as
   translations.
+- **Every cached route was 500ing.** `cached()` built its stored copy with
+  `new Response(res.body, res)`, which transfers the stream out of the response
+  the route returns — the runtime then threw "Body has already been used" while
+  serialising it, so subtitles AND stream resolve failed on every cache miss.
+  Cache the clone, return the original. Subtitles measured 0/50 before this,
+  43-46/50 after: the engine was never what was broken.
 - **The IMDb id rides the ticket** (`im=tt…`). The deepest catalog is keyed by
   it and nothing else; Reely's detail pages already hold one because their TMDB
   request appends `external_ids`, so it costs no extra upstream call.
