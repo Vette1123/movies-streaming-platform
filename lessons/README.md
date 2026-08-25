@@ -61,3 +61,4 @@ with the work, not after.
 | 2026-08-24 | [The ticket was on the critical path](2026-08-24-the-ticket-was-on-the-critical-path.md) | Warm what can be fetched before the tap — and a refactor script that only deletes is a lost file. |
 | 2026-08-24 | [The id was already on the page](2026-08-24-the-id-was-already-on-the-page.md) | Before fetching an identifier, check what the page already received — external_ids rides the render request. |
 | 2026-08-25 | [Handing out pro by hand](2026-08-25-handing-out-pro-by-hand.md) | A hand grant writes BOTH tables — supporters is what a not-yet-created account claims on sign-in. |
+| 2026-08-25 | [The regex that matched nothing](2026-08-25-the-regex-that-matched-nothing.md) | `/^ttd{5,12}$/` — a lost backslash matched no real IMDb id, so the player never got one and every subtitle paid the three-catalog walk. |

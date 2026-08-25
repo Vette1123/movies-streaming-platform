@@ -15,6 +15,7 @@
 import { loadSession, sessionCookieOf } from '@/lib/auth/session'
 import { isEntitled } from '@/lib/billing/entitlement'
 import { fetchClient } from '@/lib/fetch-client'
+import { isImdbId } from '@/lib/imdb-id'
 
 /**
  * Rows resolved per request.
@@ -184,7 +185,7 @@ export async function handleImportResolve(
       const year = Number.isInteger(row.year) ? (row.year as number) : null
 
       try {
-        if (/^tt\d{7,}$/i.test(imdb)) return await byImdbId(imdb, index)
+        if (isImdbId(imdb)) return await byImdbId(imdb, index)
         if (title) return await byTitle(title, year, index)
       } catch {
         // A TMDB blip on one row. It comes back unresolved and the client says

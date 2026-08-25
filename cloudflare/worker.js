@@ -52,6 +52,7 @@ import { loadSession, sessionCookieOf } from '@/lib/auth/session'
 import { isEntitled } from '@/lib/billing/entitlement'
 import { loadDirectory } from '@/lib/community/routes'
 import { smartQuery } from '@/lib/filter-query'
+import { isImdbId } from '@/lib/imdb-id'
 import { loadPublicList } from '@/lib/lists/routes'
 import { getMediaHeroImageUrl } from '@/lib/media'
 import { mosaicUrl, OG_HEIGHT, OG_WIDTH } from '@/lib/og/mosaic'
@@ -1402,7 +1403,7 @@ async function handleProTicket(request, env, url) {
   // The IMDb id the detail page already had. The player's first subtitle
   // source is addressable by it alone, so without this the deepest catalog is
   // simply unreachable — it is not a nice-to-have.
-  if (typeof body.imdb === 'string' && /^ttd{5,12}$/.test(body.imdb)) {
+  if (isImdbId(body.imdb)) {
     params.set('im', body.imdb)
   }
   // Playback prefs ride along so the player applies them on boot without a

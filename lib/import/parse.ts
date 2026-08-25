@@ -13,6 +13,8 @@
  * and the sync engine then copies it to all their devices.
  */
 
+import { isImdbId } from '@/lib/imdb-id'
+
 export type ImportKind = 'imdb' | 'letterboxd' | 'unknown'
 
 export interface ImportRow {
@@ -109,8 +111,6 @@ function columnIndex(header: string[], ...names: string[]): number {
   return -1
 }
 
-const IMDB_ID = /^tt\d{7,}$/i
-
 const cell = (row: string[], index: number): string =>
   index >= 0 ? (row[index] ?? '').trim() : ''
 
@@ -181,7 +181,7 @@ export function parseImport(text: string): ParsedImport {
   for (const entry of table.slice(1)) {
     const title = cell(entry, titleAt)
     const rawId = cell(entry, idAt)
-    const imdb = IMDB_ID.test(rawId) ? rawId.toLowerCase() : null
+    const imdb = isImdbId(rawId) ? rawId.toLowerCase() : null
 
     if (!title && !imdb) {
       skipped++
