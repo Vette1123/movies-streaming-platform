@@ -60,3 +60,4 @@ with the work, not after.
 | 2026-08-24 | [A mode needs a history entry](2026-08-24-a-mode-needs-a-history-entry.md)                                                                     | Back is how a phone leaves a mode — without a pushed entry it leaves the app; and a cross-origin localStorage read fails exactly like an unset preference.                                        |
 | 2026-08-24 | [The ticket was on the critical path](2026-08-24-the-ticket-was-on-the-critical-path.md) | Warm what can be fetched before the tap — and a refactor script that only deletes is a lost file. |
 | 2026-08-24 | [The id was already on the page](2026-08-24-the-id-was-already-on-the-page.md) | Before fetching an identifier, check what the page already received — external_ids rides the render request. |
+| 2026-08-25 | [Handing out pro by hand](2026-08-25-handing-out-pro-by-hand.md) | A hand grant writes BOTH tables — supporters is what a not-yet-created account claims on sign-in. |

@@ -34,6 +34,7 @@
     "cf:health": "node scripts/cf-health.mjs",
     "cf:cpu": "node scripts/cf-cpu.mjs",
     "bmc:probe": "node scripts/bmc-probe.mjs",
+    "pro": "node scripts/grant-pro.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },
