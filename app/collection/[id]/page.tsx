@@ -15,6 +15,7 @@ import {
   buildCollectionStaticParams,
   buildMediaStaticParams,
 } from '@/lib/media-page'
+import { collectionDescription } from '@/lib/seo-description'
 import { getImageURL } from '@/lib/utils'
 import { CollectionView } from '@/components/collection/collection-view'
 
@@ -57,9 +58,11 @@ export async function generateMetadata(
   }
   if (!collection?.id) notFound()
 
-  const description =
-    collection.overview?.slice(0, 200) ||
-    `Every film in the ${collection.name} on ${siteConfig.name}.`
+  // Shared with the Worker fallback — see lib/seo-description.ts.
+  const description = collectionDescription(
+    collection.name,
+    collection.overview
+  )
   const canonicalPath = `/collection/${params.id}`
   const image = collection.backdrop_path
     ? getImageURL(collection.backdrop_path)

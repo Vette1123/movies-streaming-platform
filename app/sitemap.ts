@@ -10,12 +10,14 @@ import {
   getAllTimeTopRatedSeries,
   getLatestTrendingSeries,
   getPopularSeries,
+  getSeriesDetailsById,
 } from '@/services/series'
 
 import { siteConfig } from '@/config/site'
 import { MOVIE_GENRES_WITH_SLUG, TV_GENRES_WITH_SLUG } from '@/lib/genres'
 import {
   buildCollectionStaticParams,
+  buildLinkedMediaIds,
   buildMediaSitemapEntries,
 } from '@/lib/media-page'
 import { getPosterImageURL } from '@/lib/utils'
@@ -79,13 +81,43 @@ const movieEntries = () =>
 const generateMovieUrls = (): Promise<MetadataRoute.Sitemap> =>
   mediaSitemapUrls('/movies', movieEntries)
 
+const seriesEntries = () =>
+  buildMediaSitemapEntries({
+    popular: getPopularSeries,
+    topRated: getAllTimeTopRatedSeries,
+    trending: getLatestTrendingSeries,
+  })
+
 const generateTVShowUrls = (): Promise<MetadataRoute.Sitemap> =>
-  mediaSitemapUrls('/tv-shows', () =>
-    buildMediaSitemapEntries({
-      popular: getPopularSeries,
-      topRated: getAllTimeTopRatedSeries,
-      trending: getLatestTrendingSeries,
-    })
+  mediaSitemapUrls('/tv-shows', seriesEntries)
+
+// The tail the prerendered pages link to: the similar/recommended rails on every
+// detail page point at ids outside the prerendered set, and those pages are real
+// — the Worker serves them with full metadata. They were in no sitemap and had
+// never been submitted to IndexNow, which is exactly what Bing reported. Lower
+// priority than a baked page because that is the truth: these are the second
+// ring out. See buildLinkedMediaIds.
+const linkedMediaUrls = (
+  pathPrefix: string,
+  baseParams: () => Promise<{ id: string }[]>,
+  getDetails: Parameters<typeof buildLinkedMediaIds>[1]
+): Promise<MetadataRoute.Sitemap> =>
+  mediaSitemapUrls(pathPrefix, () =>
+    buildLinkedMediaIds(baseParams, getDetails)
+  ).then((urls) => urls.map((entry) => ({ ...entry, priority: 0.5 })))
+
+const generateLinkedMovieUrls = (): Promise<MetadataRoute.Sitemap> =>
+  linkedMediaUrls(
+    '/movies',
+    () => movieEntries().then((entries) => entries.map(({ id }) => ({ id }))),
+    getMovieDetailsById
+  )
+
+const generateLinkedTVShowUrls = (): Promise<MetadataRoute.Sitemap> =>
+  linkedMediaUrls(
+    '/tv-shows',
+    () => seriesEntries().then((entries) => entries.map(({ id }) => ({ id }))),
+    getSeriesDetailsById
   )
 
 // Cast and crew pages. Same treatment as a title: no lastmod, and the portrait
@@ -238,13 +270,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   try {
-    const [movieUrls, tvShowUrls, collectionUrls, personUrls] =
-      await Promise.all([
-        generateMovieUrls(),
-        generateTVShowUrls(),
-        generateCollectionUrls(),
-        generatePersonUrls(),
-      ])
+    const [
+      movieUrls,
+      tvShowUrls,
+      collectionUrls,
+      personUrls,
+      linkedMovieUrls,
+      linkedTVShowUrls,
+    ] = await Promise.all([
+      generateMovieUrls(),
+      generateTVShowUrls(),
+      generateCollectionUrls(),
+      generatePersonUrls(),
+      generateLinkedMovieUrls(),
+      generateLinkedTVShowUrls(),
+    ])
 
     return [
       ...staticRoutes,
@@ -252,6 +292,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...tvShowUrls,
       ...collectionUrls,
       ...personUrls,
+      ...linkedMovieUrls,
+      ...linkedTVShowUrls,
     ].sort((a, b) => {
       const diff = (b.priority || 0) - (a.priority || 0)
       return diff !== 0 ? diff : a.url.localeCompare(b.url)

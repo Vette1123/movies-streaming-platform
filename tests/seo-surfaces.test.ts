@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { Credit } from '@/types/credit'
 import { castNames, crewNamesByJob, trimCredits } from '@/lib/credits'
+import { collectionDescription, mediaDescription } from '@/lib/seo-description'
 import { itemListJsonLd, movieJsonLd } from '@/lib/structured-data'
 import { listSentence } from '@/lib/utils'
 import { FIRST_YEAR, isValidYear } from '@/components/media/year-page'
@@ -153,5 +154,98 @@ describe('year hubs', () => {
     expect(isValidYear('20o5')).toBe(false)
     expect(isValidYear('2005a')).toBe(false)
     expect(isValidYear('')).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Meta descriptions. Bing flagged 53 detail pages as "too short" — every one a
+// title whose TMDB overview is a single line or missing. The old builder was
+// `overview.slice(0, 200) || <48-char fallback>`, so a thin overview produced a
+// thin description and a long one was cut mid-word.
+// ---------------------------------------------------------------------------
+
+const LONG_OVERVIEW =
+  'A cartographer is hired to map a stretch of coast nobody has surveyed since the war, and finds the villages on his employer\u2019s chart do not exist. The deeper he walks the less the land agrees with the paper in his hands.'
+
+describe('mediaDescription', () => {
+  const base = {
+    title: 'Forbidden Daughters',
+    year: '1927',
+    kind: 'movie' as const,
+    genres: ['Drama', 'Romance'],
+  }
+
+  it('fills the slot when TMDB has no overview at all', () => {
+    const description = mediaDescription({ ...base, overview: undefined })
+    expect(description.length).toBeGreaterThanOrEqual(120)
+    expect(description.length).toBeLessThanOrEqual(158)
+    expect(description).toContain('Forbidden Daughters (1927)')
+    expect(description).toContain('drama, romance movie')
+  })
+
+  it('fills the slot when the overview is one short line', () => {
+    const description = mediaDescription({
+      ...base,
+      overview: 'Japanese nunsploitation movie from 1998',
+    })
+    expect(description.length).toBeGreaterThanOrEqual(120)
+    expect(description.length).toBeLessThanOrEqual(158)
+    expect(description).toContain('Japanese nunsploitation movie from 1998.')
+  })
+
+  it('leaves a long overview alone, cut on a word boundary', () => {
+    const description = mediaDescription({ ...base, overview: LONG_OVERVIEW })
+    expect(description.length).toBeLessThanOrEqual(158)
+    expect(description.endsWith('…')).toBe(true)
+    // The old slice(0, 200) ended '...do not e'. Nothing may be cut mid-word.
+    expect(LONG_OVERVIEW).toContain(description.slice(0, -1))
+    expect(description.slice(0, -1).endsWith(' ')).toBe(false)
+  })
+
+  it('never appends an offer it cannot finish', () => {
+    for (const length of [0, 20, 60, 100, 129, 130, 200]) {
+      const description = mediaDescription({
+        ...base,
+        overview: 'word '.repeat(Math.ceil(length / 5)).slice(0, length),
+      })
+      expect(description.length).toBeLessThanOrEqual(158)
+      // An ellipsis is only ever the synopsis being trimmed — the closing
+      // sentence is either present whole or not at all.
+      expect(description).not.toMatch(/on Reel…?$/)
+      if (description.includes('on Reely')) {
+        expect(description.endsWith('on Reely.')).toBe(true)
+      }
+    }
+  })
+
+  it('says series for a series and folds whitespace', () => {
+    const description = mediaDescription({
+      title: 'House of Rock',
+      kind: 'series',
+      overview: '  \n  ',
+    })
+    expect(description).toContain('House of Rock — series.')
+    expect(description).not.toMatch(/\s{2}/)
+  })
+})
+
+describe('collectionDescription', () => {
+  it('fills the slot for the franchise pages TMDB leaves blank', () => {
+    const description = collectionDescription('Lilo & Stitch Collection', '')
+    expect(description.length).toBeGreaterThanOrEqual(120)
+    expect(description.length).toBeLessThanOrEqual(158)
+    expect(description).toContain('The Lilo & Stitch Collection, complete.')
+    expect(description.endsWith('on Reely.')).toBe(true)
+  })
+
+  it('leads with the overview when TMDB has one', () => {
+    const description = collectionDescription(
+      'Alien Collection',
+      'The crew of a commercial towing ship answers a distress call.'
+    )
+    expect(description.startsWith('The crew of a commercial towing ship')).toBe(
+      true
+    )
+    expect(description.length).toBeLessThanOrEqual(158)
   })
 })

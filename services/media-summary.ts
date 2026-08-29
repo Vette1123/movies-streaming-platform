@@ -25,6 +25,10 @@ export interface MediaSummary {
   first_air_date?: string
   backdrop_path?: string | null
   poster_path?: string | null
+  // Rides along on the same plain detail response — no extra request. The
+  // fallback's meta description spends its leftover budget on these when the
+  // title's overview is a single line (lib/seo-description.ts).
+  genres?: { id: number; name: string }[]
 }
 
 export const getMediaSummary = cache(

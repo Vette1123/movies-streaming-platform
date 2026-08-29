@@ -9,14 +9,16 @@ import {
 } from '@/config/support'
 import { LegalPage } from '@/components/legal/legal-page'
 
+const DESCRIPTION = `The terms for using ${siteConfig.name} — what an account is for, how supporter memberships and payments work, and what you can expect from the service.`
+
 export const metadata: Metadata = {
   title: 'Terms',
-  description: `The terms for using ${siteConfig.name}, including accounts and supporter memberships.`,
+  description: DESCRIPTION,
   alternates: { canonical: '/terms' },
   robots: { index: true, follow: true },
   openGraph: {
     title: `Terms | ${siteConfig.name}`,
-    description: `The terms for using ${siteConfig.name}, including accounts and supporter memberships.`,
+    description: DESCRIPTION,
     url: `${siteConfig.websiteURL}/terms`,
     type: 'article',
     images: '/opengraph-image.png',

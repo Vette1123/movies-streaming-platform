@@ -4,9 +4,11 @@ import { Metadata } from 'next'
 import { siteConfig } from '@/config/site'
 import { DisclaimerContent } from '@/components/disclaimer/disclaimer-content'
 
+const DESCRIPTION = `Legal disclaimer for ${siteConfig.name}: where the film and TV information comes from, who owns the rights to it, and what this site is and is not responsible for.`
+
 export const metadata: Metadata = {
   title: 'Disclaimer',
-  description: `Legal disclaimer for ${siteConfig.name}. Information about content sources, rights, and responsibilities.`,
+  description: DESCRIPTION,
   alternates: {
     canonical: '/disclaimer',
   },
@@ -16,7 +18,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: `Disclaimer | ${siteConfig.name}`,
-    description: `Legal disclaimer for ${siteConfig.name}.`,
+    description: DESCRIPTION,
     url: `${siteConfig.websiteURL}/disclaimer`,
     type: 'article',
     images: '/opengraph-image.png',
@@ -24,7 +26,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: `Disclaimer | ${siteConfig.name}`,
-    description: `Legal disclaimer for ${siteConfig.name}.`,
+    description: DESCRIPTION,
     images: '/opengraph-image.png',
   },
 }

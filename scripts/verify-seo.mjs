@@ -30,6 +30,11 @@ const get = async (path) => {
 
 const first = (html, re) => re.exec(html)?.[1] ?? null
 const robotsOf = (html) => first(html, /<meta name="robots" content="([^"]*)"/i)
+const descOf = (html) =>
+  first(html, /<meta name="description" content="([^"]*)"/i) ?? ''
+// What Bing calls "too short". It reported 53 pages at this, all of them detail
+// pages whose TMDB overview is one line — see lib/seo-description.ts.
+const MIN_DESCRIPTION = 110
 const canonicalOf = (html) =>
   first(html, /<link rel="canonical" href="([^"]*)"/i)
 const h1sOf = (html) =>
@@ -86,16 +91,18 @@ for (const path of [...new Set(INDEXABLE)]) {
   const robots = robotsOf(html) ?? ''
   const canonical = canonicalOf(html)
   const h1s = h1sOf(html)
+  const description = descOf(html)
   const wantCanonical = `${ORIGIN.replace('https://', 'https://www.')}${path === '/' ? '' : path}`
   const ok =
     status === 200 &&
     !/noindex/i.test(robots) &&
     h1s.length >= 1 &&
+    description.length >= MIN_DESCRIPTION &&
     canonical === wantCanonical
   check(
     `indexable  ${path}`,
     ok,
-    `${status} robots="${robots}" h1=${h1s.length} canonical=${canonical === wantCanonical ? 'self' : canonical}`
+    `${status} robots="${robots}" h1=${h1s.length} desc=${description.length} canonical=${canonical === wantCanonical ? 'self' : canonical}`
   )
 }
 
@@ -106,6 +113,42 @@ for (const path of [...new Set(INDEXABLE)]) {
     'tail page is served from the shell (worker path)',
     html.includes('data-fallback-seo'),
     'no data-fallback-seo marker — pick a different TAIL_ID, this one got prerendered'
+  )
+  // The fallback's <h1> exists FOR the crawler that runs no JS. It shipped
+  // inside `<div hidden>` — display:none, which a crawler reads as absent —
+  // and Bing duly reported tail pages under "The <h1> tag is missing". Clipped
+  // is fine; hidden is not.
+  const block = /<div[^>]*data-fallback-seo[^>]*>/i.exec(html)?.[0] ?? ''
+  check(
+    'fallback SEO block is clipped, not display:none',
+    block !== '' && !/\shidden(\s|=|>)/i.test(block),
+    block || 'no block found'
+  )
+}
+
+// ---- the sitemap covers what the site LINKS to -----------------------------
+//
+// Every detail page ends in similar/recommended rails pointing at ids outside
+// the prerendered set. Those anchors are in the HTML, so a crawler walks
+// straight off the prerendered set — and Bing reported three of the pages it
+// landed on as missing from the sitemap, one of them as never submitted to
+// IndexNow. app/sitemap.ts advertises them now (buildLinkedMediaIds); this is
+// the check that says so.
+{
+  const { html } = await get('/movies/550')
+  const linked = [
+    ...new Set(
+      [...html.matchAll(/href="(\/(?:movies|tv-shows)\/\d+)"/g)].map(
+        (m) => m[1]
+      )
+    ),
+  ]
+  const paths = new Set(locs.map((u) => new URL(u).pathname))
+  const missing = linked.filter((p) => !paths.has(p))
+  check(
+    'sitemap lists every title a detail page links to',
+    linked.length > 0 && missing.length === 0,
+    `${linked.length} linked, ${missing.length} missing${missing.length ? `: ${missing.slice(0, 5).join(', ')}` : ''}`
   )
 }
 

@@ -61,6 +61,14 @@ const baseConfig = {
   // Drop `X-Powered-By: Next.js` — free stack fingerprint for scanners, and it
   // rides on every single response.
   poweredByHeader: false,
+  // The sitemap route is one page that makes ~1,800 TMDB reads: it harvests the
+  // similar/recommended ids every detail page links to, so the pages the site
+  // points at are advertised (see lib/media-page.ts buildLinkedMediaIds).
+  // Measured on a cold fetch cache it lands either side of Next's 60s default,
+  // which turns a good build into "Failed to build /sitemap.xml (attempt 1 of
+  // 3)" and a retry — and on a slow network into a failed deploy. Nothing else
+  // in the build comes close to this, so the ceiling is generous on purpose.
+  staticPageGenerationTimeout: 300,
   experimental: {
     // Tree-shake barrel-imported libs so only the symbols actually used ship.
     // lucide-react is the big one: icons are imported per-name across ~40 files,

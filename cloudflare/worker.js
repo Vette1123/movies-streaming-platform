@@ -58,6 +58,7 @@ import { getMediaHeroImageUrl } from '@/lib/media'
 import { mosaicUrl, OG_HEIGHT, OG_WIDTH } from '@/lib/og/mosaic'
 import { signEntryTicket } from '@/lib/pro/playback-ticket'
 import { loadPublicProfile } from '@/lib/profile/routes'
+import { collectionDescription, mediaDescription } from '@/lib/seo-description'
 import { getImageURL } from '@/lib/utils'
 
 /** 6h, matching the deploy cadence that refreshes the static half of the site. */
@@ -718,9 +719,15 @@ function buildMeta(type, id, details, siteUrl) {
     4
   )
   const heading = year ? `${title} (${year})` : title
-  const description =
-    (details.overview || '').slice(0, 200) ||
-    `Details, cast, and streaming info for ${title} on Reely.`
+  // The SAME builder the prerendered detail pages use, so a tail id and a baked
+  // one describe a title identically — see lib/seo-description.ts.
+  const description = mediaDescription({
+    title,
+    year,
+    kind: type === 'tv' ? 'series' : 'movie',
+    genres: details.genres?.map((genre) => genre.name),
+    overview: details.overview,
+  })
   const image = getMediaHeroImageUrl(details.backdrop_path, details.poster_path)
   const canonical = `${siteUrl}/${type === 'tv' ? 'tv-shows' : 'movies'}/${id}`
 
@@ -779,11 +786,22 @@ async function notFoundAsset(env, url) {
 const headBlock = (meta, ogType, jsonLd) =>
   `${metaTags(meta, ogType)}<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`
 
-// A crawler that does not execute JS still gets the title and synopsis. Hidden
-// from sighted users because the client render paints the real page over it a
-// moment later.
+// A crawler that does not execute JS still gets the title and synopsis.
+//
+// This used to be `<div hidden>`, which is `display: none` — and a crawler
+// treats display:none text as absent. Bing's SEO report duly listed tail pages
+// under "The <h1> tag is missing": only the three whose client render it never
+// waited for, because on every other one it found the h1 the React app paints.
+// A block that exists FOR the crawler that runs no JS cannot be invisible to
+// exactly that crawler.
+//
+// Clipped instead of hidden, so it counts. `aria-hidden` because the block
+// survives hydration outside React's root and a screen reader would otherwise
+// hear the title and synopsis twice, once from here and once from the real page.
+const SEO_BLOCK_STYLE =
+  'position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0'
 const seoBlock = (meta) =>
-  `<div hidden data-fallback-seo><h1>${escapeHtml(meta.heading)}</h1><p>${escapeHtml(meta.description)}</p>${linkBlock(meta.links)}</div>`
+  `<div aria-hidden="true" style="${SEO_BLOCK_STYLE}" data-fallback-seo><h1>${escapeHtml(meta.heading)}</h1><p>${escapeHtml(meta.description)}</p>${linkBlock(meta.links)}</div>`
 
 /**
  * The directory's own links, for a crawler that never runs the fetch.
@@ -1030,9 +1048,10 @@ async function handleCollectionFallback(match, request, env, ctx, url) {
   if (!collection) return notFoundAsset(env, url)
 
   const siteUrl = siteUrlOf(url)
-  const description =
-    collection.overview?.slice(0, 200) ||
-    `Every film in the ${collection.name} on Reely.`
+  const description = collectionDescription(
+    collection.name,
+    collection.overview
+  )
   const meta = {
     heading: collection.name,
     title: collection.name,
@@ -1243,9 +1262,11 @@ async function handleListsDirectory(request, env, ctx, url) {
 
       const meta = {
         heading: 'Lists and people on Reely',
+        // Both branches land near the ~155 characters a SERP renders. The
+        // empty one used to be 69, which is the length Bing calls too short.
         description: lists.length
-          ? `${lists.length} film and TV lists published by people who keep their library on Reely, and the public pages behind them.`
-          : 'Film and TV lists published by people who keep their library on Reely.',
+          ? `${lists.length} film and TV lists published by people who keep their library on Reely, plus the public profiles behind them and what they are watching.`
+          : 'Film and TV lists published by people who keep their library on Reely, plus the public profiles behind them. Nothing published yet — yours could be first.',
         // The newest list's posters, as the same composed card a single list
         // unfurls with — so the directory looks like what it indexes.
         image:

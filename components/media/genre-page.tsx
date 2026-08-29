@@ -52,7 +52,7 @@ export const MOVIE_GENRE_PAGE_CONFIG: GenrePageConfig = {
   findBySlug: findMovieGenreBySlug,
   discover: discoverMovies,
   metaDescription: (name) =>
-    `Watch the most popular ${name.toLowerCase()} movies. Browse top ${name.toLowerCase()} films and find your next watch on Reely.`,
+    `Watch the most popular ${name.toLowerCase()} movies. Browse top-rated and trending ${name.toLowerCase()} films with ratings, trailers and where to stream them, on Reely.`,
 }
 
 export const TV_GENRE_PAGE_CONFIG: GenrePageConfig = {
@@ -65,7 +65,7 @@ export const TV_GENRE_PAGE_CONFIG: GenrePageConfig = {
   findBySlug: findTvGenreBySlug,
   discover: discoverSeries,
   metaDescription: (name) =>
-    `Watch the most popular ${name.toLowerCase()} TV shows. Browse top ${name.toLowerCase()} series and find your next binge on Reely.`,
+    `Watch the most popular ${name.toLowerCase()} TV shows. Browse top-rated and trending ${name.toLowerCase()} series with ratings, trailers and where to watch, on Reely.`,
 }
 
 export function genreStaticParams(config: GenrePageConfig) {

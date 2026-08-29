@@ -2,7 +2,9 @@ import { Metadata } from 'next'
 
 import { MediaResponse } from '@/types/media'
 import { siteConfig } from '@/config/site'
+import { RAIL_LIMIT } from '@/lib/constants'
 import { genreNames } from '@/lib/media'
+import { mediaDescription } from '@/lib/seo-description'
 import { getImageURL, getPosterImageURL } from '@/lib/utils'
 
 // Shared plumbing for the near-identical movies vs tv-shows routes. The two
@@ -200,6 +202,71 @@ export async function buildMediaStaticParams(fetchers: {
   return (await buildMediaSitemapEntries(fetchers)).map(({ id }) => ({ id }))
 }
 
+/**
+ * The ids the prerendered detail pages LINK to but the build never baked.
+ *
+ * Every detail page ends in two rails — TMDB's `similar` and `recommendations`,
+ * RAIL_LIMIT titles each — and those anchors are in the prerendered HTML, so a
+ * crawler walks straight off the prerendered set into ids the sitemap never
+ * mentioned. Bing's SEO report is the proof: it flagged /tv-shows/9079,
+ * /movies/1008280 and /movies/273646 as "important pages missing in sitemaps",
+ * and the first of those as never submitted via IndexNow. None of the three is
+ * anywhere near TMDB's popular/top-rated/trending lists — they are rail links.
+ *
+ * These pages are real and indexable: cloudflare/worker.js serves a tail id with
+ * the same title, description, OG tags, JSON-LD and <h1> a baked page carries.
+ * Linking to a page and then omitting it from the sitemap is just a gap.
+ *
+ * Measured against the live API (2026-08-29): 0.7 new ids per movie and 1.7 per
+ * series after dedupe — the rails point overwhelmingly at titles that are
+ * already in the popular lists — so this adds roughly 2,100 URLs to a 2,386-URL
+ * sitemap, not the 40,000 the raw 24-links-per-page arithmetic suggests.
+ *
+ * Free at build time, like buildCollectionStaticParams: it is handed the SAME
+ * service function the detail page renders from, so Next's build fetch cache
+ * serves the second read.
+ */
+interface RailResults {
+  results?: { id: number; poster_path?: string | null }[]
+}
+
+export async function buildLinkedMediaIds(
+  baseParams: () => Promise<{ id: string }[]>,
+  getDetails: (id: string) => Promise<
+    | {
+        similar?: RailResults
+        recommendations?: RailResults
+      }
+    | undefined
+  >
+): Promise<{ id: string; posterPath?: string }[]> {
+  try {
+    const base = await baseParams()
+    const known = new Set(base.map(({ id }) => id))
+    const settled = await Promise.allSettled(
+      base.map(({ id }) => getDetails(id))
+    )
+    const linked = new Map<string, string | undefined>()
+    for (const res of settled) {
+      if (res.status !== 'fulfilled') continue
+      // The same slice the page renders. Advertising the 8 titles TMDB returns
+      // beyond RAIL_LIMIT would list pages nothing on the site links to.
+      const rails = [
+        ...(res.value?.similar?.results ?? []).slice(0, RAIL_LIMIT),
+        ...(res.value?.recommendations?.results ?? []).slice(0, RAIL_LIMIT),
+      ]
+      for (const item of rails) {
+        const id = String(item.id)
+        if (known.has(id) || linked.has(id)) continue
+        linked.set(id, item.poster_path || undefined)
+      }
+    }
+    return Array.from(linked, ([id, posterPath]) => ({ id, posterPath }))
+  } catch {
+    return []
+  }
+}
+
 // Collection (franchise) pages were the last dynamic route on the site, and the
 // only one with NO prerender set at all — so every /collection/<id> hit rendered
 // on the Worker, which put it top of the 503 list once the detail-page scrapers
@@ -268,9 +335,15 @@ export interface DetailsMetadataInput {
 export function buildDetailsMetadata(input: DetailsMetadataInput): Metadata {
   const year = input.releaseDate?.slice(0, 4)
   const title = year ? `${input.title} (${year})` : input.title
-  const description =
-    input.overview?.slice(0, 200) ||
-    `Details, cast, and streaming info for ${input.title} on ${siteConfig.name}.`
+  // Shared with the Worker's tail-id fallback so a prerendered page and a
+  // fallback one describe a title identically — see lib/seo-description.ts.
+  const description = mediaDescription({
+    title: input.title,
+    year,
+    kind: input.ogType === 'video.tv_show' ? 'series' : 'movie',
+    genres: genreNames(input.genres),
+    overview: input.overview,
+  })
   const canonicalPath = `${input.basePath}/${input.id}`
   const images = buildDetailsOgImages(
     input.backdropPath,
