@@ -62,3 +62,4 @@ with the work, not after.
 | 2026-08-24 | [The id was already on the page](2026-08-24-the-id-was-already-on-the-page.md) | Before fetching an identifier, check what the page already received — external_ids rides the render request. |
 | 2026-08-25 | [Handing out pro by hand](2026-08-25-handing-out-pro-by-hand.md) | A hand grant writes BOTH tables — supporters is what a not-yet-created account claims on sign-in. |
 | 2026-08-25 | [The regex that matched nothing](2026-08-25-the-regex-that-matched-nothing.md) | `/^ttd{5,12}$/` — a lost backslash matched no real IMDb id, so the player never got one and every subtitle paid the three-catalog walk. |
+| 2026-08-29 | [The fallback event was a bot detector](2026-08-29-the-fallback-event-was-a-bot-detector.md) | 97% of "visitors" were headless clients on spoofed UAs — the image fallback was reporting them, not an ImageKit outage; and free Bot Fight Mode cannot be excepted, so it would have eaten the payment webhook. |
