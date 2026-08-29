@@ -84,6 +84,10 @@ The embed provider list lives in `config/sources.ts` and comes **entirely from t
 
 `app/` uses route groups: `(landing)` home, `movies` / `tv-shows` with `(…-list)`, `genre/[slug]`, and `[id]/(…-details)` segments, `collection/[id]`, `watchlist`, `watch-history`, plus the two noindex fallback shells (`media-fallback`, `collection-fallback`) the Worker serves under tail ids. SEO is prerendered: `sitemap.ts`, `robots.ts` (both need `dynamic = 'force-static'` under export), JSON-LD in `lib/structured-data.tsx`, static OG in `app/_og`.
 
+- **The sitemap advertises what the site LINKS to, not what the build bakes.** Beyond the prerendered set it harvests the similar/recommended ids on every detail page (`buildLinkedMediaIds`) — those anchors are in the HTML, so a crawler walks straight off the baked set, and Bing reported the pages it landed on as missing from the sitemap. ~14,900 URLs / 3.7 MB, inside the 50,000-URL limit; it is free of extra TMDB traffic (same service function the detail page renders from, so the build fetch cache serves the second read) but it makes `/sitemap.xml` a ~1,800-request route, which is why `staticPageGenerationTimeout: 300` exists in `next.config.mjs`. `pnpm deploy` then submits every one of those URLs to IndexNow.
+- **Meta descriptions come from one builder, `lib/seo-description.ts`**, shared by the prerendered detail pages and the Worker's tail-id fallback. Don't reintroduce a local `overview.slice(...)` — a thin TMDB overview is what made Bing flag 53 pages.
+- **The Worker's crawler-only `<h1>` block must never be `hidden`.** `display: none` reads as absent to a crawler (that is the "h1 missing" report); it is clipped + `aria-hidden` instead. `pnpm seo:verify` asserts all of the above against production.
+
 **Intercepting routes are unsupported by `output: 'export'`** — the `@modal` slot is gone and the disclaimer is an ordinary full-page navigation. Don't reintroduce one.
 
 ### Analytics
