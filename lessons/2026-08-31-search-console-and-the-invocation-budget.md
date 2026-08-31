@@ -127,3 +127,26 @@ needed a code change.
   per route against a 20,000-file cap, and Next 16.3 gives no way to stop
   emitting the segment-cache four. See the measurement above before re-deriving
   it.
+
+## Postscript — one more difference between the twins
+
+After the breadcrumb and the JSON-LD dedupe, a tail page and its prerendered
+twin were declared identical. They were not. The prerendered `<title>` comes
+out of the root layout's title template — `Angel Face (1953) | Reely` — and
+both hand-written title paths (the Worker's `HTMLRewriter`, and
+`useServedMetadata` writing the head back after hydration) knew nothing about
+that template, so every tail page shipped a bare `Angel Face (1953)`. The title
+is the line Google prints in the result: it was the most visible thing on the
+page and the last one checked.
+
+The check that found it was diffing the two pages tag by tag rather than
+asserting a list of tags exists. `pnpm seo:verify` never had an opinion about
+the title, so nothing failed. `lib/seo-title.ts` now holds the rule for the two
+callers that bypass Next's metadata; `og:title` and `twitter:title` stay
+unsuffixed, matching what the prerendered pages publish.
+
+Also worth recording, because it nearly produced a second false bug: after the
+deploy, the fixed title showed in `curl` but not in the browser — the browser
+had the pre-deploy HTML for that exact URL cached. A different tail id showed
+the fix immediately. When verifying a deploy in a browser, use a URL the
+browser has never seen.
