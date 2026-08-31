@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 
 import { siteConfig } from '@/config/site'
+import { docTitle } from '@/lib/seo-title'
 
 /**
  * Put back the head the Worker wrote, after React has hydrated over it.
@@ -122,7 +123,9 @@ export function useServedMetadata(meta: ServedMetadata | null): void {
     const heading = title
     const canonical = canonicalOf()
 
-    document.title = heading
+    // The tab and the SERP title carry the site name; og:title and
+    // twitter:title below do not — that is what the prerendered pages do.
+    document.title = docTitle(heading)
     named('robots', indexable === false ? 'noindex, nofollow' : 'index, follow')
     named('description', description)
     upsert(

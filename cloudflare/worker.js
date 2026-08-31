@@ -66,6 +66,7 @@ import {
   profileDescription,
 } from '@/lib/seo-description'
 import { mediaFacts } from '@/lib/seo-facts'
+import { docTitle } from '@/lib/seo-title'
 import { getImageURL } from '@/lib/utils'
 
 /** 6h, matching the deploy cadence that refreshes the static half of the site. */
@@ -948,7 +949,7 @@ function serveShellFromTemplate(shellPath, meta, ogType, jsonLd) {
 
   const chunks = [
     parts.beforeTitle,
-    encoder.encode(escapeHtml(meta.heading)),
+    encoder.encode(escapeHtml(docTitle(meta.heading))),
     parts.afterTitle,
     encoder.encode(headBlock(meta, ogType, jsonLd)),
     parts.afterHead,
@@ -995,7 +996,7 @@ async function serveShell(shellPath, meta, ogType, jsonLd, env, url) {
   const rewritten = new HTMLRewriter()
     .on('title', {
       element(el) {
-        el.setInnerContent(meta.heading)
+        el.setInnerContent(docTitle(meta.heading))
       },
     })
     // Strip the shell's OWN metadata first. HTMLRewriter appends to <head>,
