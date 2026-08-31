@@ -33,7 +33,7 @@ export function SupportCta({
         Support Reely
       </a>
       {note !== 'none' && (
-        <span className="text-muted-foreground text-sm">
+        <span className="text-sm text-muted-foreground">
           {supportPriceLine()}
           {note === 'cancel' && ' Cancel in one click.'}
         </span>

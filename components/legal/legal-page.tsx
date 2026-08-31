@@ -23,23 +23,23 @@ export function LegalPage({
         <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
           {title}
         </h1>
-        <p className="text-muted-foreground text-sm">Last updated {updated}</p>
+        <p className="text-sm text-muted-foreground">Last updated {updated}</p>
       </header>
 
-      <div className="prose prose-invert prose-headings:tracking-tight prose-headings:font-semibold prose-h2:text-xl prose-h2:mt-10 prose-p:leading-relaxed prose-li:leading-relaxed max-w-none">
+      <div className="prose max-w-none prose-invert prose-headings:font-semibold prose-headings:tracking-tight prose-h2:mt-10 prose-h2:text-xl prose-p:leading-relaxed prose-li:leading-relaxed">
         {children}
       </div>
 
-      <footer className="text-muted-foreground mt-14 border-t pt-6 text-sm">
-        <Link href="/privacy" className="hover:text-foreground underline">
+      <footer className="mt-14 border-t pt-6 text-sm text-muted-foreground">
+        <Link href="/privacy" className="underline hover:text-foreground">
           Privacy
         </Link>{' '}
         ·{' '}
-        <Link href="/terms" className="hover:text-foreground underline">
+        <Link href="/terms" className="underline hover:text-foreground">
           Terms
         </Link>{' '}
         ·{' '}
-        <Link href="/disclaimer" className="hover:text-foreground underline">
+        <Link href="/disclaimer" className="underline hover:text-foreground">
           Disclaimer
         </Link>
       </footer>

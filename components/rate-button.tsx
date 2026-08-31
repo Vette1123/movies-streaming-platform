@@ -146,7 +146,7 @@ function RateForm({
             <label htmlFor="rating" className="text-sm font-medium">
               Your rating
             </label>
-            <span className="text-primary font-mono text-3xl font-semibold tabular-nums">
+            <span className="font-mono text-3xl font-semibold text-primary tabular-nums">
               {score.toFixed(1)}
             </span>
           </div>
@@ -161,9 +161,9 @@ function RateForm({
             // A native range input rather than a component: it is keyboard
             // accessible, screen-reader labelled and touch-draggable for free,
             // and no slider library is going to beat that.
-            className="accent-primary h-2 w-full cursor-pointer"
+            className="h-2 w-full cursor-pointer accent-primary"
           />
-          <div className="text-muted-foreground flex justify-between text-xs">
+          <div className="flex justify-between text-xs text-muted-foreground">
             <span>{MIN_RATING}</span>
             <span>{MAX_RATING}</span>
           </div>
@@ -172,7 +172,7 @@ function RateForm({
         <div className="space-y-2">
           <label htmlFor="note" className="text-sm font-medium">
             A line about why{' '}
-            <span className="text-muted-foreground font-normal">
+            <span className="font-normal text-muted-foreground">
               (optional)
             </span>
           </label>
@@ -183,7 +183,7 @@ function RateForm({
             value={text}
             placeholder="Held up better than I expected."
             onChange={(event) => setText(event.target.value)}
-            className="border-input bg-background focus-visible:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-hidden"
+            className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
           />
         </div>
       </div>
@@ -192,7 +192,7 @@ function RateForm({
         {rating !== null && (
           <Button
             variant="ghost"
-            className="text-destructive hover:text-destructive mr-auto"
+            className="mr-auto text-destructive hover:text-destructive"
             onClick={() => {
               clear()
               toast(`Rating removed from “${title}”`)

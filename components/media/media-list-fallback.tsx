@@ -24,13 +24,13 @@ export const MediaListFallback = ({
   mediaType,
 }: MediaListFallbackProps) => (
   <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-    <div aria-hidden className="hidden w-80 flex-shrink-0 lg:block xl:w-96">
-      <div className="bg-card/40 h-[40rem] w-full rounded-xl border" />
+    <div aria-hidden className="hidden w-80 shrink-0 lg:block xl:w-96">
+      <div className="h-160 w-full rounded-xl border bg-card/40" />
     </div>
     <div className="min-w-0 flex-1">
       <div
         aria-hidden
-        className="bg-muted/50 mb-6 h-10 w-32 rounded-md lg:hidden"
+        className="mb-6 h-10 w-32 rounded-md bg-muted/50 lg:hidden"
       />
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {media?.results?.map((item) => (

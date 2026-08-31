@@ -106,7 +106,7 @@ export function ConfirmDialog({
       <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
       <AlertDialogContent
         className={cn(
-          'border-border/60 bg-card/95 max-w-md gap-0 overflow-hidden p-0 shadow-2xl backdrop-blur-xl',
+          'max-w-md gap-0 overflow-hidden border-border/60 bg-card/95 p-0 shadow-2xl backdrop-blur-xl',
           // A hairline of the tone across the top edge, so the dialog reads as
           // serious before a word of it has been.
           'before:absolute before:inset-x-0 before:top-0 before:h-px',
@@ -136,7 +136,7 @@ export function ConfirmDialog({
 
         {/* Its own band rather than floating under the copy: the buttons are a
             different kind of thing from the sentence above them. */}
-        <AlertDialogFooter className="border-border/60 bg-background/40 gap-2 border-t p-4 sm:gap-2">
+        <AlertDialogFooter className="gap-2 border-t border-border/60 bg-background/40 p-4 sm:gap-2">
           <AlertDialogCancel disabled={pending} className="mt-0">
             {cancelLabel}
           </AlertDialogCancel>

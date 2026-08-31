@@ -70,7 +70,7 @@ export function SettingRow({
       <div className="space-y-1">
         <p className="text-sm font-medium">{label}</p>
         {description && (
-          <p className="text-muted-foreground max-w-[65ch] text-sm leading-relaxed">
+          <p className="max-w-[65ch] text-sm leading-relaxed text-muted-foreground">
             {description}
           </p>
         )}
@@ -117,13 +117,13 @@ export function ChoiceChips({
             aria-checked={active}
             onClick={() => onSelect(option.id)}
             className={cn(
-              'focus-visible:ring-ring inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
+              'inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden',
               // Active is stated by fill AND border, not by border alone: on a
               // dark page a 1px accent hairline against an unfilled chip is not
               // a legible "this one is on".
               active
                 ? 'border-primary/70 bg-primary/15 text-foreground'
-                : 'text-muted-foreground hover:text-foreground border-white/10 hover:border-white/20 hover:bg-white/[0.06]'
+                : 'border-white/10 text-muted-foreground hover:border-white/20 hover:bg-white/6 hover:text-foreground'
             )}
           >
             {option.swatch && (
@@ -171,14 +171,14 @@ export function SettingSwitch({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        'focus-visible:ring-ring flex w-full items-start gap-4 p-4 text-left transition-colors hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:outline-hidden focus-visible:-outline-offset-2',
+        'flex w-full items-start gap-4 p-4 text-left transition-colors hover:bg-white/4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden focus-visible:-outline-offset-2',
         disabled && 'cursor-not-allowed opacity-60 hover:bg-transparent'
       )}
     >
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-medium">{label}</span>
         {description && (
-          <span className="text-muted-foreground mt-1 block max-w-[65ch] text-sm leading-relaxed">
+          <span className="mt-1 block max-w-[65ch] text-sm leading-relaxed text-muted-foreground">
             {description}
           </span>
         )}
@@ -202,7 +202,7 @@ export function Toggle({ checked }: { checked: boolean }) {
     >
       <span
         className={cn(
-          'bg-background size-4 rounded-full shadow-sm transition-transform',
+          'size-4 rounded-full bg-background shadow-sm transition-transform',
           checked ? 'translate-x-5' : 'translate-x-1'
         )}
       />

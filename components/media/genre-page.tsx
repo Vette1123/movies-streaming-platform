@@ -150,7 +150,7 @@ export async function GenrePage({
         <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
           {heading}
         </h1>
-        <p className="text-muted-foreground max-w-2xl">{description}</p>
+        <p className="max-w-2xl text-muted-foreground">{description}</p>
       </div>
 
       {/* Sibling-genre nav — discoverability + internal linking for SEO. */}

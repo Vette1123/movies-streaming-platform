@@ -25,7 +25,7 @@ export default function ListsDirectoryPage() {
         <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
           Lists and people on Reely
         </h1>
-        <p className="text-muted-foreground leading-relaxed">
+        <p className="leading-relaxed text-muted-foreground">
           Shelves other people made public: a horror marathon somebody actually
           ran, the films one person keeps going back to, what a stranger rated
           highest this year. Everything here is somebody&rsquo;s own library,

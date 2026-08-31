@@ -18,7 +18,7 @@ export function MediaPosterFallback({
   return (
     <div
       className={cn(
-        'bg-muted text-muted-foreground flex aspect-2/3 w-full flex-col items-center justify-center gap-2 rounded-lg p-4 text-center',
+        'flex aspect-2/3 w-full flex-col items-center justify-center gap-2 rounded-lg bg-muted p-4 text-center text-muted-foreground',
         className
       )}
     >

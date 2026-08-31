@@ -71,7 +71,7 @@ export const MediaListPage = ({
         <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
           {config.title}
         </h1>
-        <p className="text-muted-foreground max-w-2xl">{config.description}</p>
+        <p className="max-w-2xl text-muted-foreground">{config.description}</p>
       </div>
 
       {/* The year hubs, linked from the page that owns them. The filter

@@ -144,7 +144,7 @@ export function AlertsPanel() {
               ? 'Alerts are on for this device'
               : 'Alerts are off'}
           </p>
-          <p className="text-muted-foreground mt-1 max-w-[60ch] text-sm leading-relaxed">
+          <p className="mt-1 max-w-[60ch] text-sm leading-relaxed text-muted-foreground">
             {stateCopy(state, prefs.alerts === true)}
           </p>
         </div>
@@ -169,7 +169,7 @@ export function AlertsPanel() {
         )}
       </div>
 
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <RegionSection region={prefs.region} />
 
@@ -231,7 +231,7 @@ function PacingSection({
     <div className="space-y-4 border-t pt-6">
       <div>
         <p className="text-sm font-medium">Quiet hours</p>
-        <p className="text-muted-foreground mt-1 max-w-[65ch] text-sm leading-relaxed">
+        <p className="mt-1 max-w-[65ch] text-sm leading-relaxed text-muted-foreground">
           Nothing buzzes between these two times. The alerts still arrive — they
           are waiting in Reely when you next open it — your phone just does not
           make a noise about an episode at 3am.
@@ -295,7 +295,7 @@ function HourSelect({
       value={value}
       disabled={disabled}
       onChange={(event) => onChange(Number(event.target.value))}
-      className="border-input bg-background focus-visible:ring-ring rounded-md border px-3 py-1.5 text-sm focus-visible:ring-2 focus-visible:outline-hidden disabled:opacity-60"
+      className="rounded-md border border-input bg-background px-3 py-1.5 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden disabled:opacity-60"
     >
       {HOURS.map((hour) => (
         <option key={hour} value={hour}>
@@ -332,7 +332,7 @@ function RegionSection({ region }: { region?: string }) {
     <div className="space-y-3 border-t pt-6">
       <div>
         <p className="text-sm font-medium">Tell me when it starts streaming</p>
-        <p className="text-muted-foreground mt-1 max-w-[65ch] text-sm leading-relaxed">
+        <p className="mt-1 max-w-[65ch] text-sm leading-relaxed text-muted-foreground">
           A notification when something on your watchlist lands on a
           subscription service you could already be paying for. It is per
           country, so it needs one, and Reely will not guess: nothing is sent
@@ -348,7 +348,7 @@ function RegionSection({ region }: { region?: string }) {
           value={value}
           disabled={saving}
           onChange={(event) => void choose(event.target.value)}
-          className="border-input bg-background focus-visible:ring-ring rounded-md border px-3 py-1.5 text-sm focus-visible:ring-2 focus-visible:outline-hidden disabled:opacity-60"
+          className="rounded-md border border-input bg-background px-3 py-1.5 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden disabled:opacity-60"
         >
           <option value="" disabled>
             Choose a country
@@ -362,7 +362,7 @@ function RegionSection({ region }: { region?: string }) {
         {saving && <Loader2 className="size-4 animate-spin" aria-hidden />}
       </label>
       {!value && (
-        <p className="text-muted-foreground text-xs">
+        <p className="text-xs text-muted-foreground">
           Most people here pick{' '}
           {ALERT_REGIONS.find((r) => r.id === DEFAULT_ALERT_REGION)?.label}.
         </p>

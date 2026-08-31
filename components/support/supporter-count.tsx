@@ -30,10 +30,10 @@ export function SupporterCount() {
   if (count < SUPPORTER_FLOOR) return null
 
   return (
-    <p className="text-muted-foreground flex items-center gap-2 text-sm">
+    <p className="flex items-center gap-2 text-sm text-muted-foreground">
       <Users className="size-4" />
       <span>
-        <span className="text-foreground font-semibold tabular-nums">
+        <span className="font-semibold text-foreground tabular-nums">
           {count}
         </span>{' '}
         people already keep Reely free for everyone else.

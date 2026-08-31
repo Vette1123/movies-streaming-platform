@@ -98,7 +98,7 @@ const filterToggleVariants = cva(
         active:
           'border-primary bg-primary-fill text-primary-foreground hover:border-primary hover:text-primary-foreground',
         excluded:
-          'border-destructive/50 bg-destructive/10 text-destructive hover:text-destructive line-through',
+          'border-destructive/50 bg-destructive/10 text-destructive line-through hover:text-destructive',
       },
     },
     defaultVariants: { shape: 'pill', state: 'idle' },
@@ -133,21 +133,21 @@ const Section = ({
   count,
   children,
 }: SectionProps) => (
-  <div className="border-border/40 border-b pb-4 last:border-b-0">
+  <div className="border-b border-border/40 pb-4 last:border-b-0">
     <button
       type="button"
       onClick={onToggle}
       aria-expanded={isOpen}
-      className="text-foreground group flex w-full items-center justify-between py-1 text-sm font-medium"
+      className="group flex w-full items-center justify-between py-1 text-sm font-medium text-foreground"
     >
       <span className="flex items-center gap-2.5">
-        <SectionIcon className="text-muted-foreground group-hover:text-foreground h-4 w-4 transition-colors" />
+        <SectionIcon className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />
         {title}
         <CountBadge count={count} tone="soft" />
       </span>
       <ChevronDown
         className={cn(
-          'text-muted-foreground h-4 w-4 transition-transform duration-200 motion-reduce:transition-none',
+          'size-4 text-muted-foreground transition-transform duration-200 motion-reduce:transition-none',
           isOpen && 'rotate-180'
         )}
       />
@@ -285,7 +285,7 @@ export const FilterSidebar = ({
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icons.sliders className="h-5 w-5" />
+          <Icons.sliders className="size-5" />
           <h2 className="text-lg font-semibold">Filters</h2>
         </div>
         {hasActiveFilters && (
@@ -293,7 +293,7 @@ export const FilterSidebar = ({
             variant="ghost"
             size="sm"
             onClick={clearFilters}
-            className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
+            className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
             Clear all
           </Button>
@@ -356,14 +356,14 @@ export const FilterSidebar = ({
                     )}
                     aria-pressed={included || excluded}
                   >
-                    {included && <Check className="h-3 w-3" />}
-                    {excluded && <Minus className="h-3 w-3" />}
+                    {included && <Check className="size-3" />}
+                    {excluded && <Minus className="size-3" />}
                     {genre.name}
                   </button>
                 )
               })}
             </div>
-            <p className="text-muted-foreground/70 text-[11px] leading-relaxed">
+            <p className="text-[11px] leading-relaxed text-muted-foreground/70">
               Tap to include, tap again to exclude.
             </p>
           </Section>
@@ -401,7 +401,7 @@ export const FilterSidebar = ({
               })}
             </div>
             <div className="space-y-3 pt-1">
-              <div className="text-muted-foreground flex justify-between text-xs tabular-nums">
+              <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
                 <span>From {localYears[0]}</span>
                 <span>To {localYears[1]}</span>
               </div>
@@ -428,7 +428,7 @@ export const FilterSidebar = ({
             count={ratingCount + votesCount}
           >
             <div className="space-y-3">
-              <div className="text-muted-foreground flex justify-between text-xs tabular-nums">
+              <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
                 <span>Score</span>
                 <span>
                   {localRating[0].toFixed(1)} - {localRating[1].toFixed(1)}
@@ -447,7 +447,7 @@ export const FilterSidebar = ({
               />
             </div>
             <div className="space-y-3">
-              <div className="text-muted-foreground flex justify-between text-xs tabular-nums">
+              <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
                 <span>Min votes</span>
                 <span>{localVotes >= 1000 ? '1000+' : localVotes}</span>
               </div>
@@ -475,7 +475,7 @@ export const FilterSidebar = ({
               count={runtimeCount}
             >
               <div className="space-y-3">
-                <div className="text-muted-foreground flex justify-between text-xs tabular-nums">
+                <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
                   <span>Length</span>
                   <span>
                     {localRuntime[0]} -{' '}
@@ -590,7 +590,7 @@ export const FilterSidebar = ({
             </Select>
 
             {providers.length === 0 ? (
-              <p className="text-muted-foreground/70 text-[11px]">
+              <p className="text-[11px] text-muted-foreground/70">
                 No providers listed for this region.
               </p>
             ) : (
@@ -614,7 +614,7 @@ export const FilterSidebar = ({
                       className={cn(
                         'relative aspect-square overflow-hidden rounded-lg border-2 bg-white/95 transition motion-reduce:transition-none',
                         active
-                          ? 'border-primary ring-primary/30 ring-2'
+                          ? 'border-primary ring-2 ring-primary/30'
                           : 'border-transparent opacity-70 hover:opacity-100'
                       )}
                     >
@@ -626,11 +626,11 @@ export const FilterSidebar = ({
                         alt={p.provider_name}
                         loading="lazy"
                         draggable={false}
-                        className="h-full w-full object-contain"
+                        className="size-full object-contain"
                       />
                       {active && (
-                        <span className="bg-primary-fill text-primary-foreground absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full">
-                          <Check className="h-2.5 w-2.5" />
+                        <span className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-primary-fill text-primary-foreground">
+                          <Check className="size-2.5" />
                         </span>
                       )}
                     </button>

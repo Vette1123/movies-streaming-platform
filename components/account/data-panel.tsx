@@ -133,9 +133,9 @@ export function DataPanel() {
 
       <DeleteAccount email={account.email} pro={account.pro} />
 
-      <p className="text-muted-foreground text-sm">
+      <p className="text-sm text-muted-foreground">
         What is stored, and what is never stored, is written out on the{' '}
-        <Link href="/privacy" className="hover:text-foreground underline">
+        <Link href="/privacy" className="underline hover:text-foreground">
           privacy page
         </Link>
         .
@@ -157,7 +157,7 @@ function Row({
     <div className="space-y-3">
       <div className="space-y-1">
         <h3 className="text-sm font-semibold">{title}</h3>
-        <p className="text-muted-foreground max-w-[65ch] text-sm leading-relaxed">
+        <p className="max-w-[65ch] text-sm leading-relaxed text-muted-foreground">
           {description}
         </p>
       </div>
@@ -188,7 +188,7 @@ function ClearDevice({ pro }: { pro: boolean }) {
       }
     >
       {done ? (
-        <p className="text-muted-foreground text-sm">
+        <p className="text-sm text-muted-foreground">
           Cleared.{pro ? ' Your synced copy comes back on the next sync.' : ''}
         </p>
       ) : (
@@ -237,9 +237,9 @@ function DeleteAccount({ email, pro }: { email: string | null; pro: boolean }) {
   }
 
   return (
-    <div className="border-destructive/30 space-y-3 rounded-lg border p-4">
+    <div className="space-y-3 rounded-lg border border-destructive/30 p-4">
       <h3 className="text-sm font-semibold">Delete this account</h3>
-      <p className="text-muted-foreground max-w-[65ch] text-sm leading-relaxed">
+      <p className="max-w-[65ch] text-sm leading-relaxed text-muted-foreground">
         Removes {email ?? 'your address'}, your synced library, your lists and
         every device you are signed in on. It does not touch what is stored in
         this browser, so Reely keeps working exactly as it does for anyone
@@ -249,7 +249,7 @@ function DeleteAccount({ email, pro }: { email: string | null; pro: boolean }) {
           : ''}
       </p>
 
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <ConfirmDialog
         trigger={
@@ -267,7 +267,7 @@ function DeleteAccount({ email, pro }: { email: string | null; pro: boolean }) {
         Icon={Trash2}
         onConfirm={remove}
       >
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           What is in this browser stays: Reely keeps working exactly as it does
           for anyone signed out.
           {pro

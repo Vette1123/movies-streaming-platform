@@ -59,7 +59,7 @@ export default function ListFallbackPage() {
         <h1 className="text-2xl font-semibold tracking-tight">
           This list is not here
         </h1>
-        <p className="text-muted-foreground leading-relaxed">
+        <p className="leading-relaxed text-muted-foreground">
           It was unpublished, or the link is wrong. Lists can be taken down by
           the person who made them at any time.
         </p>
@@ -73,12 +73,12 @@ export default function ListFallbackPage() {
   if (!data) {
     return (
       <div className="container max-w-6xl py-20 lg:py-28">
-        <div className="bg-muted/30 mb-10 h-10 w-2/3 max-w-md animate-pulse rounded-lg" />
+        <div className="mb-10 h-10 w-2/3 max-w-md animate-pulse rounded-lg bg-muted/30" />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {Array.from({ length: 10 }, (_, i) => (
             <div
               key={i}
-              className="bg-muted/30 aspect-2/3 animate-pulse rounded-lg"
+              className="aspect-2/3 animate-pulse rounded-lg bg-muted/30"
             />
           ))}
         </div>

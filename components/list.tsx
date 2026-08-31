@@ -126,7 +126,7 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
     // Callers must NOT add their own horizontal padding (the detail pages used to
     // wrap this in a narrow `container`, which made the row a different width than
     // home and clipped the scroll region).
-    <nav className="cv-auto px-5 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10 xl:px-16 2xl:px-20">
+    <nav className="cv-auto px-5 py-6 sm:p-8 lg:px-12 lg:py-10 xl:px-16 2xl:px-20">
       {/* Heading row: title left, See all right. The chip is ALWAYS visible —
           the old "Explore All" was a hover reveal, which on touch screens (most
           of the audience) meant the row had no way forward at all. The accent
@@ -144,7 +144,7 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
           <h2 className="flex min-w-0 items-center gap-2.5 text-2xl font-bold tracking-tight transition-colors duration-200 ease-in group-hover/heading:text-cyan-200">
             <span
               aria-hidden
-              className="h-5 w-[3px] shrink-0 origin-center rounded-full bg-gradient-to-b from-cyan-300 to-cyan-500 opacity-85 shadow-[0_0_8px_rgba(103,232,249,0.5)] transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/heading:scale-y-[1.35] group-hover/heading:opacity-100 motion-reduce:transition-none"
+              className="h-5 w-[3px] shrink-0 origin-center rounded-full bg-linear-to-b from-cyan-300 to-cyan-500 opacity-85 shadow-[0_0_8px_rgba(103,232,249,0.5)] transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/heading:scale-y-[1.35] group-hover/heading:opacity-100 motion-reduce:transition-none"
             />
             <span className="truncate">{title}</span>
           </h2>
@@ -155,7 +155,7 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
       {items.length === 0 && (
         <div
           role="status"
-          className="text-muted-foreground border-border/60 flex items-center gap-2 rounded-lg border border-dashed px-4 py-6 text-sm"
+          className="flex items-center gap-2 rounded-lg border border-dashed border-border/60 px-4 py-6 text-sm text-muted-foreground"
         >
           <Clapperboard className="size-4 shrink-0 opacity-70" />
           Nothing to show here yet — check back soon.
@@ -197,7 +197,7 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
               // card poster is now w-full of this box, not a fixed 250px).
               <div
                 key={item.id}
-                className="w-[160px] shrink-0 snap-start sm:w-[190px] lg:w-[230px] 2xl:w-[250px]"
+                className="w-40 shrink-0 snap-start sm:w-[190px] lg:w-[230px] 2xl:w-[250px]"
               >
                 <Card item={item} itemType={itemType} />
               </div>
@@ -247,7 +247,7 @@ const RailArrow = ({ direction, visible, onClick }: RailArrowProps) => {
         'focus-visible:border-cyan-300/70 focus-visible:opacity-100 focus-visible:outline-none',
         'group-focus-within/rail:opacity-100 group-hover/rail:opacity-100',
         isLeft ? 'left-2' : 'right-2',
-        !visible && 'pointer-events-none !opacity-0'
+        !visible && 'pointer-events-none opacity-0!'
       )}
     >
       <Icon className="size-[1.1rem] drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />

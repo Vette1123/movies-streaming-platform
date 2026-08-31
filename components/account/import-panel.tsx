@@ -164,15 +164,15 @@ export function ImportPanel() {
   return (
     <div className="max-w-[65ch] space-y-6">
       <div className="space-y-3">
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           Export from{' '}
-          <strong className="text-foreground font-medium">Letterboxd</strong>{' '}
+          <strong className="font-medium text-foreground">Letterboxd</strong>{' '}
           (Settings → Import &amp; Export → Export your data) or{' '}
-          <strong className="text-foreground font-medium">IMDb</strong> (a list
+          <strong className="font-medium text-foreground">IMDb</strong> (a list
           → Export), then drop the CSV here. A file with ratings becomes watch
           history and scores; a file without them becomes your watchlist.
         </p>
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           The file never leaves this device. Only titles that need a TMDB id are
           looked up, and your ratings are not part of that lookup.
         </p>
@@ -204,7 +204,7 @@ export function ImportPanel() {
           Choose a CSV
         </Button>
         {phase === 'working' && progress.total > 0 && (
-          <span className="text-muted-foreground font-mono text-sm tabular-nums">
+          <span className="font-mono text-sm text-muted-foreground tabular-nums">
             {progress.done} / {progress.total}
           </span>
         )}
@@ -246,14 +246,14 @@ function Result({ outcome }: { outcome: Outcome }) {
       <p className="text-sm font-semibold">
         {outcome.matched} added to your {where}
       </p>
-      <p className="text-muted-foreground text-sm leading-relaxed">
+      <p className="text-sm leading-relaxed text-muted-foreground">
         {outcome.rated > 0 &&
           `${outcome.rated} ratings came across onto the ten-point scale. `}
         {outcome.unmatched > 0
           ? `${outcome.unmatched} could not be matched to a title and were left out — usually a short, a re-release, or a name that means something different on TMDB.`
           : 'Everything in the file was matched.'}
       </p>
-      <p className="text-muted-foreground text-sm leading-relaxed">
+      <p className="text-sm leading-relaxed text-muted-foreground">
         Anything already in your library was left exactly as it was. Your
         devices catch up on the next sync.
       </p>

@@ -146,8 +146,8 @@ export function SourceSwitcher({
                 aria-pressed={isActive}
                 onClick={() => select(entry.id)}
                 className={cn(
-                  'group focus-visible:ring-primary inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-semibold text-white transition-all focus-visible:ring-2 focus-visible:outline-hidden',
-                  'bg-gradient-to-r from-amber-500 via-rose-500 to-fuchsia-600',
+                  'group inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-semibold text-white transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden',
+                  'bg-linear-to-r from-amber-500 via-rose-500 to-fuchsia-600',
                   'shadow-[0_0_0_1px_rgba(255,255,255,0.25),0_4px_14px_-2px_rgba(244,63,94,0.55)]',
                   'hover:shadow-[0_0_0_1px_rgba(255,255,255,0.45),0_6px_20px_-2px_rgba(244,63,94,0.75)]',
                   !isActive && 'opacity-80 hover:opacity-100',
@@ -171,7 +171,7 @@ export function SourceSwitcher({
               aria-pressed={isActive}
               onClick={() => select(entry.id)}
               className={cn(
-                'focus-visible:ring-primary rounded-full px-3 py-1.5 font-medium backdrop-blur-sm transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
+                'rounded-full px-3 py-1.5 font-medium backdrop-blur-sm transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden',
                 isActive
                   ? 'bg-white text-black'
                   : 'bg-black/50 text-white/80 hover:bg-black/70 hover:text-white'

@@ -44,7 +44,7 @@ export function RescueBanner() {
   if (!shouldOfferRescue(counts, signedIn, dismissed)) return null
 
   return (
-    <div className="border-primary/25 from-primary/10 relative mb-8 rounded-lg border bg-gradient-to-br to-transparent p-5 sm:p-6">
+    <div className="relative mb-8 rounded-lg border border-primary/25 bg-linear-to-br from-primary/10 to-transparent p-5 sm:p-6">
       <Button
         variant="ghost"
         size="icon"
@@ -64,7 +64,7 @@ export function RescueBanner() {
             <CloudOff className="size-4 shrink-0" />
             {rescueLine(counts)}
           </p>
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             Clear this browser, switch phones or open a private window and it is
             gone. Signing in with Google is free, takes one tap, and keeps all
             of it — nothing about it is a paid feature.

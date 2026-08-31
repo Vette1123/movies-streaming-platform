@@ -61,7 +61,7 @@ export const TrailerDialog = React.memo(function TrailerDialog({
           aria-label="Watch trailer"
           className={cn(heroActionButtonBase, heroActionButtonIdle)}
         >
-          <Play className="text-primary size-5 fill-current drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
+          <Play className="size-5 fill-current text-primary drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
           <span className="hidden sm:inline">Trailer</span>
         </Button>
       </DialogTrigger>
@@ -76,7 +76,7 @@ export const TrailerDialog = React.memo(function TrailerDialog({
               trailer nobody opened. */}
           {open && (
             <iframe
-              className="h-full w-full"
+              className="size-full"
               src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&rel=0`}
               title={title ? `${title} trailer` : 'Trailer'}
               allow={YOUTUBE_EMBED_ALLOW}

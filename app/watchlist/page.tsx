@@ -35,7 +35,7 @@ function Watchlist() {
             watching?" still needs an obvious door. */}
         <Link
           href="/watch-history"
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-foreground"
         >
           <History className="size-4" />
           Watch history

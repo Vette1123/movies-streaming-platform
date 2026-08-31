@@ -218,7 +218,7 @@ function Hero() {
         <h1 className="text-4xl font-bold tracking-tighter text-balance md:text-5xl lg:text-6xl">
           Reely is free. Support is what keeps it that way.
         </h1>
-        <p className="text-muted-foreground max-w-[46ch] text-lg leading-relaxed">
+        <p className="max-w-[46ch] text-lg leading-relaxed text-muted-foreground">
           Everything here stays free for everyone. Supporting it moves your
           library off this one browser and unlocks the rest.
         </p>
@@ -248,35 +248,35 @@ function Hero() {
  */
 function PlanLadder() {
   return (
-    <div className="border-border/70 bg-card/30 divide-border/70 divide-y rounded-2xl border">
+    <div className="divide-y divide-border/70 rounded-2xl border border-border/70 bg-card/30">
       {PLANS.map(({ name, price, note, badge, featured }) => (
         <div
           key={name}
           className={cn(
             'flex items-start justify-between gap-6 p-6',
-            featured && 'from-primary/10 bg-linear-to-r to-transparent'
+            featured && 'bg-linear-to-r from-primary/10 to-transparent'
           )}
         >
           <div className="min-w-0">
             <p className="flex flex-wrap items-center gap-2 font-semibold">
               {name}
               {badge && (
-                <span className="bg-primary/15 text-primary rounded-full px-2 py-0.5 text-xs font-semibold">
+                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
                   {badge}
                 </span>
               )}
             </p>
-            <p className="text-muted-foreground mt-1 max-w-[34ch] text-sm leading-relaxed">
+            <p className="mt-1 max-w-[34ch] text-sm leading-relaxed text-muted-foreground">
               {note}
             </p>
           </div>
           <p className="font-mono text-4xl leading-none font-semibold tabular-nums">
-            <span className="text-muted-foreground align-super text-lg">$</span>
+            <span className="align-super text-lg text-muted-foreground">$</span>
             {price}
           </p>
         </div>
       ))}
-      <p className="text-muted-foreground p-6 text-xs leading-relaxed">
+      <p className="p-6 text-xs leading-relaxed text-muted-foreground">
         Handled by Buy Me a Coffee. Reely never sees a card number.
       </p>
     </div>
@@ -298,13 +298,13 @@ function Flagships() {
       </h2>
 
       <div className="mt-10 grid gap-4 lg:grid-cols-5">
-        <article className="border-primary/20 from-primary/10 relative overflow-hidden rounded-2xl border bg-linear-to-br to-transparent lg:col-span-3">
+        <article className="relative overflow-hidden rounded-2xl border border-primary/20 bg-linear-to-br from-primary/10 to-transparent lg:col-span-3">
           <div className="max-w-[52ch] p-6 sm:p-8">
-            <lead.Icon className="text-primary size-7" />
+            <lead.Icon className="size-7 text-primary" />
             <h3 className="mt-4 text-2xl font-semibold tracking-tight md:text-3xl">
               {lead.title}
             </h3>
-            <p className="text-muted-foreground mt-3 leading-relaxed">
+            <p className="mt-3 leading-relaxed text-muted-foreground">
               {lead.body}
             </p>
           </div>
@@ -316,7 +316,7 @@ function Flagships() {
           {rest.map(({ Icon, title, body }, index) => (
             <article
               key={title}
-              className="border-border/70 bg-card/40 relative flex flex-col justify-center rounded-2xl border p-6 sm:p-8"
+              className="relative flex flex-col justify-center rounded-2xl border border-border/70 bg-card/40 p-6 sm:p-8"
             >
               {index === 0 && (
                 // A local file in public/, shipped at exactly the one size it
@@ -333,9 +333,9 @@ function Flagships() {
                   className="pointer-events-none absolute -top-16 -right-10 hidden h-auto w-32 rotate-6 rounded-t-xl border shadow-xl lg:block"
                 />
               )}
-              <Icon className="text-primary size-5" />
+              <Icon className="size-5 text-primary" />
               <h3 className="mt-4 text-lg font-semibold">{title}</h3>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 {body}
               </p>
             </article>
@@ -359,12 +359,12 @@ function TheRest() {
     <section className={cn(SECTION, 'py-16')}>
       <div className="grid gap-x-12 gap-y-10 sm:grid-cols-2">
         {SUPPORT_FEATURES.map(({ Icon, title, body }) => (
-          <article key={title} className="border-primary/30 border-l pl-5">
+          <article key={title} className="border-l border-primary/30 pl-5">
             <div className="flex items-center gap-2.5">
-              <Icon className="text-primary size-4 shrink-0" />
+              <Icon className="size-4 shrink-0 text-primary" />
               <h3 className="font-semibold">{title}</h3>
             </div>
-            <p className="text-muted-foreground mt-2 max-w-[52ch] text-sm leading-relaxed">
+            <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-muted-foreground">
               {body}
             </p>
           </article>
@@ -379,11 +379,11 @@ function TheRest() {
 function FreeForever() {
   return (
     <section className={cn(SECTION, 'py-16')}>
-      <div className="border-border/70 rounded-2xl border border-dashed p-6 sm:p-10">
+      <div className="rounded-2xl border border-dashed border-border/70 p-6 sm:p-10">
         <h2 className="max-w-[24ch] text-3xl font-bold tracking-tight md:text-4xl">
           What stays free, permanently
         </h2>
-        <p className="text-muted-foreground mt-4 max-w-[62ch] leading-relaxed">
+        <p className="mt-4 max-w-[62ch] leading-relaxed text-muted-foreground">
           Not a trial, not a teaser, and not something that quietly shrinks
           later. If you never pay a penny, Reely keeps doing everything it does
           today.
@@ -391,7 +391,7 @@ function FreeForever() {
         <ul className="mt-8 grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
           {FREE_FOREVER.map((line) => (
             <li key={line} className="flex items-start gap-2.5">
-              <Check className="text-primary mt-0.5 size-4 shrink-0" />
+              <Check className="mt-0.5 size-4 shrink-0 text-primary" />
               <span className="text-sm leading-relaxed">{line}</span>
             </li>
           ))}
@@ -409,11 +409,11 @@ function WhereTheMoneyGoes() {
         <h2 className="text-3xl font-bold tracking-tight text-balance md:text-4xl">
           Where the money actually goes
         </h2>
-        <dl className="divide-border/70 divide-y">
+        <dl className="divide-y divide-border/70">
           {COSTS.map(({ title, body }, index) => (
             <div key={title} className={cn('py-5', index === 0 && 'pt-0')}>
               <dt className="font-semibold">{title}</dt>
-              <dd className="text-muted-foreground mt-2 max-w-[68ch] text-sm leading-relaxed">
+              <dd className="mt-2 max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
                 {body}
               </dd>
             </div>
@@ -430,14 +430,14 @@ function HowItReachesYou() {
       <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
         How it reaches your account
       </h2>
-      <ol className="border-border/70 mt-10 grid gap-8 border-t pt-8 md:grid-cols-3 md:gap-10">
+      <ol className="mt-10 grid gap-8 border-t border-border/70 pt-8 md:grid-cols-3 md:gap-10">
         {STEPS.map(({ title, body }, index) => (
           <li key={title}>
-            <span className="text-primary/40 font-mono text-4xl leading-none font-semibold tabular-nums">
+            <span className="font-mono text-4xl leading-none font-semibold text-primary/40 tabular-nums">
               {index + 1}
             </span>
             <h3 className="mt-3 font-semibold">{title}</h3>
-            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               {body}
             </p>
           </li>
@@ -458,7 +458,7 @@ function Faq() {
         {FAQ.map(({ q, a }) => (
           <div key={q} className="space-y-2">
             <dt className="font-semibold">{q}</dt>
-            <dd className="text-muted-foreground max-w-[60ch] text-sm leading-relaxed">
+            <dd className="max-w-[60ch] text-sm leading-relaxed text-muted-foreground">
               {a}
             </dd>
           </div>
@@ -482,13 +482,13 @@ function Faq() {
 function ContactSection() {
   return (
     <section className={cn(SECTION, 'py-16')}>
-      <div className="border-primary/25 from-primary/5 rounded-2xl border bg-linear-to-br to-transparent p-6 sm:p-8">
+      <div className="rounded-2xl border border-primary/25 bg-linear-to-br from-primary/5 to-transparent p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="min-w-0 space-y-3">
             <h2 className="text-2xl font-bold tracking-tight">
               Something wrong? Write to me directly.
             </h2>
-            <p className="text-muted-foreground max-w-[60ch] leading-relaxed">
+            <p className="max-w-[60ch] leading-relaxed text-muted-foreground">
               A payment that did not switch anything on, a subscription you want
               cancelled or refunded, the wrong email address on the account, a
               bug, or a feature you think Reely should have. It comes straight

@@ -92,7 +92,7 @@ export default function MoodPage() {
       <h1 className="text-2xl font-bold lg:text-3xl">
         What are you in the mood for?
       </h1>
-      <p className="text-muted-foreground mt-2 max-w-xl text-sm">
+      <p className="mt-2 max-w-xl text-sm text-muted-foreground">
         Skip the scrolling. Pick the feeling, get a stack tuned for it. Every
         pick is rated 6.5+ by people who watched it.
       </p>
@@ -117,7 +117,7 @@ export default function MoodPage() {
           >
             <span className="text-2xl">{entry.emoji}</span>
             <span className="mt-1 block font-semibold">{entry.label}</span>
-            <span className="text-muted-foreground block text-xs">
+            <span className="block text-xs text-muted-foreground">
               {entry.blurb}
             </span>
           </button>
@@ -152,7 +152,7 @@ export default function MoodPage() {
             <MoodResults mood={mood} mediaType={mediaType} />
           </>
         ) : (
-          <div className="border-border/60 text-muted-foreground rounded-xl border border-dashed p-10 text-center text-sm">
+          <div className="rounded-xl border border-dashed border-border/60 p-10 text-center text-sm text-muted-foreground">
             Tap a mood above and the stack appears here.
             <div className="mt-4">
               <Link href="/reels" className={buttonVariants({ size: 'sm' })}>

@@ -60,11 +60,11 @@ export const DetailsCredits = ({
                 />
               </div>
             ) : (
-              <div className="bg-muted relative aspect-2/3 w-full rounded-lg shadow-md"></div>
+              <div className="relative aspect-2/3 w-full rounded-lg bg-muted shadow-md"></div>
             )}
             <p className="mt-1 truncate text-sm sm:text-base">{cast.name}</p>
             {cast.character && (
-              <p className="text-muted-foreground truncate text-xs">
+              <p className="truncate text-xs text-muted-foreground">
                 {cast.character}
               </p>
             )}

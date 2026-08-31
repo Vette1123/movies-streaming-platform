@@ -99,7 +99,7 @@ export function ListsPanel() {
 
   return (
     <div className="space-y-4">
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       {open ? (
         <ListEditor
@@ -120,7 +120,7 @@ export function ListsPanel() {
       ) : (
         <>
           {lists.length === 0 ? (
-            <p className="text-muted-foreground max-w-[60ch] text-sm leading-relaxed">
+            <p className="max-w-[60ch] text-sm leading-relaxed text-muted-foreground">
               No lists yet. Start one and pull titles into it from everything
               you have saved or watched.
             </p>
@@ -131,15 +131,15 @@ export function ListsPanel() {
                   <button
                     type="button"
                     onClick={() => setEditing(list.id)}
-                    className="hover:border-primary/50 hover:bg-card w-full rounded-lg border p-4 text-left transition-colors"
+                    className="w-full rounded-lg border p-4 text-left transition-colors hover:border-primary/50 hover:bg-card"
                   >
                     <span className="flex items-center justify-between gap-2">
                       <span className="truncate font-medium">{list.name}</span>
                       {list.slug && (
-                        <Globe className="text-primary size-4 shrink-0" />
+                        <Globe className="size-4 shrink-0 text-primary" />
                       )}
                     </span>
-                    <span className="text-muted-foreground mt-1 block text-xs">
+                    <span className="mt-1 block text-xs text-muted-foreground">
                       {summaryOf(list)}
                       {list.slug ? ' · public' : ''}
                     </span>
@@ -195,7 +195,7 @@ function NewList({
         setName('')
       }}
     >
-      <div className="min-w-[12rem] flex-1 space-y-2">
+      <div className="min-w-48 flex-1 space-y-2">
         <Label htmlFor="new-list">New list</Label>
         <Input
           id="new-list"
@@ -212,7 +212,7 @@ function NewList({
 
       {presets.length > 0 && (
         <div className="w-full space-y-2 pt-2">
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             Or start one from a filter you saved — a smart list keeps itself up
             to date instead of holding the titles you put in it.
           </p>
@@ -228,7 +228,7 @@ function NewList({
                     `${preset.query}&mediaType=${presetMediaType(preset)}`
                   )
                 }
-                className="border-border/70 hover:bg-accent flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors"
+                className="flex items-center gap-1.5 rounded-full border border-border/70 px-2.5 py-1 text-xs transition-colors hover:bg-accent"
               >
                 <Wand2 className="size-3" />
                 {preset.name}
@@ -312,7 +312,7 @@ function ListEditor({
 
       {list.smart_query ? (
         <section className="space-y-3">
-          <p className="text-muted-foreground max-w-[62ch] text-sm leading-relaxed">
+          <p className="max-w-[62ch] text-sm leading-relaxed text-muted-foreground">
             This list follows a saved filter. Nothing is added or removed by
             hand — what it holds is whatever matches right now, here and on the
             public page. Below is what that is at this moment.
@@ -352,7 +352,7 @@ function ListEditor({
 
         <Button
           variant="ghost"
-          className="text-destructive hover:text-destructive ml-auto"
+          className="ml-auto text-destructive hover:text-destructive"
           disabled={busy}
           onClick={onDelete}
         >
@@ -397,7 +397,7 @@ function ListItems({
 }) {
   if (items.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
+      <p className="text-sm text-muted-foreground">
         Nothing in this list yet. Add something from your library below.
       </p>
     )
@@ -414,7 +414,7 @@ function ListItems({
       {items.map((item, index) => (
         <li
           key={`${item.type}:${item.id}`}
-          className="bg-card/50 grid gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_auto]"
+          className="grid gap-3 rounded-lg border bg-card/50 p-3 sm:grid-cols-[1fr_auto]"
         >
           <div className="min-w-0 space-y-2">
             <p className="truncate text-sm font-medium">{item.title}</p>
@@ -473,8 +473,8 @@ function Rating({
           <Star
             className={
               score <= value
-                ? 'fill-primary text-primary size-3.5'
-                : 'text-muted-foreground/40 group-hover:text-muted-foreground size-3.5'
+                ? 'size-3.5 fill-primary text-primary'
+                : 'size-3.5 text-muted-foreground/40 group-hover:text-muted-foreground'
             }
           />
         </button>
@@ -531,7 +531,7 @@ function AddFromLibrary({
       </div>
 
       {candidates.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
+        <p className="text-sm text-muted-foreground">
           Nothing left to add from your library.
         </p>
       ) : (
@@ -548,7 +548,7 @@ function AddFromLibrary({
                   poster_path: item.poster_path || null,
                 })
               }
-              className="hover:border-primary/60 hover:bg-accent rounded-full border px-3 py-1.5 text-xs"
+              className="rounded-full border px-3 py-1.5 text-xs hover:border-primary/60 hover:bg-accent"
             >
               <Plus className="mr-1 inline size-3" />
               {item.title}

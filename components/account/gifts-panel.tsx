@@ -163,7 +163,7 @@ function Redeem({
           Redeem
         </Button>
       </div>
-      <p className="text-muted-foreground max-w-[62ch] text-sm leading-relaxed">
+      <p className="max-w-[62ch] text-sm leading-relaxed text-muted-foreground">
         A month of everything supporters get, added on top of anything you
         already have. No card, nothing to cancel — when the month is up it
         simply stops.
@@ -187,7 +187,7 @@ function GiveAway({
     <section className="space-y-3 border-t pt-6">
       <div>
         <p className="text-sm font-medium">Give a month away</p>
-        <p className="text-muted-foreground mt-1 max-w-[62ch] text-sm leading-relaxed">
+        <p className="mt-1 max-w-[62ch] text-sm leading-relaxed text-muted-foreground">
           Mint a code and send it to whoever you keep telling about this. It
           costs you nothing and it does not touch your own support — it is the
           honest version of a referral link.
@@ -210,7 +210,7 @@ function GiveAway({
       </Button>
 
       {codes.some((entry) => entry.used) && (
-        <p className="text-muted-foreground text-xs">
+        <p className="text-xs text-muted-foreground">
           {codes.filter((entry) => entry.used).length} of your codes have been
           used.
         </p>
@@ -224,7 +224,7 @@ function CodeRow({ code }: { code: string }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <code className="bg-muted rounded-md px-3 py-2 font-mono text-sm tracking-widest">
+      <code className="rounded-md bg-muted px-3 py-2 font-mono text-sm tracking-widest">
         {code}
       </code>
       <Button
@@ -259,7 +259,7 @@ function Referrals({
           <Users className="size-4" />
           People who joined from your page
         </p>
-        <p className="text-muted-foreground mt-1 max-w-[62ch] text-sm leading-relaxed">
+        <p className="mt-1 max-w-[62ch] text-sm leading-relaxed text-muted-foreground">
           Every {REFERRALS_PER_MONTH} sign-ups from your public page is a free
           month, added automatically. Nothing to claim and nothing to chase — it
           is on your account the moment the third person joins.
@@ -271,7 +271,7 @@ function Referrals({
           value={earned}
           label={earned === 1 ? 'month earned' : 'months earned'}
         />
-        <p className="text-muted-foreground text-sm">
+        <p className="text-sm text-muted-foreground">
           {toNext} more for the next one.
         </p>
       </div>
@@ -285,7 +285,7 @@ function Figure({ value, label }: { value: number; label: string }) {
       <span className="font-mono text-2xl font-semibold tabular-nums">
         {value}
       </span>
-      <span className="text-muted-foreground text-xs">{label}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
     </p>
   )
 }

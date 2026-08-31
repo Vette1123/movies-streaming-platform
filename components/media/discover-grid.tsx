@@ -115,7 +115,7 @@ export const DiscoverGrid = ({
 
   if (items.length === 0) {
     return (
-      <p className="text-muted-foreground py-20 text-center">{emptyMessage}</p>
+      <p className="py-20 text-center text-muted-foreground">{emptyMessage}</p>
     )
   }
 

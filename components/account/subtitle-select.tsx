@@ -59,7 +59,7 @@ export function SubtitleSelect({
           aria-controls={listId}
           aria-label="Subtitle language"
           className={cn(
-            'focus-visible:ring-ring inline-flex w-full max-w-72 items-center gap-2 rounded-full border border-white/10 px-3.5 py-2 text-sm font-medium transition-colors hover:border-white/20 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:outline-hidden',
+            'inline-flex w-full max-w-72 items-center gap-2 rounded-full border border-white/10 px-3.5 py-2 text-sm font-medium transition-colors hover:border-white/20 hover:bg-white/6 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden',
             className
           )}
         >

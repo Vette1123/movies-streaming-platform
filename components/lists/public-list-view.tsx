@@ -22,7 +22,7 @@ export function PublicListView({ list }: { list: PublicList }) {
   return (
     <div className="container max-w-6xl py-20 lg:py-28">
       <header className="mb-10 max-w-3xl space-y-3">
-        <p className="text-muted-foreground flex items-center gap-2 text-xs font-semibold tracking-widest uppercase">
+        <p className="flex items-center gap-2 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
           {list.owner ? `A list by ${list.owner}` : 'A list on Reely'}
           {list.owner_pro && <SupporterBadge className="tracking-normal" />}
         </p>
@@ -30,11 +30,11 @@ export function PublicListView({ list }: { list: PublicList }) {
           {list.name}
         </h1>
         {list.description && (
-          <p className="text-muted-foreground max-w-[65ch] leading-relaxed">
+          <p className="max-w-[65ch] leading-relaxed text-muted-foreground">
             {list.description}
           </p>
         )}
-        <p className="text-muted-foreground text-sm">{countLine(list)}</p>
+        <p className="text-sm text-muted-foreground">{countLine(list)}</p>
       </header>
 
       <ListBody list={list} />

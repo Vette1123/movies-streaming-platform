@@ -43,7 +43,7 @@ function CardArt({ card, priority }: { card: MatchCard; priority?: boolean }) {
   const src = posterSrc(card)
   if (!src) {
     return (
-      <div className="text-muted-foreground grid h-full w-full place-items-center bg-zinc-900 p-6 text-center text-sm">
+      <div className="grid size-full place-items-center bg-zinc-900 p-6 text-center text-sm text-muted-foreground">
         {card.title}
       </div>
     )
@@ -56,7 +56,7 @@ function CardArt({ card, priority }: { card: MatchCard; priority?: boolean }) {
       draggable={false}
       loading={priority ? 'eager' : 'lazy'}
       fetchPriority={priority ? 'high' : 'auto'}
-      className="pointer-events-none h-full w-full object-cover select-none"
+      className="pointer-events-none size-full object-cover select-none"
     />
   )
 }
@@ -296,7 +296,7 @@ export function SwipeDeck({
         </button>
       </div>
 
-      <div className="text-muted-foreground mt-5 flex flex-wrap items-center justify-center gap-2 text-xs">
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
         <span className={`${META_CHIP} bg-white/5`}>{remaining} left</span>
         {onFind ? (
           <button

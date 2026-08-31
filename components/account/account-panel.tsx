@@ -301,7 +301,7 @@ export function AccountPanel() {
                 <h2 className="text-xl font-semibold tracking-tight">
                   {open.title}
                 </h2>
-                <p className="text-muted-foreground max-w-[65ch] text-sm leading-relaxed">
+                <p className="max-w-[65ch] text-sm leading-relaxed text-muted-foreground">
                   {open.lede}
                 </p>
               </div>
@@ -351,10 +351,10 @@ function SectionRail({
             aria-current={current === id ? 'page' : undefined}
             onClick={() => onSelect(id)}
             className={cn(
-              'focus-visible:ring-ring group flex w-full shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
+              'group flex w-full shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden',
               current === id
-                ? 'bg-accent text-foreground font-medium'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                ? 'bg-accent font-medium text-foreground'
+                : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
             )}
           >
             <Icon
@@ -401,20 +401,20 @@ function SectionPicker({
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         aria-label={`Section: ${active.label}. Change section`}
-        className="focus-visible:ring-ring flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:border-white/20 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:outline-hidden lg:hidden"
+        className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/3 p-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:border-white/20 hover:bg-white/6 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden lg:hidden"
       >
-        <span className="bg-primary-fill/10 text-primary grid size-9 shrink-0 place-items-center rounded-lg ring-1 ring-white/10">
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-fill/10 text-primary ring-1 ring-white/10">
           <ActiveIcon className="size-4" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="text-muted-foreground block text-[11px]">
+          <span className="block text-[11px] text-muted-foreground">
             Account
           </span>
           <span className="block truncate text-sm font-medium">
             {active.label}
           </span>
         </span>
-        <ChevronDown className="text-muted-foreground size-4 shrink-0" />
+        <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
       </SheetTrigger>
 
       <SheetContent
@@ -433,10 +433,10 @@ function SectionPicker({
               aria-current={current === id ? 'page' : undefined}
               onClick={() => go(id)}
               className={cn(
-                'focus-visible:ring-ring flex items-center gap-3 rounded-xl border p-3 text-left text-sm transition focus-visible:ring-2 focus-visible:outline-hidden',
+                'flex items-center gap-3 rounded-xl border p-3 text-left text-sm transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden',
                 current === id
                   ? 'border-primary/40 bg-primary/10 font-medium'
-                  : 'border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.06]'
+                  : 'border-white/10 bg-white/3 hover:border-white/20 hover:bg-white/6'
               )}
             >
               <span
@@ -451,7 +451,7 @@ function SectionPicker({
               </span>
               <span className="min-w-0 flex-1 truncate">{label}</span>
               {current === id && (
-                <Check className="text-primary size-4 shrink-0" />
+                <Check className="size-4 shrink-0 text-primary" />
               )}
             </button>
           ))}
@@ -495,26 +495,26 @@ function Overview({
               key={id}
               type="button"
               onClick={() => onSelect(id)}
-              className="group focus-visible:ring-ring relative flex items-start gap-3.5 rounded-xl border border-white/10 bg-white/[0.03] p-4 pr-9 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.06] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_10px_30px_-12px_rgba(0,0,0,0.7)] focus-visible:ring-2 focus-visible:outline-hidden motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:[&:last-child:nth-child(odd)]:col-span-2"
+              className="group relative flex items-start gap-3.5 rounded-xl border border-white/10 bg-white/3 p-4 pr-9 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/6 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_10px_30px_-12px_rgba(0,0,0,0.7)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:[&:last-child:nth-child(odd)]:col-span-2"
             >
-              <span className="bg-primary-fill/10 text-primary/90 group-hover:bg-primary-fill/20 group-hover:text-primary grid size-9 shrink-0 place-items-center rounded-lg ring-1 ring-white/10 transition-colors">
+              <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-fill/10 text-primary/90 ring-1 ring-white/10 transition-colors group-hover:bg-primary-fill/20 group-hover:text-primary">
                 <Icon className="size-4" />
               </span>
               <span className="min-w-0">
                 <span className="block text-sm font-medium">{label}</span>
-                <span className="text-muted-foreground mt-1 block text-xs leading-relaxed">
+                <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
                   {lede}
                 </span>
               </span>
-              <ChevronRight className="text-muted-foreground/50 group-hover:text-primary absolute top-4.5 right-3 size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" />
+              <ChevronRight className="absolute top-4.5 right-3 size-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5 group-hover:text-primary motion-reduce:transition-none" />
             </button>
           ))}
         </div>
       </div>
 
-      <p className="text-muted-foreground text-sm">
+      <p className="text-sm text-muted-foreground">
         Counting hours instead?{' '}
-        <Link href="/stats" className="hover:text-foreground underline">
+        <Link href="/stats" className="underline hover:text-foreground">
           Your year in Reely
         </Link>
       </p>
@@ -524,9 +524,9 @@ function Overview({
 
 function Tile({ value, label }: { value: number; label: string }) {
   return (
-    <div className="bg-card/50 rounded-lg border p-4">
+    <div className="rounded-lg border bg-card/50 p-4">
       <p className="font-mono text-2xl font-semibold tabular-nums">{value}</p>
-      <p className="text-muted-foreground mt-1 text-xs">{label}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{label}</p>
     </div>
   )
 }
@@ -564,7 +564,7 @@ function SignedOut({
     return (
       <div className="flex min-h-[50svh] flex-col items-center justify-center gap-4 text-center">
         <Icons.google className="size-8 animate-pulse" />
-        <p className="text-muted-foreground text-sm">Taking you to Google…</p>
+        <p className="text-sm text-muted-foreground">Taking you to Google…</p>
         <a
           href={signInHref('/account')}
           className={buttonVariants({ variant: 'outline', size: 'sm' })}
@@ -578,14 +578,14 @@ function SignedOut({
   return (
     <div className="max-w-2xl space-y-8">
       {error && (
-        <p className="border-destructive/40 bg-destructive/10 text-destructive flex items-start gap-2 rounded-lg border p-4 text-sm">
+        <p className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
           {error}
         </p>
       )}
 
       {failed && (
-        <p className="text-muted-foreground rounded-lg border border-dashed p-4 text-sm">
+        <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
           Accounts are not reachable at the moment. Everything else on Reely
           works exactly as normal: your watchlist and history live in this
           browser and do not need an account.
@@ -596,7 +596,7 @@ function SignedOut({
         <h2 className="text-2xl font-semibold tracking-tight">
           Sign in, or do not. Reely works either way.
         </h2>
-        <p className="text-muted-foreground max-w-[60ch] leading-relaxed">
+        <p className="max-w-[60ch] leading-relaxed text-muted-foreground">
           Everything on this site is free and needs no account. Signing in adds
           one thing: somewhere to keep your library that is not this browser,
           and a place to manage it if you support the project.
@@ -611,7 +611,7 @@ function SignedOut({
         Continue with Google
       </a>
 
-      <ul className="text-muted-foreground grid gap-2 text-sm">
+      <ul className="grid gap-2 text-sm text-muted-foreground">
         <li>Google handles the password. Reely never sees one.</li>
         <li>
           We store your email address, your name and avatar as Google reports
@@ -623,12 +623,12 @@ function SignedOut({
         </li>
       </ul>
 
-      <p className="text-muted-foreground text-sm">
-        <Link href="/privacy" className="hover:text-foreground underline">
+      <p className="text-sm text-muted-foreground">
+        <Link href="/privacy" className="underline hover:text-foreground">
           Privacy
         </Link>{' '}
         ·{' '}
-        <Link href="/terms" className="hover:text-foreground underline">
+        <Link href="/terms" className="underline hover:text-foreground">
           Terms
         </Link>
       </p>
@@ -658,13 +658,13 @@ function Identity({ account }: { account: AccountState }) {
             {account.name ?? 'Your account'}
           </h1>
           {account.pro && (
-            <span className="bg-primary/15 text-primary inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
               <Heart className="size-3" />
               Supporter
             </span>
           )}
         </div>
-        <p className="text-muted-foreground truncate text-sm">
+        <p className="truncate text-sm text-muted-foreground">
           {account.email}
           {since ? ` · here since ${since}` : ''}
         </p>
@@ -699,11 +699,11 @@ function PlanSection({ account }: { account: AccountState }) {
 
   if (!account.pro) {
     return (
-      <section className="border-primary/30 from-primary/10 rounded-lg border bg-gradient-to-br to-transparent p-6">
+      <section className="rounded-lg border border-primary/30 bg-linear-to-br from-primary/10 to-transparent p-6">
         <h2 className="text-xl font-semibold tracking-tight">
           You are on the free plan, and it is a real one
         </h2>
-        <p className="text-muted-foreground mt-2 max-w-[60ch] leading-relaxed">
+        <p className="mt-2 max-w-[60ch] leading-relaxed text-muted-foreground">
           Nothing you use today depends on paying, and nothing ever will.
           Supporting Reely adds the things an account makes possible: your
           library everywhere, backup servers when a stream will not start, your
@@ -714,7 +714,7 @@ function PlanSection({ account }: { account: AccountState }) {
           <Link href="/support" className={buttonVariants()}>
             See what support unlocks
           </Link>
-          <span className="text-muted-foreground text-sm">
+          <span className="text-sm text-muted-foreground">
             {supportPriceRow()}
           </span>
         </div>
@@ -729,7 +729,7 @@ function PlanSection({ account }: { account: AccountState }) {
           <h2 className="text-xl font-semibold tracking-tight">
             Thank you. Everything is unlocked.
           </h2>
-          <p className="text-muted-foreground mt-2 max-w-[60ch] leading-relaxed">
+          <p className="mt-2 max-w-[60ch] leading-relaxed text-muted-foreground">
             {throughDate
               ? `Supporter access is yours through ${throughDate}.`
               : 'Your support is what pays for the TMDB traffic, the domain, and the hours. Every supporter feature here is on.'}
@@ -748,7 +748,7 @@ function PlanSection({ account }: { account: AccountState }) {
       {/* Printed for supporters specifically. Everyone else can open an issue or
           close the tab; somebody who has paid and hit a problem needs an address,
           and needs it where they already are rather than three pages away. */}
-      <p className="text-muted-foreground mt-5 text-sm">
+      <p className="mt-5 text-sm text-muted-foreground">
         Anything wrong with your membership — the wrong address, a payment that
         did not register, a refund — email{' '}
         <a

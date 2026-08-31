@@ -169,7 +169,7 @@ export function UpcomingPanel() {
 
   if (state === 'failed') {
     return (
-      <p className="text-muted-foreground rounded-lg border border-dashed p-4 text-sm">
+      <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
         The schedule is not reachable at the moment. Your watchlist and alerts
         are unaffected — try this section again in a minute.
       </p>
@@ -180,7 +180,7 @@ export function UpcomingPanel() {
     <div className="space-y-8">
       {items.length === 0 ? (
         <div className="max-w-[60ch] space-y-4 rounded-lg border border-dashed p-5">
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             {emptyCopy(watchlist)}
           </p>
           <Link
@@ -200,20 +200,20 @@ export function UpcomingPanel() {
               <div className="min-w-0">
                 <Link
                   href={hrefOf(item.key)}
-                  className="hover:text-primary text-sm font-medium underline-offset-4 hover:underline"
+                  className="text-sm font-medium underline-offset-4 hover:text-primary hover:underline"
                 >
                   {item.name}
                 </Link>
                 {item.label && (
-                  <span className="text-muted-foreground ml-2 font-mono text-xs">
+                  <span className="ml-2 font-mono text-xs text-muted-foreground">
                     {item.label}
                   </span>
                 )}
-                <p className="text-muted-foreground mt-0.5 text-xs">
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   {fullDate(item.date)}
                 </p>
               </div>
-              <span className="text-primary shrink-0 text-xs font-semibold">
+              <span className="shrink-0 text-xs font-semibold text-primary">
                 {whenLabel(item.date, todayStamp)}
               </span>
             </li>
@@ -268,12 +268,12 @@ function FeedSection({
   }
 
   return (
-    <section className="bg-card/40 space-y-4 rounded-lg border p-5">
+    <section className="space-y-4 rounded-lg border bg-card/40 p-5">
       <div className="space-y-1">
         <h3 className="text-sm font-semibold">
           Put this in your real calendar
         </h3>
-        <p className="text-muted-foreground max-w-[62ch] text-sm leading-relaxed">
+        <p className="max-w-[62ch] text-sm leading-relaxed text-muted-foreground">
           A private link your calendar app checks on its own. Anything you add
           to your watchlist from now on turns up in it without another import,
           with a reminder the morning before it airs, and the past week stays in
@@ -282,7 +282,7 @@ function FeedSection({
         </p>
       </div>
 
-      <code className="border-border/60 bg-background block overflow-x-auto rounded border px-3 py-2 font-mono text-xs whitespace-nowrap">
+      <code className="block overflow-x-auto rounded border border-border/60 bg-background px-3 py-2 font-mono text-xs whitespace-nowrap">
         {url}
       </code>
 
@@ -355,7 +355,7 @@ function FeedSection({
           {/* The consequence people actually care about, and the one a single
               sentence buries: a calendar that is already subscribed does not
               follow the change, it just quietly stops updating. */}
-          <ul className="text-muted-foreground space-y-2 text-sm">
+          <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="flex gap-2">
               <span aria-hidden className="text-destructive">
                 &bull;
@@ -374,7 +374,7 @@ function FeedSection({
         </ConfirmDialog>
       </div>
 
-      <p className="text-muted-foreground text-xs leading-relaxed">
+      <p className="text-xs leading-relaxed text-muted-foreground">
         Google Calendar: <em>Other calendars → From URL</em>. Apple Calendar:{' '}
         <em>File → New Calendar Subscription</em>. Treat the link like a
         password — anyone who has it can see this schedule. Replace it any time.

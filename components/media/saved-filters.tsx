@@ -69,14 +69,14 @@ export function SavedFilters({
   if (!pro) {
     return (
       <div className={cn('space-y-2 px-1 pb-4', className)}>
-        <p className="text-muted-foreground text-xs leading-relaxed">
+        <p className="text-xs leading-relaxed text-muted-foreground">
           Supporters can save a filter like this one under a name and reopen it
           from any device.
         </p>
         <Link
           href="/support"
           onClick={() => trackSupportCtaClicked({ surface: 'saved-filters' })}
-          className="text-primary text-xs underline underline-offset-2"
+          className="text-xs text-primary underline underline-offset-2"
         >
           What support unlocks
         </Link>
@@ -125,7 +125,7 @@ export function SavedFilters({
         <ul className="flex flex-wrap gap-1.5">
           {presets.map((preset) => (
             <li key={preset.id}>
-              <span className="border-border/70 hover:bg-accent flex items-center gap-1 rounded-full border pr-1 pl-2.5 text-xs transition-colors">
+              <span className="flex items-center gap-1 rounded-full border border-border/70 pr-1 pl-2.5 text-xs transition-colors hover:bg-accent">
                 <button
                   type="button"
                   onClick={() => apply(preset.query)}
@@ -137,7 +137,7 @@ export function SavedFilters({
                   type="button"
                   aria-label={`Delete ${preset.name}`}
                   onClick={() => remove(preset.id)}
-                  className="text-muted-foreground hover:text-destructive grid size-5 place-items-center rounded-full"
+                  className="grid size-5 place-items-center rounded-full text-muted-foreground hover:text-destructive"
                 >
                   <X className="size-3" />
                 </button>
@@ -159,7 +159,7 @@ export function SavedFilters({
               if (event.key === 'Enter') void save()
               if (event.key === 'Escape') setNaming(false)
             }}
-            className="border-input bg-background focus-visible:ring-ring min-w-0 flex-1 rounded-md border px-2 py-1 text-xs focus-visible:ring-2 focus-visible:outline-hidden"
+            className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1 text-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
           />
           <Button
             size="sm"
@@ -176,7 +176,7 @@ export function SavedFilters({
           type="button"
           disabled={!hasActiveFilters || presets.length >= MAX_PRESETS}
           onClick={() => setNaming(true)}
-          className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs disabled:opacity-50"
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
         >
           <BookmarkPlus className="size-3.5" />
           {presets.length >= MAX_PRESETS

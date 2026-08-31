@@ -44,7 +44,7 @@ export function AccountDrawerSection({
           href={signInHref('/account')}
           onClick={onNavigate}
         />
-        <p className="text-muted-foreground px-1 text-xs leading-relaxed">
+        <p className="px-1 text-xs leading-relaxed text-muted-foreground">
           Optional. It syncs your watchlist across devices and unlocks lists,
           alerts and your stats.
         </p>
@@ -54,14 +54,14 @@ export function AccountDrawerSection({
 
   return (
     <DrawerSection title="Account">
-      <div className="border-border/60 bg-muted/40 flex items-center gap-3 rounded-xl border px-3.5 py-3">
+      <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/40 px-3.5 py-3">
         <AccountAvatar name={name} email={email} picture={picture} size="lg" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{name ?? 'Signed in'}</p>
-          <p className="text-muted-foreground truncate text-xs">{email}</p>
+          <p className="truncate text-xs text-muted-foreground">{email}</p>
         </div>
         {pro && (
-          <span className="border-primary/40 bg-primary/10 text-primary shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
+          <span className="shrink-0 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-primary uppercase">
             Supporter
           </span>
         )}

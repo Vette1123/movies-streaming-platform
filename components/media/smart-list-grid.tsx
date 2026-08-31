@@ -42,7 +42,7 @@ export function SmartListGrid({
 
   if (isError) {
     return (
-      <p className="text-muted-foreground text-sm">
+      <p className="text-sm text-muted-foreground">
         Could not work out what is in this list right now. Reloading usually
         fixes it.
       </p>
@@ -71,7 +71,7 @@ export function SmartListGrid({
 
   if (results.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
+      <p className="text-sm text-muted-foreground">
         Nothing matches this filter at the moment. Smart lists follow the
         filter, so this one fills itself back in when something does.
       </p>

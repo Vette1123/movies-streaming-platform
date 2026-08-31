@@ -87,7 +87,7 @@ export function PlayerSettings({
           type="button"
           aria-label="Player settings"
           className={cn(
-            'focus-visible:ring-primary inline-flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 font-medium text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-2 focus-visible:outline-hidden',
+            'inline-flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 font-medium text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden',
             open && 'bg-white text-black hover:bg-white hover:text-black',
             className
           )}
@@ -104,7 +104,7 @@ export function PlayerSettings({
         align="end"
         side="bottom"
         sideOffset={8}
-        className="z-[60] w-[min(20rem,calc(100vw-2rem))] p-3"
+        className="z-60 w-[min(20rem,calc(100vw-2rem))] p-3"
       >
         <SettingGroup>
           <SettingRow label="Subtitles">
@@ -151,7 +151,7 @@ export function PlayerSettings({
 
         <Link
           href="/account#playback"
-          className="text-muted-foreground hover:text-foreground mt-3 inline-flex items-center gap-1.5 px-1 text-xs transition-colors"
+          className="mt-3 inline-flex items-center gap-1.5 px-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           All playback settings
           <ExternalLink className="size-3 shrink-0" aria-hidden />

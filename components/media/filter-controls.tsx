@@ -63,8 +63,8 @@ export const CountBadge = ({
       className={cn(
         'flex h-5 min-w-5 items-center justify-center rounded-full font-semibold tabular-nums',
         tone === 'solid'
-          ? 'bg-primary-fill text-primary-foreground ml-1 px-1 text-xs'
-          : 'bg-primary/15 text-primary px-1.5 text-[11px]',
+          ? 'ml-1 bg-primary-fill px-1 text-xs text-primary-foreground'
+          : 'bg-primary/15 px-1.5 text-[11px] text-primary',
         className
       )}
     >
@@ -89,7 +89,7 @@ export const FilterTriggerButton = React.forwardRef<
       type="button"
       {...props}
     >
-      <Icons.filter className="h-4 w-4" />
+      <Icons.filter className="size-4" />
       Filters
       <CountBadge count={activeFilterCount} />
     </Button>

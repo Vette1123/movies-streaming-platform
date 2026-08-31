@@ -32,7 +32,7 @@ export function AccountSkeleton({ sections = 12 }: { sections?: number }) {
       <div className="grid gap-6 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-12">
         {/* One picker button on a phone, the full rail on a laptop. The rail
             row count is the sections plus the Overview row above them. */}
-        <Skeleton className="h-[3.75rem] w-full rounded-xl lg:hidden" />
+        <Skeleton className="h-15 w-full rounded-xl lg:hidden" />
         <div className="hidden lg:flex lg:flex-col lg:gap-1">
           {Array.from({ length: sections + 1 }).map((_, i) => (
             <Skeleton
@@ -46,14 +46,14 @@ export function AccountSkeleton({ sections = 12 }: { sections?: number }) {
         <div className="min-w-0 space-y-8">
           {/* The plan card. Tall on a phone, where its paragraph wraps to five
               or six lines; a third of that on a laptop. */}
-          <Skeleton className="h-[22rem] w-full rounded-lg sm:h-64 lg:h-44" />
+          <Skeleton className="h-88 w-full rounded-lg sm:h-64 lg:h-44" />
 
           {/* Three counts. */}
           <div className="grid gap-3 sm:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <Skeleton
                 key={i}
-                className="h-[5.25rem] w-full rounded-lg"
+                className="h-21 w-full rounded-lg"
                 style={{ animationDelay: `${i * 90}ms` }}
               />
             ))}
@@ -66,7 +66,7 @@ export function AccountSkeleton({ sections = 12 }: { sections?: number }) {
               {Array.from({ length: sections }).map((_, i) => (
                 <Skeleton
                   key={i}
-                  className="h-[6.5rem] w-full rounded-xl"
+                  className="h-26 w-full rounded-xl"
                   style={{ animationDelay: `${i * 70}ms` }}
                 />
               ))}

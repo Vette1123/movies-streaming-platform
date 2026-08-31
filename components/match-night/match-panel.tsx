@@ -20,7 +20,7 @@ function Presence({ swipers }: { swipers: number }) {
     return `${swipers} people swiping`
   })()
   return (
-    <p className="text-muted-foreground flex items-center gap-2 text-xs">
+    <p className="flex items-center gap-2 text-xs text-muted-foreground">
       <Users className="size-3.5" aria-hidden />
       {label}
       {swipers <= 1 ? (
@@ -68,7 +68,7 @@ export function MatchPanel({
       </div>
 
       {matched.length === 0 ? (
-        <p className="text-muted-foreground mt-3 text-xs leading-relaxed">
+        <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
           Nothing agreed on yet. A title lands here the moment two of you like
           it.
         </p>
@@ -78,7 +78,7 @@ export function MatchPanel({
             <li key={`${card.mediaType}-${card.id}`}>
               <Link
                 href={matchCardHref(card)}
-                className="hover:bg-muted/60 flex items-center gap-3 rounded-lg p-1.5 transition"
+                className="flex items-center gap-3 rounded-lg p-1.5 transition hover:bg-muted/60"
               >
                 {card.poster ? (
                   // eslint-disable-next-line @next/next/no-img-element

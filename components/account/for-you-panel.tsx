@@ -99,7 +99,7 @@ export function ForYouPanel() {
 
   if (state === 'failed') {
     return (
-      <p className="text-muted-foreground rounded-lg border border-dashed p-4 text-sm">
+      <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
         Suggestions are not reachable at the moment. Try this section again in a
         minute.
       </p>
@@ -109,7 +109,7 @@ export function ForYouPanel() {
   if (items.length === 0) {
     return (
       <div className="max-w-[60ch] space-y-4 rounded-lg border border-dashed p-5">
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           {seeds.length === 0
             ? 'Nothing to go on yet. Finish a film or tick an episode off and this fills in from what you watched — no survey, no thumbs, no setup.'
             : 'Nothing new to suggest right now: everything the last few titles point at is already in your library. Watch something different and this changes.'}
@@ -127,7 +127,7 @@ export function ForYouPanel() {
   return (
     <div className="space-y-5">
       {seeds.length > 0 && (
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           Worked out from {listOf(seeds)}. Anything already on your watchlist or
           in your history has been left out.
         </p>
@@ -157,7 +157,7 @@ export function ForYouPanel() {
                     poster_path: item.poster_path,
                   })
                 }
-                className="bg-background/80 text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute top-1.5 left-1.5 grid size-6 place-items-center rounded-full opacity-0 backdrop-blur-sm transition-opacity group-hover/tile:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden max-md:opacity-100"
+                className="absolute top-1.5 left-1.5 grid size-6 place-items-center rounded-full bg-background/80 text-muted-foreground opacity-0 backdrop-blur-sm transition-opacity group-hover/tile:opacity-100 hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden max-md:opacity-100"
               >
                 <X className="size-3.5" />
               </button>
@@ -218,10 +218,10 @@ function Tile({ item }: { item: ForYouItem }) {
         )}
       </div>
       <div className="space-y-0.5">
-        <p className="group-hover:text-primary truncate text-xs font-medium transition-colors">
+        <p className="truncate text-xs font-medium transition-colors group-hover:text-primary">
           {item.title}
         </p>
-        <p className="text-muted-foreground truncate text-[11px]">
+        <p className="truncate text-[11px] text-muted-foreground">
           {becauseLine(item)}
         </p>
       </div>

@@ -42,7 +42,7 @@ export function HiddenPanel() {
     return (
       <div className="max-w-[62ch] space-y-3 rounded-lg border border-dashed p-5">
         <p className="text-sm font-medium">Nothing hidden</p>
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           The dismiss control sits in the corner of every suggestion under
           &ldquo;Because you watched&rdquo;. Anything you dismiss stops
           appearing in suggestions and in browse results, on every device, and
@@ -55,7 +55,7 @@ export function HiddenPanel() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           {hidden.length} {hidden.length === 1 ? 'title is' : 'titles are'} kept
           out of your suggestions and browse results.
         </p>
@@ -93,7 +93,7 @@ export function HiddenPanel() {
             <button
               type="button"
               onClick={() => unhide(item.id)}
-              className="text-muted-foreground hover:text-foreground text-[11px] underline underline-offset-2"
+              className="text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
             >
               Show again
             </button>

@@ -76,7 +76,7 @@ function NowPlayingBars() {
       {[0, 160, 320].map((delay) => (
         <span
           key={delay}
-          className="animate-equalize bg-primary w-[3px] origin-bottom rounded-full"
+          className="w-[3px] origin-bottom animate-equalize rounded-full bg-primary"
           style={{ height: '100%', animationDelay: `${delay}ms` }}
         />
       ))}
@@ -270,7 +270,7 @@ export const Episodes = ({
       {!episodes?.length && !isEpisodesLoading && (
         <div
           role="status"
-          className="text-muted-foreground flex flex-col items-center gap-2 py-10 text-center text-sm"
+          className="flex flex-col items-center gap-2 py-10 text-center text-sm text-muted-foreground"
         >
           <Tv className="size-6 opacity-60" aria-hidden />
           No episodes found for this season yet.
@@ -349,7 +349,7 @@ export const Episodes = ({
                           event.stopPropagation()
                           reveal(episode.episode_number)
                         }}
-                        className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer items-center gap-1 rounded px-1 text-[10px]"
+                        className="inline-flex cursor-pointer items-center gap-1 rounded px-1 text-[10px] text-muted-foreground hover:text-foreground"
                       >
                         <Eye className="size-3" />
                         Show
@@ -361,13 +361,13 @@ export const Episodes = ({
                       className="relative top-0 left-0 shrink-0"
                     />
                     {isUpNext && (
-                      <span className="bg-primary/15 text-primary shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
+                      <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
                         {resume?.isNext ? 'Up next' : 'Continue'}
                       </span>
                     )}
                   </span>
                   {(episode?.air_date || episode?.runtime) && (
-                    <span className="text-muted-foreground flex flex-wrap items-center gap-x-2 text-xs">
+                    <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
                       {episode?.air_date && (
                         <span>{dateFormatter(episode.air_date, true)}</span>
                       )}
@@ -410,7 +410,7 @@ export const Episodes = ({
                       'grid size-5 cursor-pointer place-items-center rounded-full transition',
                       completed
                         ? 'text-emerald-500 hover:text-emerald-400'
-                        : 'text-muted-foreground hover:text-foreground opacity-0 group-hover/ep:opacity-100 focus-visible:opacity-100'
+                        : 'text-muted-foreground opacity-0 group-hover/ep:opacity-100 hover:text-foreground focus-visible:opacity-100'
                     )}
                   >
                     <Check
@@ -423,7 +423,7 @@ export const Episodes = ({
                     {isActive ? (
                       <NowPlayingBars />
                     ) : (
-                      <Play className="text-muted-foreground size-4 fill-current opacity-0 transition-opacity group-hover/ep:opacity-100" />
+                      <Play className="size-4 fill-current text-muted-foreground opacity-0 transition-opacity group-hover/ep:opacity-100" />
                     )}
                   </span>
                 </span>

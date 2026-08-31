@@ -157,7 +157,7 @@ export async function YearPage({
         <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
           {heading}
         </h1>
-        <p className="text-muted-foreground max-w-2xl">{description}</p>
+        <p className="max-w-2xl text-muted-foreground">{description}</p>
       </div>
 
       {/* Sibling years. One of these pages reaches all of them, which is what
@@ -185,7 +185,7 @@ export async function YearPage({
       </nav>
 
       {results.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
+        <p className="text-sm text-muted-foreground">
           Nothing on file for {year} yet.
         </p>
       ) : (

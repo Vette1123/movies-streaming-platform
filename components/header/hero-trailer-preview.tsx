@@ -151,7 +151,7 @@ function TouchFullscreenControls({
     <div
       // pointer-events-auto: the cover is pointer-events-none, so this layer
       // catches the tap. A tap anywhere on the film toggles play/pause.
-      className="pointer-events-auto absolute inset-0 z-[65]"
+      className="pointer-events-auto absolute inset-0 z-65"
       onClick={() => onTogglePlay?.()}
     >
       {/* Pinned mute + exit, top-right. Dimmed so they sit quietly over the
@@ -164,7 +164,7 @@ function TouchFullscreenControls({
         }}
         aria-label={muted ? 'Unmute' : 'Mute'}
         aria-pressed={!muted}
-        className="pointer-events-auto absolute top-5 right-[4.75rem] z-[70] flex size-11 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white opacity-70 backdrop-blur-md transition active:opacity-100"
+        className="pointer-events-auto absolute top-5 right-19 z-70 flex size-11 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white opacity-70 backdrop-blur-md transition active:opacity-100"
       >
         {muted ? (
           <VolumeX className="size-5" />
@@ -179,7 +179,7 @@ function TouchFullscreenControls({
           onExitFullscreen?.()
         }}
         aria-label="Exit full view"
-        className="pointer-events-auto absolute top-5 right-5 z-[70] flex size-11 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white opacity-70 backdrop-blur-md transition active:opacity-100"
+        className="pointer-events-auto absolute top-5 right-5 z-70 flex size-11 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white opacity-70 backdrop-blur-md transition active:opacity-100"
       >
         <Minimize className="size-5" />
       </button>
@@ -245,7 +245,7 @@ function DesktopFullscreenControls({
     <div
       // pointer-events-auto: the cover itself is pointer-events-none, so this
       // layer is what actually catches taps/moves to summon the controls.
-      className={`pointer-events-auto absolute inset-0 z-[65] ${shown ? '' : 'cursor-none'}`}
+      className={`pointer-events-auto absolute inset-0 z-65 ${shown ? '' : 'cursor-none'}`}
       onClick={onBackdropClick}
     >
       <AnimatePresence>
@@ -265,7 +265,7 @@ function DesktopFullscreenControls({
                 reveal()
               }}
               aria-label={paused ? 'Play' : 'Pause'}
-              className="pointer-events-auto absolute top-1/2 left-1/2 z-[70] flex size-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white opacity-80 backdrop-blur-md transition hover:bg-black/60 hover:opacity-100"
+              className="pointer-events-auto absolute top-1/2 left-1/2 z-70 flex size-20 -translate-1/2 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white opacity-80 backdrop-blur-md transition hover:bg-black/60 hover:opacity-100"
             >
               {paused ? (
                 <Play className="size-9 translate-x-0.5 fill-current" />
@@ -284,7 +284,7 @@ function DesktopFullscreenControls({
               }}
               aria-label={muted ? 'Unmute' : 'Mute'}
               aria-pressed={!muted}
-              className="pointer-events-auto absolute top-5 right-[4.75rem] z-[70] flex size-11 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white backdrop-blur-md transition hover:bg-black/70"
+              className="pointer-events-auto absolute top-5 right-19 z-70 flex size-11 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white backdrop-blur-md transition hover:bg-black/70"
             >
               {muted ? (
                 <VolumeX className="size-5" />
@@ -299,7 +299,7 @@ function DesktopFullscreenControls({
                 onExitFullscreen?.()
               }}
               aria-label="Exit full view"
-              className="pointer-events-auto absolute top-5 right-5 z-[70] flex size-11 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white backdrop-blur-md transition hover:bg-black/70"
+              className="pointer-events-auto absolute top-5 right-5 z-70 flex size-11 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white backdrop-blur-md transition hover:bg-black/70"
             >
               <Minimize className="size-5" />
             </button>

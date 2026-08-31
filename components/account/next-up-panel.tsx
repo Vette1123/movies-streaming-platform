@@ -56,7 +56,7 @@ export function NextUpPanel() {
 
   if (state === 'failed') {
     return (
-      <p className="text-muted-foreground rounded-lg border border-dashed p-4 text-sm">
+      <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
         The queue is not reachable at the moment. Nothing is lost — your
         progress is stored on your account either way.
       </p>
@@ -66,7 +66,7 @@ export function NextUpPanel() {
   if (items.length === 0) {
     return (
       <div className="max-w-[60ch] space-y-4 rounded-lg border border-dashed p-5">
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           {emptyCopy(started)}
         </p>
         <Link
@@ -122,7 +122,7 @@ function NextUpRow({ item }: { item: NextUpItem }) {
     <li>
       <Link
         href={item.href}
-        className="group border-border/60 hover:border-primary/40 hover:bg-card/60 flex items-center gap-4 rounded-lg border p-3 transition-colors"
+        className="group flex items-center gap-4 rounded-lg border border-border/60 p-3 transition-colors hover:border-primary/40 hover:bg-card/60"
       >
         <div className="w-14 shrink-0 sm:w-16">
           {item.poster_path ? (
@@ -147,7 +147,7 @@ function NextUpRow({ item }: { item: NextUpItem }) {
 
         <div className="min-w-0 flex-1 space-y-1.5">
           <p className="truncate text-sm font-medium">{item.name}</p>
-          <p className="text-muted-foreground font-mono text-xs">
+          <p className="font-mono text-xs text-muted-foreground">
             {rowMeta(item)}
           </p>
           {/* The bar is the reason somebody comes back: progress you can see is
@@ -155,7 +155,7 @@ function NextUpRow({ item }: { item: NextUpItem }) {
               playback position knows how far in they are — no invented bars. */}
           {hasBar && (
             <div
-              className="bg-muted h-1 w-full overflow-hidden rounded-full"
+              className="h-1 w-full overflow-hidden rounded-full bg-muted"
               role="progressbar"
               aria-valuenow={item.percent}
               aria-valuemin={0}
@@ -163,14 +163,14 @@ function NextUpRow({ item }: { item: NextUpItem }) {
               aria-label={`${item.percent}% of ${item.name} watched`}
             >
               <div
-                className="bg-primary h-full rounded-full transition-[width] duration-700 ease-out"
+                className="h-full rounded-full bg-primary transition-[width] duration-700 ease-out"
                 style={{ width: `${item.percent}%` }}
               />
             </div>
           )}
         </div>
 
-        <Play className="text-muted-foreground group-hover:text-primary size-4 shrink-0 transition-colors" />
+        <Play className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
       </Link>
     </li>
   )

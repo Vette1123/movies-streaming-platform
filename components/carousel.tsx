@@ -567,7 +567,7 @@ export function Carousel({
       >
         {/* Static dark base — guarantees no white flash even on a far dot-jump
           whose target image is outside the mounted window. */}
-        <div className="absolute inset-0 z-0 bg-gradient-to-br from-neutral-900 via-neutral-950 to-black" />
+        <div className="absolute inset-0 z-0 bg-linear-to-br from-neutral-900 via-neutral-950 to-black" />
 
         {/* Screen-reader announcement of the current position. */}
         <div className="sr-only" aria-live="polite" aria-atomic="true">
@@ -651,7 +651,7 @@ export function Carousel({
                 // artifact, not a colour step. Overlapping by a pixel means
                 // there is no boundary to antialias, and since both edges are
                 // sealed to black the overlap itself cannot be seen.
-                className="absolute inset-y-0 -right-px -left-px"
+                className="absolute -inset-x-px inset-y-0"
                 // A slide is placed once and never animates. The track owns all
                 // horizontal motion; anything else writing x broke the release
                 // twice before, and there is no longer a second property being

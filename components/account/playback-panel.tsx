@@ -106,16 +106,16 @@ export function PlaybackPanel() {
       </SettingGroup>
 
       <div className="space-y-3">
-        <p className="text-muted-foreground max-w-[65ch] text-sm leading-relaxed">
+        <p className="max-w-[65ch] text-sm leading-relaxed text-muted-foreground">
           Embed servers come from third parties that Reely does not host or
           control. The Reely Player above is ours. See the{' '}
-          <Link href="/disclaimer" className="hover:text-foreground underline">
+          <Link href="/disclaimer" className="underline hover:text-foreground">
             disclaimer
           </Link>{' '}
           for what each of them means.
         </p>
 
-        <p className="text-muted-foreground max-w-[65ch] text-sm leading-relaxed">
+        <p className="max-w-[65ch] text-sm leading-relaxed text-muted-foreground">
           Trailer autoplay is stored on this device rather than on your account:
           the right answer is different on a laptop and on a phone on cellular
           data.
@@ -149,7 +149,7 @@ function SectionHead({
         {title}
         {badge}
       </h3>
-      <p className="text-muted-foreground max-w-[65ch] text-sm leading-relaxed">
+      <p className="max-w-[65ch] text-sm leading-relaxed text-muted-foreground">
         {children}
       </p>
     </div>
@@ -158,7 +158,7 @@ function SectionHead({
 
 export function ProBadge() {
   return (
-    <span className="rounded-full bg-gradient-to-r from-amber-500 via-rose-500 to-fuchsia-600 px-1.5 py-px text-[9px] leading-tight font-bold tracking-wider text-white">
+    <span className="rounded-full bg-linear-to-r from-amber-500 via-rose-500 to-fuchsia-600 px-1.5 py-px text-[9px] leading-tight font-bold tracking-wider text-white">
       PRO
     </span>
   )
@@ -288,18 +288,18 @@ function ServerSection() {
                   aria-checked={active}
                   onClick={() => void savePrefs({ source: source.id })}
                   className={cn(
-                    'focus-visible:ring-ring inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
+                    'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden',
                     // The house player is not "another server", it is the
                     // product. It keeps the signature gradient whether or not
                     // it is the active one.
                     isRich
                       ? cn(
-                          'border-transparent bg-gradient-to-r from-amber-500 via-rose-500 to-fuchsia-600 text-white shadow-[0_4px_14px_-2px_rgba(244,63,94,0.55)]',
+                          'border-transparent bg-linear-to-r from-amber-500 via-rose-500 to-fuchsia-600 text-white shadow-[0_4px_14px_-2px_rgba(244,63,94,0.55)]',
                           !active && 'opacity-80 hover:opacity-100'
                         )
                       : active
                         ? 'border-primary/70 bg-primary/15 text-foreground'
-                        : 'text-muted-foreground hover:text-foreground border-white/10 hover:border-white/20 hover:bg-white/[0.06]'
+                        : 'border-white/10 text-muted-foreground hover:border-white/20 hover:bg-white/6 hover:text-foreground'
                   )}
                 >
                   {isRich && <Sparkles className="size-3.5 shrink-0" />}

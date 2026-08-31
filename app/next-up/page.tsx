@@ -37,7 +37,7 @@ function NextUp() {
       <h1 className="mb-2 text-2xl font-bold lg:text-3xl">
         Pick up where you left off
       </h1>
-      <p className="text-muted-foreground mb-8 max-w-[60ch] text-sm leading-relaxed">
+      <p className="mb-8 max-w-[60ch] text-sm leading-relaxed text-muted-foreground">
         Every film and show you have going, the exact spot you stopped, newest
         first. Play something anywhere and it moves to the front — here and on
         your home row.

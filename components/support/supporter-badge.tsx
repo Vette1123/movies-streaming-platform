@@ -15,7 +15,7 @@ export function SupporterBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        'border-primary/30 bg-primary/10 text-primary inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[0.6875rem] font-semibold tracking-wide',
+        'inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[0.6875rem] font-semibold tracking-wide text-primary',
         className
       )}
     >

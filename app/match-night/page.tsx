@@ -115,7 +115,7 @@ function DeckPreview({ cards }: { cards: MatchCard[] }) {
       aria-hidden
       className="relative hidden items-center justify-center lg:flex"
     >
-      <div className="bg-primary/15 absolute size-72 rounded-full blur-3xl" />
+      <div className="absolute size-72 rounded-full bg-primary/15 blur-3xl" />
       {trio.map((card, i) => (
         <div
           key={card.id}
@@ -154,7 +154,7 @@ function StartScreen({
           Settle it in
           <span className="text-primary"> six swipes</span>
         </h1>
-        <p className="text-muted-foreground mt-4 max-w-md leading-relaxed">
+        <p className="mt-4 max-w-md leading-relaxed text-muted-foreground">
           Open a room, send the code, and swipe the same deck. Anything you both
           like lights up instantly.
         </p>
@@ -201,7 +201,7 @@ function StartScreen({
           </form>
         </div>
 
-        <p className="text-muted-foreground mt-8 max-w-md text-sm leading-relaxed">
+        <p className="mt-8 max-w-md text-sm leading-relaxed text-muted-foreground">
           No account, nothing saved to a profile. The code is the whole
           credential and the room clears itself after 12 hours.
         </p>
@@ -397,7 +397,7 @@ export default function MatchNightPage() {
     <section className="container min-h-svh pt-20 pb-12 lg:pt-24">
       <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div className="flex items-center gap-2 sm:gap-3">
-          <span className="text-muted-foreground text-sm">Room</span>
+          <span className="text-sm text-muted-foreground">Room</span>
           <button
             type="button"
             onClick={() => {
@@ -428,7 +428,7 @@ export default function MatchNightPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="text-muted-foreground gap-2 rounded-full"
+            className="gap-2 rounded-full text-muted-foreground"
             onClick={leaveRoom}
           >
             <LogOut className="size-4" aria-hidden />
@@ -451,9 +451,9 @@ export default function MatchNightPage() {
           }}
           remaining={cards.length}
           emptyState={
-            <div className="border-border/60 text-muted-foreground w-full max-w-sm rounded-2xl border border-dashed p-10 text-center">
+            <div className="w-full max-w-sm rounded-2xl border border-dashed border-border/60 p-10 text-center text-muted-foreground">
               <Clapperboard className="mx-auto size-8 opacity-60" aria-hidden />
-              <p className="text-foreground mt-4 font-medium">
+              <p className="mt-4 font-medium text-foreground">
                 {deck ? 'That is the whole deck' : 'Dealing the deck…'}
               </p>
               {deck ? (
@@ -472,7 +472,7 @@ export default function MatchNightPage() {
             swipers={matchState?.swipers ?? 0}
             cardsByKey={likedByKey}
           />
-          <div className="border-border/60 border-t pt-6">
+          <div className="border-t border-border/60 pt-6">
             <MediaSearchPicker
               inputId="match-search"
               label="Something specific in mind?"

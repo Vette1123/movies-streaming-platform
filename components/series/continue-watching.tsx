@@ -62,7 +62,7 @@ export const ContinueWatching = ({
             className="h-1 w-full overflow-hidden rounded-full bg-white/25"
           >
             <div
-              className="bg-primary h-full rounded-full transition-[width] duration-500 ease-out motion-reduce:transition-none"
+              className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out motion-reduce:transition-none"
               style={{ width: `${percent}%` }}
             />
           </div>

@@ -15,8 +15,8 @@ import { SeasonsSelector } from '@/components/series/selector'
 // HTML, so it has to match the real aside's dimensions or the page shifts.
 export const SeasonNavigatorFallback = () => (
   <aside className="w-full lg:w-72 lg:shrink-0" aria-hidden>
-    <div className="bg-muted/50 mb-3 h-11 w-full rounded-md" />
-    <div className="bg-card/40 h-[26rem] w-full rounded-xl border shadow-sm lg:h-[34rem]" />
+    <div className="mb-3 h-11 w-full rounded-md bg-muted/50" />
+    <div className="h-104 w-full rounded-xl border bg-card/40 shadow-sm lg:h-136" />
   </aside>
 )
 
@@ -34,7 +34,7 @@ export const SeasonNavigator = ({ series }: { series: SeriesDetails }) => {
         selectedSeason={selectedSeason}
         onSeasonChange={selectSeason}
       />
-      <ScrollArea className="bg-card/40 h-[26rem] w-full rounded-xl border shadow-sm lg:h-[34rem]">
+      <ScrollArea className="h-104 w-full rounded-xl border bg-card/40 shadow-sm lg:h-136">
         <Episodes
           episodes={episodes}
           selectedSeason={selectedSeason}

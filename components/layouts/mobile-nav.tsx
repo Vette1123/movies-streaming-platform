@@ -129,7 +129,7 @@ export function MobileNav({ items }: MobileNavProps) {
           </Link>
         </div>
         <div className="flex-1 overflow-y-auto overscroll-contain">
-          <nav className="divide-border/60 flex flex-col divide-y px-6 pb-4">
+          <nav className="flex flex-col divide-y divide-border/60 px-6 pb-4">
             {items?.map((item) => (
               <MobileLink
                 key={item.title}
@@ -223,7 +223,7 @@ function MobileLink({
       // Assets ahead of the Worker, so they cost no invocation and can't trip
       // the WAF rate limit the card links have to worry about.
       className={cn(
-        'text-foreground/70 hover:text-foreground flex h-11 items-center text-base font-medium transition-colors',
+        'flex h-11 items-center text-base font-medium text-foreground/70 transition-colors hover:text-foreground',
         pathname === href && 'text-secondary-foreground',
         disabled && 'pointer-events-none opacity-60'
       )}

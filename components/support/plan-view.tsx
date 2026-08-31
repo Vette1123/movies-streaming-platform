@@ -58,8 +58,8 @@ function SupporterPanel({ name }: { name: string | null }) {
     // it — which the pitch never showed, because it was the only branch anybody
     // checked.
     <div className="container max-w-(--breakpoint-xl) pt-24 pb-16 lg:pt-28">
-      <section className="border-primary/25 from-primary/10 rounded-2xl border bg-linear-to-br to-transparent p-6 sm:p-8">
-        <p className="text-primary inline-flex items-center gap-2 text-sm font-semibold">
+      <section className="rounded-2xl border border-primary/25 bg-linear-to-br from-primary/10 to-transparent p-6 sm:p-8">
+        <p className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
           <Heart className="size-4" />
           You are a supporter
         </p>
@@ -67,7 +67,7 @@ function SupporterPanel({ name }: { name: string | null }) {
           {name ? `Thank you, ${name}.` : 'Thank you.'} Everything is switched
           on.
         </h1>
-        <p className="text-muted-foreground mt-3 max-w-[62ch] leading-relaxed">
+        <p className="mt-3 max-w-[62ch] leading-relaxed text-muted-foreground">
           This is what keeps Reely online, ad-free, and free for everyone who
           never pays a penny. Every one of the features below is live on your
           account, on every device you sign in on.
@@ -102,12 +102,12 @@ function SupporterPanel({ name }: { name: string | null }) {
         <ul className="mt-8 grid gap-x-12 gap-y-5 sm:grid-cols-2">
           {ALL_SUPPORT_FEATURES.map(({ Icon, title, short }) => (
             <li key={title} className="flex items-start gap-3">
-              <span className="bg-primary/10 text-primary mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full">
+              <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Icon className="size-3.5" />
               </span>
               <div className="min-w-0">
                 <p className="font-medium">{title}</p>
-                <p className="text-muted-foreground mt-0.5 text-sm leading-relaxed">
+                <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
                   {short}
                 </p>
               </div>
@@ -119,17 +119,17 @@ function SupporterPanel({ name }: { name: string | null }) {
       <section className="mt-16 grid gap-10 lg:grid-cols-2 lg:gap-16">
         <div className="space-y-3">
           <h2 className="text-xl font-bold tracking-tight">Change your plan</h2>
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             Switching from monthly to yearly saves two months, and the Lifetime
             is ${SUPPORT_PRICES.lifetime} once and never renews. Both are one
             change on Buy Me a Coffee, which handles the billing.
           </p>
-          <ul className="text-muted-foreground space-y-2 text-sm">
+          <ul className="space-y-2 text-sm text-muted-foreground">
             {LEVELS.map(({ name: level, price, note }) => (
               <li key={level} className="flex items-start gap-2">
-                <Check className="text-primary mt-0.5 size-4 shrink-0" />
+                <Check className="mt-0.5 size-4 shrink-0 text-primary" />
                 <span>
-                  <span className="text-foreground font-medium">{level}</span> —
+                  <span className="font-medium text-foreground">{level}</span> —
                   ${price}, {note}
                 </span>
               </li>
@@ -139,12 +139,12 @@ function SupporterPanel({ name }: { name: string | null }) {
 
         <div className="space-y-3">
           <h2 className="text-xl font-bold tracking-tight">Anything else</h2>
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             Cancelling is one click there too, and it takes effect at the end of
             the period you have already paid for. Nothing you saved is deleted
             when support ends.
           </p>
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             Paid under a different address than the one you sign in with, or
             anything else gone wrong? Email{' '}
             <a

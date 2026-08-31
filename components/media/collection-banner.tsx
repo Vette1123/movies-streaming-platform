@@ -22,7 +22,7 @@ export const CollectionBanner = ({ movie }: { movie: MovieDetails }) => {
     <Link
       href={`/collection/${collection.id}`}
       aria-label={`View the ${collection.name}`}
-      className="group/collection focus-visible:ring-primary/60 relative mt-10 block overflow-hidden rounded-xl border border-white/10 shadow-lg transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-2xl focus-visible:ring-2 focus-visible:outline-none"
+      className="group/collection relative mt-10 block overflow-hidden rounded-xl border border-white/10 shadow-lg transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-2xl focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:outline-none"
     >
       {backdrop && (
         <BlurredImage
@@ -51,7 +51,7 @@ export const CollectionBanner = ({ movie }: { movie: MovieDetails }) => {
             <ArrowRight className="size-3.5 transition-transform duration-300 group-hover/collection:translate-x-1" />
           </span>
         </div>
-        <span className="text-primary bg-primary/15 ring-primary/30 grid size-11 shrink-0 place-items-center rounded-full ring-1 backdrop-blur-sm transition-transform duration-300 group-hover/collection:scale-110">
+        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30 backdrop-blur-sm transition-transform duration-300 group-hover/collection:scale-110">
           <ArrowRight className="size-5" aria-hidden />
         </span>
       </div>

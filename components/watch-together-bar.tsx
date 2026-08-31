@@ -168,7 +168,7 @@ export function WatchTogetherBar({
   return (
     <div
       data-testid="together-bar"
-      className="bg-primary/10 border-primary/40 text-foreground absolute inset-x-0 top-16 z-50 flex items-center justify-center gap-2 border-b px-3 py-1.5 text-xs"
+      className="absolute inset-x-0 top-16 z-50 flex items-center justify-center gap-2 border-b border-primary/40 bg-primary/10 px-3 py-1.5 text-xs text-foreground"
     >
       <Users className="size-3.5 shrink-0" />
       {/* min-w-0 + truncate, or the role text pushes the copy button off the
@@ -191,7 +191,7 @@ export function WatchTogetherBar({
           void navigator.clipboard?.writeText(location.href)
           toast('Invite link copied')
         }}
-        className="hover:border-primary/60 inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 px-2 py-0.5 font-medium transition"
+        className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 px-2 py-0.5 font-medium transition hover:border-primary/60"
       >
         <Copy className="size-3" aria-hidden />
         Copy link

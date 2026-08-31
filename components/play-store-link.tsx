@@ -27,7 +27,7 @@ export function PlayStoreLink({
         openOnPlayStore(app)
       }}
       className={cn(
-        'text-foreground/75 hover:text-foreground font-medium transition-colors',
+        'font-medium text-foreground/75 transition-colors hover:text-foreground',
         className
       )}
     >

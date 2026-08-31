@@ -48,17 +48,17 @@ export const DetailsExtraInfoLayout = ({
       {/* Reserve the badge row so the mount-gated "New" chip doesn't shove the
           title down post-hydration (CLS). `static` keeps it in normal flow
           inside the reserved box instead of the base `absolute`. */}
-      <div className="mb-2 min-h-[1.75rem]">
+      <div className="mb-2 min-h-7">
         <NewBadgeWhenRecent date={badgeDate} className="static" />
       </div>
       <h1 className="text-sm font-bold lg:text-3xl">{title}</h1>
       {tagline && (
-        <p className="text-muted-foreground mt-1 text-xs italic lg:text-base">
+        <p className="mt-1 text-xs text-muted-foreground italic lg:text-base">
           {tagline}
         </p>
       )}
       {heroRates}
-      <p className="prose-invert text-xs font-semibold lg:text-lg">
+      <p className="text-xs font-semibold prose-invert lg:text-lg">
         {overview}
       </p>
       <GenreChips genres={genres} mediaType={mediaType} className="mt-4" />
@@ -80,7 +80,7 @@ export const DetailsExtraInfoLayout = ({
                   <span className="underline underline-offset-4">
                     {info.value}
                   </span>
-                  <Icons.arrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" />
+                  <Icons.arrowRight className="size-5 transition-transform group-hover:translate-x-2" />
                 </span>
               </Link>
             ) : (

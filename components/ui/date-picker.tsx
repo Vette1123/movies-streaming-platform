@@ -77,9 +77,9 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
     return (
       <div className={cn('flex flex-col gap-2', className)}>
         {label && (
-          <Label htmlFor={id} className="text-muted-foreground text-xs">
+          <Label htmlFor={id} className="text-xs text-muted-foreground">
             {label}
-            {required && <span className="text-destructive ml-1">*</span>}
+            {required && <span className="ml-1 text-destructive">*</span>}
           </Label>
         )}
         <Input

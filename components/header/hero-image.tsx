@@ -75,7 +75,7 @@ export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
             // screens.
             src={getImageURL(media?.poster_path)}
             alt={alt}
-            className="animate-hero-kenburns block size-full object-cover object-center will-change-transform motion-reduce:animate-none"
+            className="block size-full animate-hero-kenburns object-cover object-center will-change-transform motion-reduce:animate-none"
             fill
             sizes={COVER_POSTER_SIZES}
             intro

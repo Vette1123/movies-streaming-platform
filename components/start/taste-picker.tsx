@@ -93,7 +93,7 @@ export function TastePicker({ candidates }: { candidates: TastePick[] }) {
                 onClick={() => toggle(candidate)}
                 className={`group relative block w-full overflow-hidden rounded-lg border-2 transition-all ${
                   on
-                    ? 'border-primary scale-[0.97]'
+                    ? 'scale-[0.97] border-primary'
                     : 'border-transparent hover:-translate-y-1'
                 }`}
               >
@@ -108,12 +108,12 @@ export function TastePicker({ candidates }: { candidates: TastePick[] }) {
                     className="aspect-2/3 w-full object-cover"
                   />
                 ) : (
-                  <span className="bg-muted flex aspect-2/3 w-full items-center justify-center p-2 text-center text-xs">
+                  <span className="flex aspect-2/3 w-full items-center justify-center bg-muted p-2 text-center text-xs">
                     {candidate.title}
                   </span>
                 )}
                 {on && (
-                  <span className="bg-primary text-primary-foreground absolute top-2 right-2 flex size-6 items-center justify-center rounded-full">
+                  <span className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
                     <Check className="size-4" />
                   </span>
                 )}
@@ -123,7 +123,7 @@ export function TastePicker({ candidates }: { candidates: TastePick[] }) {
         })}
       </ul>
 
-      <div className="bg-background/85 sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-lg border p-4 backdrop-blur">
+      <div className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-lg border bg-background/85 p-4 backdrop-blur">
         <p className="text-sm font-medium">{tastePrompt(picked.length)}</p>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {picked.length > 0 && (
@@ -151,7 +151,7 @@ export function TastePicker({ candidates }: { candidates: TastePick[] }) {
       </div>
 
       {suggest.isError && (
-        <p className="text-muted-foreground text-sm">
+        <p className="text-sm text-muted-foreground">
           That did not work. Try again — nothing was lost.
         </p>
       )}
@@ -162,7 +162,7 @@ export function TastePicker({ candidates }: { candidates: TastePick[] }) {
             <h2 className="text-2xl font-semibold tracking-tight">
               Because of what you picked
             </h2>
-            <p className="text-muted-foreground max-w-[60ch] text-sm leading-relaxed">
+            <p className="max-w-[60ch] text-sm leading-relaxed text-muted-foreground">
               Worked out from the genres your picks have in common. Nothing was
               recorded anywhere — this is the same catalogue everyone browses,
               asked a better question.
@@ -185,8 +185,8 @@ export function TastePicker({ candidates }: { candidates: TastePick[] }) {
             ))}
           </div>
 
-          <div className="border-primary/25 from-primary/10 flex flex-col gap-4 rounded-lg border bg-gradient-to-br to-transparent p-6 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-muted-foreground max-w-[52ch] text-sm leading-relaxed">
+          <div className="flex flex-col gap-4 rounded-lg border border-primary/25 bg-linear-to-br from-primary/10 to-transparent p-6 sm:flex-row sm:items-center sm:justify-between">
+            <p className="max-w-[52ch] text-sm leading-relaxed text-muted-foreground">
               {signedIn
                 ? 'Save them and they follow you to every device you sign in on.'
                 : 'Save them to this browser now, for free. Signing in with Google — also free — is what keeps them when this browser is cleared or swapped.'}

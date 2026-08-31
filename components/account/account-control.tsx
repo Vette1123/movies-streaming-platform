@@ -78,14 +78,14 @@ export function AccountControl() {
           // account, who already knows what it means.
           <span
             aria-hidden
-            className="border-background bg-primary absolute right-1 bottom-1 size-2.5 rounded-full border-2"
+            className="absolute right-1 bottom-1 size-2.5 rounded-full border-2 border-background bg-primary"
           />
         )}
         <span className="sr-only">Your account</span>
       </PopoverTrigger>
 
       <PopoverContent align="end" className="w-64 p-2">
-        <div className="flex items-center gap-3 px-2 py-2">
+        <div className="flex items-center gap-3 p-2">
           <AccountAvatar
             name={name}
             email={email}
@@ -96,17 +96,17 @@ export function AccountControl() {
             <p className="truncate text-sm font-medium">
               {name ?? 'Signed in'}
             </p>
-            <p className="text-muted-foreground truncate text-xs">{email}</p>
+            <p className="truncate text-xs text-muted-foreground">{email}</p>
           </div>
         </div>
 
-        <div className="bg-border my-1 h-px" />
+        <div className="my-1 h-px bg-border" />
 
         {accountMenuFor(pro).map(({ href, label, Icon }) => (
           <PopoverRow key={href} Icon={Icon} title={label} href={href} />
         ))}
 
-        <div className="bg-border my-1 h-px" />
+        <div className="my-1 h-px bg-border" />
 
         <PopoverRow
           Icon={LogOut}

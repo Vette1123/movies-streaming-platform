@@ -110,7 +110,7 @@ async function IndexPage() {
           ~200px, so the background eases in under the first poster row instead
           of appearing as a hard seam. */}
       <div className="relative">
-        <div className="from-background pointer-events-none absolute inset-x-0 top-0 z-[-1] h-52 bg-gradient-to-b to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 -z-1 h-52 bg-linear-to-b from-background to-transparent" />
         {/* Above the catalogue rails, below the hero: what you were already
             watching outranks what is popular this week. Renders nothing at all
             until it has rows, so the homepage's first paint is unchanged for

@@ -26,7 +26,7 @@ export function SeeAllLink({ href, label, className }: SeeAllLinkProps) {
       href={href}
       aria-label={label ? `See all ${label}` : 'See all'}
       className={cn(
-        'group/seeall text-muted-foreground focus-visible:ring-ring inline-flex shrink-0 items-center gap-1 self-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors duration-200 hover:border-cyan-300/40 hover:bg-white/[0.06] hover:text-cyan-200 focus-visible:border-cyan-300/50 focus-visible:ring-2 focus-visible:outline-hidden',
+        'group/seeall inline-flex shrink-0 items-center gap-1 self-center rounded-full border border-white/10 bg-white/3 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-muted-foreground transition-colors duration-200 hover:border-cyan-300/40 hover:bg-white/6 hover:text-cyan-200 focus-visible:border-cyan-300/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden',
         className
       )}
     >

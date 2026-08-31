@@ -307,7 +307,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         // tracking — the mismatch is caused by the extension, not our markup.
         suppressHydrationWarning
         className={cn(
-          'bg-background min-h-screen scroll-smooth font-sans antialiased',
+          'min-h-screen scroll-smooth bg-background font-sans antialiased',
           fontSans.variable
         )}
       >
@@ -324,7 +324,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             hidden until focused, jumps past the header nav straight to content. */}
         <a
           href="#main-content"
-          className="focus:bg-primary-fill focus:text-primary-foreground sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:px-4 focus:py-2 focus:shadow-lg focus:ring-2 focus:ring-white/70 focus:outline-none"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-100 focus:rounded-md focus:bg-primary-fill focus:px-4 focus:py-2 focus:text-primary-foreground focus:shadow-lg focus:ring-2 focus:ring-white/70 focus:outline-none"
         >
           Skip to content
         </a>

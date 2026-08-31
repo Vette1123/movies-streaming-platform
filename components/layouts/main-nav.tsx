@@ -35,7 +35,7 @@ export function BrandLogo() {
           wordmark as an app name that does not match the consent screen);
           branding is verified now, so the phone gets the space back. The
           link's aria-label still carries the name for assistive tech. */}
-      <span className="text-secondary-foreground hidden text-xl font-bold whitespace-nowrap sm:inline-block sm:text-2xl 2xl:text-3xl">
+      <span className="hidden text-xl font-bold whitespace-nowrap text-secondary-foreground sm:inline-block sm:text-2xl 2xl:text-3xl">
         {siteConfig.name}
       </span>
     </Link>
@@ -72,7 +72,7 @@ export function MainNav({ items }: MainNavProps) {
                     // whitespace-nowrap is the actual guard: a flex row will
                     // happily break a two-word label rather than overflow, and
                     // a wrapped label is taller than the header.
-                    'text-secondary-foreground flex shrink-0 items-center text-sm font-medium whitespace-nowrap 2xl:text-base',
+                    'flex shrink-0 items-center text-sm font-medium whitespace-nowrap text-secondary-foreground 2xl:text-base',
                     pathname === item.href && 'underline underline-offset-4',
                     buttonVariants({
                       size: 'text',

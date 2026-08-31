@@ -26,7 +26,7 @@ export function GenreChips({ genres, mediaType, className }: GenreChipsProps) {
 
   return (
     <nav aria-label="Genres" className={cn('flex flex-col gap-2', className)}>
-      <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+      <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
         Genres
       </span>
       <ul className="flex flex-wrap gap-2">

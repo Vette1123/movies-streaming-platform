@@ -106,7 +106,7 @@ export function DrawerSection({
 }) {
   return (
     <section className="space-y-2">
-      <h3 className="text-muted-foreground px-1 text-[11px] font-semibold tracking-widest uppercase">
+      <h3 className="px-1 text-[11px] font-semibold tracking-widest text-muted-foreground uppercase">
         {title}
       </h3>
       {children}

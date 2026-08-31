@@ -36,7 +36,7 @@ export function StaticRail({
   itemType = 'movie',
 }: StaticRailProps) {
   return (
-    <nav className="cv-auto px-5 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10 xl:px-16 2xl:px-20">
+    <nav className="cv-auto px-5 py-6 sm:p-8 lg:px-12 lg:py-10 xl:px-16 2xl:px-20">
       {/* Identical resting heading to components/list.tsx (title left, See all
           chip right) — this component renders before the interactive List
           hydrates, and any difference would jump at the swap. */}
@@ -50,7 +50,7 @@ export function StaticRail({
           <h2 className="flex min-w-0 items-center gap-2.5 text-2xl font-bold tracking-tight">
             <span
               aria-hidden
-              className="h-5 w-[3px] shrink-0 origin-center rounded-full bg-gradient-to-b from-cyan-300 to-cyan-500 shadow-[0_0_8px_rgba(103,232,249,0.5)]"
+              className="h-5 w-[3px] shrink-0 origin-center rounded-full bg-linear-to-b from-cyan-300 to-cyan-500 shadow-[0_0_8px_rgba(103,232,249,0.5)]"
             />
             <span className="truncate">{title}</span>
           </h2>
@@ -61,7 +61,7 @@ export function StaticRail({
       {items.length === 0 && (
         <div
           role="status"
-          className="text-muted-foreground border-border/60 flex items-center gap-2 rounded-lg border border-dashed px-4 py-6 text-sm"
+          className="flex items-center gap-2 rounded-lg border border-dashed border-border/60 px-4 py-6 text-sm text-muted-foreground"
         >
           <Clapperboard className="size-4 shrink-0 opacity-70" />
           Nothing to show here yet — check back soon.
@@ -75,7 +75,7 @@ export function StaticRail({
             return (
               <div
                 key={item.id}
-                className="w-[160px] shrink-0 snap-start sm:w-[190px] lg:w-[230px] 2xl:w-[250px]"
+                className="w-40 shrink-0 snap-start sm:w-[190px] lg:w-[230px] 2xl:w-[250px]"
               >
                 <MediaLink
                   href={`${itemRedirect(itemType)}/${item.id}`}

@@ -72,7 +72,7 @@ export function ContinueWatching() {
             // The same accent bar every rail heading carries, in the primary
             // colour rather than the rails' cyan: this row is yours, and the
             // rest of the page is the catalogue.
-            className="bg-primary h-5 w-[3px] origin-center rounded-full"
+            className="h-5 w-[3px] origin-center rounded-full bg-primary"
           />
           Pick up where you left off
         </h2>
@@ -149,7 +149,7 @@ function Tile({ item }: { item: NextUpItem }) {
             aria-label={`${item.percent}% of ${item.name} watched`}
           >
             <div
-              className="bg-primary h-full transition-[width] duration-700 ease-out"
+              className="h-full bg-primary transition-[width] duration-700 ease-out"
               style={{ width: `${item.percent}%` }}
             />
           </div>
@@ -157,10 +157,10 @@ function Tile({ item }: { item: NextUpItem }) {
       </div>
 
       <div className="space-y-0.5">
-        <p className="group-hover:text-primary truncate text-sm font-medium transition-colors">
+        <p className="truncate text-sm font-medium transition-colors group-hover:text-primary">
           {item.name}
         </p>
-        <p className="text-muted-foreground font-mono text-xs">
+        <p className="font-mono text-xs text-muted-foreground">
           {tileMeta(item)}
         </p>
       </div>
@@ -178,9 +178,9 @@ function Tile({ item }: { item: NextUpItem }) {
 function CarryItOver() {
   return (
     <section className="px-5 pt-8 sm:px-8 lg:px-12 xl:px-16 2xl:px-20">
-      <div className="border-primary/25 from-primary/10 flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-linear-to-br to-transparent px-5 py-4">
-        <p className="text-muted-foreground max-w-[62ch] text-sm leading-relaxed">
-          <span className="text-foreground font-medium">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-primary/25 bg-linear-to-br from-primary/10 to-transparent px-5 py-4">
+        <p className="max-w-[62ch] text-sm leading-relaxed text-muted-foreground">
+          <span className="font-medium text-foreground">
             You are part-way through something.
           </span>{' '}
           Supporters get that as a row right here — everything they have going,

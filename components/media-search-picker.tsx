@@ -64,13 +64,13 @@ export function MediaSearchPicker({
     <div>
       <label
         htmlFor={inputId}
-        className="text-muted-foreground text-xs font-medium"
+        className="text-xs font-medium text-muted-foreground"
       >
         {label}
       </label>
       <div className="relative mt-2">
         <Search
-          className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden
         />
         <Input
@@ -84,14 +84,14 @@ export function MediaSearchPicker({
         />
         {isFetching ? (
           <Loader2
-            className="text-muted-foreground absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin"
+            className="absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin text-muted-foreground"
             aria-hidden
           />
         ) : null}
       </div>
 
       {showEmpty ? (
-        <p className="text-muted-foreground mt-3 text-xs">
+        <p className="mt-3 text-xs text-muted-foreground">
           Nothing by that name. Try fewer words.
         </p>
       ) : null}
@@ -109,7 +109,7 @@ export function MediaSearchPicker({
                     onPick(card)
                     setTerm('')
                   }}
-                  className="hover:bg-muted/60 flex w-full items-center gap-3 rounded-lg p-1.5 text-left transition disabled:opacity-50"
+                  className="flex w-full items-center gap-3 rounded-lg p-1.5 text-left transition hover:bg-muted/60 disabled:opacity-50"
                 >
                   {card.poster ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -120,18 +120,18 @@ export function MediaSearchPicker({
                       className="h-14 w-10 shrink-0 rounded-sm object-cover"
                     />
                   ) : (
-                    <div className="bg-muted h-14 w-10 shrink-0 rounded-sm" />
+                    <div className="h-14 w-10 shrink-0 rounded-sm bg-muted" />
                   )}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">
                       {card.title}
                     </span>
-                    <span className="text-muted-foreground block text-xs">
+                    <span className="block text-xs text-muted-foreground">
                       {card.mediaType === 'tv' ? 'Series' : 'Film'}
                       {card.year ? ` · ${card.year}` : ''}
                     </span>
                   </span>
-                  <span className="text-muted-foreground shrink-0 text-xs">
+                  <span className="shrink-0 text-xs text-muted-foreground">
                     {taken ? (
                       takenLabel
                     ) : (

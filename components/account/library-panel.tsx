@@ -53,11 +53,11 @@ export function LibraryPanel() {
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {SYNCED_STORES.map(({ key, label }) => (
-          <div key={key} className="bg-card/50 rounded-lg border p-4">
+          <div key={key} className="rounded-lg border bg-card/50 p-4">
             <p className="font-mono text-2xl font-semibold tabular-nums">
               {counts[key] ?? 0}
             </p>
-            <p className="text-muted-foreground mt-1 text-xs">{label}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{label}</p>
           </div>
         ))}
       </div>
@@ -77,7 +77,7 @@ export function LibraryPanel() {
         </Button>
       </div>
 
-      <p className="text-muted-foreground max-w-[65ch] text-sm leading-relaxed">
+      <p className="max-w-[65ch] text-sm leading-relaxed text-muted-foreground">
         Changes sync a couple of seconds after you make them, and whenever you
         leave the tab. Nothing is recorded about what you watch beyond the
         titles you save and tick off yourself, and deleting your account takes
@@ -92,14 +92,14 @@ export function LibraryPanel() {
 function SyncStatus({ status }: { status: string }) {
   if (status === 'syncing') {
     return (
-      <p className="text-muted-foreground flex items-center gap-2 text-sm">
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
         <RefreshCw className="size-4 animate-spin" /> Syncing
       </p>
     )
   }
   if (status === 'error') {
     return (
-      <p className="text-muted-foreground flex items-center gap-2 text-sm">
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
         <TriangleAlert className="size-4" /> Could not reach the server. Your
         library is safe on this device and will sync when it is back.
       </p>
@@ -107,13 +107,13 @@ function SyncStatus({ status }: { status: string }) {
   }
   if (status === 'offline') {
     return (
-      <p className="text-muted-foreground flex items-center gap-2 text-sm">
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
         <CloudOff className="size-4" /> Offline
       </p>
     )
   }
   return (
-    <p className="text-muted-foreground flex items-center gap-2 text-sm">
+    <p className="flex items-center gap-2 text-sm text-muted-foreground">
       <Check className="size-4" /> Up to date
     </p>
   )

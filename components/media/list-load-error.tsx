@@ -44,7 +44,7 @@ export const ListLoadError = ({ isEmpty, onRetry }: ListLoadErrorProps) => {
 
   return (
     <div className="flex flex-col items-center gap-3 py-8">
-      <p className="text-muted-foreground text-sm">
+      <p className="text-sm text-muted-foreground">
         Couldn&apos;t load more titles.
       </p>
       <Button variant="outline" onClick={handleRetry}>

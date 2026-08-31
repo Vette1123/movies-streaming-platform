@@ -121,14 +121,14 @@ const CardComponent = ({
           the mobile measurement in 9e89605 was actually about. */}
       {/* Hover scrim + play affordance. */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-black/35 opacity-0 transition-opacity duration-500 ease-out group-hover/card:opacity-100">
-        <span className="bg-primary-fill/90 text-primary-foreground grid size-12 translate-y-1 place-items-center rounded-full shadow-lg backdrop-blur-sm transition-transform duration-300 group-hover/card:translate-y-0">
+        <span className="grid size-12 translate-y-1 place-items-center rounded-full bg-primary-fill/90 text-primary-foreground shadow-lg backdrop-blur-sm transition-transform duration-300 group-hover/card:translate-y-0">
           {/* Sprite, not lucide: one per card in every rail and grid. */}
           <SpriteIcon name="play" className="size-5 translate-x-0.5" />
         </span>
       </div>
 
       {/* Bottom gradient with rating + year for at-a-glance context */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-2 rounded-b-lg bg-gradient-to-t from-black/85 to-transparent px-3 pt-8 pb-2.5 text-[11px] font-medium text-white opacity-0 transition-opacity duration-500 ease-out group-hover/card:opacity-100">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-2 rounded-b-lg bg-linear-to-t from-black/85 to-transparent px-3 pt-8 pb-2.5 text-[11px] font-medium text-white opacity-0 transition-opacity duration-500 ease-out group-hover/card:opacity-100">
         <ScoreChip
           imdbRating={imdbRating}
           voteAverage={item.vote_average}
@@ -222,13 +222,13 @@ const CardComponent = ({
             />
           </div>
           {overview && (
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               {isTruncateOverview && overview.length > 150
                 ? `${overview.slice(0, 150)}…`
                 : overview.slice(0, 400)}
             </p>
           )}
-          <div className="text-muted-foreground flex items-center pt-1 text-xs">
+          <div className="flex items-center pt-1 text-xs text-muted-foreground">
             <CalendarDays className="mr-2 size-4 opacity-70" />
             {dateFormatter(releaseDate ?? '', true)}
           </div>

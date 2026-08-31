@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
  * is needed, add a variant here rather than passing `bg-*` overrides.
  */
 const chipVariants = cva(
-  'inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full font-semibold leading-none transition-[color,background-color,border-color,box-shadow,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+  'inline-flex shrink-0 items-center justify-center rounded-full leading-none font-semibold whitespace-nowrap transition-[color,background-color,border-color,box-shadow,transform] duration-200 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none',
   {
     variants: {
       size: {
@@ -41,7 +41,7 @@ const chipVariants = cva(
         // TMDB star rating and similar amber-accented scores.
         rating: 'border border-amber-400/25 bg-amber-400/10 text-amber-200',
         // Freshness — glassy emerald, always uppercase.
-        new: 'border border-white/20 bg-emerald-400 font-bold uppercase tracking-wide text-emerald-950 shadow-lg ring-1 ring-emerald-300/40 backdrop-blur-md',
+        new: 'border border-white/20 bg-emerald-400 font-bold tracking-wide text-emerald-950 uppercase shadow-lg ring-1 ring-emerald-300/40 backdrop-blur-md',
         // Positive status (watched, completed) without the uppercase.
         success:
           'border border-white/20 bg-emerald-500/90 text-white shadow-lg ring-1 ring-emerald-300/30 backdrop-blur-md',
@@ -49,7 +49,7 @@ const chipVariants = cva(
         danger: 'border border-destructive/40 text-destructive',
       },
       uppercase: {
-        true: 'uppercase tracking-wide',
+        true: 'tracking-wide uppercase',
         false: '',
       },
       interactive: {

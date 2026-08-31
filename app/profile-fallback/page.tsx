@@ -60,7 +60,7 @@ export default function ProfileFallbackPage() {
         <h1 className="text-2xl font-semibold tracking-tight">
           Nobody here by that name
         </h1>
-        <p className="text-muted-foreground leading-relaxed">
+        <p className="leading-relaxed text-muted-foreground">
           The page was made private, or the link is wrong. A profile can be
           taken down by the person who made it at any time.
         </p>

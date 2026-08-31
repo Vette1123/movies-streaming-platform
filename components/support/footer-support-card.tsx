@@ -28,8 +28,8 @@ export function FooterSupportCard() {
   if (ready && pro) {
     return (
       <div className={CARD}>
-        <p className="text-foreground flex items-center gap-2 text-base font-semibold">
-          <Heart className="text-primary size-4" />
+        <p className="flex items-center gap-2 text-base font-semibold text-foreground">
+          <Heart className="size-4 text-primary" />
           You support Reely
         </p>
         <p className="leading-relaxed">
@@ -52,7 +52,7 @@ export function FooterSupportCard() {
 
   return (
     <div className={CARD}>
-      <p className="text-foreground text-base font-semibold">
+      <p className="text-base font-semibold text-foreground">
         Reely stays free. Support keeps it that way.
       </p>
       <p className="leading-relaxed">
@@ -63,7 +63,7 @@ export function FooterSupportCard() {
         alerts, a year-in-review card and themes. Everything free today stays
         free either way.
       </p>
-      <p className="text-foreground/90 font-medium">{supportPriceRow()}</p>
+      <p className="font-medium text-foreground/90">{supportPriceRow()}</p>
       <SupportLink
         surface="footer"
         className={cn(buttonVariants({ size: 'sm' }), 'w-full sm:w-auto')}

@@ -96,12 +96,12 @@ export function WatchedItemCard({ item, onRemove }: WatchedItemCardProps) {
                 {item.type === 'series' &&
                   item.season !== undefined &&
                   item.episode !== undefined && (
-                    <span className="text-muted-foreground ml-2 shrink-0 text-xs">
+                    <span className="ml-2 shrink-0 text-xs text-muted-foreground">
                       S{item.season}, E{item.episode}
                     </span>
                   )}
               </div>
-              <div className="text-muted-foreground mt-2 flex items-center text-xs">
+              <div className="mt-2 flex items-center text-xs text-muted-foreground">
                 <CalendarDays className="mr-1 size-3" />
                 {dateFormatter(item.added_at, true)}
               </div>

@@ -396,7 +396,7 @@ export function HeroSlide({
           buttons over bright artwork. Softens during the trailer takeover so the
           video owns the frame. */}
       <div
-        className={`pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/95 via-black/55 to-black/25 transition-opacity duration-500 ease-out ${
+        className={`pointer-events-none absolute inset-0 z-10 bg-linear-to-t from-black/95 via-black/55 to-black/25 transition-opacity duration-500 ease-out ${
           cinematic ? 'opacity-60' : 'opacity-100'
         }`}
       />
@@ -593,7 +593,7 @@ export function HeroSlide({
               cinematic ? 'opacity-0 blur-sm' : 'blur-0 opacity-100'
             }`}
           >
-            <div className="relative min-h-[700px] w-[400px] overflow-hidden rounded-xl shadow-2xl">
+            <div className="relative min-h-175 w-100 overflow-hidden rounded-xl shadow-2xl">
               {/* `sizes` is a flat 400px because the box above is a flat 400px,
                   and this panel only exists at lg and up (the wrapper is
                   `hidden lg:flex`). The old value claimed 1024px there and 30vw
@@ -654,7 +654,7 @@ export function HeroSlide({
           type="button"
           onClick={toggleFullscreen}
           aria-label="Full view"
-          className="pointer-events-auto absolute top-20 right-[7.5rem] z-[60] flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:top-auto lg:bottom-16"
+          className="pointer-events-auto absolute top-20 right-30 z-60 flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:top-auto lg:bottom-16"
         >
           <Maximize className="size-5" />
         </button>
@@ -667,7 +667,7 @@ export function HeroSlide({
           onClick={() => setTrailerMuted((m) => !m)}
           aria-label={trailerMuted ? 'Unmute trailer' : 'Mute trailer'}
           aria-pressed={!trailerMuted}
-          className="pointer-events-auto absolute top-20 right-[4.25rem] z-[60] flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:top-auto lg:bottom-16"
+          className="pointer-events-auto absolute top-20 right-17 z-60 flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:top-auto lg:bottom-16"
         >
           {trailerMuted ? (
             <VolumeX className="size-5" />
@@ -698,7 +698,7 @@ export function HeroSlide({
               : 'Turn on trailer autoplay'
           }
           aria-pressed={autoplayEnabled}
-          className="pointer-events-auto absolute top-20 right-4 z-[60] flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:top-auto lg:bottom-16"
+          className="pointer-events-auto absolute top-20 right-4 z-60 flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:top-auto lg:bottom-16"
         >
           {autoplayEnabled ? (
             <Video className="size-5" />

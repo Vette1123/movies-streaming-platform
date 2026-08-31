@@ -94,7 +94,7 @@ export function AccountAvatar({
       aria-hidden
       className={cn(
         box,
-        'bg-secondary text-secondary-foreground grid shrink-0 place-items-center rounded-full font-semibold'
+        'grid shrink-0 place-items-center rounded-full bg-secondary font-semibold text-secondary-foreground'
       )}
     >
       {initial}

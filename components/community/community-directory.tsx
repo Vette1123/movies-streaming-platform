@@ -36,7 +36,7 @@ export function CommunityDirectory() {
 
   if (isError) {
     return (
-      <p className="text-muted-foreground max-w-[60ch] leading-relaxed">
+      <p className="max-w-[60ch] leading-relaxed text-muted-foreground">
         The directory could not be loaded. Everything else on Reely works
         without it — try again in a moment.
       </p>
@@ -78,21 +78,21 @@ export function CommunityDirectory() {
               <li key={person.handle}>
                 <Link
                   href={`/u/${person.handle}`}
-                  className="hover:border-primary/50 hover:bg-muted/40 flex h-full items-start gap-4 rounded-lg border p-4 transition-colors"
+                  className="flex h-full items-start gap-4 rounded-lg border p-4 transition-colors hover:border-primary/50 hover:bg-muted/40"
                 >
                   <Avatar picture={person.picture} name={person.name} />
                   <div className="min-w-0 space-y-1">
                     <p className="truncate font-medium">
                       {person.name || person.handle}
                     </p>
-                    <p className="text-muted-foreground truncate text-xs">
+                    <p className="truncate text-xs text-muted-foreground">
                       @{person.handle}
                       {person.lists > 0
                         ? ` · ${person.lists} ${person.lists === 1 ? 'list' : 'lists'}`
                         : ''}
                     </p>
                     {person.bio && (
-                      <p className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
+                      <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                         {person.bio}
                       </p>
                     )}
@@ -113,7 +113,7 @@ function SectionHead({ title, note }: { title: string; note: string }) {
   return (
     <div className="space-y-1">
       <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
-      <p className="text-muted-foreground max-w-[70ch] text-sm leading-relaxed">
+      <p className="max-w-[70ch] text-sm leading-relaxed text-muted-foreground">
         {note}
       </p>
     </div>
@@ -131,7 +131,7 @@ function ListCard({ list }: { list: DirectoryList }) {
   return (
     <Link
       href={`/l/${list.slug}`}
-      className="hover:border-primary/50 group block h-full space-y-3 rounded-lg border p-4 transition-colors"
+      className="group block h-full space-y-3 rounded-lg border p-4 transition-colors hover:border-primary/50"
     >
       {/* A fixed-height strip so a one-poster card and a five-poster card are
           the same shape — a directory of different-sized boxes reads as broken
@@ -152,19 +152,19 @@ function ListCard({ list }: { list: DirectoryList }) {
             />
           ))
         ) : (
-          <div className="bg-muted/40 flex h-full w-full items-center justify-center rounded text-xs">
-            <Sparkles className="text-muted-foreground size-5" />
+          <div className="flex size-full items-center justify-center rounded bg-muted/40 text-xs">
+            <Sparkles className="size-5 text-muted-foreground" />
           </div>
         )}
       </div>
 
       <div className="space-y-1">
-        <p className="group-hover:text-primary font-medium transition-colors">
+        <p className="font-medium transition-colors group-hover:text-primary">
           {list.name}
         </p>
-        <p className="text-muted-foreground text-xs">{countLine(list)}</p>
+        <p className="text-xs text-muted-foreground">{countLine(list)}</p>
         {list.description && (
-          <p className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
+          <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
             {list.description}
           </p>
         )}
@@ -205,8 +205,8 @@ function Avatar({
     )
   }
   return (
-    <span className="bg-muted flex size-12 shrink-0 items-center justify-center rounded-full">
-      <UserRound className="text-muted-foreground size-5" />
+    <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-muted">
+      <UserRound className="size-5 text-muted-foreground" />
     </span>
   )
 }
@@ -222,13 +222,13 @@ function JoinIn({ supporters }: { supporters: number }) {
   const { signedIn, pro } = useAccount()
 
   return (
-    <section className="border-primary/25 from-primary/10 rounded-lg border bg-gradient-to-br to-transparent p-6 sm:p-8">
+    <section className="rounded-lg border border-primary/25 bg-linear-to-br from-primary/10 to-transparent p-6 sm:p-8">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="max-w-[56ch] space-y-2">
           <h2 className="text-xl font-semibold tracking-tight">
             {pro ? 'Your shelf belongs here too' : 'Put your own shelf up'}
           </h2>
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             Everything on this page was made by somebody keeping their library
             on Reely. Signing in is free and moves your watchlist and history
             off this one browser; publishing a list or a public page is what
@@ -258,7 +258,7 @@ function NothingYet() {
   return (
     <div className="max-w-[60ch] space-y-3">
       <Chip variant="outline">Early days</Chip>
-      <p className="text-muted-foreground leading-relaxed">
+      <p className="leading-relaxed text-muted-foreground">
         Nobody has published anything yet. Whoever goes first gets a page with
         their name on it and no competition for attention.
       </p>
@@ -275,12 +275,12 @@ function DirectorySkeleton() {
             {Array.from({ length: 5 }).map((_, poster) => (
               <div
                 key={poster}
-                className="bg-muted/40 h-full w-[4.7rem] animate-pulse rounded"
+                className="h-full w-[4.7rem] animate-pulse rounded bg-muted/40"
               />
             ))}
           </div>
-          <div className="bg-muted/40 h-4 w-2/3 animate-pulse rounded" />
-          <div className="bg-muted/40 h-3 w-1/3 animate-pulse rounded" />
+          <div className="h-4 w-2/3 animate-pulse rounded bg-muted/40" />
+          <div className="h-3 w-1/3 animate-pulse rounded bg-muted/40" />
         </div>
       ))}
     </div>

@@ -37,16 +37,16 @@ export function SupporterGate({
   return (
     <div
       className={cn(
-        'border-border/60 bg-card/40 rounded-lg border border-dashed p-6',
+        'rounded-lg border border-dashed border-border/60 bg-card/40 p-6',
         className
       )}
     >
       <div className="flex items-start gap-3">
-        <Icon className="text-muted-foreground mt-0.5 size-4 shrink-0" />
+        <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 space-y-3">
           <div className="space-y-1">
             <h3 className="text-base font-semibold">{title}</h3>
-            <div className="text-muted-foreground max-w-[60ch] text-sm leading-relaxed">
+            <div className="max-w-[60ch] text-sm leading-relaxed text-muted-foreground">
               {children}
             </div>
           </div>
@@ -58,7 +58,7 @@ export function SupporterGate({
             >
               {cta}
             </Link>
-            <span className="text-muted-foreground text-xs">
+            <span className="text-xs text-muted-foreground">
               {supportPriceLine()}
             </span>
           </div>

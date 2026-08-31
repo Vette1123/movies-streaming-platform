@@ -181,7 +181,7 @@ export const FilteredMediaContent = ({
       >
         {/* Sidebar Layout - Always visible on desktop to prevent layout shift */}
         {layout === 'sidebar' && (
-          <aside className="hidden w-80 flex-shrink-0 lg:block xl:w-96">
+          <aside className="hidden w-80 shrink-0 lg:block xl:w-96">
             <div className="sticky top-6">{renderFilter()}</div>
           </aside>
         )}

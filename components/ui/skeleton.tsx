@@ -17,7 +17,7 @@ function Skeleton({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('bg-muted animate-pulse rounded-md', SHEEN, className)}
+      className={cn('animate-pulse rounded-md bg-muted', SHEEN, className)}
       {...props}
     />
   )
@@ -28,7 +28,7 @@ function SkeletonContainer({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <Skeleton className={clsx('bg-background rounded-2xl p-4', className)}>
+    <Skeleton className={clsx('rounded-2xl bg-background p-4', className)}>
       {props.children}
     </Skeleton>
   )
@@ -83,7 +83,7 @@ function SkeletonMediaRows({
       {Array.from({ length: rows }).map((_, i) => (
         <li
           key={i}
-          className="border-border/60 flex items-center gap-4 rounded-lg border p-3"
+          className="flex items-center gap-4 rounded-lg border border-border/60 p-3"
         >
           <Skeleton
             className="aspect-2/3 w-14 shrink-0 rounded sm:w-16"

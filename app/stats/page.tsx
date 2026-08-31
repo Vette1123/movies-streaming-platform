@@ -24,7 +24,7 @@ export default function StatsPage() {
         <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
           Your year in Reely
         </h1>
-        <p className="text-muted-foreground max-w-[60ch] leading-relaxed">
+        <p className="max-w-[60ch] leading-relaxed text-muted-foreground">
           Counted from what you have ticked off yourself. Nothing here was
           recorded without you.
         </p>

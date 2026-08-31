@@ -162,14 +162,14 @@ const PersonPage = async (props: { params: Promise<{ id: string }> }) => {
             <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
               {person.name}
             </h1>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               {[person.known_for_department, dates, person.place_of_birth]
                 .filter(Boolean)
                 .join(' · ')}
             </p>
           </div>
           {biography && (
-            <p className="text-muted-foreground max-w-3xl leading-relaxed whitespace-pre-line">
+            <p className="max-w-3xl leading-relaxed whitespace-pre-line text-muted-foreground">
               {biography}
             </p>
           )}
@@ -181,7 +181,7 @@ const PersonPage = async (props: { params: Promise<{ id: string }> }) => {
           {person.name} movies and TV shows
         </h2>
         {credits.length === 0 ? (
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             Nothing on file for {person.name} yet.
           </p>
         ) : (

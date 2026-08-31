@@ -62,7 +62,7 @@ const PeoplePage = async () => {
         <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
           {TITLE}
         </h1>
-        <p className="text-muted-foreground max-w-2xl">{DESCRIPTION}</p>
+        <p className="max-w-2xl text-muted-foreground">{DESCRIPTION}</p>
       </div>
 
       <ul className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">

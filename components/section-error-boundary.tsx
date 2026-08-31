@@ -86,7 +86,7 @@ export class SectionErrorBoundary extends React.Component<
           // the column it replaced, left-aligned, with a coloured rail carrying
           // the state. A small centred card floating in a wide empty row reads
           // like a crash; this reads like the page telling you something.
-          'relative isolate my-6 flex w-full items-start gap-4 overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 backdrop-blur-sm sm:items-center sm:px-5',
+          'relative isolate my-6 flex w-full items-start gap-4 overflow-hidden rounded-xl border border-white/10 bg-white/3 p-4 backdrop-blur-sm sm:items-center sm:px-5',
           this.props.className
         )}
       >
@@ -116,12 +116,12 @@ export class SectionErrorBoundary extends React.Component<
         </span>
 
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <p className="text-foreground text-sm leading-snug font-medium">
+          <p className="text-sm leading-snug font-medium text-foreground">
             {stale
               ? STALE_TITLE
               : (this.props.title ?? "This section didn't load")}
           </p>
-          <p className="text-muted-foreground text-xs leading-relaxed text-pretty">
+          <p className="text-xs leading-relaxed text-pretty text-muted-foreground">
             {stale ? STALE_BODY : 'Everything else on the page still works.'}
           </p>
         </div>

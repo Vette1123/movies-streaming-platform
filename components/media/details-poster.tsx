@@ -26,12 +26,12 @@ const POSTER_SIZES =
   '(min-width: 1024px) 400px, (min-width: 640px) 260px, 220px'
 
 export const DetailsPoster = ({ path, alt }: { path: string; alt: string }) => (
-  <div className="mx-auto w-full max-w-[220px] shrink-0 sm:max-w-[260px] lg:mx-0 lg:w-[400px] lg:max-w-none">
-    <div className="relative aspect-2/3 w-full overflow-hidden rounded-xl shadow-xl lg:aspect-auto lg:min-h-[600px]">
+  <div className="mx-auto w-full max-w-55 shrink-0 sm:max-w-65 lg:mx-0 lg:w-100 lg:max-w-none">
+    <div className="relative aspect-2/3 w-full overflow-hidden rounded-xl shadow-xl lg:aspect-auto lg:min-h-150">
       <BlurredImage
         src={getImageURL(path)}
         alt={alt}
-        className="h-full w-full object-cover"
+        className="size-full object-cover"
         fill
         sizes={POSTER_SIZES}
         quality={POSTER_QUALITY}

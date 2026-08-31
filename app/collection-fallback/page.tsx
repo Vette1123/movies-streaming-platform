@@ -60,14 +60,14 @@ export default function CollectionFallbackPage() {
     return (
       <div className="relative">
         <div
-          className="bg-muted/30 animate-pulse"
+          className="animate-pulse bg-muted/30"
           style={{ height: '28rem' }}
         />
         <div className="container mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {Array.from({ length: 5 }, (_, i) => (
             <div
               key={i}
-              className="bg-muted/30 aspect-2/3 animate-pulse rounded-lg"
+              className="aspect-2/3 animate-pulse rounded-lg bg-muted/30"
             />
           ))}
         </div>

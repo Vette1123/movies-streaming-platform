@@ -143,11 +143,11 @@ export default function MediaFallbackPage() {
 function MediaFallbackSkeleton() {
   return (
     <div className="relative">
-      <div className="bg-muted/30 h-[70vh] w-full animate-pulse" />
+      <div className="h-[70vh] w-full animate-pulse bg-muted/30" />
       <div className="container mt-8 space-y-4">
-        <div className="bg-muted/30 h-8 w-2/3 animate-pulse rounded" />
-        <div className="bg-muted/30 h-4 w-full animate-pulse rounded" />
-        <div className="bg-muted/30 h-4 w-5/6 animate-pulse rounded" />
+        <div className="h-8 w-2/3 animate-pulse rounded bg-muted/30" />
+        <div className="h-4 w-full animate-pulse rounded bg-muted/30" />
+        <div className="h-4 w-5/6 animate-pulse rounded bg-muted/30" />
       </div>
     </div>
   )

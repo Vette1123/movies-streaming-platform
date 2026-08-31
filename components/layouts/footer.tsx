@@ -73,13 +73,13 @@ export function Footer() {
   ]
 
   return (
-    <footer className="site-footer text-muted-foreground border-border/60 mt-8 border-t text-sm">
+    <footer className="site-footer mt-8 border-t border-border/60 text-sm text-muted-foreground">
       <div className="container grid gap-10 py-12 lg:grid-cols-[1.6fr_1fr_1.1fr] lg:gap-12">
         {/* The app named and explained on every page, not only the homepage:
             anyone who lands deep in the catalogue should be able to tell what
             this site is without scrolling back to a poster wall. */}
         <div className="space-y-3">
-          <p className="text-foreground text-base font-semibold">
+          <p className="text-base font-semibold text-foreground">
             {siteConfig.name}
           </p>
           <p className="max-w-[52ch] leading-relaxed">
@@ -101,7 +101,7 @@ export function Footer() {
         </div>
 
         <nav className="space-y-3" aria-label="Site">
-          <p className="text-foreground text-xs font-semibold tracking-wide uppercase">
+          <p className="text-xs font-semibold tracking-wide text-foreground uppercase">
             Site
           </p>
           <ul className="space-y-2">
@@ -122,7 +122,7 @@ export function Footer() {
         <FooterSupportCard />
       </div>
 
-      <div className="border-border/60 border-t">
+      <div className="border-t border-border/60">
         <div className="container flex flex-col items-center justify-between gap-4 py-6 text-xs sm:flex-row">
           <p>
             © {year} {siteConfig.name}. Built by{' '}

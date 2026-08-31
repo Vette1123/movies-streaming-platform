@@ -53,7 +53,7 @@ export default async function StartPage() {
         <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
           What should I watch?
         </h1>
-        <p className="text-muted-foreground leading-relaxed">
+        <p className="leading-relaxed text-muted-foreground">
           Tap a few you already like. That is the whole setup — no account, no
           questionnaire, and nothing is sent anywhere. You get a real answer at
           the bottom and can keep it if you want to.

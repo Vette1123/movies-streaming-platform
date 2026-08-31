@@ -26,11 +26,11 @@ export function StrangerPitch({
   cta: string
 }) {
   return (
-    <section className="border-primary/25 from-primary/10 mt-16 rounded-lg border bg-gradient-to-br to-transparent p-6 sm:p-8">
+    <section className="mt-16 rounded-lg border border-primary/25 bg-linear-to-br from-primary/10 to-transparent p-6 sm:p-8">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="max-w-[52ch] space-y-2">
           <h2 className="text-xl font-semibold tracking-tight">{heading}</h2>
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             A movie and TV guide: search thousands of titles, keep a watchlist,
             tick off the episodes you finish, and stream them in your browser.
             No account needed for any of it. Pages like this one are what

@@ -36,12 +36,12 @@ export default function WatchTogetherPage() {
   return (
     <section className="container min-h-svh py-20 lg:py-32">
       <h1 className="text-2xl font-bold lg:text-3xl">Watch Together (beta)</h1>
-      <p className="text-muted-foreground mt-2 max-w-xl text-sm">
+      <p className="mt-2 max-w-xl text-sm text-muted-foreground">
         One of you presses play — everyone follows. Pauses and seeks sync for
         the whole room, so nobody is 40 seconds ahead spoiling the twist.
       </p>
 
-      <ol className="text-muted-foreground mt-6 max-w-md list-decimal space-y-1 pl-5 text-sm">
+      <ol className="mt-6 max-w-md list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
         <li>Search the film or series you want to watch</li>
         <li>Picking it opens a room and takes you to the player</li>
         <li>Send the invite from the bar — anyone who opens it follows you</li>
@@ -57,7 +57,7 @@ export default function WatchTogetherPage() {
         />
       </div>
 
-      <p className="text-muted-foreground mt-8 text-xs">
+      <p className="mt-8 text-xs text-muted-foreground">
         Guests: open the link the host sent — it already carries the room code.
       </p>
     </section>

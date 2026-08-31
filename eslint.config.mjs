@@ -23,13 +23,17 @@ const config = [
     ],
   },
   ...nextConfig,
-  ...tailwindPlugin.configs['flat/recommended'],
+  tailwindPlugin.configs.recommended,
   prettierConfig,
   {
     settings: {
       tailwindcss: {
-        callees: ['cn'],
-        cssFiles: ['./styles/globals.css'],
+        // Tailwind 4 keeps its theme in CSS, not in a JS config, and the
+        // plugin has to be told where. Without it every lint run printed
+        // "Cannot resolve default tailwindcss config path" once per file and
+        // sorted classes against stock Tailwind rather than ours. `cn` needs
+        // no declaring here — v4 parses it by default.
+        cssConfigPath: './styles/globals.css',
       },
       next: {
         rootDir: ['./'],
@@ -39,6 +43,15 @@ const config = [
       '@next/next/no-html-link-for-pages': 'off',
       'react/jsx-key': 'off',
       'tailwindcss/no-custom-classname': 'off',
+      // Off because its autofix writes CSS that does not exist. MEASURED
+      // 2026-08-31: it rewrote `scale-[1.03]` to `scale-1.03`, and Tailwind's
+      // `scale-<number>` is a PERCENTAGE, so 1.03 is not a smaller number, it
+      // is not a class at all — the utility compiled to nothing and the hover
+      // zoom on every poster silently stopped. Same for `scale-y-[1.35]` and
+      // `scale-[0.97]`. The rule's other rewrites (rem and px values that have
+      // a spacing-scale equivalent) are correct and are already applied; what
+      // it cannot be trusted with is a fractional value.
+      'tailwindcss/no-unnecessary-arbitrary-value': 'off',
     },
   },
 ]

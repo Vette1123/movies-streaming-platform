@@ -105,7 +105,7 @@ export function LibrarySearch() {
       <div className="space-y-2">
         <Label htmlFor="library-search">Find something</Label>
         <div className="relative">
-          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="library-search"
             value={query}
@@ -117,7 +117,7 @@ export function LibrarySearch() {
             className="pl-9"
           />
         </div>
-        <p className="text-muted-foreground text-xs">
+        <p className="text-xs text-muted-foreground">
           Searches everything at once and says where each one is. Tick rows to
           remove them, or to put them back on your watchlist.
         </p>
@@ -131,7 +131,7 @@ export function LibrarySearch() {
       />
 
       {chosen.length > 0 && (
-        <div className="bg-card/60 sticky bottom-2 flex flex-wrap items-center gap-2 rounded-lg border p-3 backdrop-blur">
+        <div className="sticky bottom-2 flex flex-wrap items-center gap-2 rounded-lg border bg-card/60 p-3 backdrop-blur">
           <span className="text-sm font-medium">{chosen.length} selected</span>
           <Button size="sm" variant="outline" onClick={saveChosen}>
             <Bookmark className="mr-2 size-4" />
@@ -182,7 +182,7 @@ function Results({
 
   if (hits.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
+      <p className="text-sm text-muted-foreground">
         Nothing in your library matches that.
       </p>
     )
@@ -190,18 +190,18 @@ function Results({
 
   return (
     <>
-      <ul className="divide-border/60 max-h-96 divide-y overflow-y-auto rounded-lg border">
+      <ul className="max-h-96 divide-y divide-border/60 overflow-y-auto rounded-lg border">
         {hits.map((hit) => (
           <li key={hit.id}>
-            <label className="hover:bg-accent/40 flex cursor-pointer items-center gap-3 p-3 text-sm transition-colors">
+            <label className="flex cursor-pointer items-center gap-3 p-3 text-sm transition-colors hover:bg-accent/40">
               <input
                 type="checkbox"
                 checked={selected.has(hit.id)}
                 onChange={() => onToggle(hit.id)}
-                className="accent-primary size-4 shrink-0"
+                className="size-4 shrink-0 accent-primary"
               />
               <span className="min-w-0 flex-1 truncate">{hit.item.title}</span>
-              <span className="text-muted-foreground shrink-0 text-xs">
+              <span className="shrink-0 text-xs text-muted-foreground">
                 {STORE_LABEL[hit.store]}
               </span>
             </label>
@@ -209,7 +209,7 @@ function Results({
         ))}
       </ul>
       {hits.length >= MAX_HITS && (
-        <p className="text-muted-foreground text-xs">
+        <p className="text-xs text-muted-foreground">
           Showing the first {MAX_HITS}. Type a bit more to narrow it down.
         </p>
       )}

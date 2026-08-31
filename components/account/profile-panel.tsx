@@ -113,7 +113,7 @@ export function ProfilePanel() {
         <section className="space-y-3">
           <Label>Your address</Label>
           <div className="flex flex-wrap items-center gap-2">
-            <code className="bg-muted min-w-0 flex-1 truncate rounded-md px-3 py-2 text-sm">
+            <code className="min-w-0 flex-1 truncate rounded-md bg-muted px-3 py-2 text-sm">
               {url}
             </code>
             <Button
@@ -143,7 +143,7 @@ export function ProfilePanel() {
               </a>
             </Button>
           </div>
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             Names are kept for good. This one is a link people may already have
             saved, so it is not something to swap around.
           </p>
@@ -152,7 +152,7 @@ export function ProfilePanel() {
         <section className="space-y-3">
           <Label htmlFor="profile-handle">Pick your name</Label>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-muted-foreground text-sm">
+            <span className="text-sm text-muted-foreground">
               reely.space/u/
             </span>
             <Input
@@ -172,7 +172,7 @@ export function ProfilePanel() {
               Claim
             </Button>
           </div>
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             Three to twenty characters: letters, numbers and single dashes. You
             get one, and it is yours for good — so pick the one you would put on
             a business card.
@@ -193,7 +193,7 @@ export function ProfilePanel() {
             void send({ bio })
           }}
         />
-        <p className="text-muted-foreground text-xs">
+        <p className="text-xs text-muted-foreground">
           {MAX_BIO - bio.length} characters left. Saved when you click away.
         </p>
       </section>
@@ -208,7 +208,7 @@ export function ProfilePanel() {
         />
       </SettingGroup>
 
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   )
 }

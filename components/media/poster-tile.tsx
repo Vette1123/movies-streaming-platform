@@ -60,13 +60,13 @@ export function PosterTile({
       <div className="space-y-1">
         <p className="line-clamp-2 text-sm font-medium">{item.title}</p>
         {item.rating != null && (
-          <p className="text-muted-foreground flex items-center gap-1 text-xs">
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
             <Star className="size-3 fill-amber-400 text-amber-400" />
             {item.rating}/10
           </p>
         )}
         {item.note && (
-          <p className="text-muted-foreground text-xs leading-relaxed">
+          <p className="text-xs leading-relaxed text-muted-foreground">
             {item.note}
           </p>
         )}

@@ -17,7 +17,7 @@ export const DisclaimerContent = ({
             <h1 className="text-2xl font-semibold tracking-tight">
               Disclaimer
             </h1>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Please read this disclaimer carefully before using the service
               operated by us.
             </p>
@@ -30,14 +30,14 @@ export const DisclaimerContent = ({
           isHideHeader ? '' : 'my-4'
         )}
       >
-        <p className="text-muted-foreground text-base">
+        <p className="text-base text-muted-foreground">
           Reely.space is a free online movie and TV show streaming website that
           allows users to watch content sourced from third parties. Reely.space
           does not upload, host, own or store any movies, TV shows or video
           content displayed on the site. All content is provided by external
           sources and streamed directly from third party servers.
         </p>
-        <p className="text-muted-foreground text-base">
+        <p className="text-base text-muted-foreground">
           Reely.space has no control over the content quality, availability,
           copyright, legality or validity of the third party material viewed via
           the space. Reely.space cannot be held responsible for any streaming
@@ -45,14 +45,14 @@ export const DisclaimerContent = ({
           responsible for verifying they have the legal right to view any
           streamed content.
         </p>
-        <p className="text-muted-foreground text-base">
+        <p className="text-base text-muted-foreground">
           The operators of Reely.space make no warranties or representations
           about the site or any of the content, and assume no liability for any
           costs, damages or losses from the use of the site. By using
           Reely.space, you agree that access is provided “as is” at your own
           risk.
         </p>
-        <div className="text-muted-foreground text-base">
+        <div className="text-base text-muted-foreground">
           <p>Copyright Infringement:</p>
           Reely.space respects the intellectual property rights of others. Users
           are prohibited from using Reely.space to engage in copyright
@@ -60,7 +60,7 @@ export const DisclaimerContent = ({
           Reely.space will promptly remove or disable access to any infringing
           content upon receipt of proper notification from the copyright holder.
         </div>
-        <div className="text-muted-foreground text-base">
+        <div className="text-base text-muted-foreground">
           <p>No Endorsement:</p>
           <p>
             The content accessible through Reely.space does not constitute an
@@ -70,7 +70,7 @@ export const DisclaimerContent = ({
             purposes only.
           </p>
         </div>
-        <div className="text-muted-foreground text-base">
+        <div className="text-base text-muted-foreground">
           <p>Age Restricted Content:</p>
           <p>
             Reely.space does not knowingly collect or distribute content
@@ -81,7 +81,7 @@ export const DisclaimerContent = ({
             using the service.
           </p>
         </div>
-        <div className="text-muted-foreground text-base">
+        <div className="text-base text-muted-foreground">
           <p>No Warranties:</p>
           <p>
             Reely.space provides access to third party content on an “as is”
@@ -91,7 +91,7 @@ export const DisclaimerContent = ({
             intellectual property rights related to any accessible content.
           </p>
         </div>
-        <div className="text-muted-foreground text-base">
+        <div className="text-base text-muted-foreground">
           <p>Limitation of Liability:</p>
           <p>
             In no event shall Reely.space be liable for any direct, indirect,

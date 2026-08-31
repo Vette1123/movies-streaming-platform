@@ -35,7 +35,7 @@ const CommandMenu = dynamic(
         aria-hidden
         // Widths must track the real trigger in command-menu.tsx, or the swap
         // shifts the header.
-        className="bg-muted/40 h-9 w-full animate-pulse rounded-md border md:w-44 xl:w-52 2xl:w-64"
+        className="h-9 w-full animate-pulse rounded-md border bg-muted/40 md:w-44 xl:w-52 2xl:w-64"
       />
     ),
   }
@@ -81,7 +81,7 @@ export function SiteHeader() {
             aria-label="Support Reely"
             className={cn(
               buttonVariants({ size: 'icon', variant: 'ghost' }),
-              'text-primary hover:text-primary shrink-0'
+              'shrink-0 text-primary hover:text-primary'
             )}
           >
             <Heart className="size-5" />

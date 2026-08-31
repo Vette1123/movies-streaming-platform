@@ -13,7 +13,7 @@ export const GridSkeletonCells = ({ count = 10 }: GridSkeletonCellsProps) => (
     {Array.from({ length: count }).map((_, i) => (
       <div
         key={`skeleton-${i}`}
-        className="bg-muted/70 aspect-[2/3] w-full animate-pulse rounded-lg"
+        className="aspect-2/3 w-full animate-pulse rounded-lg bg-muted/70"
       />
     ))}
   </>

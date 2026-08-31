@@ -43,13 +43,13 @@ export const FilterSheet = ({
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="w-[350px] overflow-hidden sm:w-[400px]"
+        className="w-[350px] overflow-hidden sm:w-100"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
-            <Icons.sliders className="h-5 w-5" />
+            <Icons.sliders className="size-5" />
             {filterOverlayTitle(mediaType)}
           </SheetTitle>
         </SheetHeader>

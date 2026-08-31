@@ -256,7 +256,7 @@ function ReelSlide({
     <div
       ref={ref}
       data-testid="reel-slide"
-      className="relative h-full w-full snap-start overflow-hidden bg-black"
+      className="relative size-full snap-start overflow-hidden bg-black"
     >
       {/* The still stands in until the trailer paints, and only for slides the
           viewer can plausibly reach next. Everything further out holds black,
@@ -268,7 +268,7 @@ function ReelSlide({
           alt=""
           loading={active ? 'eager' : 'lazy'}
           fetchPriority={active ? 'high' : 'low'}
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 size-full object-cover"
         />
       ) : null}
 
@@ -534,14 +534,14 @@ export default function ReelsPage() {
         className="no-scrollbar h-full snap-y snap-mandatory overflow-y-scroll overscroll-contain"
       >
         {reels.length === 0 ? (
-          <div className="h-full w-full">
-            <Skeleton className="h-full w-full rounded-none" />
+          <div className="size-full">
+            <Skeleton className="size-full rounded-none" />
           </div>
         ) : (
           reels.map((reel, index) => (
             <div
               key={`${reel.mediaType}-${reel.id}`}
-              className="h-full w-full snap-start"
+              className="size-full snap-start"
             >
               <ReelSlide
                 reel={reel}

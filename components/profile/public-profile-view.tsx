@@ -42,7 +42,7 @@ export function PublicProfileView({ profile }: { profile: PublicProfile }) {
             </h1>
             <SupporterBadge />
           </div>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             @{profile.handle} · keeping score since {joined}
           </p>
           {profile.bio && (
@@ -99,7 +99,7 @@ export function PublicProfileView({ profile }: { profile: PublicProfile }) {
               <li key={list.slug}>
                 <Link
                   href={`/l/${list.slug}`}
-                  className="group hover:bg-card/60 flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-3 transition duration-200 hover:-translate-y-0.5 hover:border-white/20 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                  className="group flex items-center gap-4 rounded-xl border border-white/10 bg-white/3 p-3 transition duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-card/60 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                 >
                   {list.poster_path ? (
                     // A plain img: one 48px-wide thumbnail per list, on a
@@ -117,11 +117,11 @@ export function PublicProfileView({ profile }: { profile: PublicProfile }) {
                       className="aspect-2/3 w-12 shrink-0 rounded object-cover"
                     />
                   ) : (
-                    <div className="bg-muted aspect-2/3 w-12 shrink-0 rounded" />
+                    <div className="aspect-2/3 w-12 shrink-0 rounded bg-muted" />
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{list.name}</p>
-                    <p className="text-muted-foreground truncate text-sm">
+                    <p className="truncate text-sm text-muted-foreground">
                       {list.description ||
                         `${list.count} ${list.count === 1 ? 'title' : 'titles'}`}
                     </p>
@@ -158,7 +158,7 @@ function Avatar({ picture, who }: { picture: string | null; who: string }) {
     )
   }
   return (
-    <div className="bg-primary-fill/15 text-primary ring-primary/20 grid size-24 shrink-0 place-items-center rounded-full text-3xl font-semibold ring-1">
+    <div className="grid size-24 shrink-0 place-items-center rounded-full bg-primary-fill/15 text-3xl font-semibold text-primary ring-1 ring-primary/20">
       {who.slice(0, 1).toUpperCase()}
     </div>
   )
@@ -166,7 +166,7 @@ function Avatar({ picture, who }: { picture: string | null; who: string }) {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
+    <h2 className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
       {children}
     </h2>
   )
@@ -182,14 +182,14 @@ function Figure({
   label: string
 }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
-      <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+    <div className="rounded-lg border border-white/10 bg-white/3 p-4">
+      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
         {icon}
       </p>
       <p className="mt-2 font-mono text-3xl font-semibold tabular-nums">
         {value}
       </p>
-      <p className="text-muted-foreground mt-1 text-xs">{label}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{label}</p>
     </div>
   )
 }

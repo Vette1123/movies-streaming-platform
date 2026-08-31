@@ -85,7 +85,7 @@ export function StatsPanel() {
     return (
       <div className="max-w-[60ch] space-y-4">
         {picker}
-        <p className="text-muted-foreground leading-relaxed">
+        <p className="leading-relaxed text-muted-foreground">
           {emptyLine(year)}
         </p>
         <Link href="/movies" className={buttonVariants({ variant: 'outline' })}>
@@ -161,7 +161,7 @@ export function StatsPanel() {
         {pro ? (
           <ShareCard stats={stats} name={name} year={year} />
         ) : (
-          <p className="text-muted-foreground max-w-[52ch] text-sm leading-relaxed">
+          <p className="max-w-[52ch] text-sm leading-relaxed text-muted-foreground">
             These numbers come from this browser alone, and they stop at this
             browser too. Supporting Reely counts everything you watch on every
             device, survives a cleared browser, and turns the year into a card
@@ -320,7 +320,7 @@ function Figure({
       >
         {value}
       </p>
-      <p className="text-muted-foreground mt-2 text-xs">{label}</p>
+      <p className="mt-2 text-xs text-muted-foreground">{label}</p>
     </div>
   )
 }
@@ -328,7 +328,7 @@ function Figure({
 function Line({ term, value }: { term: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-4 border-b py-2">
-      <dt className="text-muted-foreground text-sm">{term}</dt>
+      <dt className="text-sm text-muted-foreground">{term}</dt>
       <dd className="text-sm font-medium">{value}</dd>
     </div>
   )

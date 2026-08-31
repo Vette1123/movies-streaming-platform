@@ -103,7 +103,7 @@ const HighlightedText = React.memo(function HighlightedText({
         part.toLowerCase() === lowered ? (
           <mark
             key={i}
-            className="bg-primary/25 text-foreground rounded-sm px-0.5"
+            className="rounded-sm bg-primary/25 px-0.5 text-foreground"
           >
             {part}
           </mark>
@@ -274,7 +274,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
           // Widens only where there is room to spare. It used to jump to 16rem
           // at lg, which is exactly the band where the desktop nav is fighting
           // for the same pixels.
-          'text-muted-foreground hover:border-primary/40 relative w-full justify-start pl-9 text-sm transition-colors sm:pr-14 md:w-44 xl:w-52 2xl:w-64'
+          'relative w-full justify-start pl-9 text-sm text-muted-foreground transition-colors hover:border-primary/40 sm:pr-14 md:w-44 xl:w-52 2xl:w-64'
         )}
         onClick={() => setOpen(true)}
         {...props}
@@ -284,7 +284,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
           aria-hidden
         />
         <span className="truncate">Search...</span>
-        <kbd className="bg-background text-muted-foreground pointer-events-none absolute top-1/2 right-2 hidden h-6 -translate-y-1/2 items-center gap-1 rounded-md border px-1.5 font-mono text-[11px] font-medium shadow-sm select-none sm:flex">
+        <kbd className="pointer-events-none absolute top-1/2 right-2 hidden h-6 -translate-y-1/2 items-center gap-1 rounded-md border bg-background px-1.5 font-mono text-[11px] font-medium text-muted-foreground shadow-sm select-none sm:flex">
           <span className="text-sm leading-none">⌘</span>K
         </kbd>
       </Button>
@@ -338,7 +338,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
             ))}
           </div>
         )}
-        <CommandList className="max-h-[75vh] min-h-0 flex-1 sm:max-h-[74vh] sm:min-h-[460px] sm:flex-none">
+        <CommandList className="max-h-[75vh] min-h-0 flex-1 sm:max-h-[74vh] sm:min-h-115 sm:flex-none">
           <CommandGroup heading={resultsHeading}>
             {status === 'idle' &&
               (recent.length > 0 ? (
@@ -347,10 +347,10 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                     key={term}
                     value={`recent:${term}`}
                     onSelect={() => submitSearch(term)}
-                    className="group/recent hover:bg-accent cursor-pointer"
+                    className="group/recent cursor-pointer hover:bg-accent"
                   >
                     <Clock
-                      className="text-muted-foreground mr-2 size-4 shrink-0"
+                      className="mr-2 size-4 shrink-0 text-muted-foreground"
                       aria-hidden
                     />
                     <span className="flex-1 truncate">{term}</span>
@@ -362,7 +362,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                         removeRecent(term)
                       }}
                       onPointerDown={(e) => e.stopPropagation()}
-                      className="text-muted-foreground/60 hover:text-foreground ml-2 shrink-0 cursor-pointer rounded p-0.5 opacity-0 transition group-hover/recent:opacity-100 focus-visible:opacity-100"
+                      className="ml-2 shrink-0 cursor-pointer rounded p-0.5 text-muted-foreground/60 opacity-0 transition group-hover/recent:opacity-100 hover:text-foreground focus-visible:opacity-100"
                     >
                       <X className="size-3.5" />
                     </button>
@@ -371,7 +371,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
               ) : (
                 <div
                   role="status"
-                  className="text-muted-foreground flex items-center justify-center gap-2 py-6 text-sm"
+                  className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground"
                 >
                   <Search className="size-4" aria-hidden />
                   <p>Start typing to search movies & series…</p>
@@ -387,7 +387,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
               >
                 <span className="sr-only">Searching…</span>
                 {Array.from({ length: skeletonCount }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3 px-2 py-2">
+                  <div key={i} className="flex items-center gap-3 p-2">
                     <Skeleton className="aspect-video h-[54px] shrink-0 rounded-md" />
                     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                       <Skeleton className="h-3.5 w-1/2" />
@@ -407,11 +407,11 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                 className="flex flex-col items-center justify-center gap-1 px-4 py-6 text-center"
               >
                 <Icons.search
-                  className="text-muted-foreground size-5"
+                  className="size-5 text-muted-foreground"
                   aria-hidden
                 />
                 <p className="text-sm font-medium">No results found</p>
-                <p className="text-muted-foreground w-full text-xs break-words">
+                <p className="w-full text-xs wrap-break-word text-muted-foreground">
                   Nothing matched “{trimmedQuery}”. Try a different title.
                 </p>
               </div>
@@ -439,7 +439,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                   <CommandItem
                     key={`${movie.media_type ?? 'movie'}-${movie.id}`}
                     value={`${movie.id}-${movie.title}`}
-                    className="group/command-item hover:bg-accent cursor-pointer transition-colors duration-200"
+                    className="group/command-item cursor-pointer transition-colors duration-200 hover:bg-accent"
                     onSelect={() => {
                       trackSearchResultClicked({
                         query: trimmedQuery,
@@ -455,7 +455,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                   >
                     <div className="flex w-full min-w-0 flex-nowrap items-center gap-3 overflow-hidden">
                       {movie?.backdrop_path ? (
-                        <div className="bg-muted ring-border/60 relative aspect-video h-[54px] shrink-0 overflow-hidden rounded-md shadow-sm ring-1">
+                        <div className="relative aspect-video h-[54px] shrink-0 overflow-hidden rounded-md bg-muted shadow-sm ring-1 ring-border/60">
                           <Image
                             src={getThumbBackdropURL(movie.backdrop_path)}
                             alt={movie?.title ?? ''}
@@ -470,7 +470,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                           />
                         </div>
                       ) : movie?.poster_path ? (
-                        <div className="bg-muted ring-border/60 relative aspect-video h-[54px] shrink-0 overflow-hidden rounded-md shadow-sm ring-1">
+                        <div className="relative aspect-video h-[54px] shrink-0 overflow-hidden rounded-md bg-muted shadow-sm ring-1 ring-border/60">
                           <Image
                             src={getThumbPosterURL(movie.poster_path)}
                             alt={movie?.title ?? ''}
@@ -485,7 +485,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                           />
                         </div>
                       ) : (
-                        <div className="bg-muted text-muted-foreground ring-border/60 flex aspect-video h-[54px] shrink-0 items-center justify-center rounded-md shadow-sm ring-1">
+                        <div className="flex aspect-video h-[54px] shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground shadow-sm ring-1 ring-border/60">
                           {movie?.media_type === 'tv' ? (
                             <Tv className="size-4" aria-hidden />
                           ) : (
@@ -501,7 +501,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                           />
                         </p>
                         {(year || imdbRating || rating || showOriginal) && (
-                          <p className="text-muted-foreground truncate text-xs">
+                          <p className="truncate text-xs text-muted-foreground">
                             {showOriginal && (
                               <span className="italic">
                                 {movie.original_title}
@@ -535,7 +535,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                           </p>
                         )}
                         {movie?.overview && (
-                          <p className="text-muted-foreground/90 line-clamp-2 text-xs leading-snug">
+                          <p className="line-clamp-2 text-xs leading-snug text-muted-foreground/90">
                             {movie.overview}
                           </p>
                         )}
@@ -609,7 +609,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
               <Heart className="mr-2 size-4" />
               <div className="flex flex-col">
                 <span>{supporter ? 'Your plan' : 'Support Reely'}</span>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-xs text-muted-foreground">
                   {supporter
                     ? 'Manage or change your supporter membership'
                     : `From $${SUPPORT_PRICES.monthly} a month · keeps the site free`}
@@ -646,7 +646,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                   <Icons.googlePlay className="size-5" />
                   <div className="flex flex-col">
                     <span>{app.name}</span>
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-xs text-muted-foreground">
                       {app.tagline} · Google Play
                     </span>
                   </div>
@@ -671,25 +671,25 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
           <CommandSeparator />
         </CommandList>
         <div
-          className="text-muted-foreground bg-muted/30 hidden items-center justify-between gap-2 border-t px-3 py-2 text-[11px] sm:flex"
+          className="hidden items-center justify-between gap-2 border-t bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground sm:flex"
           aria-hidden
         >
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <kbd className="bg-background rounded border px-1 font-mono">
+              <kbd className="rounded border bg-background px-1 font-mono">
                 ↑↓
               </kbd>
               navigate
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="bg-background rounded border px-1 font-mono">
+              <kbd className="rounded border bg-background px-1 font-mono">
                 ↵
               </kbd>
               open
             </span>
           </div>
           <span className="flex items-center gap-1">
-            <kbd className="bg-background rounded border px-1 font-mono">
+            <kbd className="rounded border bg-background px-1 font-mono">
               esc
             </kbd>
             close
