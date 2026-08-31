@@ -47,6 +47,16 @@ export const POSTER_QUALITY = 70
 // would be a new function every render.
 const returnFalse = () => false
 
+// The <picture> that wraps every image below is the frame a `fill` image fills,
+// and it has to say so. A bare <picture> is `display:inline; position:static`,
+// and next/image measures the img's PARENT — the picture, not the box the
+// caller made `relative` — so every image on every page logged "has 'fill' and
+// parent element with invalid 'position'". The picture between them was also a
+// stray inline box: the image painted correctly only because it positioned
+// against the relative ancestor further up. This makes the wrapper the box it
+// was pretending to be.
+const PICTURE_FILL = 'absolute inset-0'
+
 // Offers the browser AVIF before next/image's own <img>, and gets out of the way
 // when it can't.
 //
@@ -210,7 +220,7 @@ export const BlurredImage = React.memo(function BlurredImage({
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-slate-900"
         />
-        <picture>
+        <picture className={props.fill ? PICTURE_FILL : undefined}>
           <AvifSource
             src={effectiveSrc}
             sizes={props.sizes}
@@ -264,7 +274,7 @@ export const BlurredImage = React.memo(function BlurredImage({
             unchanged. The wrapper's bg-slate-900 backs the reserved box, so there's
             no blank before the first pixels paint, and the aspect-ratio box means
             zero CLS. */}
-        <picture>
+        <picture className={PICTURE_FILL}>
           <AvifSource
             src={effectiveSrc}
             sizes={sizes}
@@ -293,33 +303,34 @@ export const BlurredImage = React.memo(function BlurredImage({
     )
   }
 
-  // Non-intro `fill` usage (e.g. collection banner): the image is absolutely
-  // positioned against an outer `relative` parent, so keep the light wrapper.
+  // Non-intro `fill` usage (e.g. the collection banner, a person portrait): the
+  // caller owns the `relative` box, so the picture just fills it. The `w-fit
+  // rounded-lg bg-slate-900` div that used to sit here painted nothing — its
+  // only child was absolutely positioned, so it measured 0x0 — and it is what
+  // put a static parent between the box and the image.
   const blurClassName = cn(className, 'duration-700 ease-in-out', {
     'blur-lg': isLoading,
     'blur-0': !isLoading,
   })
   return (
-    <div className="w-fit overflow-hidden rounded-lg bg-slate-900">
-      <picture>
-        <AvifSource
-          src={effectiveSrc}
-          sizes={props.sizes}
-          quality={props.quality}
-          fallbackQuality={HERO_QUALITY}
-          priority={props.priority}
-        />
-        <Image
-          quality={HERO_QUALITY}
-          {...props}
-          ref={imgRef}
-          alt={alt}
-          src={effectiveSrc}
-          className={blurClassName}
-          onLoad={() => setLoading(false)}
-          onError={handleError}
-        />
-      </picture>
-    </div>
+    <picture className={PICTURE_FILL}>
+      <AvifSource
+        src={effectiveSrc}
+        sizes={props.sizes}
+        quality={props.quality}
+        fallbackQuality={HERO_QUALITY}
+        priority={props.priority}
+      />
+      <Image
+        quality={HERO_QUALITY}
+        {...props}
+        ref={imgRef}
+        alt={alt}
+        src={effectiveSrc}
+        className={blurClassName}
+        onLoad={() => setLoading(false)}
+        onError={handleError}
+      />
+    </picture>
   )
 })

@@ -68,6 +68,35 @@ after mount, not at module init.
   torn down and rebuilt on every parent render; rebuilding it mid-playback
   drops messages.
 
+## Postscript: every image had a static parent
+
+The dev console logged "has 'fill' and parent element with invalid 'position'"
+for every image on every page, and it was right. `BlurredImage` wraps its
+`<img>` in a bare `<picture>` so it can offer AVIF first — and a bare
+`<picture>` is `display:inline; position:static`. next/image measures the img's
+PARENT, so it saw the picture, not the `relative` box the caller made. The image
+still painted, because it positioned against the relative ancestor one level
+further up; the picture was just a stray inline box in between. The
+non-intro branch was worse: it wrapped everything in `div.w-fit
+.rounded-lg.bg-slate-900`, a div whose only child was absolutely positioned, so
+it measured 0x0 and painted nothing at all. The picture is `absolute inset-0`
+now and that div is gone.
+
+Verifying it cost more than fixing it. Two separate faults in the automation
+browser look exactly like an app bug:
+
+- **The screenshot is blank while the page is fine.** Measured on /people from
+  the built export: 197 images, `naturalWidth` 307, opacity 1, boxes 153x230 —
+  and a screenshot showing empty tiles. Trust `getBoundingClientRect` and
+  `naturalWidth`, not the picture.
+- **React's Suspense boundaries never stitch.** Content sits in
+  `<div hidden id="S:0">` beside a `<template id="B:0">` forever. Calling
+  `('B:0','S:0')` by hand throws nothing and changes nothing. It happens on
+  the dev server, on the built static export served locally, AND on production —
+  same HTML that curl proves is complete and that real visitors render. It is
+  the browser, not the site. A page whose content arrives in the first flush
+  (/people, /account) is unaffected, which is why it looks intermittent.
+
 ## Rules
 
 - A setting that boots with the player needs a remount to take effect. Give the
@@ -75,5 +104,8 @@ after mount, not at module init.
 - Gate a settings panel on the surface that reads the settings, not on who is
   allowed to see it.
 - Do not add a pref field without a reader. The reader is the feature.
-- In a Next dev browser session, scope every DOM query to the visible root —
-  `body` still holds the streaming `<div hidden>` copy, and it answers first.
+- In a Next browser session, scope every DOM query to the visible root — `body`
+  still holds the streaming `<div hidden>` copy, and it answers first.
+- A bare `<picture>` around a `fill` image is a static parent. Whatever wraps a
+  `fill` image has to be the positioned box itself.
+- When the automated browser disagrees with curl, believe curl.
