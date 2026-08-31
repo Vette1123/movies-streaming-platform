@@ -1,4 +1,4 @@
-import { getPopularPeople } from '@/services/people'
+import { getPeopleWithPages } from '@/services/people'
 
 /**
  * Which cast members this build actually has a page for.
@@ -23,7 +23,7 @@ let pageIds: Promise<Set<number>> | undefined
 
 const loadPageIds = async (): Promise<Set<number>> => {
   try {
-    return new Set((await getPopularPeople()).map((person) => person.id))
+    return new Set(getPeopleWithPages().map((person) => person.id))
   } catch {
     // No person pages this build is a missing link, not a broken page.
     return new Set()

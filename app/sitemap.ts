@@ -5,7 +5,7 @@ import {
   getMovieDetailsById,
   getPopularMovies,
 } from '@/services/movies'
-import { getPopularPeople } from '@/services/people'
+import { getPeopleWithPages } from '@/services/people'
 import {
   getAllTimeTopRatedSeries,
   getLatestTrendingSeries,
@@ -124,7 +124,7 @@ const generateLinkedTVShowUrls = (): Promise<MetadataRoute.Sitemap> =>
 // advertised as an image — a person page is one large photo and a grid.
 const generatePersonUrls = async (): Promise<MetadataRoute.Sitemap> => {
   try {
-    return (await getPopularPeople()).map((person) => ({
+    return getPeopleWithPages().map((person) => ({
       url: `${baseUrl}/person/${person.id}`,
       changeFrequency: 'monthly' as const,
       priority: 0.6,

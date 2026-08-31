@@ -67,3 +67,4 @@ with the work, not after.
 
 | 2026-08-31 | [A marketing round is mostly form plumbing](2026-08-31-marketing-round.md) | Never write a PR number a command can produce — the status table shipped with three invented ones; and a controlled form field needs the native value setter, not typing. |
 | 2026-08-31 | [The server picker nobody could reach](2026-08-31-the-server-picker-nobody-could-reach.md) | The Settings server was written to the account and read by nothing, and the in-player switcher was hidden in the one mode supporters are in — so the house player was inescapable. |
+| 2026-08-31 | [Search Console said Soft 404](2026-08-31-search-console-said-soft-404.md) | The tail fallback had 1,393 visible characters and 13,900 identical bodies — and every fact it needed was already in the payload it fetched; a prerendered set built from a list that moves deletes its own indexed pages. |

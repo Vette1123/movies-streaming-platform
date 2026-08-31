@@ -1,7 +1,7 @@
 import React from 'react'
 import { Metadata } from 'next'
 import Link from 'next/link'
-import { getPopularPeople } from '@/services/people'
+import { getPeopleWithPages } from '@/services/people'
 
 import { siteConfig } from '@/config/site'
 import { breadcrumbJsonLd, itemListJsonLd, JsonLd } from '@/lib/structured-data'
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
  * single route and fixes that.
  */
 const PeoplePage = async () => {
-  const people = await getPopularPeople()
+  const people = getPeopleWithPages()
 
   return (
     <main className="container py-20 lg:py-32">

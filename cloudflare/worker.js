@@ -59,6 +59,7 @@ import { mosaicUrl, OG_HEIGHT, OG_WIDTH } from '@/lib/og/mosaic'
 import { signEntryTicket } from '@/lib/pro/playback-ticket'
 import { loadPublicProfile } from '@/lib/profile/routes'
 import { collectionDescription, mediaDescription } from '@/lib/seo-description'
+import { mediaFacts } from '@/lib/seo-facts'
 import { getImageURL } from '@/lib/utils'
 
 /** 6h, matching the deploy cadence that refreshes the static half of the site. */
@@ -731,7 +732,19 @@ function buildMeta(type, id, details, siteUrl) {
   const image = getMediaHeroImageUrl(details.backdrop_path, details.poster_path)
   const canonical = `${siteUrl}/${type === 'tv' ? 'tv-shows' : 'movies'}/${id}`
 
-  return { heading, description, image, canonical, title }
+  // The body copy. Everything in it comes out of the payload already fetched
+  // above — see lib/seo-facts.ts for why a tail page needs more than an <h1>.
+  const detail = mediaFacts(type, details)
+
+  return {
+    heading,
+    description,
+    image,
+    canonical,
+    title,
+    detail,
+    links: detail.links,
+  }
 }
 
 function metaTags(
@@ -801,7 +814,43 @@ const headBlock = (meta, ogType, jsonLd) =>
 const SEO_BLOCK_STYLE =
   'position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0'
 const seoBlock = (meta) =>
-  `<div aria-hidden="true" style="${SEO_BLOCK_STYLE}" data-fallback-seo><h1>${escapeHtml(meta.heading)}</h1><p>${escapeHtml(meta.description)}</p>${linkBlock(meta.links)}</div>`
+  `<div aria-hidden="true" style="${SEO_BLOCK_STYLE}" data-fallback-seo><h1>${escapeHtml(meta.heading)}</h1>${leadParagraph(meta)}${detailBlock(meta.detail)}${linkBlock(meta.links)}</div>`
+
+/**
+ * The description, unless the block below is about to print the whole synopsis
+ * it was cut from — two paragraphs where the first is a truncation of the
+ * second is not more content, it is the same content twice.
+ */
+const leadParagraph = (meta) =>
+  meta.detail?.overview ? '' : `<p>${escapeHtml(meta.description)}</p>`
+
+/**
+ * The body of a tail detail page, for the crawler that runs no JS.
+ *
+ * Without this the only thing in the document was the heading and the 158-
+ * character meta description, and every one of the ~13,900 tail ids carried
+ * the same nav and footer around it. Search Console read that the way it
+ * looks: 112 pages filed as Soft 404, 6,961 as "Duplicate without
+ * user-selected canonical", 10,203 as "Crawled - currently not indexed".
+ *
+ * The facts come free with the payload the page already fetched, so the whole
+ * cost of this is the string building — see lib/seo-facts.ts.
+ */
+const detailBlock = (detail) => {
+  if (!detail) return ''
+  const facts = detail.facts
+    .map(
+      (fact) =>
+        `<dt>${escapeHtml(fact.label)}</dt><dd>${escapeHtml(fact.value)}</dd>`
+    )
+    .join('')
+  return [
+    detail.tagline ? `<p>${escapeHtml(detail.tagline)}</p>` : '',
+    `<p>${escapeHtml(detail.intro)}</p>`,
+    detail.overview ? `<p>${escapeHtml(detail.overview)}</p>` : '',
+    facts ? `<dl>${facts}</dl>` : '',
+  ].join('')
+}
 
 /**
  * The directory's own links, for a crawler that never runs the fetch.
@@ -1012,13 +1061,33 @@ async function handleDetailFallback(match, request, env, ctx, url) {
   if (!details) return notFoundAsset(env, url)
 
   const meta = buildMeta(type, id, details, siteUrlOf(url))
+  const { detail } = meta
+  // The same entity the prerendered pages describe, from the same fields. A
+  // Movie with a genre, a date, a runtime and a rating is a thing Google can
+  // file; a Movie with a name and a URL looks like a template.
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': type === 'tv' ? 'TVSeries' : 'Movie',
     name: meta.title,
-    description: meta.description,
+    description: detail.overview || meta.description,
     url: meta.canonical,
     ...(meta.image ? { image: meta.image } : {}),
+    ...(details.genres?.length
+      ? { genre: details.genres.map((genre) => genre.name) }
+      : {}),
+    ...(detail.released ? { datePublished: detail.released } : {}),
+    ...(detail.duration ? { duration: detail.duration } : {}),
+    ...(detail.rating
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: Number(detail.rating.value.toFixed(1)),
+            ratingCount: detail.rating.count,
+            bestRating: 10,
+            worstRating: 1,
+          },
+        }
+      : {}),
   }
   const ogType = type === 'tv' ? 'video.tv_show' : 'video.movie'
 

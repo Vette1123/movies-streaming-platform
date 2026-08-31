@@ -29,6 +29,32 @@ export interface MediaSummary {
   // fallback's meta description spends its leftover budget on these when the
   // title's overview is a single line (lib/seo-description.ts).
   genres?: { id: number; name: string }[]
+
+  // Everything below is in that same 1.7KB response and was simply going
+  // unread. lib/seo-facts.ts turns it into the body copy a tail page needs to
+  // stop reading like an empty template — see the note there. Declaring a
+  // field here costs nothing: the request itself does not change.
+  tagline?: string
+  status?: string
+  original_language?: string
+  original_title?: string
+  original_name?: string
+  spoken_languages?: { iso_639_1: string; english_name: string }[]
+  production_companies?: { id: number; name: string }[]
+  production_countries?: { iso_3166_1: string; name: string }[]
+  vote_average?: number
+  vote_count?: number
+  belongs_to_collection?: { id: number; name?: string } | null
+  // Movies only.
+  runtime?: number | null
+  // Series only.
+  last_air_date?: string
+  in_production?: boolean
+  number_of_seasons?: number
+  number_of_episodes?: number
+  episode_run_time?: number[]
+  networks?: { id: number; name: string }[]
+  created_by?: { id: number; name: string }[]
 }
 
 export const getMediaSummary = cache(

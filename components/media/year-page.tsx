@@ -15,6 +15,7 @@ import {
   JsonLd,
 } from '@/lib/structured-data'
 import { cn } from '@/lib/utils'
+import { isValidYear, yearRange } from '@/lib/year-range'
 import { chipVariants } from '@/components/ui/chip'
 import { Card } from '@/components/card'
 
@@ -32,24 +33,9 @@ import { Card } from '@/components/card'
  * requests at build, zero at runtime.
  */
 
-/** Far enough back to be useful, near enough that TMDB's data is dense. */
-export const FIRST_YEAR = 1990
-
-export const yearRange = (): number[] => {
-  const last = new Date().getFullYear()
-  const years: number[] = []
-  for (let year = last; year >= FIRST_YEAR; year--) years.push(year)
-  return years
-}
-
-export const isValidYear = (value: string): boolean => {
-  const year = Number(value)
-  return (
-    /^\d{4}$/.test(value) &&
-    year >= FIRST_YEAR &&
-    year <= new Date().getFullYear()
-  )
-}
+// The range itself lives in lib/year-range.ts — the Worker needs it and must
+// not import this file. Re-exported so every existing importer keeps working.
+export { FIRST_YEAR, isValidYear, yearRange } from '@/lib/year-range'
 
 export interface YearPageConfig {
   mediaType: ItemType

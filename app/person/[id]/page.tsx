@@ -1,7 +1,7 @@
 import React from 'react'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getPopularPeople, populatePersonPage } from '@/services/people'
+import { getPeopleWithPages, populatePersonPage } from '@/services/people'
 
 import { siteConfig } from '@/config/site'
 import { toListEntries } from '@/lib/media'
@@ -29,7 +29,7 @@ export const revalidate = 86400
 export const dynamicParams = false
 
 export async function generateStaticParams() {
-  const people = await getPopularPeople()
+  const people = getPeopleWithPages()
   return people.map((person) => ({ id: String(person.id) }))
 }
 

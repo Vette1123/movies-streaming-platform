@@ -1,4 +1,5 @@
 import { cache } from 'react'
+import PEOPLE from '@/data/people.json'
 
 import { Movie, Param } from '@/types/movie-result'
 import { fetchClient } from '@/lib/fetch-client'
@@ -12,16 +13,21 @@ import { capListOverviews } from '@/lib/media'
  * A person page turns each of them into a hub that links back into the
  * catalogue, which is worth as much to the titles as it is to the person.
  *
- * The set is TMDB's own popularity ranking rather than the cast lists of what
- * this site prerenders. Those cast lists are the more "correct" set and are
- * roughly six thousand people — five times what the 20,000-file asset cap has
- * room for (a static export writes ~10 files per route). Popularity is the
- * cheap approximation of the same head of the distribution: 10 requests, and it
- * is the same ordering the search demand follows.
+ * The set is a COMMITTED file, data/people.json, not a live TMDB list.
+ *
+ * It used to be TMDB's own popularity ranking, read at build time. That list
+ * moves daily, and `dynamicParams = false` means a person who drops out of it
+ * becomes a hard 404 on the next deploy — for a URL the sitemap had already
+ * advertised and Google had already indexed. Search Console reported exactly
+ * that. A file changes when somebody runs `pnpm people:refresh`, which unions
+ * rather than replaces, so a page that has been advertised stays.
+ *
+ * The cast lists of what this site prerenders would be the more "correct" set
+ * and are roughly six thousand people — five times what the 20,000-file asset
+ * cap has room for (a static export writes ~10 files per route). Popularity is
+ * the cheap approximation of the same head of the distribution, and it is the
+ * same ordering the search demand follows.
  */
-
-/** 20 people per TMDB page. 10 pages = 200, measured against the file cap. */
-const PERSON_LIST_DEPTH = 10
 
 /** As many credits as a page can show without becoming a database dump. */
 const CREDIT_LIMIT = 24
@@ -42,10 +48,6 @@ export interface PersonDetails extends PersonSummary {
   also_known_as?: string[]
 }
 
-interface PersonListResponse {
-  results?: PersonSummary[]
-}
-
 interface CombinedCredits {
   cast?: (Movie & { character?: string })[]
   crew?: (Movie & { job?: string })[]
@@ -56,34 +58,13 @@ interface PersonWithCredits extends PersonDetails {
 }
 
 /**
- * The people who get a page.
+ * The people who get a page: data/people.json, verbatim.
  *
- * revalidate:false — build-only, like every other list behind a static page.
- * Fails soft to [] so a TMDB hiccup drops the person pages from one deploy
- * rather than breaking it.
+ * No TMDB request and no failure mode — the file is in the bundle. It is also
+ * why the sitemap can list person URLs without a network call, and why two
+ * consecutive deploys advertise the same ones.
  */
-export const getPopularPeople = cache(async (): Promise<PersonSummary[]> => {
-  const requests = Array.from({ length: PERSON_LIST_DEPTH }, (_, index) =>
-    fetchClient.get<PersonListResponse>(
-      `person/popular?language=en-US&page=${index + 1}`,
-      {},
-      true,
-      false
-    )
-  )
-  const responses = await Promise.allSettled(requests)
-  const byId = new Map<number, PersonSummary>()
-  for (const response of responses) {
-    if (response.status !== 'fulfilled') continue
-    for (const person of response.value?.results ?? []) {
-      // No profile photo is a page that is mostly empty space, and TMDB's
-      // popular list carries a few. Skip rather than ship a thin page.
-      if (!person?.id || !person.name || !person.profile_path) continue
-      if (!byId.has(person.id)) byId.set(person.id, person)
-    }
-  }
-  return [...byId.values()]
-})
+export const getPeopleWithPages = (): PersonSummary[] => PEOPLE
 
 /**
  * Rank a person's credits by how likely somebody is looking for THAT one.
