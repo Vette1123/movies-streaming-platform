@@ -10,7 +10,7 @@ import { base64UrlDecode } from '@/lib/token'
 import { useAccount } from '@/hooks/use-account'
 import { Button } from '@/components/ui/button'
 
-import { SettingSwitch } from './controls'
+import { SettingGroup, SettingSwitch } from './controls'
 import { SupporterGate } from './supporter-gate'
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ''
@@ -268,13 +268,15 @@ function PacingSection({
         {saving && <Loader2 className="size-4 animate-spin" aria-hidden />}
       </div>
 
-      <SettingSwitch
-        label="One notification a day"
-        description="Instead of one per episode. Everything that happened is collected in Reely and your phone is rung at most once in twenty hours — the right setting for a watchlist with a lot on it."
-        checked={digest}
-        disabled={saving}
-        onChange={(next) => void save({ digest: next })}
-      />
+      <SettingGroup>
+        <SettingSwitch
+          label="One notification a day"
+          description="Instead of one per episode. Everything that happened is collected in Reely and your phone is rung at most once in twenty hours, which is the right setting for a watchlist with a lot on it."
+          checked={digest}
+          disabled={saving}
+          onChange={(next) => void save({ digest: next })}
+        />
+      </SettingGroup>
     </div>
   )
 }

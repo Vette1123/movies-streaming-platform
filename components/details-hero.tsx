@@ -14,6 +14,7 @@ import { type StreamSourceControl } from '@/hooks/use-stream-source'
 import { HeroImage } from '@/components/header/hero-image'
 import { PlayButton } from '@/components/play-button'
 import { EmbedProgressBridge } from '@/components/player/embed-progress-bridge'
+import { PlayerSettings } from '@/components/player/player-settings'
 import { ReelyPlayer } from '@/components/player/reely-player'
 import { SourceSwitcher } from '@/components/player/source-switcher'
 import { RateButton } from '@/components/rate-button'
@@ -59,6 +60,7 @@ export const DetailsHero = ({
   resumeSlot,
   sourceControl,
   selfHost,
+  onEnded,
 }: {
   movie?: MovieDetails
   series?: SeriesDetails
@@ -96,6 +98,11 @@ export const DetailsHero = ({
     year?: number
     imdb?: string
   } | null
+  /**
+   * The Reely Player reached the end of what it was playing. Series pages use
+   * it to start the next episode; a movie page passes nothing.
+   */
+  onEnded?: () => void
 }) => {
   const media = (movie || series) as MovieDetails & SeriesDetails
   const title = getMediaTitle(media)
@@ -152,6 +159,17 @@ export const DetailsHero = ({
   // The house player's frame. Watch Together has to steer whichever of the two
   // is actually on screen.
   const reelyFrameRef = React.useRef<HTMLIFrameElement>(null)
+
+  // Bumped when the settings panel changes something the player only reads at
+  // boot (the subtitle track above all). It is part of the frame's key, so the
+  // player is remounted: a fresh ticket, and it comes back at the position it
+  // has been storing all along. Nothing else remounts it, so a prefs refresh
+  // arriving mid-title cannot interrupt anybody who did not ask for it.
+  const [playerBoot, setPlayerBoot] = React.useState(0)
+  const reloadPlayer = React.useCallback(() => {
+    setLoadedSrc(null)
+    setPlayerBoot((n) => n + 1)
+  }, [])
 
   // Watch Together rides along when the URL carries the room (?watch=CODE).
   // Read at render with a window guard, not useSearchParams: this hero
@@ -265,9 +283,11 @@ export const DetailsHero = ({
             // prompt's contested bottom edge.
             <div className="relative size-full py-20">
               <ReelyPlayer
+                key={`${key}:${playerBoot}`}
                 target={selfHost}
                 onReady={() => setLoadedSrc(`reely:${key}`)}
                 onUnavailable={onReelyUnavailable}
+                onEnded={onEnded}
                 frameRef={reelyFrameRef}
               />
               {!reelyLoaded && (
@@ -334,7 +354,7 @@ export const DetailsHero = ({
               frameRef={useReely ? reelyFrameRef : iframeRef}
             />
           )}
-          {isIframeShown && sourceControl && (
+          {isIframeShown && (
             // Rendered over the house player too, not only over the embeds: the
             // player is a source like any other, and hiding the bar there left
             // supporters — the only people who ever see it — with no way to
@@ -347,8 +367,27 @@ export const DetailsHero = ({
             // click. The band above the frame is empty on every viewport,
             // because the iframe is inset by py-20 — offset clear of the sticky header,
             // which sits above this and was eating the click at top-4.
-            <div className="pointer-events-none absolute inset-x-0 top-20 z-50 flex justify-center px-4">
-              <SourceSwitcher control={sourceControl} loaded={shownLoaded} />
+            <div className="pointer-events-none absolute inset-x-0 top-20 z-50 flex flex-wrap items-center justify-center gap-2 px-4">
+              {sourceControl && (
+                <SourceSwitcher control={sourceControl} loaded={shownLoaded} />
+              )}
+              {/* Next to the server buttons rather than inside them: which
+                  server is playing and how the player behaves are two different
+                  questions, and the switcher hides itself for visitors who
+                  cannot switch.
+
+                  Only while the house player is the one on screen. Every lever
+                  in there — subtitles, their size, the mini bar, the jump to the
+                  next episode — is read by the Reely Player and by nothing else,
+                  so over an embed it would be a panel of controls that quietly
+                  do nothing. */}
+              {useReely && (
+                <PlayerSettings
+                  isSeries={!isMovie}
+                  onNeedsReload={reloadPlayer}
+                  className="pointer-events-auto"
+                />
+              )}
             </div>
           )}
         </div>

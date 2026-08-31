@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 
-import { SettingSwitch } from './controls'
+import { SettingGroup, SettingSwitch } from './controls'
 import { SupporterGate } from './supporter-gate'
 
 interface Settings {
@@ -198,13 +198,15 @@ export function ProfilePanel() {
         </p>
       </section>
 
-      <SettingSwitch
-        label="Publish the page"
-        description="Off, and the address answers as if nobody is there. On, and anyone with the link sees your counts, your highest-rated titles and your published lists. Never your watchlist, your history or your email."
-        checked={settings.published}
-        disabled={busy || !settings.handle}
-        onChange={(next) => void send({ published: next })}
-      />
+      <SettingGroup>
+        <SettingSwitch
+          label="Publish the page"
+          description="Off, and the address answers as if nobody is there. On, and anyone with the link sees your counts, your highest-rated titles and your published lists. Never your watchlist, your history or your email."
+          checked={settings.published}
+          disabled={busy || !settings.handle}
+          onChange={(next) => void send({ published: next })}
+        />
+      </SettingGroup>
 
       {error && <p className="text-destructive text-sm">{error}</p>}
     </div>

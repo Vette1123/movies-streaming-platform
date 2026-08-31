@@ -10,6 +10,7 @@ import {
   trackMediaDetailViewed,
   trackMediaPlayed,
 } from '@/lib/analytics'
+import { useAccount } from '@/hooks/use-account'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { useSeasonEpisodes } from '@/hooks/use-season-episodes'
 import { useSeriesProgress } from '@/hooks/use-series-progress'
@@ -61,6 +62,9 @@ export const SeriesDetailsHero = ({
   const [deepLink, setDeepLink] = React.useState<DeepLink | null>(null)
   const sourceControl = useStreamSource(`series:${series?.id}`)
   const { registerPlayer, reportPlaying } = useSeriesPlayback()
+  // Supporter-only in practice: nothing but the Reely Player reports an ending.
+  const { prefs } = useAccount()
+  const autoNext = prefs.autoNext === true
   // Which episode we have already counted as played (see startPlayback).
   const playedKeyRef = React.useRef<string | null>(null)
   const router = useRouter()
@@ -160,6 +164,38 @@ export const SeriesDetailsHero = ({
     [registerPlayer, startPlayback]
   )
 
+  // Autoplay of the next episode, for accounts that asked for it.
+  //
+  // The only surface that can report an ending is the Reely Player: an embed is
+  // a cross-origin iframe that tells the page nothing, which is why the rest of
+  // this file infers progress rather than observing it. So this is a supporter
+  // feature by construction, not by policy.
+  //
+  // The season's own episode count decides whether there IS a next one, and it
+  // is on the payload the page already rendered from. Stopping at the end of a
+  // season rather than rolling into the next is deliberate: the next season is
+  // a different fetch, often a different release year, and "it kept playing"
+  // is a worse surprise than "it stopped".
+  const seasonCount = React.useMemo(() => {
+    const season = playingTarget?.season
+    if (!season) return 0
+    return (
+      series?.seasons?.find((entry) => entry.season_number === season)
+        ?.episode_count ?? 0
+    )
+  }, [series?.seasons, playingTarget?.season])
+
+  const handleEnded = React.useCallback(() => {
+    if (!autoNext || !playingTarget) return
+    const next = playingTarget.episode + 1
+    if (next > seasonCount) return
+    const target = { season: playingTarget.season, episode: next }
+    startPlayback(target, { track: true })
+    router.replace(`?season=${target.season}&episode=${target.episode}`, {
+      scroll: false,
+    })
+  }, [autoNext, playingTarget, router, seasonCount, startPlayback])
+
   const src =
     playingTarget === undefined || !series?.id
       ? ''
@@ -185,6 +221,7 @@ export const SeriesDetailsHero = ({
         trailerKey={trailerKey}
         playTarget={playTarget}
         isResume={Boolean(resumeTarget)}
+        onEnded={handleEnded}
         selfHost={
           playingTarget === undefined || !series?.id
             ? undefined

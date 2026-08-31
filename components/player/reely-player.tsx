@@ -33,11 +33,18 @@ export function ReelyPlayer({
   target,
   onReady,
   onUnavailable,
+  onEnded,
   frameRef: exposedRef,
 }: {
   target: SelfHostTarget
   onReady: () => void
   onUnavailable: () => void
+  /**
+   * The title played to the end. Series pages use it to start the next episode
+   * when the account asks for that (`prefs.autoNext`); everything else ignores
+   * it and the stored position is cleared either way.
+   */
+  onEnded?: () => void
   /** Handed out so a Watch Together room can steer THIS frame. The house
    * player is the default source, so without it the guest half of a room was
    * posting into an embed iframe that is not on screen. */
@@ -48,6 +55,13 @@ export function ReelyPlayer({
   const failed = React.useRef(false)
   const ownRef = React.useRef<HTMLIFrameElement>(null)
   const frameRef = exposedRef ?? ownRef
+  // In a ref so the message listener below does not have to be torn down and
+  // rebuilt every time the parent re-renders with a fresh closure. The effect
+  // is keyed on the URL, and re-running it mid-playback would drop messages.
+  const endedRef = React.useRef(onEnded)
+  React.useEffect(() => {
+    endedRef.current = onEnded
+  }, [onEnded])
 
   const key = `${target.type}:${target.id}:${target.season ?? ''}:${target.episode ?? ''}`
 
@@ -100,6 +114,7 @@ export function ReelyPlayer({
         )
       } else if (data.kind === 'ended') {
         clearPosition(pKey)
+        endedRef.current?.()
       }
     }
     window.addEventListener('message', onMessage)

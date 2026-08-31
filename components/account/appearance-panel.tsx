@@ -6,7 +6,7 @@ import { savePrefs } from '@/lib/account'
 import { ACCENTS, applyAppearance, DENSITIES } from '@/lib/appearance'
 import { useAccount } from '@/hooks/use-account'
 
-import { ChoiceChips } from './controls'
+import { ChoiceChips, SettingGroup, SettingRow } from './controls'
 import { SupporterGate } from './supporter-gate'
 
 export function AppearancePanel() {
@@ -32,27 +32,36 @@ export function AppearancePanel() {
   }
 
   return (
-    <div className="space-y-6">
-      <ChoiceChips
-        legend="Accent"
-        options={ACCENTS}
-        value={accent}
-        onSelect={(id) => {
-          applyAppearance(id, density)
-          void savePrefs({ accent: id })
-        }}
-      />
+    <SettingGroup>
+      <SettingRow
+        label="Accent"
+        description="The colour on every button, link and highlight. It is applied before the first paint, so it is already yours on the next page you open."
+      >
+        <ChoiceChips
+          ariaLabel="Accent"
+          options={ACCENTS}
+          value={accent}
+          onSelect={(id) => {
+            applyAppearance(id, density)
+            void savePrefs({ accent: id })
+          }}
+        />
+      </SettingRow>
 
-      <ChoiceChips
-        legend="Layout"
-        options={DENSITIES}
-        value={density}
-        hint="Compact fits about one more poster per row and tightens everything to match. It is a change to the whole site, not just this page."
-        onSelect={(id) => {
-          applyAppearance(accent, id)
-          void savePrefs({ density: id })
-        }}
-      />
-    </div>
+      <SettingRow
+        label="Layout"
+        description="Compact fits about one more poster per row and tightens everything to match. It is a change to the whole site, not just this page."
+      >
+        <ChoiceChips
+          ariaLabel="Layout"
+          options={DENSITIES}
+          value={density}
+          onSelect={(id) => {
+            applyAppearance(accent, id)
+            void savePrefs({ density: id })
+          }}
+        />
+      </SettingRow>
+    </SettingGroup>
   )
 }
