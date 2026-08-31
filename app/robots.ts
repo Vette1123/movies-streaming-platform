@@ -8,6 +8,17 @@ const baseUrl = siteConfig.websiteURL
 // once at build time rather than per request. Emits a static out/robots.txt.
 export const dynamic = 'force-static'
 
+// Icon routes, exempt from the `/*?*` rule below.
+//
+// Next fingerprints its metadata icons with a query (`/icon?f3b7d5758ff5c7f0`),
+// so `Disallow: /*?*` swallowed them and Search Console filed the site's own
+// favicon under "Blocked by robots.txt". Google resolves a conflict by the
+// longest matching pattern, and `/icon` (5) beats `/*?*` (4), so an explicit
+// Allow is enough. The URLs are dead — no build since the icon rework emits
+// them — and letting Google fetch them is precisely the point: an honest 404
+// drops them, while a robots block leaves them listed forever.
+const CRAWL_ALLOW = ['/', '/icon', '/apple-icon', '/favicon.ico']
+
 // One list rather than the same nine lines copied into each rule block.
 const CRAWL_DISALLOW = [
   '/api/',
@@ -47,12 +58,12 @@ export default function robots(): MetadataRoute.Robots {
           'Slackbot',
           'Applebot',
         ],
-        allow: ['/'],
+        allow: CRAWL_ALLOW,
         disallow: CRAWL_DISALLOW,
       },
       {
         userAgent: '*',
-        allow: ['/'],
+        allow: CRAWL_ALLOW,
         disallow: CRAWL_DISALLOW,
       },
       {
@@ -93,6 +104,27 @@ export default function robots(): MetadataRoute.Robots {
           'Diffbot',
           'omgili',
         ],
+        disallow: '/',
+      },
+      // The one AI *search* crawler that is disallowed, and it is a crawl-rate
+      // decision rather than a policy one.
+      //
+      // `Amzn-SearchBot` is a distinct product token from `Amazonbot` above, so
+      // the training block never applied to it and it fell through to `*`.
+      // Measured over 24h on 2026-08-31 it was the single largest consumer of
+      // this Worker's invocation budget: 8,033 requests/day — more than
+      // Claude-SearchBot (6,394), bingbot (2,631) and Googlebot (1,469) put
+      // together — against a 100,000/day free-plan cap the site was already
+      // using 68% of. It feeds Alexa and Amazon's own search surfaces, which
+      // have sent this site no measurable referral.
+      //
+      // Amazon documents that none of its crawlers honour `Crawl-delay`
+      // (developer.amazon.com/amazonbot), so there is no way to keep it at a
+      // sane rate — the choice is all of it or none of it. The other AI search
+      // crawlers stay allowed: they cite a page to a user, which is a referral.
+      // Revisit if Amazon ever sends traffic back.
+      {
+        userAgent: 'Amzn-SearchBot',
         disallow: '/',
       },
     ],

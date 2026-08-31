@@ -88,6 +88,32 @@ const property = (name: string, value?: string) =>
 const canonicalOf = () =>
   `${window.location.origin}${window.location.pathname.replace(/\/+$/, '')}`
 
+/**
+ * Drop the JSON-LD React emitted a second time.
+ *
+ * The shells are prerendered with the root layout's WebSite and Organization
+ * blocks already in the HTML. Hydration re-renders that layout and React
+ * APPENDS its head scripts rather than matching the ones already there, so a
+ * tail page ends up publishing WebSite and Organization twice — measured on
+ * production: five ld+json blocks where the prerendered twin has four.
+ *
+ * Deduped on the serialized text, not on `@type`: what React repeats is a
+ * byte-identical copy of a block the shell already carried, while the Worker's
+ * own block (the Movie/TVSeries entity plus its breadcrumb) is unique and has
+ * to survive. Comparing text keeps that distinction without parsing anything.
+ */
+const dedupeJsonLd = () => {
+  const seen = new Set<string>()
+  document
+    .querySelectorAll<HTMLScriptElement>('script[type="application/ld+json"]')
+    .forEach((script) => {
+      const body = (script.textContent || '').trim()
+      if (!body) return
+      if (seen.has(body)) script.remove()
+      else seen.add(body)
+    })
+}
+
 export function useServedMetadata(meta: ServedMetadata | null): void {
   const { title, description, image, ogType, indexable } = meta ?? {}
 
@@ -119,5 +145,6 @@ export function useServedMetadata(meta: ServedMetadata | null): void {
     named('twitter:title', heading)
     named('twitter:description', description)
     named('twitter:image', image)
+    dedupeJsonLd()
   }, [description, image, indexable, ogType, title])
 }

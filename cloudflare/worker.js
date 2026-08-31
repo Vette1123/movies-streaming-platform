@@ -802,8 +802,32 @@ async function notFoundAsset(env, url) {
  * The two dynamic blocks a shell needs, shared by both render paths below so
  * they cannot drift into producing different HTML.
  */
+// `jsonLd` may be one object or several. Several are emitted as a single
+// top-level array in one script, which is what schema.org and Google's parser
+// both take — and one script is one HTMLRewriter append instead of N.
 const headBlock = (meta, ogType, jsonLd) =>
   `${metaTags(meta, ogType)}<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`
+
+/**
+ * The trail a prerendered detail page publishes, for the tail pages too.
+ *
+ * `app/movies/[id]/(movie-details)/page.tsx` emits exactly this next to its
+ * Movie/TVSeries block, and a tail page emitted none — so the two described the
+ * same kind of thing with different completeness, and only the baked half was
+ * eligible for the breadcrumb trail Google shows under a result. Built from
+ * strings this handler already has: no payload field, no request, no CPU worth
+ * measuring.
+ */
+const breadcrumbJsonLd = (items) => ({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: items.map((item, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: item.name,
+    item: item.url,
+  })),
+})
 
 // A crawler that does not execute JS still gets the title and synopsis.
 //
@@ -1096,10 +1120,20 @@ async function handleDetailFallback(match, request, env, ctx, url) {
       : {}),
   }
   const ogType = type === 'tv' ? 'video.tv_show' : 'video.movie'
+  const siteUrl = siteUrlOf(url)
+  const listPath = type === 'tv' ? '/tv-shows' : '/movies'
+  const graph = [
+    jsonLd,
+    breadcrumbJsonLd([
+      { name: 'Home', url: `${siteUrl}/` },
+      { name: type === 'tv' ? 'TV Shows' : 'Movies', url: siteUrl + listPath },
+      { name: meta.title, url: meta.canonical },
+    ]),
+  ]
 
   return (
-    serveShellFromTemplate(SHELL_MEDIA, meta, ogType, jsonLd) ??
-    serveShell(SHELL_MEDIA, meta, ogType, jsonLd, env, url)
+    serveShellFromTemplate(SHELL_MEDIA, meta, ogType, graph) ??
+    serveShell(SHELL_MEDIA, meta, ogType, graph, env, url)
   )
 }
 

@@ -26,6 +26,9 @@
 //   8. TLS hardening: minimum TLS 1.2, SSL mode Full (Strict), and HSTS at 6
 //      months + includeSubDomains (no preload). See the step for the reasoning
 //      on each, especially why preload stays off.
+//   9. Web Analytics auto-install: OFF. Its beacon POSTs to /cdn-cgi/rum, which
+//      is 1,042 Worker invocations/day answering 405 for a product we do not
+//      read. PostHog is the analytics source.
 //
 // Idempotent — managed rules are identified by description prefix "[reely-waf]"
 // and replaced on each run. Any other custom rules in the zone are preserved.
@@ -368,6 +371,33 @@ const BLOCK_RULE = {
 // page with none of these is not a person browsing the site.
 const BROWSER_UAS = ['Chrome', 'Firefox', 'Safari', 'Edg', 'OPR', 'Gecko/']
 
+/**
+ * Scrapers that pass BROWSER_UAS by sending a browser string nobody still runs.
+ *
+ * BROWSER_UAS asks "does this look like a browser", which a scraper answers by
+ * copying one. Measured over 24h on 2026-08-31, ONE frozen user-agent string —
+ * Firefox 121, shipped December 2023 — accounted for 7,935 Worker invocations,
+ * 12% of the whole 100,000/day free-plan budget and 93% of all unverified tail
+ * traffic. It walks `/movies/<id>` across the TMDB id space from a spread of
+ * IPs, so the per-IP rate limit never sees enough from any one of them to fire.
+ *
+ * Matched on the FULL string, not on `Firefox/121`: the point is that the whole
+ * fingerprint is frozen, and an exact match cannot catch a real reader who
+ * happens to be a few versions behind. `managed_challenge`, like every other
+ * rule here — a genuine straggler on an eight-version-old Firefox gets a puzzle
+ * and still reaches the page.
+ *
+ * Add to this list only with a measurement. `pnpm cf:cpu` shows the routes;
+ * group Workers Logs by `$workers.event.request.headers.user-agent` for the
+ * strings.
+ */
+const STALE_BROWSER_UAS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+]
+
+const uaEqAny = (uas) =>
+  uas.map((ua) => `(http.user_agent eq "${ua}")`).join(' or ')
+
 // The detail pages are the only genuinely expensive route on this site, and only
 // for ids outside the prerender set: Cloudflare does not edge-cache Worker HTML
 // (CACHE_RULE below is a no-op for it — measured, no cf-cache-status on any HTML
@@ -403,7 +433,9 @@ const CHALLENGE_DETAIL_SCRAPERS_RULE = {
     // the page exists for.
     'not (starts_with(http.request.uri.path, "/movies/year") or starts_with(http.request.uri.path, "/tv-shows/year"))',
     'not cf.client.bot',
-    `not (${orExpr(BROWSER_UAS)})`,
+    // Either it does not look like a browser at all, or it looks like one that
+    // has not existed for two years. See STALE_BROWSER_UAS.
+    `((not (${orExpr(BROWSER_UAS)})) or (${uaEqAny(STALE_BROWSER_UAS)}))`,
   ].join(' and '),
   action: 'managed_challenge',
 }
@@ -784,6 +816,37 @@ async function main() {
           enable_js: false,
           is_robots_txt_managed: false,
         }),
+      })
+    }
+  )
+
+  // Cloudflare Web Analytics auto-install OFF.
+  //
+  // Enabled on this zone 2026-03-21 and forgotten. `auto_install` injects
+  // <script src="static.cloudflareinsights.com/beacon.min.js"> into every HTML
+  // response at the edge, and that beacon POSTs to /cdn-cgi/rum — a path this
+  // static export has nothing to answer, so `not_found_handling: "none"` sends
+  // it to the Worker for a 405. Measured 2026-08-31: 1,042 invocations/day
+  // spent on a 405 for a product we do not read. PostHog is the analytics
+  // source (lib/analytics.ts) and it already reports web vitals.
+  //
+  // The site record and its history are kept — only the injection stops. Needs
+  // Account · Web Analytics · Edit on the token; a token with only Read gets a
+  // flat 403 here, which is why this is a soft step. The dashboard toggle is
+  // Web Analytics → reely.space → Manage site → "Add JavaScript snippet
+  // automatically".
+  const accountId = zones[0].account?.id
+  await step(
+    'Web Analytics auto-install off (needs Account Web Analytics: Edit)',
+    async () => {
+      if (!accountId) throw new Error('no account id on the zone record')
+      const sites = await cf(`/accounts/${accountId}/rum/site_info/list`)
+      const site = (sites || []).find((s) => s.ruleset?.zone_tag === zoneId)
+      if (!site) return
+      if (site.auto_install === false) return
+      await cf(`/accounts/${accountId}/rum/site_info/${site.site_tag}`, {
+        method: 'PUT',
+        body: JSON.stringify({ zone_tag: zoneId, auto_install: false }),
       })
     }
   )

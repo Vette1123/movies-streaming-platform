@@ -166,7 +166,12 @@ async function checkWorker() {
     `nominal budget ${budget}ms — a gauge, not a gate (kills are the gate); warns over ${budget * 0.8}ms p99`
   )
   grade(
-    band(perDay, LIMITS.invocationsPerDay * 0.7, LIMITS.invocationsPerDay),
+    // Warns at 60%, not 70%. At 70% this read ✓ on 67,644/day (2026-08-31) —
+    // the run that prompted the audit which found 12% of the budget going to
+    // one spoofed Firefox 121 user-agent and another 12% to Amzn-SearchBot. A
+    // gauge that stays green until the last third leaves no room to find and
+    // fix what is eating it; 60% is roughly two months of this site's growth.
+    band(perDay, LIMITS.invocationsPerDay * 0.6, LIMITS.invocationsPerDay),
     `Invocations: ${Math.round(perDay).toLocaleString()}/day projected (${pct(perDay, LIMITS.invocationsPerDay).toFixed(0)}% of cap)`,
     'static assets are exempt, so this counts only /api/* + tail-id fallbacks'
   )
