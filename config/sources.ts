@@ -261,3 +261,37 @@ export const seriesStreamUrl = (
 /** Append the slot's configured query, if any. Never touches signed params. */
 const withSourceQuery = (url: string, source: StreamSource): string =>
   source.query ? `${url}${url.includes('?') ? '&' : '?'}${source.query}` : url
+
+/**
+ * Which source a visitor plays from, given everything known about their intent.
+ *
+ * Pure and here rather than inside the hook because the ORDER is the whole
+ * feature and it is worth a test: the bug it fixes was supporters whose
+ * Settings choice was skipped entirely, so the house player was the only thing
+ * they could ever play.
+ *
+ *  1. what they switched to on THIS title,
+ *  2. what they chose in Settings (`prefs.source`) — deliberate, cross-device,
+ *  3. what they last switched to on this device (free accounts only: one switch
+ *     should not move a supporter off the player they pay for),
+ *  4. the tier default — our player for supporters, the default embed otherwise.
+ *
+ * Anything not in `sources` is ignored: a stored id survives a tier change, and
+ * a lapsed supporter must not resolve to the player they no longer have.
+ */
+export const resolveSourceId = (input: {
+  sources: StreamSource[]
+  remembered?: string | null
+  accountSource?: string | null
+  devicePreference?: string | null
+  pro: boolean
+}): string => {
+  const has = (id?: string | null): id is string =>
+    !!id && input.sources.some((entry) => entry.id === id)
+
+  if (has(input.remembered)) return input.remembered
+  if (has(input.accountSource)) return input.accountSource
+  if (!input.pro && has(input.devicePreference)) return input.devicePreference
+  if (input.pro && RICH_SOURCE) return RICH_SOURCE.id
+  return DEFAULT_SOURCE_ID
+}

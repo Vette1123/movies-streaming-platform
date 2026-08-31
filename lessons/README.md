@@ -66,3 +66,4 @@ with the work, not after.
 | 2026-08-29 | [Bing said the h1 was missing, and it was right](2026-08-29-bing-said-the-h1-was-missing.md) | A crawler-only block inside `<div hidden>` is `display:none`, so it does not exist; the sitemap advertised what the build bakes, not what the pages link to; and `exit 0` hid a route that only passed on its second attempt. |
 
 | 2026-08-31 | [A marketing round is mostly form plumbing](2026-08-31-marketing-round.md) | Never write a PR number a command can produce — the status table shipped with three invented ones; and a controlled form field needs the native value setter, not typing. |
+| 2026-08-31 | [The server picker nobody could reach](2026-08-31-the-server-picker-nobody-could-reach.md) | The Settings server was written to the account and read by nothing, and the in-player switcher was hidden in the one mode supporters are in — so the house player was inescapable. |

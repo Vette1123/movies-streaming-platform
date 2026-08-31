@@ -334,7 +334,13 @@ export const DetailsHero = ({
               frameRef={useReely ? reelyFrameRef : iframeRef}
             />
           )}
-          {isIframeShown && sourceControl && !useReely && (
+          {isIframeShown && sourceControl && (
+            // Rendered over the house player too, not only over the embeds: the
+            // player is a source like any other, and hiding the bar there left
+            // supporters — the only people who ever see it — with no way to
+            // leave it from the page they are on. Settings was the only exit,
+            // and Settings did not work either.
+            //
             // Above the frame, not below it. Two things already live along the
             // bottom edge — the embed's own scrubber, and the install prompt,
             // which measurably sat on top of these buttons and swallowed the

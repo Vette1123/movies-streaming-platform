@@ -3,13 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
-  DEFAULT_SOURCE_ID,
-  RICH_SOURCE,
+  resolveSourceId,
   visibleSourcesFor,
   type StreamSource,
 } from '@/config/sources'
 import { savePrefs } from '@/lib/account'
-import { useAccountIdentity } from '@/hooks/use-account'
+import { useAccount, useAccountIdentity } from '@/hooks/use-account'
 
 /**
  * Which provider plays this title, and how to move off one that will not.
@@ -20,8 +19,13 @@ import { useAccountIdentity } from '@/hooks/use-account'
  *     they differ overall — one carries a show the other has never had — so the
  *     memory that actually saves time is per title, and it is written the moment
  *     somebody switches rather than asked for.
- *  2. **This device's provider**, in localStorage, for every other title.
- *  3. **The tier's default underneath**: our own player for supporters, the
+ *  2. **The account's preferred server** (`prefs.source`, the Settings control).
+ *     It is the one server choice somebody typed out deliberately, for every
+ *     device, so nothing below it may quietly overrule it — including a tier
+ *     default. That is exactly what used to happen: supporters were pinned to
+ *     the house player and the Settings picker did nothing at all for them.
+ *  3. **This device's provider**, in localStorage, for every other title.
+ *  4. **The tier's default underneath**: our own player for supporters, the
  *     environment's default embed for everyone else.
  *
  * The supporter difference is the DEFAULT, not a locked door: free accounts
@@ -111,6 +115,9 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
   // of that gap here is the player silently pinning them to the default server
   // for the title they just opened. Same reason the header paints from it.
   const { signedIn, pro } = useAccountIdentity()
+  // The account's own server choice, from Settings. Read through useAccount
+  // (never fetches — the header owns the one refresh) so this costs nothing.
+  const { prefs } = useAccount()
   const [devicePreference, setDevicePreference] = useState('')
   const [byTitle, setByTitle] = useState<ByTitle>({})
   const [switched, setSwitched] = useState(false)
@@ -138,25 +145,19 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
 
   const canSwitch = signedIn === true && sources.length > 1
 
-  const currentId = useMemo(() => {
-    // Per-title memory first, for every tier: it is written only by an
-    // explicit switch on that title, so it is always the most recent intent.
-    const remembered = byTitle[mediaKey]
-    if (remembered && sources.some((s) => s.id === remembered)) {
-      return remembered
-    }
-    if (!pro) {
-      if (devicePreference && sources.some((s) => s.id === devicePreference))
-        return devicePreference
-      return DEFAULT_SOURCE_ID
-    }
-    // Supporters: the self-host player IS the default. Stored account/device
-    // server choices predate it, so honouring them here would silently pin
-    // supporters to an embed; a deliberate switch writes per-title memory,
-    // which is honoured above.
-    if (RICH_SOURCE) return RICH_SOURCE.id
-    return DEFAULT_SOURCE_ID
-  }, [byTitle, devicePreference, mediaKey, pro, sources])
+  const currentId = useMemo(
+    () =>
+      resolveSourceId({
+        sources,
+        // Per-title memory: written only by an explicit switch on that title,
+        // so it is always the most recent intent.
+        remembered: byTitle[mediaKey],
+        accountSource: prefs.source,
+        devicePreference,
+        pro: pro === true,
+      }),
+    [byTitle, devicePreference, mediaKey, prefs.source, pro, sources]
+  )
 
   // Resolve within the visitor's own list; an id that is not in it (a source
   // remembered before opting out) falls to the site default.
@@ -172,6 +173,11 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
       const merged = trim({ ...byTitle, [mediaKey]: id })
       setByTitle(merged)
       writeJson(BY_TITLE_KEY, merged)
+      // Supporters stop here: the house player stays their default, and a
+      // switch on one title is a memory of what worked on that title, not a new
+      // default for every other one. Settings is where they move the default —
+      // and now that `prefs.source` is honoured above, it actually moves it.
+      if (pro) return
       // Also the device default, so somebody who had to switch once does not
       // have to switch again on the next title. The per-title memory still wins
       // for the titles that needed something else.
@@ -183,7 +189,7 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
       // while the network decides.
       void savePrefs({ source: id })
     },
-    [byTitle, canSwitch, mediaKey, sources]
+    [byTitle, canSwitch, mediaKey, pro, sources]
   )
 
   const next = canSwitch ? sourceAfter(sources, source.id) : null

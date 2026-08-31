@@ -138,3 +138,96 @@ describe('visibleSourcesFor tiers', () => {
     ).toBe(false)
   })
 })
+
+/**
+ * The precedence that decides what plays. The bug this pins: a supporter's
+ * Settings choice was skipped entirely, so every title opened in the house
+ * player no matter what they picked — and the switcher was hidden there, so
+ * there was no way out of it from the page either.
+ */
+describe('resolveSourceId precedence', () => {
+  afterEach(() => vi.resetModules())
+
+  const TRIAL_ENV = { ...BASE_ENV, NEXT_PUBLIC_PRO_TRIAL_SELFHOST: 'true' }
+
+  it('supporters default to the house player with nothing chosen', async () => {
+    const mod = await importWithEnv(TRIAL_ENV)
+    expect(
+      mod.resolveSourceId({
+        sources: mod.visibleSourcesFor(true, true),
+        pro: true,
+      })
+    ).toBe(mod.REELY_SOURCE_ID)
+  })
+
+  it("a supporter's Settings server wins over the house player", async () => {
+    const mod = await importWithEnv(TRIAL_ENV)
+    expect(
+      mod.resolveSourceId({
+        sources: mod.visibleSourcesFor(true, true),
+        accountSource: 'a.example',
+        pro: true,
+      })
+    ).toBe('a.example')
+  })
+
+  it('the per-title memory wins over the Settings server', async () => {
+    const mod = await importWithEnv(TRIAL_ENV)
+    expect(
+      mod.resolveSourceId({
+        sources: mod.visibleSourcesFor(true, true),
+        remembered: mod.REELY_SOURCE_ID,
+        accountSource: 'a.example',
+        pro: true,
+      })
+    ).toBe(mod.REELY_SOURCE_ID)
+  })
+
+  it('a device switch does not move a supporter off the house player', async () => {
+    const mod = await importWithEnv(TRIAL_ENV)
+    expect(
+      mod.resolveSourceId({
+        sources: mod.visibleSourcesFor(true, true),
+        devicePreference: 'a.example',
+        pro: true,
+      })
+    ).toBe(mod.REELY_SOURCE_ID)
+  })
+
+  it('a device switch DOES carry for a free account', async () => {
+    const mod = await importWithEnv(TRIAL_ENV)
+    expect(
+      mod.resolveSourceId({
+        sources: mod.visibleSourcesFor(true, false),
+        devicePreference: 'a.example',
+        pro: false,
+      })
+    ).toBe('a.example')
+  })
+
+  it('ignores a stored id the visitor no longer has access to', async () => {
+    const mod = await importWithEnv(TRIAL_ENV)
+    // A lapsed supporter, still carrying the house player in every store.
+    expect(
+      mod.resolveSourceId({
+        sources: mod.visibleSourcesFor(true, false),
+        remembered: mod.REELY_SOURCE_ID,
+        accountSource: mod.REELY_SOURCE_ID,
+        pro: false,
+      })
+    ).toBe(mod.DEFAULT_SOURCE_ID)
+  })
+
+  it('anonymous visitors resolve to the default however much is stored', async () => {
+    const mod = await importWithEnv(TRIAL_ENV)
+    expect(
+      mod.resolveSourceId({
+        sources: mod.visibleSourcesFor(false, false),
+        remembered: 'a.example',
+        accountSource: 'a.example',
+        devicePreference: 'a.example',
+        pro: false,
+      })
+    ).toBe(mod.DEFAULT_SOURCE_ID)
+  })
+})
