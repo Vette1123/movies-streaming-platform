@@ -150,3 +150,31 @@ deploy, the fixed title showed in `curl` but not in the browser — the browser
 had the pre-deploy HTML for that exact URL cached. A different tail id showed
 the fix immediately. When verifying a deploy in a browser, use a URL the
 browser has never seen.
+
+## Postscript 2 — two wrong names for the same toggle
+
+Turning the Cloudflare Web Analytics beacon off cost three exchanges, all of
+them mine to own.
+
+First, the wrong permission. The `✗` line said the token needed
+`Account · Web Analytics · Edit`. No such permission exists — Cloudflare gates
+the RUM `site_info` write behind **Account Settings · Edit**, with the read
+behind Account Settings · Read, which is why the list call succeeded and only
+the PUT 403'd. The lesson is not "look it up": it is that a script printing the
+permission a step needs is asserting a fact, and an unverified one reads exactly
+like a verified one to whoever acts on it. And once the real name was known the
+answer changed — Account Settings · Edit is account-wide write, which is not
+worth putting in a CI secret to reclaim 1% of the invocation cap.
+
+Then, the wrong field. After the dashboard toggle was flipped the step still
+reported ✗, because disabling RUM in the UI clears `ruleset.enabled` and leaves
+`auto_install: true`. The beacon was already gone — zero
+`cloudflareinsights` / `/cdn-cgi/rum` references in the served HTML of the
+homepage, a prerendered page and a tail page — while the script kept retrying a
+PUT it was never allowed to make. A check that reads one field of a two-field
+state is not a check; it is a second source of truth that can disagree with the
+first.
+
+**Rule:** when a step reports a permission or a state, verify the string against
+the API, and confirm the outcome you actually care about — here, the served
+bytes — rather than the flag you happened to write the check against.
