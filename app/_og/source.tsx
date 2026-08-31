@@ -138,7 +138,7 @@ export async function buildOpenGraphImageInput() {
                 textTransform: 'uppercase',
               }}
             >
-              Free to stream
+              Open source
             </div>
           </div>
 
@@ -199,7 +199,7 @@ export async function buildOpenGraphImageInput() {
                 lineHeight: 1.15,
               }}
             >
-              Watch movies &amp; TV shows. Free.
+              Find what to watch, then keep track.
             </div>
 
             <div
@@ -213,8 +213,8 @@ export async function buildOpenGraphImageInput() {
                 maxWidth: 640,
               }}
             >
-              Discover, track, and stream thousands of trending titles &mdash;
-              no signup, no paywall.
+              Trending rails, deep filters, instant search, a watchlist and a
+              watch history.
             </div>
           </div>
 
