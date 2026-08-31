@@ -28,7 +28,8 @@
 //      on each, especially why preload stays off.
 //   9. Web Analytics auto-install: OFF. Its beacon POSTs to /cdn-cgi/rum, which
 //      is 1,042 Worker invocations/day answering 405 for a product we do not
-//      read. PostHog is the analytics source.
+//      read. PostHog is the analytics source. Needs a permission this token
+//      deliberately does not carry — see the step.
 //
 // Idempotent — managed rules are identified by description prefix "[reely-waf]"
 // and replaced on each run. Any other custom rules in the zone are preserved.
@@ -830,14 +831,20 @@ async function main() {
   // spent on a 405 for a product we do not read. PostHog is the analytics
   // source (lib/analytics.ts) and it already reports web vitals.
   //
-  // The site record and its history are kept — only the injection stops. Needs
-  // Account · Web Analytics · Edit on the token; a token with only Read gets a
-  // flat 403 here, which is why this is a soft step. The dashboard toggle is
-  // Web Analytics → reely.space → Manage site → "Add JavaScript snippet
-  // automatically".
+  // The site record and its history are kept — only the injection stops.
+  //
+  // There is no "Web Analytics" token permission: Cloudflare gates the RUM
+  // site_info WRITE behind Account Settings · Edit, and the read behind Account
+  // Settings · Read (which this token has — that is why the list call succeeds
+  // and only the PUT 403s). Account Settings · Edit is account-wide write and
+  // not worth putting in a CI secret to save ~1% of the invocation cap, so this
+  // step is expected to stay ✗ and stays soft. Flip it once by hand instead:
+  // Analytics & Logs → Web Analytics → reely.space → Manage site → "Add
+  // JavaScript snippet automatically" off. Once off, this step turns into an
+  // assertion that it stayed off.
   const accountId = zones[0].account?.id
   await step(
-    'Web Analytics auto-install off (needs Account Web Analytics: Edit)',
+    'Web Analytics auto-install off (needs Account Settings: Edit — see comment)',
     async () => {
       if (!accountId) throw new Error('no account id on the zone record')
       const sites = await cf(`/accounts/${accountId}/rum/site_info/list`)
