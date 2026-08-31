@@ -58,7 +58,7 @@ async function main() {
     const constName = `INTER_${weight}_TTF_B64`
     const body = `export const ${constName} =\n  '${buf.toString('base64')}'\n`
     await writeFile(target, body, 'utf8')
-    // eslint-disable-next-line no-console
+
     console.log(`inter-${weight}.ts: ${buf.length}B raw ttf`)
   }
 }

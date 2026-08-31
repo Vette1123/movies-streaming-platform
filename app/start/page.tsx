@@ -48,7 +48,7 @@ export default async function StartPage() {
   ]
 
   return (
-    <section className="container max-w-6xl min-h-svh py-20 lg:py-28">
+    <section className="container min-h-svh max-w-6xl py-20 lg:py-28">
       <div className="mb-10 max-w-[62ch] space-y-3">
         <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
           What should I watch?

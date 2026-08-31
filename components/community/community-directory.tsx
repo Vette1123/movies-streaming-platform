@@ -188,8 +188,11 @@ function Avatar({
   name: string | null
 }) {
   if (picture) {
-    // eslint-disable-next-line @next/next/no-img-element
     return (
+      // A Google avatar on Google's own host, 48px, already the right size and
+      // already cached by every signed-in browser. next/image would route it
+      // through our loader for no benefit.
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={picture}
         alt=""

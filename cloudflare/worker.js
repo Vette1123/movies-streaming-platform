@@ -1565,7 +1565,7 @@ async function handleProTicket(request, env, url) {
   )
 }
 
-export default {
+const worker = {
   /**
    * The hourly sweep for new-episode alerts. Imported lazily so its TMDB and
    * push code is evaluated only in the isolate that actually runs a cron tick,
@@ -1691,3 +1691,5 @@ export default {
     }
   },
 }
+
+export default worker

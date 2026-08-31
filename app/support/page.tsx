@@ -319,6 +319,10 @@ function Flagships() {
               className="border-border/70 bg-card/40 relative flex flex-col justify-center rounded-2xl border p-6 sm:p-8"
             >
               {index === 0 && (
+                // A local file in public/, shipped at exactly the one size it
+                // is ever drawn at and only above lg. next/image would route a
+                // same-origin asset through the TMDB image loader.
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src="/screenshot-narrow.webp"
                   alt="The Reely homepage on a phone, showing a featured title and a trending row"

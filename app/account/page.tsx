@@ -29,7 +29,7 @@ export default function AccountPage() {
     // shoved down when the real panel arrived — a 0.48 CLS on every refresh.
     // Reserving a viewport of height keeps the footer below the fold until the
     // panel has settled, so the growth happens where nobody can see it.
-    <section className="container max-w-5xl py-20 lg:py-28 min-h-svh">
+    <section className="container min-h-svh max-w-5xl py-20 lg:py-28">
       <AccountPanel />
     </section>
   )

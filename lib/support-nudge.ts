@@ -94,6 +94,7 @@ function showNudge(): void {
       // has no router in scope, on a static site where either costs the same.
       onClick: () => {
         trackSupportCtaClicked({ surface: 'nudge' })
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         window.location.href = '/support'
       },
     },

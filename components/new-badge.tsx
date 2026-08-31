@@ -20,7 +20,7 @@ export const NewBadge = ({ label = 'New', className }: NewBadgeProps) => {
       variant="new"
       size="sm"
       className={cn(
-        'pointer-events-none absolute left-2 top-2 z-10',
+        'pointer-events-none absolute top-2 left-2 z-10',
         className
       )}
     >

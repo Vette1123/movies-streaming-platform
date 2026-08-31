@@ -229,6 +229,10 @@ function DeleteAccount({ email, pro }: { email: string | null; pro: boolean }) {
       return
     }
     clearSyncState()
+    // A hard navigation, not the router: the account this tab is holding in
+    // memory no longer exists, and every store keyed on it has to be thrown
+    // away. A client-side push would keep all of it.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = '/'
   }
 

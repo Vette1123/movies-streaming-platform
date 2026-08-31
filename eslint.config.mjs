@@ -2,7 +2,7 @@ import nextConfig from 'eslint-config-next/core-web-vitals'
 import prettierConfig from 'eslint-config-prettier/flat'
 import tailwindPlugin from 'eslint-plugin-tailwindcss'
 
-export default [
+const config = [
   {
     // `.next` / `.open-next` / `.wrangler` are generated build output: linting
     // them reports errors in code we never wrote (and pulls in rules the flat
@@ -42,3 +42,5 @@ export default [
     },
   },
 ]
+
+export default config

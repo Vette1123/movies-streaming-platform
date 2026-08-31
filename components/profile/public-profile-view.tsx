@@ -106,6 +106,7 @@ export function PublicProfileView({ profile }: { profile: PublicProfile }) {
                     // page that already carries a grid of optimised posters.
                     // getThumbPosterURL is w300, which covers 48 CSS px at
                     // dpr 3 without a hand-written srcset.
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={getThumbPosterURL(list.poster_path)}
                       alt=""
@@ -144,6 +145,8 @@ export function PublicProfileView({ profile }: { profile: PublicProfile }) {
 function Avatar({ picture, who }: { picture: string | null; who: string }) {
   if (picture) {
     return (
+      // Same as the account header: a Google-hosted avatar at its native size.
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={picture}
         alt=""

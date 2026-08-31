@@ -97,6 +97,24 @@ browser look exactly like an app bug:
   the browser, not the site. A page whose content arrives in the first flush
   (/people, /account) is unaffected, which is why it looks intermittent.
 
+## Postscript: 24 lint warnings, 0 left
+
+`pnpm lint` reported 0 errors and 24 warnings, which is the state where nobody
+reads it any more. Half were class-order and two stale `eslint-disable`
+directives that `--fix` handled; one of those was a real bug of its own, a
+`no-img-element` disable sitting one line above the `<img>` it was meant to
+cover, so the disable was dead AND the warning was live. The rest were
+deliberate choices with no note saying so: four `<img>` avatars on hosts that
+already serve the right size, two hard `window.location.href` navigations that
+have to throw away in-memory state, and a view-event effect keyed on the id.
+Each got a disable with the reason on the line above it. One genuine defect was
+in the new code: the subtitle combobox set `aria-expanded` but not
+`aria-controls` — Radix only writes that while the popover is open, and a
+combobox has to name its list either way.
+
+A warning nobody plans to fix is either a bug or a missing comment. It is never
+a third thing.
+
 ## Rules
 
 - A setting that boots with the player needs a remount to take effect. Give the
@@ -109,3 +127,5 @@ browser look exactly like an app bug:
 - A bare `<picture>` around a `fill` image is a static parent. Whatever wraps a
   `fill` image has to be the positioned box itself.
 - When the automated browser disagrees with curl, believe curl.
+- Keep `pnpm lint` at zero. Every surviving warning is a bug or an undocumented
+  decision, and a list of them is how both get missed.

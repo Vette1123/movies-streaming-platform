@@ -39,12 +39,12 @@ export function GenreLink({
       {/* Sprite icons — a genre chip renders many times per page. */}
       <SpriteIcon
         name="tag"
-        className="text-primary size-3 opacity-70 transition-[opacity,color] duration-200 group-hover/genre:text-primary-foreground group-hover/genre:opacity-100"
+        className="text-primary group-hover/genre:text-primary-foreground size-3 opacity-70 transition-[opacity,color] duration-200 group-hover/genre:opacity-100"
       />
       {name}
       <SpriteIcon
         name="chevron-right"
-        className="text-primary -ml-1.5 h-3.5 w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover/genre:ml-0 group-hover/genre:w-3.5 group-hover/genre:text-primary-foreground group-hover/genre:opacity-100"
+        className="text-primary group-hover/genre:text-primary-foreground -ml-1.5 h-3.5 w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover/genre:ml-0 group-hover/genre:w-3.5 group-hover/genre:opacity-100"
       />
     </Link>
   )

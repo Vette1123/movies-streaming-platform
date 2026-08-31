@@ -72,6 +72,10 @@ export function AccountAvatar({
 
   if (picture) {
     return (
+      // Google serves this avatar at the size we ask for, on its own host, and
+      // every signed-in browser already has it cached. Routing it through our
+      // image loader would buy nothing and cost a request.
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={picture}
         alt=""

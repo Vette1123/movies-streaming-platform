@@ -26,6 +26,10 @@ export const MovieDetailsHero = ({
   React.useEffect(() => {
     if (!movie?.id) return
     trackMediaDetailViewed(buildMediaEventBase(movie, 'movie'))
+    // Keyed on the id alone: the payload is what the page rendered from and
+    // cannot change under a stable id, and depending on the object would fire
+    // this view event again on every re-render that hands us a new one.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movie?.id])
 
   const src =

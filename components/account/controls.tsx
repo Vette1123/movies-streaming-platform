@@ -171,7 +171,7 @@ export function SettingSwitch({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        'focus-visible:ring-ring flex w-full items-start gap-4 p-4 text-left transition-colors hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:-outline-offset-2 focus-visible:outline-hidden',
+        'focus-visible:ring-ring flex w-full items-start gap-4 p-4 text-left transition-colors hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:outline-hidden focus-visible:-outline-offset-2',
         disabled && 'cursor-not-allowed opacity-60 hover:bg-transparent'
       )}
     >

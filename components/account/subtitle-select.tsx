@@ -43,6 +43,11 @@ export function SubtitleSelect({
   className?: string
 }) {
   const [open, setOpen] = React.useState(false)
+  // Radix only writes `aria-controls` on the trigger while the popover is open,
+  // and a combobox has to name the list it controls whether it is open or not —
+  // that is what a screen reader reads to say there is one. Naming the panel
+  // ourselves also means the id is stable across opens.
+  const listId = React.useId()
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -51,6 +56,7 @@ export function SubtitleSelect({
           type="button"
           role="combobox"
           aria-expanded={open}
+          aria-controls={listId}
           aria-label="Subtitle language"
           className={cn(
             'focus-visible:ring-ring inline-flex w-full max-w-72 items-center gap-2 rounded-full border border-white/10 px-3.5 py-2 text-sm font-medium transition-colors hover:border-white/20 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:outline-hidden',
@@ -67,7 +73,7 @@ export function SubtitleSelect({
           />
         </button>
       </PopoverTrigger>
-      <PopoverContent align={align} className="w-64 p-0">
+      <PopoverContent id={listId} align={align} className="w-64 p-0">
         <Command
           // cmdk scores against the item's `value`, so each row carries its
           // English name alongside the endonym: searching "arabic" has to find

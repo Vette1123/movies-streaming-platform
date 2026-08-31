@@ -157,7 +157,7 @@ export function ForYouPanel() {
                     poster_path: item.poster_path,
                   })
                 }
-                className="bg-background/80 text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute top-1.5 left-1.5 grid size-6 place-items-center rounded-full opacity-0 backdrop-blur-sm transition-opacity focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden group-hover/tile:opacity-100 max-md:opacity-100"
+                className="bg-background/80 text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute top-1.5 left-1.5 grid size-6 place-items-center rounded-full opacity-0 backdrop-blur-sm transition-opacity group-hover/tile:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden max-md:opacity-100"
               >
                 <X className="size-3.5" />
               </button>
