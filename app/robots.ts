@@ -23,9 +23,12 @@ const CRAWL_DISALLOW = [
   // /collection/<id> URLs, with the title, OG tags, JSON-LD and an <h1>
   // injected. Fetched at their own bare path they are an empty skeleton with
   // no heading, which is what an SEO crawl reports as a missing <h1>. They
-  // already carry noindex; this stops a crawler spending a fetch on them.
+  // are answered with an X-Robots-Tag (public/_headers); this stops a crawler
+  // spending a fetch on them at all.
   '/media-fallback',
   '/collection-fallback',
+  '/list-fallback',
+  '/profile-fallback',
 ]
 
 export default function robots(): MetadataRoute.Robots {

@@ -1,11 +1,12 @@
 // Checks the deployed pages for the things an SEO crawl reports on, none of
 // which any build step can catch.
 //
-// The one that prompted this: app/media-fallback/layout.tsx sets `noindex,
-// nofollow` so its own bare URL stays out of the index, and cloudflare/worker.js
-// serves that same HTML as the real /movies/<id> for every id outside the
-// prerendered set — so the whole tail of the site was asking Google not to
-// index it, and nothing anywhere would have told us.
+// The one that prompted this: the fallback shells set `noindex, nofollow` so
+// their own bare URLs stay out of the index, and cloudflare/worker.js serves
+// that same HTML as the real /movies/<id> for every id outside the prerendered
+// set — so the whole tail of the site was asking Google not to index it, and
+// nothing anywhere would have told us. The shells carry no such tag now; they
+// are noindex by header (public/_headers), which stays with the URL.
 //
 // Run: pnpm seo:verify              (against production)
 //      pnpm seo:verify http://localhost:3000
@@ -25,7 +26,7 @@ const get = async (path) => {
   const res = await fetch(path.startsWith('http') ? path : `${ORIGIN}${path}`, {
     headers: { 'user-agent': UA },
   })
-  return { status: res.status, html: await res.text() }
+  return { status: res.status, headers: res.headers, html: await res.text() }
 }
 
 const first = (html, re) => re.exec(html)?.[1] ?? null
@@ -172,14 +173,38 @@ for (const path of [...new Set(INDEXABLE)]) {
 }
 
 // ---- pages that must NOT be indexed ----------------------------------------
+//
+// The four shells are noindex by HEADER, not by a meta tag. The tag used to be
+// in their HTML, and their HTML is what the Worker serves as the real
+// /movies/<id> — the Worker strips it, but React puts it back on hydration and
+// Googlebot renders JS, which is how 9,274 real pages were filed under
+// "Excluded by 'noindex' tag". So this asserts the OPPOSITE of what it used
+// to for those paths: the header says noindex, and the body must not.
 for (const path of [
   '/media-fallback',
   '/collection-fallback',
-  '/watch-history',
+  '/list-fallback',
+  '/profile-fallback',
 ]) {
-  const { html } = await get(path)
+  const { headers, html } = await get(path)
+  const header = headers.get('x-robots-tag') ?? ''
+  const meta = robotsOf(html) ?? ''
+  check(
+    `noindex by header, not by meta  ${path}`,
+    /noindex/i.test(header) && !/noindex/i.test(meta),
+    `X-Robots-Tag="${header}" meta="${meta}"`
+  )
+}
+
+// The one page that is noindex in its own right — it is nobody's shell.
+{
+  const { html } = await get('/watch-history')
   const robots = robotsOf(html) ?? ''
-  check(`noindex  ${path}`, /noindex/i.test(robots), `robots="${robots}"`)
+  check(
+    'noindex  /watch-history',
+    /noindex/i.test(robots),
+    `robots="${robots}"`
+  )
 }
 
 // The 404 needs an h1 too: it is a real page a crawler renders, and a document

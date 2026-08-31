@@ -6,7 +6,9 @@ import { useQuery } from '@tanstack/react-query'
 
 import { getJson } from '@/lib/api-client'
 import type { PublicList } from '@/lib/lists/routes'
+import { listDescription } from '@/lib/seo-description'
 import { useLocationPathname } from '@/hooks/use-location-pathname'
+import { useServedMetadata } from '@/hooks/use-served-metadata'
 import { buttonVariants } from '@/components/ui/button'
 import { PublicListView } from '@/components/lists/public-list-view'
 
@@ -37,11 +39,19 @@ export default function ListFallbackPage() {
     },
   })
 
-  // The Worker injects the real <title>, but hydration re-renders the shell's
-  // own — without this the tab reverts to the generic site title.
-  React.useEffect(() => {
-    if (data?.name) document.title = data.name
-  }, [data])
+  // Hydration wipes the head the Worker wrote — see use-served-metadata.
+  useServedMetadata(
+    data?.name
+      ? {
+          title: data.name,
+          description: listDescription(
+            data.description,
+            data.items?.length ?? 0,
+            data.owner
+          ),
+        }
+      : null
+  )
 
   if (isError) {
     return (

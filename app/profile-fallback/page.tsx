@@ -4,9 +4,12 @@ import React from 'react'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 
+import { siteConfig } from '@/config/site'
 import { getJson } from '@/lib/api-client'
 import type { PublicProfile } from '@/lib/profile/routes'
+import { profileDescription } from '@/lib/seo-description'
 import { useLocationPathname } from '@/hooks/use-location-pathname'
+import { useServedMetadata } from '@/hooks/use-served-metadata'
 import { buttonVariants } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PublicProfileView } from '@/components/profile/public-profile-view'
@@ -39,11 +42,17 @@ export default function ProfileFallbackPage() {
     },
   })
 
-  // The Worker injects the real <title>, but hydration re-renders the shell's
-  // own — without this the tab reverts to the generic site title.
-  React.useEffect(() => {
-    if (data) document.title = `${data.name || data.handle} on Reely`
-  }, [data])
+  // Hydration wipes the head the Worker wrote — see use-served-metadata.
+  useServedMetadata(
+    data
+      ? {
+          title: `${data.name || data.handle} on ${siteConfig.name}`,
+          description: profileDescription(data.bio, data.counts),
+          image: data.picture || undefined,
+          ogType: 'profile',
+        }
+      : null
+  )
 
   if (isError) {
     return (

@@ -1,14 +1,15 @@
 import React from 'react'
-import { Metadata } from 'next'
 
-// This route is an implementation detail: cloudflare/worker.js serves its
-// exported HTML under /movies/<id> and /tv-shows/<id> for ids the build did not
-// prerender, rewriting the <head> as it goes. The bare /media-fallback URL shows
-// an empty shell, so keep it out of the index — the real detail URLs are what
-// should rank, and the Worker gives those a proper canonical.
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-}
+// An implementation detail of the static export: cloudflare/worker.js serves
+// this route's exported HTML under /movies/<id> and /tv-shows/<id>, rewriting the <head> as it goes.
+//
+// It carries NO `noindex` metadata, deliberately. A meta tag travels with the
+// body, and this body is served under those real URLs — the Worker strips the
+// tag out of what it streams, but React puts it back on hydration from this
+// route's own metadata, and Googlebot renders JS. That is how 9,274 real
+// pages ended up in Search Console under "Excluded by 'noindex' tag". The
+// bare URL is kept out of the index by robots.txt and by the X-Robots-Tag in
+// public/_headers, both of which apply to the URL and not to the body.
 
 export default function MediaFallbackLayout({
   children,

@@ -130,3 +130,21 @@
   Cache-Control: private, max-age=0, must-revalidate
 /watchlist
   Cache-Control: private, max-age=0, must-revalidate
+
+# The fallback shells, at their own bare URLs.
+#
+# cloudflare/worker.js serves these documents under the real /movies/<id>,
+# /collection/<id>, /l/<slug> and /u/<handle> URLs, so anything that says
+# "do not index me" INSIDE the HTML says it about those pages too — which is
+# how 9,274 real pages ended up in Search Console under "Excluded by
+# 'noindex' tag" (React re-renders the shell's own metadata on hydration,
+# and Googlebot renders JS). A header is attached to the URL, not to the
+# body, so it cannot travel with the shell.
+/media-fallback
+  X-Robots-Tag: noindex, nofollow
+/collection-fallback
+  X-Robots-Tag: noindex, nofollow
+/list-fallback
+  X-Robots-Tag: noindex, nofollow
+/profile-fallback
+  X-Robots-Tag: noindex, nofollow

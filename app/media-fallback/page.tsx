@@ -6,7 +6,10 @@ import { useQuery } from '@tanstack/react-query'
 import { MultiMovieDetailsRequestProps } from '@/types/movie-details'
 import { MultiSeriesDetailsRequestProps } from '@/types/series-details'
 import { getJson } from '@/lib/api-client'
+import { getMediaHeroImageUrl } from '@/lib/media'
+import { mediaDescription } from '@/lib/seo-description'
 import { useLocationPathname } from '@/hooks/use-location-pathname'
+import { useServedMetadata } from '@/hooks/use-served-metadata'
 import { MoviesDetailsContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
 import { SeriesDetailsContent } from '@/components/series/details-content'
@@ -42,6 +45,36 @@ function parseLocation(
   return { type: match[1] === 'tv-shows' ? 'tv' : 'movie', id: match[2] }
 }
 
+/** The head this page would have had if the build had prerendered it. */
+function servedMetadata(payload?: Payload) {
+  if (!payload) return null
+  const details = isSeries(payload)
+    ? payload.seriesDetails
+    : payload.movieDetails
+  const name = isSeries(payload)
+    ? payload.seriesDetails.name
+    : payload.movieDetails.title
+  if (!name) return null
+  const released = isSeries(payload)
+    ? payload.seriesDetails.first_air_date
+    : payload.movieDetails.release_date
+  const year = (released || '').slice(0, 4)
+  return {
+    title: year ? `${name} (${year})` : name,
+    description: mediaDescription({
+      title: name,
+      year,
+      kind: isSeries(payload) ? ('series' as const) : ('movie' as const),
+      genres: details.genres?.map((genre) => genre.name),
+      overview: details.overview,
+    }),
+    image:
+      getMediaHeroImageUrl(details.backdrop_path, details.poster_path) ??
+      undefined,
+    ogType: isSeries(payload) ? 'video.tv_show' : 'video.movie',
+  }
+}
+
 export default function MediaFallbackPage() {
   const pathname = useLocationPathname()
   const target = React.useMemo(() => parseLocation(pathname), [pathname])
@@ -53,25 +86,11 @@ export default function MediaFallbackPage() {
     queryFn: () => getJson<Payload>(`/api/media/${target!.type}/${target!.id}`),
   })
 
-  // The Worker injects the real <title> into the served HTML, which is what
-  // crawlers and unfurlers read — but React re-renders the shell's own title on
-  // hydration, so without this the tab (and any bookmark) reverts to the
-  // generic site title once the page becomes interactive.
-  React.useEffect(() => {
-    if (!data) return
-    const { name, released } = isSeries(data)
-      ? {
-          name: data.seriesDetails.name,
-          released: data.seriesDetails.first_air_date,
-        }
-      : {
-          name: data.movieDetails.title,
-          released: data.movieDetails.release_date,
-        }
-    if (!name) return
-    const year = (released || '').slice(0, 4)
-    document.title = year ? `${name} (${year})` : name
-  }, [data])
+  // What the Worker wrote into the head is gone by the time this runs —
+  // React re-rendered it from the SHELL's metadata on hydration, which is
+  // `noindex, nofollow` and a canonical pointing at the homepage. Googlebot
+  // renders JS, so that is what it filed. See hooks/use-served-metadata.ts.
+  useServedMetadata(React.useMemo(() => servedMetadata(data), [data]))
 
   if (isError) {
     return (

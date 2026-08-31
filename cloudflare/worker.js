@@ -58,7 +58,13 @@ import { getMediaHeroImageUrl } from '@/lib/media'
 import { mosaicUrl, OG_HEIGHT, OG_WIDTH } from '@/lib/og/mosaic'
 import { signEntryTicket } from '@/lib/pro/playback-ticket'
 import { loadPublicProfile } from '@/lib/profile/routes'
-import { collectionDescription, mediaDescription } from '@/lib/seo-description'
+import {
+  collectionDescription,
+  listDescription,
+  listShelf,
+  mediaDescription,
+  profileDescription,
+} from '@/lib/seo-description'
 import { mediaFacts } from '@/lib/seo-facts'
 import { getImageURL } from '@/lib/utils'
 
@@ -1191,8 +1197,7 @@ async function handleListPage(match, env, url) {
     ? await resolveSmartList(list.smart_query)
     : list.items
   const count = items.length
-  const owner = list.owner ? ` by ${list.owner}` : ''
-  const shelf = `${count} ${count === 1 ? 'title' : 'titles'}${owner} on Reely`
+  const shelf = listShelf(count, list.owner)
   // The list's own posters, composed into one 1200x630 card by the image CDN —
   // see lib/og/mosaic.ts. A single portrait poster as og:image was the previous
   // behaviour and unfurled as a centre-cropped band of one poster; it stays as
@@ -1205,7 +1210,7 @@ async function handleListPage(match, env, url) {
   const meta = {
     heading: list.name,
     title: list.name,
-    description: list.description || `${shelf}.`,
+    description: listDescription(list.description, count, list.owner),
     image:
       mosaic ||
       (items[0]?.poster_path ? getImageURL(items[0].poster_path) : ''),
@@ -1265,9 +1270,7 @@ async function handleProfilePage(match, env, url) {
     // (see metaTags/seoBlock) — so it carries the site name here rather than
     // leaving a shared link reading as a bare personal name with no context.
     heading: `${who} on Reely`,
-    description:
-      profile.bio ||
-      `${profile.counts.finished} films finished, ${profile.counts.episodes} episodes ticked off, ${profile.counts.lists} lists worth stealing.`,
+    description: profileDescription(profile.bio, profile.counts),
     image: mosaic || profile.picture || '',
     imageWidth: mosaic ? OG_WIDTH : null,
     imageHeight: mosaic ? OG_HEIGHT : null,

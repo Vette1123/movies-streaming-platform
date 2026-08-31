@@ -5,7 +5,10 @@ import { useQuery } from '@tanstack/react-query'
 
 import { CollectionDetails } from '@/types/collection'
 import { getJson } from '@/lib/api-client'
+import { collectionDescription } from '@/lib/seo-description'
+import { getImageURL } from '@/lib/utils'
 import { useLocationPathname } from '@/hooks/use-location-pathname'
+import { useServedMetadata } from '@/hooks/use-served-metadata'
 import { CollectionView } from '@/components/collection/collection-view'
 
 // The shell for franchise ids the build did not prerender — the collection
@@ -30,11 +33,18 @@ export default function CollectionFallbackPage() {
     queryFn: () => getJson<CollectionDetails>(`/api/collection/${id}`),
   })
 
-  // The Worker injects the real <title>, but hydration re-renders the shell's
-  // own — without this the tab reverts to the generic site title.
-  React.useEffect(() => {
-    if (data?.name) document.title = data.name
-  }, [data])
+  // Hydration wipes the head the Worker wrote — see use-served-metadata.
+  useServedMetadata(
+    data?.name
+      ? {
+          title: data.name,
+          description: collectionDescription(data.name, data.overview),
+          image: data.backdrop_path
+            ? getImageURL(data.backdrop_path)
+            : undefined,
+        }
+      : null
+  )
 
   if (isError) {
     return (

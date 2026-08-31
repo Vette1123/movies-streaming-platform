@@ -119,3 +119,28 @@ export function collectionDescription(
     .join(' ')
   return assemble(head, COLLECTION_OFFERS)
 }
+
+/**
+ * A list's shelf line: "12 titles by Ana on Reely".
+ *
+ * Shared because the Worker writes it into the served head and the shell
+ * writes it again after hydration (hooks/use-served-metadata.ts). Two copies
+ * of the sentence is two chances for a page to describe itself differently to
+ * a crawler than to the unfurler that fetched it a second earlier.
+ */
+export const listShelf = (count: number, owner?: string | null) =>
+  `${count} ${count === 1 ? 'title' : 'titles'}${owner ? ` by ${owner}` : ''} on ${siteConfig.name}`
+
+export const listDescription = (
+  description: string | null | undefined,
+  count: number,
+  owner?: string | null
+) => squash(description) || `${listShelf(count, owner)}.`
+
+/** A profile describes itself by its bio, or by what is on its shelves. */
+export const profileDescription = (
+  bio: string | null | undefined,
+  counts: { finished: number; episodes: number; lists: number }
+) =>
+  squash(bio) ||
+  `${counts.finished} films finished, ${counts.episodes} episodes ticked off, ${counts.lists} lists worth stealing.`
