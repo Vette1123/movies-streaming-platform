@@ -261,3 +261,57 @@ jobs:
             fi
           done
           exit $fail
+
+  # A public, dated record of what each deploy contained.
+  #
+  # Its own job, for one reason: the deploy job's GITHUB_TOKEN is deliberately
+  # read-only (see `permissions` at the top), and publishing a release needs
+  # write. Widening the deploy job would hand write access to every step that
+  # runs a build script off the lockfile. A second job that does nothing but
+  # read the log and call the releases API keeps that blast radius at one step.
+  #
+  # Gated on `push`: the scheduled deploys exist to refresh TMDB data on
+  # unchanged code, so releasing on them would publish four empty releases a day
+  # and bury the real ones. `needs: deploy` means a release only ever describes
+  # something that actually reached production and passed the smoke test.
+  release:
+    needs: deploy
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Tags and full history: the notes are the commits since the previous
+          # `v*` tag, and the default shallow clone has neither.
+          fetch-depth: 0
+          # `gh release create` authenticates with GH_TOKEN and creates the tag
+          # through the API, so nothing here pushes over git.
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Build release notes
+        id: notes
+        run: |
+          node scripts/release-notes.mjs > release-notes.md
+          cat release-notes.md
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+
+      # Skipped when the push carried nothing but docs, tests, tooling or
+      # refactors — those are counted in the notes of the next release that has
+      # something to say, rather than being one of their own.
+      - name: Publish release
+        if: steps.notes.outputs.has_visible == 'true'
+        run: |
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes-file release-notes.md \
+            --target "$GITHUB_SHA"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.notes.outputs.tag }}
