@@ -74,6 +74,9 @@ check(
 
 // ---- indexable pages -------------------------------------------------------
 // A sample across every shape, plus a tail id the build does not prerender.
+/** A tail page below this is a template with a title in it, not a page. */
+const MIN_FALLBACK_BODY = 500
+
 const TAIL_ID = '/movies/9340' // The Goonies — outside the prerendered set
 const INDEXABLE = [
   '/',
@@ -123,6 +126,22 @@ for (const path of [...new Set(INDEXABLE)]) {
     'fallback SEO block is clipped, not display:none',
     block !== '' && !/\shidden(\s|=|>)/i.test(block),
     block || 'no block found'
+  )
+
+  // …and it says something. A heading and a 158-character description over a
+  // nav and a footer identical on ~13,900 other tail URLs is what Google filed
+  // as Soft 404 and "Duplicate without user-selected canonical". The body is
+  // built by lib/seo-facts.ts; this is the check that it is still there.
+  const body =
+    /<div[^>]*data-fallback-seo[^>]*>([\s\S]*?)<\/div>/i.exec(html)?.[1] ?? ''
+  const visible = body
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  check(
+    'fallback carries a real body, not just a heading',
+    visible.length >= MIN_FALLBACK_BODY && /<dl>/i.test(body),
+    `${visible.length} chars, facts=${/<dl>/i.test(body)}`
   )
 }
 
