@@ -850,7 +850,14 @@ async function main() {
       const sites = await cf(`/accounts/${accountId}/rum/site_info/list`)
       const site = (sites || []).find((s) => s.ruleset?.zone_tag === zoneId)
       if (!site) return
-      if (site.auto_install === false) return
+      // Two different fields can hold the "off" state, and the dashboard sets
+      // the second one. Disabling RUM in the UI clears `ruleset.enabled` and
+      // leaves `auto_install: true` — inert, because a disabled ruleset injects
+      // nothing (verified 2026-08-31: zero cloudflareinsights/cdn-cgi/rum refs
+      // in the served HTML of `/`, a prerendered page and a tail page). Only
+      // the API PUT below flips `auto_install` itself. Check both, or this step
+      // reports ✗ forever against a beacon that is already gone.
+      if (site.auto_install === false || site.ruleset?.enabled === false) return
       await cf(`/accounts/${accountId}/rum/site_info/${site.site_tag}`, {
         method: 'PUT',
         body: JSON.stringify({ zone_tag: zoneId, auto_install: false }),
