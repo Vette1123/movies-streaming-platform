@@ -49,11 +49,13 @@ this repo.
   the field has to be re-clicked before every tag).
 - **Read a "Something went wrong when trying to fetch the file" as the whole
   story on AlternativeTo.** Their server-side icon fetch of
-  `https://www.reely.space/android-chrome-512x512.png` failed — almost certainly
-  our own WAF challenging a non-browser user agent, the same lesson as the IMDb
-  shard self-fetch. The local file upload had actually succeeded a moment
-  earlier; the stale red error text hid a valid form. Check the resulting state,
-  not the last error string.
+  `https://www.reely.space/android-chrome-512x512.png` failed. Blamed our WAF on
+  the strength of the IMDb shard self-fetch — wrong: `assetExpr()` in
+  `scripts/cf-waf-setup.mjs` exempts `.png`/`.ico` from the UA challenge, and
+  that URL answers 200 to an empty UA, to `python-requests` and to
+  `Go-http-client` (measured 31 Aug). The failure was theirs. The local file
+  upload had actually succeeded a moment earlier; the stale red error text hid a
+  valid form. Check the resulting state, not the last error string.
 - **Clicked a button at coordinates captured before `scrollIntoView` ran.** The
   page moved, the click hit empty footer, and the submit looked like it silently
   failed. Screenshot coordinates and JS `getBoundingClientRect` are in different
@@ -82,8 +84,10 @@ this repo.
   the first separator after it — never on a repeated table header.
 - Any prefilled or controlled web form field: write via the native value setter
   plus `input`/`change`, then read the value back before submitting.
-- When a directory says it could not fetch an asset from reely.space, suspect
-  our WAF first (`scripts/cf-waf-setup.mjs`) — their fetcher has no browser UA.
+- When a directory says it could not fetch an asset from reely.space, measure
+  before blaming the WAF: curl the URL with an empty user agent. Static
+  extensions are exempt from the UA challenge (`assetExpr()` in
+  `scripts/cf-waf-setup.mjs`); HTML paths are not.
 - Marketing copy for this repo describes the catalog, the filters and the
   tracking. The player is "an external source you configure, behind a
   disclaimer — Reely hosts no video." Nothing in `docs/marketing/launch-kit.md`
