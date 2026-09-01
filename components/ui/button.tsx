@@ -19,10 +19,15 @@ const buttonVariants = cva(
           'bg-secondary text-secondary-foreground hover:bg-secondary/80',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
-        'animated-watch-now':
-          'animate-border bg-primary bg-linear-to-r from-red-500 via-purple-500 to-blue-500 bg-size-[400%_400%] font-sans text-2xl font-medium text-secondary-foreground transition-transform hover:scale-105',
+        // The hero's primary action. `text-secondary-foreground` here was
+        // near-white in dark mode, which is fine on Reely's blue and wrong on
+        // three of the five supporter accents: ember, ocean and forest are light
+        // enough that the token comment in styles/globals.css sets
+        // `--primary-foreground` dark on purpose. Pairing the accent background
+        // with the accent's own foreground is the pair that comment describes,
+        // and it is the only one that holds AA across all six palettes.
         watchNow:
-          'bg-primary font-sans text-xl font-bold text-secondary-foreground transition-transform hover:scale-105',
+          'bg-primary-fill font-sans text-xl font-bold text-primary-foreground transition-transform hover:scale-105',
       },
       size: {
         default: 'h-10 px-4 py-2',

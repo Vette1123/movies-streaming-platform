@@ -13,6 +13,19 @@ import { cn } from '@/lib/utils'
  * Keep colour in the `variant`, not at the call site. If a new semantic colour
  * is needed, add a variant here rather than passing `bg-*` overrides.
  */
+/**
+ * The hover a pill gets when it is clickable: lift, fill with the accent, and
+ * cast a soft glow in the same accent.
+ *
+ * Exported because components/media/filter-sidebar.tsx renders its own toggle
+ * rather than a <Chip> and had this exact string copied into it — which is how
+ * the glow came to be `rgba(59,130,246,0.6)`, Reely's blue, hard-coded in both.
+ * A supporter on ember or rose got an orange pill throwing a blue shadow. The
+ * fill beside it was already `--primary-fill`; only the shadow was a literal.
+ */
+export const CHIP_INTERACTIVE_HOVER =
+  'cursor-pointer hover:-translate-y-0.5 hover:border-primary hover:bg-primary-fill hover:text-primary-foreground hover:shadow-[0_8px_24px_-6px_hsl(var(--primary)/0.6)]'
+
 const chipVariants = cva(
   'inline-flex shrink-0 items-center justify-center rounded-full leading-none font-semibold whitespace-nowrap transition-[color,background-color,border-color,box-shadow,transform] duration-200 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none',
   {
@@ -53,9 +66,7 @@ const chipVariants = cva(
         false: '',
       },
       interactive: {
-        // Fancy hover: lift, fill with brand blue, and cast a soft blue glow so
-        // the pill clearly "pops" off the page on interaction.
-        true: 'cursor-pointer hover:-translate-y-0.5 hover:border-primary hover:bg-primary-fill hover:text-primary-foreground hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.6)]',
+        true: CHIP_INTERACTIVE_HOVER,
         false: '',
       },
     },

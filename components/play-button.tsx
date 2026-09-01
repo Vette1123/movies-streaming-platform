@@ -68,8 +68,21 @@ export function PlayButton({
         target,
         isResume
       )}
+      // The accent, not a literal colour.
+      //
+      // This was `from-purple-600 to-blue-500` with a hover into indigo, purple
+      // and pink — hard-coded, and the largest control on a detail page. The
+      // note beside the supporter accents in styles/globals.css claims "every
+      // accented surface in this codebase already reads --primary rather than a
+      // literal colour", and this button was the exception that made it untrue:
+      // on ember, ocean, forest or rose the page's primary action stayed purple
+      // while every other control moved. Measured on production with ember set.
+      //
+      // `--primary-fill` rather than `--primary` because the glyph on top is
+      // solid `--primary-foreground`; that is the pair the token comment says to
+      // use wherever a label sits on the accent.
       className={cn(
-        'cursor-pointer rounded-full bg-linear-to-br from-purple-600 to-blue-500 text-center font-medium text-white transition-colors duration-500 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden'
+        'cursor-pointer rounded-full bg-primary-fill text-center font-medium text-primary-foreground transition-[background-color,transform] duration-300 hover:bg-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden active:scale-[0.97] motion-reduce:transition-none'
       )}
     >
       <Icons.playIcon

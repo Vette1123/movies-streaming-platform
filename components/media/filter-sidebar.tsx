@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils'
 import { useGenres } from '@/hooks/use-genres'
 import { useWatchProviders } from '@/hooks/use-watch-providers'
 import { Button } from '@/components/ui/button'
+import { CHIP_INTERACTIVE_HOVER } from '@/components/ui/chip'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Select,
@@ -94,7 +95,10 @@ const filterToggleVariants = cva(
         square: 'rounded-md text-xs font-semibold transition-colors',
       },
       state: {
-        idle: 'border-white/12 bg-secondary text-secondary-foreground shadow-sm hover:-translate-y-0.5 hover:border-primary hover:bg-primary-fill hover:text-primary-foreground hover:shadow-[0_8px_24px_-6px_rgba(59,130,246,0.6)]',
+        idle: cn(
+          'border-white/12 bg-secondary text-secondary-foreground shadow-sm',
+          CHIP_INTERACTIVE_HOVER
+        ),
         active:
           'border-primary bg-primary-fill text-primary-foreground hover:border-primary hover:text-primary-foreground',
         excluded:
