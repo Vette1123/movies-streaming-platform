@@ -3,6 +3,7 @@ import React, { Suspense } from 'react'
 import { Credit } from '@/types/credit'
 import { MediaType } from '@/types/media'
 import { SeriesDetails } from '@/types/series-details'
+import { recommendedHeading, similarHeading } from '@/lib/seo-title'
 import { List } from '@/components/list'
 import { SliderHorizontalListLoader } from '@/components/loaders/slider-horizontal-list-loader'
 import { DetailsCredits } from '@/components/media/details-credits'
@@ -64,13 +65,17 @@ export const SeriesDetailsContent = ({
       <div className="pb-10 lg:pb-20">
         <Suspense fallback={<SliderHorizontalListLoader />}>
           <List
-            title="Recommended Series"
+            title={recommendedHeading(series.name)}
             items={recommendedSeries}
             itemType="tv"
           />
         </Suspense>
         <Suspense fallback={<SliderHorizontalListLoader />}>
-          <List title="Similar Series" items={similarSeries} itemType="tv" />
+          <List
+            title={similarHeading(series.name, 'series')}
+            items={similarSeries}
+            itemType="tv"
+          />
         </Suspense>
       </div>
     </>

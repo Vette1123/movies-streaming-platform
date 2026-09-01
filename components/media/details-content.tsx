@@ -3,6 +3,7 @@ import React, { Suspense } from 'react'
 import { Credit } from '@/types/credit'
 import { MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
+import { recommendedHeading, similarHeading } from '@/lib/seo-title'
 import { List } from '@/components/list'
 import { SliderHorizontalListLoader } from '@/components/loaders/slider-horizontal-list-loader'
 import { CollectionBanner } from '@/components/media/collection-banner'
@@ -47,10 +48,16 @@ export const MoviesDetailsContent = ({
           don't render narrower than home. */}
       <div className="pb-10 lg:pb-20">
         <Suspense fallback={<SliderHorizontalListLoader />}>
-          <List title="Recommended Movies" items={recommendedMovies} />
+          <List
+            title={recommendedHeading(movie.title)}
+            items={recommendedMovies}
+          />
         </Suspense>
         <Suspense fallback={<SliderHorizontalListLoader />}>
-          <List title="Similar Movies" items={similarMovies} />
+          <List
+            title={similarHeading(movie.title, 'movie')}
+            items={similarMovies}
+          />
         </Suspense>
       </div>
     </>

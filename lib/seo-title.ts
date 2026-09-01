@@ -64,3 +64,28 @@ const TITLE_INTENT: Record<MediaTitleInput['kind'], string> = {
 
 export const mediaDocHeading = (input: MediaTitleInput) =>
   `${mediaHeading(input)} — ${TITLE_INTENT[input.kind]}`
+
+/**
+ * The two rail headings on a detail page, which used to be the same eight
+ * characters on every one of ~13,000 URLs.
+ *
+ * "Similar Movies" and "Recommended Movies" are boilerplate: they say nothing a
+ * person searches for, and repeated verbatim across the catalogue they are part
+ * of what makes one detail page look like a copy of the next. "Movies like Fight
+ * Club" is a query with real volume that IMDb does not own the way it owns the
+ * bare title, and the rail underneath it is already the answer — TMDB's
+ * `similar` and `recommendations` arrive in the same `append_to_response` the
+ * page renders from, so this costs no extra request and no extra CPU.
+ *
+ * These are `<h2>`s in components/list.tsx, and the Worker's crawler block picks
+ * up nothing here — a tail page gets its body from lib/seo-facts.ts.
+ */
+const LIKE_NOUN: Record<MediaTitleInput['kind'], string> = {
+  movie: 'Movies',
+  series: 'Shows',
+}
+
+export const similarHeading = (title: string, kind: MediaTitleInput['kind']) =>
+  `${LIKE_NOUN[kind]} like ${title}`
+
+export const recommendedHeading = (title: string) => `If you liked ${title}`
