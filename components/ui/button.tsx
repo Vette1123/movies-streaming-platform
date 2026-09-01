@@ -32,9 +32,11 @@ const buttonVariants = cva(
       size: {
         default: 'h-10 px-4 py-2',
         sm: 'h-9 rounded-md px-3',
-        // min-h-6, not h-auto alone: the label's own line box is 23px, one
-        // pixel under WCAG 2.2's 24x24 minimum target size.
-        text: 'h-auto min-h-6 px-2',
+        // A pixel value, not a spacing step: this root is 15px and the Tailwind
+        // spacing unit is 3.75px, so min-h-6 lands on 22.5px. WCAG 2.2's 24x24
+        // minimum target size is in CSS pixels, and the label's own line box is
+        // 23 of them.
+        text: 'h-auto min-h-[24px] px-2',
         lg: 'h-11 rounded-md px-8',
         icon: 'size-10',
         '2xl': 'h-11 rounded-md px-12',
