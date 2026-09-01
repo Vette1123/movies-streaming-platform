@@ -150,11 +150,35 @@ const generateCollectionUrls = (): Promise<MetadataRoute.Sitemap> =>
 
 const SITE_LAUNCH_DATE = '2024-01-01T00:00:00.000Z'
 
+// When the browse hubs last changed, which is this build.
+//
+// The hubs carried SITE_LAUNCH_DATE, and that is a false answer in the
+// direction that costs the most: it told Google the homepage, /movies,
+// /tv-shows and every genre hub had not changed since January 2024. They change
+// on every deploy — their rows are trending and popular lists that turn over,
+// which is the whole reason the site redeploys every six hours — and they are
+// the pages a crawler walks to reach everything else. Search Console on
+// 2026-08-28 had 43,781 pages sitting in states a recrawl would clear (15,989
+// "Server error (5xx)" from the 3 Aug migration, 11,464 "Excluded by noindex"
+// and 6,923 "Duplicate without canonical" from the shell bug, 9,405
+// "Crawled - currently not indexed"), all of them fixed in the code and all of
+// them waiting on a crawler that had been told not to bother.
+//
+// This is NOT the mistake the comment above warns about. That one put the build
+// timestamp on ~2,100 DETAIL pages, claiming a film's page changed every six
+// hours when it had not changed in years; Google stops trusting the field
+// across the whole sitemap when it is used that way. A hub whose content
+// genuinely turns over every deploy is the case lastmod exists for. Detail
+// pages still carry none.
+//
+// `dynamic = 'force-static'` means this evaluates once, at build.
+const CONTENT_REFRESHED_AT = new Date().toISOString()
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
-      lastModified: SITE_LAUNCH_DATE,
+      lastModified: CONTENT_REFRESHED_AT,
       changeFrequency: 'daily',
       priority: 1.0,
     },
@@ -168,19 +192,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${baseUrl}/lists`,
-      lastModified: SITE_LAUNCH_DATE,
+      lastModified: CONTENT_REFRESHED_AT,
       changeFrequency: 'daily',
       priority: 0.7,
     },
     {
       url: `${baseUrl}/movies`,
-      lastModified: SITE_LAUNCH_DATE,
+      lastModified: CONTENT_REFRESHED_AT,
       changeFrequency: 'daily',
       priority: 0.9,
     },
     {
       url: `${baseUrl}/tv-shows`,
-      lastModified: SITE_LAUNCH_DATE,
+      lastModified: CONTENT_REFRESHED_AT,
       changeFrequency: 'daily',
       priority: 0.9,
     },
@@ -237,19 +261,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     ...MOVIE_GENRES_WITH_SLUG.map((genre) => ({
       url: `${baseUrl}/movies/genre/${genre.slug}`,
-      lastModified: SITE_LAUNCH_DATE,
+      lastModified: CONTENT_REFRESHED_AT,
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     })),
     ...TV_GENRES_WITH_SLUG.map((genre) => ({
       url: `${baseUrl}/tv-shows/genre/${genre.slug}`,
-      lastModified: SITE_LAUNCH_DATE,
+      lastModified: CONTENT_REFRESHED_AT,
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     })),
     {
       url: `${baseUrl}/people`,
-      lastModified: SITE_LAUNCH_DATE,
+      lastModified: CONTENT_REFRESHED_AT,
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     },
@@ -262,7 +286,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         : ('yearly' as const)
       return ['/movies', '/tv-shows'].map((basePath) => ({
         url: `${baseUrl}${basePath}/year/${year}`,
-        lastModified: SITE_LAUNCH_DATE,
+        lastModified: isCurrentYear ? CONTENT_REFRESHED_AT : SITE_LAUNCH_DATE,
         changeFrequency,
         priority: isCurrentYear ? 0.7 : 0.5,
       }))
