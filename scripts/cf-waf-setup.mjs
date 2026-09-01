@@ -54,11 +54,16 @@
 //   - Zone.Cache Rules: Edit      (edge-cache rule — the 10ms-CPU defence)
 //   - Zone.Bot Management: Edit   (optional, for Bot Fight Mode toggle)
 
+import fs from 'node:fs'
+import path from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 
 import { loadLocalEnv } from './load-env.mjs'
 
 loadLocalEnv()
+
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 const TOKEN = process.env.CLOUDFLARE_API_TOKEN
 const ZONE_NAME = process.env.CF_ZONE_NAME || 'reely.space'
@@ -248,30 +253,39 @@ const DEAD_EXTENSION_RULE = {
   action: 'block',
 }
 
-// Crawlers that robots.txt disallows and that keep crawling anyway.
+// Crawlers this site refuses, enforced rather than requested.
 //
-// `app/robots.ts` has disallowed `Amzn-SearchBot` since 2026-08-31 — it was the
-// single largest consumer of the Worker's invocation budget and Amazon documents
-// that none of its crawlers honour `Crawl-delay`, so the choice was all or
-// nothing. Measured again 2026-09-01, a day later: still 115 requests per 40
-// minutes against `/movies/*` alone, ~4,100/day. robots.txt is a request, and
-// this one is not being honoured on any timescale that matters before launch.
+// The tokens come from config/blocked-crawlers.json, which is also what
+// app/robots.ts builds its Disallow groups from — one list, two enforcers. They
+// were two hand-written lists until 2026-09-01 and the drift had a price:
+// Amzn-SearchBot was disallowed in robots.txt on 31 Aug, ignored it, and was
+// still spending ~4,100 Worker invocations a day 24 hours later.
 //
 // This has to sit ABOVE ALLOW_RULE. That rule skips the whole `waf` product for
 // anything `cf.client.bot` marks as a verified bot, and Cloudflare verifies
-// Amazon's crawlers — so a rule placed after it would never fire.
+// Amazon's and Yandex's crawlers — a rule placed after it would never fire.
 //
-// Deliberately NOT a challenge: a crawler cannot solve one, so it would burn the
-// same edge work every time and leave the operator no signal. A 403 to a bot
-// whose robots.txt entry already says no is the honest answer. Search crawlers
-// that actually send traffic (Googlebot, bingbot, DuckDuckBot, YandexBot,
-// Applebot) are not in this list and must never be — `pnpm cf:health` fails if
-// any of them takes a 403.
-const ROBOTS_DEFYING_UAS = ['Amzn-SearchBot']
+// Deliberately a block, not a challenge: a crawler cannot solve a challenge, so
+// a challenge would burn the same edge work on every request forever. A 403 to
+// a crawler whose robots.txt entry already says no is the honest answer, and it
+// is the answer a well-behaved crawler backs off from.
+//
+// What is NOT here, and must never be: Googlebot, bingbot, DuckDuckBot,
+// Applebot, the social unfurlers, and the AI *search* crawlers that cite a page
+// to a person. `pnpm cf:health` fails if any search crawler it grades takes a
+// 403 — keep that list and this one consistent when either moves.
+const blockedCrawlers = JSON.parse(
+  fs.readFileSync(path.join(root, 'config/blocked-crawlers.json'), 'utf8')
+)
+const BLOCKED_CRAWLER_UAS = [
+  ...blockedCrawlers.seoTools,
+  ...blockedCrawlers.aiTraining,
+  ...blockedCrawlers.noReferral,
+]
 
 const BLOCK_DISALLOWED_CRAWLERS_RULE = {
   description: `${TAG} block crawlers robots.txt already disallows`,
-  expression: `(${orExpr(ROBOTS_DEFYING_UAS)})`,
+  expression: `(${orExpr(BLOCKED_CRAWLER_UAS)})`,
   action: 'block',
 }
 

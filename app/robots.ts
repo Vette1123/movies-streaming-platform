@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next'
 
+import blockedCrawlers from '@/config/blocked-crawlers.json'
 import { siteConfig } from '@/config/site'
 
 const baseUrl = siteConfig.websiteURL
@@ -60,6 +61,15 @@ export default function robots(): MetadataRoute.Robots {
         ],
         allow: CRAWL_ALLOW,
         disallow: CRAWL_DISALLOW,
+        // Google has never supported Crawl-delay and ignores this line, which
+        // is the intent — Google is the one crawler that should not be
+        // throttled. bingbot, DuckDuckBot and Applebot all honour it, and
+        // Applebot is why the number is here: 218 requests per 40 minutes on
+        // 2026-09-01, ~7,800/day, against a 100,000/day invocation cap it
+        // shares with everyone else. 20 seconds caps a compliant crawler at
+        // 4,320/day, which is more than enough to keep a ~14,900-URL catalogue
+        // current and roughly half what Applebot was taking.
+        crawlDelay: 20,
       },
       // Everything else, at a rate this site can afford.
       //
@@ -80,65 +90,21 @@ export default function robots(): MetadataRoute.Robots {
         disallow: CRAWL_DISALLOW,
         crawlDelay: 10,
       },
+      // Refused outright, and refused twice: these same tokens drive the WAF
+      // block rule in scripts/cf-waf-setup.mjs. robots.txt is a request and
+      // some of them ignore it — see the comment in the JSON for what that
+      // cost. Three groups rather than one so the file still says WHY each
+      // crawler is refused, which is the part a future reader needs.
       {
-        userAgent: [
-          'AhrefsBot',
-          'SemrushBot',
-          'MJ12bot',
-          'DotBot',
-          'AspiegelBot',
-          'DataForSeoBot',
-          'BLEXBot',
-          'PetalBot',
-        ],
+        userAgent: blockedCrawlers.seoTools,
         disallow: '/',
       },
-      // AI *training* crawlers. These were only ever disallowed by Cloudflare's
-      // managed robots.txt, which scripts/cf-waf-setup.mjs now turns off (it
-      // replaced this whole file at the edge and dropped the `Sitemap:` line
-      // with it), so the rules move here or they are gone.
-      //
-      // The AI *search* crawlers are deliberately NOT in this list —
-      // OAI-SearchBot, ChatGPT-User and PerplexityBot fetch a page to cite it to
-      // a user, which is a referral, not training. Blocking them would remove
-      // the site from AI answers for no gain.
       {
-        userAgent: [
-          'GPTBot',
-          'ClaudeBot',
-          'anthropic-ai',
-          'CCBot',
-          'Google-Extended',
-          'Applebot-Extended',
-          'meta-externalagent',
-          'FacebookBot',
-          'Bytespider',
-          'Amazonbot',
-          'cohere-ai',
-          'Diffbot',
-          'omgili',
-        ],
+        userAgent: blockedCrawlers.aiTraining,
         disallow: '/',
       },
-      // The one AI *search* crawler that is disallowed, and it is a crawl-rate
-      // decision rather than a policy one.
-      //
-      // `Amzn-SearchBot` is a distinct product token from `Amazonbot` above, so
-      // the training block never applied to it and it fell through to `*`.
-      // Measured over 24h on 2026-08-31 it was the single largest consumer of
-      // this Worker's invocation budget: 8,033 requests/day — more than
-      // Claude-SearchBot (6,394), bingbot (2,631) and Googlebot (1,469) put
-      // together — against a 100,000/day free-plan cap the site was already
-      // using 68% of. It feeds Alexa and Amazon's own search surfaces, which
-      // have sent this site no measurable referral.
-      //
-      // Amazon documents that none of its crawlers honour `Crawl-delay`
-      // (developer.amazon.com/amazonbot), so there is no way to keep it at a
-      // sane rate — the choice is all of it or none of it. The other AI search
-      // crawlers stay allowed: they cite a page to a user, which is a referral.
-      // Revisit if Amazon ever sends traffic back.
       {
-        userAgent: 'Amzn-SearchBot',
+        userAgent: blockedCrawlers.noReferral,
         disallow: '/',
       },
     ],

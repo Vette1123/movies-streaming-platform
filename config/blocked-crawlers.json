@@ -1,0 +1,35 @@
+{
+  "_comment": "One list, two enforcers. app/robots.ts turns these into Disallow groups; scripts/cf-waf-setup.mjs turns the union into a WAF block rule. They were separate lists until 2026-09-01, and the drift cost real quota: Amzn-SearchBot sat in robots.txt for a full day, ignored it, and kept spending ~4,100 Worker invocations a day. robots.txt is a request; the WAF is the answer. Anything added here is refused both ways. WAF matching is a substring test on the user-agent, so a token must be specific enough not to catch a sibling — Applebot-Extended must not match plain Applebot, ClaudeBot must not match Claude-SearchBot.",
+
+  "_seoTools": "Backlink and rank-tracker crawlers. They index nothing a person searches; the product they build is sold to somebody else.",
+  "seoTools": [
+    "AhrefsBot",
+    "SemrushBot",
+    "MJ12bot",
+    "DotBot",
+    "AspiegelBot",
+    "DataForSeoBot",
+    "BLEXBot",
+    "PetalBot"
+  ],
+
+  "_aiTraining": "AI crawlers that take the page into a training corpus and send nobody back. The AI *search* crawlers are deliberately absent — OAI-SearchBot, ChatGPT-User, PerplexityBot and Claude-SearchBot fetch a page to cite it to a person, which is a referral.",
+  "aiTraining": [
+    "GPTBot",
+    "ClaudeBot",
+    "anthropic-ai",
+    "CCBot",
+    "Google-Extended",
+    "Applebot-Extended",
+    "meta-externalagent",
+    "FacebookBot",
+    "Bytespider",
+    "Amazonbot",
+    "cohere-ai",
+    "Diffbot",
+    "omgili"
+  ],
+
+  "_noReferral": "Search crawlers that are real search crawlers and still cost more than they return. Every entry here is a measured decision, not a category judgement, and each is reversible the day it sends traffic. Amzn-SearchBot: 8,033 requests/day on 2026-08-31, the single largest consumer of the invocation budget, feeding Alexa and Amazon search, no measurable referral, and Amazon documents that its crawlers ignore Crawl-delay. YandexBot: 304 requests per 40 minutes on 2026-09-01 (~11,000/day, 11% of the whole free-plan cap) against an English-language catalogue, and Yandex dropped Crawl-delay support in 2018 so there is no rate setting to reach for. Baiduspider: same shape, same language mismatch.",
+  "noReferral": ["Amzn-SearchBot", "YandexBot", "Baiduspider"]
+}

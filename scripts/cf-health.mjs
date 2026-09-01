@@ -213,9 +213,14 @@ async function checkEyeball(zone) {
  * Search crawlers that actually drive organic traffic. Anything else calling
  * itself a bot (PerplexityBot, SERanking, scrapers) is SUPPOSED to be challenged
  * — being strict with those is the point of the WAF, so they are not graded.
+ *
+ * YandexBot and PetalBot were here until 2026-09-01 and were removed the day
+ * they were added to config/blocked-crawlers.json. A check that fails on a
+ * refusal the operator chose is a check that gets ignored, and an ignored check
+ * is worse than no check: the whole value of this line is that a 403 to
+ * Googlebot is a five-alarm fire. Grade only what the site still wants.
  */
-const SEO_CRAWLERS =
-  /Googlebot|bingbot|DuckDuckBot|YandexBot|Applebot|PetalBot/i
+const SEO_CRAWLERS = /Googlebot|bingbot|DuckDuckBot|Applebot/i
 
 /**
  * What the search crawlers got — the one error class whose cost is invisible in
