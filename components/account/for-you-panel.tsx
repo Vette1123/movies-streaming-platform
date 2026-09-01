@@ -157,7 +157,7 @@ export function ForYouPanel() {
                     poster_path: item.poster_path,
                   })
                 }
-                className="absolute top-1.5 left-1.5 grid size-6 place-items-center rounded-full bg-background/80 text-muted-foreground opacity-0 backdrop-blur-sm transition-opacity group-hover/tile:opacity-100 hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden max-md:opacity-100"
+                className="tap-target absolute top-1.5 left-1.5 grid size-6 place-items-center rounded-full bg-background/80 text-muted-foreground opacity-0 backdrop-blur-sm transition-opacity group-hover/tile:opacity-100 hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden max-md:opacity-100"
               >
                 <X className="size-3.5" />
               </button>

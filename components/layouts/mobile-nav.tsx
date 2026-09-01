@@ -12,7 +12,12 @@ import { cn } from '@/lib/utils'
 import { useAccountIdentity } from '@/hooks/use-account'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
 import { AccountDrawerSection } from '@/components/account/account-drawer-section'
 import { Icons } from '@/components/icons'
 import {
@@ -117,6 +122,11 @@ export function MobileNav({ items }: MobileNavProps) {
         side="left"
         className="inset-y-0 flex h-full w-[350px] flex-col p-0"
       >
+        {/* The drawer is a dialog, and this was the only one in the app with no
+            accessible name — a screen reader announced it as an unnamed dialog.
+            Screen-reader-only because the panel's own header is the wordmark
+            below, which is a link rather than a heading. */}
+        <SheetTitle className="sr-only">Menu</SheetTitle>
         <div className="shrink-0 px-6 py-4">
           <Link
             aria-label="Home"

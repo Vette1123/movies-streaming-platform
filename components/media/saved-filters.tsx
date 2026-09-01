@@ -139,7 +139,7 @@ export function SavedFilters({
                   type="button"
                   aria-label={`Delete ${preset.name}`}
                   onClick={() => remove(preset.id)}
-                  className="grid size-5 place-items-center rounded-full text-muted-foreground hover:text-destructive"
+                  className="tap-target grid size-5 place-items-center rounded-full text-muted-foreground hover:text-destructive"
                 >
                   <X className="size-3" />
                 </button>

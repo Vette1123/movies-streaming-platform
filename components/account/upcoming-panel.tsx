@@ -200,7 +200,7 @@ export function UpcomingPanel() {
               <div className="min-w-0">
                 <Link
                   href={hrefOf(item.key)}
-                  className="text-sm font-medium underline-offset-4 hover:text-primary hover:underline"
+                  className="tap-target inline-flex items-center text-sm font-medium underline-offset-4 hover:text-primary hover:underline"
                 >
                   {item.name}
                 </Link>
