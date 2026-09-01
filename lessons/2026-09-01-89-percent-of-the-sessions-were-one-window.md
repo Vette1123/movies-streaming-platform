@@ -53,6 +53,13 @@ only ever reduce false positives — and the viewport match alone already yields
 precision measurably and could silently break the whole filter if the fleet's
 headless build reports outer dimensions differently. Dropped it.
 
+**Wrote up a $5/month recommendation off a 24-hour average.** The invocation
+number was real; the window was not. `cf:health` defaults to 24h, the WAF change
+had landed a few hours earlier, and an average over the broken state reads as a
+live failure for a full day after the fix. Three hours of the same query said
+34%. **Re-measure with a short window right after any change**, and be suspicious
+of a metric whose default window is longer than the age of the fix.
+
 **Two performance "wins" I did not ship.** The `image_host_fallback` event is
 99.4% this fleet failing to fetch images — an alarm for an ImageKit outage that
 is not happening. It is now silent because the fleet never inits PostHog at all,
@@ -74,36 +81,25 @@ traffic accurately; PostHog is for questions about people.
 **Four queries, not four hours.** Vitals by device, then by viewport, then the
 cohort's engagement, then event volume by name. Each one narrowed the next.
 
-## The open decision: invocations at 89% of cap
+## The invocation alarm was a stale window
 
-Not a defect and not fixable from the code without giving something up. Last 24
-hours, 88,611 invocations against a 100,000/day free-plan cap:
+`pnpm cf:health` graded **88,611 invocations/day, 89% of the free plan's
+100,000**, and I spent a while costing out the ways to buy headroom: inline the
+payload into the fallback shell (trades CPU, which is 11% from a hard stop, for
+invocations), stop advertising off-set ids (trades the SEO strategy), tighten
+the WAF (five rules, five in use), or move to Workers paid at $5/month.
 
-| route                     | share | what it is                                                |
-| ------------------------- | ----- | --------------------------------------------------------- |
-| `/movies/` + `/tv-shows/` | 69.3% | tail-id fallback: a detail id outside the prerendered set |
-| `/api/media/`             | 24.9% | the payload the fallback shell fetches once it boots      |
-| everything else           | 5.8%  | filters, seasons, sync, auth, billing                     |
+None of it was needed. That 24-hour window **straddled a WAF deploy from
+earlier the same day** — the ten frozen scraper user-agents had been escalated
+from `managed_challenge` to `block`. Re-measured over the three hours after it:
+**34,024/day projected, 34% of cap**, kills 0. Verified live: all ten strings
+get a 403 on `/movies/<tail id>` and `/api/media/*`, a current Chrome/146 gets 200.
 
-So ~94% of the budget is crawlers walking the id space, and each of those pages
-that runs JS costs two invocations rather than one. The options all trade
-something:
-
-- **Inline the payload into the fallback HTML** — removes 25% of invocations,
-  but puts the 98KB `append_to_response` fetch back on the Worker, which is
-  exactly what `services/media-summary.ts` was written to get off it. CPU p99
-  is already 8ms against a 10ms budget. Trading the metric with zero kills for
-  the metric that is 11% from a hard stop is the wrong direction.
-- **Stop advertising off-set ids** — the sitemap harvests ~14,900 URLs from
-  similar/recommended anchors deliberately, because Bing was landing on pages
-  the sitemap did not list. This is the SEO strategy, working as designed.
-- **Tighten the WAF** — the free plan takes five custom rules and all five are
-  in use.
-- **Workers paid, $5/month** — 10M requests, cap gone, nothing else changes.
-
-The fourth is the honest answer. Every constraint in this repo's architecture
-exists to stay inside the free plan; this is the first one that cannot be
-engineered around without spending SEO or CPU to buy it.
+The shape of the problem, while it lasted, is still worth keeping. Of 87,258
+invocations: `/movies/` 47.3%, `/tv-shows/` 22.0%, `/api/media/` 24.9%. That is
+69% tail-id fallbacks plus the payload those same shells fetch once they boot —
+**a crawler that runs JS costs two invocations, not one.** If it comes back,
+that ratio is the thing to attack.
 
 ## Rules
 
