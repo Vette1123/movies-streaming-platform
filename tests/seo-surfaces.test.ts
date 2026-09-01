@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import type { Credit } from '@/types/credit'
 import { castNames, crewNamesByJob, trimCredits } from '@/lib/credits'
-import { collectionDescription, mediaDescription } from '@/lib/seo-description'
+import {
+  collectionDescription,
+  mediaDescription,
+  trimBiography,
+} from '@/lib/seo-description'
 import { itemListJsonLd, movieJsonLd } from '@/lib/structured-data'
 import { listSentence } from '@/lib/utils'
 import { FIRST_YEAR, isValidYear } from '@/components/media/year-page'
@@ -247,5 +251,37 @@ describe('collectionDescription', () => {
       true
     )
     expect(description.length).toBeLessThanOrEqual(158)
+  })
+})
+
+describe('trimBiography', () => {
+  const attribution =
+    'Description above from the Wikipedia article Tom Hanks, licensed under CC-BY-SA, full list of contributors on Wikipedia.'
+
+  it('leaves a short biography alone', () => {
+    expect(trimBiography('Born in Concord. Acted a lot.')).toBe(
+      'Born in Concord. Acted a lot.'
+    )
+    expect(trimBiography(undefined)).toBe('')
+  })
+
+  it('ends on a sentence rather than mid-attribution', () => {
+    const bio = `${'He made a film. '.repeat(90)}${attribution}`
+    const out = trimBiography(bio)
+    expect(out.length).toBeLessThanOrEqual(1400)
+    // The bug: the old word-boundary cut ended "...the Wikipedia article Tom…"
+    expect(out).not.toMatch(/Wikipedia article Tom$/)
+    expect(out.endsWith('.')).toBe(true)
+  })
+
+  it('prefers a paragraph break when there is one', () => {
+    const bio = `${'A sentence about the work. '.repeat(45)}\n${'More prose. '.repeat(60)}`
+    expect(trimBiography(bio)).not.toContain('\n')
+  })
+
+  it('falls back to a word boundary when nothing else fits', () => {
+    const out = trimBiography('word '.repeat(400))
+    expect(out.endsWith('…')).toBe(true)
+    expect(out).not.toMatch(/wor…$/)
   })
 })

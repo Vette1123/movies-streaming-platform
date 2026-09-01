@@ -144,3 +144,40 @@ export const profileDescription = (
 ) =>
   squash(bio) ||
   `${counts.finished} films finished, ${counts.episodes} episodes ticked off, ${counts.lists} lists worth stealing.`
+
+/** TMDB biographies run to several thousand characters. */
+const BIO_LIMIT = 1400
+
+/**
+ * Where to end a biography that runs past the limit, best boundary first.
+ *
+ * A cut on the nearest space lands wherever the 1400th character happens to
+ * fall, and on TMDB that is very often the middle of the closing attribution:
+ * the Tom Hanks page ended "Description above from the Wikipedia article Tom…",
+ * which reads as a broken page AND loses the CC-BY-SA credit while keeping the
+ * fragment that names it. A paragraph or a sentence ends on a complete thought.
+ *
+ * The half-limit floor is what stops a boundary in the first sentence from
+ * throwing away most of the bio to reach it.
+ */
+const lastBoundary = (cut: string): number => {
+  const paragraph = cut.lastIndexOf('\n')
+  if (paragraph > BIO_LIMIT / 2) return paragraph
+  const sentence = Math.max(
+    cut.lastIndexOf('. '),
+    cut.lastIndexOf('.\n'),
+    cut.lastIndexOf('! '),
+    cut.lastIndexOf('? ')
+  )
+  if (sentence > BIO_LIMIT / 2) return sentence + 1
+  return cut.lastIndexOf(' ')
+}
+
+export const trimBiography = (text?: string | null): string => {
+  const value = String(text ?? '').trim()
+  if (value.length <= BIO_LIMIT) return value
+  const cut = value.slice(0, BIO_LIMIT)
+  const body = cut.slice(0, lastBoundary(cut)).trimEnd()
+  // A cut that already ends a sentence does not need an ellipsis to say so.
+  return /[.!?]$/.test(body) ? body : `${body}…`
+}

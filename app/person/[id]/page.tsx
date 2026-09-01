@@ -5,6 +5,7 @@ import { getPeopleWithPages, populatePersonPage } from '@/services/people'
 
 import { siteConfig } from '@/config/site'
 import { toListEntries } from '@/lib/media'
+import { trimBiography } from '@/lib/seo-description'
 import {
   breadcrumbJsonLd,
   itemListJsonLd,
@@ -31,16 +32,6 @@ export const dynamicParams = false
 export async function generateStaticParams() {
   const people = getPeopleWithPages()
   return people.map((person) => ({ id: String(person.id) }))
-}
-
-/** TMDB biographies run to several thousand characters. */
-const BIO_LIMIT = 1400
-
-const trimmed = (text?: string): string => {
-  const value = (text ?? '').trim()
-  if (value.length <= BIO_LIMIT) return value
-  const cut = value.slice(0, BIO_LIMIT)
-  return `${cut.slice(0, cut.lastIndexOf(' '))}…`
 }
 
 const lifeDates = (birthday?: string | null, deathday?: string | null) => {
@@ -103,7 +94,7 @@ const PersonPage = async (props: { params: Promise<{ id: string }> }) => {
   }
   const { person, credits } = data
   const dates = lifeDates(person.birthday, person.deathday)
-  const biography = trimmed(person.biography)
+  const biography = trimBiography(person.biography)
   const canonical = `/person/${person.id}`
 
   return (
