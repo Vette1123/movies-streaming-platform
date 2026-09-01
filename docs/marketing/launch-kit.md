@@ -160,7 +160,58 @@ track & stream films and series…"; homepage `https://www.reely.space`; 20 topi
 including `nextjs`, `react-19`, `tmdb`, `cloudflare-workers`, `shadcn-ui`,
 `tailwindcss`, `pwa`, `movies`, `tv-shows`. Nothing to do here.
 
-## Submission status — 2026-08-31
+## What the numbers say — 2026-09-01
+
+Read this before planning another round, because it decides which channel is
+worth the hours.
+
+**Search Console, 28 days to 29 Aug 2026:** 8.4k impressions, 264 clicks, CTR
+3.1%, average position **24.7** — page three. The clicks are almost entirely
+brand queries: "reely movie" 40, "reely.space" 37, "reely space" 35, "reely tv" 4. The title queries bring impressions and no clicks at all — "daddy's in
+trouble" 814 impressions / 2 clicks, "to the max 2026" 190 / 0, "reely" itself
+2,424 / 7 (that one is a brand collision with unrelated companies). 945 queries
+in total.
+
+Two things follow. First, **people who arrive from search already know the
+name**, so every listing that puts the word "Reely" in front of someone is
+doing more than it looks like it is. Second, a `<title>` of `Daddy's in Trouble
+(2026) | Reely` can only ever match the bare name, which is the one query IMDb
+and Rotten Tomatoes already own — fixed 1 Sep, detail titles now carry the
+modifiers people actually type (`— Cast, Trailer & Where to Watch`), which is
+how JustWatch and Reelgood title the same pages.
+
+**PostHog, weekly users who actually interacted** (clicked a card, played
+something, searched — not pageviews, which are ~97% bots on this site): 93 →
+152 → 437 → 327 → 214 → 165 across the six weeks to 30 Aug. The 2 Aug peak was
+the last round of listings landing. It decays without a new event, which is the
+argument for spacing launches rather than stacking them.
+
+**The awesome-list channel is spent.** Rounds one and two took every list Reely
+legitimately belongs in; what is left is either rejected for a reason recorded
+above, or a sub-200-star list whose last push was 2024. Re-checked 1 Sep:
+`officialrajdeepsingh/awesome-nextjs` (707 ★, active) is libraries and tools
+only, no section for an app; `pluja/awesome-privacy` (19.6k ★) would be a
+bad-faith entry while the site runs PostHog with session replay on. Do not open
+PRs to either.
+
+## Submission status — 2026-08-31, re-checked 2026-09-01
+
+**Re-check, 1 Sep 2026.** All five awesome-list PRs still **open**, none merged
+or commented (`gh pr list --repo <x> --author Vette1123 --state all`).
+AlternativeTo: still not in their search index — the submission has not cleared
+review. OpenAlternative: still "preview only … not yet published", the paid
+skip-the-queue upgrade still declined. Product Hunt: draft intact and scheduled
+**8 Sep 2026, 12:01 AM PDT**, gallery leading with the rewritten OG card. So
+nothing in this table has landed yet, and nothing in it is waiting on us — the
+next moves are the two dated ones (Product Hunt 8 Sep, Peerlist Launchpad from
+Mon 7 Sep) plus the three that need the owner's own hands: the Hacker News
+email, the Launching Next arithmetic captcha, and a dev.to sign-in.
+
+**Free and unused: the Product Hunt pre-launch page.** The draft is already
+public at https://www.producthunt.com/products/reely and collects followers who
+are notified the moment it goes live; it has 1. PH's own prompt on the page is
+to open a thread in the product forum before launch day. Both are worth doing in
+the week of 1–7 Sep, and both post publicly in the owner's name.
 
 | Channel                                | State                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

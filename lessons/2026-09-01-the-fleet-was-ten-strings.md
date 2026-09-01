@@ -15,12 +15,12 @@ traffic actually arrives.
 
 Where it went, from `pnpm cf:cpu 24`:
 
-| route               | invocations/day | share |
-| ------------------- | --------------- | ----- |
-| `/movies/`          | 42,075          | 46.9% |
-| `/api/media/`       | 25,579          | 28.5% |
-| `/tv-shows/`        | 17,231          | 19.2% |
-| `/api/season-details` | 3,332         | 3.7%  |
+| route                 | invocations/day | share |
+| --------------------- | --------------- | ----- |
+| `/movies/`            | 42,075          | 46.9% |
+| `/api/media/`         | 25,579          | 28.5% |
+| `/tv-shows/`          | 17,231          | 19.2% |
+| `/api/season-details` | 3,332           | 3.7%  |
 
 Grouping `httpRequestsAdaptiveGroups` by `userAgent` named the cause: **ten
 frozen user-agent strings took 347,061 of 574,868 eyeball requests in 24h, 61%
