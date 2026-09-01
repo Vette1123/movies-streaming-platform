@@ -248,6 +248,33 @@ const DEAD_EXTENSION_RULE = {
   action: 'block',
 }
 
+// Crawlers that robots.txt disallows and that keep crawling anyway.
+//
+// `app/robots.ts` has disallowed `Amzn-SearchBot` since 2026-08-31 — it was the
+// single largest consumer of the Worker's invocation budget and Amazon documents
+// that none of its crawlers honour `Crawl-delay`, so the choice was all or
+// nothing. Measured again 2026-09-01, a day later: still 115 requests per 40
+// minutes against `/movies/*` alone, ~4,100/day. robots.txt is a request, and
+// this one is not being honoured on any timescale that matters before launch.
+//
+// This has to sit ABOVE ALLOW_RULE. That rule skips the whole `waf` product for
+// anything `cf.client.bot` marks as a verified bot, and Cloudflare verifies
+// Amazon's crawlers — so a rule placed after it would never fire.
+//
+// Deliberately NOT a challenge: a crawler cannot solve one, so it would burn the
+// same edge work every time and leave the operator no signal. A 403 to a bot
+// whose robots.txt entry already says no is the honest answer. Search crawlers
+// that actually send traffic (Googlebot, bingbot, DuckDuckBot, YandexBot,
+// Applebot) are not in this list and must never be — `pnpm cf:health` fails if
+// any of them takes a 403.
+const ROBOTS_DEFYING_UAS = ['Amzn-SearchBot']
+
+const BLOCK_DISALLOWED_CRAWLERS_RULE = {
+  description: `${TAG} block crawlers robots.txt already disallows`,
+  expression: `(${orExpr(ROBOTS_DEFYING_UAS)})`,
+  action: 'block',
+}
+
 const ALLOW_RULE = {
   description: `${TAG} allow social scrapers and verified search bots`,
   // `cf.client.bot` is true for bots Cloudflare verified via reverse DNS
@@ -427,14 +454,27 @@ const uaEqAny = (uas) =>
 // instead: everything except the review paths, the machine-called calendar feed
 // and static assets. Assets stay exempt because they cost no invocations and a
 // directory's server-side icon fetch must keep working (see assetExpr()).
-const CHALLENGE_FROZEN_UAS_RULE = {
-  description: `${TAG} challenge frozen scraper fingerprints`,
+// Escalated from `managed_challenge` to `block` on 2026-09-01, the same day the
+// rule shipped. A managed challenge issues a `cf_clearance` cookie that is good
+// for 30 minutes, and this fleet solves it: 40 minutes after the rule went live
+// the ten strings were still taking ~400 requests against `/movies/*` — every
+// one of them a Worker invocation, because a tail id is the one route that is
+// not a static asset. Whatever is behind those strings runs enough of a browser
+// to pass, so the challenge is not a filter, it is a toll booth we pay.
+//
+// A real person on one of these exact builds (Chrome 118-120, Edge 119-120,
+// Firefox 120-121, all shipped in late 2023) would get a 403 on detail pages
+// and API calls. That is the trade, taken knowingly: the ten strings were 61%
+// of the entire zone, their daily counts sit within 6% of each other, and no
+// browser on that list has been current for two years.
+const BLOCK_FROZEN_UAS_RULE = {
+  description: `${TAG} block frozen scraper fingerprints`,
   expression:
     `(${uaEqAny(STALE_BROWSER_UAS)})` +
     ` and ${notAnyPath(EXEMPT_PATHS)}` +
     ` and not starts_with(http.request.uri.path, "${CALENDAR_PREFIX}")` +
     ` and not (${assetExpr()})`,
-  action: 'managed_challenge',
+  action: 'block',
 }
 
 // The detail pages are the only genuinely expensive route on this site, and only
@@ -473,7 +513,7 @@ const CHALLENGE_DETAIL_SCRAPERS_RULE = {
     'not (starts_with(http.request.uri.path, "/movies/year") or starts_with(http.request.uri.path, "/tv-shows/year"))',
     'not cf.client.bot',
     // Does not look like a browser at all. The frozen-fingerprint case — a
-    // scraper that copies a real browser string — is CHALLENGE_FROZEN_UAS_RULE
+    // scraper that copies a real browser string — is BLOCK_FROZEN_UAS_RULE
     // above, which covers every path rather than only these.
     `not (${orExpr(BROWSER_UAS)})`,
   ].join(' and '),
@@ -675,12 +715,13 @@ async function main() {
     )
   }
   const customRules = permissive
-    ? [DEAD_EXTENSION_RULE, ALLOW_RULE]
+    ? [DEAD_EXTENSION_RULE, BLOCK_DISALLOWED_CRAWLERS_RULE, ALLOW_RULE]
     : [
         DEAD_EXTENSION_RULE,
+        BLOCK_DISALLOWED_CRAWLERS_RULE,
         ALLOW_RULE,
         BLOCK_RULE,
-        CHALLENGE_FROZEN_UAS_RULE,
+        BLOCK_FROZEN_UAS_RULE,
         CHALLENGE_DETAIL_SCRAPERS_RULE,
       ]
   await step(

@@ -61,10 +61,24 @@ export default function robots(): MetadataRoute.Robots {
         allow: CRAWL_ALLOW,
         disallow: CRAWL_DISALLOW,
       },
+      // Everything else, at a rate this site can afford.
+      //
+      // `Crawl-delay` is a request for one fetch every N seconds. Google has
+      // never supported it and ignores it (that group above is the one that
+      // matters and is deliberately left unthrottled); bingbot honours it, and
+      // so do most of the long tail of small crawlers that arrive with a
+      // browser-shaped user-agent and no referral to show for it. 10 seconds
+      // caps a compliant crawler at 8,640 requests/day.
+      //
+      // The number exists because of what a tail URL costs here: the site
+      // advertises ~14,900 URLs and prerenders ~1,000 of them, so every crawl
+      // of the other ~13,900 is a Worker invocation against a 100,000/day
+      // free-plan cap. Crawl rate is a budget line, not a politeness setting.
       {
         userAgent: '*',
         allow: CRAWL_ALLOW,
         disallow: CRAWL_DISALLOW,
+        crawlDelay: 10,
       },
       {
         userAgent: [
