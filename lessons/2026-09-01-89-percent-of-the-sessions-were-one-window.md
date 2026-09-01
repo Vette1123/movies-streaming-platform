@@ -101,6 +101,20 @@ invocations: `/movies/` 47.3%, `/tv-shows/` 22.0%, `/api/media/` 24.9%. That is
 **a crawler that runs JS costs two invocations, not one.** If it comes back,
 that ratio is the thing to attack.
 
+## Postscript: the capture gate is a backstop, not the fix
+
+Checked the fifteen-minute buckets after deploying it: the 1280x720 cohort was
+**already at zero** for the previous three hours. The WAF block from earlier the
+same morning stops them at the edge with a 403, so they never load the JS that
+would have sent the events. The gate did not close a door that was still open.
+
+That is worth keeping rather than quietly deleting, because it names what the
+gate is FOR. The fleet has rotated its user agents at least once already; the
+next time it does, the WAF rule stops matching and the traffic comes back before
+anyone notices. The viewport check catches it on the way into the analytics
+without waiting for a human to re-read a user-agent table — and it is the layer
+that does not depend on knowing which strings they picked this month.
+
 ## Rules
 
 - **Check the population before believing the percentile.** Split by viewport,
