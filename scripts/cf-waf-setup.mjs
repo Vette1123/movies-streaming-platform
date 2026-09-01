@@ -382,22 +382,60 @@ const BROWSER_UAS = ['Chrome', 'Firefox', 'Safari', 'Edg', 'OPR', 'Gecko/']
  * traffic. It walks `/movies/<id>` across the TMDB id space from a spread of
  * IPs, so the per-IP rate limit never sees enough from any one of them to fire.
  *
+ * Re-measured 2026-09-01: it is a FLEET, and one string was a tenth of it. Ten
+ * frozen fingerprints — Chrome 118/119/120, Edge 119/120, Firefox 120/121, all
+ * shipped in late 2023 — took 347,061 of 574,868 eyeball requests that day, 61%
+ * of everything the zone served. Their counts land within 6% of each other
+ * (37,061 down to 34,600, with the already-listed Firefox 121 trailing at
+ * 22,049 because the detail-page rule below was catching part of it), which is
+ * what a rotation over a fixed list looks like; the next non-fleet stale string
+ * after them is 825 requests. Between them they spent ~45,000 Worker
+ * invocations a day — 25,152 of the 26,086 calls to `/api/media/` and most of
+ * the tail-id page traffic — against a 100,000/day cap the site was already
+ * using 91% of.
+ *
  * Matched on the FULL string, not on `Firefox/121`: the point is that the whole
  * fingerprint is frozen, and an exact match cannot catch a real reader who
  * happens to be a few versions behind. `managed_challenge`, like every other
- * rule here — a genuine straggler on an eight-version-old Firefox gets a puzzle
- * and still reaches the page.
+ * rule here — a genuine straggler on a three-year-old browser gets a puzzle and
+ * still reaches the page.
  *
  * Add to this list only with a measurement. `pnpm cf:cpu` shows the routes;
- * group Workers Logs by `$workers.event.request.headers.user-agent` for the
- * strings.
+ * for the strings, group `httpRequestsAdaptiveGroups` by `userAgent` — a fleet
+ * shows up as a cluster of near-equal counts with a cliff underneath it.
  */
 const STALE_BROWSER_UAS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0',
 ]
 
 const uaEqAny = (uas) =>
   uas.map((ua) => `(http.user_agent eq "${ua}")`).join(' or ')
+
+// A frozen fingerprint is not a detail-page problem, so it does not belong in a
+// detail-page rule. The fleet's biggest single line item was `/api/media/` —
+// the shell's own payload fetch, one Worker invocation per tail page it
+// rendered — which the detail-path rule never looked at. Scoped like BLOCK_RULE
+// instead: everything except the review paths, the machine-called calendar feed
+// and static assets. Assets stay exempt because they cost no invocations and a
+// directory's server-side icon fetch must keep working (see assetExpr()).
+const CHALLENGE_FROZEN_UAS_RULE = {
+  description: `${TAG} challenge frozen scraper fingerprints`,
+  expression:
+    `(${uaEqAny(STALE_BROWSER_UAS)})` +
+    ` and ${notAnyPath(EXEMPT_PATHS)}` +
+    ` and not starts_with(http.request.uri.path, "${CALENDAR_PREFIX}")` +
+    ` and not (${assetExpr()})`,
+  action: 'managed_challenge',
+}
 
 // The detail pages are the only genuinely expensive route on this site, and only
 // for ids outside the prerender set: Cloudflare does not edge-cache Worker HTML
@@ -434,9 +472,10 @@ const CHALLENGE_DETAIL_SCRAPERS_RULE = {
     // the page exists for.
     'not (starts_with(http.request.uri.path, "/movies/year") or starts_with(http.request.uri.path, "/tv-shows/year"))',
     'not cf.client.bot',
-    // Either it does not look like a browser at all, or it looks like one that
-    // has not existed for two years. See STALE_BROWSER_UAS.
-    `((not (${orExpr(BROWSER_UAS)})) or (${uaEqAny(STALE_BROWSER_UAS)}))`,
+    // Does not look like a browser at all. The frozen-fingerprint case — a
+    // scraper that copies a real browser string — is CHALLENGE_FROZEN_UAS_RULE
+    // above, which covers every path rather than only these.
+    `not (${orExpr(BROWSER_UAS)})`,
   ].join(' and '),
   action: 'managed_challenge',
 }
@@ -641,6 +680,7 @@ async function main() {
         DEAD_EXTENSION_RULE,
         ALLOW_RULE,
         BLOCK_RULE,
+        CHALLENGE_FROZEN_UAS_RULE,
         CHALLENGE_DETAIL_SCRAPERS_RULE,
       ]
   await step(
