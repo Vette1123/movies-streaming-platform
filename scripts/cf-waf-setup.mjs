@@ -69,6 +69,9 @@ const TOKEN = process.env.CLOUDFLARE_API_TOKEN
 const ZONE_NAME = process.env.CF_ZONE_NAME || 'reely.space'
 const TAG = '[reely-waf]'
 
+/** Custom rules allowed in one phase on the free plan. A sixth fails the PUT. */
+const MAX_CUSTOM_RULES = 5
+
 if (!TOKEN) {
   console.error('Set CLOUDFLARE_API_TOKEN before running.')
   process.exit(1)
@@ -169,7 +172,11 @@ const SCRAPER_UAS = [
   'Googlebot',
   'bingbot',
   'DuckDuckBot',
-  'YandexBot',
+  // No YandexBot. It sat here until 2026-09-01, when it was refused in
+  // config/blocked-crawlers.json for taking ~26,000 requests/day against an
+  // English catalogue with no Crawl-delay support. BLOCK_RULE_FIRST is ahead of
+  // this rule so the block wins either way, but a token that says "allow" in the
+  // allowlist is a trap for whoever reorders the ruleset next.
 ]
 
 // `HeadlessChrome` is deliberately NOT here. It is the only token on this list
@@ -245,13 +252,9 @@ const endsWithAny = (extensions) =>
     .map((ext) => `ends_with(http.request.uri.path, "${ext}")`)
     .join(' or ')
 
-const DEAD_EXTENSION_RULE = {
-  description: `${TAG} block extensions this site never serves`,
-  expression:
-    `(${endsWithAny(PROBE_EXTENSIONS)})` +
-    ` or ((${endsWithAny(DEAD_IMAGE_EXTENSIONS)}) and not cf.client.bot)`,
-  action: 'block',
-}
+const DEAD_EXTENSION_EXPR =
+  `(${endsWithAny(PROBE_EXTENSIONS)})` +
+  ` or ((${endsWithAny(DEAD_IMAGE_EXTENSIONS)}) and not cf.client.bot)`
 
 // Crawlers this site refuses, enforced rather than requested.
 //
@@ -283,9 +286,21 @@ const BLOCKED_CRAWLER_UAS = [
   ...blockedCrawlers.noReferral,
 ]
 
-const BLOCK_DISALLOWED_CRAWLERS_RULE = {
-  description: `${TAG} block crawlers robots.txt already disallows`,
-  expression: `(${orExpr(BLOCKED_CRAWLER_UAS)})`,
+// One rule, two refusals, because the free plan allows FIVE custom rules in the
+// http_request_firewall_custom phase and no more. A sixth is not "ignored": the
+// PUT is rejected whole with `50001: exceeded the maximum number of rules in the
+// phase: 6 out of 5`, so the ruleset stays exactly as it was and every other
+// change in the same run — a challenge escalated to a block, a new token — never
+// lands either. This shipped as a sixth rule on 2026-09-01 and cost half a day
+// of Yandex and Amzn-SearchBot crawling that the code said was blocked.
+//
+// The two halves belong together anyway: both are `block`, and both have to sit
+// AHEAD of ALLOW_RULE, which skips the whole `waf` product for `cf.client.bot` —
+// Cloudflare verifies Googlebot-Image (the dead-image half) and Amazon's and
+// Yandex's crawlers (this half) alike.
+const BLOCK_RULE_FIRST = {
+  description: `${TAG} block dead extensions and crawlers robots.txt disallows`,
+  expression: `(${DEAD_EXTENSION_EXPR}) or (${orExpr(BLOCKED_CRAWLER_UAS)})`,
   action: 'block',
 }
 
@@ -729,16 +744,25 @@ async function main() {
     )
   }
   const customRules = permissive
-    ? [DEAD_EXTENSION_RULE, BLOCK_DISALLOWED_CRAWLERS_RULE, ALLOW_RULE]
+    ? [BLOCK_RULE_FIRST, ALLOW_RULE]
     : [
-        DEAD_EXTENSION_RULE,
-        BLOCK_DISALLOWED_CRAWLERS_RULE,
+        BLOCK_RULE_FIRST,
         ALLOW_RULE,
         BLOCK_RULE,
         BLOCK_FROZEN_UAS_RULE,
         CHALLENGE_DETAIL_SCRAPERS_RULE,
       ]
-  await step(
+  // The free plan's ceiling for this phase. Cloudflare rejects the whole PUT
+  // over it, so a sixth rule silently leaves the LIVE ruleset untouched — the
+  // deploy stays green and the posture never changes. Fail here instead, where
+  // the message names the actual problem.
+  if (customRules.length > MAX_CUSTOM_RULES) {
+    throw new Error(
+      `${customRules.length} custom rules, but the plan allows ${MAX_CUSTOM_RULES} in http_request_firewall_custom. ` +
+        'Merge two rules that share an action and a position rather than adding one.'
+    )
+  }
+  const wafOk = await step(
     'Custom rules: allowlist + block-scrapers (needs Zone WAF: Edit)',
     async () => {
       const rs = await getOrCreatePhaseEntrypoint(
@@ -968,6 +992,18 @@ async function main() {
     console.warn(
       `Skipped ${failures.length} of the above (missing token perms) — see ✗ lines.\n`
     )
+  }
+  // The WAF ruleset used to be a soft failure, on the reasoning that only the
+  // edge-cache rule defends the CPU budget. Since 2026-09-01 the binding
+  // free-plan constraint is INVOCATIONS, and this ruleset is what refuses the
+  // crawlers spending them — a green deploy over a ruleset that never applied is
+  // exactly how ~26,000 Yandex requests a day survived a commit that blocked
+  // them. It fails the run now, after every other step has had its turn.
+  if (!wafOk) {
+    console.error(
+      'FAILED: custom WAF rules NOT applied — see the ✗ line above.'
+    )
+    process.exit(1)
   }
   if (!(cacheOk && varyOk)) {
     console.error(
