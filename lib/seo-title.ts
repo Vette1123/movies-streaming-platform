@@ -89,3 +89,19 @@ export const similarHeading = (title: string, kind: MediaTitleInput['kind']) =>
   `${LIKE_NOUN[kind]} like ${title}`
 
 export const recommendedHeading = (title: string) => `If you liked ${title}`
+
+/**
+ * A page title that already names the site, without the site name twice.
+ *
+ * `app/layout.tsx` sets `title.template = '%s | Reely'` and Next applies it to
+ * every page title unconditionally. A page whose own title says "Reely" —
+ * "Support Reely", "Your year in Reely" — therefore renders it twice, and
+ * `app/mood` rendered `What's your mood? | Reely | Reely` because its layout
+ * appended the suffix by hand as well. Measured on production 2026-09-01.
+ *
+ * `{ absolute }` is Next's own opt-out from the template. This is the same rule
+ * `docTitle()` applies on the Worker path, in the one form Next understands, so
+ * that a page cannot pick up the brand twice by either route.
+ */
+export const pageTitle = (heading: string): string | { absolute: string } =>
+  heading.includes(siteConfig.name) ? { absolute: heading } : heading

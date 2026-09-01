@@ -1,10 +1,11 @@
 import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { pageTitle } from '@/lib/seo-title'
 import { StatsPanel } from '@/components/account/stats-panel'
 
 export const metadata: Metadata = {
-  title: 'Your year in Reely',
+  title: pageTitle(`Your year in ${siteConfig.name}`),
   description: `Hours watched, titles finished and the streaks behind them, from your own ${siteConfig.name} library.`,
   alternates: { canonical: '/stats' },
   // Nothing here is the same for two people, and none of it is on the server at

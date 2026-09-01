@@ -1,10 +1,11 @@
 import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { pageTitle } from '@/lib/seo-title'
 import { CommunityDirectory } from '@/components/community/community-directory'
 
 export const metadata: Metadata = {
-  title: 'Lists and people on Reely',
+  title: pageTitle(`Lists and people on ${siteConfig.name}`),
   description: `Film and TV lists published by people who keep their library on ${siteConfig.name}, and the public pages behind them.`,
   alternates: { canonical: '/lists' },
 }

@@ -12,6 +12,7 @@ import {
   yearlyAnchor,
 } from '@/config/support'
 import { FLAGSHIP_FEATURES, SUPPORT_FEATURES } from '@/config/support-features'
+import { pageTitle } from '@/lib/seo-title'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { PlanView } from '@/components/support/plan-view'
@@ -19,7 +20,7 @@ import { SupportCta } from '@/components/support/support-cta'
 import { SupporterCount } from '@/components/support/supporter-count'
 
 export const metadata: Metadata = {
-  title: 'Support Reely',
+  title: pageTitle(`Support ${siteConfig.name}`),
   description: `Reely is free and stays free. Supporting it keeps your library on every device, unlocks lists, alerts and more, and pays for the running costs.`,
   alternates: { canonical: '/support' },
   openGraph: {
