@@ -28,7 +28,13 @@ export const SeasonNavigator = ({ series }: { series: SeriesDetails }) => {
     useEpisodeHandler(series?.id, resume?.season)
 
   return (
-    <aside className="w-full lg:w-72 lg:shrink-0">
+    // Named, and with a heading. This panel is the whole point of a TV page
+    // and it had neither: the outline ran h1 -> "Cast" with the episode list
+    // nowhere in it, and the landmark announced as an unnamed complementary.
+    // The heading is screen-reader-only because the season <Select> below is
+    // the visible label, and it says WHICH season rather than what this is.
+    <aside className="w-full lg:w-72 lg:shrink-0" aria-label="Episodes">
+      <h2 className="sr-only">Episodes</h2>
       <SeasonsSelector
         series={series}
         selectedSeason={selectedSeason}

@@ -396,6 +396,11 @@ export default function MatchNightPage() {
   return (
     <section className="container min-h-svh pt-20 pb-12 lg:pt-24">
       <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        {/* The lobby above has a real h1; once a room is open this view
+            replaced it and the page was left with no h1 at all — its whole
+            outline was the "Matches" h2 in the sidebar. Screen-reader-only
+            because the visible identity of this screen is the room code. */}
+        <h1 className="sr-only">Match Night</h1>
         <div className="flex items-center gap-2 sm:gap-3">
           <span className="text-sm text-muted-foreground">Room</span>
           <button
@@ -466,7 +471,10 @@ export default function MatchNightPage() {
           }
         />
 
-        <aside className="space-y-8 lg:sticky lg:top-28 lg:self-start">
+        <aside
+          aria-label="Matches"
+          className="space-y-8 lg:sticky lg:top-28 lg:self-start"
+        >
           <MatchPanel
             hits={hits}
             swipers={matchState?.swipers ?? 0}

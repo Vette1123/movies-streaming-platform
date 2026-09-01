@@ -179,9 +179,15 @@ export const FilteredMediaContent = ({
       <div
         className={`flex flex-col gap-6 ${layout === 'sidebar' ? 'lg:flex-row lg:gap-8' : ''}`}
       >
-        {/* Sidebar Layout - Always visible on desktop to prevent layout shift */}
+        {/* Sidebar Layout - Always visible on desktop to prevent layout shift.
+            aria-label rather than aria-labelledby: renderFilter() is rendered
+            twice on this page (here, and inside the mobile FilterSheet), so an
+            id on its "Filters" heading would be a duplicate id, not a label. */}
         {layout === 'sidebar' && (
-          <aside className="hidden w-80 shrink-0 lg:block xl:w-96">
+          <aside
+            aria-label="Filters"
+            className="hidden w-80 shrink-0 lg:block xl:w-96"
+          >
             <div className="sticky top-6">{renderFilter()}</div>
           </aside>
         )}

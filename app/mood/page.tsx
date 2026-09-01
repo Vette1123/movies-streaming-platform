@@ -130,24 +130,32 @@ export default function MoodPage() {
             {/* A mood is a feeling, not a format — "make me laugh" is as much a
                 sitcom as a comedy film. The genre ids differ per type, which is
                 why the mood carries both sets. */}
-            <div className="mb-5 inline-flex rounded-full border p-1">
-              {MEDIA_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  data-testid={`mood-media-${tab.id}`}
-                  onClick={() => selectMedia(tab.id)}
-                  aria-pressed={mediaType === tab.id}
-                  className={cn(
-                    'rounded-full px-4 py-1.5 text-sm font-medium transition',
-                    mediaType === tab.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              {/* The stack had no heading at all: the page outline stopped at
+                  the h1 and both a crawler and a screen reader met a wall of
+                  posters with nothing naming them. Visible rather than
+                  sr-only, because on a phone the picker scrolls off and this
+                  is then the only thing saying which mood is showing. */}
+              <h2 className="text-lg font-semibold">{mood.label}</h2>
+              <div className="inline-flex rounded-full border p-1">
+                {MEDIA_TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    data-testid={`mood-media-${tab.id}`}
+                    onClick={() => selectMedia(tab.id)}
+                    aria-pressed={mediaType === tab.id}
+                    className={cn(
+                      'rounded-full px-4 py-1.5 text-sm font-medium transition',
+                      mediaType === tab.id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <MoodResults mood={mood} mediaType={mediaType} />
           </>
