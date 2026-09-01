@@ -290,7 +290,7 @@ function YearPicker({
             onClick={() => onSelect(choice.value)}
             className={chipVariants({
               variant: active ? 'primary' : 'neutral',
-              interactive: !active,
+              interactive: active ? 'current' : true,
             })}
           >
             {choice.label}

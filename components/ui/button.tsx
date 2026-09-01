@@ -32,11 +32,10 @@ const buttonVariants = cva(
       size: {
         default: 'h-10 px-4 py-2',
         sm: 'h-9 rounded-md px-3',
-        // A pixel value, not a spacing step: this root is 15px and the Tailwind
-        // spacing unit is 3.75px, so min-h-6 lands on 22.5px. WCAG 2.2's 24x24
-        // minimum target size is in CSS pixels, and the label's own line box is
-        // 23 of them.
-        text: 'h-auto min-h-[24px] px-2',
+        // tap-target, not min-h-6: on compact density the root is 15px and a
+        // spacing step is 3.75px, so 6 lands on 22.5. The label's own line box
+        // is 23. See the utility in styles/globals.css.
+        text: 'tap-target h-auto px-2',
         lg: 'h-11 rounded-md px-8',
         icon: 'size-10',
         '2xl': 'h-11 rounded-md px-12',

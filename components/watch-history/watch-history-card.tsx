@@ -90,7 +90,7 @@ export function WatchedItemCard({ item, onRemove }: WatchedItemCardProps) {
             </div>
             <CardContent className="p-4">
               <div className="flex items-baseline justify-between">
-                <h3 className="truncate font-semibold">{item.title}</h3>
+                <h2 className="truncate font-semibold">{item.title}</h2>
                 {/* Both, not just the type: a series SAVED rather than watched
                     carries no episode, and this printed a bare "S, E" at it. */}
                 {item.type === 'series' &&

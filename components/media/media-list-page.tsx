@@ -89,7 +89,10 @@ export const MediaListPage = ({
             <Link
               key={year}
               href={`${config.path}/year/${year}`}
-              className={cn(chipVariants({ variant: 'neutral' }), 'text-sm')}
+              className={cn(
+                chipVariants({ variant: 'neutral', interactive: 'subtle' }),
+                'text-sm'
+              )}
             >
               {year}
             </Link>

@@ -165,6 +165,24 @@
    row reads as a clean carousel — nav is swipe/trackpad on touch, hover-revealed
    glass arrows on lg+. Scroll position is still fully accessible. */
 @layer utilities {
+  /*
+    WCAG 2.2 (2.5.8) asks for a 24x24 CSS-pixel minimum on a pointer target.
+
+    In PIXELS, deliberately, because the whole Tailwind scale is rem and the
+    compact density preference below moves the root font size to 93.75% — so
+    `h-6`, the idiom you reach for to hit exactly 24, is 22.5px for anyone who
+    turned density on. A minimum that shrinks with a display preference is not a
+    minimum, and every carousel dot, filter chip and nav link on the site was
+    one and a half pixels under it.
+
+    For anything whose whole job is to be tappable. It sets a floor only, so a
+    control that is already bigger is untouched.
+  */
+  .tap-target {
+    min-width: 24px;
+    min-height: 24px;
+  }
+
   .no-scrollbar {
     -ms-overflow-style: none; /* IE / old Edge */
     scrollbar-width: none; /* Firefox */

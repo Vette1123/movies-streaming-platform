@@ -6,6 +6,18 @@ import { X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
+/**
+ * The corner close button on anything that opens over the page.
+ *
+ * Exported because components/ui/sheet.tsx had this string copied into it, and
+ * the copy is what let both drift to a 15x15 hit area — the icon is `size-4`
+ * and there was no padding around it, so the target was the glyph. `tap-target`
+ * puts the WCAG 2.2 floor back; `grid place-items-center` keeps the icon
+ * centred now that the box is bigger than it is.
+ */
+export const OVERLAY_CLOSE_BUTTON =
+  'tap-target absolute top-4 right-4 grid cursor-pointer place-items-center rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none'
+
 const Dialog = DialogPrimitive.Root
 
 const DialogTrigger = DialogPrimitive.Trigger
@@ -45,7 +57,12 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute top-4 right-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+      <DialogPrimitive.Close
+        className={cn(
+          OVERLAY_CLOSE_BUTTON,
+          'data-[state=open]:bg-accent data-[state=open]:text-muted-foreground'
+        )}
+      >
         <X className="size-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>

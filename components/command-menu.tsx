@@ -317,10 +317,9 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                 className={cn(
                   chipVariants({
                     variant: effectiveFilter === key ? 'primary' : 'neutral',
+                    interactive: effectiveFilter === key ? 'current' : 'subtle',
                   }),
-                  'cursor-pointer disabled:cursor-not-allowed disabled:opacity-40',
-                  effectiveFilter !== key &&
-                    'hover:border-primary/50 hover:bg-primary/10 hover:text-foreground'
+                  'cursor-pointer disabled:cursor-not-allowed disabled:opacity-40'
                 )}
               >
                 {label}
@@ -627,7 +626,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
             >
               <div className="flex items-center gap-4">
                 <Avatar>
-                  <AvatarImage src="/personal-logo.png" />
+                  <AvatarImage alt="" src="/personal-logo.png" />
                   <AvatarFallback>G</AvatarFallback>
                 </Avatar>
                 Portfolio

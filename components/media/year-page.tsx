@@ -174,7 +174,10 @@ export async function YearPage({
               href={`${config.basePath}/year/${sibling}`}
               aria-current={isCurrent ? 'page' : undefined}
               className={cn(
-                chipVariants({ variant: isCurrent ? 'primary' : 'neutral' }),
+                chipVariants({
+                  variant: isCurrent ? 'primary' : 'neutral',
+                  interactive: isCurrent ? 'current' : 'subtle',
+                }),
                 'text-sm'
               )}
             >

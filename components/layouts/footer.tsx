@@ -107,7 +107,15 @@ export function Footer() {
           <ul className="space-y-2">
             {siteLinks.map(({ href, label }) => (
               <li key={href}>
-                <Link href={href} className={linkClass}>
+                {/* `inline-block py-1` so the row is 25px rather than the 17px
+                    a bare line box gives — these are a column of standalone
+                    targets, not links inside a sentence, so WCAG 2.2's inline
+                    exception does not cover them. The credits below ARE in a
+                    sentence, which is why they keep the plain class. */}
+                <Link
+                  href={href}
+                  className={cn(linkClass, 'inline-block py-1')}
+                >
                   {label}
                 </Link>
               </li>

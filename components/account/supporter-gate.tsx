@@ -45,7 +45,11 @@ export function SupporterGate({
         <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 space-y-3">
           <div className="space-y-1">
-            <h3 className="text-base font-semibold">{title}</h3>
+            {/* h2, not h3: this panel is used both inside an account section (which
+                  has its own h2 above it) and standalone on /next-up, /watchlist and
+                  /watch-history, where the nearest heading is the page h1 — an h3
+                  there skipped a level. A sibling h2 is correct in both places. */}
+            <h2 className="text-base font-semibold">{title}</h2>
             <div className="max-w-[60ch] text-sm leading-relaxed text-muted-foreground">
               {children}
             </div>

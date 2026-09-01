@@ -6,6 +6,7 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { OVERLAY_CLOSE_BUTTON } from '@/components/ui/dialog'
 
 const Sheet = SheetPrimitive.Root
 
@@ -182,7 +183,7 @@ const SheetContent = React.forwardRef<
         {children}
         <SheetPrimitive.Close
           ref={closeRef}
-          className="absolute top-4 right-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary"
+          className={cn(OVERLAY_CLOSE_BUTTON, 'data-[state=open]:bg-secondary')}
         >
           <X className="size-4" />
           <span className="sr-only">Close</span>

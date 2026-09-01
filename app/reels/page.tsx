@@ -504,9 +504,20 @@ export default function ReelsPage() {
     []
   )
 
+  // The feed is chrome-free by design — the header and footer are hidden here —
+  // so there was nowhere for a heading to sit and the page shipped without an
+  // <h1> at all. Screen-reader-only rather than absent: it is the one thing that
+  // tells a crawler, and anyone arriving by keyboard, what this route is. Held
+  // in a variable because the error branch below is a whole page too, and it was
+  // rendering with no heading of any level.
+  const heading = (
+    <h1 className="sr-only">Reely Reels — movie and TV trailers</h1>
+  )
+
   if (error) {
     return (
       <div className="flex h-dvh flex-col items-center justify-center gap-4 bg-black px-6 text-center">
+        {heading}
         <p className="text-white/80">The trailer feed did not load.</p>
         <Button onClick={() => void refetch()} className="gap-2 rounded-full">
           <RotateCw className="size-4" aria-hidden />
@@ -522,12 +533,7 @@ export default function ReelsPage() {
         focused ? 'reels-focus' : ''
       }`}
     >
-      {/* The feed is chrome-free by design — the header and footer are hidden
-          here — so there was nowhere for a heading to sit and the page shipped
-          without an <h1> at all. Screen-reader-only rather than absent: it is
-          the one thing that tells a crawler, and anyone arriving by keyboard,
-          what this route is. */}
-      <h1 className="sr-only">Reely Reels — movie and TV trailers</h1>
+      {heading}
       <div
         ref={setRoot}
         data-testid="reels-scroller"

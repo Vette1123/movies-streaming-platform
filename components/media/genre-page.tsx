@@ -163,10 +163,9 @@ export async function GenrePage({
             className={cn(
               chipVariants({
                 variant: g.slug === slug ? 'primary' : 'neutral',
+                interactive: g.slug === slug ? 'current' : 'subtle',
               }),
-              'text-sm',
-              g.slug !== slug &&
-                'hover:border-primary/50 hover:bg-primary/10 hover:text-foreground'
+              'text-sm'
             )}
           >
             {g.name}

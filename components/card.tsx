@@ -211,10 +211,15 @@ const CardComponent = ({
       <HoverCardContent className="hidden w-80 md:block" side="right">
         <div className="space-y-2">
           <div className="flex items-start justify-between gap-2">
-            <h4 className="text-sm leading-tight font-semibold">
+            {/* Not a heading. This is the hover preview, it exists only while
+                a pointer is on the poster, and an <h4> here was the only
+                heading a browse page had — so its outline read h1 then h4,
+                with nothing in between and nothing there at all until you
+                hovered. */}
+            <p className="text-sm leading-tight font-semibold">
               {title}
               {year ? ` (${year})` : ''}
-            </h4>
+            </p>
             <ScoreChip
               imdbRating={imdbRating}
               voteAverage={item.vote_average}

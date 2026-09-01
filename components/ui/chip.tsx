@@ -65,9 +65,26 @@ const chipVariants = cva(
         true: 'tracking-wide uppercase',
         false: '',
       },
+      // Says whether the pill is a control, and how loudly it reacts. Every
+      // value except `false` carries `tap-target`, because the thing that
+      // makes 24px a requirement is being clickable, not being hovered: `md`
+      // is `h-6` — 24px at the default root, but 22.5px for anyone on compact
+      // density, which is under WCAG 2.2's floor. See the utility in
+      // styles/globals.css for why it is in pixels.
       interactive: {
-        true: CHIP_INTERACTIVE_HOVER,
+        // A label. Nothing to hit.
         false: '',
+        // The loud one: lift, fill, glow. For a pill that stands alone.
+        true: `tap-target ${CHIP_INTERACTIVE_HOVER}`,
+        // The quiet one, for dense rows — a genre strip or a filter bar, where
+        // nineteen pills lifting under the pointer is noise. This treatment was
+        // copy-pasted into genre-page, year-page and the command menu before it
+        // lived here.
+        subtle:
+          'tap-target cursor-pointer hover:border-primary/50 hover:bg-primary/10 hover:text-foreground',
+        // Still a control, but it is the one already selected, so it has
+        // nowhere to take you. Keeps the target floor, drops the hover.
+        current: 'tap-target',
       },
     },
     defaultVariants: {

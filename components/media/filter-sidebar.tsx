@@ -322,7 +322,7 @@ export const FilterSidebar = ({
               value={filter.sortBy}
               onValueChange={(v) => updateFilter({ sortBy: v as SortOption })}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger aria-label="Sort by" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -517,7 +517,7 @@ export const FilterSidebar = ({
                 })
               }
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger aria-label="Original language" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -581,7 +581,7 @@ export const FilterSidebar = ({
                 updateFilter({ watchRegion: v, watchProviders: [] })
               }
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger aria-label="Watch region" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

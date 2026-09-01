@@ -40,7 +40,10 @@ export function SeasonsSelector({
       value={selectedSeason}
       disabled={!formattedSeasons?.length}
     >
-      <SelectTrigger className="mb-3 h-11 w-full font-medium disabled:cursor-not-allowed">
+      <SelectTrigger
+        aria-label="Season"
+        className="mb-3 h-11 w-full font-medium disabled:cursor-not-allowed"
+      >
         <SelectValue placeholder="Select a season" />
       </SelectTrigger>
       <SelectContent>

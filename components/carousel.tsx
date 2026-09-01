@@ -484,7 +484,8 @@ export function Carousel({
   // (keyed by index so it restarts each slide, frozen while paused). Inactive
   // dots stay plain. This carries the autoplay progress without a full-width
   // edge line. Transform-only fill = GPU-cheap.
-  // Each dot is a 24px-min hit target (WCAG 2.2 target-size) with the small
+  // Each dot is a 24px-min hit target (WCAG 2.2 target-size, hence the
+  // pixel-based tap-target — h-6 is 22.5px on compact density) with the small
   // visual mark centered inside — the dots look identical, they're just properly
   // tappable on touch instead of a 10px pinpoint.
   const renderDot = (index: number, ariaLabel: string) => {
@@ -495,7 +496,7 @@ export function Carousel({
         onClick={() => handleDotClick(index)}
         aria-label={ariaLabel}
         aria-current={isActive ? 'true' : undefined}
-        className="group/dot grid h-6 min-w-6 cursor-pointer place-items-center"
+        className="group/dot tap-target grid cursor-pointer place-items-center"
       >
         {isActive ? (
           <span className="relative flex h-2.5 w-7 overflow-hidden rounded-full bg-white/25 ring-1 ring-white/40 sm:h-3 sm:w-8">
