@@ -66,7 +66,7 @@ import {
   profileDescription,
 } from '@/lib/seo-description'
 import { mediaFacts } from '@/lib/seo-facts'
-import { docTitle } from '@/lib/seo-title'
+import { docTitle, mediaDocHeading, mediaHeading } from '@/lib/seo-title'
 import { getImageURL } from '@/lib/utils'
 
 /** 6h, matching the deploy cadence that refreshes the static half of the site. */
@@ -726,13 +726,15 @@ function buildMeta(type, id, details, siteUrl) {
     0,
     4
   )
-  const heading = year ? `${title} (${year})` : title
-  // The SAME builder the prerendered detail pages use, so a tail id and a baked
-  // one describe a title identically — see lib/seo-description.ts.
+  const kind = type === 'tv' ? 'series' : 'movie'
+  // The SAME builders the prerendered detail pages use, so a tail id and a
+  // baked one read identically — see lib/seo-title.ts, lib/seo-description.ts.
+  const heading = mediaHeading({ title, year, kind })
+  const docHeading = mediaDocHeading({ title, year, kind })
   const description = mediaDescription({
     title,
     year,
-    kind: type === 'tv' ? 'series' : 'movie',
+    kind,
     genres: details.genres?.map((genre) => genre.name),
     overview: details.overview,
   })
@@ -745,6 +747,7 @@ function buildMeta(type, id, details, siteUrl) {
 
   return {
     heading,
+    docHeading,
     description,
     image,
     canonical,
@@ -936,6 +939,16 @@ function encodedShell(route) {
 }
 
 /**
+ * The `<title>` for a decorated shell, written the same way by both render
+ * paths below.
+ *
+ * Detail pages carry a `docHeading` — the name plus the search modifiers people
+ * actually type (lib/seo-title.ts). A list, a profile or a franchise shell has
+ * only its heading, and falls back to it.
+ */
+const shellTitle = (meta) => docTitle(meta.docHeading || meta.heading)
+
+/**
  * Assemble a fallback page from the pre-split shell — the fast path.
  *
  * No HTML parse, no ASSETS subrequest: seven chunks queued onto a stream, four
@@ -949,7 +962,7 @@ function serveShellFromTemplate(shellPath, meta, ogType, jsonLd) {
 
   const chunks = [
     parts.beforeTitle,
-    encoder.encode(escapeHtml(docTitle(meta.heading))),
+    encoder.encode(escapeHtml(shellTitle(meta))),
     parts.afterTitle,
     encoder.encode(headBlock(meta, ogType, jsonLd)),
     parts.afterHead,
@@ -996,7 +1009,7 @@ async function serveShell(shellPath, meta, ogType, jsonLd, env, url) {
   const rewritten = new HTMLRewriter()
     .on('title', {
       element(el) {
-        el.setInnerContent(docTitle(meta.heading))
+        el.setInnerContent(shellTitle(meta))
       },
     })
     // Strip the shell's OWN metadata first. HTMLRewriter appends to <head>,

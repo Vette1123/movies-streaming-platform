@@ -32,8 +32,14 @@ import { docTitle } from '@/lib/seo-title'
  * stays written.
  */
 export interface ServedMetadata {
-  /** Also the <title>. */
+  /** The name of the thing: the <h1>, og:title and twitter:title. */
   title: string
+  /**
+   * What goes in the tab and the SERP, when that differs from the heading — a
+   * detail page adds the search modifiers to it (lib/seo-title.ts). Defaults to
+   * `title`, which is right for every shell that is not a detail page.
+   */
+  docHeading?: string
   description?: string
   /** Absolute URL. */
   image?: string
@@ -116,7 +122,8 @@ const dedupeJsonLd = () => {
 }
 
 export function useServedMetadata(meta: ServedMetadata | null): void {
-  const { title, description, image, ogType, indexable } = meta ?? {}
+  const { title, docHeading, description, image, ogType, indexable } =
+    meta ?? {}
 
   useEffect(() => {
     if (!title) return
@@ -125,7 +132,7 @@ export function useServedMetadata(meta: ServedMetadata | null): void {
 
     // The tab and the SERP title carry the site name; og:title and
     // twitter:title below do not — that is what the prerendered pages do.
-    document.title = docTitle(heading)
+    document.title = docTitle(docHeading || heading)
     named('robots', indexable === false ? 'noindex, nofollow' : 'index, follow')
     named('description', description)
     upsert(
@@ -149,5 +156,5 @@ export function useServedMetadata(meta: ServedMetadata | null): void {
     named('twitter:description', description)
     named('twitter:image', image)
     dedupeJsonLd()
-  }, [description, image, indexable, ogType, title])
+  }, [description, docHeading, image, indexable, ogType, title])
 }

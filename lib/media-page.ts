@@ -5,6 +5,7 @@ import { siteConfig } from '@/config/site'
 import { RAIL_LIMIT } from '@/lib/constants'
 import { genreNames } from '@/lib/media'
 import { mediaDescription } from '@/lib/seo-description'
+import { mediaDocHeading, mediaHeading } from '@/lib/seo-title'
 import { getImageURL, getPosterImageURL } from '@/lib/utils'
 
 // Shared plumbing for the near-identical movies vs tv-shows routes. The two
@@ -334,13 +335,18 @@ export interface DetailsMetadataInput {
 
 export function buildDetailsMetadata(input: DetailsMetadataInput): Metadata {
   const year = input.releaseDate?.slice(0, 4)
-  const title = year ? `${input.title} (${year})` : input.title
+  const kind = input.ogType === 'video.tv_show' ? 'series' : 'movie'
+  // The heading names the title; the document title adds what people search for
+  // alongside it. Both shared with the Worker's tail-id fallback so a
+  // prerendered page and a fallback one read identically — see lib/seo-title.ts.
+  const heading = mediaHeading({ title: input.title, year, kind })
+  const title = mediaDocHeading({ title: input.title, year, kind })
   // Shared with the Worker's tail-id fallback so a prerendered page and a
   // fallback one describe a title identically — see lib/seo-description.ts.
   const description = mediaDescription({
     title: input.title,
     year,
-    kind: input.ogType === 'video.tv_show' ? 'series' : 'movie',
+    kind,
     genres: genreNames(input.genres),
     overview: input.overview,
   })
@@ -365,7 +371,9 @@ export function buildDetailsMetadata(input: DetailsMetadataInput): Metadata {
     alternates: { canonical: canonicalPath },
     openGraph: {
       type: input.ogType,
-      title,
+      // The heading, not the document title: an unfurled card is a poster with
+      // a name under it, and the search modifiers read as spam there.
+      title: heading,
       description,
       url: `${siteConfig.websiteURL}${canonicalPath}`,
       images,
@@ -373,7 +381,7 @@ export function buildDetailsMetadata(input: DetailsMetadataInput): Metadata {
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: heading,
       description,
       images: images.map((i) => i.url),
     },

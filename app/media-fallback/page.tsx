@@ -8,6 +8,7 @@ import { MultiSeriesDetailsRequestProps } from '@/types/series-details'
 import { getJson } from '@/lib/api-client'
 import { getMediaHeroImageUrl } from '@/lib/media'
 import { mediaDescription } from '@/lib/seo-description'
+import { mediaDocHeading, mediaHeading } from '@/lib/seo-title'
 import { useLocationPathname } from '@/hooks/use-location-pathname'
 import { useServedMetadata } from '@/hooks/use-served-metadata'
 import { MoviesDetailsContent } from '@/components/media/details-content'
@@ -59,19 +60,21 @@ function servedMetadata(payload?: Payload) {
     ? payload.seriesDetails.first_air_date
     : payload.movieDetails.release_date
   const year = (released || '').slice(0, 4)
+  const kind = isSeries(payload) ? ('series' as const) : ('movie' as const)
   return {
-    title: year ? `${name} (${year})` : name,
+    title: mediaHeading({ title: name, year, kind }),
+    docHeading: mediaDocHeading({ title: name, year, kind }),
     description: mediaDescription({
       title: name,
       year,
-      kind: isSeries(payload) ? ('series' as const) : ('movie' as const),
+      kind,
       genres: details.genres?.map((genre) => genre.name),
       overview: details.overview,
     }),
     image:
       getMediaHeroImageUrl(details.backdrop_path, details.poster_path) ??
       undefined,
-    ogType: isSeries(payload) ? 'video.tv_show' : 'video.movie',
+    ogType: kind === 'series' ? 'video.tv_show' : 'video.movie',
   }
 }
 
