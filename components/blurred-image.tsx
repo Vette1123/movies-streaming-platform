@@ -57,6 +57,19 @@ const returnFalse = () => false
 // was pretending to be.
 const PICTURE_FILL = 'absolute inset-0'
 
+// Dark backing for the two `fill` branches, so a box that has reserved its space
+// isn't a transparent hole in the page until the image paints. It fills the same
+// `relative` parent the `fill` image positions against and sits behind it by DOM
+// order; the image is opaque and covers it the instant it has pixels, so no
+// opacity, no transition, no runtime cost. The intrinsic branch gets the same
+// thing for free from its own wrapper's `bg-slate-900`.
+const ImageBacking = () => (
+  <span
+    aria-hidden
+    className="pointer-events-none absolute inset-0 bg-slate-900"
+  />
+)
+
 // Offers the browser AVIF before next/image's own <img>, and gets out of the way
 // when it can't.
 //
@@ -210,16 +223,7 @@ export const BlurredImage = React.memo(function BlurredImage({
     })
     return (
       <>
-        {/* Dark backing so the hero isn't blank before the image has any pixels.
-            The backdrop is an opaque photo that covers this the instant it paints,
-            so no opacity/transition is needed here — a static fill is enough and
-            costs nothing at runtime (no state coupling, no compositor work). It
-            fills the same `relative` parent the `fill` image positions against and
-            sits behind it by DOM order. */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-slate-900"
-        />
+        {props.fill ? <ImageBacking /> : null}
         <picture className={props.fill ? PICTURE_FILL : undefined}>
           <AvifSource
             src={effectiveSrc}
@@ -313,24 +317,31 @@ export const BlurredImage = React.memo(function BlurredImage({
     'blur-0': !isLoading,
   })
   return (
-    <picture className={PICTURE_FILL}>
-      <AvifSource
-        src={effectiveSrc}
-        sizes={props.sizes}
-        quality={props.quality}
-        fallbackQuality={HERO_QUALITY}
-        priority={props.priority}
-      />
-      <Image
-        quality={HERO_QUALITY}
-        {...props}
-        ref={imgRef}
-        alt={alt}
-        src={effectiveSrc}
-        className={blurClassName}
-        onLoad={() => setLoading(false)}
-        onError={handleError}
-      />
-    </picture>
+    <>
+      {/* The person grids and the collection banner land here. Their boxes have
+          a reserved aspect ratio and nothing behind it, so before the portrait
+          painted you saw the page's own background through a rounded rectangle
+          — a hole, not a placeholder. */}
+      <ImageBacking />
+      <picture className={PICTURE_FILL}>
+        <AvifSource
+          src={effectiveSrc}
+          sizes={props.sizes}
+          quality={props.quality}
+          fallbackQuality={HERO_QUALITY}
+          priority={props.priority}
+        />
+        <Image
+          quality={HERO_QUALITY}
+          {...props}
+          ref={imgRef}
+          alt={alt}
+          src={effectiveSrc}
+          className={blurClassName}
+          onLoad={() => setLoading(false)}
+          onError={handleError}
+        />
+      </picture>
+    </>
   )
 })

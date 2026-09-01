@@ -32,7 +32,7 @@ import {
   supportPriceRow,
 } from '@/config/support'
 import { signInHref, type AccountState } from '@/lib/account'
-import { cn } from '@/lib/utils'
+import { cn, localFullDate, localMonthYear } from '@/lib/utils'
 import { useAccountSession } from '@/hooks/use-account'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { buttonVariants } from '@/components/ui/button'
@@ -637,12 +637,7 @@ function SignedOut({
 }
 
 function Identity({ account }: { account: AccountState }) {
-  const since = account.createdAt
-    ? new Date(account.createdAt).toLocaleDateString(undefined, {
-        month: 'long',
-        year: 'numeric',
-      })
-    : null
+  const since = account.createdAt ? localMonthYear(account.createdAt) : null
 
   return (
     <div className="flex flex-wrap items-center gap-4">
@@ -688,14 +683,7 @@ function PlanSection({ account }: { account: AccountState }) {
   // has already made that decision — `pro` is false once the paid period ends
   // (see isEntitled) — so re-deciding it against the browser's clock would only
   // add a way for the two to disagree, and would read the clock during render.
-  const throughDate =
-    !plan?.granted && endsAt
-      ? new Date(endsAt).toLocaleDateString(undefined, {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-        })
-      : null
+  const throughDate = !plan?.granted && endsAt ? localFullDate(endsAt) : null
 
   if (!account.pro) {
     return (

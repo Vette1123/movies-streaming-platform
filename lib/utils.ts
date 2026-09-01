@@ -53,6 +53,26 @@ function getThumbBackdropURL(path: string) {
   return `${apiConfig.w300Image(path)}`
 }
 
+// The visitor's OWN dates — when they joined, when a plan ends, when they first
+// tracked something. Unlike dateFormatter above (TMDB calendar dates, pinned to
+// en-US + UTC so server and client render the same string), these are personal
+// timestamps rendered in the reader's own locale, and only ever inside a
+// mounted client panel.
+//
+// The options are here rather than at the call sites because a bare
+// `toLocaleDateString()` renders "4/16/2026" — the one date shape on the site
+// that matches nothing else on it. That was live on the stats panel.
+const localDate = (
+  value: string | number | Date,
+  options: Intl.DateTimeFormatOptions
+) => new Date(value).toLocaleDateString(undefined, options)
+
+const localMonthYear = (value: string | number | Date) =>
+  localDate(value, { month: 'long', year: 'numeric' })
+
+const localFullDate = (value: string | number | Date) =>
+  localDate(value, { day: 'numeric', month: 'long', year: 'numeric' })
+
 function dateFormatter(date: string, showDay: boolean = false) {
   if (!date) return 'N/A'
   return new Date(date).toLocaleDateString('en-US', {
@@ -186,6 +206,8 @@ export {
   getThumbPosterURL,
   getThumbBackdropURL,
   dateFormatter,
+  localMonthYear,
+  localFullDate,
   getGenres,
   numberRounder,
   pluralize,

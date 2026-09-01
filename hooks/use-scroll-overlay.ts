@@ -15,7 +15,10 @@ export const useNavbarScrollOverlay = () => {
       }
     }
 
-    window.addEventListener('scroll', handleScroll)
+    // Passive: this handler never calls preventDefault, and without the flag
+    // the browser waits on it before it can scroll.
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
 
     return () => {
       window.removeEventListener('scroll', handleScroll)

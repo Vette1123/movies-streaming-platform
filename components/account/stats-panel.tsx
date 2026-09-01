@@ -15,6 +15,7 @@ import {
   type LibraryStats,
 } from '@/lib/stats'
 import { cardFileName, renderStatsCard } from '@/lib/stats-card'
+import { localFullDate, localMonthYear } from '@/lib/utils'
 import { useAccount } from '@/hooks/use-account'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useMounted } from '@/hooks/use-mounted'
@@ -26,7 +27,7 @@ import { Skeleton, SkeletonRows } from '@/components/ui/skeleton'
 const monthName = (key: string): string => {
   const [year, month] = key.split('-')
   const date = new Date(Number(year), Number(month) - 1, 1)
-  return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+  return localMonthYear(date)
 }
 
 export function StatsPanel() {
@@ -129,11 +130,7 @@ export function StatsPanel() {
         />
         <Line
           term="First tracked"
-          value={
-            stats.firstAt
-              ? new Date(stats.firstAt).toLocaleDateString()
-              : 'Not yet'
-          }
+          value={stats.firstAt ? localFullDate(stats.firstAt) : 'Not yet'}
         />
         <Line
           term="Saved for later"

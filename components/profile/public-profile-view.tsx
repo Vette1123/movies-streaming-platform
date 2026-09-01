@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Film, ListVideo, Star, Tv } from 'lucide-react'
 
 import type { PublicProfile } from '@/lib/profile/routes'
-import { getThumbPosterURL } from '@/lib/utils'
+import { getThumbPosterURL, localMonthYear } from '@/lib/utils'
 import { PosterTile } from '@/components/media/poster-tile'
 import { StrangerPitch } from '@/components/support/stranger-pitch'
 import { SupporterBadge } from '@/components/support/supporter-badge'
@@ -25,10 +25,7 @@ import { ReferralCookie } from './referral-cookie'
  */
 export function PublicProfileView({ profile }: { profile: PublicProfile }) {
   const who = profile.name || profile.handle
-  const joined = new Date(profile.since).toLocaleDateString(undefined, {
-    month: 'long',
-    year: 'numeric',
-  })
+  const joined = localMonthYear(profile.since)
 
   return (
     <div className="container max-w-5xl py-20 lg:py-28">

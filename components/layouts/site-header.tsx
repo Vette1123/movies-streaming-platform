@@ -48,7 +48,11 @@ export function SiteHeader() {
       className={cn(
         'site-header fixed inset-x-0 top-0 z-40 w-full transition duration-200',
         {
-          'bg-background/80': isShowNavBackground,
+          // The tint is 80% opaque, so with no blur the page reads straight
+          // through the nav labels while scrolling — backdrop copy collided
+          // with the links on every detail page. The blur is what makes a
+          // translucent bar legible; the tint alone is not enough.
+          'bg-background/80 backdrop-blur-md': isShowNavBackground,
         }
       )}
     >
