@@ -133,6 +133,10 @@ export function useAccountIdentity(): AccountIdentity {
   }, [])
 
   if (!hydrated) return UNREADY
-  if (account.signedIn === undefined && !cached) return UNREADY
+  // A refresh that failed has answered as much as it is ever going to. Without
+  // the `failed` clause the header sits on its unready placeholder forever
+  // whenever /api/auth/refresh is unreachable.
+  if (account.signedIn === undefined && !cached && !account.failed)
+    return UNREADY
   return identityOf(account, cached)
 }

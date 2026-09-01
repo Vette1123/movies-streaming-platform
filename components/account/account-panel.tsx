@@ -266,7 +266,14 @@ export function AccountPanel() {
     )
   }, [])
 
-  if (account.signedIn === undefined) {
+  // `failed` is an answer too. A refresh that 503s (the deployment-without-DB
+  // case lib/account.ts calls out) or dies on the network sets `failed` and
+  // leaves `signedIn` undefined forever — so gating the skeleton on
+  // `signedIn` alone left this page pulsing skeletons with no way out. The
+  // signed-out view below already has the copy for it ("Accounts are not
+  // reachable at the moment") and already declines to auto-redirect when
+  // `failed`; it just could never be reached.
+  if (account.signedIn === undefined && !account.failed) {
     return <AccountSkeleton sections={SECTIONS.length} />
   }
 

@@ -43,7 +43,7 @@ export function SavedFilters({
   hasActiveFilters: boolean
   className?: string
 }) {
-  const { pro, prefs, signedIn } = useAccount()
+  const { pro, prefs, signedIn, failed } = useAccount()
   const router = useRouter()
   const pathname = usePathname()
   const [naming, setNaming] = React.useState(false)
@@ -58,7 +58,9 @@ export function SavedFilters({
   // synchronously — so a reserved slot is exact rather than a guess, and the
   // nine accordions below it never jump once the answer lands. A visitor with
   // no session reserves nothing, because nothing is what they will get.
-  if (signedIn === undefined)
+  // `failed` settles it too: a refresh that never comes back would otherwise
+  // hold this reserved box open for the rest of the session.
+  if (signedIn === undefined && !failed)
     return <SavedFiltersPlaceholder className={className} />
 
   // Signed out, this section is noise on top of the control somebody came here
@@ -76,7 +78,7 @@ export function SavedFilters({
         <Link
           href="/support"
           onClick={() => trackSupportCtaClicked({ surface: 'saved-filters' })}
-          className="text-xs text-primary underline underline-offset-2"
+          className="tap-target inline-flex items-center text-xs text-primary underline underline-offset-2"
         >
           What support unlocks
         </Link>
