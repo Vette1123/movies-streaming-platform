@@ -63,7 +63,36 @@ from a different provider, re-derived here independently. Pro's differentiator
 has to come from what we own (switching, resume, lists, alerts, calendar,
 watch-together), not from owning the pixels.
 
+## What shipped
+`reely-pro-player` resolves nothing server-side any more. `/api/stream/resolve`
+returns `{direct:true, embedBase}` without touching the provider, and the
+client frames the embed immediately — so the only request that ever reaches
+the provider is the viewer's browser, from the viewer's IP, which is the one
+address that works. Measured after deploy: **200 in 0.22s**, no relay call,
+iframe mounted. It was a 502 several seconds deep before.
+
+`NATIVE_RESOLVE` on the playback worker brings the old chain back the day a
+provider stops gating one of the two minting hops. The code is kept rather
+than deleted, because it is correct — the provider changed, not the code.
+
+The house player was demoted out of position 0 mid-session and then put back
+once the delay was gone. Both commits are in `main` and the sequence is the
+honest one: the demotion was right while it cost seconds of black, and wrong
+the moment it did not.
+
 ## Mistakes
+- **Fixed the ordering before fixing the cause.** Demoting the player was a
+  real improvement against the symptom and it went out first, which meant the
+  next commit reverted it. The cause — two round trips that could not succeed
+  — was cheaper to remove than to route around, and removing it made the
+  ordering question disappear. Reach for the symptom only when the cause is
+  genuinely out of reach; here it was three lines.
+- **Declared the client-side path dead on one un-paired fetch.** Wrote
+  "no CORS" after a single `fetch` threw from our origin, when the rule already
+  in this repo's lessons is to pair every failed cross-origin fetch with a
+  `no-cors` twin. The pair later confirmed it, and it also showed the thing
+  that mattered: `/playlist/*` IS readable from our origin while `/embed/*` is
+  not. CORS here is **per path**, and a single test cannot see that.
 - **Took the question at face value and started shopping for providers.** The
   useful move was to identify the *invariant* first — segment bytes are gated
   on both Origin and ASN — because that one fact disqualifies the entire
