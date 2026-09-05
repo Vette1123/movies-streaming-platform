@@ -186,6 +186,11 @@ jobs:
           # The supporters-only opt-in for OUR player. Needs the playback
           # worker + gado-proxy tier live, or the toggle only advertises.
           NEXT_PUBLIC_PRO_TRIAL_SELFHOST: ${{ secrets.NEXT_PUBLIC_PRO_TRIAL_SELFHOST }}
+          # Client mirror of the Worker's PRO_PLAYER_OPEN (wrangler.jsonc).
+          # Missing here it is simply absent from the bundle, and the open
+          # window is a door nobody can find: tickets mint for the world while
+          # the slot stays supporter-only.
+          NEXT_PUBLIC_PRO_PLAYER_OPEN: ${{ secrets.NEXT_PUBLIC_PRO_PLAYER_OPEN }}
           NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE: ${{ secrets.NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE }}
           NEXT_PUBLIC_IMAGE_CACHE_HOST_URL: ${{ secrets.NEXT_PUBLIC_IMAGE_CACHE_HOST_URL }}
           NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}

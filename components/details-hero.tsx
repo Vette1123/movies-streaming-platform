@@ -139,10 +139,13 @@ export const DetailsHero = ({
   // If the house player cannot start — ticket refused once PRO_PLAYER_OPEN is
   // lifted, or the worker not configured — fall back to the first embed and
   // let the switcher reflect it, exactly like a stalled server would.
+  //
+  // The hook owns finding that embed. This used to search `sources`, which is
+  // the CHOOSER's list: for a tier that cannot switch it holds one entry, and
+  // under the open window that entry is the house player itself — so the
+  // search returned nothing and a refused ticket stayed a dead frame.
   const onReelyUnavailable = React.useCallback(() => {
-    if (!sourceControl) return
-    const fallback = sourceControl.sources.find((s) => s.id !== REELY_SOURCE_ID)
-    if (fallback) sourceControl.select(fallback.id)
+    sourceControl?.dropToFallback()
   }, [sourceControl])
 
   // Bridge the blank gap between "Watch" click and the streaming iframe painting

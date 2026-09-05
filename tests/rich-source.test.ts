@@ -231,3 +231,78 @@ describe('resolveSourceId precedence', () => {
     ).toBe(mod.DEFAULT_SOURCE_ID)
   })
 })
+
+/**
+ * The open-for-everyone window.
+ *
+ * The bug this pins: PRO_PLAYER_OPEN shipped on the Worker ONLY. Tickets were
+ * minting for anyone who asked, while this file still required signedIn AND
+ * pro before the slot existed at all — so nobody could ask, and the house
+ * player was invisible to every visitor who was not already a supporter.
+ */
+describe('PRO_PLAYER_OPEN window', () => {
+  afterEach(() => vi.resetModules())
+
+  const TRIAL_ENV = { ...BASE_ENV, NEXT_PUBLIC_PRO_TRIAL_SELFHOST: 'true' }
+  const OPEN_ENV = { ...TRIAL_ENV, NEXT_PUBLIC_PRO_PLAYER_OPEN: 'true' }
+  const CLOSED_ENV = { ...TRIAL_ENV, NEXT_PUBLIC_PRO_PLAYER_OPEN: undefined }
+
+  it('leads with the house player for a signed-in free account', async () => {
+    const mod = await importWithEnv(OPEN_ENV)
+    const list = mod.visibleSourcesFor(true, false)
+    expect(list[0].id).toBe(mod.REELY_SOURCE_ID)
+    expect(list.slice(1)).toEqual(mod.STREAM_SOURCES)
+  })
+
+  it('leads with the house player for an anonymous visitor', async () => {
+    const mod = await importWithEnv(OPEN_ENV)
+    const list = mod.visibleSourcesFor(false, false)
+    expect(list[0].id).toBe(mod.REELY_SOURCE_ID)
+  })
+
+  /**
+   * The anonymous list carries a second entry that the CHOOSER never shows
+   * (the hook slices it away, and select is account-gated). It exists so a
+   * refused ticket has somewhere to land — without it the house player leads
+   * a list of one and a failure is a permanently dead frame.
+   */
+  it('keeps an embed behind the house player for anonymous, to fall back to', async () => {
+    const mod = await importWithEnv(OPEN_ENV)
+    const list = mod.visibleSourcesFor(false, false)
+    const escape = list.find((s) => s.id !== mod.REELY_SOURCE_ID)
+    expect(escape?.id).toBe(mod.DEFAULT_SOURCE_ID)
+  })
+
+  it('the per-title memory moves an anonymous visitor off a dead player', async () => {
+    const mod = await importWithEnv(OPEN_ENV)
+    expect(
+      mod.resolveSourceId({
+        sources: mod.visibleSourcesFor(false, false),
+        // What dropToFallback writes when the ticket is refused.
+        remembered: mod.DEFAULT_SOURCE_ID,
+        pro: false,
+      })
+    ).toBe(mod.DEFAULT_SOURCE_ID)
+  })
+
+  it('defaults a free account to the house player with nothing stored', async () => {
+    const mod = await importWithEnv(OPEN_ENV)
+    expect(
+      mod.resolveSourceId({
+        sources: mod.visibleSourcesFor(true, false),
+        pro: false,
+      })
+    ).toBe(mod.REELY_SOURCE_ID)
+  })
+
+  it('closed: every tier behaves exactly as it did before the window', async () => {
+    const mod = await importWithEnv(CLOSED_ENV)
+    expect(mod.visibleSourcesFor(false, false)).toHaveLength(1)
+    expect(
+      mod
+        .visibleSourcesFor(true, false)
+        .some((s) => s.id === mod.REELY_SOURCE_ID)
+    ).toBe(false)
+    expect(mod.visibleSourcesFor(true, true)[0].id).toBe(mod.REELY_SOURCE_ID)
+  })
+})

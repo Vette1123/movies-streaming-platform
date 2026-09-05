@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
+  REELY_SOURCE_ID,
   resolveSourceId,
   visibleSourcesFor,
   type StreamSource,
@@ -107,6 +108,15 @@ export interface StreamSourceControl {
    * let a caller hop servers with no UI to show for it.
    */
   canSwitch: boolean
+  /**
+   * Move off the house player when it refuses to start.
+   *
+   * Separate from `select` on purpose: `select` is account-gated because
+   * CHOOSING a server is an account feature, while being pushed off one that
+   * would not play is not a choice at all — it has to work for anonymous
+   * visitors too, or the open window hands them a frame with no way out.
+   */
+  dropToFallback: () => void
 }
 
 export function useStreamSource(mediaKey: string): StreamSourceControl {
@@ -192,6 +202,37 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
     [byTitle, canSwitch, mediaKey, pro, sources]
   )
 
+  /**
+   * Where the house player hands off when it cannot start.
+   *
+   * Read from the TIER list rather than the chooser's, because those two
+   * differ exactly where it matters: an anonymous visitor under the open
+   * window is shown one server and may switch to none, so the chooser has no
+   * second entry to fall to. Reading the chooser found nothing and left the
+   * visitor on a dead frame.
+   */
+  const fallback = useMemo(
+    () => sources.find((entry) => entry.id !== REELY_SOURCE_ID) ?? null,
+    [sources]
+  )
+
+  /**
+   * Drop off the house player. Deliberately NOT `select`: choosing a server
+   * costs an account, but being moved off one that refused to start is not a
+   * choice, and it has to work for every tier.
+   *
+   * Written to the per-title memory only — never the device, never the
+   * account — so one title the player could not open never becomes the new
+   * default for every other one.
+   */
+  const dropToFallback = useCallback(() => {
+    if (!fallback) return
+    setSwitched(true)
+    const merged = trim({ ...byTitle, [mediaKey]: fallback.id })
+    setByTitle(merged)
+    writeJson(BY_TITLE_KEY, merged)
+  }, [byTitle, fallback, mediaKey])
+
   const next = canSwitch ? sourceAfter(sources, source.id) : null
 
   const advance = useCallback(() => {
@@ -209,5 +250,6 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
     advance,
     switched,
     canSwitch,
+    dropToFallback,
   }
 }

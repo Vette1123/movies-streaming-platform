@@ -191,6 +191,22 @@ export const HAS_FALLBACK_SOURCE = STREAM_SOURCES.length > 1
  */
 const SELFHOST_TRIAL = process.env.NEXT_PUBLIC_PRO_TRIAL_SELFHOST === 'true'
 
+/**
+ * The open-for-everyone window, mirroring the Worker's `PRO_PLAYER_OPEN`.
+ *
+ * The Worker var alone opens only the SERVER half: /api/pro/ticket mints with
+ * no account and no entitlement. That is inert by itself — the slot has to
+ * exist in the visitor's list before anything ever asks for a ticket, and this
+ * file is what decides that. Set on the Worker and not here, the window is a
+ * door nobody can find, which is exactly how it shipped: tickets were open to
+ * the world and the surface stayed supporter-only.
+ *
+ * Client code cannot read a wrangler var, so this is the NEXT_PUBLIC_ mirror,
+ * inlined at build time. Unset, every tier gate below behaves exactly as it
+ * did before the window existed.
+ */
+const PRO_PLAYER_OPEN = process.env.NEXT_PUBLIC_PRO_PLAYER_OPEN === 'true'
+
 export const RICH_SOURCE: StreamSource | null = SELFHOST_TRIAL
   ? {
       id: REELY_SOURCE_ID,
@@ -217,8 +233,17 @@ export const visibleSourcesFor = (
   signedIn: boolean,
   pro: boolean
 ): StreamSource[] => {
-  if (!signedIn) return STREAM_SOURCES.slice(0, 1)
-  if (pro && RICH_SOURCE) return [RICH_SOURCE, ...STREAM_SOURCES]
+  const house = RICH_SOURCE && (pro || PRO_PLAYER_OPEN) ? RICH_SOURCE : null
+  if (!signedIn) {
+    // Anonymous visitors still get exactly one CHOOSABLE server: the hook
+    // slices this list to its head for them, and `select` is account-gated.
+    // The trailing embed is not an offer, it is the landing spot for an
+    // INVOLUNTARY fallback — a refused ticket has to have somewhere to go, or
+    // leading with the house player means a dead frame and no way out of it.
+    if (!house) return STREAM_SOURCES.slice(0, 1)
+    return [house, ...STREAM_SOURCES.slice(0, 1)]
+  }
+  if (house) return [house, ...STREAM_SOURCES]
   return STREAM_SOURCES
 }
 
@@ -296,9 +321,14 @@ export const resolveSourceId = (input: {
   const has = (id?: string | null): id is string =>
     !!id && input.sources.some((entry) => entry.id === id)
 
+  // The house player leads for a supporter, and for everybody while the open
+  // window is up. `has` is what keeps that honest: it can only ever resolve to
+  // a source this visitor's own list actually carries.
+  const houseLeads = !!RICH_SOURCE && (input.pro || PRO_PLAYER_OPEN)
+
   if (has(input.remembered)) return input.remembered
   if (has(input.accountSource)) return input.accountSource
-  if (!input.pro && has(input.devicePreference)) return input.devicePreference
-  if (input.pro && RICH_SOURCE) return RICH_SOURCE.id
+  if (!houseLeads && has(input.devicePreference)) return input.devicePreference
+  if (houseLeads && RICH_SOURCE && has(RICH_SOURCE.id)) return RICH_SOURCE.id
   return DEFAULT_SOURCE_ID
 }
