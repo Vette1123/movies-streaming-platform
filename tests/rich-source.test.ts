@@ -119,11 +119,17 @@ describe('visibleSourcesFor tiers', () => {
     expect(list.map((s) => s.id)).toEqual(['b.example', 'a.example'])
   })
 
-  it('supporters: our player first, then every embed', async () => {
+  // Offered, not defaulted. The house player cannot resolve a stream from the
+  // provider any more (2026-09-05: the token is bound to the IP that mints it,
+  // and the minting hops answer 403 to our egress and send no CORS header to
+  // our origin), so it must never occupy the slot that plays when nobody
+  // chooses. It stays in the list because an explicit switch still reaches it.
+  it('supporters: every embed first, our player last', async () => {
     const mod = await importWithEnv(TRIAL_ENV)
     const list = mod.visibleSourcesFor(true, true)
-    expect(list[0].id).toBe(mod.REELY_SOURCE_ID)
-    expect(list.slice(1)).toEqual(mod.STREAM_SOURCES)
+    expect(list[0].id).toBe('b.example')
+    expect(list.at(-1)!.id).toBe(mod.REELY_SOURCE_ID)
+    expect(list.slice(0, -1)).toEqual(mod.STREAM_SOURCES)
   })
 
   it('lapsed supporters drop back exactly to the signed-in free list', async () => {
@@ -150,14 +156,18 @@ describe('resolveSourceId precedence', () => {
 
   const TRIAL_ENV = { ...BASE_ENV, NEXT_PUBLIC_PRO_TRIAL_SELFHOST: 'true' }
 
-  it('supporters default to the house player with nothing chosen', async () => {
+  // With nothing chosen, a supporter gets the same playable embed everyone
+  // else does. The house player is reachable only by asking for it — it can no
+  // longer resolve a stream, so defaulting to it spent two dead round trips on
+  // behalf of someone who expressed no preference at all.
+  it('supporters default to the embed, not the house player', async () => {
     const mod = await importWithEnv(TRIAL_ENV)
     expect(
       mod.resolveSourceId({
         sources: mod.visibleSourcesFor(true, true),
         pro: true,
       })
-    ).toBe(mod.REELY_SOURCE_ID)
+    ).toBe(mod.DEFAULT_SOURCE_ID)
   })
 
   it("a supporter's Settings server wins over the house player", async () => {
@@ -183,7 +193,10 @@ describe('resolveSourceId precedence', () => {
     ).toBe(mod.REELY_SOURCE_ID)
   })
 
-  it('a device switch does not move a supporter off the house player', async () => {
+  // A one-off switch on some other device is still not a cross-device
+  // preference for a supporter — that is what the Settings choice is for. It
+  // simply falls through to the default now instead of to the house player.
+  it('a device switch still does not carry for a supporter', async () => {
     const mod = await importWithEnv(TRIAL_ENV)
     expect(
       mod.resolveSourceId({
@@ -191,7 +204,7 @@ describe('resolveSourceId precedence', () => {
         devicePreference: 'a.example',
         pro: true,
       })
-    ).toBe(mod.REELY_SOURCE_ID)
+    ).toBe(mod.DEFAULT_SOURCE_ID)
   })
 
   it('a device switch DOES carry for a free account', async () => {
