@@ -173,32 +173,21 @@ export const DEFAULT_SOURCE_ID: string = STREAM_SOURCES[0]?.id ?? ''
 export const HAS_FALLBACK_SOURCE = STREAM_SOURCES.length > 1
 
 /**
- * The supporters-only surface: OUR OWN player. Offered, NOT the default.
+ * The supporters-only surface: OUR OWN player, back by default for them.
  *
- * Enabled deployment-wide by NEXT_PUBLIC_PRO_TRIAL_SELFHOST=true — it needs
- * the playback worker plus a gado-proxy tier behind it (see the
- * reely-resolver-relay repo) to serve bytes, since no provider hands out
- * origin-open segments. Deliberately NOT part of STREAM_SOURCES: it never
- * exists for visitors without an entitled account, so the public journey is
- * untouched down to the URL.
+ * Enabled deployment-wide by NEXT_PUBLIC_PRO_TRIAL_SELFHOST=true. Deliberately
+ * NOT part of STREAM_SOURCES: it never exists for visitors without an entitled
+ * account, so the public journey is untouched down to the URL.
  *
- * It led the list until 2026-09-05, when the provider closed the last door it
- * needed. Measured that day, both directions:
- *
- *   - Manifest and segments ARE readable from our own origin (CORS 200), so
- *     the player itself is fine.
- *   - The playlist token is bound to the IP that MINTED it: the same token
- *     that streams instantly in a browser gets 403 from our egress, with the
- *     correct Referer, from their origin server rather than their WAF.
- *   - Minting it needs `/api/movie/<id>` and `/embed/<id>`, and those answer
- *     403 to every datacenter IP AND send no CORS header to our origin — so
- *     neither our servers nor the visitor's browser can mint one.
- *
- * Only a browser on the provider's own page can, which is the iframe they
- * sell. So the house player resolves nothing, falls through to that iframe
- * anyway, and leading with it bought every supporter two dead round trips
- * before the picture. Until a provider exists whose bytes we can actually
- * reach, it goes last. See lessons/2026-09-05-pro-player-egress-403.md.
+ * Since 2026-09-05 the playback worker frames the provider's embed directly
+ * and resolves nothing server-side — the provider closed that door at both
+ * ends (the playlist token binds to the IP that mints it, and the minting hops
+ * refuse our egress while sending no CORS header to our origin, so neither our
+ * servers nor the visitor's browser can produce one). The practical effect
+ * here: this slot is a distinct provider the embed list does not otherwise
+ * carry, and it mounts in about a fifth of a second, so it is worth leading
+ * with again. What it no longer adds is our own chrome, subtitles and resume.
+ * See lessons/2026-09-05-pro-player-egress-403.md.
  */
 const SELFHOST_TRIAL = process.env.NEXT_PUBLIC_PRO_TRIAL_SELFHOST === 'true'
 
@@ -218,12 +207,7 @@ export const RICH_SOURCE: StreamSource | null = SELFHOST_TRIAL
  *
  * - Anonymous: the default server only. Choice costs an account.
  * - Signed-in free: every embed slot.
- * - Supporters: every embed slot, then our player last.
- *
- * Position 0 is not a ranking, it is what plays when nobody chooses — free
- * visitors only ever get `sources[0]`, and the stall detector's automatic hop
- * walks forward from it. So the slot has to hold the source most likely to
- * paint a frame, and today that is an embed, not ours.
+ * - Supporters: our player first, then every embed slot.
  *
  * Callers must treat the result as the validation set for stored source ids —
  * an id remembered under one tier has to resolve to nothing if the tier loses
@@ -234,7 +218,7 @@ export const visibleSourcesFor = (
   pro: boolean
 ): StreamSource[] => {
   if (!signedIn) return STREAM_SOURCES.slice(0, 1)
-  if (pro && RICH_SOURCE) return [...STREAM_SOURCES, RICH_SOURCE]
+  if (pro && RICH_SOURCE) return [RICH_SOURCE, ...STREAM_SOURCES]
   return STREAM_SOURCES
 }
 
@@ -297,15 +281,7 @@ const withSourceQuery = (url: string, source: StreamSource): string =>
  *  2. what they chose in Settings (`prefs.source`) — deliberate, cross-device,
  *  3. what they last switched to on this device (free accounts only: one switch
  *     should not move a supporter off the player they pay for),
- *  4. the default embed.
- *
- * Step 4 used to hand supporters the house player. It stopped being a default
- * on 2026-09-05: it cannot resolve a stream from this provider at all (see
- * RICH_SOURCE above), so choosing it for someone who expressed no preference
- * only spent two dead round trips on their behalf. A supporter who WANTS it
- * still gets it through steps 1 and 2 — an explicit switch, or the Settings
- * choice — which is the difference between offering something and defaulting
- * to it.
+ *  4. the tier default — our player for supporters, the default embed otherwise.
  *
  * Anything not in `sources` is ignored: a stored id survives a tier change, and
  * a lapsed supporter must not resolve to the player they no longer have.
@@ -323,5 +299,6 @@ export const resolveSourceId = (input: {
   if (has(input.remembered)) return input.remembered
   if (has(input.accountSource)) return input.accountSource
   if (!input.pro && has(input.devicePreference)) return input.devicePreference
+  if (input.pro && RICH_SOURCE) return RICH_SOURCE.id
   return DEFAULT_SOURCE_ID
 }
