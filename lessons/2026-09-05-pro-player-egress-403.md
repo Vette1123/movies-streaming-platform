@@ -30,7 +30,45 @@ It did not unblock it. Verified after deploy: `/api/movie/550 -> 403 len=4545
 server=cloudflare`. The header fix is still correct — the two halves must not
 drift — but the gate is the network, not the fingerprint.
 
+## Then: is there a provider we CAN resolve? No — the box is closed
+Surveyed every configured source for a chain we could own. The disqualifier is
+never the same one twice, and together they close every door:
+
+| Provider | Datacenter egress | Chain | Segment bytes to a foreign origin |
+| --- | --- | --- | --- |
+| vixsrc.to (current) | **403** | HLS + token | IP-bound to a /24 |
+| vidsrcme.ru (Server 1) | 200 | JSON + WASM decrypt | **origin-gated** (2026-08-22) |
+| vidlink.pro | 200 (page) / **403** (CDN) | DASH via JWPlayer, tokenless `.mpd` | **origin-gated** |
+| vidfast.pro | 301 → vidfast.vc | never issues a stream request at all | untested |
+| 2embed.cc | 200 | aggregator of other embeds | n/a |
+
+vidlink looked like the winner for an hour: JWPlayer DASH with a **tokenless**
+manifest URL, which would have meant no IP-binding at all. Then both walls
+landed on it anyway — the cors/no-cors pair from our own player origin showed
+the CDN withholding ACAO, and a clean egress probe showed the same CDN
+returning `403 cloudflare` to a datacenter IP.
+
+That is the shape of the whole category, and it is not accidental. **Segment
+bytes are gated twice over: on `Origin` (so a browser on our origin cannot
+read them) and on ASN (so our servers cannot either).** The only caller that
+satisfies both is a residential browser sitting on the provider's own page —
+which is the ad-supported iframe they sell. A design that defeats both gates
+has to push the entire video stream through a residential proxy, at
+residential-proxy prices per GB, per viewer, per hour. There is no version of
+that which scales.
+
+So the answer to "point the resolver at a better provider" is that there isn't
+one, and the ceiling is the iframe — the same conclusion 2026-08-22 reached
+from a different provider, re-derived here independently. Pro's differentiator
+has to come from what we own (switching, resume, lists, alerts, calendar,
+watch-together), not from owning the pixels.
+
 ## Mistakes
+- **Took the question at face value and started shopping for providers.** The
+  useful move was to identify the *invariant* first — segment bytes are gated
+  on both Origin and ASN — because that one fact disqualifies the entire
+  category in a single test, and it is testable in two fetches. Four provider
+  walks produced the same answer the invariant would have given immediately.
 - **Called the relay "retired" off a stale README and said so out loud.** Its
   `README.md` opened with "Status: retired. Twice over." and I repeated it as
   fact. The relay is live, deployed, and wired into the worker's `RELAY_URL` —
@@ -87,3 +125,14 @@ drift — but the gate is the network, not the fingerprint.
   proxy.
 - **This machine cannot reach the provider.** Diagnose it from `wrangler tail`,
   the relay probe, or Chrome — never from local curl.
+- **Before evaluating a provider, test the LAST hop from a foreign origin AND
+  from a datacenter IP.** Two fetches. Everything upstream of the segment bytes
+  — API shape, decryptors, tokenless manifests — is irrelevant if the bytes are
+  gated, and in this category they always are. `/egress-probe` on the relay
+  answers the ASN half; the cors/no-cors pair from our player origin answers
+  the Origin half.
+- **Do not reopen stream extraction for this category again.** Both gates are
+  deliberate access controls on the providers' side, and the only architecture
+  that beats them is a residential proxy carrying full video bandwidth. The
+  iframe is what these providers sell; treat it as the ceiling and put Pro's
+  value in what we own.
