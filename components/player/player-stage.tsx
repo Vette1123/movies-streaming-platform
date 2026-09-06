@@ -6,6 +6,18 @@ import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 /**
+ * When a bare spinner stops being an answer.
+ *
+ * The frame wrapper was the most-clicked dead element on the site — 26 clicks
+ * in five days across six titles, all of them inside the picture area while it
+ * was still a spinner. A spinning circle says "something is happening" and
+ * nothing else, so after a few seconds of it people start clicking the video to
+ * make it go. Naming the wait is what stops that; the switcher's own stall
+ * notice takes over at nine seconds, so this only has to cover the gap.
+ */
+const PATIENCE_MS = 4000
+
+/**
  * The box the player lives in: controls in the band above, picture below.
  *
  * The controls used to be an `absolute inset-x-0 top-20` overlay on the hero's
@@ -53,6 +65,22 @@ export function PlayerStage({
   showSpinner?: boolean
   children: React.ReactNode
 }) {
+  const [waiting, setWaiting] = React.useState(false)
+
+  React.useEffect(() => {
+    if (loaded) return
+    // Restarts whenever the source changes, so a new provider gets its own
+    // grace period rather than inheriting the last one's expired clock. The
+    // reset lives in the cleanup, not in the body: setting state while an
+    // effect runs is a second render pass for something the timer will decide
+    // anyway.
+    const timer = setTimeout(() => setWaiting(true), PATIENCE_MS)
+    return () => {
+      clearTimeout(timer)
+      setWaiting(false)
+    }
+  }, [loaded])
+
   return (
     <div
       className={cn(
@@ -74,8 +102,15 @@ export function PlayerStage({
       <div className="relative min-h-0 flex-1">
         {children}
         {showSpinner && !loaded ? (
-          <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
+          <div
+            role="status"
+            aria-live="polite"
+            className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center gap-3"
+          >
             <Loader2 className="size-12 animate-spin text-white/80" />
+            <p className="px-6 text-center text-sm text-white/70">
+              {waiting ? 'Still connecting…' : 'Starting the stream…'}
+            </p>
           </div>
         ) : null}
       </div>

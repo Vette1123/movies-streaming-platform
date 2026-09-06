@@ -11,7 +11,13 @@ export const useSeasonEpisodes = (
   seriesId?: number,
   season?: string | number
 ) => {
-  const { data: episodes, isLoading: isEpisodesLoading } = useQuery({
+  const {
+    data: episodes,
+    isLoading: isEpisodesLoading,
+    isPlaceholderData,
+    isError,
+    refetch,
+  } = useQuery({
     // String() so a numeric season (hero) and a string season (navigator) hash
     // to the same key instead of fetching the same list twice.
     queryKey: ['season-episodes', seriesId, String(season)],
@@ -39,5 +45,27 @@ export const useSeasonEpisodes = (
     staleTime: 5 * 60 * 1000,
   })
 
-  return { episodes, isEpisodesLoading }
+  return {
+    episodes,
+    isEpisodesLoading,
+    /*
+     * The list on screen belongs to the PREVIOUS season.
+     *
+     * `keepPreviousData` stops a season switch flashing an empty panel, and it
+     * also means `isLoading` is false the whole time the new season is in
+     * flight — so the navigator showed one season's episodes under another
+     * season's name with nothing moving. That is what the rage clicks on
+     * "Season 1" were: a picker that had already changed above a list that had
+     * not. Callers dim the stale list instead of pretending it is current.
+     */
+    isSeasonStale: isPlaceholderData,
+    /*
+     * The request gave up after its retries. Without this the panel drew "No
+     * episodes found for this season yet", which blames the show for a failure
+     * that was ours — roughly a third of /api/season-details calls did not
+     * answer over 24h.
+     */
+    isEpisodesError: isError,
+    retryEpisodes: refetch,
+  }
 }

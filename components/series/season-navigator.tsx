@@ -24,8 +24,15 @@ export const SeasonNavigator = ({ series }: { series: SeriesDetails }) => {
   const { resume } = useSeriesProgress(series)
   // Opens on the season the user is actually part-way through instead of
   // always season 1 (a ?season deep-link or a manual pick still wins).
-  const { selectSeason, episodes, selectedSeason, isEpisodesLoading } =
-    useEpisodeHandler(series?.id, resume?.season)
+  const {
+    selectSeason,
+    episodes,
+    selectedSeason,
+    isEpisodesLoading,
+    isSeasonStale,
+    isEpisodesError,
+    retryEpisodes,
+  } = useEpisodeHandler(series?.id, resume?.season)
 
   return (
     // Named, and with a heading. This panel is the whole point of a TV page
@@ -45,6 +52,9 @@ export const SeasonNavigator = ({ series }: { series: SeriesDetails }) => {
           episodes={episodes}
           selectedSeason={selectedSeason}
           isEpisodesLoading={isEpisodesLoading}
+          isSeasonStale={isSeasonStale}
+          isEpisodesError={isEpisodesError}
+          onRetry={retryEpisodes}
           backdrop_path={series?.backdrop_path}
           poster_path={series?.poster_path}
           series_name={series?.name}

@@ -525,13 +525,22 @@ export function HeroSlide({
                   (~600px and under, e.g. a small phone with browser chrome)
                   rather than letting the block get sliced through a line box.
                   Clamped text always ends on an ellipsis, never a half-glyph. */}
-              <p
-                className={`mt-2 line-clamp-2 max-w-xl text-sm leading-relaxed text-white/85 drop-shadow-sm transition-opacity duration-500 ease-out sm:line-clamp-3 lg:mt-3 lg:max-w-2xl lg:text-lg [@media(max-height:600px)]:line-clamp-1 ${
+              {/* Clamped text ending in an ellipsis is an invitation, and
+                  people took it: this paragraph was the most-clicked dead
+                  element on the home page. It never did anything, because the
+                  whole copy column was inert — the only link in the slide was
+                  the Watch button. A click here means "tell me more about
+                  this", and the rest of the synopsis is on the detail page, so
+                  send them there rather than leaving the click on the floor. */}
+              <MediaLink
+                href={href}
+                aria-label={`More about ${title}`}
+                className={`mt-2 line-clamp-2 block max-w-xl text-sm leading-relaxed text-white/85 drop-shadow-sm transition-opacity duration-500 ease-out hover:opacity-100 sm:line-clamp-3 lg:mt-3 lg:max-w-2xl lg:text-lg [@media(max-height:600px)]:line-clamp-1 ${
                   cinematic ? 'opacity-65' : 'opacity-100'
                 }`}
               >
                 {movie.overview}
-              </p>
+              </MediaLink>
             </div>
 
             {/* Actions: primary Watch + Trailer + Save. Left-aligned to match the

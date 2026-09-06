@@ -16,6 +16,7 @@ import { useMounted } from '@/hooks/use-mounted'
 import { useScrollToTop } from '@/hooks/use-scroll-to-top'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { type ResumePoint } from '@/hooks/use-series-progress'
+import { Button } from '@/components/ui/button'
 import { SkeletonRows } from '@/components/ui/skeleton'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 import { useSeriesPlayback } from '@/components/series/playback-context'
@@ -29,6 +30,11 @@ interface EpisodesProps {
   episodes: EpisodeDetails[] | undefined
   selectedSeason: string
   isEpisodesLoading: boolean
+  /** The visible list is the PREVIOUS season's — see use-season-episodes. */
+  isSeasonStale?: boolean
+  /** The request gave up. Not the same as a season with no episodes. */
+  isEpisodesError?: boolean
+  onRetry?: () => void
   backdrop_path: string
   poster_path: string
   series_name: string
@@ -105,6 +111,9 @@ export const Episodes = ({
   episodes,
   selectedSeason,
   isEpisodesLoading,
+  isSeasonStale,
+  isEpisodesError,
+  onRetry,
   backdrop_path,
   poster_path,
   series_name,
@@ -259,7 +268,16 @@ export const Episodes = ({
   }
 
   return (
-    <section className="space-y-1 p-2 sm:p-2.5">
+    <section
+      className={cn(
+        'relative space-y-1 p-2 sm:p-2.5',
+        // These rows belong to the season the visitor just left. Keeping them
+        // on screen avoids an empty flash; dimming them and taking their clicks
+        // away is what stops them reading as the season now named above.
+        isSeasonStale && 'pointer-events-none opacity-40'
+      )}
+      aria-busy={isSeasonStale || undefined}
+    >
       {!episodes?.length && isEpisodesLoading && (
         <SkeletonRows
           rows={8}
@@ -267,7 +285,24 @@ export const Episodes = ({
           className="space-y-1.5 py-1"
         />
       )}
-      {!episodes?.length && !isEpisodesLoading && (
+      {/* A failed request is not an empty season. Saying "no episodes found"
+          when the call never answered blames the show for our outage, and
+          leaves the one useful action — try again — off the screen. */}
+      {isEpisodesError && !episodes?.length && (
+        <div
+          role="status"
+          className="flex flex-col items-center gap-2 py-10 text-center text-sm text-muted-foreground"
+        >
+          <Tv className="size-6 opacity-60" aria-hidden />
+          <span>Couldn’t load this season.</span>
+          {onRetry ? (
+            <Button size="sm" variant="secondary" onClick={() => onRetry()}>
+              Try again
+            </Button>
+          ) : null}
+        </div>
+      )}
+      {!episodes?.length && !isEpisodesLoading && !isEpisodesError && (
         <div
           role="status"
           className="flex flex-col items-center gap-2 py-10 text-center text-sm text-muted-foreground"

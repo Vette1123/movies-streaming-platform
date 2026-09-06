@@ -31,15 +31,21 @@ export const useEpisodeHandler = (seriesID: number, resumeSeason?: number) => {
     setSelectedSeason(String(resumeSeason))
   }, [resumeSeason, seasonQuerySTR])
 
-  const { episodes, isEpisodesLoading } = useSeasonEpisodes(
-    seriesID,
-    selectedSeason
-  )
+  const {
+    episodes,
+    isEpisodesLoading,
+    isSeasonStale,
+    isEpisodesError,
+    retryEpisodes,
+  } = useSeasonEpisodes(seriesID, selectedSeason)
 
   return {
     selectedSeason,
     selectSeason,
     episodes,
     isEpisodesLoading,
+    isSeasonStale,
+    isEpisodesError,
+    retryEpisodes,
   }
 }
