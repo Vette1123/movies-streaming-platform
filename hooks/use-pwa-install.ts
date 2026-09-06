@@ -2,6 +2,12 @@
 
 import * as React from 'react'
 
+import {
+  trackPwaInstallable,
+  trackPwaInstalled,
+  trackPwaPrompted,
+} from '@/lib/analytics'
+
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
@@ -29,11 +35,23 @@ function bindOnce() {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault()
     deferred = e as BeforeInstallPromptEvent
+    trackPwaInstallable()
     emit()
   })
+  /*
+   * The other half of the funnel, which was never wired.
+   *
+   * `trackPwaInstalled` has existed since the analytics module was written and
+   * was called from nowhere, so PostHog showed a stream of "installable" and
+   * not one install — a number that reads as "nobody wants this" and is in
+   * fact "nobody is counting". The same goes for the outcome of the prompt
+   * below: a dismissal and a decline are different answers and both were
+   * invisible.
+   */
   window.addEventListener('appinstalled', () => {
     deferred = null
     installed = true
+    trackPwaInstalled()
     emit()
   })
 }
@@ -97,6 +115,7 @@ export function usePwaInstall(): PwaInstall {
     await evt.prompt()
     const { outcome } = await evt.userChoice
     deferred = null
+    trackPwaPrompted({ outcome })
     emit()
     return outcome
   }, [])

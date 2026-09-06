@@ -60,6 +60,7 @@ export const EVENTS = {
   // PWA install lifecycle
   PWA_INSTALLABLE: 'pwa_installable',
   PWA_INSTALLED: 'pwa_installed',
+  PWA_PROMPTED: 'pwa_prompted',
   // Support / monetisation. One event with a `surface` property rather than an
   // event per placement: the only question worth asking of it is which surface
   // sends people to the plans, and that is a breakdown, not six funnels.
@@ -422,6 +423,19 @@ export function trackPwaInstallable(): void {
 /** App was installed to the home screen / desktop (`appinstalled` fired). */
 export function trackPwaInstalled(): void {
   track(EVENTS.PWA_INSTALLED)
+}
+
+/**
+ * The native install dialog was shown, and what came back.
+ *
+ * Without this, "installable" and "installed" are the only two points on the
+ * funnel and the gap between them has no explanation: nobody asked, or
+ * everybody said no, look identical.
+ */
+export function trackPwaPrompted(props: {
+  outcome: 'accepted' | 'dismissed'
+}): void {
+  track(EVENTS.PWA_PROMPTED, props)
 }
 
 // ---- Infrastructure ---------------------------------------------------------

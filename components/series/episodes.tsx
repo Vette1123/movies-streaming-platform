@@ -238,24 +238,10 @@ export const Episodes = ({
         episode: episode?.episode_number,
       })
     }
-    setWatchedItems(nextItems)
-    // episodes.tsx writes localStorage directly (not via useWatchedMedia), so
-    // sync the PostHog person profile's watch stats here too.
-    syncWatchStats(nextItems)
-
-    // Completion is unobservable (the player is a cross-origin embed), so infer
-    // it linearly: starting an episode means the earlier ones in this season are
-    // done. The episode being started is NOT marked — only what came before it.
-    const earlier = (episodes ?? []).filter(
-      (candidate) => candidate.episode_number < episode.episode_number
-    )
-    if (earlier.length) {
-      markEpisodesCompleted(earlier.map(buildCompletionMeta))
-    }
-
-    // Clicking a row IS the play intent, so start the embed directly instead of
-    // letting the URL trigger it — the params can already point at this episode
-    // (arriving from continue-watching), and then nothing would change.
+    // What the tap ASKED for, first and synchronously. Clicking a row IS the
+    // play intent, so start the embed directly instead of letting the URL
+    // trigger it — the params can already point at this episode (arriving from
+    // continue-watching), and then nothing would change.
     requestPlay({
       season: Number(selectedSeason),
       episode: episode?.episode_number,
@@ -265,6 +251,46 @@ export const Episodes = ({
       { scroll: false }
     )
     scrollToTop()
+
+    /*
+     * Everything below is bookkeeping, and it used to run BEFORE the play —
+     * two localStorage round trips over the whole watch history, a PostHog
+     * person-property write, and a completion pass over every earlier episode
+     * in the season, all inside the click. TV detail pages are where this
+     * site's interaction latency lives: p75 INP is 384ms on the busiest one
+     * and over a second on three others, against a 200ms "good" threshold, and
+     * these rows are the only thing on the page doing work like this on a tap.
+     *
+     * None of it is visible, so none of it needs to be in the way of the
+     * frame that shows playback starting. Deferring past the next paint hands
+     * the browser the interaction back immediately; the work still happens,
+     * a tick later, in the same order.
+     */
+    const commitProgress = () => {
+      setWatchedItems(nextItems)
+      // episodes.tsx writes localStorage directly (not via useWatchedMedia), so
+      // sync the PostHog person profile's watch stats here too.
+      syncWatchStats(nextItems)
+
+      // Completion is unobservable (the player is a cross-origin embed), so
+      // infer it linearly: starting an episode means the earlier ones in this
+      // season are done. The episode being started is NOT marked — only what
+      // came before it.
+      const earlier = (episodes ?? []).filter(
+        (candidate) => candidate.episode_number < episode.episode_number
+      )
+      if (earlier.length) {
+        markEpisodesCompleted(earlier.map(buildCompletionMeta))
+      }
+    }
+
+    // requestIdleCallback where it exists, a macrotask where it does not
+    // (Safari). Either way it lands after the browser has painted the tap.
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(commitProgress, { timeout: 1000 })
+    } else {
+      setTimeout(commitProgress, 0)
+    }
   }
 
   return (
