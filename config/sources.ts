@@ -179,15 +179,20 @@ export const HAS_FALLBACK_SOURCE = STREAM_SOURCES.length > 1
  * NOT part of STREAM_SOURCES: it never exists for visitors without an entitled
  * account, so the public journey is untouched down to the URL.
  *
- * Since 2026-09-05 the playback worker frames the provider's embed directly
- * and resolves nothing server-side — the provider closed that door at both
- * ends (the playlist token binds to the IP that mints it, and the minting hops
- * refuse our egress while sending no CORS header to our origin, so neither our
- * servers nor the visitor's browser can produce one). The practical effect
- * here: this slot is a distinct provider the embed list does not otherwise
- * carry, and it mounts in about a fifth of a second, so it is worth leading
- * with again. What it no longer adds is our own chrome, subtitles and resume.
- * See lessons/2026-09-05-pro-player-egress-403.md.
+ * It is our own player again as of 2026-09-06: controls, subtitle overlay,
+ * quality picker, resume and progress, playing real HLS. For one day in
+ * between it was the provider's own iframe, because the source it resolved
+ * from closed both doors at once — the playlist token binds to the IP that
+ * mints it, and the minting hops refuse our egress while sending no CORS
+ * header to our origin, so neither our servers nor the visitor's browser could
+ * produce one. That is still true of that provider and always will be.
+ *
+ * What changed is which provider the resolver walks. The one behind it now
+ * answers our egress on every hop, and its bytes are relayed rather than
+ * fetched by the browser, because its CDN allowlists player origins on the
+ * segments while leaving playlists open to anyone. See
+ * lessons/2026-09-06-the-door-was-open-on-a-different-house.md, and
+ * lessons/2026-09-05-pro-player-egress-403.md for the day it was shut.
  */
 const SELFHOST_TRIAL = process.env.NEXT_PUBLIC_PRO_TRIAL_SELFHOST === 'true'
 
