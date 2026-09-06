@@ -55,15 +55,65 @@ const HEADLESS_VIEWPORT = { width: 1280, height: 720 }
  * the filter. Cloudflare already counts this traffic properly — see
  * `pnpm cf:health`; PostHog is meant to answer questions about people.
  */
+/**
+ * A desktop Chrome that renders through software and has no plug-ins.
+ *
+ * The 1280x720 fleet above was blocked on 2026-09-01 and a second one took its
+ * place: 251 sessions in five days, all from CN with no city, all reporting
+ * Chrome 144 on Windows at 1920x1080 — a resolution 34 real sessions also
+ * report, so the viewport trick that caught the last one cannot catch this one.
+ * What separates them is behaviour: 252 pageviews across 251 sessions, and
+ * ZERO searches, ZERO plays and ZERO autocaptured clicks between them, against
+ * 399 plays and 323 searches from the 388 human sessions beside them. It was
+ * 40% of everything PostHog recorded.
+ *
+ * Behaviour cannot be tested at ingest time, so this tests the two things a
+ * headless browser farm cannot easily fake while still executing our JavaScript:
+ *
+ *   - a desktop Chrome with an EMPTY plug-in list. Real desktop Chrome always
+ *     exposes its built-in PDF viewers; headless reports none. Mobile Chrome
+ *     also reports none, which is why the desktop claim is required first.
+ *   - a WebGL renderer that is a software rasteriser. A farm has no GPU, so
+ *     Chrome falls back to SwiftShader; a real desktop names its actual card.
+ *
+ * Either alone is a fingerprint rather than a rule, so BOTH must agree before
+ * a session is discarded — a real visitor on a machine with a broken GPU still
+ * has plug-ins, and one with plug-ins disabled still has a renderer.
+ *
+ * Re-measure before changing it: in PostHog, group sessions by `$browser`,
+ * `$screen_width` and `$geoip_city_name`, then check whether the cohort
+ * produced any `media_played` or `search_performed` at all. A fleet is a
+ * cluster with a lot of pageviews and none of those.
+ */
+const looksHeadlessDesktop = (): boolean => {
+  const ua = navigator.userAgent
+  // Only Chromium on a desktop OS. Everything else keeps its data.
+  if (!ua.includes('Chrome/') || /Mobile|Android|iPhone|iPad/.test(ua))
+    return false
+  if (navigator.plugins?.length !== 0) return false
+
+  const canvas = document.createElement('canvas')
+  const gl = (canvas.getContext('webgl') ??
+    canvas.getContext('experimental-webgl')) as WebGLRenderingContext | null
+  if (!gl) return true
+  const info = gl.getExtension('WEBGL_debug_renderer_info')
+  if (!info) return false
+  const renderer = String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL) ?? '')
+  return /swiftshader|llvmpipe|software/i.test(renderer)
+}
+
 const isAutomated = (): boolean => {
   try {
     // Set by every CDP-driven browser (Puppeteer, Playwright, Selenium) unless
     // it has been deliberately patched out. Free, and catches the honest ones.
     if (navigator.webdriver) return true
-    return (
+    if (
       window.innerWidth === HEADLESS_VIEWPORT.width &&
       window.innerHeight === HEADLESS_VIEWPORT.height
-    )
+    ) {
+      return true
+    }
+    return looksHeadlessDesktop()
   } catch {
     return false
   }
