@@ -13,8 +13,7 @@ the visitor's own browser could fetch the film instead, and the answer is: only
 if it is WebKit.
 
 Measured one header at a time against a live segment, with the send-neither case
-included — the thing [probing headers separately](https://reely.space) exists to
-force:
+included:
 
 | request                            | segment        |
 | ---------------------------------- | -------------- |
