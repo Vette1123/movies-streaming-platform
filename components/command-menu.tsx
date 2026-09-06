@@ -18,7 +18,7 @@ import {
   trackSupportCtaClicked,
 } from '@/lib/analytics'
 import { searchMediaApi } from '@/lib/api-client'
-import { COMPANION_APPS, openOnPlayStore } from '@/lib/apps'
+import { COMPANION_APPS, openStoreListing, storesLabel } from '@/lib/apps'
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
 import { handleImageFallbackError } from '@/lib/tmdbConfig'
@@ -638,15 +638,15 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                 className="cursor-pointer"
                 onSelect={() => {
                   trackCommandShortcutUsed({ shortcut: app.slug })
-                  runCommand(() => openOnPlayStore(app))
+                  runCommand(() => openStoreListing(app))
                 }}
               >
                 <div className="flex items-center gap-4">
-                  <Icons.googlePlay className="size-5" />
+                  <Icons.apps className="size-5" />
                   <div className="flex flex-col">
                     <span>{app.name}</span>
                     <span className="text-xs text-muted-foreground">
-                      {app.tagline} · Google Play
+                      {app.tagline} · {storesLabel(app)}
                     </span>
                   </div>
                 </div>

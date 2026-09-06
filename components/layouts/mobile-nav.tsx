@@ -7,7 +7,12 @@ import { NavItem } from '@/types/navbar'
 import { siteConfig } from '@/config/site'
 import { SUPPORT_PRICES } from '@/config/support'
 import { trackSupportCtaClicked } from '@/lib/analytics'
-import { COMPANION_APPS, EXTERNAL_LINKS, openOnPlayStore } from '@/lib/apps'
+import {
+  COMPANION_APPS,
+  EXTERNAL_LINKS,
+  openStoreListing,
+  storesLabel,
+} from '@/lib/apps'
 import { cn } from '@/lib/utils'
 import { useAccountIdentity } from '@/hooks/use-account'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
@@ -42,7 +47,7 @@ type DrawerLink = Pick<
   | 'external'
 >
 
-// Our own products that aren't on Google Play.
+// Our own products that are on the web, not in an app store.
 const TOOL_LINKS: DrawerLink[] = [
   {
     href: siteConfig.links.socialDownloader,
@@ -178,13 +183,13 @@ export function MobileNav({ items }: MobileNavProps) {
               {COMPANION_APPS.map((app) => (
                 <DrawerAction
                   key={app.slug}
-                  Icon={Icons.googlePlay}
+                  Icon={Icons.apps}
                   label={app.name}
-                  hint="Google Play"
+                  hint={storesLabel(app)}
                   tone="brand"
                   onClick={() => {
                     close()
-                    openOnPlayStore(app)
+                    openStoreListing(app)
                   }}
                 />
               ))}

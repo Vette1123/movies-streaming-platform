@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { FooterSupportCard } from '@/components/support/footer-support-card'
 
 import { Icons } from '../icons'
-import { PlayStoreLink } from '../play-store-link'
+import { StoreLink } from '../store-link'
 import { buttonVariants } from '../ui/button'
 
 const SITE_LINKS = [
@@ -92,11 +92,11 @@ export function Footer() {
             Also from us:{' '}
             {COMPANION_APPS.map((app, index) => (
               <React.Fragment key={app.slug}>
-                <PlayStoreLink app={app} />
+                <StoreLink app={app} />
                 {listSeparator(index, COMPANION_APPS.length)}
               </React.Fragment>
             ))}{' '}
-            on Google Play.
+            our own mobile apps.
           </p>
         </div>
 

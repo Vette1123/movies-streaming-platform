@@ -10,6 +10,7 @@ import {
   Search,
   Settings,
   SlidersHorizontal,
+  Smartphone,
   StarIcon,
   SunMedium,
   X,
@@ -20,6 +21,10 @@ import { cn } from '@/lib/utils'
 export const Icons = {
   sun: SunMedium,
   moon: Moon,
+  // Companion-app rows and the header trigger. Deliberately NOT the Play
+  // triangle: Rafiq and Masareef are on both stores, so a Play glyph beside
+  // "App Store . Google Play" is an icon contradicting its own label.
+  apps: Smartphone,
   // X (formerly Twitter) — the current brand mark, replacing the retired bird.
   twitter: (props: LucideProps) => (
     <svg

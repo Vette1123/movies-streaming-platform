@@ -4,7 +4,11 @@ import dynamic from 'next/dynamic'
 import { Heart } from 'lucide-react'
 
 import { siteConfig } from '@/config/site'
-import { COMPANION_APPS, EXTERNAL_LINKS, openOnPlayStore } from '@/lib/apps'
+import {
+  COMPANION_APPS,
+  EXTERNAL_LINKS,
+  openStoreListing,
+} from '@/lib/apps'
 import { cn } from '@/lib/utils'
 import { useNavbarScrollOverlay } from '@/hooks/use-scroll-overlay'
 import { buttonVariants } from '@/components/ui/button'
@@ -93,21 +97,21 @@ export function SiteHeader() {
           <nav className="hidden shrink-0 items-center gap-1 md:flex">
             <Popover>
               <PopoverTrigger
-                aria-label="Our apps on Google Play"
+                aria-label="Our apps"
                 className={buttonVariants({ size: 'icon', variant: 'ghost' })}
               >
-                <Icons.googlePlay className="size-5" />
-                <span className="sr-only">Our apps on Google Play</span>
+                <Icons.apps className="size-5" />
+                <span className="sr-only">Our apps</span>
               </PopoverTrigger>
               <PopoverContent align="end" className="w-72 p-2">
-                <PopoverHeading>Our apps on Google Play</PopoverHeading>
+                <PopoverHeading>Our apps</PopoverHeading>
                 {COMPANION_APPS.map((app) => (
                   <PopoverRow
                     key={app.slug}
-                    Icon={Icons.googlePlay}
+                    Icon={Icons.apps}
                     title={app.name}
                     subtitle={app.tagline}
-                    onClick={() => openOnPlayStore(app)}
+                    onClick={() => openStoreListing(app)}
                   />
                 ))}
               </PopoverContent>
