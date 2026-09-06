@@ -70,6 +70,13 @@ only signal that can start that timer.
 
 ## Mistakes
 
+- **Fixed the row and then broke it again with a ring.** The house chip was
+  marked as selected with `ring-2 ring-white/90`. A ring draws OUTSIDE the
+  border box, so the one selected chip stood 32px tall in a row of 28s and
+  pressed into the bar's 4px of padding: a white halo, cropped. Every other
+  chip in the row was measured; the one that changed was not. `ring-inset`
+  plus a brighter glow says the same thing and cannot change a height.
+
 - **Believed the comment instead of the box model.** "The band above the frame
   is empty on every viewport" was written next to the code that filled it. Two
   `getBoundingClientRect` calls disproved it, and they were available before any
@@ -112,6 +119,10 @@ only signal that can start that timer.
   supporter surface is untestable on `localhost`.
 
 ## Rules
+
+- **Selection state must not change an element's box.** Outline, ring and
+  border all reserve space outside it; saturation, an inset hairline and a
+  shadow do not. In a row of equal pills, only the second kind is safe.
 
 - **Never position an overlay against a number that another rule also owns.**
   `top-20` matching `py-20` is not a coincidence to notice later, it is a bug

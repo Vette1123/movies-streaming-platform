@@ -258,17 +258,34 @@ export function SourceSwitcher({
                   onClick={() => select(entry.id)}
                   className={cn(
                     shared,
-                    'font-semibold text-white',
+                    'relative isolate font-semibold text-white',
                     'bg-linear-to-r from-amber-500 via-rose-500 to-fuchsia-600',
-                    'shadow-[0_1px_10px_-2px_rgba(244,63,94,0.65)]',
-                    'hover:shadow-[0_2px_14px_-2px_rgba(244,63,94,0.85)]',
-                    !isActive && 'opacity-75 hover:opacity-100',
-                    isActive && 'ring-2 ring-white/90'
+                    // Selection is carried by saturation and light, not by an
+                    // outline. `ring-2 ring-white/90` drew OUTSIDE the border
+                    // box, so the one chip that was selected stood 32px tall in
+                    // a row of 28s and pressed against the bar's 4px of
+                    // padding: a white halo on a coloured pill, cropped by the
+                    // surface behind it. An inset hairline cannot change the
+                    // height, and reads as a bevel on the gradient rather than
+                    // a sticker cut out of it.
+                    'ring-1 ring-white/25 ring-inset',
+                    'shadow-[0_1px_10px_-3px_rgba(244,63,94,0.55)]',
+                    isActive
+                      ? 'shadow-[0_2px_18px_-3px_rgba(244,63,94,0.95)] ring-white/55'
+                      : 'opacity-70 hover:opacity-100 hover:shadow-[0_2px_14px_-3px_rgba(244,63,94,0.8)]'
                   )}
                 >
+                  {/* The top-edge highlight every physical control has and no
+                      flat gradient does. Inside the pill, above the gradient,
+                      below the label — the cheapest thing that separates a
+                      button from a coloured rectangle. */}
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-linear-to-b from-white/30 to-transparent to-45%"
+                  />
                   <Sparkles className="size-3.5 shrink-0" aria-hidden />
                   {entry.label}
-                  <span className="rounded-full bg-black/30 px-1.5 py-px text-[9px] leading-tight font-bold tracking-wider">
+                  <span className="rounded-full bg-black/35 px-1.5 py-px text-[9px] leading-tight font-bold tracking-wider text-white/95">
                     PRO
                   </span>
                 </button>
