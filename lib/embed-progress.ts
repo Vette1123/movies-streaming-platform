@@ -19,14 +19,37 @@ export interface EmbedProgress {
   durationSeconds?: number
 }
 
+interface PlayerEventPayload {
+  event?: unknown
+  currentTime?: unknown
+  duration?: unknown
+}
+
+/**
+ * The payload rides under `data` OR under `event`, and which one depends
+ * entirely on how many frames it has crossed.
+ *
+ * The provider's innermost player posts `{type:'PLAYER_EVENT', data:{…}}` to
+ * the page that frames it. That page is theirs, and what it re-posts to ITS
+ * own parent — us — is `{type:'PLAYER_EVENT', event:<the same payload>}`. Read
+ * from their own bundle, and measured on 2026-09-06: an embed framed from
+ * reely.space delivers the second shape and only the second shape, so a parser
+ * that knew only `data` matched nothing that ever reached this origin. Every
+ * position an embed reported was dropped on the floor, silently, because the
+ * shape it was tested against is the one that never crosses a boundary.
+ *
+ * Accept both. They carry the same fields, the key is an artifact of depth,
+ * and a recogniser that insists on one nesting depth is not recognising a
+ * shape — it is guessing at a topology.
+ */
 interface PlayerEventEnvelope {
   type?: unknown
-  data?: {
-    event?: unknown
-    currentTime?: unknown
-    duration?: unknown
-  }
+  data?: PlayerEventPayload
+  event?: PlayerEventPayload
 }
+
+/** Player events that mean the title finished, across the two player families. */
+const ENDED_EVENTS = new Set(['ended', 'complete'])
 
 const finiteNumber = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0
@@ -42,10 +65,11 @@ const finiteNumber = (value: unknown): number | null =>
 export const parseEmbedProgress = (data: unknown): EmbedProgress | null => {
   const envelope = data as PlayerEventEnvelope
   if (!envelope || envelope.type !== 'PLAYER_EVENT') return null
-  const inner = envelope.data
+  const inner = envelope.data ?? envelope.event
   if (!inner || typeof inner !== 'object') return null
 
-  if (inner.event === 'ended') return { kind: 'ended', positionSeconds: 0 }
+  if (typeof inner.event === 'string' && ENDED_EVENTS.has(inner.event))
+    return { kind: 'ended', positionSeconds: 0 }
 
   if (inner.event !== 'timeupdate') return null
   const position = finiteNumber(inner.currentTime)

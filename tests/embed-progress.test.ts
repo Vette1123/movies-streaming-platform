@@ -42,6 +42,53 @@ describe('parseEmbedProgress', () => {
     ).toBeUndefined()
   })
 
+  // What actually crosses an origin boundary. The provider's inner player
+  // posts the payload under `data` to the page framing it; that page re-posts
+  // it to US under `event`. Read from their bundle and measured against a live
+  // embed on 2026-09-06 — the `data` shape never leaves their own document, so
+  // this is the only one a reely.space listener ever sees.
+  const crossOrigin = (payload: Record<string, unknown>) => ({
+    type: 'PLAYER_EVENT',
+    event: { ...payload, video_id: '170060' },
+  })
+
+  it('parses a timeupdate that arrived under `event` rather than `data`', () => {
+    expect(
+      parseEmbedProgress(
+        crossOrigin({
+          event: 'timeupdate',
+          currentTime: 31.4,
+          duration: 3609.8,
+        })
+      )
+    ).toEqual({
+      kind: 'progress',
+      positionSeconds: 31.4,
+      durationSeconds: 3609.8,
+    })
+  })
+
+  it('parses an end that arrived under `event`, by either name', () => {
+    expect(parseEmbedProgress(crossOrigin({ event: 'ended' }))).toEqual({
+      kind: 'ended',
+      positionSeconds: 0,
+    })
+    // JWPlayer, which is what sits inside these embeds, calls it `complete`.
+    expect(parseEmbedProgress(crossOrigin({ event: 'complete' }))).toEqual({
+      kind: 'ended',
+      positionSeconds: 0,
+    })
+  })
+
+  it('still rejects the other events that ride the same envelope', () => {
+    expect(
+      parseEmbedProgress(crossOrigin({ event: 'pause', data: {} }))
+    ).toBeNull()
+    expect(
+      parseEmbedProgress(crossOrigin({ event: 'play', data: {} }))
+    ).toBeNull()
+  })
+
   it('parses ended without requiring a position', () => {
     expect(
       parseEmbedProgress({ type: 'PLAYER_EVENT', data: { event: 'ended' } })

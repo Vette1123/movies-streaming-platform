@@ -153,11 +153,14 @@ export function SourceSwitcher({
   // of the rail — and an entry you cannot see cannot tell you what is playing.
   React.useEffect(() => {
     const rail = railRef.current
-    if (!rail || !currentId) return
+    // Only when there is somewhere to scroll TO. On a rail that fits, this
+    // would still be a scroll call, and a scroll call on an element inside a
+    // full-viewport hero is one the page can decide to answer itself.
+    if (!rail || !currentId || !railOverflows) return
     rail
       .querySelector(`[data-source-id="${CSS.escape(currentId)}"]`)
       ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-  }, [currentId])
+  }, [currentId, railOverflows])
 
   const stalled = !loaded && stalledId !== null && stalledId === currentId
   const showWarning = stalled && !loaded
@@ -228,7 +231,7 @@ export function SourceSwitcher({
           role="group"
           aria-label="Streaming server"
           className={cn(
-            'no-scrollbar flex min-w-0 snap-x snap-proximity items-center gap-1.5 overflow-x-auto scroll-smooth',
+            'no-scrollbar flex min-w-0 snap-x snap-proximity items-center gap-1.5 overflow-x-auto motion-safe:scroll-smooth',
             railOverflows
               ? 'justify-start mask-[linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)]'
               : 'justify-center'

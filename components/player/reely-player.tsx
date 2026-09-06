@@ -63,6 +63,13 @@ export function ReelyPlayer({
   React.useEffect(() => {
     endedRef.current = onEnded
   }, [onEnded])
+  // Same reason, for the give-up path: the player can now say the provider
+  // inside it failed, and that has to reach the hero without rebuilding the
+  // listener on every render.
+  const unavailableRef = React.useRef(onUnavailable)
+  React.useEffect(() => {
+    unavailableRef.current = onUnavailable
+  }, [onUnavailable])
 
   const key = `${target.type}:${target.id}:${target.season ?? ''}:${target.episode ?? ''}`
 
@@ -116,6 +123,18 @@ export function ReelyPlayer({
       } else if (data.kind === 'ended') {
         clearPosition(pKey)
         endedRef.current?.()
+      } else if (data.kind === 'unavailable') {
+        // The player booted, and then whatever it framed could not play. Until
+        // it could say so, this was the one failure the switcher's stall
+        // detector could not see either: our shell paints in about 200ms, so
+        // `load` fires, `loaded` goes true, and the nine-second timer that
+        // moves a visitor off a dead provider never starts. The result was a
+        // black rectangle with no warning and no automatic hop — on the one
+        // source that supporters are given by default.
+        if (!failed.current) {
+          failed.current = true
+          unavailableRef.current()
+        }
       }
     }
     window.addEventListener('message', onMessage)
