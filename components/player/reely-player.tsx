@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 
+import { STREAM_EMBED_ALLOW } from '@/lib/embed-policy'
 import {
   clearPosition,
   playbackKey,
@@ -129,7 +130,14 @@ export function ReelyPlayer({
       src={url}
       className="size-full rounded-md bg-black"
       allowFullScreen
-      allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+      // The same grant every other embed on the site gets, from the same
+      // builder. It used to be a hand-written list here, which meant this frame
+      // silently missed the ad-tech denials (`browsing-topics`,
+      // `attribution-reporting`, the Protected Audience pair) that the rest of
+      // the site withholds — and the house player nests a provider inside
+      // itself, so a permission missing at this level is missing two levels
+      // down as well. See lib/embed-policy.ts.
+      allow={STREAM_EMBED_ALLOW}
       onLoad={onReady}
       title="Reely Player"
     />

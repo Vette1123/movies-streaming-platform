@@ -11,7 +11,7 @@ import {
   type PlaybackPrefs,
 } from '@/lib/playback-prefs'
 import { cn } from '@/lib/utils'
-import { useAccount } from '@/hooks/use-account'
+import { useAccount, useAccountIdentity } from '@/hooks/use-account'
 import {
   Popover,
   PopoverContent,
@@ -68,7 +68,17 @@ export function PlayerSettings({
   onNeedsReload?: () => void
   className?: string
 }) {
-  const { pro, prefs } = useAccount()
+  // The cache-backed identity for the ENTITLEMENT, the store for the prefs.
+  //
+  // `useAccount().pro` is false until the session refresh lands, and stays
+  // false forever when that refresh cannot land at all (offline, or the 503 a
+  // deployment without D1 returns). The switcher next door already resolves the
+  // house player from the cached identity for exactly that reason, so gating
+  // this on the raw store produced the one combination that makes no sense: the
+  // Reely Player on screen, and no way to reach its subtitles. Same bug, same
+  // fix, one hook along. See useStreamSource.
+  const { pro } = useAccountIdentity()
+  const { prefs } = useAccount()
   const [open, setOpen] = React.useState(false)
 
   if (!pro) return null
@@ -87,13 +97,19 @@ export function PlayerSettings({
           type="button"
           aria-label="Player settings"
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 font-medium text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden',
+            // Sits inside the player bar's pill, so it carries no surface of
+            // its own: another filled pill next to six server pills is what
+            // made it read as a seventh server.
+            'tap-target inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium whitespace-nowrap text-white/85 transition-colors hover:bg-white/15 hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/60 focus-visible:outline-hidden',
             open && 'bg-white text-black hover:bg-white hover:text-black',
             className
           )}
         >
           <Settings2 className="size-3.5 shrink-0" aria-hidden />
-          Settings
+          {/* The gear alone carries it on a phone, where every pixel of the row
+              belongs to the servers. The label returns as soon as there is
+              room for it. */}
+          <span className="hidden sm:inline">Settings</span>
         </button>
       </PopoverTrigger>
 

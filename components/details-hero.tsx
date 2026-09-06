@@ -1,6 +1,5 @@
 import React from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Loader2 } from 'lucide-react'
 
 import { MovieDetails } from '@/types/movie-details'
 import { SeriesDetails } from '@/types/series-details'
@@ -15,6 +14,7 @@ import { HeroImage } from '@/components/header/hero-image'
 import { PlayButton } from '@/components/play-button'
 import { EmbedProgressBridge } from '@/components/player/embed-progress-bridge'
 import { PlayerSettings } from '@/components/player/player-settings'
+import { PlayerStage } from '@/components/player/player-stage'
 import { ReelyPlayer } from '@/components/player/reely-player'
 import { SourceSwitcher } from '@/components/player/source-switcher'
 import { RateButton } from '@/components/rate-button'
@@ -189,6 +189,35 @@ export const DetailsHero = ({
   const reelyLoaded = useReely && loadedSrc === `reely:${key}`
   const shownLoaded = useReely ? reelyLoaded : iframeLoaded
 
+  // One control bar, handed to whichever surface is mounted.
+  //
+  // Rendered over the house player too, not only over the embeds: the player is
+  // a source like any other, and hiding the bar there left supporters — the
+  // only people who ever see it — with no way to leave it from the page they
+  // are on. Settings was the only exit, and Settings did not work either.
+  //
+  // It lives in the band ABOVE the picture rather than over it. Two things
+  // already live along the bottom edge (the embed's own scrubber, and the
+  // install prompt, which measurably sat on these buttons and swallowed the
+  // click), and the top edge is where the sticky header used to eat it. The
+  // band is reserved by PlayerStage, so "above the frame" is now a fact about
+  // the layout instead of an assumption about two matching offsets.
+  const controls = sourceControl ? (
+    <SourceSwitcher
+      control={sourceControl}
+      loaded={shownLoaded}
+      // Only while the house player is the one on screen. Every lever in there
+      // — subtitles, their size, the mini bar, the jump to the next episode —
+      // is read by the Reely Player and by nothing else, so over an embed it
+      // would be a panel of controls that quietly do nothing.
+      trailing={
+        useReely ? (
+          <PlayerSettings isSeries={!isMovie} onNeedsReload={reloadPlayer} />
+        ) : undefined
+      }
+    />
+  ) : null
+
   // Hero fills exactly one viewport and never exceeds it — the whole hero is
   // visible on load with no scroll to see the buttons, and no oversized band
   // pushing content down. Uses 100svh (small viewport height), NOT dvh: dvh is
@@ -278,10 +307,11 @@ export const DetailsHero = ({
             )}
           </AnimatePresence>
           {useReely && selfHost ? (
-            // Same centered slot the embed occupies; inset by py-20 for the
-            // same reason — clear of the sticky header above and the install
-            // prompt's contested bottom edge.
-            <div className="relative size-full py-20">
+            <PlayerStage
+              loaded={reelyLoaded}
+              controls={controls}
+              bannerInset={!!together}
+            >
               <ReelyPlayer
                 key={`${key}:${playerBoot}`}
                 target={selfHost}
@@ -290,22 +320,17 @@ export const DetailsHero = ({
                 onEnded={onEnded}
                 frameRef={reelyFrameRef}
               />
-              {!reelyLoaded && (
-                <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
-                  <Loader2 className="size-12 animate-spin text-white/80" />
-                </div>
-              )}
-            </div>
+            </PlayerStage>
           ) : (
-            <>
-              {isIframeShown && !iframeLoaded && (
-                <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
-                  <Loader2 className="size-12 animate-spin text-white/80" />
-                </div>
-              )}
+            <PlayerStage
+              loaded={iframeLoaded}
+              showSpinner={isIframeShown}
+              controls={isIframeShown ? controls : undefined}
+              bannerInset={!!together}
+            >
               <iframe
                 ref={iframeRef}
-                className={cn('size-full py-20', {
+                className={cn('size-full', {
                   hidden: !isIframeShown,
                 })}
                 // Left undefined until play, so the embed is never requested on
@@ -341,7 +366,7 @@ export const DetailsHero = ({
                   frameRef={iframeRef}
                 />
               )}
-            </>
+            </PlayerStage>
           )}
           {/* Mounted whether or not the player is open: the room is what the
               URL says, and a host who has not pressed play yet still needs the
@@ -353,42 +378,6 @@ export const DetailsHero = ({
               isHost={together.isHost}
               frameRef={useReely ? reelyFrameRef : iframeRef}
             />
-          )}
-          {isIframeShown && (
-            // Rendered over the house player too, not only over the embeds: the
-            // player is a source like any other, and hiding the bar there left
-            // supporters — the only people who ever see it — with no way to
-            // leave it from the page they are on. Settings was the only exit,
-            // and Settings did not work either.
-            //
-            // Above the frame, not below it. Two things already live along the
-            // bottom edge — the embed's own scrubber, and the install prompt,
-            // which measurably sat on top of these buttons and swallowed the
-            // click. The band above the frame is empty on every viewport,
-            // because the iframe is inset by py-20 — offset clear of the sticky header,
-            // which sits above this and was eating the click at top-4.
-            <div className="pointer-events-none absolute inset-x-0 top-20 z-50 flex flex-wrap items-center justify-center gap-2 px-4">
-              {sourceControl && (
-                <SourceSwitcher control={sourceControl} loaded={shownLoaded} />
-              )}
-              {/* Next to the server buttons rather than inside them: which
-                  server is playing and how the player behaves are two different
-                  questions, and the switcher hides itself for visitors who
-                  cannot switch.
-
-                  Only while the house player is the one on screen. Every lever
-                  in there — subtitles, their size, the mini bar, the jump to the
-                  next episode — is read by the Reely Player and by nothing else,
-                  so over an embed it would be a panel of controls that quietly
-                  do nothing. */}
-              {useReely && (
-                <PlayerSettings
-                  isSeries={!isMovie}
-                  onNeedsReload={reloadPlayer}
-                  className="pointer-events-auto"
-                />
-              )}
-            </div>
           )}
         </div>
       </div>
