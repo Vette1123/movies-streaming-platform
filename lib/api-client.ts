@@ -41,7 +41,8 @@ export class ApiError extends Error {
  */
 export async function getJson<T>(
   path: string,
-  params: Record<string, unknown> = {}
+  params: Record<string, unknown> = {},
+  signal?: AbortSignal
 ) {
   const search = new URLSearchParams()
   for (const [key, value] of Object.entries(params)) {
@@ -49,13 +50,15 @@ export async function getJson<T>(
     search.set(key, String(value))
   }
   const qs = search.toString()
-  const res = await fetch(`${path}${qs ? `?${qs}` : ''}`)
+  const res = await fetch(`${path}${qs ? `?${qs}` : ''}`, { signal })
   if (!res.ok) throw new ApiError(res.status, path)
   return (await res.json()) as T
 }
 
-export const searchMediaApi = (query: string): Promise<MediaResponse> =>
-  getJson('/api/search', { query })
+export const searchMediaApi = (
+  query: string,
+  signal?: AbortSignal
+): Promise<MediaResponse> => getJson('/api/search', { query }, signal)
 
 // Page 2+ of the /movies and /tv-shows browse lists. Page 1 is baked into the
 // prerendered HTML; only scrolling past it reaches the Worker.
