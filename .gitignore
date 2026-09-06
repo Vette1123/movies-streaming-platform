@@ -52,3 +52,5 @@ out
 # file is kept as dev.vars.bak; both stay untracked.
 .dev.vars
 dev.vars.bak
+# Local agent worktrees are their own checkouts, never this repo's content.
+.claude/worktrees/
