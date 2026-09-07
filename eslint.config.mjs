@@ -19,6 +19,11 @@ const config = [
       // The bundled Worker (scripts/build-worker.mjs output). Same class as
       // the generated dirs above — it only exists after `pnpm build:cf`.
       '.cloudflare/**',
+      // Agent worktrees: a whole second checkout of this repo living inside it.
+      // Linting them is duplicate work at best, and the Tailwind plugin walks
+      // into their .next/ looking for a stylesheet that never got generated,
+      // which fails the ENTIRE run with ENOENT rather than one file.
+      '.claude/worktrees/**',
       '**/*.esm.js',
     ],
   },

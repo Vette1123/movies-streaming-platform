@@ -7,7 +7,6 @@ import { REELY_SOURCE_ID } from '@/config/sources'
 import { STREAM_EMBED_ALLOW } from '@/lib/embed-policy'
 import { getMediaTitle } from '@/lib/media'
 import { warmReelyTicket } from '@/lib/pro/ticket-cache'
-import { cn } from '@/lib/utils'
 import { useIntentProps } from '@/hooks/use-prefetch-intent'
 import { type StreamSourceControl } from '@/hooks/use-stream-source'
 import { HeroImage } from '@/components/header/hero-image'
@@ -324,15 +323,16 @@ export const DetailsHero = ({
           ) : (
             <PlayerStage
               loaded={iframeLoaded}
-              showSpinner={isIframeShown}
-              controls={isIframeShown ? controls : undefined}
+              // Not merely "do not draw the spinner": an inactive stage is
+              // display:none, because it is size-full and paints over the
+              // button stack it is a sibling of.
+              active={isIframeShown}
+              controls={controls}
               bannerInset={!!together}
             >
               <iframe
                 ref={iframeRef}
-                className={cn('size-full', {
-                  hidden: !isIframeShown,
-                })}
+                className="size-full"
                 // Left undefined until play, so the embed is never requested on
                 // load. Re-rendering with the SAME string is a no-op for React,
                 // which is what keeps pressing play on the already-playing episode

@@ -43,7 +43,7 @@ export function PlayerStage({
   controls,
   loaded,
   bannerInset,
-  showSpinner = true,
+  active = true,
   children,
 }: {
   /** The control bar. Rendered in the band above the picture, flush to it. */
@@ -58,11 +58,18 @@ export function PlayerStage({
    */
   bannerInset?: boolean
   /**
-   * Whether the spinner may show at all. The embed surface keeps its frame
-   * mounted before playback starts, and a spinner over an empty stage would
-   * claim something is loading when nothing has been asked for yet.
+   * Whether this surface is on screen at all.
+   *
+   * The embed keeps its frame mounted before playback starts — that is what
+   * stops pressing play on the already-playing episode from restarting it — so
+   * an inactive stage is `display: none`, exactly as the bare iframe used to
+   * be before it gained a wrapper. That is not cosmetic: the stage is
+   * `size-full` and a later sibling of the hero's button stack, so a stage
+   * that merely looks empty still paints over every control in the hero and
+   * swallows the tap. It gates the spinner too, which over an empty stage
+   * would claim something is loading when nothing has been asked for yet.
    */
-  showSpinner?: boolean
+  active?: boolean
   children: React.ReactNode
 }) {
   const [waiting, setWaiting] = React.useState(false)
@@ -84,7 +91,12 @@ export function PlayerStage({
   return (
     <div
       className={cn(
-        'relative flex size-full flex-col pb-20',
+        'relative size-full flex-col pb-20',
+        // One display utility, picked here rather than layered as `flex` plus a
+        // conditional `hidden`: which of those two wins is decided by
+        // Tailwind's emission order, not by the order they appear in this
+        // string.
+        active ? 'flex' : 'hidden',
         bannerInset ? 'pt-28' : 'pt-20'
       )}
     >
@@ -101,7 +113,7 @@ export function PlayerStage({
           picture overflows the hero instead of fitting it. */}
       <div className="relative min-h-0 flex-1">
         {children}
-        {showSpinner && !loaded ? (
+        {!loaded ? (
           <div
             role="status"
             aria-live="polite"
