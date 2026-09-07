@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 
+import { trackPlayerStreamPath } from '@/lib/analytics'
 import { STREAM_EMBED_ALLOW } from '@/lib/embed-policy'
 import {
   clearPosition,
@@ -106,7 +107,14 @@ export function ReelyPlayer({
       if (event.origin !== playerOrigin) return
       if (event.source !== frameRef.current?.contentWindow) return
       const data = event.data as
-        { source?: string; kind?: string; t?: number; dur?: number } | undefined
+        | {
+            source?: string
+            kind?: string
+            t?: number
+            dur?: number
+            native?: boolean
+          }
+        | undefined
       if (!data || data.source !== 'reely-player') return
       const pKey = playbackKey(
         target.type,
@@ -123,6 +131,11 @@ export function ReelyPlayer({
       } else if (data.kind === 'ended') {
         clearPosition(pKey)
         endedRef.current?.()
+      } else if (data.kind === 'capability') {
+        // Counts the one thing that decides what a viewer costs us. See
+        // trackPlayerStreamPath — this is how a platform change that frees a
+        // whole browser family announces itself.
+        trackPlayerStreamPath({ native: data.native === true })
       } else if (data.kind === 'unavailable') {
         // The player booted, and then whatever it framed could not play. Until
         // it could say so, this was the one failure the switcher's stall

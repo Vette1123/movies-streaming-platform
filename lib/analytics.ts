@@ -61,6 +61,7 @@ export const EVENTS = {
   PWA_INSTALLABLE: 'pwa_installable',
   PWA_INSTALLED: 'pwa_installed',
   PWA_PROMPTED: 'pwa_prompted',
+  PLAYER_STREAM_PATH: 'player_stream_path',
   // Support / monetisation. One event with a `surface` property rather than an
   // event per placement: the only question worth asking of it is which surface
   // sends people to the plans, and that is a breakdown, not six funnels.
@@ -436,6 +437,23 @@ export function trackPwaPrompted(props: {
   outcome: 'accepted' | 'dismissed'
 }): void {
   track(EVENTS.PWA_PROMPTED, props)
+}
+
+/**
+ * Which path carried this play: the viewer's own browser, or our relay.
+ *
+ * A media element sends no `Origin`, so a browser that can play HLS natively
+ * fetches the film straight from the provider and costs us nothing; hls.js
+ * must send one, and the CDN refuses it, so those plays come through the relay
+ * and cost us the whole film. That split is the site's only per-viewer
+ * expense, and it was previously reasoned about rather than counted.
+ *
+ * It is also the alarm for a change nobody here can test: Chromium has been
+ * landing desktop native HLS since 142, and Android Chrome may already pass.
+ * Either shows up as this ratio moving on its own.
+ */
+export function trackPlayerStreamPath(props: { native: boolean }): void {
+  track(EVENTS.PLAYER_STREAM_PATH, props)
 }
 
 // ---- Infrastructure ---------------------------------------------------------
