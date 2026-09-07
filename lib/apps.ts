@@ -10,8 +10,9 @@
 // the chooser page the apps themselves link to — that a desktop reader gets,
 // because from a laptop we cannot know which phone they will install on.
 //
-// Nafis is Android-only, so it has neither, and `storesLabel` says so rather
-// than inheriting a claim from its neighbours.
+// Nafis reached the App Store on 2026-09-06, so all three carry both now. The
+// Play-only branch stays: `storesLabel` and `storeHref` read the data rather
+// than a constant, which is what let this app change stores by adding an id.
 
 export interface CompanionApp {
   /** Stable key for analytics + React keys. */
@@ -66,7 +67,8 @@ export const COMPANION_APPS: CompanionApp[] = [
   companionApp(
     'nafis',
     'Nafis',
-    'A local-price tracker for gold, currencies and more'
+    'A local-price tracker for gold, currencies and more',
+    '6807595780'
   ),
 ]
 
