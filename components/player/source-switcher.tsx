@@ -2,12 +2,19 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { AlertTriangle, Server, Sparkles } from 'lucide-react'
+import { AlertTriangle, ChevronDown, Server, Sparkles } from 'lucide-react'
 
 import { HAS_FALLBACK_SOURCE, REELY_SOURCE_ID } from '@/config/sources'
 import { trackSupportCtaClicked } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 import { type StreamSourceControl } from '@/hooks/use-stream-source'
+import {
+  Popover,
+  PopoverContent,
+  PopoverHeading,
+  PopoverRow,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 
 /**
  * The escape hatch when a stream will not start.
@@ -19,16 +26,25 @@ import { type StreamSourceControl } from '@/hooks/use-stream-source'
  * loop: if the second one is also silent the honest thing is a visible control
  * and an explanation, not an endless carousel of black rectangles.
  *
- * The buttons are always there while something is playing, because the failure
+ * The control is always there while something is playing, because the failure
  * this cannot detect — a provider that loads a page and then plays nothing — is
  * common enough that "it loaded" is not the same as "it works".
  *
- * ONE ROW, ALWAYS. The servers used to `flex-wrap`, which is fine at three and
- * a wall at six: a supporter on a phone got four rows of near-identical pills
- * laid over the picture, and the row height changed under them every time the
- * stall notice swapped in. A rail that scrolls has a height that does not
- * depend on how many providers are configured or how wide the phone is, so the
- * band above the video can reserve it and the picture never moves.
+ * ONE CONTROL, NOT ONE PER SERVER. Every server used to be its own pill on the
+ * bar. Three of them plus Settings is already wider than a phone, so the row
+ * became a rail that scrolled — and a rail that scrolls hides something. On a
+ * 412px phone the measured overflow was 77px, all of it eaten off the left
+ * edge, which is where the house player sits: a supporter watching the player
+ * they pay for saw a 40px sliver of magenta and three servers they were not
+ * on. Before the rail it was `flex-wrap`, which was four rows of pills over the
+ * picture. Both are the same mistake — sizing a control to the number of
+ * providers configured.
+ *
+ * A trigger that names what is playing plus a list on tap is fixed-width by
+ * construction: a sixth provider changes what is inside the panel and nothing
+ * about the bar. It is also the control next door — Settings is a pill in this
+ * same bar that opens a popover — so the two halves of the player's chrome now
+ * work the same way instead of two ways.
  */
 
 /**
@@ -40,34 +56,6 @@ import { type StreamSourceControl } from '@/hooks/use-stream-source'
  * never looks like nothing happening.
  */
 const STALL_MS = 9000
-
-/**
- * Whether a scroller has anything to scroll to.
- *
- * Drives two things that both look wrong if guessed: the rail centres its
- * entries when they fit and left-aligns them when they do not (a centred
- * overflowing row hides its own first entry under the left edge), and the edge
- * fade only appears when there is something past the edge to fade.
- */
-function useOverflows(ref: React.RefObject<HTMLElement | null>): boolean {
-  const [overflows, setOverflows] = React.useState(false)
-
-  React.useEffect(() => {
-    const node = ref.current
-    if (!node) return
-    const measure = () => setOverflows(node.scrollWidth > node.clientWidth + 1)
-    measure()
-    // Fires on the element's own resize AND on content changes that resize it,
-    // so a tier change that adds the house player is covered without a second
-    // effect keyed on the list.
-    const observer = new ResizeObserver(measure)
-    observer.observe(node)
-    for (const child of node.children) observer.observe(child)
-    return () => observer.disconnect()
-  }, [ref])
-
-  return overflows
-}
 
 /** The shell every state of this bar shares: one pill-shaped, glassy row. */
 function Bar({
@@ -102,6 +90,47 @@ function StallNotice({ children }: { children: React.ReactNode }) {
   )
 }
 
+/**
+ * The house player's mark, and only on the gradient pill.
+ *
+ * Cut OUT of the gradient rather than painted on top of it: a badge carrying
+ * the same three stops as the pill behind it is a lozenge you have to look
+ * twice at. It is not repeated inside the list, where the row already carries
+ * a different icon, a different name, a line of copy and a heading separating
+ * it from the servers — a fifth signal there is decoration.
+ */
+function ProMark() {
+  return (
+    <span className="rounded-full bg-black/35 px-1.5 py-px text-[9px] leading-tight font-bold tracking-wider text-white/95">
+      PRO
+    </span>
+  )
+}
+
+/**
+ * The trigger wears what is playing.
+ *
+ * On the house player it takes the signature gradient, so a supporter can tell
+ * at a glance which surface they are on; on an embed it is a quiet glass pill
+ * that does not compete with the picture underneath. Open state is carried by
+ * light, never by a ring: `ring-2` draws OUTSIDE the border box and stood the
+ * pill taller than the gear beside it, cropped by the bar's own padding.
+ */
+function triggerClass(onHouse: boolean, open: boolean): string {
+  if (onHouse) {
+    return cn(
+      'relative isolate bg-linear-to-r from-amber-500 via-rose-500 to-fuchsia-600 font-semibold text-white shadow-[0_1px_10px_-3px_rgba(244,63,94,0.55)] ring-1 ring-white/25 ring-inset',
+      open
+        ? 'shadow-[0_2px_18px_-3px_rgba(244,63,94,0.95)] ring-white/55'
+        : 'hover:shadow-[0_2px_14px_-3px_rgba(244,63,94,0.8)]'
+    )
+  }
+  return cn(
+    'font-medium text-white/90 hover:bg-white/15 hover:text-white',
+    open && 'bg-white/15 text-white'
+  )
+}
+
 export function SourceSwitcher({
   control,
   loaded,
@@ -112,10 +141,10 @@ export function SourceSwitcher({
   /** Whether the frame has painted for the CURRENT src. */
   loaded: boolean
   /**
-   * Pinned to the end of the bar and never scrolled away — the player's own
-   * settings. It lives inside this bar rather than beside it because a second
-   * floating pill next to six server pills reads as a seventh server, and
-   * because two independent bars cannot agree on a height.
+   * Pinned to the end of the bar — the player's own settings. It lives inside
+   * this bar rather than beside it because a second floating pill next to the
+   * server control reads as a second player, and because two independent bars
+   * cannot agree on a height.
    */
   trailing?: React.ReactNode
   className?: string
@@ -126,9 +155,8 @@ export function SourceSwitcher({
   // both derives `stalled` and clears it on a switch, with no second effect
   // resetting a flag — which is the version that raced.
   const [stalledId, setStalledId] = React.useState<string | null>(null)
+  const [open, setOpen] = React.useState(false)
   const hopped = React.useRef(false)
-  const railRef = React.useRef<HTMLDivElement>(null)
-  const railOverflows = useOverflows(railRef)
   const currentId = source?.id ?? null
 
   React.useEffect(() => {
@@ -147,20 +175,6 @@ export function SourceSwitcher({
     }, STALL_MS)
     return () => clearTimeout(timer)
   }, [advance, currentId, loaded, next])
-
-  // Keep the playing server in view. Switching by keyboard, and the automatic
-  // hop, both move the selection to an entry that can be off the visible part
-  // of the rail — and an entry you cannot see cannot tell you what is playing.
-  React.useEffect(() => {
-    const rail = railRef.current
-    // Only when there is somewhere to scroll TO. On a rail that fits, this
-    // would still be a scroll call, and a scroll call on an element inside a
-    // full-viewport hero is one the page can decide to answer itself.
-    if (!rail || !currentId || !railOverflows) return
-    rail
-      .querySelector(`[data-source-id="${CSS.escape(currentId)}"]`)
-      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-  }, [currentId, railOverflows])
 
   const stalled = !loaded && stalledId !== null && stalledId === currentId
   const showWarning = stalled && !loaded
@@ -203,6 +217,15 @@ export function SourceSwitcher({
     )
   }
 
+  // The house player is not "another server" — it is the product, so it leads
+  // the list on its own rather than sitting in a run of Server N. Found by id
+  // rather than taken from position 0: the order the tier hands us is a fact
+  // about entitlement, not something this list should depend on.
+  const house = sources.find((entry) => entry.id === REELY_SOURCE_ID)
+  const embeds = sources.filter((entry) => entry.id !== REELY_SOURCE_ID)
+  const onHouse = source.id === REELY_SOURCE_ID
+  const TriggerIcon = onHouse ? Sparkles : Server
+
   return (
     <div
       className={cn(
@@ -219,99 +242,78 @@ export function SourceSwitcher({
       ) : null}
 
       <Bar>
-        {/* Says what the row is without spending a tap target on it. Hidden on
-            phones, where the row itself is the whole width worth having. */}
-        <span className="hidden shrink-0 items-center gap-1.5 pr-0.5 pl-2.5 font-medium text-white/70 sm:inline-flex">
-          <Server className="size-3.5 shrink-0" aria-hidden />
-          Servers
-        </span>
-
-        <div
-          ref={railRef}
-          role="group"
-          aria-label="Streaming server"
-          className={cn(
-            'no-scrollbar flex min-w-0 snap-x snap-proximity items-center gap-1.5 overflow-x-auto motion-safe:scroll-smooth',
-            railOverflows
-              ? 'justify-start mask-[linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)]'
-              : 'justify-center'
-          )}
-        >
-          {sources.map((entry) => {
-            // The house player is not "another server" — it is the product.
-            // Give it a look nothing else on this bar can be confused with:
-            // signature gradient, spark, and a PRO mark. Active or not, it
-            // always reads premium so supporters see what they are paying for
-            // and free visitors see what they are missing.
-            const isReely = entry.id === REELY_SOURCE_ID
-            const isActive = entry.id === source.id
-            const shared =
-              'tap-target inline-flex h-7 shrink-0 snap-start items-center gap-1.5 rounded-full px-3 whitespace-nowrap transition-all focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/60 focus-visible:outline-hidden'
-
-            if (isReely) {
-              return (
-                <button
-                  key={entry.id}
-                  type="button"
-                  data-source-id={entry.id}
-                  aria-pressed={isActive}
-                  onClick={() => select(entry.id)}
-                  className={cn(
-                    shared,
-                    'relative isolate font-semibold text-white',
-                    'bg-linear-to-r from-amber-500 via-rose-500 to-fuchsia-600',
-                    // Selection is carried by saturation and light, not by an
-                    // outline. `ring-2 ring-white/90` drew OUTSIDE the border
-                    // box, so the one chip that was selected stood 32px tall in
-                    // a row of 28s and pressed against the bar's 4px of
-                    // padding: a white halo on a coloured pill, cropped by the
-                    // surface behind it. An inset hairline cannot change the
-                    // height, and reads as a bevel on the gradient rather than
-                    // a sticker cut out of it.
-                    'ring-1 ring-white/25 ring-inset',
-                    'shadow-[0_1px_10px_-3px_rgba(244,63,94,0.55)]',
-                    isActive
-                      ? 'shadow-[0_2px_18px_-3px_rgba(244,63,94,0.95)] ring-white/55'
-                      : 'opacity-70 hover:opacity-100 hover:shadow-[0_2px_14px_-3px_rgba(244,63,94,0.8)]'
-                  )}
-                >
-                  {/* The top-edge highlight every physical control has and no
-                      flat gradient does. Inside the pill, above the gradient,
-                      below the label — the cheapest thing that separates a
-                      button from a coloured rectangle. */}
-                  <span
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-linear-to-b from-white/30 to-transparent to-45%"
-                  />
-                  <Sparkles className="size-3.5 shrink-0" aria-hidden />
-                  {entry.label}
-                  <span className="rounded-full bg-black/35 px-1.5 py-px text-[9px] leading-tight font-bold tracking-wider text-white/95">
-                    PRO
-                  </span>
-                </button>
-              )
-            }
-
-            return (
-              <button
-                key={entry.id}
-                type="button"
-                data-source-id={entry.id}
-                aria-pressed={isActive}
-                onClick={() => select(entry.id)}
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              // Named rather than left to the visible label alone: "Server 2"
+              // on its own says nothing about what the control does, and it is
+              // the whole accessible name of the only way off a dead stream.
+              aria-label={`Streaming server: ${source.label}`}
+              className={cn(
+                'tap-target inline-flex h-8 min-w-0 items-center gap-1.5 rounded-full px-3 whitespace-nowrap transition-all focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/60 focus-visible:outline-hidden',
+                triggerClass(onHouse, open)
+              )}
+            >
+              {onHouse ? (
+                // The top-edge highlight every physical control has and no flat
+                // gradient does. Inside the pill, above the gradient, below the
+                // label — the cheapest thing that separates a button from a
+                // coloured rectangle.
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-linear-to-b from-white/30 to-transparent to-45%"
+                />
+              ) : null}
+              <TriggerIcon className="size-3.5 shrink-0" aria-hidden />
+              <span className="truncate">{source.label}</span>
+              {onHouse ? <ProMark /> : null}
+              <ChevronDown
+                aria-hidden
                 className={cn(
-                  shared,
-                  'font-medium',
-                  isActive
-                    ? 'bg-white text-black'
-                    : 'text-white/85 hover:bg-white/15 hover:text-white'
+                  'size-3.5 shrink-0 opacity-70 transition-transform',
+                  open && 'rotate-180'
                 )}
-              >
-                {entry.label}
-              </button>
-            )
-          })}
-        </div>
+              />
+            </button>
+          </PopoverTrigger>
+
+          {/* Opens downward over the picture, because the trigger sits in a bar
+              pinned to the top of the frame and there is nothing above it but
+              the page header. Never wider than the phone it is on. */}
+          <PopoverContent
+            align="center"
+            side="bottom"
+            sideOffset={8}
+            className="z-60 w-[min(20rem,calc(100vw-2rem))] p-1.5"
+          >
+            <div role="group" aria-label="Streaming server">
+              {house ? (
+                <>
+                  <PopoverRow
+                    Icon={Sparkles}
+                    iconClassName="text-fuchsia-400"
+                    title={house.label}
+                    subtitle="Subtitles, quality and resume"
+                    pressed={house.id === source.id}
+                    onClick={() => select(house.id)}
+                  />
+                  <PopoverHeading>Other servers</PopoverHeading>
+                </>
+              ) : null}
+
+              {embeds.map((entry) => (
+                <PopoverRow
+                  key={entry.id}
+                  Icon={Server}
+                  title={entry.label}
+                  pressed={entry.id === source.id}
+                  onClick={() => select(entry.id)}
+                />
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
 
         {trailing ? (
           <>

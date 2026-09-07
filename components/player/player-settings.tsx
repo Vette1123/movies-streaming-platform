@@ -100,7 +100,11 @@ export function PlayerSettings({
             // Sits inside the player bar's pill, so it carries no surface of
             // its own: another filled pill next to six server pills is what
             // made it read as a seventh server.
-            'tap-target inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium whitespace-nowrap text-white/85 transition-colors hover:bg-white/15 hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/60 focus-visible:outline-hidden',
+            // h-8, matching the server control it shares the bar with. Two
+            // pills of different heights in one pill-shaped bar reads as a
+            // mistake, and this bar has room now that it holds two controls
+            // rather than one per configured provider.
+            'tap-target inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium whitespace-nowrap text-white/85 transition-colors hover:bg-white/15 hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/60 focus-visible:outline-hidden',
             open && 'bg-white text-black hover:bg-white hover:text-black',
             className
           )}

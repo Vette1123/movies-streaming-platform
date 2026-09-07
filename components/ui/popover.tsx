@@ -3,6 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import * as PopoverPrimitive from '@radix-ui/react-popover'
+import { Check } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
@@ -56,6 +57,13 @@ export interface PopoverRowProps {
   /** Opens in a new tab. Off by default: our own routes stay in this one. */
   external?: boolean
   onClick?: () => void
+  /**
+   * The row is one option in a single-choice list, and this is whether it is
+   * the chosen one. Set on EVERY row of such a list, `false` included: the
+   * tick column only exists for rows that pass it, so a list where one row
+   * omits it shifts under the reader.
+   */
+  pressed?: boolean
 }
 
 /**
@@ -76,16 +84,29 @@ function PopoverRow({
   href,
   external,
   onClick,
+  pressed,
 }: PopoverRowProps) {
   const content = (
     <>
       <Icon className={cn('size-5 shrink-0', iconClassName)} />
-      <span className="flex min-w-0 flex-col">
+      <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-sm font-medium">{title}</span>
         {subtitle && (
           <span className="text-xs text-muted-foreground">{subtitle}</span>
         )}
       </span>
+      {pressed === undefined ? null : (
+        // Rendered on every row of the list rather than only the chosen one,
+        // at zero opacity: a tick that appears and disappears takes its column
+        // with it, and the titles slide when the choice changes.
+        <Check
+          aria-hidden
+          className={cn(
+            'size-4 shrink-0',
+            pressed ? 'opacity-100' : 'opacity-0'
+          )}
+        />
+      )}
     </>
   )
 
@@ -107,7 +128,12 @@ function PopoverRow({
 
   return (
     <PopoverClose asChild>
-      <button type="button" onClick={onClick} className={POPOVER_ROW}>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={pressed}
+        className={cn(POPOVER_ROW, pressed && 'bg-accent/60')}
+      >
         {content}
       </button>
     </PopoverClose>
