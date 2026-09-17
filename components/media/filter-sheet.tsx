@@ -43,7 +43,7 @@ export const FilterSheet = ({
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="w-[350px] overflow-hidden sm:w-100"
+        className="flex w-[350px] flex-col overflow-hidden sm:w-100"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
@@ -53,7 +53,7 @@ export const FilterSheet = ({
             {filterOverlayTitle(mediaType)}
           </SheetTitle>
         </SheetHeader>
-        <div className="mt-6">
+        <div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <FilterSidebar
             mediaType={mediaType}
             className="max-w-none"

@@ -27,7 +27,7 @@ export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
     <div className="relative overflow-hidden">
       {/* Must precede the Carousel — the hook reads the cache on first render. */}
       <HeroExtrasSeeder seed={heroExtras} />
-      <Carousel stageClassName="min-h-[86svh] sm:min-h-[70svh] lg:min-h-screen">
+      <Carousel stageClassName="min-h-[86svh] sm:min-h-[70svh] lg:min-h-svh">
         {movies?.map((movie, index) => {
           const isTv = resolveMediaType(movie) === 'tv'
           return (

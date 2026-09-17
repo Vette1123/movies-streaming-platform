@@ -35,7 +35,7 @@ interface CommandDialogProps
 
 // Matches Tailwind's `sm` breakpoint — below it we treat the dialog as the
 // mobile, keyboard-aware variant.
-const MOBILE_QUERY = '(max-width: 639px)'
+const MOBILE_QUERY = '(max-width: 639px), (pointer: coarse)'
 // Gap kept between the dialog's top edge and the visible viewport.
 const VIEWPORT_GAP = 12
 // Only a hairline is kept above the keyboard — that space sits right where the
@@ -88,12 +88,8 @@ const CommandDialog = ({
     >
       <DialogContent
         style={contentStyle}
-        className={cn(
-          'top-[7vh] w-[calc(100%-1.5rem)] max-w-xl translate-y-0 overflow-hidden rounded-xl p-0 shadow-2xl sm:w-full sm:max-w-xl sm:rounded-xl lg:top-[9vh]',
-          // A flex column lets the list grow into the remaining height and
-          // scroll, keeping the input pinned at the top above the keyboard.
-          keyboardAware && 'flex flex-col'
-        )}
+        scrollable={false}
+        className="top-[7dvh] flex max-h-[calc(93dvh-1rem)] w-[calc(100%-1.5rem)] max-w-xl translate-y-0 flex-col overflow-hidden rounded-xl p-0 shadow-2xl sm:w-full sm:max-w-xl sm:rounded-xl lg:top-[9dvh] lg:max-h-[calc(91dvh-1rem)]"
       >
         <VisuallyHidden.Root>
           <DialogTitle>Search</DialogTitle>
@@ -115,7 +111,10 @@ const CommandInput = React.forwardRef<
     isLoading?: boolean
   }
 >(({ isLoading, className, ...props }, ref) => (
-  <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
+  <div
+    className="flex shrink-0 items-center border-b px-3"
+    cmdk-input-wrapper=""
+  >
     {isLoading ? (
       <Loader className="mr-2 size-4 shrink-0 animate-spin opacity-50" />
     ) : (
@@ -140,7 +139,10 @@ const CommandList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.List
     ref={ref}
-    className={cn('max-h-75 overflow-x-hidden overflow-y-auto', className)}
+    className={cn(
+      'max-h-75 min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain',
+      className
+    )}
     {...props}
   />
 ))

@@ -383,7 +383,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
           isLoading={isLoading}
         />
         {status === 'results' && visibleResults.length > 0 && (
-          <div className="flex items-center gap-1.5 border-b px-3 py-2">
+          <div className="flex shrink-0 items-center gap-1.5 border-b px-3 py-2">
             {(
               [
                 ['all', 'All', counts.all],
@@ -420,7 +420,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
             ))}
           </div>
         )}
-        <CommandList className="max-h-[75vh] min-h-0 flex-1 sm:max-h-[74vh] sm:min-h-115 sm:flex-none">
+        <CommandList className="max-h-[75dvh] min-h-0 flex-1 sm:max-h-[74dvh] sm:basis-115">
           <CommandGroup heading={resultsHeading}>
             {/* When the typed query found nothing and a looser one did, say
                 which one. Quietly answering a different question is how a
@@ -789,7 +789,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
           <CommandSeparator />
         </CommandList>
         <div
-          className="hidden items-center justify-between gap-2 border-t bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground sm:flex"
+          className="hidden shrink-0 items-center justify-between gap-2 border-t bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground sm:flex"
           aria-hidden
         >
           <div className="flex items-center gap-3">

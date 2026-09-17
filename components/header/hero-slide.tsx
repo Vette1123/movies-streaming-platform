@@ -312,7 +312,7 @@ export function HeroSlide({
   const cinematic = previewActive
 
   return (
-    <div className="relative size-full overflow-hidden">
+    <div className="relative min-h-[inherit] w-full overflow-hidden">
       {/* Backdrop — full-bleed landscape, falling back to the poster. */}
       {media.backdrop_path ? (
         <BlurredImage
@@ -412,7 +412,7 @@ export function HeroSlide({
       {/* pb-24 on mobile (not pb-28): the dots sit at bottom-3 and the counter
           adds ~44px, so 96px clears them with room to spare — the extra 16px
           goes back to the copy, which is what was running out of height. */}
-      <div className="absolute inset-0 z-30 pb-24 sm:pb-32 lg:pb-0">
+      <div className="relative z-30 flex min-h-[inherit] flex-col pb-24 sm:pb-32 lg:pb-20">
         {/* Mobile: anchor copy to the lower third so the artwork breathes up top
             and the content can never overflow upward into the fixed header (the
             old vertical-centering pushed the NEW badge behind the header on tall
@@ -426,7 +426,7 @@ export function HeroSlide({
             while an auto top margin collapses to 0 and the overflow goes
             DOWNWARD into the 96px bottom padding that only holds the dots — so
             the copy stays fully readable. Desktop keeps the centered row. */}
-        <div className="relative container flex h-full flex-col gap-x-8 pt-20 sm:pt-24 lg:flex-row lg:items-center lg:justify-center lg:pt-28">
+        <div className="relative container flex flex-1 flex-col gap-x-8 pt-20 sm:pt-24 lg:flex-row lg:items-center lg:justify-center lg:pt-24">
           {/* No height cap here on purpose. Capping the column (max-h-full) and
               clipping the text block was what sliced the overview through the
               middle of a line on short viewports. The copy is sized to FIT
@@ -435,7 +435,7 @@ export function HeroSlide({
               viewports — so nothing is ever cut mid-glyph. The header is still
               safe regardless: this whole block is z-30, strictly below the
               header's z-40, so it can never paint over the nav. */}
-          <div className="mt-auto flex w-full grow-0 flex-col lg:mt-0 lg:grow">
+          <div className="mt-auto flex w-full min-w-0 grow-0 flex-col lg:mt-0 lg:flex-1">
             {/* Title, badge and rating stay put during the takeover so the movie
                 is always identifiable; only the long overview recedes (below) to
                 give the trailer more of the frame. */}
@@ -598,11 +598,11 @@ export function HeroSlide({
           </div>
 
           <div
-            className={`hidden transition-all duration-500 ease-out lg:flex ${
+            className={`hidden shrink-0 transition-all duration-500 ease-out lg:flex ${
               cinematic ? 'opacity-0 blur-sm' : 'blur-0 opacity-100'
             }`}
           >
-            <div className="relative min-h-175 w-100 overflow-hidden rounded-xl shadow-2xl">
+            <div className="relative aspect-2/3 w-[min(28vw,400px,calc((100svh-12rem)*2/3))] overflow-hidden rounded-xl shadow-2xl">
               {/* `sizes` is a flat 400px because the box above is a flat 400px,
                   and this panel only exists at lg and up (the wrapper is
                   `hidden lg:flex`). The old value claimed 1024px there and 30vw

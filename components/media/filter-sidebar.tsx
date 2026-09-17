@@ -309,7 +309,7 @@ export const FilterSidebar = ({
           make it the one control you have to scroll to find. */}
       <SavedFilters hasActiveFilters={hasActiveFilters} />
 
-      <ScrollArea className="max-h-[78vh] overflow-y-auto pb-8 lg:max-h-[calc(100vh-8rem)] lg:pb-0">
+      <ScrollArea className="pb-8 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto lg:pb-0">
         <div className="space-y-4 pr-3">
           {/* Sort */}
           <Section

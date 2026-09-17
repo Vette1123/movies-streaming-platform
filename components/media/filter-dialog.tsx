@@ -42,7 +42,7 @@ export const FilterDialog = ({
         />
       </DialogTrigger>
       <DialogContent
-        className="max-h-[80vh] max-w-md overflow-hidden"
+        className="flex max-h-[80dvh] max-w-md flex-col overflow-hidden"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
@@ -52,7 +52,7 @@ export const FilterDialog = ({
             {filterOverlayTitle(mediaType)}
           </DialogTitle>
         </DialogHeader>
-        <div className="overflow-y-auto">
+        <div className="min-h-0 overflow-y-auto overscroll-contain">
           <FilterSidebar
             mediaType={mediaType}
             className="max-w-none"

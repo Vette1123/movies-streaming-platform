@@ -594,7 +594,7 @@ export function Carousel({
           autoplay produce the identical motion. */}
         <motion.div
           ref={trackRef}
-          className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
+          className="relative z-10 grid min-h-[inherit] cursor-grab active:cursor-grabbing"
           style={{
             x,
             touchAction: 'pan-y pinch-zoom',
@@ -652,7 +652,7 @@ export function Carousel({
                 // artifact, not a colour step. Overlapping by a pixel means
                 // there is no boundary to antialias, and since both edges are
                 // sealed to black the overlap itself cannot be seen.
-                className="absolute -inset-x-px inset-y-0"
+                className="relative col-start-1 row-start-1 -mx-px min-h-[inherit] min-w-0"
                 // A slide is placed once and never animates. The track owns all
                 // horizontal motion; anything else writing x broke the release
                 // twice before, and there is no longer a second property being
