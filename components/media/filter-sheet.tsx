@@ -44,8 +44,6 @@ export const FilterSheet = ({
       <SheetContent
         side="right"
         className="flex w-[350px] flex-col overflow-hidden sm:w-100"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
       >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">

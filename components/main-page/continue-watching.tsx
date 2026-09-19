@@ -6,7 +6,8 @@ import { Play } from 'lucide-react'
 
 import { trackSupportCtaClicked } from '@/lib/analytics'
 import type { NextUpItem } from '@/lib/nextup/routes'
-import { getPosterImageURL } from '@/lib/utils'
+import { RAIL_TRACK_CLASS } from '@/lib/rail-scroll'
+import { cn, getPosterImageURL } from '@/lib/utils'
 import { useAccountIdentity } from '@/hooks/use-account'
 import { readStore } from '@/hooks/use-local-storage'
 import { useNextUp } from '@/hooks/use-next-up'
@@ -81,7 +82,9 @@ export function ContinueWatching() {
 
       {/* A scroller rather than a grid, for the same reason as every other rail:
           a row that wraps to three lines on a phone is not a row. */}
-      <ul className="scrollbar-hide -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
+      <ul
+        className={cn(RAIL_TRACK_CLASS, 'scrollbar-hide -mx-1 gap-3 px-1 pb-2')}
+      >
         {items.map((item) => (
           <li key={item.id} className="w-40 shrink-0 snap-start sm:w-44">
             <Tile item={item} />

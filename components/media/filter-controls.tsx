@@ -23,6 +23,26 @@ export interface FilterOverlayProps {
   activeFilterCount: number
 }
 
+/**
+ * Both filter overlays used to pass `onPointerDownOutside` and
+ * `onInteractOutside` handlers that called `preventDefault()` unconditionally,
+ * which made the dimmed backdrop inert: tapping it did nothing at all. That is
+ * how every other overlay on this site closes — the account panel, the
+ * disclaimer, the trailer dialog, the mobile nav — and PostHog logged the dead
+ * clicks on `div.backdrop-blur-xs.bg-background/80` to prove people were trying
+ * it here too.
+ *
+ * Neither handler carried a comment, and the thing worth checking before
+ * deleting them was the four `Slider`s in the sidebar: releasing a range drag
+ * past the edge of the panel is the one gesture that could plausibly reach
+ * Radix as an interaction "outside" and close the panel mid-drag. It does not —
+ * `onPointerDownOutside` fires on pointer DOWN, and a slider drag's pointerdown
+ * is inside the content — and that was verified in a browser, dragging each
+ * slider past the panel edge and releasing, before the handlers came out.
+ *
+ * Nothing is lost by closing either way: every filter applies live and is
+ * stored in the URL by nuqs, so there is no unsaved work to protect.
+ */
 export function useFilterOverlay(onOpenChange: (open: boolean) => void) {
   // Prevent event bubbling that can cause mobile refresh issues.
   const handleOpenChange = useCallback(

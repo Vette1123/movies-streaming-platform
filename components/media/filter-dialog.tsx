@@ -41,11 +41,7 @@ export const FilterDialog = ({
           onClick={handleTriggerClick}
         />
       </DialogTrigger>
-      <DialogContent
-        className="flex max-h-[80dvh] max-w-md flex-col overflow-hidden"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
-      >
+      <DialogContent className="flex max-h-[80dvh] max-w-md flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Icons.sliders className="size-5" />

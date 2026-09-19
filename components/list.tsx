@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Clapperboard } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
-import { canPage, railArrowState } from '@/lib/rail-scroll'
+import { canPage, RAIL_TRACK_CLASS, railArrowState } from '@/lib/rail-scroll'
 import { cn, itemRedirect } from '@/lib/utils'
 import { Card } from '@/components/card'
 import { SeeAllLink } from '@/components/see-all-link'
@@ -180,7 +180,7 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
           <h2 className="flex min-w-0 items-center gap-2.5 text-2xl font-bold tracking-tight transition-colors duration-200 ease-in group-hover/heading:text-cyan-200">
             <span
               aria-hidden
-              className="h-5 w-[3px] shrink-0 origin-center rounded-full bg-linear-to-b from-cyan-300 to-cyan-500 opacity-85 shadow-[0_0_8px_rgba(103,232,249,0.5)] transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] group-hover/heading:scale-y-[1.35] group-hover/heading:opacity-100 motion-reduce:transition-none"
+              className="h-5 w-[3px] shrink-0 origin-center rounded-full bg-linear-to-b from-cyan-300 to-cyan-500 opacity-85 shadow-[0_0_8px_rgba(103,232,249,0.5)] transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/heading:scale-y-[1.35] group-hover/heading:opacity-100 motion-reduce:transition-none"
             />
             <span className="truncate">{title}</span>
           </h2>
@@ -225,7 +225,10 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
             // pointer-drag animate toward its target, so rapid drag updates fight
             // the smoothing and the rail feels stuck / unswipeable on desktop.
             // Arrow paging still animates via scrollBy({ behavior: 'smooth' }).
-            className="no-scrollbar -mx-4 -my-6 flex snap-x snap-mandatory scroll-pl-4 gap-6 overflow-x-auto px-4 py-6"
+            className={cn(
+              RAIL_TRACK_CLASS,
+              'no-scrollbar -mx-4 -my-6 scroll-pl-4 gap-6 px-4 py-6'
+            )}
           >
             {items.map((item) => (
               // Responsive width matching SliderHorizontalListLoader so the

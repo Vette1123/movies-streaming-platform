@@ -5,7 +5,8 @@ import { Clapperboard } from 'lucide-react'
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
 import { getMediaTitle } from '@/lib/media'
-import { getPosterImageURL, itemRedirect } from '@/lib/utils'
+import { RAIL_TRACK_CLASS } from '@/lib/rail-scroll'
+import { cn, getPosterImageURL, itemRedirect } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
 import { MediaLink } from '@/components/media/media-link'
 import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
@@ -69,7 +70,7 @@ export function StaticRail({
       )}
 
       {items.length > 0 && (
-        <div className="no-scrollbar -my-4 flex snap-x snap-mandatory gap-6 overflow-x-auto py-4">
+        <div className={cn(RAIL_TRACK_CLASS, 'no-scrollbar -my-4 gap-6 py-4')}>
           {items.map((item) => {
             const posterTitle = getMediaTitle(item) || 'Poster'
             return (

@@ -16,6 +16,30 @@
  * looks correct against it.
  */
 
+/**
+ * The scroll behaviour every horizontal poster rail shares.
+ *
+ * `snap-proximity`, not `snap-mandatory`, and that is the whole reason this
+ * string exists in one place. Mandatory snapping forces the nearest snap point
+ * after every gesture, so a flick that travels less than half a card is undone:
+ * the track returns exactly where it started and the finger produced no scroll
+ * at all. PostHog logged 19 `$dead_swipe`s in a fortnight, most of them on the
+ * poster images in these rails, which is what that feels like from the other
+ * side — the rail reads as stuck.
+ *
+ * Mandatory is for a track where one item IS the viewport and landing between
+ * two of them is meaningless. That describes the reels feed (`snap-y`, one
+ * full-screen reel per page), which keeps it. It does not describe a poster
+ * rail showing two to six cards at once, where resting between cards is a
+ * perfectly good place to be and the CSS working group's own guidance is
+ * proximity. A large swipe still snaps; a small one now settles.
+ *
+ * Spacing stays with each caller — the rails deliberately differ there, and
+ * `static-rail` has to match `list` exactly or the row jumps when the skeleton
+ * swaps for the real one.
+ */
+export const RAIL_TRACK_CLASS = 'flex snap-x snap-proximity overflow-x-auto'
+
 export interface RailMetrics {
   scrollLeft: number
   scrollWidth: number
