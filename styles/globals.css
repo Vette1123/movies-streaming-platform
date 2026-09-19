@@ -232,12 +232,49 @@
 
   /* Skip layout+paint for offscreen content until it scrolls near the viewport.
      The homepage stacks many poster rails; only the first couple are above the
-     fold, so the rest cost nothing to render initially. `contain-intrinsic-size`
-     reserves an estimated height so the scrollbar and page height stay stable
-     (no jump as rows realize). ~420px ≈ heading + one poster row. */
+     fold, so the rest cost nothing to render initially.
+
+     contain-intrinsic-size is the height a rail CLAIMS while it is still
+     skipped, and it is load-bearing for smoothness, not just for the scrollbar:
+     every rail that crosses into the viewport swaps its claimed height for its
+     real one, and the difference is taken out of the page below it while the
+     finger is still moving. One number cannot be right at every width — a rail
+     is a heading plus one poster row, and that row is sized by the card width,
+     which steps at sm/lg/2xl. A single 420px estimate was wrong in BOTH
+     directions and worst on a phone: measured against the real thing it
+     OVER-reserved 84px per rail below 640px (six rails on the homepage, so
+     ~500px of phantom page collapsing upward on the way down) and
+     UNDER-reserved 83px per rail at 1536px and up.
+
+     The values below are measured, not estimated — each is what a rail actually
+     reports at that tier: 336 / 397 / 473 / 503. Re-measure if the card widths
+     in components/list.tsx or the rail padding change; static-rail mirrors list
+     exactly and shares this class for the same reason.
+
+     The `auto` keyword means a rail that HAS rendered once remembers its real
+     size, so these govern only the first pass down the page — which is exactly
+     the pass somebody feels. */
   .cv-auto {
     content-visibility: auto;
-    contain-intrinsic-size: auto 420px;
+    contain-intrinsic-size: auto 336px;
+  }
+
+  @media (min-width: 40rem) {
+    .cv-auto {
+      contain-intrinsic-size: auto 397px;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .cv-auto {
+      contain-intrinsic-size: auto 473px;
+    }
+  }
+
+  @media (min-width: 96rem) {
+    .cv-auto {
+      contain-intrinsic-size: auto 503px;
+    }
   }
 }
 

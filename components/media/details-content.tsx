@@ -4,12 +4,13 @@ import { Credit } from '@/types/credit'
 import { MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
 import { recommendedHeading, similarHeading } from '@/lib/seo-title'
+import { cn } from '@/lib/utils'
 import { List } from '@/components/list'
 import { SliderHorizontalListLoader } from '@/components/loaders/slider-horizontal-list-loader'
 import { CollectionBanner } from '@/components/media/collection-banner'
 import { DetailsCredits } from '@/components/media/details-credits'
 import { DetailsExtraInfo } from '@/components/media/details-extra-info'
-import { DetailsPoster } from '@/components/media/details-poster'
+import { DETAILS_ROW, DetailsPoster } from '@/components/media/details-poster'
 
 export const MoviesDetailsContent = ({
   movie,
@@ -31,9 +32,9 @@ export const MoviesDetailsContent = ({
   return (
     <>
       <section className="container max-w-(--breakpoint-2xl) pt-12 pb-6 lg:pb-10">
-        <div className="flex flex-col gap-8 lg:flex-row">
+        <div className={cn(DETAILS_ROW, 'flex-col')}>
           <DetailsPoster path={movie.poster_path} alt={movie.title} />
-          <section className="flex flex-col gap-4">
+          <section className="flex min-w-0 flex-1 flex-col gap-4">
             <DetailsExtraInfo movie={movie} director={director} />
             <DetailsCredits
               movieCredits={movieCredits}

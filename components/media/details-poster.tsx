@@ -25,8 +25,28 @@ import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
 const POSTER_SIZES =
   '(min-width: 1024px) 400px, (min-width: 640px) 260px, 220px'
 
+/**
+ * The breakpoint at which the poster stops being a centred block stacked above
+ * the information and joins it on a single row.
+ *
+ * It lives here, beside the poster, because THREE class strings have to agree
+ * about it and they were each written out separately: the row on the movie
+ * page, the same row on the series page, and the poster's own `mx-auto`
+ * centring below. All three said `lg` — 1024px — so at a tablet width a 260px
+ * poster sat marooned in the middle of a ~900px row with a few hundred pixels
+ * of inert gutter either side of it, and the synopsis began underneath. PostHog
+ * logged the clicks that landed in that gutter: they hit the row itself, which
+ * is layout, so nothing happened. From `md` the poster and the copy fill the
+ * row between them and the gutter does not exist.
+ *
+ * Callers add their own stacking direction for the narrow case — the movie page
+ * puts the poster first, the series page puts it after the information
+ * (`flex-col-reverse`) — and both resolve to the same row here.
+ */
+export const DETAILS_ROW = 'flex gap-8 md:flex-row'
+
 export const DetailsPoster = ({ path, alt }: { path: string; alt: string }) => (
-  <div className="mx-auto w-full max-w-55 shrink-0 sm:max-w-65 lg:mx-0 lg:w-100 lg:max-w-none">
+  <div className="mx-auto w-full max-w-55 shrink-0 sm:max-w-65 md:mx-0 lg:w-100 lg:max-w-none">
     <div className="relative aspect-2/3 w-full overflow-hidden rounded-xl shadow-xl lg:aspect-auto lg:min-h-150">
       <BlurredImage
         src={getImageURL(path)}

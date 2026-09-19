@@ -4,10 +4,11 @@ import { Credit } from '@/types/credit'
 import { MediaType } from '@/types/media'
 import { SeriesDetails } from '@/types/series-details'
 import { recommendedHeading, similarHeading } from '@/lib/seo-title'
+import { cn } from '@/lib/utils'
 import { List } from '@/components/list'
 import { SliderHorizontalListLoader } from '@/components/loaders/slider-horizontal-list-loader'
 import { DetailsCredits } from '@/components/media/details-credits'
-import { DetailsPoster } from '@/components/media/details-poster'
+import { DETAILS_ROW, DetailsPoster } from '@/components/media/details-poster'
 import { SectionErrorBoundary } from '@/components/section-error-boundary'
 import { SeriesDetailsExtraInfo } from '@/components/series/details-extra-info'
 import {
@@ -37,7 +38,7 @@ export const SeriesDetailsContent = ({
   return (
     <>
       <section className="container max-w-(--breakpoint-2xl) pt-12 pb-6 lg:pb-10">
-        <div className="flex flex-col-reverse gap-8 lg:flex-row">
+        <div className={cn(DETAILS_ROW, 'flex-col-reverse')}>
           <DetailsPoster path={series.poster_path} alt={series.name} />
           <section className="flex flex-1 flex-col gap-4">
             <SeriesDetailsExtraInfo series={series} director={director} />

@@ -458,67 +458,90 @@ export function HeroSlide({
                   date={movie.release_date || movie.first_air_date}
                   className="relative top-0 left-0 mb-2 px-2.5 py-1 text-[11px] lg:text-xs"
                 />
-                {showLogo ? (
-                  // Stack the text title and the official logo in one bottom-
-                  // aligned box that reserves the logo's height, so there's no
-                  // layout jump and no hard swap: the text shows immediately and
-                  // holds the frame, then crossfades out as the decoded logo
-                  // rises in. Plain <img> so we don't fight next/image over the
-                  // logo's arbitrary aspect ratio; falls back to text on error.
-                  <div className="relative flex min-h-16 w-full items-end sm:min-h-20 lg:min-h-32">
+                {/* The title is a link, because the synopsis under it already is.
+                    That paragraph was made one when it turned out to be the
+                    most-clicked dead element on the home page, and the reasoning
+                    there applies with more force here: the wordmark is the
+                    biggest, most obviously "this is the thing" target on the
+                    page, and it did nothing. It rides the same MediaLink the
+                    overview and Watch Now use, so the carousel's tap resolver
+                    (TAP_SLOP in components/carousel.tsx — it arms for
+                    `a[href], button` only) already tells a tap on it apart from
+                    a swipe that started on it.
+                    NOT made a link: the artwork around this column. Those clicks
+                    exist in PostHog too, but they land on the layout box above
+                    the copy, they come from both phones and desktops, and on a
+                    stage whose primary gesture is a horizontal drag the likeliest
+                    reading of a click on bare artwork is a swipe that never
+                    travelled. Turning that into navigation would send people to
+                    a detail page every time a swipe failed to take. */}
+                <MediaLink
+                  href={href}
+                  aria-label={`More about ${title}`}
+                  className="block w-full"
+                >
+                  {showLogo ? (
+                    // Stack the text title and the official logo in one bottom-
+                    // aligned box that reserves the logo's height, so there's no
+                    // layout jump and no hard swap: the text shows immediately and
+                    // holds the frame, then crossfades out as the decoded logo
+                    // rises in. Plain <img> so we don't fight next/image over the
+                    // logo's arbitrary aspect ratio; falls back to text on error.
+                    <div className="relative flex min-h-16 w-full items-end sm:min-h-20 lg:min-h-32">
+                      <h2
+                        aria-hidden={logoLoaded}
+                        className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md transition-opacity duration-500 ease-out sm:text-4xl lg:text-6xl ${
+                          logoLoaded || holdTitleText
+                            ? 'opacity-0'
+                            : 'opacity-100'
+                        }`}
+                      >
+                        {title}
+                      </h2>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        ref={logoRef}
+                        src={getLogoImageURL(logoPath!)}
+                        // A plain <img> gets no srcset from next/image, so the
+                        // density pair is written by hand: the wordmark lays out
+                        // at ~500 CSS px, which retina paints at 1000.
+                        srcSet={getLogoImageSrcSet(logoPath!)}
+                        alt={title}
+                        // The first slide's wordmark is part of the LCP frame and
+                        // races a fallback timer; tell the browser so it isn't
+                        // queued behind the rails' posters.
+                        fetchPriority={priority ? 'high' : 'auto'}
+                        // The carousel keeps a slide mounted either side, and
+                        // their wordmarks are parked a stage-width away where
+                        // nobody can see them. Eager, they were 3 logo downloads
+                        // on load — measured at 24/59/67 KB once the 2x file
+                        // exists, i.e. more than the hero backdrop itself. Lazy,
+                        // an off-stage slide fetches its logo when it slides in,
+                        // behind the title-text fallback the crossfade already
+                        // has for exactly this case.
+                        loading={priority ? 'eager' : 'lazy'}
+                        // Same reason as every image in BlurredImage: a native
+                        // image drag would ghost the logo and eat the gesture.
+                        draggable={false}
+                        onError={markLogoError}
+                        onLoad={markLogoLoaded}
+                        className={`absolute bottom-0 left-0 max-h-16 w-auto max-w-[80%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] transition-all duration-700 ease-out sm:max-h-20 lg:max-h-32 ${
+                          logoLoaded
+                            ? 'blur-0 translate-y-0 opacity-100'
+                            : 'pointer-events-none translate-y-2 opacity-0 blur-[2px]'
+                        }`}
+                      />
+                    </div>
+                  ) : (
                     <h2
-                      aria-hidden={logoLoaded}
                       className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md transition-opacity duration-500 ease-out sm:text-4xl lg:text-6xl ${
-                        logoLoaded || holdTitleText
-                          ? 'opacity-0'
-                          : 'opacity-100'
+                        holdTitleText ? 'opacity-0' : 'opacity-100'
                       }`}
                     >
                       {title}
                     </h2>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      ref={logoRef}
-                      src={getLogoImageURL(logoPath!)}
-                      // A plain <img> gets no srcset from next/image, so the
-                      // density pair is written by hand: the wordmark lays out
-                      // at ~500 CSS px, which retina paints at 1000.
-                      srcSet={getLogoImageSrcSet(logoPath!)}
-                      alt={title}
-                      // The first slide's wordmark is part of the LCP frame and
-                      // races a fallback timer; tell the browser so it isn't
-                      // queued behind the rails' posters.
-                      fetchPriority={priority ? 'high' : 'auto'}
-                      // The carousel keeps a slide mounted either side, and
-                      // their wordmarks are parked a stage-width away where
-                      // nobody can see them. Eager, they were 3 logo downloads
-                      // on load — measured at 24/59/67 KB once the 2x file
-                      // exists, i.e. more than the hero backdrop itself. Lazy,
-                      // an off-stage slide fetches its logo when it slides in,
-                      // behind the title-text fallback the crossfade already
-                      // has for exactly this case.
-                      loading={priority ? 'eager' : 'lazy'}
-                      // Same reason as every image in BlurredImage: a native
-                      // image drag would ghost the logo and eat the gesture.
-                      draggable={false}
-                      onError={markLogoError}
-                      onLoad={markLogoLoaded}
-                      className={`absolute bottom-0 left-0 max-h-16 w-auto max-w-[80%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] transition-all duration-700 ease-out sm:max-h-20 lg:max-h-32 ${
-                        logoLoaded
-                          ? 'blur-0 translate-y-0 opacity-100'
-                          : 'pointer-events-none translate-y-2 opacity-0 blur-[2px]'
-                      }`}
-                    />
-                  </div>
-                ) : (
-                  <h2
-                    className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md transition-opacity duration-500 ease-out sm:text-4xl lg:text-6xl ${
-                      holdTitleText ? 'opacity-0' : 'opacity-100'
-                    }`}
-                  >
-                    {title}
-                  </h2>
-                )}
+                  )}
+                </MediaLink>
               </div>
               <HeroRatesInfos movie={movie} genreTable={genreTable} />
               {/* The clamp steps down by a WHOLE line on very short viewports

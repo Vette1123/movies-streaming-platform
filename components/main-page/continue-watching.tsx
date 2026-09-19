@@ -181,8 +181,23 @@ function Tile({ item }: { item: NextUpItem }) {
 function CarryItOver() {
   return (
     <section className="px-5 pt-8 sm:px-8 lg:px-12 xl:px-16 2xl:px-20">
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-primary/25 bg-linear-to-br from-primary/10 to-transparent px-5 py-4">
-        <p className="max-w-[62ch] text-sm leading-relaxed text-muted-foreground">
+      {/* One composition, not a bar stretched to the page gutters.
+
+          `justify-between` across a full-bleed band pinned the CTA to the right
+          edge while the copy kept its ~62ch reading measure on the left, so the
+          two sat 1005px apart at 1920 and further still beyond that, with
+          nothing between them: a paragraph wrapped into a narrow column,
+          floating beside a button it no longer looked related to.
+
+          The band is capped instead, and the copy FLEXES to fill whatever the
+          button leaves rather than holding a fixed measure inside a much wider
+          box. Measured across the range, the CTA now sits 24px from the text at
+          every width above 640px; below that both still stack, which is right
+          on a phone. The cap is what turns three short lines into two full ones
+          from 1024px up (the band goes 102px tall to 80px), and it is why the
+          button stops wrapping onto its own row at 768px. */}
+      <div className="flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-3 rounded-lg border border-primary/25 bg-linear-to-br from-primary/10 to-transparent px-5 py-4">
+        <p className="min-w-0 flex-1 basis-80 text-sm leading-relaxed text-muted-foreground">
           <span className="font-medium text-foreground">
             You are part-way through something.
           </span>{' '}
@@ -193,7 +208,7 @@ function CarryItOver() {
         <Link
           href="/support"
           onClick={() => trackSupportCtaClicked({ surface: 'home_continue' })}
-          className={buttonVariants({ size: 'sm' })}
+          className={cn(buttonVariants({ size: 'sm' }), 'shrink-0')}
         >
           See what support unlocks
         </Link>

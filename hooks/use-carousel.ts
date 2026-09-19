@@ -27,6 +27,11 @@ export const useCarousel = ({
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isUserInteracting, setIsUserInteracting] = useState(false)
   const [isTabHidden, setIsTabHidden] = useState(false)
+  // Is the stage itself on screen? See the observer below.
+  const [isOffscreen, setIsOffscreen] = useState(false)
+  // The stage element, owned here because this hook is what needs to watch it.
+  // The carousel attaches it to the box it renders the slides in.
+  const stageRef = useRef<HTMLDivElement>(null)
   const isMounted = useMounted()
 
   // Once the visitor drives the carousel themselves, it stops driving itself —
@@ -67,6 +72,31 @@ export const useCarousel = ({
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [])
 
+  // ...and pause it while the hero is scrolled off screen, for the same reason
+  // and a bigger payoff.
+  //
+  // `document.hidden` only covers a backgrounded TAB. The hero sits at the top
+  // of the home page, so the moment somebody scrolls down to the rails it is out
+  // of sight and still rotating: every 5s it advanced the index, which
+  // re-rendered the three mounted slides, ran a spring over the track and had
+  // the browser decode the incoming backdrop — a main-thread spike, on a timer,
+  // landing on frames a finger is already scrolling through. It reads as scroll
+  // lag rather than as anything visible, because the thing doing the work is not
+  // on screen to be seen doing it.
+  //
+  // The 200px margin starts it again just BEFORE it comes back into view, so
+  // scrolling up never reveals a frozen hero that then catches up in a jump.
+  useEffect(() => {
+    const el = stageRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsOffscreen(!entry.isIntersecting),
+      { rootMargin: '200px 0px' }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   // Memoized values for performance
   const hasMultipleSlides = useMemo(() => childrenCount > 1, [childrenCount])
   // How many dots fit on ONE row of a phone, not how many are "a lot".
@@ -102,6 +132,7 @@ export const useCarousel = ({
       userTookOver ||
       isUserInteracting ||
       isTabHidden ||
+      isOffscreen ||
       externalPaused
     )
       return
@@ -123,6 +154,7 @@ export const useCarousel = ({
     userTookOver,
     isUserInteracting,
     isTabHidden,
+    isOffscreen,
     externalPaused,
   ])
 
@@ -290,8 +322,9 @@ export const useCarousel = ({
     currentIndex,
     isUserInteracting,
     isMounted,
+    stageRef,
     // For the autoplay progress bar: freeze it whenever the timer isn't running.
-    isPaused: isUserInteracting || isTabHidden || externalPaused,
+    isPaused: isUserInteracting || isTabHidden || isOffscreen || externalPaused,
     hasMultipleSlides,
     showAllDots,
     paginate,

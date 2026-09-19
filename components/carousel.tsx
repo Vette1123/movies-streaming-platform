@@ -182,6 +182,7 @@ export function Carousel({
     handleHoverEnd,
     handleButtonClick,
     handleDotClick,
+    stageRef,
   } = useCarousel({
     childrenCount,
     // Reduced-motion turns the rotation OFF, not just the spring. It was only
@@ -213,7 +214,6 @@ export function Carousel({
   // Hence NO dragConstraints: with nothing to snap back to, x simply stays where
   // the finger left it and this component owns every pixel of the return.
   const x = useMotionValue(0)
-  const stageRef = React.useRef<HTMLDivElement>(null)
   const prevIndexRef = React.useRef(currentIndex)
 
   // Which slide the mounted WINDOW is centred on. Deliberately lags
