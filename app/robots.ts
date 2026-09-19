@@ -18,7 +18,24 @@ export const dynamic = 'force-static'
 // Allow is enough. The URLs are dead — no build since the icon rework emits
 // them — and letting Google fetch them is precisely the point: an honest 404
 // drops them, while a robots block leaves them listed forever.
-const CRAWL_ALLOW = ['/', '/icon', '/apple-icon', '/favicon.ico']
+//
+// The same exemption is why the manifest and the touch icons are listed. They
+// are NOT dead: every page links them, and every link carries the cache-buster
+// (`/site.webmanifest?v=2`, `/apple-touch-icon.png?v=2`), which is a query
+// string, which `/*?*` swallows. `/favicon.ico` was already exempt and the
+// others were not, so Google could fetch the search-result favicon and nothing
+// else the site declares about itself. Each path below is longer than `/*?*`,
+// so each wins the conflict on its own.
+const CRAWL_ALLOW = [
+  '/',
+  '/icon',
+  '/apple-icon',
+  '/favicon.ico',
+  '/site.webmanifest',
+  '/apple-touch-icon.png',
+  '/android-chrome-192x192.png',
+  '/android-chrome-512x512.png',
+]
 
 // One list rather than the same nine lines copied into each rule block.
 const CRAWL_DISALLOW = [
