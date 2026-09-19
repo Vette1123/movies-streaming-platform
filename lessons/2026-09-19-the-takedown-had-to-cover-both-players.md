@@ -73,6 +73,20 @@ takedown list. Removed, and verified back to one entry. A script whose only mode
 writes to committed state needs a dry-run flag, or a fixture path — noted, not yet
 built.
 
+**The confirmation went out from the wrong mailbox, twice over.** The first
+attempt replied to the notice's `From:`, which is `abuse@notify.cloudflare.com` —
+a noreply address that discards everything, so Cloudflare never logged it. The
+notice names the real route in its own body (`abusereply@cloudflare.com`, report
+id in the subject): the address to answer sat three lines below the one the mail
+client auto-filled into the Reply button. The second attempt reached the right
+address but **from the wrong account** — the connected Gmail is
+`boogado996@gmail.com`, while the abuse notice had been sent to
+`boogado66@gmail.com`. That mailbox was inferred from a note about
+`support@reely.space` forwarding rather than checked, and an abuse response
+Cloudflare cannot tie to the customer account is a response that may not count.
+Both failures are the same failure: trusting the transport's default over the
+instruction written in the message.
+
 ## What worked
 
 - **Diffing against `blocked-crawlers.json` before designing anything.** That file
@@ -105,6 +119,10 @@ built.
 - **Record the report id and the date in the same write that applies the block.**
   They are the evidence that removal was expeditious, which is the only thing the
   process is for. That is why it is a script and not a hand edit.
+- **Read the notice for the reply route, and check which mailbox you are sending
+  from.** The `From:` on an abuse forward is nearly always a noreply, and the real
+  address is in the body. A correct letter from the wrong address is not a
+  delivered letter.
 - **Re-read the legal pages when the architecture moves.** Every claim on
   `/disclaimer` and `/dmca` must be backed by something in the repo. Do not add a
   promise to those pages that no code keeps.
