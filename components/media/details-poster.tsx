@@ -42,8 +42,25 @@ const POSTER_SIZES =
  * Callers add their own stacking direction for the narrow case — the movie page
  * puts the poster first, the series page puts it after the information
  * (`flex-col-reverse`) — and both resolve to the same row here.
+ *
+ * `md:flex-wrap` is what lets ONE constant serve both pages, which have a
+ * different number of columns. The movie row is poster + information and never
+ * wraps. The series row has a third child, the season navigator, and that aside
+ * is `w-full` until `lg` — dropped into a row at `md` unwrapped it would claim
+ * the whole line and crush the synopsis to about 90px. Wrapping, it takes its
+ * own line under the poster and the copy until `xl` makes it a real column (see
+ * NAVIGATOR_BOX in components/series/season-navigator.tsx), at which point all
+ * three fit against a 1208px container and the line stops breaking on its own.
+ *
+ * The information column must be `flex-1` (i.e. `flex: 1 1 0%`) for that to be
+ * deterministic: a zero flex-basis means it never contributes width to the
+ * wrapping decision, so where the line breaks depends only on the poster and the
+ * aside, not on how long a synopsis happens to be.
+ *
+ * Wrapping is scoped to `md` and up on purpose — below it the container is a
+ * COLUMN, where `flex-wrap` would break on height instead.
  */
-export const DETAILS_ROW = 'flex gap-8 md:flex-row'
+export const DETAILS_ROW = 'flex gap-8 md:flex-row md:flex-wrap'
 
 export const DetailsPoster = ({ path, alt }: { path: string; alt: string }) => (
   <div className="mx-auto w-full max-w-55 shrink-0 sm:max-w-65 md:mx-0 lg:w-100 lg:max-w-none">

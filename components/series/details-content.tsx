@@ -40,7 +40,7 @@ export const SeriesDetailsContent = ({
       <section className="container max-w-(--breakpoint-2xl) pt-12 pb-6 lg:pb-10">
         <div className={cn(DETAILS_ROW, 'flex-col-reverse')}>
           <DetailsPoster path={series.poster_path} alt={series.name} />
-          <section className="flex flex-1 flex-col gap-4">
+          <section className="flex min-w-0 flex-1 flex-col gap-4">
             <SeriesDetailsExtraInfo series={series} director={director} />
             <DetailsCredits
               movieCredits={seriesCredits}
