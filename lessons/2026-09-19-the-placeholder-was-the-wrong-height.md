@@ -71,6 +71,23 @@ result.** It fixed the gap but left the copy at three lines. One measurement
 across six widths showed `5xl` settles it to two, which is what "the text is
 cut" was actually about.
 
+**A regression shipped, and the verification pass is the only reason it did not
+stay shipped.** Moving the details row from `lg` to `md` was checked on the
+MOVIE page — poster flush left, information filling the row, gutter gone — and
+pushed. The series page has a third child in that same row, the season
+navigator, and it is `w-full` until `lg`. Dropped into an unwrapped row at
+768px it took the whole line and left the synopsis and cast about 90px. Two
+files share a layout constant precisely because they are the same layout; that
+is exactly why a change to it has to be measured on BOTH, and "I verified the
+change" meant one of them.
+
+**The 200px column was there the whole time and nobody had looked.** At `lg` the
+poster grows to 400px, so poster + a 288px navigator + gaps against a 952px row
+left the series synopsis 200px — narrower than the poster beside it. That was
+production's behaviour before any of this, and it only surfaced because the
+regression above forced a measurement of every child at every breakpoint. The
+checking found more than the thing it was checking.
+
 ## What worked
 
 - **Same-origin iframes as a viewport rig.** `resize_window` does nothing when
@@ -109,3 +126,8 @@ cut" was actually about.
   had to agree on `lg` and nothing made them.
 - Stop after two failed attempts to prove something in the browser harness, and
   say the test was inconclusive rather than reasoning from it.
+- A shared layout constant has to be measured on every page that imports it, not
+  on the one the change was written for. The second caller is where the child
+  count differs.
+- Measure every CHILD of a row, not just the one that moved. The squeezed column
+  is never the element being changed.
