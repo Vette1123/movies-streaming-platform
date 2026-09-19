@@ -36,6 +36,43 @@ was `4866792` — the worked example in `refresh-people.mjs`'s own docstring. Al
 25 unioned in (197 → 287 of a 300 cap), deployed, and all 25 now return 200 to
 Googlebot from the edge cache.
 
+## The rest of the console
+
+Page indexing is one report of nine. The others, swept afterwards:
+
+| Report | State |
+|---|---|
+| Manual actions | **No issues detected** |
+| Security issues | **No issues detected** |
+| Core Web Vitals, mobile + desktop | INP / CLS / LCP: **0 URLs** on each, both devices |
+| HTTPS | 0 non-HTTPS, 32 HTTPS, no issues in 90 days |
+| Breadcrumbs | 0 invalid, 22 valid |
+| Review snippets | 0 invalid, 15 valid |
+| Videos (structured data) | 0 invalid, 11 valid |
+| Sitemaps | `sitemap.xml` Success, last read 19 Sept, 14,832 pages |
+| **Video indexing** | **222 not indexed / 16 indexed — "Video isn't on a watch page"** |
+
+Two things came out of it.
+
+**The manifest and the touch icons were robots-blocked by our own rule.**
+`Disallow: /*?*` exists to keep filter permutations out of the crawl, and every
+icon link on every page carries a cache-buster: `/site.webmanifest?v=2`,
+`/apple-touch-icon.png?v=2`, `/android-chrome-*.png?v=2`. A query string is
+exactly what that rule swallows. `/favicon.ico` had an explicit Allow and the
+others did not, so Google could fetch the favicon it draws beside a search
+result and nothing else the site declares about itself. Fixed by the same
+mechanism the `/icon` exemption already used — longest matching pattern wins,
+and any real path beats `/*?*`.
+
+**Video indexing is a deliberate trade, not a defect.** 222 trailers are "not on
+a watch page", and they never will be: the trailer lives behind a dialog on a
+page whose subject is the title, and the `VideoObject` is nested under the
+movie's `trailer` property, which is what Google's own Movie schema asks for.
+Making 222 pages into watch pages means a YouTube iframe inline on every detail
+page — several hundred KB and a pile of main-thread work on the exact pages that
+were just tuned for scroll smoothness. Keeping correct structured data that
+Google declines to index as *video* costs nothing; the page still indexes.
+
 ## Mistakes
 
 **`seo:verify` was accused of silently skipping its own check.** Its output
@@ -92,3 +129,9 @@ character in the origin string. Pass paths through PowerShell, or
   and the report is the list of promises broken.
 - On Windows, a leading-slash CLI argument through Git Bash is a Windows path by
   the time the program sees it.
+- A blanket `Disallow: /*?*` also hides your own versioned assets. Every URL the
+  site links with a cache-buster needs an Allow, or Google is refused the files
+  the page uses to describe itself.
+- Not every red number is a defect. Apex-to-www redirects, robots-blocked API
+  routes and a trailer that is not the page's subject are correct behaviour;
+  validating them just fails again and teaches nobody anything.
