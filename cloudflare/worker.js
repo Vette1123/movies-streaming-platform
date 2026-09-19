@@ -50,6 +50,7 @@ import { fetchWatchProviders } from '@/services/watch-providers'
 import { ownsPath } from '@/lib/api/account-paths'
 import { loadSession, sessionCookieOf } from '@/lib/auth/session'
 import { isEntitled } from '@/lib/billing/entitlement'
+import { blockedTitleEntry } from '@/lib/blocked-titles'
 import { loadDirectory } from '@/lib/community/routes'
 import { smartQuery } from '@/lib/filter-query'
 import { isImdbId } from '@/lib/imdb-id'
@@ -1502,6 +1503,38 @@ async function handleProTicket(request, env, url) {
       }
     )
   }
+  // Playback disabled following a copyright notice — see
+  // config/blocked-titles.json.
+  //
+  // This check is the one that matters, and it has to live here rather than in
+  // the UI. A ticket is a signed grant the private player accepts on its own;
+  // anything that can POST this endpoint can play, with or without our page. A
+  // client-side gate would hide the button and change nothing about what is
+  // reachable, which is the difference between a removal and the appearance of
+  // one.
+  //
+  // 451, not 403: the resource exists and the refusal is legal, which is
+  // exactly what that status was defined for, and it makes the reason legible
+  // in a log without anyone having to guess.
+  const blocked = blockedTitleEntry(type, id)
+  if (blocked) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Playback for this title has been disabled.',
+        reason: 'copyright-notice',
+        reportId: blocked.reportId,
+      }),
+      {
+        status: 451,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+        },
+      }
+    )
+  }
+
   const season = Number(body.season)
   const episode = Number(body.episode)
   const start = Math.max(0, Number(body.start) || 0)

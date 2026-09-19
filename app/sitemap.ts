@@ -214,6 +214,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'yearly',
       priority: 0.3,
     },
+    // Listed so it is findable by the people who need it. A takedown page that
+    // only the footer knows about is a takedown page a rights holder's lawyer
+    // never sees before writing to the host.
+    {
+      url: `${baseUrl}/dmca`,
+      lastModified: SITE_LAUNCH_DATE,
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
     // Indexable on purpose, unlike /account and /watchlist: this one is the same
     // page for everybody, it is the only page that explains what supporting the
     // site buys, and it is what a search for "reely supporter" should find.

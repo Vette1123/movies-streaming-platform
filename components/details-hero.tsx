@@ -60,12 +60,22 @@ export const DetailsHero = ({
   sourceControl,
   selfHost,
   onEnded,
+  blocked = false,
 }: {
   movie?: MovieDetails
   series?: SeriesDetails
   /** Embed URL. Empty/undefined until the visitor presses play. */
   src?: string
   playVideo: () => void
+  /**
+   * Playback disabled for this title following a copyright notice — see
+   * config/blocked-titles.json. The callers also withhold `src` and
+   * `selfHost`, so there is nothing to play either way; this is what replaces
+   * the control, so the page says so instead of offering a button that does
+   * nothing. Everything else on the page — synopsis, cast, artwork, ratings,
+   * and the official trailer — is unaffected.
+   */
+  blocked?: boolean
   trailerKey?: string
   /**
    * Which server is playing, and how to move off one that will not. Rendered
@@ -134,6 +144,10 @@ export const DetailsHero = ({
     if (reelyIsTheSource && selfHost) warmReelyTicket(selfHost)
   }, [reelyIsTheSource, selfHost])
   const playIntent = useIntentProps(warmTicket)
+  // A blocked title mints nothing: selfHost is already undefined so warmTicket
+  // is a no-op, but not attaching the handler at all means the block does not
+  // quietly depend on that staying true two refactors from now.
+  const stackIntent = blocked ? undefined : playIntent
 
   // If the house player cannot start — ticket refused once PRO_PLAYER_OPEN is
   // lifted, or the worker not configured — fall back to the first embed and
@@ -253,15 +267,32 @@ export const DetailsHero = ({
                 className="absolute inset-0 flex flex-col items-center justify-center gap-4 sm:gap-5"
                 // On the stack, not the button: a touch anywhere in it bubbles
                 // up here, and the resume control leads to the same player.
-                {...playIntent}
+                {...stackIntent}
               >
-                <PlayButton
-                  onClick={playVideo}
-                  media={media}
-                  target={playTarget}
-                  isResume={isResume}
-                />
-                {resumeSlot}
+                {blocked ? (
+                  <div
+                    role="status"
+                    className="max-w-md rounded-lg border border-white/15 bg-black/70 px-5 py-4 text-center backdrop-blur-md"
+                  >
+                    <p className="text-sm font-medium text-white">
+                      Playback unavailable for this title
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-white/70">
+                      We disabled it after a copyright notice from the rights
+                      holder. Everything else on this page still works.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <PlayButton
+                      onClick={playVideo}
+                      media={media}
+                      target={playTarget}
+                      isResume={isResume}
+                    />
+                    {resumeSlot}
+                  </>
+                )}
                 {/* Buttons are icon-only < sm, so pair each with a muted caption
                     (mobile only) that names what it does. */}
                 <div className="flex flex-wrap items-start justify-center gap-2 sm:items-center sm:gap-3">

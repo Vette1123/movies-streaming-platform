@@ -10,6 +10,7 @@ import {
   trackMediaDetailViewed,
   trackMediaPlayed,
 } from '@/lib/analytics'
+import { isTitleBlocked } from '@/lib/blocked-titles'
 import { useAccount } from '@/hooks/use-account'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { useSeasonEpisodes } from '@/hooks/use-season-episodes'
@@ -196,8 +197,13 @@ export const SeriesDetailsHero = ({
     })
   }, [autoNext, playingTarget, router, seasonCount, startPlayback])
 
+  // Playback disabled following a copyright notice — see
+  // config/blocked-titles.json. A show is blocked whole: a notice names the
+  // work, and every episode of it is that work.
+  const blocked = isTitleBlocked('tv', series?.id)
+
   const src =
-    playingTarget === undefined || !series?.id
+    blocked || playingTarget === undefined || !series?.id
       ? ''
       : // A "series root" play normalizes to the first episode. Providers used
         // to pick one themselves off /tv/{id}, but a URL that names the episode
@@ -216,14 +222,18 @@ export const SeriesDetailsHero = ({
       <DetailsHero
         series={series}
         src={src}
+        blocked={blocked}
         sourceControl={sourceControl}
-        playVideo={playDefaultSeries}
+        playVideo={() => {
+          if (blocked) return
+          playDefaultSeries()
+        }}
         trailerKey={trailerKey}
         playTarget={playTarget}
         isResume={Boolean(resumeTarget)}
         onEnded={handleEnded}
         selfHost={
-          playingTarget === undefined || !series?.id
+          blocked || playingTarget === undefined || !series?.id
             ? undefined
             : {
                 type: 'tv',

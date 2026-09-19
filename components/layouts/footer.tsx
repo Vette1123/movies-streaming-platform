@@ -21,6 +21,10 @@ const SITE_LINKS = [
   { href: '/privacy', label: 'Privacy' },
   { href: '/terms', label: 'Terms' },
   { href: '/disclaimer', label: 'Disclaimer' },
+  // On every page, next to the disclaimer, because a rights holder who cannot
+  // find a route to a human sends the next message to the hosting provider
+  // instead — and that conversation is slower and costs more for everyone.
+  { href: '/dmca', label: 'Copyright & takedowns' },
   // A real address rather than a form. Every page carries it, because the person
   // who needs it most — somebody whose payment did not switch anything on — is
   // exactly the person who will not go looking for a contact page.

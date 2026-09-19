@@ -1,0 +1,14 @@
+{
+  "_comment": "Titles whose PLAYBACK is disabled, one list, two enforcers — the same shape as blocked-crawlers.json and for the same reason: a rule that lives in one half only is a rule that is half true. cloudflare/worker.js refuses to mint a playback ticket for anything in here (that is the house player), and the detail heroes refuse to mount any player at all (that is every third-party embed). Both read lib/blocked-titles.ts. The PAGE still renders: the synopsis, cast, artwork and metadata are TMDB data we are licensed to show, they carry the SEO, and removing them would serve nobody. It is the player that goes. Add entries with `pnpm takedown` rather than by hand, so the reportId and date are never left blank — they are the evidence that removal was expeditious, which is the whole point of having a process.",
+  "titles": [
+    {
+      "type": "movie",
+      "id": 969681,
+      "title": "Spider-Man: Brand New Day",
+      "reportedOn": "2026-09-19",
+      "reportId": "7e170169c822f2f4",
+      "complainant": "Stichting BREIN on behalf of Sony Pictures",
+      "via": "Cloudflare Trust & Safety"
+    }
+  ]
+}

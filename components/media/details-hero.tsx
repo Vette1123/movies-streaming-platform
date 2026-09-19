@@ -5,6 +5,7 @@ import React from 'react'
 import { MovieDetails } from '@/types/movie-details'
 import { movieStreamUrl } from '@/config/sources'
 import { buildMediaEventBase, trackMediaDetailViewed } from '@/lib/analytics'
+import { isTitleBlocked } from '@/lib/blocked-titles'
 import { useStreamSource } from '@/hooks/use-stream-source'
 import { DetailsHero } from '@/components/details-hero'
 
@@ -32,18 +33,32 @@ export const MovieDetailsHero = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movie?.id])
 
+  // Playback disabled following a copyright notice. Withholding `src` and
+  // `selfHost` is what actually stops it: an embed is an iframe URL this
+  // component chooses, so there is no server in that path to refuse it, and the
+  // only way not to play is to produce nothing to play. The house player is
+  // refused at /api/pro/ticket as well, because a signed ticket does not need
+  // this page at all.
+  const blocked = isTitleBlocked('movie', movie?.id)
+
   const src =
-    playing && movie?.id ? movieStreamUrl(sourceControl.source, movie.id) : ''
+    !blocked && playing && movie?.id
+      ? movieStreamUrl(sourceControl.source, movie.id)
+      : ''
 
   return (
     <DetailsHero
       movie={movie}
       src={src}
-      playVideo={() => setPlaying(true)}
+      blocked={blocked}
+      playVideo={() => {
+        if (blocked) return
+        setPlaying(true)
+      }}
       trailerKey={trailerKey}
       sourceControl={sourceControl}
       selfHost={
-        movie?.id
+        movie?.id && !blocked
           ? {
               type: 'movie',
               id: movie.id,
