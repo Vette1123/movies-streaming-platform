@@ -91,7 +91,11 @@ export function PlayerStage({
   return (
     <div
       className={cn(
-        'relative size-full flex-col pb-20',
+        // `player-stage` is a styling hook, not a look. A phone in landscape
+        // has less viewport than the two bands below come to, and the rules
+        // that take them away live in styles/globals.css because the same tier
+        // has to reach the fixed header and the tip-jar button as well.
+        'player-stage relative size-full flex-col pb-20',
         // One display utility, picked here rather than layered as `flex` plus a
         // conditional `hidden`: which of those two wins is decided by
         // Tailwind's emission order, not by the order they appear in this
@@ -104,7 +108,7 @@ export function PlayerStage({
         // justify-end so the bar sits flush against the top of the picture and
         // anything that appears above it (the stall notice) grows upward into
         // the band instead of pushing the video down.
-        <div className="pointer-events-none z-50 flex shrink-0 flex-col justify-end pb-2 empty:hidden">
+        <div className="player-stage-controls pointer-events-none z-50 flex shrink-0 flex-col justify-end pb-2 empty:hidden">
           {controls}
         </div>
       ) : null}

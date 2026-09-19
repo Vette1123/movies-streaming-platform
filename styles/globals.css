@@ -837,3 +837,56 @@ body > div[style*='z-index: 9999'] {
 body[data-player-open] .pwa-install-prompt {
   display: none;
 }
+
+/* A phone in landscape is the shortest viewport this site ever gets, and it
+   was the one viewport the player could not be seen in at all.
+
+   The hero is `100svh`. PlayerStage reserves a fixed band above the picture
+   (`pt-20`, which is what clears the 64px fixed header) and below it (`pb-20`,
+   which keeps the frame off the embed's own scrubber and the install nudge).
+   Both numbers are right for a portrait phone, where the hero is ~640px tall.
+   Rotated, the whole viewport is roughly 200px: the two bands plus the control
+   row come to more than all of it, so the frame - a flex child with `min-h-0`,
+   free to shrink - is handed a negative height and clamps to zero. That is the
+   hairline in the report, and it is why rotating to watch produced a page with
+   no picture on it.
+
+   Rotating a phone while something is playing means "make it bigger", so the
+   answer is not a thinner band, it is no reserved band: the control row comes
+   out of the column and floats over the top edge, and the frame takes the
+   whole stage. Two tiers, because the two problems have different thresholds.
+   A reserved band is wrong for any short landscape window, a short desktop one
+   included; the fixed header and the tip jar only cost anything on a phone.
+   430px is the line the player's own chrome switches at (reely-pro-player,
+   public/play.html), so a viewer is never caught between the two designs. */
+@media (orientation: landscape) and (max-height: 600px) {
+  .player-stage {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  /* Off the flex flow, so `flex-1` on the frame resolves against the full
+     stage. The switcher paints its own opaque pill, so it stays legible over
+     the picture without a scrim of its own. */
+  .player-stage-controls {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    padding-top: 0.5rem;
+    padding-bottom: 0;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 430px) {
+  /* Both are fixed to the viewport and neither earns its keep over a running
+     film: the header sits behind the hero's own stacking context, and the tip
+     jar occupies the bottom-left corner the picture now fills - it is sitting
+     on the film in the report's screenshot. Scoped to `data-player-open`, so
+     both are back the moment playback closes, and on rotate. */
+  body[data-player-open] .site-header {
+    display: none;
+  }
+  body[data-player-open] #bmc-wbtn {
+    display: none !important;
+  }
+}
