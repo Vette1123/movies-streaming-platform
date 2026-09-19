@@ -276,6 +276,43 @@ const BUCKETS = [
     /^\/sw\.js$/,
   ],
   ['bot: PHP/WordPress probes', /wp-|\.php$|\.env|\/admin/i],
+  // Credential scanners walking a wordlist of places a careless deploy leaves
+  // secrets: `/opt/aws_credentials.json`, `/config/mailer/smtp_password.txt`,
+  // `/src/aws.json`, `/token_sqs.txt`. 1,551 of these in 24h on 2026-09-19, and
+  // they were the entire unclassified column.
+  //
+  // A 404 is the correct and complete answer — this repo is public, ships no
+  // secrets as assets, and Workers Static Assets can only serve what is in
+  // `out/`. They are bucketed so the column they were drowning stays readable,
+  // NOT because they are worth acting on. If this bucket ever pairs with a 200,
+  // that is the incident; the count alone is weather.
+  [
+    'bot: credential/secret scanner (404, nothing to find)',
+    /(credential|password|secret|api[_-]?key|token|smtp|mailgun|sendgrid|ses_|stripe|s3|aws|fauna|\.pem$|\.key$|id_rsa|\.git\/|\.aws\/|\.ssh\/)/i,
+  ],
+  // The same scanners, second wordlist: the config and infrastructure files a
+  // careless deploy leaves servable. `/api/v2/swagger.json`, `/.cloudfront/
+  // config.js`, `/server/config/constants.js`, `/terraform.tfvars`,
+  // `/k8s/limitrange.json`, `/tsconfig.prod.json`. Split from the row above
+  // only because the words share nothing — the intent and the answer are
+  // identical, and the answer is that a static export serves what is in `out/`
+  // and nothing else.
+  [
+    'bot: config/infrastructure wordlist (404, nothing to find)',
+    /(\/configs?\/|config\.(js|json|ya?ml)$|constants\.js$|settings\.json$|tsconfig[.\w]*\.json$|swagger|\.tfvars$|terraform|cloudfront|\/k8s\/|serverless\.ya?ml$|sftp\.json$|\.vscode\/|\.github\/|application\.ini$|database\.(xml|json|ya?ml)$)/i,
+  ],
+  // Android App Links verification. A device or a store crawler asks every
+  // domain an app claims whether the domain agrees. This one does not publish
+  // the file, so 404 is the correct answer and nothing is broken by it.
+  //
+  // It is classified rather than ignored because it would become signal the day
+  // one of the apps in the footer declares reely.space as an associated domain:
+  // then this 404 is the reason deep links open the browser instead of the app,
+  // and it would be sitting here already looking familiar.
+  [
+    'android App Links probe (404, no app claims this domain)',
+    /^\/\.well-known\/assetlinks\.json$/,
+  ],
   // Bare TMDB paths, plus the fragments a naive crawler produces by splitting an
   // ImageKit srcset URL on the commas inside it: "/tr:w-500,q-82,f-auto/w500/x.jpg"
   // becomes a request for "/f-auto/w500/x.jpg". Every image URL the site actually
@@ -287,7 +324,13 @@ const BUCKETS = [
   // those in the unclassified column, which is the one column meant to be signal.
   [
     'bot: image crawler on stale/mis-split URLs',
-    /^\/[A-Za-z0-9_-]{20,32}\.(jpg|png)$|\/(f-auto|f-webp|pr-true|q-\d+)\//,
+    // `c-at_max` was added to the transform string (lib/tmdbConfig.ts) after
+    // this list was written, and it is the LAST parameter, so it is the
+    // fragment a comma-splitting crawler is left holding most often:
+    // "/c-at_max/original/abc.jpg". Missing it left those in the unclassified
+    // column looking like a new failure. A transform parameter added there has
+    // to be added here.
+    /^\/[A-Za-z0-9_-]{20,32}\.(jpg|png)$|\/(f-auto|f-webp|pr-true|c-at_max|q-\d+)\//,
   ],
   [
     'bot: doubled path from bad referrers',
@@ -339,9 +382,41 @@ const STATUS_BUCKETS = [
   ['client disconnected mid-request (499)', 499],
 ]
 
-const bucketFor = ({ clientRequestPath, edgeResponseStatus }) =>
-  BUCKETS.find(([, re]) => re.test(clientRequestPath))?.[0] ??
-  STATUS_BUCKETS.find(([, status]) => status === edgeResponseStatus)?.[0]
+/**
+ * Percent-decoding is not cosmetic here, it is what makes the buckets above
+ * work at all.
+ *
+ * Measured 2026-09-19: 1,551 requests sat unclassified, and every one of the
+ * top twelve was a secret scanner writing its dots as `%2e` —
+ * `/database%2exml`, `/token_sqs%2etxt`, `/opt/aws_credentials%2ejson`. That is
+ * a deliberate filter-evasion trick, and it beat the extension buckets by
+ * construction: `/\.(txt|xml)$/` cannot match a path with no `.` in it. Any
+ * scanner can evade every pattern in this file the same way, so the decode
+ * belongs here rather than as a twelfth regex that only covers `%2e`.
+ *
+ * Decoded once, defensively: a malformed sequence throws on `decodeURI`, and a
+ * scanner sending one is exactly the caller least entitled to break the report.
+ */
+const decodePath = (path) => {
+  try {
+    const decoded = decodeURIComponent(path)
+    // Collapse the traversal form too, so `/a/%2e%2e/b` does not read as a
+    // literal segment. The path is only ever matched against, never fetched.
+    return decoded.replace(/\/{2,}/g, '/')
+  } catch {
+    return path
+  }
+}
+
+const bucketFor = ({ clientRequestPath, edgeResponseStatus }) => {
+  const path = decodePath(clientRequestPath)
+  return (
+    BUCKETS.find(
+      ([, re]) => re.test(path) || re.test(clientRequestPath)
+    )?.[0] ??
+    STATUS_BUCKETS.find(([, status]) => status === edgeResponseStatus)?.[0]
+  )
+}
 
 async function checkClientErrors(zone) {
   const filter = `datetime_geq:"${SINCE}",datetime_leq:"${UNTIL}",requestSource:"eyeball",edgeResponseStatus_geq:400,edgeResponseStatus_lt:500`

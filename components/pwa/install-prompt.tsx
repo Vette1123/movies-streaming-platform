@@ -64,6 +64,38 @@ export function InstallPrompt() {
 
   return (
     <div className="pwa-install-prompt fixed inset-x-3 bottom-3 z-70 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-white/15 bg-[rgba(10,12,20,0.82)] px-4 py-3 shadow-[0_10px_40px_rgba(0,0,0,0.55)] backdrop-blur-md backdrop-saturate-150 duration-500 animate-in fade-in slide-in-from-bottom-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2">
+      {/* The whole card installs, not just the 60px button on the right.
+          PostHog logged four dead clicks on this card in a fortnight and not
+          one of them was on a control: two on the card itself, one on the cyan
+          tile, one on the download glyph inside it. That tile is a 40px filled
+          gradient square with an icon in it — every other filled gradient on
+          the site is a button, so it reads as the button, and it did nothing.
+
+          A stretched button rather than a handler on the wrapper: this has to
+          be reachable by keyboard and announce itself, and a div with an
+          onClick is neither.
+
+          The layering is the whole trick and it only works one way round. The
+          tile and the copy are left UNPOSITIONED, so this positioned overlay
+          paints over them and takes their clicks. The two real controls carry
+          `relative z-10`, which beats a positioned sibling at `z-index: auto`
+          whatever the DOM order, so Install and Dismiss keep their own hit
+          areas. Putting the overlay behind instead reads as tidier and does
+          nothing at all: a click on the tile would hit the tile, bubble to the
+          card, and never reach a button that is its sibling rather than its
+          ancestor.
+
+          Not rendered for the iOS hint, where the card is an instruction to go
+          and use Safari's own share menu. There is nothing for a tap to do
+          there, and a button that only looks like one is the bug being fixed. */}
+      {!needsIosHint && (
+        <button
+          type="button"
+          onClick={install}
+          aria-label="Install Reely"
+          className="absolute inset-0 rounded-2xl focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(10,12,20,0.82)] focus-visible:outline-hidden"
+        />
+      )}
       <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-linear-to-br from-cyan-300 to-cyan-500 text-[#04121a]">
         <Download className="size-5" strokeWidth={2.5} aria-hidden />
       </div>
@@ -84,7 +116,7 @@ export function InstallPrompt() {
         <button
           type="button"
           onClick={install}
-          className="shrink-0 rounded-lg bg-linear-to-br from-cyan-300 to-cyan-500 px-3 py-1.5 text-sm font-semibold text-[#04121a] transition hover:brightness-105 active:scale-95"
+          className="relative z-10 shrink-0 rounded-lg bg-linear-to-br from-cyan-300 to-cyan-500 px-3 py-1.5 text-sm font-semibold text-[#04121a] transition hover:brightness-105 active:scale-95"
         >
           Install
         </button>
@@ -93,7 +125,7 @@ export function InstallPrompt() {
         type="button"
         onClick={remember}
         aria-label="Dismiss"
-        className="grid size-7 shrink-0 place-items-center rounded-full text-white/60 transition hover:bg-white/10 hover:text-white"
+        className="relative z-10 grid size-7 shrink-0 place-items-center rounded-full text-white/60 transition hover:bg-white/10 hover:text-white"
       >
         <X className="size-4" aria-hidden />
       </button>

@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Clapperboard } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
+import { canPage, railArrowState } from '@/lib/rail-scroll'
 import { cn, itemRedirect } from '@/lib/utils'
 import { Card } from '@/components/card'
 import { SeeAllLink } from '@/components/see-all-link'
@@ -48,28 +49,63 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
   const syncArrows = React.useCallback(() => {
     const el = railRef.current
     if (!el) return
-    // 1px slack absorbs sub-pixel rounding at the extremes.
-    setCanLeft(el.scrollLeft > 1)
-    setCanRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 1)
+    // The comparison lives in lib/rail-scroll.ts: it is three numbers that all
+    // read 0 on a rail that has not been laid out yet, so every version of it
+    // looks right until one is measured. Tested there.
+    const { canLeft: left, canRight: right } = railArrowState(el)
+    setCanLeft(left)
+    setCanRight(right)
   }, [])
 
   React.useEffect(() => {
     syncArrows()
     const el = railRef.current
     if (!el) return
-    const onResize = () => syncArrows()
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
+
+    // A ResizeObserver, not a window resize listener.
+    //
+    // `canRight` is `scrollLeft < scrollWidth - clientWidth - 1`, so it is a
+    // claim about two sizes — and both of them change without a scroll and
+    // without the window moving. The track's `scrollWidth` grows as card images
+    // decode and as the Suspense skeleton swaps for the real row; its
+    // `clientWidth` changes whenever the rail's own box does. Listening only to
+    // `window.resize` meant the arrows were enabled from whatever the sizes
+    // happened to be one frame after mount: either a right arrow that never
+    // appeared on a row that could scroll, or — the one PostHog logged — an
+    // arrow still enabled over a track with nothing left to scroll, where
+    // pressing it calls scrollBy and moves zero pixels. A control that is
+    // present, lit, and does nothing.
+    //
+    // Observing the element covers window resizes too, so this replaces the
+    // listener rather than joining it.
+    const observer = new ResizeObserver(() => syncArrows())
+    observer.observe(el)
+    // The track's content box, so a row that grows WIDER without the rail's own
+    // box changing still re-arms the arrows.
+    if (el.firstElementChild) observer.observe(el.firstElementChild)
+    return () => observer.disconnect()
   }, [syncArrows, items])
 
-  const scrollByPage = React.useCallback((direction: 1 | -1) => {
-    const el = railRef.current
-    if (!el) return
-    el.scrollBy({
-      left: direction * el.clientWidth * PAGE_FRACTION,
-      behavior: 'smooth',
-    })
-  }, [])
+  const scrollByPage = React.useCallback(
+    (direction: 1 | -1) => {
+      const el = railRef.current
+      if (!el) return
+      // If there is no room in the direction asked for, the arrow that was
+      // pressed should not have been enabled — re-derive both arrows from the
+      // sizes as they are NOW rather than call scrollBy and move nothing.
+      // `scroll` does not fire for a zero-pixel scroll, so without this the
+      // stale arrow stays lit and every further press is another dead click.
+      if (!canPage(direction, el)) {
+        syncArrows()
+        return
+      }
+      el.scrollBy({
+        left: direction * el.clientWidth * PAGE_FRACTION,
+        behavior: 'smooth',
+      })
+    },
+    [syncArrows]
+  )
 
   const onPointerDown = React.useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {

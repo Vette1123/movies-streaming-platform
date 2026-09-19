@@ -1,5 +1,33 @@
 import { IMAGE_CACHE_HOST_URL } from './constants'
 
+/**
+ * What an image builder returns when TMDB has no image to point at.
+ *
+ * Every builder below interpolates its argument straight into a template
+ * literal, and every one is typed `string` — so a `null` from TMDB (which is
+ * what `backdrop_path`, `poster_path` and `logo_path` are whenever a title has
+ * no art) stringifies into the URL instead of being rejected by the type.
+ * `/original` + `null` is `/originalnull`, and Cloudflare logged 22 requests a
+ * day for exactly that path, sitting in the unclassified 4xx column next to the
+ * credential scanners. Each one also walked the whole onError fallback chain in
+ * BlurredImage, so one missing poster cost three 404s: ImageKit, then wsrv,
+ * then TMDB's origin.
+ *
+ * Most call sites do guard. The guard belongs here anyway, because "most" is
+ * the problem: nine call sites pass one of these paths and the type system
+ * cannot tell the guarded ones from the rest. A transparent 1x1 GIF costs no
+ * request at all, and `buildURL` in lib/image-loader.ts returns any src it
+ * cannot match as-is, so a data URI passes through the loader untouched.
+ */
+const EMPTY_PIXEL =
+  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+
+/** Falsy TMDB path in, transparent pixel out; anything else is built normally. */
+const withImagePath = (
+  imgPath: string | null | undefined,
+  build: (path: string) => string
+) => (imgPath ? build(imgPath) : EMPTY_PIXEL)
+
 // Read lazily, NOT captured at module init. cloudflare/worker.js copies the
 // Worker's secrets onto `process.env` when a request arrives, which is after
 // this module has already been evaluated — eager fields would have frozen the
@@ -62,10 +90,17 @@ const apiConfig = {
   // identical 55,044 B / 2560x1440 with and without it). Same fix as `&we` on
   // the wsrv stage — the fallback got it first, this is the path everyone
   // actually loads.
-  originalImage: (imgPath: string) =>
-    `${IMAGE_CACHE_HOST_URL}/tr:w-2560,q-82,f-auto,pr-true,c-at_max/original${imgPath}`,
-  w500Image: (imgPath: string) =>
-    `${IMAGE_CACHE_HOST_URL}/tr:q-82,f-auto/w500${imgPath}`,
+  originalImage: (imgPath: string | null | undefined) =>
+    withImagePath(
+      imgPath,
+      (path) =>
+        `${IMAGE_CACHE_HOST_URL}/tr:w-2560,q-82,f-auto,pr-true,c-at_max/original${path}`
+    ),
+  w500Image: (imgPath: string | null | undefined) =>
+    withImagePath(
+      imgPath,
+      (path) => `${IMAGE_CACHE_HOST_URL}/tr:q-82,f-auto/w500${path}`
+    ),
   // The hero's title wordmark. It is the ONE image on the site that renders as a
   // plain <img>, so next/image's loader never sees it and the q-82 above stands
   // — which made the two visible logos the two heaviest files on the homepage
@@ -80,12 +115,22 @@ const apiConfig = {
   // homepage. Reading from `/original` (and `c-at_max`, so a small source is
   // never enlarged) lets getLogoImageSrcSet hand out a real 1x/2x pair, and the
   // 2x file is only ever fetched by a screen that can show it.
-  logoImage: (imgPath: string, width = 500) =>
-    `${IMAGE_CACHE_HOST_URL}/tr:w-${width},q-70,f-auto,c-at_max/original${imgPath}`,
-  w185Image: (imgPath: string) =>
-    `${IMAGE_CACHE_HOST_URL}/tr:q-80,f-auto/w185${imgPath}`,
-  w300Image: (imgPath: string) =>
-    `${IMAGE_CACHE_HOST_URL}/tr:q-80,f-auto/w300${imgPath}`,
+  logoImage: (imgPath: string | null | undefined, width = 500) =>
+    withImagePath(
+      imgPath,
+      (path) =>
+        `${IMAGE_CACHE_HOST_URL}/tr:w-${width},q-70,f-auto,c-at_max/original${path}`
+    ),
+  w185Image: (imgPath: string | null | undefined) =>
+    withImagePath(
+      imgPath,
+      (path) => `${IMAGE_CACHE_HOST_URL}/tr:q-80,f-auto/w185${path}`
+    ),
+  w300Image: (imgPath: string | null | undefined) =>
+    withImagePath(
+      imgPath,
+      (path) => `${IMAGE_CACHE_HOST_URL}/tr:q-80,f-auto/w300${path}`
+    ),
 }
 
 // TMDB's own image origin — free, keyless, unmetered, never expires. The last
