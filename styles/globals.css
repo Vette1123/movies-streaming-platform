@@ -875,6 +875,19 @@ body[data-player-open] .pwa-install-prompt {
     padding-top: 0.5rem;
     padding-bottom: 0;
   }
+
+  /* The Watch Together banner is `absolute inset-x-0 top-16` on the hero, and
+     `pt-28` on the stage is what used to seat the controls below it. With the
+     band gone, 64px down is the middle of a 196px picture - a strip of chrome
+     across the film, which is the same defect this block exists to fix. The
+     banner goes to the top edge and the controls move under it; its height is
+     `py-1.5` plus a 12px line, so 2rem clears it with a little air. */
+  .watch-together-bar {
+    top: 0;
+  }
+  .player-stage[data-banner] .player-stage-controls {
+    top: 2rem;
+  }
 }
 
 @media (orientation: landscape) and (max-height: 430px) {

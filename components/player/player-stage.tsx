@@ -103,6 +103,11 @@ export function PlayerStage({
         active ? 'flex' : 'hidden',
         bannerInset ? 'pt-28' : 'pt-20'
       )}
+      // The same fact as `bannerInset`, readable from CSS. The landscape tier
+      // in globals.css zeroes the band `pt-28` lives in, so the room banner
+      // and the control row both end up at the top edge and have to be told
+      // about each other there.
+      data-banner={bannerInset ? '' : undefined}
     >
       {controls ? (
         // justify-end so the bar sits flush against the top of the picture and

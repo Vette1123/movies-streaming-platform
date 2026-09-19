@@ -168,7 +168,10 @@ export function WatchTogetherBar({
   return (
     <div
       data-testid="together-bar"
-      className="absolute inset-x-0 top-16 z-50 flex items-center justify-center gap-2 border-b border-primary/40 bg-primary/10 px-3 py-1.5 text-xs text-foreground"
+      // `watch-together-bar` is a styling hook: on a landscape phone the stage
+      // gives up the band this bar's `top-16` was measured against, so
+      // styles/globals.css moves it to the top edge there.
+      className="watch-together-bar absolute inset-x-0 top-16 z-50 flex items-center justify-center gap-2 border-b border-primary/40 bg-primary/10 px-3 py-1.5 text-xs text-foreground"
     >
       <Users className="size-3.5 shrink-0" />
       {/* min-w-0 + truncate, or the role text pushes the copy button off the
