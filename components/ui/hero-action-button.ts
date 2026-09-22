@@ -1,6 +1,6 @@
 // Shared styling for the hero action pills — Trailer / Save / Mark watched /
-// Share. The four components render the same-looking button, so the look lives
-// here once: enhance it in this file, not in four call sites.
+// Share / Share card. The components render the same-looking button, so the look
+// lives here once: enhance it in this file, not in the call sites.
 //
 // - `heroActionButtonBase`: layout + motion shared by every state (lift on
 //   hover, press-down on active, blur, drop-shadowed label).

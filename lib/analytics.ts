@@ -235,8 +235,10 @@ export function trackMediaShared(props: {
   media_id?: number
   media_type?: MediaKind
   title?: string
-  // 'web_share' = native OS share sheet; 'clipboard' = copy-link fallback.
-  method: 'web_share' | 'clipboard'
+  // 'web_share' = native OS share sheet; 'clipboard' = copy-link fallback;
+  // 'card_share' = spoiler-free PNG through the sheet; 'card_download' = the
+  // same PNG saved to disk (platform could not share files).
+  method: 'web_share' | 'clipboard' | 'card_share' | 'card_download'
 }): void {
   track(EVENTS.MEDIA_SHARED, props)
 }

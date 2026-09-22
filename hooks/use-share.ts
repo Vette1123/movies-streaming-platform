@@ -13,7 +13,7 @@ interface ShareInput {
 }
 
 /** The only rejection that means "the user decided". */
-const isDismissal = (error: unknown) =>
+export const isDismissal = (error: unknown) =>
   error instanceof DOMException && error.name === 'AbortError'
 
 /**

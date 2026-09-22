@@ -19,6 +19,7 @@ import { SourceSwitcher } from '@/components/player/source-switcher'
 import { RateButton } from '@/components/rate-button'
 import { SaveButton } from '@/components/save-button'
 import { ShareButton } from '@/components/share-button'
+import { ShareCardButton } from '@/components/share-card-button'
 import { TrailerDialog } from '@/components/trailer-dialog'
 import { WatchTogetherBar } from '@/components/watch-together-bar'
 import { WatchedButton } from '@/components/watched-button'
@@ -331,6 +332,13 @@ export const DetailsHero = ({
                       mediaType={isMovie ? 'movie' : 'tv'}
                     />
                     <span className={captionClass}>Share</span>
+                  </div>
+                  {/* Second share action: the spoiler-free picture, next to the
+                      link share it mirrors. Caption reads "Card" so two-word
+                      wrapping under the pill matches its siblings. */}
+                  <div className="flex flex-col items-center gap-1.5">
+                    <ShareCardButton media={media} />
+                    <span className={captionClass}>Card</span>
                   </div>
                 </div>
               </motion.div>

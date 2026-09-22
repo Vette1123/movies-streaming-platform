@@ -1,3 +1,13 @@
+import {
+  ACCENT,
+  BACKDROP,
+  CARD_HEIGHT,
+  CARD_WIDTH,
+  fitText,
+  INK,
+  MUTED,
+  SANS,
+} from '@/lib/canvas-card'
 import { hoursLabel, type LibraryStats } from '@/lib/stats'
 
 /**
@@ -9,22 +19,9 @@ import { hoursLabel, type LibraryStats } from '@/lib/stats'
  * somebody's hand can draw in a millisecond. It also means the card works
  * offline and nothing about anyone's viewing is ever sent anywhere to make it.
  *
- * 1080×1350 is the 4:5 portrait that every feed crops least.
+ * Frame size, palette and fitText live in lib/canvas-card.ts, shared with the
+ * spoiler-free title card (lib/share-card.ts).
  */
-const WIDTH = 1080
-const HEIGHT = 1350
-
-// Fixed rather than read from the theme. A card is looked at somewhere else,
-// where Reely's CSS variables do not exist, and `getComputedStyle` on a custom
-// property can hand back an `oklch()` string that older canvas implementations
-// refuse — a blank card is a worse outcome than one that ignores the accent.
-const INK = '#f8fafc'
-const MUTED = '#94a3b8'
-const ACCENT = '#f43f5e'
-const BACKDROP = '#0b1120'
-
-const SANS =
-  'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
 
 interface Cell {
   value: string
@@ -40,23 +37,6 @@ const cellsOf = (stats: LibraryStats): Cell[] => [
     label: 'day streak',
   },
 ]
-
-/** Fit a headline into the card by shrinking it, never by clipping it. */
-function fitText(
-  context: CanvasRenderingContext2D,
-  text: string,
-  maxWidth: number,
-  startPx: number,
-  weight = '700'
-): number {
-  let size = startPx
-  do {
-    context.font = `${weight} ${size}px ${SANS}`
-    if (context.measureText(text).width <= maxWidth) return size
-    size -= 4
-  } while (size > 24)
-  return size
-}
 
 /** The small line above the headline. Says which year, when there is one. */
 export const eyebrow = (year: number | null): string =>
@@ -94,28 +74,28 @@ export async function renderStatsCard(
   year: number | null = null
 ): Promise<Blob | null> {
   const canvas = document.createElement('canvas')
-  canvas.width = WIDTH
-  canvas.height = HEIGHT
+  canvas.width = CARD_WIDTH
+  canvas.height = CARD_HEIGHT
   const context = canvas.getContext('2d')
   if (!context) return null
 
   context.fillStyle = BACKDROP
-  context.fillRect(0, 0, WIDTH, HEIGHT)
+  context.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT)
 
   // A soft accent bloom behind the headline, so the card is not a rectangle of
   // flat navy with text on it.
   const glow = context.createRadialGradient(
-    WIDTH * 0.78,
-    HEIGHT * 0.16,
+    CARD_WIDTH * 0.78,
+    CARD_HEIGHT * 0.16,
     0,
-    WIDTH * 0.78,
-    HEIGHT * 0.16,
-    WIDTH * 0.85
+    CARD_WIDTH * 0.78,
+    CARD_HEIGHT * 0.16,
+    CARD_WIDTH * 0.85
   )
   glow.addColorStop(0, 'rgba(244, 63, 94, 0.22)')
   glow.addColorStop(1, 'rgba(244, 63, 94, 0)')
   context.fillStyle = glow
-  context.fillRect(0, 0, WIDTH, HEIGHT)
+  context.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT)
 
   const margin = 88
   context.textBaseline = 'alphabetic'
@@ -128,7 +108,7 @@ export async function renderStatsCard(
 
   context.fillStyle = INK
   const headline = headlineOf(name, year)
-  const headlineSize = fitText(context, headline, WIDTH - margin * 2, 84)
+  const headlineSize = fitText(context, headline, CARD_WIDTH - margin * 2, 84)
   context.font = `700 ${headlineSize}px ${SANS}`
   context.fillText(headline, margin, 268)
 
@@ -146,7 +126,7 @@ export async function renderStatsCard(
   // Two by two, because four numbers in a row at this width are unreadable on a
   // phone-sized thumbnail — which is the only size most people will see it.
   const cells = cellsOf(stats)
-  const columnWidth = (WIDTH - margin * 2) / 2
+  const columnWidth = (CARD_WIDTH - margin * 2) / 2
   cells.forEach((cell, index) => {
     const x = margin + (index % 2) * columnWidth
     const y = 760 + Math.floor(index / 2) * 210
@@ -172,12 +152,12 @@ export async function renderStatsCard(
   context.fillText(
     stats.saved > 0 ? `${stats.saved} more saved for later` : 'Still counting',
     margin,
-    HEIGHT - 132
+    CARD_HEIGHT - 132
   )
 
   context.fillStyle = INK
   context.font = `700 36px ${SANS}`
-  context.fillText('reely.space', margin, HEIGHT - 76)
+  context.fillText('reely.space', margin, CARD_HEIGHT - 76)
 
   return new Promise((resolve) =>
     canvas.toBlob((blob) => resolve(blob), 'image/png')
