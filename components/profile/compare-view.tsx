@@ -1,0 +1,300 @@
+'use client'
+
+import * as React from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { GitCompare, SearchX } from 'lucide-react'
+
+import { getJson } from '@/lib/api-client'
+import {
+  matchBlurb,
+  matchTopRated,
+  type TasteMatch,
+} from '@/lib/profile/match'
+import type { ProfileTitle, PublicProfile } from '@/lib/profile/routes'
+import { Button } from '@/components/ui/button'
+import { Chip } from '@/components/ui/chip'
+import { EmptyState } from '@/components/ui/empty-state'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
+import { PosterTile } from '@/components/media/poster-tile'
+
+/**
+ * Two public profiles, side by side.
+ *
+ * Reads `?a=` and `?b=` from the URL after mount (same pattern as /mood: a
+ * `useSearchParams` read would bail this route to CSR under `output: 'export'`)
+ * and writes them back on submit so a result is a link you can send. Each
+ * profile is one `/api/profile/<handle>` GET — the payload the profile shell
+ * already draws — and the overlap is pure (`lib/profile/match`).
+ */
+
+const loadProfile = async (handle: string): Promise<PublicProfile | null> => {
+  try {
+    const body = await getJson<{
+      success?: boolean
+      profile?: PublicProfile
+    }>(`/api/profile/${encodeURIComponent(handle)}`)
+    return body?.success && body.profile ? body.profile : null
+  } catch {
+    return null
+  }
+}
+
+interface CompareResult {
+  handleA: string
+  handleB: string
+  a: PublicProfile | null
+  b: PublicProfile | null
+  match: TasteMatch | null
+}
+
+const display = (profile: PublicProfile): string =>
+  profile.name || profile.handle
+
+export function CompareView() {
+  const [a, setA] = React.useState('')
+  const [b, setB] = React.useState('')
+  // What we actually fetch — set on submit (and from the URL on mount), so
+  // typing in a field never re-fires a request.
+  const [pair, setPair] = React.useState<{ a: string; b: string } | null>(null)
+  const [formError, setFormError] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const fromA = params.get('a')
+    const fromB = params.get('b')
+    // After mount on purpose: the prerendered HTML knows no query string.
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (fromA) setA(fromA)
+    if (fromB) setB(fromB)
+    if (fromA && fromB) setPair({ a: fromA, b: fromB })
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [])
+
+  const { data, isPending, isError } = useQuery<CompareResult>({
+    queryKey: ['taste-compare', pair?.a, pair?.b],
+    enabled: Boolean(pair),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+    queryFn: async () => {
+      const handleA = pair!.a
+      const handleB = pair!.b
+      const [left, right] = await Promise.all([
+        loadProfile(handleA),
+        loadProfile(handleB),
+      ])
+      return {
+        handleA,
+        handleB,
+        a: left,
+        b: right,
+        match:
+          left && right ? matchTopRated(left.topRated, right.topRated) : null,
+      }
+    },
+  })
+
+  const onSubmit = (event: React.FormEvent) => {
+    event.preventDefault()
+    const left = a.trim().toLowerCase()
+    const right = b.trim().toLowerCase()
+
+    if (!left || !right) {
+      setFormError('Two handles, both filled in.')
+      return
+    }
+    if (left === right) {
+      setFormError('Pick two different people.')
+      return
+    }
+
+    setFormError(null)
+    setPair({ a: left, b: right })
+    window.history.replaceState(
+      null,
+      '',
+      `${window.location.pathname}?a=${encodeURIComponent(left)}&b=${encodeURIComponent(right)}`
+    )
+  }
+
+  return (
+    <div className="space-y-10">
+      <form onSubmit={onSubmit} className="max-w-xl space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="compare-a">First handle</Label>
+            <Input
+              id="compare-a"
+              name="a"
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder="gado"
+              value={a}
+              onChange={(event) => setA(event.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="compare-b">Second handle</Label>
+            <Input
+              id="compare-b"
+              name="b"
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder="mohamed"
+              value={b}
+              onChange={(event) => setB(event.target.value)}
+            />
+          </div>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {formError ? (
+            <span role="alert" className="text-destructive">
+              {formError}
+            </span>
+          ) : (
+            'The name from reely.space/u/… — both profiles must be public.'
+          )}
+        </p>
+        <Button type="submit" className="gap-2">
+          <GitCompare className="size-4" aria-hidden />
+          Compare taste
+        </Button>
+      </form>
+
+      {pair && isPending && <CompareSkeleton />}
+
+      {pair && !isPending && isError && (
+        <p className="text-sm text-muted-foreground">
+          Could not load that pair. Try again in a moment.
+        </p>
+      )}
+
+      {pair && !isPending && !isError && data && (
+        <CompareResultView result={data} />
+      )}
+
+      {!pair && (
+        <EmptyState
+          icon={GitCompare}
+          title="Put two handles side by side"
+          description="Open somebody's profile and use Compare taste, or type both names above. Each side has to be a public Reely profile."
+        />
+      )}
+    </div>
+  )
+}
+
+function CompareResultView({ result }: { result: CompareResult }) {
+  const { a, b, match } = result
+
+  if (!a || !b || !match) {
+    const missing = !a ? result.handleA : result.handleB
+    return (
+      <EmptyState
+        icon={SearchX}
+        title="No public profile there"
+        description={`@${missing} has no public page — the handle is wrong, or the profile is private or unpublished.`}
+      />
+    )
+  }
+
+  const whoA = display(a)
+  const whoB = display(b)
+
+  return (
+    <div className="space-y-12">
+      <header className="flex flex-wrap items-center gap-3">
+        <h2 className="text-lg font-semibold">
+          {whoA} &amp; {whoB}
+        </h2>
+        <Chip variant="primary">{match.score}% in common</Chip>
+        <p className="w-full text-sm text-muted-foreground sm:w-auto">
+          {matchBlurb(match)}
+        </p>
+      </header>
+
+      {match.shared.length > 0 && (
+        <Section title="In both shelves">
+          <TitleGrid titles={match.shared} />
+        </Section>
+      )}
+
+      {match.onlyA.length > 0 && (
+        <Section title={`Only ${whoA}`}>
+          <TitleGrid titles={match.onlyA} />
+        </Section>
+      )}
+
+      {match.onlyB.length > 0 && (
+        <Section title={`Only ${whoB}`}>
+          <TitleGrid titles={match.onlyB} />
+        </Section>
+      )}
+
+      {match.shared.length === 0 &&
+        match.onlyA.length === 0 &&
+        match.onlyB.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            Neither profile has a title rated highest yet — there is nothing to
+            line up.
+          </p>
+        )}
+    </div>
+  )
+}
+
+function Section({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <section>
+      <h3 className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+        {title}
+      </h3>
+      <div className="mt-4">{children}</div>
+    </section>
+  )
+}
+
+function TitleGrid({ titles }: { titles: ProfileTitle[] }) {
+  return (
+    <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-4 lg:grid-cols-6">
+      {titles.map((item) => (
+        <li key={`${item.type}:${item.id}`}>
+          <PosterTile
+            item={item}
+            sizes="(min-width: 1024px) 9.5rem, (min-width: 640px) 22vw, 45vw"
+          />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** Holds the shape of the score header and one poster row while profiles load. */
+function CompareSkeleton() {
+  return (
+    <div aria-hidden className="space-y-12">
+      <div className="flex flex-wrap items-center gap-3">
+        <Skeleton className="h-7 w-48" />
+        <Skeleton className="h-6 w-28 rounded-full" />
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-4 lg:grid-cols-6">
+        {Array.from({ length: 6 }, (_, i) => (
+          <Skeleton
+            key={i}
+            className="aspect-2/3 w-full rounded-lg"
+            style={{ animationDelay: `${i * 70}ms` }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}

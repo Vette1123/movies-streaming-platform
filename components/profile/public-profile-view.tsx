@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Film, ListVideo, Star, Tv } from 'lucide-react'
+import { Film, GitCompare, ListVideo, Star, Tv } from 'lucide-react'
 
 import type { PublicProfile } from '@/lib/profile/routes'
 import { getThumbPosterURL, localMonthYear } from '@/lib/utils'
@@ -129,6 +129,19 @@ export function PublicProfileView({ profile }: { profile: PublicProfile }) {
           </ul>
         </section>
       )}
+
+      {/* The door into /compare with this handle already filled in — the one
+          action a stranger can take with somebody else's profile that is not
+          "open a title". */}
+      <div className="mt-14">
+        <Link
+          href={`/compare?a=${profile.handle}`}
+          className="tap-target inline-flex items-center gap-2 rounded-full border border-white/15 bg-secondary/85 px-4 py-2 text-sm font-semibold text-secondary-foreground transition hover:border-primary hover:bg-primary-fill hover:text-primary-foreground"
+        >
+          <GitCompare className="size-4" aria-hidden />
+          Compare taste with a friend
+        </Link>
+      </div>
 
       <StrangerPitch
         surface="public_profile"
