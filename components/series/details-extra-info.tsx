@@ -18,6 +18,7 @@ export const SeriesDetailsExtraInfo = ({
     <DetailsExtraInfoLayout
       title={series.name}
       badgeDate={series.first_air_date}
+      nextAirDate={series.next_episode_to_air?.air_date}
       tagline={series.tagline}
       overview={series.overview}
       genres={series.genres}

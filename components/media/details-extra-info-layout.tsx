@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { MovieGenre } from '@/types/movie-genre'
 import { SEARCH_ACTOR_GOOGLE } from '@/lib/constants'
 import { cn } from '@/lib/utils'
+import { AiringChip } from '@/components/airing-chip'
 import { Icons } from '@/components/icons'
 import { GenreChips } from '@/components/media/genre-chips'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
@@ -21,6 +22,8 @@ interface DetailsExtraInfoLayoutProps {
   title: string
   // Date that drives the mount-gated "New" badge (release / first-air).
   badgeDate?: string
+  // TMDB next_episode_to_air.air_date — series only; drives the airing chip.
+  nextAirDate?: string | null
   tagline?: string
   overview: string
   genres?: MovieGenre[]
@@ -36,6 +39,7 @@ interface DetailsExtraInfoLayoutProps {
 export const DetailsExtraInfoLayout = ({
   title,
   badgeDate,
+  nextAirDate,
   tagline,
   overview,
   genres,
@@ -45,11 +49,12 @@ export const DetailsExtraInfoLayout = ({
 }: DetailsExtraInfoLayoutProps) => {
   return (
     <section>
-      {/* Reserve the badge row so the mount-gated "New" chip doesn't shove the
-          title down post-hydration (CLS). `static` keeps it in normal flow
-          inside the reserved box instead of the base `absolute`. */}
-      <div className="mb-2 min-h-7">
+      {/* Reserve the badge row so the mount-gated "New" and airing chips don't
+          shove the title down post-hydration (CLS). `static` keeps them in
+          normal flow inside the reserved box instead of the base `absolute`. */}
+      <div className="mb-2 flex min-h-7 flex-wrap items-center gap-2">
         <NewBadgeWhenRecent date={badgeDate} className="static" />
+        <AiringChip airDate={nextAirDate} className="static" />
       </div>
       <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
         {title}
