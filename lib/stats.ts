@@ -18,8 +18,8 @@ import type { WatchedItem } from '@/hooks/use-local-storage'
  * Kept, rather than deleted, because a library is a long-lived thing and the
  * alternative to a labelled estimate is a wrong total presented as a fact.
  */
-const MINUTES_PER_EPISODE = 42
-const MINUTES_PER_FILM = 115
+export const MINUTES_PER_EPISODE = 42
+export const MINUTES_PER_FILM = 115
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
