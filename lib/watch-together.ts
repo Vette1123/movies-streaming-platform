@@ -78,15 +78,16 @@ export const planRemoteCommand = (
  * dropped so they poll as a guest rather than creating a second host loop. */
 export const inviteHref = (href: string): string => {
   const url = new URL(href)
-  url.host = ''
+  // The QUERY param. `url.host = ''` would target the hostname — a silent
+  // no-op on https that shipped once and turned every invitee into a host.
+  url.searchParams.delete('host')
   return url.toString()
 }
 
 /** The QR payload: the invite URL with `remote=1`, which tells the detail hero
  * to mount the phone pad instead of the room bar. */
 export const remoteHref = (href: string): string => {
-  const url = new URL(href)
-  url.host = ''
+  const url = new URL(inviteHref(href))
   url.searchParams.set('remote', '1')
   return url.toString()
 }
