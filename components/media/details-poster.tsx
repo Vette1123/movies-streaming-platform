@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { getImageURL } from '@/lib/utils'
+import { cn, getImageURL } from '@/lib/utils'
 import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
 
 // The big poster beside the synopsis on a details page. Movies and series had
@@ -40,8 +40,9 @@ const POSTER_SIZES =
  * row between them and the gutter does not exist.
  *
  * Callers add their own stacking direction for the narrow case — the movie page
- * puts the poster first, the series page puts it after the information
- * (`flex-col-reverse`) — and both resolve to the same row here.
+ * puts the poster first, the series page puts the synopsis first and the poster
+ * after it (`order-*` on each child; see components/series/details-content.tsx)
+ * — and both resolve to the same row here.
  *
  * `md:flex-wrap` is what lets ONE constant serve both pages, which have a
  * different number of columns. The movie row is poster + information and never
@@ -62,8 +63,22 @@ const POSTER_SIZES =
  */
 export const DETAILS_ROW = 'flex gap-8 md:flex-row md:flex-wrap'
 
-export const DetailsPoster = ({ path, alt }: { path: string; alt: string }) => (
-  <div className="mx-auto w-full max-w-55 shrink-0 sm:max-w-65 md:mx-0 lg:w-100 lg:max-w-none">
+export const DetailsPoster = ({
+  path,
+  alt,
+  className,
+}: {
+  path: string
+  alt: string
+  /** Order/stack overrides — the series page resequences this box on mobile. */
+  className?: string
+}) => (
+  <div
+    className={cn(
+      'mx-auto w-full max-w-55 shrink-0 sm:max-w-65 md:mx-0 lg:w-100 lg:max-w-none',
+      className
+    )}
+  >
     <div className="relative aspect-2/3 w-full overflow-hidden rounded-xl shadow-xl lg:aspect-auto lg:min-h-150">
       <BlurredImage
         src={getImageURL(path)}

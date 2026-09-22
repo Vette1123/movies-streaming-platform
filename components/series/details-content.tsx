@@ -37,10 +37,19 @@ export const SeriesDetailsContent = ({
   )?.name
   return (
     <>
-      <section className="container max-w-(--breakpoint-2xl) pt-12 pb-6 lg:pb-10">
-        <div className={cn(DETAILS_ROW, 'flex-col-reverse')}>
-          <DetailsPoster path={series.poster_path} alt={series.name} />
-          <section className="flex min-w-0 flex-1 flex-col gap-4">
+      <section className="container max-w-(--breakpoint-2xl) pt-8 pb-6 sm:pt-12 lg:pb-10">
+        {/* flex-col (not -reverse) + order: below `md` the stack must read
+            synopsis → poster → episodes, because flex-col-reverse put the
+            season navigator ABOVE the h1 — the page's only heading sat under
+            a season <Select> on every phone. `order-0` at md restores DOM
+            order for the row layout. */}
+        <div className={cn(DETAILS_ROW, 'flex-col')}>
+          <DetailsPoster
+            path={series.poster_path}
+            alt={series.name}
+            className="order-2 md:order-0"
+          />
+          <section className="order-1 flex min-w-0 flex-1 flex-col gap-4 md:order-0">
             <SeriesDetailsExtraInfo series={series} director={director} />
             <DetailsCredits
               movieCredits={seriesCredits}
@@ -55,6 +64,7 @@ export const SeriesDetailsContent = ({
           <SectionErrorBoundary
             section="series_seasons"
             title="Episodes didn't load"
+            className="order-3 md:order-0"
           >
             <Suspense fallback={<SeasonNavigatorFallback />}>
               <SeasonNavigator series={series} />

@@ -51,14 +51,16 @@ export const DetailsExtraInfoLayout = ({
       <div className="mb-2 min-h-7">
         <NewBadgeWhenRecent date={badgeDate} className="static" />
       </div>
-      <h1 className="text-sm font-bold lg:text-3xl">{title}</h1>
+      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
+        {title}
+      </h1>
       {tagline && (
-        <p className="mt-1 text-xs text-muted-foreground italic lg:text-base">
+        <p className="mt-1 text-sm text-muted-foreground italic sm:text-base lg:text-lg">
           {tagline}
         </p>
       )}
       {heroRates}
-      <p className="text-xs font-semibold prose-invert lg:text-lg">
+      <p className="max-w-[68ch] text-sm leading-relaxed font-medium prose-invert sm:text-base lg:text-lg">
         {overview}
       </p>
       <GenreChips genres={genres} mediaType={mediaType} className="mt-4" />
@@ -66,7 +68,7 @@ export const DetailsExtraInfoLayout = ({
         {extraInfo.map((info) => (
           <div
             key={info.name}
-            className="grid grid-cols-2 text-sm font-semibold lg:text-lg"
+            className="grid grid-cols-2 gap-3 text-sm font-semibold sm:text-base lg:text-lg"
           >
             <p className="text-muted-foreground">{info.name}</p>
             {info.isLink ? (

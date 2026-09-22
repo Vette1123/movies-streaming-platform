@@ -143,10 +143,15 @@ export default function MediaFallbackPage() {
 }
 
 // Mirrors the detail hero's footprint so the paint doesn't shift the page.
+// 100svh, not 70vh: the hero is exactly one small-viewport height, so a 70vh
+// skeleton collapsed by ~30% the moment the real hero landed on a tail id.
 function MediaFallbackSkeleton() {
   return (
     <div className="relative">
-      <div className="h-[70vh] w-full animate-pulse bg-muted/30" />
+      <div
+        className="w-full animate-pulse bg-muted/30"
+        style={{ height: '100svh' }}
+      />
       <div className="container mt-8 space-y-4">
         <div className="h-8 w-2/3 animate-pulse rounded bg-muted/30" />
         <div className="h-4 w-full animate-pulse rounded bg-muted/30" />

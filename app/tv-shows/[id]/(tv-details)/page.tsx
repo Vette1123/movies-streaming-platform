@@ -70,6 +70,7 @@ export async function generateMetadata(
     basePath: '/tv-shows',
     ogType: 'video.tv_show',
     keywordsTail: ['tv series', 'episodes'],
+    ogReleaseDate: seriesDetails.first_air_date || undefined,
   })
 }
 
@@ -115,6 +116,7 @@ const TVSeries = async (props: PageDetailsProps) => {
     creators: seriesDetails.created_by?.map((person) => person.name),
     trailerKey,
     trailerPublishedAt,
+    originalLanguage: seriesDetails.original_language,
   })
 
   return (

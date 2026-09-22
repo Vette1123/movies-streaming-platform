@@ -31,7 +31,7 @@ export const MoviesDetailsContent = ({
   )?.name
   return (
     <>
-      <section className="container max-w-(--breakpoint-2xl) pt-12 pb-6 lg:pb-10">
+      <section className="container max-w-(--breakpoint-2xl) pt-8 pb-6 sm:pt-12 lg:pb-10">
         <div className={cn(DETAILS_ROW, 'flex-col')}>
           <DetailsPoster path={movie.poster_path} alt={movie.title} />
           <section className="flex min-w-0 flex-1 flex-col gap-4">

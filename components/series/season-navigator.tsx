@@ -23,7 +23,9 @@ import { SeasonsSelector } from '@/components/series/selector'
  * Written once because the Suspense fallback and the real navigator must claim
  * the SAME box — if they disagree the page reflows the moment the seasons land.
  */
-const NAVIGATOR_BOX = 'w-full xl:w-72 xl:shrink-0'
+// `order-3` pairs with the series details row's mobile stack: synopsis first,
+// poster second, episodes last (md:order-0 rejoins the desktop row).
+const NAVIGATOR_BOX = 'order-3 w-full md:order-0 xl:w-72 xl:shrink-0'
 
 // Reserves the navigator's exact box while the subtree hydrates. The season
 // selector reads ?season during render, which under a static prerender bails

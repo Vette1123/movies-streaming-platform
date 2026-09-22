@@ -115,6 +115,7 @@ const MoviePage = async (props: PageDetailsProps) => {
     directors: crewNamesByJob(movieCredits, 'Director'),
     trailerKey,
     trailerPublishedAt,
+    originalLanguage: movieDetails.original_language,
   })
 
   return (

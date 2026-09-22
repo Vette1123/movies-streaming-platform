@@ -70,9 +70,14 @@ export const HeroRatesInfos = React.memo(function HeroRatesInfos({
       <Chip variant="outline" uppercase>
         {item?.original_language}
       </Chip>
-      <Chip variant={item?.adult ? 'danger' : 'outline'} uppercase>
-        {item?.adult ? 'NC-17' : 'PG-13'}
-      </Chip>
+      {/* No certification chip: TMDB's detail payload carries no rating, and
+          the old `adult ? 'NC-17' : 'PG-13'` invented one for every title on
+          the site. A missing chip is honest; a wrong one is a claim. */}
+      {item?.adult && (
+        <Chip variant="danger" uppercase>
+          Adult
+        </Chip>
+      )}
       <ScoreChip
         imdbRating={imdbRating}
         voteAverage={item?.vote_average}

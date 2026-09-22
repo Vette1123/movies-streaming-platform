@@ -157,6 +157,8 @@ interface MovieSchemaInput {
   directors?: (string | null | undefined)[]
   trailerKey?: string | null
   trailerPublishedAt?: string | null
+  /** ISO 639-1 code from TMDB — drives `inLanguage` instead of a hard-coded `en`. */
+  originalLanguage?: string | null
 }
 
 // schema.org AggregateRating from a TMDB vote average/count, or undefined when
@@ -184,7 +186,9 @@ export const movieJsonLd = (movie: MovieSchemaInput) => {
     '@id': `${url}#movie`,
     url,
     name: movie.title,
-    inLanguage: 'en',
+    // The film's own language, not the site's. A Japanese or French title
+    // filed as `en` is a wrong claim in the graph crawlers read.
+    inLanguage: movie.originalLanguage || 'en',
   }
 
   if (movie.description) schema.description = movie.description
@@ -230,6 +234,8 @@ interface SeriesSchemaInput {
   creators?: (string | null | undefined)[]
   trailerKey?: string | null
   trailerPublishedAt?: string | null
+  /** ISO 639-1 code from TMDB — drives `inLanguage` instead of a hard-coded `en`. */
+  originalLanguage?: string | null
 }
 
 export const tvSeriesJsonLd = (series: SeriesSchemaInput) => {
@@ -240,7 +246,7 @@ export const tvSeriesJsonLd = (series: SeriesSchemaInput) => {
     '@id': `${url}#tv-series`,
     url,
     name: series.name,
-    inLanguage: 'en',
+    inLanguage: series.originalLanguage || 'en',
   }
 
   if (series.description) schema.description = series.description
