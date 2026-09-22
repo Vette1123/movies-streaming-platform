@@ -21,6 +21,7 @@ import { SaveButton } from '@/components/save-button'
 import { ShareButton } from '@/components/share-button'
 import { ShareCardButton } from '@/components/share-card-button'
 import { TrailerDialog } from '@/components/trailer-dialog'
+import { TogetherRemote } from '@/components/together-remote'
 import { WatchTogetherBar } from '@/components/watch-together-bar'
 import { WatchedButton } from '@/components/watched-button'
 
@@ -190,11 +191,18 @@ export const DetailsHero = ({
   // prerenders ~1000 times at build, and a searchParams read at render would
   // deopt every one of them. The bar only mounts after a client-side play
   // click, so the server/client snapshot difference never reaches the DOM.
+  // `remote=1` (from the host's QR) mounts the phone pad instead of the bar.
   const together = React.useMemo(() => {
     if (typeof window === 'undefined') return null
     const params = new URLSearchParams(window.location.search)
     const code = params.get('watch')
-    return code ? { code, isHost: params.get('host') === '1' } : null
+    return code
+      ? {
+          code,
+          isHost: params.get('host') === '1',
+          isRemote: params.get('remote') === '1',
+        }
+      : null
   }, [])
 
   // The reely surface reports readiness with its own pseudo-src so the stall
@@ -410,14 +418,18 @@ export const DetailsHero = ({
           {/* Mounted whether or not the player is open: the room is what the
               URL says, and a host who has not pressed play yet still needs the
               invite to send. Before play the guest loop has no frame to steer
-              and simply idles. */}
-          {together && (
+              and simply idles. `remote=1` swaps the bar for the phone pad —
+              the two never coexist: one device drives, one device follows. */}
+          {together && together.isRemote ? (
+            <TogetherRemote code={together.code} />
+          ) : null}
+          {together && !together.isRemote ? (
             <WatchTogetherBar
               code={together.code}
               isHost={together.isHost}
               frameRef={useReely ? reelyFrameRef : iframeRef}
             />
-          )}
+          ) : null}
         </div>
       </div>
       <div className="pointer-events-none absolute -inset-4 rounded-md bg-linear-to-b from-slate-900/45 via-slate-900/10 to-slate-900/40 shadow-[inset_0_1px_0_0_rgba(148,163,184,0.1)] transition motion-reduce:transition-none lg:-inset-x-6 lg:block lg:drop-shadow-lg" />

@@ -142,6 +142,10 @@ export interface TogetherBeat {
   position: number
   playing: number
   updated_at: number
+  /** One-shot remote command the host loop drains; null when none pending. */
+  cmd_position: number | null
+  cmd_playing: number | null
+  cmd_at: number | null
 }
 
 export const togetherBeatApi = (input: {
@@ -152,3 +156,9 @@ export const togetherBeatApi = (input: {
 
 export const togetherStateApi = (code: string): Promise<TogetherBeat> =>
   getJson('/api/together/state', { code })
+
+export const togetherRemoteApi = (input: {
+  code: string
+  position: number
+  playing: boolean
+}): Promise<{ ok: boolean }> => postJson('/api/together/remote', input)

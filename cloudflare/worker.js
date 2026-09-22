@@ -617,12 +617,42 @@ async function handleApi(pathname, url, request, ctx, env) {
     if (!code) return liveJson({ error: 'code required' }, { status: 400 })
     const beat = await db
       .prepare(
-        'SELECT position, playing, updated_at FROM together_beats WHERE code = ?'
+        `SELECT position, playing, updated_at, cmd_position, cmd_playing, cmd_at
+         FROM together_beats WHERE code = ?`
       )
       .bind(code)
       .first()
     if (!beat) return liveJson({ error: 'room not found' }, { status: 404 })
     return liveJson(beat)
+  }
+
+  if (pathname === '/api/together/remote' && request.method === 'POST') {
+    const db = env.DB
+    if (!db) return liveJson({ error: 'unavailable' }, { status: 503 })
+    const body = await request.json().catch(() => null)
+    const { code, position, playing } = body ?? {}
+    if (!code || typeof position !== 'number' || typeof playing !== 'boolean') {
+      return liveJson({ error: 'code, position, playing' }, { status: 400 })
+    }
+    const room = await db
+      .prepare('SELECT 1 AS ok FROM together_beats WHERE code = ?')
+      .bind(String(code))
+      .first()
+    if (!room) return liveJson({ error: 'room not found' }, { status: 404 })
+    await db
+      .prepare(
+        `UPDATE together_beats
+         SET cmd_position = ?, cmd_playing = ?, cmd_at = ?
+         WHERE code = ?`
+      )
+      .bind(
+        Math.max(0, position),
+        playing ? 1 : 0,
+        Date.now(),
+        String(code)
+      )
+      .run()
+    return liveJson({ ok: true })
   }
 
   if (pathname === '/api/season-details') {
@@ -1648,7 +1678,8 @@ const worker = {
       (pathname === '/api/match/room' ||
         pathname === '/api/match/swipe' ||
         pathname === '/api/together/room' ||
-        pathname === '/api/together/beat')
+        pathname === '/api/together/beat' ||
+        pathname === '/api/together/remote')
     ) {
       return await handleApi(pathname, url, request, ctx, env)
     }

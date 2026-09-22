@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { followHost, STALE_BEAT_MS } from '@/lib/watch-together'
+import {
+  followHost,
+  inviteHref,
+  planRemoteCommand,
+  remoteHref,
+  STALE_BEAT_MS,
+} from '@/lib/watch-together'
 
 const NOW = 1_700_000_000_000
 const fresh = (over: Partial<Parameters<typeof followHost>[0]> = {}) => ({
@@ -58,5 +64,54 @@ describe('followHost', () => {
       playing: true,
     })
     expect(followHost(fresh({ position: 1 }), null, NOW)).toBeNull()
+  })
+})
+
+describe('planRemoteCommand', () => {
+  const cmd = (over: Partial<Parameters<typeof planRemoteCommand>[0]> = {}) => ({
+    position: 120,
+    playing: false,
+    updatedAt: NOW - 500,
+    ...over,
+  })
+
+  it('applies a fresh command the host has not drained yet', () => {
+    expect(planRemoteCommand(cmd(), 0, NOW)).toEqual({
+      position: 120,
+      playing: false,
+    })
+  })
+
+  it('drops a command the host already applied', () => {
+    expect(planRemoteCommand(cmd(), NOW, NOW)).toBeNull()
+    expect(planRemoteCommand(cmd(), NOW + 1, NOW)).toBeNull()
+  })
+
+  it('drops a command older than the stale window (hidden host tab)', () => {
+    // The phone pressed something, the host tab sat hidden past STALE_BEAT_MS,
+    // and rewinding playback now would be a surprise, not a feature.
+    const late = cmd({ updatedAt: NOW - STALE_BEAT_MS - 1 })
+    expect(planRemoteCommand(late, 0, NOW)).toBeNull()
+  })
+
+  it('drops a null command', () => {
+    expect(planRemoteCommand(null, 0, NOW)).toBeNull()
+  })
+})
+
+describe('room hrefs', () => {
+  const href =
+    'https://reely.example/tv-shows/1399?season=2&episode=5&watch=ABCD12&host=1'
+
+  it('inviteHref keeps playback params and drops the host flag', () => {
+    expect(inviteHref(href)).toBe(
+      'https://reely.example/tv-shows/1399?season=2&episode=5&watch=ABCD12'
+    )
+  })
+
+  it('remoteHref drops host and marks the URL as a remote', () => {
+    expect(remoteHref(href)).toBe(
+      'https://reely.example/tv-shows/1399?season=2&episode=5&watch=ABCD12&remote=1'
+    )
   })
 })

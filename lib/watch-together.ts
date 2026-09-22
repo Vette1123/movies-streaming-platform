@@ -48,3 +48,45 @@ export const followHost = (
 
   return { position: beat.position, playing: beat.playing }
 }
+
+export interface RemoteCommand {
+  position: number
+  playing: boolean
+  /** Epoch ms, as the Worker wrote it (`cmd_at`). */
+  updatedAt: number
+}
+
+/**
+ * `null` means drop the command — either already applied (the host drained
+ * `cmd_at` on an earlier tick) or too old to trust. A phone that presses pause,
+ * walks away, and whose command finally surfaces after the room has moved on
+ * would otherwise rewind playback; `STALE_BEAT_MS` is the same window the guest
+ * follower already uses for a dead host.
+ */
+export const planRemoteCommand = (
+  cmd: RemoteCommand | null,
+  appliedAt: number,
+  now: number
+): { position: number; playing: boolean } | null => {
+  if (!cmd) return null
+  if (cmd.updatedAt <= appliedAt) return null
+  if (now - cmd.updatedAt > STALE_BEAT_MS) return null
+  return { position: cmd.position, playing: cmd.playing }
+}
+
+/** The same URL a guest opens on their phone: playback params kept, `host`
+ * dropped so they poll as a guest rather than creating a second host loop. */
+export const inviteHref = (href: string): string => {
+  const url = new URL(href)
+  url.host = ''
+  return url.toString()
+}
+
+/** The QR payload: the invite URL with `remote=1`, which tells the detail hero
+ * to mount the phone pad instead of the room bar. */
+export const remoteHref = (href: string): string => {
+  const url = new URL(href)
+  url.host = ''
+  url.searchParams.set('remote', '1')
+  return url.toString()
+}
