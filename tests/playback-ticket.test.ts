@@ -22,7 +22,9 @@ describe('signEntryTicket', () => {
   })
 
   it('returns null when no secret is configured', async () => {
-    expect(await signEntryTicket(undefined, { type: 'movie', id: 550 })).toBeNull()
+    expect(
+      await signEntryTicket(undefined, { type: 'movie', id: 550 })
+    ).toBeNull()
     expect(await signEntryTicket('', { type: 'movie', id: 550 })).toBeNull()
   })
 

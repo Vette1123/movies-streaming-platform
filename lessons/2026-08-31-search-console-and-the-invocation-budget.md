@@ -13,17 +13,17 @@ because the clicks were brand queries and the impressions were the tail.
 
 Every bucket traced to one of four things:
 
-| Reason | Pages | Cause |
-| --- | --- | --- |
-| Server error (5xx) | 15,962 | Pre-migration OpenNext CPU kills. Every example last crawled **2–3 Aug**, before the static export shipped on the 3rd. |
-| Excluded by 'noindex' | 9,274 | The tail-page hydration bug fixed in `f2e5ad6`. |
-| Duplicate without user-selected canonical | 6,961 | Same bug — hydration reset the canonical to the homepage. |
-| Crawled – currently not indexed | 10,203 | Same bug, plus ordinary tail-crawl behaviour. |
-| Not found (404) | 1,832 | Person ids from the closed-set churn (fixed in `136f461`) plus TMDB ids that do not exist. |
-| Page with redirect | 1,692 | apex → www 301 on URLs Google knew from before. |
-| Soft 404 | 112 | Same hydration bug, crawled 15–16 Aug. |
-| Blocked due to access forbidden (403) | 42 | Stale. Every example last crawled **4 Jun**, before the WAF was tuned. |
-| Blocked by robots.txt | 4 | Two of them were **our own icon URLs**. |
+| Reason                                    | Pages  | Cause                                                                                                                  |
+| ----------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Server error (5xx)                        | 15,962 | Pre-migration OpenNext CPU kills. Every example last crawled **2–3 Aug**, before the static export shipped on the 3rd. |
+| Excluded by 'noindex'                     | 9,274  | The tail-page hydration bug fixed in `f2e5ad6`.                                                                        |
+| Duplicate without user-selected canonical | 6,961  | Same bug — hydration reset the canonical to the homepage.                                                              |
+| Crawled – currently not indexed           | 10,203 | Same bug, plus ordinary tail-crawl behaviour.                                                                          |
+| Not found (404)                           | 1,832  | Person ids from the closed-set churn (fixed in `136f461`) plus TMDB ids that do not exist.                             |
+| Page with redirect                        | 1,692  | apex → www 301 on URLs Google knew from before.                                                                        |
+| Soft 404                                  | 112    | Same hydration bug, crawled 15–16 Aug.                                                                                 |
+| Blocked due to access forbidden (403)     | 42     | Stale. Every example last crawled **4 Jun**, before the WAF was tuned.                                                 |
+| Blocked by robots.txt                     | 4      | Two of them were **our own icon URLs**.                                                                                |
 
 Fixed in this pass: the robots.txt icon block, a missing `BreadcrumbList` on tail
 pages, JSON-LD that hydration was publishing twice, and the two largest
@@ -77,14 +77,14 @@ lever it looks like.
 same dataset by `$workers.event.request.cf.verifiedBotCategory` and
 `$workers.event.request.headers.user-agent` says who, and who is fixable:
 
-| Source | /day | Share of the 100k cap |
-| --- | --- | --- |
-| Amzn-SearchBot | 8,033 | 8.0% |
-| Firefox/121.0 — one frozen UA | 7,935 | 7.9% |
-| Claude-SearchBot | 6,394 | 6.4% |
-| YandexBot | 2,881 | 2.9% |
-| bingbot | 2,631 | 2.6% |
-| Googlebot | 1,469 | 1.5% |
+| Source                        | /day  | Share of the 100k cap |
+| ----------------------------- | ----- | --------------------- |
+| Amzn-SearchBot                | 8,033 | 8.0%                  |
+| Firefox/121.0 — one frozen UA | 7,935 | 7.9%                  |
+| Claude-SearchBot              | 6,394 | 6.4%                  |
+| YandexBot                     | 2,881 | 2.9%                  |
+| bingbot                       | 2,631 | 2.6%                  |
+| Googlebot                     | 1,469 | 1.5%                  |
 
 Two strings were a quarter of the entire budget, and Googlebot — the only
 crawler whose opinion the Search Console report reflects — was 1.5% of it.
@@ -118,7 +118,7 @@ needed a code change.
   where the CPU goes. The user-agent tells you which requests you are allowed to
   stop making, and the two answers are not the same.
 - **Do not block AI search crawlers as a class** — they cite, which is a
-  referral. Block one on a *measurement* that it costs more than everything it
+  referral. Block one on a _measurement_ that it costs more than everything it
   returns, and write the number in the comment. `Amzn-SearchBot` is the only one
   disallowed, at 8,033/day for no referral, and Amazon honours nothing else.
 - **`content-visibility` breaks `innerText` as a content metric.** Use

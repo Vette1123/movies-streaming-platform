@@ -7,13 +7,13 @@
 
 Bing's SEO scan reported five things. Four are ours, one is not:
 
-| Finding | Count | Where it actually was |
-| --- | --- | --- |
-| Meta descriptions too short | 53 pages | Detail pages whose TMDB `overview` is one line or empty |
-| `<h1>` missing | 3 pages | Tail detail pages — the fallback `<h1>` shipped inside `<div hidden>` |
-| Important pages missing in sitemaps | 3 pages | The similar/recommended rails link outside the prerendered set |
-| Not submitted via IndexNow | 1 page | Same root cause — IndexNow submits the sitemap |
-| No inbound links from high-quality domains | 1 | Off-site. Not a code change. |
+| Finding                                    | Count    | Where it actually was                                                 |
+| ------------------------------------------ | -------- | --------------------------------------------------------------------- |
+| Meta descriptions too short                | 53 pages | Detail pages whose TMDB `overview` is one line or empty               |
+| `<h1>` missing                             | 3 pages  | Tail detail pages — the fallback `<h1>` shipped inside `<div hidden>` |
+| Important pages missing in sitemaps        | 3 pages  | The similar/recommended rails link outside the prerendered set        |
+| Not submitted via IndexNow                 | 1 page   | Same root cause — IndexNow submits the sitemap                        |
+| No inbound links from high-quality domains | 1        | Off-site. Not a code change.                                          |
 
 Fixed:
 
@@ -42,14 +42,14 @@ Fixed:
 - **Estimated the sitemap growth from a sample and was out by 7x.** Sampled 224
   of 893 movies and 228 of 911 series, measured 0.7 and 1.7 new ids per title,
   and extrapolated ~2,100 new URLs. The real build produced 12,535. A per-item
-  average taken from a sample undercounts the size of a *union* — each extra
+  average taken from a sample undercounts the size of a _union_ — each extra
   title contributes ids the sample never saw. It happened to land inside the
   50,000-URL sitemap limit; it was not checked against that limit first, and if
   the real number had been 60,000 it would have been found by a broken deploy.
 - **Shipped a build that ran into Next's 60-second page timeout and called it
   green.** The first `pnpm build:cf` failed outright; the second passed — with
   `Failed to build /sitemap.xml/route (attempt 1 of 3) because it took more than
-  60 seconds` buried in the log. A build that only passes on a retry is a build
+60 seconds` buried in the log. A build that only passes on a retry is a build
   that fails on a slower network, and the deploy workflow runs on every push.
   Fixed with `staticPageGenerationTimeout: 300`. Read the whole log, not the
   exit code.
@@ -60,7 +60,7 @@ Fixed:
   Bing never waited for. The report was about the fallback, not the page.
 - **Three of the URLs Bing named are still not in the sitemap.** `/tv-shows/9079`,
   `/movies/1008280`, `/movies/273646` are reachable only rail-to-rail from
-  *another* tail page, one ring further out than the harvest goes. Harvesting a
+  _another_ tail page, one ring further out than the harvest goes. Harvesting a
   second ring means ~13,000 more build-time TMDB reads. The class of gap is
   closed; those three specific URLs are not, and saying so is better than
   claiming the report is clear.
@@ -68,7 +68,7 @@ Fixed:
 ## What worked
 
 - Asking for the per-finding URL lists instead of working from the summary CSV.
-  The CSV says "3 pages"; the detail view says *which* 3, and every conclusion
+  The CSV says "3 pages"; the detail view says _which_ 3, and every conclusion
   above came from reading those URLs against the live HTML. The summary alone
   would have sent the meta-description fix to the wrong pages.
 - Diffing prerendered `/movies/550` against a tail id with `curl`. Same shape,
@@ -87,7 +87,7 @@ Fixed:
 - **`exit 0` is not "the build passed".** Grep the log for `Failed`, `attempt`
   and `Retrying` — Next retries a timed-out route three times and still exits 0.
 - **A page the site links to belongs in the sitemap.** The sitemap was derived
-  from what the build *bakes*; the rails link past that set on every detail page.
+  from what the build _bakes_; the rails link past that set on every detail page.
 - Bing's SEO summary CSV has no URLs in it. Open each finding and export the
   page list, or you are guessing.
 

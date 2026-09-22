@@ -21,22 +21,18 @@ const b64url = (bytes: Uint8Array): string => {
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
-const hmac = async (
-  secretB64: string,
-  data: string,
-): Promise<Uint8Array> => {
-  const pad = secretB64.length % 4 === 0 ? '' : '='.repeat(4 - (secretB64.length % 4))
+const hmac = async (secretB64: string, data: string): Promise<Uint8Array> => {
+  const pad =
+    secretB64.length % 4 === 0 ? '' : '='.repeat(4 - (secretB64.length % 4))
   const raw = atob(secretB64.replace(/-/g, '+').replace(/_/g, '/') + pad)
   const key = await crypto.subtle.importKey(
     'raw',
     Uint8Array.from(raw, (c) => c.charCodeAt(0)),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
-    ['sign'],
+    ['sign']
   )
-  return new Uint8Array(
-    await crypto.subtle.sign('HMAC', key, enc.encode(data)),
-  )
+  return new Uint8Array(await crypto.subtle.sign('HMAC', key, enc.encode(data)))
 }
 
 export interface PlaybackTarget {
@@ -53,7 +49,7 @@ export interface PlaybackTarget {
  */
 export const signEntryTicket = async (
   secret: string | undefined,
-  target: PlaybackTarget,
+  target: PlaybackTarget
 ): Promise<string | null> => {
   if (!secret) return null
   const body = {

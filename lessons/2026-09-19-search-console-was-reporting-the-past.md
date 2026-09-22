@@ -13,16 +13,16 @@ It is not. Every large bucket is a record of a bug that has already been fixed,
 sitting in the report until Google recrawls. Each one was checked against
 production rather than reasoned about:
 
-| Reason | Pages | Checked | Verdict |
-|---|---|---|---|
-| Server error (5xx) | 15,951 | 31 sampled URLs as Googlebot | all **200**, ~200ms. `cf:health`: 0 eyeball 5xx of 72,090 |
-| Excluded by `noindex` | 12,188 | 15 sampled, headers + meta | all `index, follow`, no X-Robots-Tag |
-| Discovered / crawled, not indexed | 18,496 | — | Google-side, no site action |
-| Alternative page w/ proper canonical | 8,713 | — | benign by definition |
-| Duplicate without user-selected canonical | 6,345 | 7 sampled | self-canonical, distinct titles + descriptions, 1.6–2.2k visible chars |
-| Page with redirect | 4,292 | 998 examples grouped by host | **all** on apex `reely.space` — the apex→www 301, by design |
-| Not found (404) | 1,096 | 1,000 examples grouped by prefix | 387 Freebase, 25 person, rest dead TMDB ids |
-| Soft 404 | 88 | 15 sampled | 1,608–2,636 visible chars, facts block present |
+| Reason                                    | Pages  | Checked                          | Verdict                                                                |
+| ----------------------------------------- | ------ | -------------------------------- | ---------------------------------------------------------------------- |
+| Server error (5xx)                        | 15,951 | 31 sampled URLs as Googlebot     | all **200**, ~200ms. `cf:health`: 0 eyeball 5xx of 72,090              |
+| Excluded by `noindex`                     | 12,188 | 15 sampled, headers + meta       | all `index, follow`, no X-Robots-Tag                                   |
+| Discovered / crawled, not indexed         | 18,496 | —                                | Google-side, no site action                                            |
+| Alternative page w/ proper canonical      | 8,713  | —                                | benign by definition                                                   |
+| Duplicate without user-selected canonical | 6,345  | 7 sampled                        | self-canonical, distinct titles + descriptions, 1.6–2.2k visible chars |
+| Page with redirect                        | 4,292  | 998 examples grouped by host     | **all** on apex `reely.space` — the apex→www 301, by design            |
+| Not found (404)                           | 1,096  | 1,000 examples grouped by prefix | 387 Freebase, 25 person, rest dead TMDB ids                            |
+| Soft 404                                  | 88     | 15 sampled                       | 1,608–2,636 visible chars, facts block present                         |
 
 The 5xx are almost certainly the invocation cap: before the scraper fleet was
 blocked on 2026-09-01 the Worker ran at 91% of the free plan's 100k/day, and the
@@ -40,17 +40,17 @@ Googlebot from the edge cache.
 
 Page indexing is one report of nine. The others, swept afterwards:
 
-| Report | State |
-|---|---|
-| Manual actions | **No issues detected** |
-| Security issues | **No issues detected** |
-| Core Web Vitals, mobile + desktop | INP / CLS / LCP: **0 URLs** on each, both devices |
-| HTTPS | 0 non-HTTPS, 32 HTTPS, no issues in 90 days |
-| Breadcrumbs | 0 invalid, 22 valid |
-| Review snippets | 0 invalid, 15 valid |
-| Videos (structured data) | 0 invalid, 11 valid |
-| Sitemaps | `sitemap.xml` Success, last read 19 Sept, 14,832 pages |
-| **Video indexing** | **222 not indexed / 16 indexed — "Video isn't on a watch page"** |
+| Report                            | State                                                            |
+| --------------------------------- | ---------------------------------------------------------------- |
+| Manual actions                    | **No issues detected**                                           |
+| Security issues                   | **No issues detected**                                           |
+| Core Web Vitals, mobile + desktop | INP / CLS / LCP: **0 URLs** on each, both devices                |
+| HTTPS                             | 0 non-HTTPS, 32 HTTPS, no issues in 90 days                      |
+| Breadcrumbs                       | 0 invalid, 22 valid                                              |
+| Review snippets                   | 0 invalid, 15 valid                                              |
+| Videos (structured data)          | 0 invalid, 11 valid                                              |
+| Sitemaps                          | `sitemap.xml` Success, last read 19 Sept, 14,832 pages           |
+| **Video indexing**                | **222 not indexed / 16 indexed — "Video isn't on a watch page"** |
 
 Two things came out of it.
 
@@ -71,7 +71,7 @@ movie's `trailer` property, which is what Google's own Movie schema asks for.
 Making 222 pages into watch pages means a YouTube iframe inline on every detail
 page — several hundred KB and a pile of main-thread work on the exact pages that
 were just tuned for scroll smoothness. Keeping correct structured data that
-Google declines to index as *video* costs nothing; the page still indexes.
+Google declines to index as _video_ costs nothing; the page still indexes.
 
 ## Mistakes
 

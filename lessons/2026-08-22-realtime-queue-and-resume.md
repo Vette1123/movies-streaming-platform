@@ -9,9 +9,9 @@
 
 ## Mistakes
 
-- **I nearly tombstoned undateable rows.** First version of `collectResumeChanges` skipped a position whose `updated_at` couldn't be parsed — which made it *absent*, and absent means deleted in this engine. A corrupt stamp would have wiped everyone else's copy. Fix: carry the mirror's stamp across for unreadable rows. The test suite caught it only because I wrote the test first as "should skip" and the assertion failed loudly.
+- **I nearly tombstoned undateable rows.** First version of `collectResumeChanges` skipped a position whose `updated_at` couldn't be parsed — which made it _absent_, and absent means deleted in this engine. A corrupt stamp would have wiped everyone else's copy. Fix: carry the mirror's stamp across for unreadable rows. The test suite caught it only because I wrote the test first as "should skip" and the assertion failed loudly.
 - **Verified in the wrong runtime again.** Burned several browser-harness rounds trying to exercise the pro flow under `pnpm dev`, where no `/api/*` Worker route exists (2026-08-16 lesson says exactly this). The stub chain needed hint cookie + profile cache + `/api/auth/refresh` interception before the app even believed it was signed in.
-- **Outbound payload shape drift:** array stores push WatchedItem *objects* (the server serialises); I first pre-stringified positions. Widened `OutboundChange.payload` instead of special-casing at the call site.
+- **Outbound payload shape drift:** array stores push WatchedItem _objects_ (the server serialises); I first pre-stringified positions. Widened `OutboundChange.payload` instead of special-casing at the call site.
 
 ## What worked
 

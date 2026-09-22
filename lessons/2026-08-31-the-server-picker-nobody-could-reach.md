@@ -55,7 +55,7 @@ switcher renders over the house player too. Seven cases pinned in
 ## What worked
 
 - Faking the tier locally instead of standing up an account: `document.cookie =
-  'reely_account=1'` plus a `reely_profile` entry with `pro: true`. Dev has no
+'reely_account=1'` plus a `reely_profile` entry with `pro: true`. Dev has no
   `/api/auth/refresh`, so the refresh fails, `markFailed` leaves `signedIn`
   undefined, and `useAccountIdentity` falls back to the cached profile — a real
   supporter render with no D1 and no OAuth.

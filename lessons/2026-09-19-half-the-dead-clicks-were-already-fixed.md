@@ -14,13 +14,13 @@ reached two days behind its own fix and counted the corpses.
 
 Re-querying from 2026-09-08 gave an honest list, and it was a different list:
 
-| Still failing | n | Fixed by |
-|---|---|---|
-| dead swipe on poster `img` | 14 | `snap-proximity` |
-| rail arrow + its chevron (incl. a rageclick) | 4 | ResizeObserver |
-| install nudge card, cyan tile, iOS hint | 5 | stretched button |
-| filter overlay backdrop | 3 | outside-click restored |
-| cmdk palette input | 6 | nothing — benign |
+| Still failing                                | n   | Fixed by               |
+| -------------------------------------------- | --- | ---------------------- |
+| dead swipe on poster `img`                   | 14  | `snap-proximity`       |
+| rail arrow + its chevron (incl. a rageclick) | 4   | ResizeObserver         |
+| install nudge card, cyan tile, iOS hint      | 5   | stretched button       |
+| filter overlay backdrop                      | 3   | outside-click restored |
+| cmdk palette input                           | 6   | nothing — benign       |
 
 **The dead swipes were `snap-mandatory`.** Every horizontal rail had it. A flick
 shorter than half a card is forcibly returned to the snap point it started at,
@@ -42,7 +42,7 @@ dialog and the mobile nav all close on a backdrop tap.
 **The first query's window predated the fix it was measuring.** Fourteen days
 looked like a reasonable amount of data and it silently included two days of a
 bug that no longer existed. Worse, the code already said so: the comment above
-that paragraph reads "this paragraph *was* the most-clicked dead element", past
+that paragraph reads "this paragraph _was_ the most-clicked dead element", past
 tense. The answer was in the file being read.
 
 **The remaining 404s were assumed to be ours and were not.**

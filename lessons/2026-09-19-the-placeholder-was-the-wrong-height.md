@@ -23,15 +23,15 @@ onto its own row at 768px.
 **The lag.** `.cv-auto` — `content-visibility: auto` — reserved
 `contain-intrinsic-size: auto 420px` for every poster rail. A rail is a heading
 plus one poster row, and the poster row is sized by the card width, which steps
-at sm/lg/2xl. So one number cannot be right, and 420 was wrong in *both*
+at sm/lg/2xl. So one number cannot be right, and 420 was wrong in _both_
 directions:
 
-| viewport | real rail | reserved | error |
-|---|---|---|---|
-| <640 | 336px | 420px | **over** by 84 |
-| 640–1023 | 397px | 420px | over by 23 |
-| 1024–1535 | 473px | 420px | under by 53 |
-| ≥1536 | 503px | 420px | **under** by 83 |
+| viewport  | real rail | reserved | error           |
+| --------- | --------- | -------- | --------------- |
+| <640      | 336px     | 420px    | **over** by 84  |
+| 640–1023  | 397px     | 420px    | over by 23      |
+| 1024–1535 | 473px     | 420px    | under by 53     |
+| ≥1536     | 503px     | 420px    | **under** by 83 |
 
 Six rails on the home page. On a phone that is ~500px of page that does not
 exist, collapsing upward as each rail realizes under a moving finger. The values

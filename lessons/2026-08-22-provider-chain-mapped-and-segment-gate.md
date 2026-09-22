@@ -32,6 +32,7 @@ unspoofable: **the iframe is the product. Lifting it out is impossible by
 design**, and production already uses the iframe (Server 1).
 
 Consequences acted on:
+
 - **No app changes.** The native/self-host source cannot work even behind a
   tester gate — verified negative end-to-end. Nothing was added back.
 - **The relay repo is dead twice over**: premise void (IP-bound tokens,

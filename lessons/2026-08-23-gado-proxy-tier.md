@@ -28,7 +28,7 @@ origin-open segments, built the tier that makes OUR player work anyway:
   run it before every push, tests alone do not type-check.
 - **My first leak-detector matched our own signed URLs** (the encoded
   upstream inside `u=` contains the host name). A leak test must look for
-  URIs *starting* with http, not substrings anywhere.
+  URIs _starting_ with http, not substrings anywhere.
 - Two PowerShell inline-one-liner failures in a row — moved to script files
   instead of fighting quoting.
 

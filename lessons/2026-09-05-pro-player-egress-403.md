@@ -1,6 +1,7 @@
 # 2026-09-05 — The Reely Player went black: the provider blocked our egress, not our code
 
 ## What
+
 The Reely Player (source #0, "Reely Beta PRO") stopped playing: black frame,
 then the switcher's 9s stall detector hopped visitors to Server 2. Traced the
 whole chain end to end and found nothing wrong with any of our code.
@@ -8,12 +9,12 @@ whole chain end to end and found nothing wrong with any of our code.
 `vixsrc.to` now answers **403** to datacenter egress on exactly the paths the
 resolve chain walks. Measured today, same request shape from three networks:
 
-| Path | Cloudflare Worker | Deno relay | Residential browser |
-| --- | --- | --- | --- |
-| `/api/movie/550` | 403 | 403 | **200** |
-| `/movie/550` | 403 | 403 | **200** |
-| `/` | — | 403 | 200 |
-| `/api/list/movie` | — | **200** (1.66 MB) | 200 |
+| Path              | Cloudflare Worker | Deno relay        | Residential browser |
+| ----------------- | ----------------- | ----------------- | ------------------- |
+| `/api/movie/550`  | 403               | 403               | **200**             |
+| `/movie/550`      | 403               | 403               | **200**             |
+| `/`               | —                 | 403               | 200                 |
+| `/api/list/movie` | —                 | **200** (1.66 MB) | 200                 |
 
 So both tiers that can own playback are dead, and the player falls to tier 3 —
 the provider's own iframe in the visitor's browser, which still works because
@@ -31,16 +32,17 @@ server=cloudflare`. The header fix is still correct — the two halves must not
 drift — but the gate is the network, not the fingerprint.
 
 ## Then: is there a provider we CAN resolve? No — the box is closed
+
 Surveyed every configured source for a chain we could own. The disqualifier is
 never the same one twice, and together they close every door:
 
-| Provider | Datacenter egress | Chain | Segment bytes to a foreign origin |
-| --- | --- | --- | --- |
-| vixsrc.to (current) | **403** | HLS + token | IP-bound to a /24 |
-| vidsrcme.ru (Server 1) | 200 | JSON + WASM decrypt | **origin-gated** (2026-08-22) |
-| vidlink.pro | 200 (page) / **403** (CDN) | DASH via JWPlayer, tokenless `.mpd` | **origin-gated** |
-| vidfast.pro | 301 → vidfast.vc | never issues a stream request at all | untested |
-| 2embed.cc | 200 | aggregator of other embeds | n/a |
+| Provider               | Datacenter egress          | Chain                                | Segment bytes to a foreign origin |
+| ---------------------- | -------------------------- | ------------------------------------ | --------------------------------- |
+| vixsrc.to (current)    | **403**                    | HLS + token                          | IP-bound to a /24                 |
+| vidsrcme.ru (Server 1) | 200                        | JSON + WASM decrypt                  | **origin-gated** (2026-08-22)     |
+| vidlink.pro            | 200 (page) / **403** (CDN) | DASH via JWPlayer, tokenless `.mpd`  | **origin-gated**                  |
+| vidfast.pro            | 301 → vidfast.vc           | never issues a stream request at all | untested                          |
+| 2embed.cc              | 200                        | aggregator of other embeds           | n/a                               |
 
 vidlink looked like the winner for an hour: JWPlayer DASH with a **tokenless**
 manifest URL, which would have meant no IP-binding at all. Then both walls
@@ -64,6 +66,7 @@ has to come from what we own (switching, resume, lists, alerts, calendar,
 watch-together), not from owning the pixels.
 
 ## What shipped
+
 `reely-pro-player` resolves nothing server-side any more. `/api/stream/resolve`
 returns `{direct:true, embedBase}` without touching the provider, and the
 client frames the embed immediately — so the only request that ever reaches
@@ -81,6 +84,7 @@ honest one: the demotion was right while it cost seconds of black, and wrong
 the moment it did not.
 
 ## Mistakes
+
 - **Fixed the ordering before fixing the cause.** Demoting the player was a
   real improvement against the symptom and it went out first, which meant the
   next commit reverted it. The cause — two round trips that could not succeed
@@ -94,7 +98,7 @@ the moment it did not.
   that mattered: `/playlist/*` IS readable from our origin while `/embed/*` is
   not. CORS here is **per path**, and a single test cannot see that.
 - **Took the question at face value and started shopping for providers.** The
-  useful move was to identify the *invariant* first — segment bytes are gated
+  useful move was to identify the _invariant_ first — segment bytes are gated
   on both Origin and ASN — because that one fact disqualifies the entire
   category in a single test, and it is testable in two fetches. Four provider
   walks produced the same answer the invariant would have given immediately.
@@ -107,7 +111,7 @@ the moment it did not.
   and a `/health` probe are the present. Rewrote the README.
 - **Reached for "the provider rotated their page format" first.** It is the
   failure the resolver's own error message suggests, and it was wrong. Running
-  our three extraction regexes against the live embed page *from the browser*
+  our three extraction regexes against the live embed page _from the browser_
   showed all three still matching — token, expires and playlist URL — which
   killed that theory in one call and should have been the first call.
 - **Nearly concluded "vixsrc blocks datacenter IPs" from a single 403.** The
@@ -120,8 +124,9 @@ the moment it did not.
   on the same machine reaches it fine.
 
 ## What worked
+
 - **`wrangler tail` on the private player worker.** `resolve failed
-  StreamResolveError: https://vixsrc.to/api/movie/278 -> 403` named the exact
+StreamResolveError: https://vixsrc.to/api/movie/278 -> 403` named the exact
   hop and status in one shot. The Worker had that detail all along; the relay
   did not, which is why the relay half took ten times longer to diagnose. That
   asymmetry is now closed.
@@ -135,13 +140,13 @@ the moment it did not.
   the code is fine and the network is not.
 
 ## Rules
+
 - **A 403 from one egress is not a block; it is one sample.** Probe a second
   path from the same IP before concluding anything. Same IP + different path +
   different answer = a WAF rule, and rules have shapes you can work around.
 - **Every hop that crosses to a third party must report status, path and
   `cf-mitigated`/`server` on failure.** A bare "resolve failed" cannot tell a
-  rotated format from a missing title from a bot block, and all three arrive as
-  502. `cf-mitigated` absent on a Cloudflare 403 means it is a flat WAF block,
+  rotated format from a missing title from a bot block, and all three arrive as 502. `cf-mitigated` absent on a Cloudflare 403 means it is a flat WAF block,
   not a challenge — no header set will ever pass it.
 - **The provider fingerprint lives in two repos and must not drift.**
   `reely-pro-player/src/vixsrc.mjs` `browserHeaders` and

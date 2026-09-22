@@ -11,7 +11,7 @@ the bytes": **Vidlink as an embed source plus a postMessage progress bridge**.
   (`play/pause/seeked/ended/timeupdate` with `currentTime`/`duration`) and
   `MEDIA_DATA` (full per-title/per-episode progress). Their player also
   auto-resumes from its own origin storage, so replaying a title continues
-  where *their* player left off.
+  where _their_ player left off.
 - `lib/embed-progress.ts` — pure envelope parser (`PLAYER_EVENT` shapes only)
   and a ≥5s write throttle (a seek's backwards jump counts as movement).
 - `components/player/embed-progress-bridge.tsx` — mounted by DetailsHero next

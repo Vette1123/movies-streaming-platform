@@ -4,11 +4,7 @@ import dynamic from 'next/dynamic'
 import { Heart } from 'lucide-react'
 
 import { siteConfig } from '@/config/site'
-import {
-  COMPANION_APPS,
-  EXTERNAL_LINKS,
-  openStoreListing,
-} from '@/lib/apps'
+import { COMPANION_APPS, EXTERNAL_LINKS, openStoreListing } from '@/lib/apps'
 import { cn } from '@/lib/utils'
 import { useNavbarScrollOverlay } from '@/hooks/use-scroll-overlay'
 import { buttonVariants } from '@/components/ui/button'

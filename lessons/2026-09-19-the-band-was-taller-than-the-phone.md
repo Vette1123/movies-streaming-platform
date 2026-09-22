@@ -23,10 +23,10 @@ painted as a line.
 
 Measured in the browser against a 196px stage:
 
-| | padding | frame height |
-|---|---|---|
+|        | padding     | frame height                                  |
+| ------ | ----------- | --------------------------------------------- |
 | before | 80px + 80px | **36px** (0 once the switcher row is present) |
-| after | 0 + 0 | **196px** |
+| after  | 0 + 0       | **196px**                                     |
 
 Shipped: two media tiers in `globals.css`, next to the `body[data-player-open]`
 rule that already existed for the install nudge. Below 600px of landscape height
