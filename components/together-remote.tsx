@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { ApiError, togetherRemoteApi, togetherStateApi } from '@/lib/api-client'
 import { formatPlaybackTime } from '@/lib/playback-positions'
+import { remoteView } from '@/lib/watch-together'
 
 // The phone half of the remote: the host scans a QR on their phone, this pad
 // opens with ?remote=1, and every press writes a one-shot command to D1 that
@@ -38,6 +39,8 @@ export function TogetherRemote({ code }: TogetherRemoteProps) {
 
   const send = React.useCallback(
     async (position: number, playing: boolean) => {
+      // A remote you cannot feel is a remote you press twice.
+      navigator.vibrate?.(10)
       // Optimistic: the pad should feel instant even though the host polls
       // every 4s. The next poll reconciles whatever the host actually applied.
       setBeat({ position, playing })
@@ -55,6 +58,8 @@ export function TogetherRemote({ code }: TogetherRemoteProps) {
   )
 
   React.useEffect(() => {
+    // A swept room stays swept: polling its 404 every 4s buys nothing.
+    if (ended) return
     let cancelled = false
     const sync = async () => {
       // A hidden phone tab is nobody holding the remote — same rule the host
@@ -63,13 +68,9 @@ export function TogetherRemote({ code }: TogetherRemoteProps) {
       try {
         const state = await togetherStateApi(code)
         if (cancelled) return
-        setBeat({ position: state.position, playing: !!state.playing })
+        setBeat(remoteView(state, state.now ?? Date.now()))
       } catch (error) {
-        if (
-          !cancelled &&
-          error instanceof ApiError &&
-          error.status === 404
-        ) {
+        if (!cancelled && error instanceof ApiError && error.status === 404) {
           setEnded(true)
         }
       }
@@ -80,7 +81,7 @@ export function TogetherRemote({ code }: TogetherRemoteProps) {
       cancelled = true
       clearInterval(id)
     }
-  }, [code])
+  }, [code, ended])
 
   const position = beat?.position ?? 0
   const disabled = !beat || ended
@@ -90,8 +91,8 @@ export function TogetherRemote({ code }: TogetherRemoteProps) {
       data-testid="together-remote"
       className="watch-together-bar absolute inset-x-0 top-16 z-50 flex items-center justify-center gap-2 border-b border-primary/40 bg-primary/10 px-3 py-1.5 text-xs text-foreground"
     >
-      <Smartphone className="size-3.5 shrink-0" />
-      <span className="min-w-0 truncate">
+      <Smartphone className="size-3.5 shrink-0" aria-hidden />
+      <span className="min-w-0 truncate" aria-live="polite">
         Remote · <span className="font-mono font-bold">{code}</span>
         {remoteStatus(beat, ended)}
       </span>

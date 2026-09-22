@@ -7,6 +7,7 @@ import { REELY_SOURCE_ID } from '@/config/sources'
 import { STREAM_EMBED_ALLOW } from '@/lib/embed-policy'
 import { getMediaTitle } from '@/lib/media'
 import { warmReelyTicket } from '@/lib/pro/ticket-cache'
+import { useMounted } from '@/hooks/use-mounted'
 import { useIntentProps } from '@/hooks/use-prefetch-intent'
 import { type StreamSourceControl } from '@/hooks/use-stream-source'
 import { HeroImage } from '@/components/header/hero-image'
@@ -20,8 +21,8 @@ import { RateButton } from '@/components/rate-button'
 import { SaveButton } from '@/components/save-button'
 import { ShareButton } from '@/components/share-button'
 import { ShareCardButton } from '@/components/share-card-button'
-import { TrailerDialog } from '@/components/trailer-dialog'
 import { TogetherRemote } from '@/components/together-remote'
+import { TrailerDialog } from '@/components/trailer-dialog'
 import { WatchTogetherBar } from '@/components/watch-together-bar'
 import { WatchedButton } from '@/components/watched-button'
 
@@ -34,7 +35,7 @@ import { WatchedButton } from '@/components/watched-button'
 // it. The shadow is what makes it legible over a bright still — opacity alone
 // cannot be tuned for an image nobody chose.
 const captionClass =
-  'w-14 text-center text-[10px] leading-tight font-medium text-white/90 [text-shadow:0_1px_3px_rgba(0,0,0,0.85)] sm:hidden'
+  'w-12 text-center text-[10px] leading-tight font-medium text-white/90 [text-shadow:0_1px_3px_rgba(0,0,0,0.85)] sm:hidden'
 
 // The embed is driven by a `src` STRING, not by writing `.src` on a ref.
 //
@@ -187,13 +188,15 @@ export const DetailsHero = ({
   }, [])
 
   // Watch Together rides along when the URL carries the room (?watch=CODE).
-  // Read at render with a window guard, not useSearchParams: this hero
-  // prerenders ~1000 times at build, and a searchParams read at render would
-  // deopt every one of them. The bar only mounts after a client-side play
-  // click, so the server/client snapshot difference never reaches the DOM.
+  // Read after mount, not useSearchParams: this hero prerenders ~1000 times at
+  // build, and a searchParams read at render would deopt every one of them.
+  // The mount gate is load-bearing — the bar mounts before any play click, so
+  // reading `window` during the first render hydrated a bar the server HTML
+  // never had (React #418 on every invite link).
   // `remote=1` (from the host's QR) mounts the phone pad instead of the bar.
+  const mounted = useMounted()
   const together = React.useMemo(() => {
-    if (typeof window === 'undefined') return null
+    if (!mounted) return null
     const params = new URLSearchParams(window.location.search)
     const code = params.get('watch')
     return code
@@ -203,7 +206,7 @@ export const DetailsHero = ({
           isRemote: params.get('remote') === '1',
         }
       : null
-  }, [])
+  }, [mounted])
 
   // The reely surface reports readiness with its own pseudo-src so the stall
   // detector and the spinner treat both surfaces identically.
@@ -304,7 +307,10 @@ export const DetailsHero = ({
                 )}
                 {/* Buttons are icon-only < sm, so pair each with a muted caption
                     (mobile only) that names what it does. */}
-                <div className="flex flex-wrap items-start justify-center gap-2 sm:items-center sm:gap-3">
+                {/* gap-1 + w-12 captions below sm: six actions (a movie with a
+                    trailer) must share ONE row on a 360px phone — at gap-2/w-14
+                    they needed ~376px and "Card" wrapped onto a row alone. */}
+                <div className="flex flex-wrap items-start justify-center gap-1 sm:items-center sm:gap-3">
                   {trailerKey && (
                     <div className="flex flex-col items-center gap-1.5">
                       <TrailerDialog

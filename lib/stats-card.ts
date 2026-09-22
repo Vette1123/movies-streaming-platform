@@ -3,6 +3,7 @@ import {
   BACKDROP,
   CARD_HEIGHT,
   CARD_WIDTH,
+  drawBloom,
   fitText,
   INK,
   MUTED,
@@ -82,20 +83,7 @@ export async function renderStatsCard(
   context.fillStyle = BACKDROP
   context.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT)
 
-  // A soft accent bloom behind the headline, so the card is not a rectangle of
-  // flat navy with text on it.
-  const glow = context.createRadialGradient(
-    CARD_WIDTH * 0.78,
-    CARD_HEIGHT * 0.16,
-    0,
-    CARD_WIDTH * 0.78,
-    CARD_HEIGHT * 0.16,
-    CARD_WIDTH * 0.85
-  )
-  glow.addColorStop(0, 'rgba(244, 63, 94, 0.22)')
-  glow.addColorStop(1, 'rgba(244, 63, 94, 0)')
-  context.fillStyle = glow
-  context.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT)
+  drawBloom(context)
 
   const margin = 88
   context.textBaseline = 'alphabetic'

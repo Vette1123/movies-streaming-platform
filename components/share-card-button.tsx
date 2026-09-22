@@ -6,12 +6,14 @@ import { toast } from 'sonner'
 
 import { MovieDetails } from '@/types/movie-details'
 import { SeriesDetails } from '@/types/series-details'
+import { siteConfig } from '@/config/site'
 import { trackMediaShared } from '@/lib/analytics'
 import {
   genreNames,
   getMediaReleaseDate,
   getMediaTitle,
   getReleaseYear,
+  mediaDetailHref,
   resolveMediaType,
 } from '@/lib/media'
 import {
@@ -20,7 +22,7 @@ import {
   shareCardRatingLine,
 } from '@/lib/share-card'
 import { cn, getImageURL } from '@/lib/utils'
-import { isDismissal } from '@/hooks/use-share'
+import { shareOrDownloadFile } from '@/hooks/use-share'
 import { Button } from '@/components/ui/button'
 import {
   heroActionButtonBase,
@@ -32,7 +34,12 @@ interface ShareCardButtonProps {
   className?: string
 }
 
-/** Backdrop first (fills the 4:5 frame with the least crop), poster second. */
+/**
+ * Backdrop first, poster second. Not for the crop — a 16:9 backdrop keeps
+ * under half its width in a 4:5 frame, a poster most of its height — but
+ * because posters carry their own title lettering, which would sit under the
+ * card's title twice.
+ */
 const artPathOf = (media: MovieDetails & SeriesDetails): string | null =>
   media.backdrop_path || media.poster_path || null
 
@@ -73,29 +80,22 @@ export const ShareCardButton = React.memo(function ShareCardButton({
       const file = new File([blob], shareCardFileName(title), {
         type: 'image/png',
       })
-      // canShare with the FILE, not just a share check: desktop Chrome has
-      // navigator.share and refuses files, and calling share anyway throws.
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title,
-          text: `Watch “${title}” on Reely`,
-        })
-        trackCard('card_share')
-        return
+      // The link rides in the text: a picture on its own leaves the recipient
+      // nowhere to tap.
+      const link = `${siteConfig.websiteURL}${mediaDetailHref(resolveMediaType(media), media.id)}`
+      const outcome = await shareOrDownloadFile(file, {
+        title,
+        text: `Watch “${title}” on Reely — ${link}`,
+      })
+      if (outcome === 'shared') trackCard('card_share')
+      if (outcome === 'downloaded') {
+        trackCard('card_download')
+        toast.success(`Saved ${file.name}`)
       }
-      const url = URL.createObjectURL(file)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = file.name
-      link.click()
-      URL.revokeObjectURL(url)
-      trackCard('card_download')
-      toast.success(`Saved ${file.name}`)
-    } catch (error) {
-      // A dismissed sheet is the one outcome that needs no fallback and no
-      // words (see lessons/2026-08-24-a-failed-share-sheet-is-not-a-dismissal).
-      if (!isDismissal(error)) toast.error('Could not share the card')
+    } catch {
+      // Only the render can land here now — the share itself falls back to a
+      // download (see lessons/2026-08-24-a-failed-share-sheet-is-not-a-dismissal).
+      toast.error('Could not draw the card')
     } finally {
       setBusy(false)
     }

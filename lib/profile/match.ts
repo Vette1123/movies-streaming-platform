@@ -15,7 +15,21 @@
  * pattern the free plan already banned elsewhere.
  */
 
-import type { ProfileTitle } from '@/lib/profile/routes'
+import { normaliseHandle, type ProfileTitle } from '@/lib/profile/routes'
+
+/**
+ * A handle out of whatever somebody typed or pasted: `gado`, `@Gado`, or the
+ * profile link itself (`https://reely.space/u/gado?x=1`). Null when what is
+ * left is not a valid handle — the same rule the profile editor enforces.
+ */
+export function handleFromInput(raw: string): string | null {
+  const bare = raw
+    .trim()
+    .replace(/^.*\/u\//, '')
+    .replace(/[/?#].*$/, '')
+    .replace(/^@/, '')
+  return normaliseHandle(bare)
+}
 
 export interface TasteMatch {
   /** In both rated-highest lists, in A's order. */

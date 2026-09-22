@@ -623,7 +623,9 @@ async function handleApi(pathname, url, request, ctx, env) {
       .bind(code)
       .first()
     if (!beat) return liveJson({ error: 'room not found' }, { status: 404 })
-    return liveJson(beat)
+    // `now` is the clock every stamp in this row was written with. Ages are
+    // measured against it, not the device's own clock, which may be minutes out.
+    return liveJson({ ...beat, now: Date.now() })
   }
 
   if (pathname === '/api/together/remote' && request.method === 'POST') {
@@ -634,24 +636,18 @@ async function handleApi(pathname, url, request, ctx, env) {
     if (!code || typeof position !== 'number' || typeof playing !== 'boolean') {
       return liveJson({ error: 'code, position, playing' }, { status: 400 })
     }
-    const room = await db
-      .prepare('SELECT 1 AS ok FROM together_beats WHERE code = ?')
-      .bind(String(code))
-      .first()
-    if (!room) return liveJson({ error: 'room not found' }, { status: 404 })
-    await db
+    // One statement: zero rows changed IS the missing room.
+    const result = await db
       .prepare(
         `UPDATE together_beats
          SET cmd_position = ?, cmd_playing = ?, cmd_at = ?
          WHERE code = ?`
       )
-      .bind(
-        Math.max(0, position),
-        playing ? 1 : 0,
-        Date.now(),
-        String(code)
-      )
+      .bind(Math.max(0, position), playing ? 1 : 0, Date.now(), String(code))
       .run()
+    if (!result.meta?.changes) {
+      return liveJson({ error: 'room not found' }, { status: 404 })
+    }
     return liveJson({ ok: true })
   }
 

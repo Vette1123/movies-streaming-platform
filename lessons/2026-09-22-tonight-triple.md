@@ -5,7 +5,7 @@
 Feature 4 of the five-killer-features pass: a "Tonight's triple" band at the top
 of `/watchlist` that picks three saved titles for one evening, shows each
 runtime and a total, and offers a **Spin again** control. Selection is pure
-(`lib/watchlist-triple.ts`), seeded by UTC day so the default triple is stable
+(`lib/watchlist-triple.ts`), seeded by day (UTC at first; local since 2026-09-23) so the default triple is stable
 while you navigate; the spin control is just `daySeed() + spins`.
 
 ## Mistakes

@@ -3,25 +3,30 @@
 import React, { useMemo, useState } from 'react'
 import { Dices } from 'lucide-react'
 
-import { convertMinutesToHours, getThumbPosterURL } from '@/lib/utils'
+import { convertMinutesToHours } from '@/lib/utils'
 import {
   daySeed,
   minutesFor,
   pickTriple,
+  sittingLabel,
   tripleMinutes,
 } from '@/lib/watchlist-triple'
 import { useMounted } from '@/hooks/use-mounted'
 import { useWatchlist } from '@/hooks/use-watchlist'
 import { Button } from '@/components/ui/button'
-import { MediaLink } from '@/components/media/media-link'
+import { PosterTile } from '@/components/media/poster-tile'
+
+/** Spins per day before two days' seeds could meet — far past any real use. */
+const SPINS_PER_DAY = 1000
 
 /**
  * "Tonight's triple" — three titles from your own watchlist that fit an evening.
  *
  * Mount-gated like every other localStorage read: the server and first client
- * render agree on null, then the pick appears. The seed is the UTC day (plus
- * whatever the Spin control has added), so the default triple is stable while
- * you navigate and only changes when the day does — or when you ask it to.
+ * render agree on null, then the pick appears. The seed is the visitor's local
+ * day (scaled, so tomorrow's default is not today's first spin) plus whatever
+ * the Spin control has added: stable while you navigate, and only changes when
+ * the day does — or when you ask it to.
  */
 export const TonightTriple = () => {
   const { watchlist } = useWatchlist()
@@ -29,7 +34,7 @@ export const TonightTriple = () => {
   const [spins, setSpins] = useState(0)
 
   const seed = useMemo(
-    () => (isMounted ? daySeed() + spins : 0),
+    () => (isMounted ? daySeed() * SPINS_PER_DAY + spins : 0),
     [isMounted, spins]
   )
 
@@ -51,51 +56,45 @@ export const TonightTriple = () => {
           </h2>
           <p className="text-sm text-muted-foreground">
             Three from your watchlist — about{' '}
-            <span className="tabular-nums">
-              {convertMinutesToHours(total)}
-            </span>
+            <span className="tabular-nums">{convertMinutesToHours(total)}</span>
             .
           </p>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setSpins((n) => n + 1)}
-          className="gap-2"
-        >
-          <Dices className="size-4" aria-hidden />
-          Spin again
-        </Button>
-      </div>
-      <div className="grid grid-cols-3 gap-3 sm:gap-4">
-        {triple.map((item) => (
-          <MediaLink
-            key={`${item.type}:${item.id}`}
-            href={
-              item.type === 'movie'
-                ? `/movies/${item.id}`
-                : `/tv-shows/${item.id}`
-            }
-            className="group block"
+        {/* Exactly three saved: every spin is the same three, reordered. */}
+        {watchlist.length > 3 ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setSpins((n) => n + 1)}
+            className="gap-2"
           >
-            <div className="overflow-hidden rounded-lg ring-1 ring-transparent transition-shadow group-hover:ring-primary/60">
-              <img
-                src={getThumbPosterURL(item.poster_path)}
-                alt=""
-                width={300}
-                height={450}
-                loading="lazy"
-                className="aspect-2/3 w-full object-cover"
-              />
-            </div>
-            <p className="mt-2 truncate text-sm font-medium">{item.title}</p>
-            <p className="text-xs text-muted-foreground tabular-nums">
-              {convertMinutesToHours(minutesFor(item))}
-            </p>
-          </MediaLink>
-        ))}
+            <Dices className="size-4" aria-hidden />
+            Spin again
+          </Button>
+        ) : null}
       </div>
+      {/* PosterTile, the shared grid tile: a missing poster gets the drawn
+          fallback instead of an empty box, and the href comes from one place. */}
+      <ul className="grid grid-cols-3 gap-3 sm:gap-4" aria-live="polite">
+        {triple.map((item) => (
+          <li key={`${item.type}:${item.id}`}>
+            <PosterTile
+              item={{
+                id: item.id,
+                type: item.type,
+                title: item.title,
+                poster_path: item.poster_path || null,
+                note: sittingLabel(
+                  item,
+                  convertMinutesToHours(minutesFor(item))
+                ),
+              }}
+              sizes="(min-width: 1400px) 27rem, 31vw"
+            />
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }

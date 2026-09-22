@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { matchBlurb, matchTopRated } from '@/lib/profile/match'
+import { handleFromInput, matchBlurb, matchTopRated } from '@/lib/profile/match'
 import type { ProfileTitle } from '@/lib/profile/routes'
 
 const title = (
@@ -58,10 +58,7 @@ describe('matchTopRated', () => {
 
   it('rounds the Jaccard score to a whole percent', () => {
     // 1 shared / 3 union = 33.33… → 33
-    const match = matchTopRated(
-      [title(1), title(2)],
-      [title(1), title(8)]
-    )
+    const match = matchTopRated([title(1), title(2)], [title(1), title(8)])
     expect(match.score).toBe(33)
   })
 })
@@ -76,5 +73,20 @@ describe('matchBlurb', () => {
 
     const two = matchTopRated([title(1), title(2)], [title(2), title(1)])
     expect(matchBlurb(two)).toBe('2 titles in both rated-highest lists.')
+  })
+})
+
+describe('handleFromInput', () => {
+  it('accepts a bare handle, an @handle, and a pasted profile link', () => {
+    expect(handleFromInput('  Gado ')).toBe('gado')
+    expect(handleFromInput('@gado')).toBe('gado')
+    expect(handleFromInput('https://reely.space/u/gado')).toBe('gado')
+    expect(handleFromInput('reely.space/u/Gado/?ref=x#top')).toBe('gado')
+  })
+
+  it('rejects what is not a handle', () => {
+    expect(handleFromInput('')).toBeNull()
+    expect(handleFromInput('@')).toBeNull()
+    expect(handleFromInput('two words')).toBeNull()
   })
 })

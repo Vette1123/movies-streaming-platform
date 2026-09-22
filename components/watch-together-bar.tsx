@@ -5,13 +5,6 @@ import { Copy, QrCode, Users } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { toast } from 'sonner'
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { ApiError, togetherBeatApi, togetherStateApi } from '@/lib/api-client'
 import { parseEmbedProgress } from '@/lib/embed-progress'
 import { formatPlaybackTime } from '@/lib/playback-positions'
@@ -21,6 +14,13 @@ import {
   planRemoteCommand,
   remoteHref,
 } from '@/lib/watch-together'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 // The Watch Together sync loop, mounted inside the player area of a detail
 // page when the URL carries ?watch=CODE.
@@ -58,11 +58,16 @@ export function WatchTogetherBar({
   const latest = React.useRef<{ position: number; playing: boolean } | null>(
     null
   )
+  // Whether the surface reporting is the house player — the only one that
+  // takes steering. A remote command drained into anything else is consumed
+  // and silently lost, so the host loop leaves it pending instead.
+  const houseReporting = React.useRef(false)
 
   React.useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       const data = e.data
       if (data && data.source === 'reely-player') {
+        houseReporting.current = true
         latest.current = {
           position: typeof data.t === 'number' ? data.t : 0,
           playing: !!data.playing,
@@ -74,6 +79,7 @@ export function WatchTogetherBar({
       // and the room simply never moved.
       const progress = parseEmbedProgress(data)
       if (!progress) return
+      houseReporting.current = false
       latest.current = {
         position: progress.positionSeconds,
         // A clock that is moving is a film that is playing; `ended` is the
@@ -108,6 +114,9 @@ export function WatchTogetherBar({
   // The newest remote command the host loop has already drained. Commands are
   // one-shot: `cmd_at` older than this ref means "applied, do not re-apply".
   const appliedCmd = React.useRef(0)
+  // The first read after mount marks whatever command is already on the row as
+  // applied: a host who reloads must not replay a press from before the reload.
+  const cmdSeeded = React.useRef(false)
 
   // Steering a frame, for both loops below. Hoisted so the host and guest
   // effects share one function instead of closing over their own copy.
@@ -135,6 +144,10 @@ export function WatchTogetherBar({
       // skipping the write keeps D1 and the frame in step with one round-trip.
       try {
         const state = await togetherStateApi(code)
+        if (!cmdSeeded.current) {
+          cmdSeeded.current = true
+          appliedCmd.current = state.cmd_at ?? 0
+        }
         const cmd =
           state.cmd_at != null
             ? {
@@ -143,8 +156,14 @@ export function WatchTogetherBar({
                 updatedAt: state.cmd_at,
               }
             : null
-        const plan = planRemoteCommand(cmd, appliedCmd.current, Date.now())
-        if (plan && state.cmd_at != null) {
+        const plan = planRemoteCommand(
+          cmd,
+          appliedCmd.current,
+          state.now ?? Date.now()
+        )
+        const steerable =
+          houseReporting.current && !!frameRef.current?.contentWindow
+        if (plan && state.cmd_at != null && steerable) {
           appliedCmd.current = state.cmd_at
           push(plan.position, plan.playing)
           // Let the next tick write the beat the command produced; forcing a
@@ -176,7 +195,7 @@ export function WatchTogetherBar({
       }).catch(() => undefined)
     }, 4000)
     return () => clearInterval(id)
-  }, [code, isHost, ended, push])
+  }, [code, isHost, ended, push, frameRef])
 
   // The last host beat this guest actually acted on. A player that reports
   // nothing back (an embed, or the house player before its first tick) leaves
@@ -204,7 +223,7 @@ export function WatchTogetherBar({
             updatedAt: beat.updated_at,
           },
           latest.current,
-          Date.now()
+          beat.now ?? Date.now()
         )
         if (follow && beat.updated_at !== acted.current) {
           acted.current = beat.updated_at
@@ -251,7 +270,7 @@ export function WatchTogetherBar({
         <button
           type="button"
           onClick={() => setRemoteOpen(true)}
-          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 px-2 py-0.5 font-medium transition hover:border-primary/60"
+          className="tap-target inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 px-2 py-0.5 font-medium transition hover:border-primary/60"
         >
           <QrCode className="size-3" aria-hidden />
           Remote
@@ -265,7 +284,7 @@ export function WatchTogetherBar({
           void navigator.clipboard?.writeText(inviteHref(location.href))
           toast('Invite link copied')
         }}
-        className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 px-2 py-0.5 font-medium transition hover:border-primary/60"
+        className="tap-target inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 px-2 py-0.5 font-medium transition hover:border-primary/60"
       >
         <Copy className="size-3" aria-hidden />
         Copy link

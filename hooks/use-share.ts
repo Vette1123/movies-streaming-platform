@@ -17,6 +17,35 @@ export const isDismissal = (error: unknown) =>
   error instanceof DOMException && error.name === 'AbortError'
 
 /**
+ * A rendered file (share card, stats card) to the share sheet, or to a download
+ * wherever the sheet cannot take it. `canShare` is asked with the FILE: desktop
+ * Chrome has navigator.share and refuses files. Any rejection other than a
+ * dismissal falls through to the download — a card that took longer to draw
+ * than the browser's user-activation window rejects with NotAllowedError, and
+ * that used to end in an error toast and no picture at all.
+ */
+export const shareOrDownloadFile = async (
+  file: File,
+  data: { title: string; text?: string }
+): Promise<'shared' | 'downloaded' | 'dismissed'> => {
+  if (navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], ...data })
+      return 'shared'
+    } catch (error) {
+      if (isDismissal(error)) return 'dismissed'
+    }
+  }
+  const url = URL.createObjectURL(file)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = file.name
+  link.click()
+  URL.revokeObjectURL(url)
+  return 'downloaded'
+}
+
+/**
  * Native share sheet where the platform has one (every mobile browser, desktop
  * Safari/Chrome/Edge), clipboard + toast everywhere else. Returns whether the
  * native path was used, for callers that want to restyle after sharing.

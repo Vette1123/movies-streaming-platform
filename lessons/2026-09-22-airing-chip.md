@@ -3,7 +3,7 @@
 ## What
 
 Feature 5 of the five-killer-features pass: a chip in the series detail badge
-row — "Ars today" / "Airs tomorrow" / "Airs in N days" / the date — driven by
+row — "Airs today" / "Airs tomorrow" / "Airs in N days" / the date — driven by
 `SeriesDetails.next_episode_to_air.air_date`. Pure label logic in
 `lib/airing.ts` (`airingLabel`), mount-gated chip in
 `components/airing-chip.tsx`, mounted beside `NewBadgeWhenRecent` in the
@@ -38,6 +38,8 @@ already-reserved `min-h-7` badge row.
 - Any label that depends on `Date.now()` or the visitor's locale is
   mount-gated and uses `dateFormatter` (or another pinned formatter), never
   bare `toLocale*`.
-- Air-date arithmetic is calendar days on UTC midnight, not elapsed hours.
+- Air-date arithmetic is calendar days, not elapsed hours — on the visitor's
+  LOCAL calendar (superseded 2026-09-23: UTC days hid a US prime-time chip
+  from 8pm; see 2026-09-23-five-features-had-never-shipped).
 - The chip reads `next_episode_to_air.air_date` only — no extra TMDB call; the
   field is already on the detail payload the page renders from.

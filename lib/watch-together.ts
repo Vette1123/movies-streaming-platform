@@ -74,6 +74,37 @@ export const planRemoteCommand = (
   return { position: cmd.position, playing: cmd.playing }
 }
 
+/**
+ * What the phone pad should show. A command newer than the last beat is where
+ * the host is ABOUT to be — the host skips its beat on the tick it drains one —
+ * so showing the beat instead snapped the pad back and computed the next +10
+ * from a stale position. A command that went stale undrained (host on an embed,
+ * or away) no longer describes anything, so the beat wins again.
+ */
+export const remoteView = (
+  state: {
+    position: number
+    playing: number | boolean
+    updated_at: number
+    cmd_position: number | null
+    cmd_playing: number | null
+    cmd_at: number | null
+  },
+  now: number
+): { position: number; playing: boolean } => {
+  const pending =
+    state.cmd_at != null &&
+    state.cmd_at > state.updated_at &&
+    now - state.cmd_at <= STALE_BEAT_MS
+  if (pending) {
+    return {
+      position: state.cmd_position ?? state.position,
+      playing: !!state.cmd_playing,
+    }
+  }
+  return { position: state.position, playing: !!state.playing }
+}
+
 /** The same URL a guest opens on their phone: playback params kept, `host`
  * dropped so they poll as a guest rather than creating a second host loop. */
 export const inviteHref = (href: string): string => {

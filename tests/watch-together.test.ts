@@ -5,6 +5,7 @@ import {
   inviteHref,
   planRemoteCommand,
   remoteHref,
+  remoteView,
   STALE_BEAT_MS,
 } from '@/lib/watch-together'
 
@@ -68,7 +69,9 @@ describe('followHost', () => {
 })
 
 describe('planRemoteCommand', () => {
-  const cmd = (over: Partial<Parameters<typeof planRemoteCommand>[0]> = {}) => ({
+  const cmd = (
+    over: Partial<Parameters<typeof planRemoteCommand>[0]> = {}
+  ) => ({
     position: 120,
     playing: false,
     updatedAt: NOW - 500,
@@ -113,5 +116,52 @@ describe('room hrefs', () => {
     expect(remoteHref(href)).toBe(
       'https://reely.example/tv-shows/1399?season=2&episode=5&watch=ABCD12&remote=1'
     )
+  })
+})
+
+describe('remoteView', () => {
+  const row = {
+    position: 100,
+    playing: 1,
+    updated_at: NOW - 3000,
+    cmd_position: null,
+    cmd_playing: null,
+    cmd_at: null,
+  }
+
+  it('shows the beat when no command is pending', () => {
+    expect(remoteView(row, NOW)).toEqual({ position: 100, playing: true })
+  })
+
+  it('shows a command the host has not drained yet', () => {
+    const state = {
+      ...row,
+      cmd_position: 110,
+      cmd_playing: 0,
+      cmd_at: NOW - 1000,
+    }
+    expect(remoteView(state, NOW)).toEqual({ position: 110, playing: false })
+  })
+
+  it('lets a newer beat win over an older command', () => {
+    const state = {
+      ...row,
+      updated_at: NOW - 500,
+      cmd_position: 110,
+      cmd_playing: 0,
+      cmd_at: NOW - 1000,
+    }
+    expect(remoteView(state, NOW)).toEqual({ position: 100, playing: true })
+  })
+
+  it('drops a command that went stale undrained', () => {
+    const state = {
+      ...row,
+      updated_at: NOW - STALE_BEAT_MS - 5000,
+      cmd_position: 110,
+      cmd_playing: 0,
+      cmd_at: NOW - STALE_BEAT_MS - 1,
+    }
+    expect(remoteView(state, NOW)).toEqual({ position: 100, playing: true })
   })
 })

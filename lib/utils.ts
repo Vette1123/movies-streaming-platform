@@ -175,10 +175,12 @@ function convertMinutesToHours(minutes: number): string {
   const hours = Math.floor(minutes / 60)
   const min = minutes % 60
 
-  let hoursString = hours > 0 ? `${hours} ${pluralize(hours, 'hour')}` : ''
-  let minString = min > 0 ? `${min} ${pluralize(min, 'minute')}` : ''
+  const hoursString = hours > 0 ? `${hours} ${pluralize(hours, 'hour')}` : ''
+  const minString = min > 0 ? `${min} ${pluralize(min, 'minute')}` : ''
 
-  return `${hoursString} ${minString}`
+  // Joined, not templated: "47 minutes" came out as " 47 minutes" and "2 hours"
+  // as "2 hours ", which doubled the space wherever it sat inside a sentence.
+  return [hoursString, minString].filter(Boolean).join(' ')
 }
 
 function seasonsFormatter(seasons: Season[]) {

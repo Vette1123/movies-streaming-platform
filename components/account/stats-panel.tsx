@@ -20,6 +20,7 @@ import { useAccount } from '@/hooks/use-account'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useMounted } from '@/hooks/use-mounted'
 import { useRuntimeBackfill } from '@/hooks/use-runtime-backfill'
+import { shareOrDownloadFile } from '@/hooks/use-share'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { chipVariants } from '@/components/ui/chip'
 import { Skeleton, SkeletonRows } from '@/components/ui/skeleton'
@@ -209,24 +210,12 @@ function ShareCard({
         )
         return
       }
-      // canShare with the file, not just a share check: desktop Chrome has
-      // navigator.share and refuses files, and calling share anyway throws.
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: year === null ? 'My year on Reely' : `My ${year} on Reely`,
-        })
-        return
-      }
-      const url = URL.createObjectURL(file)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = file.name
-      link.click()
-      URL.revokeObjectURL(url)
+      await shareOrDownloadFile(file, {
+        title: year === null ? 'My year on Reely' : `My ${year} on Reely`,
+      })
     } catch {
-      // A share sheet the user dismissed throws AbortError. Nothing went wrong
-      // and nothing needs saying.
+      // Only the render can land here: the share falls back to a download.
+      toast('Could not draw the card. The summary above still copies.')
     } finally {
       setBusy(false)
     }

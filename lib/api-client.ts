@@ -146,6 +146,8 @@ export interface TogetherBeat {
   cmd_position: number | null
   cmd_playing: number | null
   cmd_at: number | null
+  /** The Worker's clock at read time — the one every stamp above used. */
+  now?: number
 }
 
 export const togetherBeatApi = (input: {

@@ -27,11 +27,21 @@ const row = (
 })
 
 describe('daySeed', () => {
-  it('is stable within a UTC day and moves at midnight', () => {
+  it('is stable within a day and moves at midnight', () => {
     const before = Date.parse('2026-09-22T23:59:59.999Z')
     const after = Date.parse('2026-09-23T00:00:00.000Z')
-    expect(daySeed(before)).toBe(daySeed(before - 1000))
-    expect(daySeed(after)).not.toBe(daySeed(before))
+    expect(daySeed(before, 0)).toBe(daySeed(before - 1000, 0))
+    expect(daySeed(after, 0)).not.toBe(daySeed(before, 0))
+  })
+
+  it('rolls over at LOCAL midnight, not UTC', () => {
+    // UTC+3 (offset -180): 22:00Z is already 01:00 the next local day, and
+    // 20:00Z is 23:00 the same local day — the evening must not flip at 03:00.
+    const lateEvening = Date.parse('2026-09-22T20:00:00.000Z')
+    const pastMidnight = Date.parse('2026-09-22T22:00:00.000Z')
+    const earlyEvening = Date.parse('2026-09-22T15:00:00.000Z')
+    expect(daySeed(lateEvening, -180)).toBe(daySeed(earlyEvening, -180))
+    expect(daySeed(pastMidnight, -180)).not.toBe(daySeed(lateEvening, -180))
   })
 })
 
@@ -110,5 +120,41 @@ describe('tripleMinutes', () => {
   it('sums minutesFor across the triple', () => {
     expect(tripleMinutes([row(1, 'movie', 90), row(2, 'series', 45)])).toBe(135)
     expect(tripleMinutes([])).toBe(0)
+  })
+})
+
+describe('pickTriple spin variety', () => {
+  it('keeps reshuffling a mixed list whose films never fit the evening', () => {
+    // Ten films at the 115 fallback + five series: any triple with a film
+    // overruns, so every fitting triple is three series. The old pass 2 took
+    // "the three shortest" and returned the SAME three on every spin.
+    const items = [
+      ...Array.from({ length: 10 }, (_, i) => row(i + 1, 'movie')),
+      // Real episode lengths, all distinct: equal ones let a stable sort keep
+      // the seed order among ties, and short ones (~30) let a film fit beside
+      // two series — either hides the bug this test exists for. These are the
+      // runtimes it was caught with in the browser.
+      ...[47, 51, 55, 58, 60].map((minutes, i) =>
+        row(100 + i, 'series', minutes)
+      ),
+    ]
+    const picks = Array.from({ length: 12 }, (_, spin) =>
+      pickTriple(items, 20_000 * 1000 + spin)
+    )
+    const sets = new Set(
+      picks.map((triple) =>
+        triple
+          .map((item) => item.id)
+          .sort((x, y) => x - y)
+          .join(',')
+      )
+    )
+    // Measured: 6 distinct sets in 12 spins (10 fitting triples exist); the
+    // old shortest-three pass gave 1, and a plain greedy walk barely more — it
+    // takes a film first, strands itself at two, and falls back.
+    expect(sets.size).toBeGreaterThanOrEqual(4)
+    for (const triple of picks) {
+      expect(tripleMinutes(triple)).toBeLessThanOrEqual(EVENING_MINUTES)
+    }
   })
 })

@@ -4,8 +4,9 @@ import * as React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { GitCompare, SearchX } from 'lucide-react'
 
-import { getJson } from '@/lib/api-client'
+import { ApiError, getJson } from '@/lib/api-client'
 import {
+  handleFromInput,
   matchBlurb,
   matchTopRated,
   type TasteMatch,
@@ -36,9 +37,34 @@ const loadProfile = async (handle: string): Promise<PublicProfile | null> => {
       profile?: PublicProfile
     }>(`/api/profile/${encodeURIComponent(handle)}`)
     return body?.success && body.profile ? body.profile : null
-  } catch {
-    return null
+  } catch (error) {
+    // Only a 404 means "no public profile". A rate-limit, a 5xx or being
+    // offline is a failed load, and reporting it as a wrong handle sent people
+    // off to fix a name that was fine.
+    if (error instanceof ApiError && error.status === 404) return null
+    throw error
   }
+}
+
+/** Both handles, validated the same way whether typed or read off the URL. */
+const checkPair = (
+  rawA: string,
+  rawB: string
+): { pair: { a: string; b: string } } | { error: string } => {
+  if (!rawA.trim() || !rawB.trim())
+    return { error: 'Two handles, both filled in.' }
+  const a = handleFromInput(rawA)
+  const b = handleFromInput(rawB)
+  if (!a || !b) {
+    return { error: `@${(a ? rawB : rawA).trim()} is not a Reely handle.` }
+  }
+  if (a === b) return { error: 'Pick two different people.' }
+  return { pair: { a, b } }
+}
+
+const missingLabel = (result: CompareResult): string => {
+  if (!result.a && !result.b) return `@${result.handleA} and @${result.handleB}`
+  return `@${result.a ? result.handleB : result.handleA}`
 }
 
 interface CompareResult {
@@ -59,6 +85,7 @@ export function CompareView() {
   // typing in a field never re-fires a request.
   const [pair, setPair] = React.useState<{ a: string; b: string } | null>(null)
   const [formError, setFormError] = React.useState<string | null>(null)
+  const secondField = React.useRef<HTMLInputElement>(null)
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -68,7 +95,16 @@ export function CompareView() {
     /* eslint-disable react-hooks/set-state-in-effect */
     if (fromA) setA(fromA)
     if (fromB) setB(fromB)
-    if (fromA && fromB) setPair({ a: fromA, b: fromB })
+    // Arriving from a profile's button brings `a` only: the next thing to
+    // type is the other person.
+    if (fromA && !fromB) secondField.current?.focus()
+    if (fromA && fromB) {
+      // The same checks as a submit — a hand-edited `?a=gado&b=GADO` must not
+      // compare somebody with themselves and call it 100%.
+      const checked = checkPair(fromA, fromB)
+      if ('pair' in checked) setPair(checked.pair)
+      else setFormError(checked.error)
+    }
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [])
 
@@ -97,20 +133,17 @@ export function CompareView() {
 
   const onSubmit = (event: React.FormEvent) => {
     event.preventDefault()
-    const left = a.trim().toLowerCase()
-    const right = b.trim().toLowerCase()
-
-    if (!left || !right) {
-      setFormError('Two handles, both filled in.')
+    const checked = checkPair(a, b)
+    if ('error' in checked) {
+      setFormError(checked.error)
       return
     }
-    if (left === right) {
-      setFormError('Pick two different people.')
-      return
-    }
+    const { a: left, b: right } = checked.pair
 
     setFormError(null)
-    setPair({ a: left, b: right })
+    setA(left)
+    setB(right)
+    setPair(checked.pair)
     window.history.replaceState(
       null,
       '',
@@ -138,6 +171,7 @@ export function CompareView() {
           <div className="space-y-2">
             <Label htmlFor="compare-b">Second handle</Label>
             <Input
+              ref={secondField}
               id="compare-b"
               name="b"
               autoComplete="off"
@@ -164,17 +198,20 @@ export function CompareView() {
         </Button>
       </form>
 
-      {pair && isPending && <CompareSkeleton />}
+      {/* Announced: the score lands well after the button press. */}
+      <div aria-live="polite">
+        {pair && isPending && <CompareSkeleton />}
 
-      {pair && !isPending && isError && (
-        <p className="text-sm text-muted-foreground">
-          Could not load that pair. Try again in a moment.
-        </p>
-      )}
+        {pair && !isPending && isError && (
+          <p className="text-sm text-muted-foreground">
+            Could not load that pair. Try again in a moment.
+          </p>
+        )}
 
-      {pair && !isPending && !isError && data && (
-        <CompareResultView result={data} />
-      )}
+        {pair && !isPending && !isError && data && (
+          <CompareResultView result={data} />
+        )}
+      </div>
 
       {!pair && (
         <EmptyState
@@ -191,12 +228,12 @@ function CompareResultView({ result }: { result: CompareResult }) {
   const { a, b, match } = result
 
   if (!a || !b || !match) {
-    const missing = !a ? result.handleA : result.handleB
+    const both = !a && !b
     return (
       <EmptyState
         icon={SearchX}
         title="No public profile there"
-        description={`@${missing} has no public page — the handle is wrong, or the profile is private or unpublished.`}
+        description={`${missingLabel(result)} ${both ? 'have' : 'has'} no public page — the handle is wrong, or the profile is private or unpublished.`}
       />
     )
   }

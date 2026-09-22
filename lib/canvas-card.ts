@@ -37,5 +37,23 @@ export function fitText(
     if (context.measureText(text).width <= maxWidth) return size
     size -= 4
   } while (size > 24)
+  // The floor: leave the context AT the size returned, not the last one tried.
+  context.font = `${weight} ${size}px ${SANS}`
   return size
+}
+
+/** The accent bloom top-right, so a card is not flat navy with text on it. */
+export function drawBloom(context: CanvasRenderingContext2D): void {
+  const glow = context.createRadialGradient(
+    CARD_WIDTH * 0.78,
+    CARD_HEIGHT * 0.16,
+    0,
+    CARD_WIDTH * 0.78,
+    CARD_HEIGHT * 0.16,
+    CARD_WIDTH * 0.85
+  )
+  glow.addColorStop(0, 'rgba(244, 63, 94, 0.22)')
+  glow.addColorStop(1, 'rgba(244, 63, 94, 0)')
+  context.fillStyle = glow
+  context.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT)
 }

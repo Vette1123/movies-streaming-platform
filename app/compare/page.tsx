@@ -7,6 +7,15 @@ export const metadata: Metadata = {
   title: 'Taste match',
   description: `Put two ${siteConfig.name} profiles side by side and see where your rated-highest titles overlap — no sign-up, just two public handles.`,
   alternates: { canonical: '/compare' },
+  // Without its own, a sent compare link unfurled as the homepage — and
+  // sending the link is the whole point of this page.
+  openGraph: {
+    title: 'Taste match',
+    description:
+      'Two Reely profiles, side by side: what you both rated highest.',
+    url: `${siteConfig.websiteURL}/compare`,
+    type: 'website',
+  },
 }
 
 /**
@@ -23,9 +32,9 @@ export default function ComparePage() {
           Taste match
         </h1>
         <p className="leading-relaxed text-muted-foreground">
-          Two public profiles, one list of what each person rated highest. We
-          line them up and show what is in both, what is only on one side, and
-          the overlap as a percentage.
+          Two public profiles, and the eight titles each person rated highest.
+          We line them up and show what is in both, what is only on one side,
+          and the overlap as a percentage.
         </p>
       </div>
       <CompareView />

@@ -3,6 +3,7 @@ import {
   BACKDROP,
   CARD_HEIGHT,
   CARD_WIDTH,
+  drawBloom,
   fitText,
   INK,
   MUTED,
@@ -158,22 +159,6 @@ function drawCover(
     width,
     height
   )
-}
-
-/** The stats card's accent bloom, for a card with no art of its own. */
-function drawBloom(context: CanvasRenderingContext2D): void {
-  const glow = context.createRadialGradient(
-    CARD_WIDTH * 0.78,
-    CARD_HEIGHT * 0.16,
-    0,
-    CARD_WIDTH * 0.78,
-    CARD_HEIGHT * 0.16,
-    CARD_WIDTH * 0.85
-  )
-  glow.addColorStop(0, 'rgba(244, 63, 94, 0.22)')
-  glow.addColorStop(1, 'rgba(244, 63, 94, 0)')
-  context.fillStyle = glow
-  context.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT)
 }
 
 /**
