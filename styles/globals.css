@@ -875,6 +875,19 @@ body[data-player-open] .pwa-install-prompt {
   display: none;
 }
 
+/* The phone remote (components/together-remote.tsx) is a sheet on the bottom
+   edge — the thumb zone the install nudge and the tip jar also live in. While
+   it is up they step aside, and the page gains room to scroll clear of it. */
+body[data-remote-open] .pwa-install-prompt {
+  display: none;
+}
+body[data-remote-open] #bmc-wbtn {
+  display: none !important;
+}
+body[data-remote-open] {
+  padding-bottom: 14rem;
+}
+
 /* A phone in landscape is the shortest viewport this site ever gets, and it
    was the one viewport the player could not be seen in at all.
 

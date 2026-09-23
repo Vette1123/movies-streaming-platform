@@ -105,7 +105,7 @@ export const ShareCardButton = React.memo(function ShareCardButton({
       if (!blob) {
         // A failed draw, or a browser with no canvas: either way, a retry is
         // the only move, and a failed draw has already been forgotten.
-        toast('Could not draw the card — try again')
+        toast('Could not draw the card. Try again.')
         return
       }
       const file = new File([blob], shareCardFileName(title), {
@@ -116,7 +116,7 @@ export const ShareCardButton = React.memo(function ShareCardButton({
       const link = `${siteConfig.websiteURL}${mediaDetailHref(resolveMediaType(media), media.id)}`
       const outcome = await shareOrDownloadFile(file, {
         title,
-        text: `Watch “${title}” on Reely — ${link}`,
+        text: `Watch “${title}” on Reely: ${link}`,
       })
       if (outcome === 'shared') trackCard('card_share')
       if (outcome === 'downloaded') {

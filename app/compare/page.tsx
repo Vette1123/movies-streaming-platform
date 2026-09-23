@@ -5,7 +5,7 @@ import { CompareView } from '@/components/profile/compare-view'
 
 export const metadata: Metadata = {
   title: 'Taste match',
-  description: `Put two ${siteConfig.name} profiles side by side and see where your rated-highest titles overlap — no sign-up, just two public handles.`,
+  description: `Put two ${siteConfig.name} profiles side by side and see where your rated-highest titles overlap. No sign-up, just two public handles.`,
   alternates: { canonical: '/compare' },
   // Without its own, a sent compare link unfurled as the homepage — and
   // sending the link is the whole point of this page.

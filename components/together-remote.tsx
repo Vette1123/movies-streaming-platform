@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Pause, Play, Smartphone } from 'lucide-react'
+import { Pause, Play, RotateCcw, RotateCw, Smartphone } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { ApiError, togetherRemoteApi, togetherStateApi } from '@/lib/api-client'
@@ -23,13 +23,14 @@ interface TogetherRemoteProps {
   remoteKey: string
 }
 
-const remoteStatus = (
+/** The pad's one big reading: where the film is, or why there is no answer. */
+const padReadout = (
   beat: { position: number } | null,
   ended: boolean
 ): string => {
-  if (ended) return ' · the room has ended'
-  if (!beat) return ' · connecting…'
-  return ` · ${formatPlaybackTime(beat.position)}`
+  if (ended) return 'Room ended'
+  if (!beat) return 'Connecting…'
+  return formatPlaybackTime(beat.position)
 }
 
 export function TogetherRemote({ code, remoteKey }: TogetherRemoteProps) {
@@ -85,52 +86,110 @@ export function TogetherRemote({ code, remoteKey }: TogetherRemoteProps) {
     }
   }, [code, ended])
 
+  // The fixed bottom widgets (install nudge, tip jar) would sit under the pad's
+  // thumb zone; styles/globals.css hides them and pads the page while it is up.
+  React.useEffect(() => {
+    document.body.dataset.remoteOpen = '1'
+    return () => {
+      delete document.body.dataset.remoteOpen
+    }
+  }, [])
+
   const position = beat?.position ?? 0
   const disabled = !beat || ended
 
+  // A remote, shaped like one: this device exists to press three buttons, so
+  // they sit where a thumb rests — a sheet on the bottom edge, safe-area
+  // padded — at a size nobody misses, with the one reading that matters
+  // (where the film is) large enough to check at arm's length.
   return (
-    <div
+    <section
       data-testid="together-remote"
-      className="watch-together-bar absolute inset-x-0 top-16 z-50 flex items-center justify-center gap-2 border-b border-primary/40 bg-primary/10 px-3 py-1.5 text-xs text-foreground"
+      aria-label="Remote control"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-background/85 px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl"
     >
-      <Smartphone className="size-3.5 shrink-0" aria-hidden />
-      <span className="min-w-0 truncate" aria-live="polite">
-        Remote · <span className="font-mono font-bold">{code}</span>
-        {remoteStatus(beat, ended)}
-      </span>
-      <div className="flex shrink-0 items-center gap-1.5">
-        <button
-          type="button"
-          aria-label="Back 10 seconds"
-          disabled={disabled}
-          onClick={() => void send(Math.max(0, position - 10), !!beat?.playing)}
-          className="tap-target inline-flex items-center rounded-full border border-white/15 px-2 py-0.5 font-mono font-medium transition hover:border-primary/60 disabled:opacity-40"
+      <div className="mx-auto flex max-w-sm flex-col items-center gap-3">
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Smartphone className="size-3.5 shrink-0" aria-hidden />
+          Remote for room
+          <span className="font-mono font-semibold text-foreground">
+            {code}
+          </span>
+        </p>
+        <p
+          aria-live="polite"
+          className="text-3xl font-semibold tracking-tight tabular-nums"
         >
-          -10
-        </button>
-        <button
-          type="button"
-          aria-label={beat?.playing ? 'Pause' : 'Play'}
-          disabled={disabled}
-          onClick={() => void send(position, !beat?.playing)}
-          className="tap-target inline-flex items-center rounded-full border border-white/15 px-2 py-0.5 transition hover:border-primary/60 disabled:opacity-40"
-        >
-          {beat?.playing ? (
-            <Pause className="size-3.5" aria-hidden />
-          ) : (
-            <Play className="size-3.5" aria-hidden />
-          )}
-        </button>
-        <button
-          type="button"
-          aria-label="Forward 10 seconds"
-          disabled={disabled}
-          onClick={() => void send(position + 10, !!beat?.playing)}
-          className="tap-target inline-flex items-center rounded-full border border-white/15 px-2 py-0.5 font-mono font-medium transition hover:border-primary/60 disabled:opacity-40"
-        >
-          +10
-        </button>
+          {padReadout(beat, ended)}
+        </p>
+        <div className="flex items-center gap-7">
+          <SkipButton
+            direction="back"
+            disabled={disabled}
+            onPress={() =>
+              void send(Math.max(0, position - SKIP_S), !!beat?.playing)
+            }
+          />
+          <button
+            type="button"
+            aria-label={beat?.playing ? 'Pause' : 'Play'}
+            disabled={disabled}
+            onClick={() => void send(position, !beat?.playing)}
+            className="grid size-20 place-items-center rounded-full bg-primary-fill text-primary-foreground shadow-[0_10px_30px_-8px_hsl(var(--primary)/0.7)] transition-transform duration-150 active:scale-95 disabled:opacity-40 disabled:shadow-none"
+          >
+            {beat?.playing ? (
+              <Pause className="size-8 fill-current" aria-hidden />
+            ) : (
+              <Play
+                className="size-8 translate-x-0.5 fill-current"
+                aria-hidden
+              />
+            )}
+          </button>
+          <SkipButton
+            direction="forward"
+            disabled={disabled}
+            onPress={() => void send(position + SKIP_S, !!beat?.playing)}
+          />
+        </div>
       </div>
-    </div>
+    </section>
+  )
+}
+
+/** Seconds per skip press — the number drawn inside the skip glyphs. */
+const SKIP_S = 10
+
+/** ↺ 10 / ↻ 10: the skip glyph every video app has taught people to read. */
+function SkipButton({
+  direction,
+  disabled,
+  onPress,
+}: {
+  direction: 'back' | 'forward'
+  disabled: boolean
+  onPress: () => void
+}) {
+  const Icon = direction === 'back' ? RotateCcw : RotateCw
+  return (
+    <button
+      type="button"
+      aria-label={
+        direction === 'back'
+          ? `Back ${SKIP_S} seconds`
+          : `Forward ${SKIP_S} seconds`
+      }
+      disabled={disabled}
+      onClick={onPress}
+      className="relative grid size-14 place-items-center rounded-full border border-white/15 bg-white/5 transition-transform duration-150 active:scale-95 disabled:opacity-40"
+    >
+      <Icon className="size-7" strokeWidth={1.75} aria-hidden />
+      <span
+        aria-hidden
+        className="absolute pt-px text-[10px] font-bold tabular-nums"
+      >
+        {SKIP_S}
+      </span>
+    </button>
   )
 }

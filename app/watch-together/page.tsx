@@ -29,7 +29,7 @@ export default function WatchTogetherPage() {
       const { code, key } = await createTogetherRoomApi()
       router.push(hostHref(matchCardHref(card), code, key))
     } catch {
-      toast('Could not open a room — try again')
+      toast('Could not open a room. Try again.')
       setBusy(false)
     }
   }
@@ -38,14 +38,14 @@ export default function WatchTogetherPage() {
     <section className="container min-h-svh py-20 lg:py-32">
       <h1 className="text-2xl font-bold lg:text-3xl">Watch Together (beta)</h1>
       <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-        One of you presses play — everyone follows. Pauses and seeks sync for
+        One of you presses play and everyone follows. Pauses and seeks sync for
         the whole room, so nobody is 40 seconds ahead spoiling the twist.
       </p>
 
       <ol className="mt-6 max-w-md list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
         <li>Search the film or series you want to watch</li>
         <li>Picking it opens a room and takes you to the player</li>
-        <li>Send the invite from the bar — anyone who opens it follows you</li>
+        <li>Send the invite from the bar. Anyone who opens it follows you</li>
       </ol>
 
       <div className="mt-8 max-w-md">
@@ -59,7 +59,7 @@ export default function WatchTogetherPage() {
       </div>
 
       <p className="mt-8 text-xs text-muted-foreground">
-        Guests: open the link the host sent — it already carries the room code.
+        Guests: open the link the host sent. It already carries the room code.
       </p>
     </section>
   )

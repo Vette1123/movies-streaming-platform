@@ -298,7 +298,7 @@ export function WatchTogetherBar({
             <DialogTitle>Use your phone as the remote</DialogTitle>
             <DialogDescription>
               Scan with your camera. The pad plays, pauses and skips on this
-              screen while the Reely player is on — third-party servers take no
+              screen while the Reely player is on. Third-party servers take no
               steering. Keep the code to yourself: it controls your player.
             </DialogDescription>
           </DialogHeader>

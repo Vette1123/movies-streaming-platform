@@ -48,23 +48,33 @@ export const TonightTriple = () => {
 
   const total = tripleMinutes(triple)
 
+  // A band, not a second grid: the triple is a suggestion sitting on top of
+  // the watchlist, so its tiles sit a step below the list's own and the copy
+  // sits beside them. As a full-width three-column grid it was ~400px tall
+  // with the copy crammed above it, and pushed the list below the fold.
   return (
-    <section className="mb-8">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold sm:text-xl">
-            Tonight&apos;s triple
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Three from your watchlist — about{' '}
-            <span className="tabular-nums">{convertMinutesToHours(total)}</span>
-            {/* Only when nothing on the list fits the evening — say so rather
-                than let "about 5 hours" pass as a normal night. */}
-            {total > EVENING_MINUTES
-              ? ', a long night — nothing shorter fits.'
-              : '.'}
-          </p>
-        </div>
+    <section
+      aria-labelledby="tonight-triple-heading"
+      className="mb-8 grid gap-5 rounded-xl border border-white/10 bg-white/3 p-4 sm:p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-8"
+    >
+      <div className="max-w-[46ch]">
+        <h2
+          id="tonight-triple-heading"
+          className="text-lg font-semibold tracking-tight sm:text-xl"
+        >
+          Tonight&apos;s triple
+        </h2>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          Three from your watchlist, about{' '}
+          <span className="text-foreground tabular-nums">
+            {convertMinutesToHours(total)}
+          </span>
+          {/* Only when nothing on the list fits the evening: say so rather
+              than let "about 5 hours" pass as a normal night. */}
+          {total > EVENING_MINUTES
+            ? '. Nothing shorter fits tonight.'
+            : ' in all.'}
+        </p>
         {/* Exactly three saved: every spin is the same three, reordered. */}
         {watchlist.length > 3 ? (
           <Button
@@ -72,18 +82,32 @@ export const TonightTriple = () => {
             variant="outline"
             size="sm"
             onClick={() => setSpins((n) => n + 1)}
-            className="gap-2"
+            className="group mt-4 gap-2"
           >
-            <Dices className="size-4" aria-hidden />
+            <Dices
+              className="size-4 transition-transform duration-300 group-active:rotate-90"
+              aria-hidden
+            />
             Spin again
           </Button>
         ) : null}
       </div>
-      {/* PosterTile, the shared grid tile: a missing poster gets the drawn
-          fallback instead of an empty box, and the href comes from one place. */}
-      <ul className="grid grid-cols-3 gap-3 sm:gap-4" aria-live="polite">
-        {triple.map((item) => (
-          <li key={`${item.type}:${item.id}`}>
+      {/* Tiles keyed by the seed, so each spin replays the rise-in (the list
+          itself stays mounted: a remounted live region announces nothing).
+          The new pick arrives rather than silently swapping; the keyframes
+          collapse to a fade under reduced motion (styles/globals.css).
+          PosterTile is the shared grid tile: drawn fallback for a missing
+          poster, one href. */}
+      <ul
+        className="grid grid-cols-3 gap-3 md:w-108 lg:w-136"
+        aria-live="polite"
+      >
+        {triple.map((item, index) => (
+          <li
+            key={`${seed}:${item.type}:${item.id}`}
+            className="animate-rise-in"
+            style={{ animationDelay: `${index * 70}ms` }}
+          >
             <PosterTile
               item={{
                 id: item.id,
@@ -95,7 +119,7 @@ export const TonightTriple = () => {
                   convertMinutesToHours(minutesFor(item))
                 ),
               }}
-              sizes="(min-width: 1400px) 27rem, 31vw"
+              sizes="(min-width: 1024px) 11rem, (min-width: 768px) 8.5rem, 30vw"
             />
           </li>
         ))}
