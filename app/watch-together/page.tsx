@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { createTogetherRoomApi } from '@/lib/api-client'
 import { matchCardHref, type MatchCard } from '@/lib/match-night'
+import { hostHref } from '@/lib/watch-together'
 import { MediaSearchPicker } from '@/components/media-search-picker'
 
 // Watch Together, step one: pick a title, mint a room, land on the detail
@@ -25,8 +26,8 @@ export default function WatchTogetherPage() {
     setBusy(true)
     toast(`Opening a room for ${card.title}…`)
     try {
-      const { code } = await createTogetherRoomApi()
-      router.push(`${matchCardHref(card)}?watch=${code}&host=1`)
+      const { code, key } = await createTogetherRoomApi()
+      router.push(hostHref(matchCardHref(card), code, key))
     } catch {
       toast('Could not open a room — try again')
       setBusy(false)

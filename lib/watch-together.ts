@@ -105,20 +105,34 @@ export const remoteView = (
   return { position: state.position, playing: !!state.playing }
 }
 
+/** The query param carrying the remote's key. Host URL and QR only — never an
+ * invite: the room code is shared, the key is what steers the host's player. */
+export const REMOTE_KEY_PARAM = 'rk'
+
+/** Where the host lands after minting a room: `path` is the title's page. */
+export const hostHref = (path: string, code: string, key: string): string =>
+  `${path}?watch=${encodeURIComponent(code)}&host=1&${REMOTE_KEY_PARAM}=${encodeURIComponent(key)}`
+
 /** The same URL a guest opens on their phone: playback params kept, `host`
- * dropped so they poll as a guest rather than creating a second host loop. */
+ * and the remote key dropped — a guest polls, it neither hosts nor steers. */
 export const inviteHref = (href: string): string => {
   const url = new URL(href)
   // The QUERY param. `url.host = ''` would target the hostname — a silent
   // no-op on https that shipped once and turned every invitee into a host.
   url.searchParams.delete('host')
+  url.searchParams.delete(REMOTE_KEY_PARAM)
+  url.searchParams.delete('remote')
   return url.toString()
 }
 
-/** The QR payload: the invite URL with `remote=1`, which tells the detail hero
- * to mount the phone pad instead of the room bar. */
-export const remoteHref = (href: string): string => {
+/** The QR payload: the invite URL with `remote=1` (the detail hero mounts the
+ * phone pad instead of the room bar) and the host's key put back, or null when
+ * this room has no key — a room from before keys existed has no remote. */
+export const remoteHref = (href: string): string | null => {
+  const key = new URL(href).searchParams.get(REMOTE_KEY_PARAM)
+  if (!key) return null
   const url = new URL(inviteHref(href))
   url.searchParams.set('remote', '1')
+  url.searchParams.set(REMOTE_KEY_PARAM, key)
   return url.toString()
 }

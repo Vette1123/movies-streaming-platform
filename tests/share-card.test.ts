@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { layoutHeadline, type MeasureText } from '@/lib/canvas-card'
 import {
   shareCardEyebrow,
   shareCardFileName,
@@ -83,5 +84,48 @@ describe('shareCardRatingLine', () => {
 describe('shareCardEyebrow', () => {
   it('names the site on every card', () => {
     expect(shareCardEyebrow).toBe('ON REELY')
+  })
+})
+
+describe('layoutHeadline', () => {
+  // Half an em per character: close enough to a bold sans to reason about.
+  const measure: MeasureText = (text, size) => text.length * size * 0.5
+  const WIDTH = 904 // the card's 1080 minus two 88px margins
+
+  it('keeps a short title on one line at full size', () => {
+    expect(layoutHeadline('Heat', WIDTH, measure)).toEqual({
+      size: 84,
+      lines: ['Heat'],
+    })
+  })
+
+  it('shrinks onto one line while that stays readable', () => {
+    // 28 chars: 28 * 64 * 0.5 = 896 fits at 64, above the 60px floor.
+    const title = 'The Grand Budapest Hotel two'
+    expect(layoutHeadline(title, WIDTH, measure)).toEqual({
+      size: 64,
+      lines: [title],
+    })
+  })
+
+  it('breaks a long title into two balanced lines instead of a caption', () => {
+    const title = 'Harry Potter and the Deathly Hallows: Part 2'
+    const layout = layoutHeadline(title, WIDTH, measure)
+    expect(layout.lines).toEqual([
+      'Harry Potter and the',
+      'Deathly Hallows: Part 2',
+    ])
+    // One line would have needed 40px; two lines hold 76px.
+    expect(layout.size).toBe(76)
+    for (const line of layout.lines) {
+      expect(measure(line, layout.size)).toBeLessThanOrEqual(WIDTH)
+    }
+  })
+
+  it('shrinks an unbreakable word rather than splitting it', () => {
+    const word = 'Supercalifragilisticexpialidocious'
+    const layout = layoutHeadline(word, WIDTH, measure)
+    expect(layout.lines).toEqual([word])
+    expect(measure(word, layout.size)).toBeLessThanOrEqual(WIDTH)
   })
 })

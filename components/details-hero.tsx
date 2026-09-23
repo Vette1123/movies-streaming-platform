@@ -7,6 +7,7 @@ import { REELY_SOURCE_ID } from '@/config/sources'
 import { STREAM_EMBED_ALLOW } from '@/lib/embed-policy'
 import { getMediaTitle } from '@/lib/media'
 import { warmReelyTicket } from '@/lib/pro/ticket-cache'
+import { REMOTE_KEY_PARAM } from '@/lib/watch-together'
 import { useMounted } from '@/hooks/use-mounted'
 import { useIntentProps } from '@/hooks/use-prefetch-intent'
 import { type StreamSourceControl } from '@/hooks/use-stream-source'
@@ -199,11 +200,14 @@ export const DetailsHero = ({
     if (!mounted) return null
     const params = new URLSearchParams(window.location.search)
     const code = params.get('watch')
+    const remoteKey = params.get(REMOTE_KEY_PARAM)
     return code
       ? {
           code,
           isHost: params.get('host') === '1',
-          isRemote: params.get('remote') === '1',
+          // A pad without the key could only fail at every press: a remote
+          // link missing it opens as a plain guest instead.
+          remoteKey: params.get('remote') === '1' ? remoteKey : null,
         }
       : null
   }, [mounted])
@@ -426,10 +430,13 @@ export const DetailsHero = ({
               invite to send. Before play the guest loop has no frame to steer
               and simply idles. `remote=1` swaps the bar for the phone pad —
               the two never coexist: one device drives, one device follows. */}
-          {together && together.isRemote ? (
-            <TogetherRemote code={together.code} />
+          {together && together.remoteKey ? (
+            <TogetherRemote
+              code={together.code}
+              remoteKey={together.remoteKey}
+            />
           ) : null}
-          {together && !together.isRemote ? (
+          {together && !together.remoteKey ? (
             <WatchTogetherBar
               code={together.code}
               isHost={together.isHost}

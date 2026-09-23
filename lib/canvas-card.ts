@@ -42,6 +42,61 @@ export function fitText(
   return size
 }
 
+export interface HeadlineLayout {
+  size: number
+  lines: string[]
+}
+
+/** Width of `text` at `size`px — the canvas's measureText, injectable for tests. */
+export type MeasureText = (text: string, size: number) => number
+
+/** The word boundary that makes the longer of the two halves shortest. */
+function balancedSplit(text: string, measure: MeasureText): string[] | null {
+  const words = text.split(' ')
+  if (words.length < 2) return null
+  let best: string[] | null = null
+  let bestWidth = Infinity
+  for (let i = 1; i < words.length; i++) {
+    const pair = [words.slice(0, i).join(' '), words.slice(i).join(' ')]
+    const width = Math.max(measure(pair[0], 100), measure(pair[1], 100))
+    if (width < bestWidth) {
+      bestWidth = width
+      best = pair
+    }
+  }
+  return best
+}
+
+const SINGLE_LINE_FLOOR = 60
+const HEADLINE_FLOOR = 24
+const HEADLINE_STEP = 4
+
+/**
+ * A headline laid out to be READ, not merely to fit: one line while that
+ * stays at 60px or more, otherwise two balanced lines at the largest size
+ * where both fit. Shrinking a long title onto one line (fitText alone) put
+ * "Harry Potter and the Deathly Hallows: Part 2" on the card at ~40px — a
+ * caption, in a feed that shows the card at a third of its size.
+ */
+export function layoutHeadline(
+  text: string,
+  maxWidth: number,
+  measure: MeasureText,
+  startPx = 84
+): HeadlineLayout {
+  for (let size = startPx; size >= SINGLE_LINE_FLOOR; size -= HEADLINE_STEP) {
+    if (measure(text, size) <= maxWidth) return { size, lines: [text] }
+  }
+  // One word too long for the line has nowhere to break: shrink it.
+  const lines = balancedSplit(text, measure) ?? [text]
+  for (let size = startPx; size > HEADLINE_FLOOR; size -= HEADLINE_STEP) {
+    if (lines.every((line) => measure(line, size) <= maxWidth)) {
+      return { size, lines }
+    }
+  }
+  return { size: HEADLINE_FLOOR, lines }
+}
+
 /** The accent bloom top-right, so a card is not flat navy with text on it. */
 export function drawBloom(context: CanvasRenderingContext2D): void {
   const glow = context.createRadialGradient(

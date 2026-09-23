@@ -337,6 +337,22 @@ const roomCode = () => {
   )
 }
 
+/** The remote's capability: 128 random bits, hex. Never read aloud, so no
+ * alphabet games — it only ever rides inside a URL the host's phone scans. */
+const remoteKey = () =>
+  Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) =>
+    b.toString(16).padStart(2, '0')
+  ).join('')
+
+/** A playback position worth storing: finite, not negative, under a day. JSON
+ * cannot carry NaN, but it can carry 1e308, and nothing plays for that long. */
+const MAX_POSITION_S = 86_400
+const isPosition = (value) =>
+  typeof value === 'number' &&
+  Number.isFinite(value) &&
+  value >= 0 &&
+  value <= MAX_POSITION_S
+
 /**
  * The detail payload for an id, or null if TMDB does not know it.
  *
@@ -582,13 +598,16 @@ async function handleApi(pathname, url, request, ctx, env) {
       .bind(now - 6 * 3600 * 1000)
       .run()
     const code = roomCode()
+    const key = remoteKey()
     await db
       .prepare(
-        'INSERT INTO together_beats (code, position, playing, updated_at) VALUES (?, 0, 0, ?)'
+        'INSERT INTO together_beats (code, position, playing, updated_at, remote_key) VALUES (?, 0, 0, ?, ?)'
       )
-      .bind(code, now)
+      .bind(code, now, key)
       .run()
-    return liveJson({ code })
+    // `key` goes to the host alone; guests get the code through the invite,
+    // which strips it (lib/watch-together.ts inviteHref).
+    return liveJson({ code, key })
   }
 
   if (pathname === '/api/together/beat' && request.method === 'POST') {
@@ -596,7 +615,8 @@ async function handleApi(pathname, url, request, ctx, env) {
     if (!db) return liveJson({ error: 'unavailable' }, { status: 503 })
     const body = await request.json().catch(() => null)
     const { code, position, playing } = body ?? {}
-    if (!code || typeof position !== 'number' || typeof playing !== 'boolean') {
+    const at = typeof position === 'number' ? Math.max(0, position) : position
+    if (!code || !isPosition(at) || typeof playing !== 'boolean') {
       return liveJson({ error: 'code, position, playing' }, { status: 400 })
     }
     await db
@@ -605,7 +625,7 @@ async function handleApi(pathname, url, request, ctx, env) {
          VALUES (?, ?, ?, ?)
          ON CONFLICT (code) DO UPDATE SET position = excluded.position, playing = excluded.playing, updated_at = excluded.updated_at`
       )
-      .bind(String(code), Math.max(0, position), playing ? 1 : 0, Date.now())
+      .bind(String(code), at, playing ? 1 : 0, Date.now())
       .run()
     return liveJson({ ok: true })
   }
@@ -632,18 +652,29 @@ async function handleApi(pathname, url, request, ctx, env) {
     const db = env.DB
     if (!db) return liveJson({ error: 'unavailable' }, { status: 503 })
     const body = await request.json().catch(() => null)
-    const { code, position, playing } = body ?? {}
-    if (!code || typeof position !== 'number' || typeof playing !== 'boolean') {
-      return liveJson({ error: 'code, position, playing' }, { status: 400 })
+    const { code, key, position, playing } = body ?? {}
+    const at = typeof position === 'number' ? Math.max(0, position) : position
+    if (
+      !code ||
+      typeof key !== 'string' ||
+      !isPosition(at) ||
+      typeof playing !== 'boolean'
+    ) {
+      return liveJson(
+        { error: 'code, key, position, playing' },
+        { status: 400 }
+      )
     }
-    // One statement: zero rows changed IS the missing room.
+    // One statement: zero rows changed IS the missing room — or the wrong key,
+    // deliberately indistinguishable, so a guest holding the room code cannot
+    // probe for the remote. The code is the room; the key is the host's hand.
     const result = await db
       .prepare(
         `UPDATE together_beats
          SET cmd_position = ?, cmd_playing = ?, cmd_at = ?
-         WHERE code = ?`
+         WHERE code = ? AND remote_key = ?`
       )
-      .bind(Math.max(0, position), playing ? 1 : 0, Date.now(), String(code))
+      .bind(at, playing ? 1 : 0, Date.now(), String(code), key)
       .run()
     if (!result.meta?.changes) {
       return liveJson({ error: 'room not found' }, { status: 404 })

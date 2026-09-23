@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   followHost,
+  hostHref,
   inviteHref,
   planRemoteCommand,
   remoteHref,
@@ -104,18 +105,36 @@ describe('planRemoteCommand', () => {
 
 describe('room hrefs', () => {
   const href =
-    'https://reely.example/tv-shows/1399?season=2&episode=5&watch=ABCD12&host=1'
+    'https://reely.example/tv-shows/1399?season=2&episode=5&watch=ABCD12&host=1&rk=k3y'
 
-  it('inviteHref keeps playback params and drops the host flag', () => {
+  it('hostHref carries the room, the host flag and the key', () => {
+    expect(hostHref('/tv-shows/1399', 'ABCD12', 'k3y')).toBe(
+      '/tv-shows/1399?watch=ABCD12&host=1&rk=k3y'
+    )
+  })
+
+  it('inviteHref keeps playback params and drops the host flag AND the key', () => {
     expect(inviteHref(href)).toBe(
       'https://reely.example/tv-shows/1399?season=2&episode=5&watch=ABCD12'
     )
   })
 
-  it('remoteHref drops host and marks the URL as a remote', () => {
-    expect(remoteHref(href)).toBe(
-      'https://reely.example/tv-shows/1399?season=2&episode=5&watch=ABCD12&remote=1'
+  it('inviteHref from the phone pad does not hand out the remote either', () => {
+    expect(inviteHref(`${href}&remote=1`)).toBe(
+      'https://reely.example/tv-shows/1399?season=2&episode=5&watch=ABCD12'
     )
+  })
+
+  it('remoteHref drops host, marks the remote and keeps the key', () => {
+    expect(remoteHref(href)).toBe(
+      'https://reely.example/tv-shows/1399?season=2&episode=5&watch=ABCD12&remote=1&rk=k3y'
+    )
+  })
+
+  it('remoteHref is null for a room without a key', () => {
+    expect(
+      remoteHref('https://reely.example/movies/550?watch=ABCD12&host=1')
+    ).toBeNull()
   })
 })
 

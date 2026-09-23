@@ -39,8 +39,9 @@ import {
 export const TOGETHER_SOURCE = 'reely-together'
 
 const hostRoleLabel = (isHost: boolean, ended: boolean) => {
-  if (isHost) return ' · you control playback'
+  // Ended first: a host whose room was swept controls nothing any more.
   if (ended) return ' · the room has ended'
+  if (isHost) return ' · you control playback'
   return ' · following the host'
 }
 
@@ -263,10 +264,11 @@ export function WatchTogetherBar({
           {formatPlaybackTime(hostAt)}
         </span>
       ) : null}
-      {/* The phone remote: host-only, and pointless once the room has ended.
-          Opens a QR whose payload is the invite URL with remote=1, which the
-          detail hero reads to mount the pad instead of this bar. */}
-      {isHost && !ended ? (
+      {/* The phone remote: host-only, pointless once the room has ended, and
+          absent for a room minted before remote keys (it has none to hand
+          out). Opens a QR whose payload is the invite URL with remote=1 and
+          the key, which the detail hero reads to mount the pad. */}
+      {isHost && !ended && remoteHref(location.href) ? (
         <button
           type="button"
           onClick={() => setRemoteOpen(true)}
@@ -279,8 +281,9 @@ export function WatchTogetherBar({
       <button
         type="button"
         onClick={() => {
-          // inviteHref drops `host=1`: an invitee opening this URL must poll
-          // as a guest, not spin up a second host loop fighting over the beat.
+          // inviteHref drops `host=1` and the remote key: an invitee opening
+          // this URL must poll as a guest — not spin up a second host loop
+          // fighting over the beat, and not steer the host's player.
           void navigator.clipboard?.writeText(inviteHref(location.href))
           toast('Invite link copied')
         }}
@@ -294,14 +297,17 @@ export function WatchTogetherBar({
           <DialogHeader>
             <DialogTitle>Use your phone as the remote</DialogTitle>
             <DialogDescription>
-              Scan with your camera. The pad controls playback on this screen.
+              Scan with your camera. The pad plays, pauses and skips on this
+              screen while the Reely player is on — third-party servers take no
+              steering. Keep the code to yourself: it controls your player.
             </DialogDescription>
           </DialogHeader>
           {/* White plate so the code scans on any theme — the module sits over
-              the player, where a transparent code has no quiet zone. */}
+              the player, where a transparent code has no quiet zone. Read at
+              open time, not mount: the URL moves on with the episode. */}
           <div className="rounded-md bg-white p-3">
             <QRCodeSVG
-              value={remoteHref(location.href)}
+              value={remoteHref(location.href) ?? ''}
               size={192}
               bgColor="#ffffff"
               fgColor="#000000"

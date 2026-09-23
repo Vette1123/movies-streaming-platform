@@ -135,8 +135,11 @@ export interface MatchState {
 export const matchHitsApi = (code: string): Promise<MatchState> =>
   getJson('/api/match/matches', { code })
 
-export const createTogetherRoomApi = (): Promise<{ code: string }> =>
-  postJson('/api/together/room')
+/** `key` is the phone remote's capability — host only, see lib/watch-together. */
+export const createTogetherRoomApi = (): Promise<{
+  code: string
+  key: string
+}> => postJson('/api/together/room')
 
 export interface TogetherBeat {
   position: number
@@ -161,6 +164,7 @@ export const togetherStateApi = (code: string): Promise<TogetherBeat> =>
 
 export const togetherRemoteApi = (input: {
   code: string
+  key: string
   position: number
   playing: boolean
 }): Promise<{ ok: boolean }> => postJson('/api/together/remote', input)

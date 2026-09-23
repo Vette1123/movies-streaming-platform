@@ -140,6 +140,17 @@ jobs:
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
 
+      # BEFORE the Worker ships: a Worker that reads a column the database does
+      # not have yet 500s every request touching that table (0009's remote
+      # columns sat one forgotten manual step from breaking every Watch
+      # Together room). Idempotent — "No migrations to apply" on most runs —
+      # and a failure here stops the deploy with the old Worker still serving.
+      - name: Apply D1 migrations
+        run: pnpm exec wrangler d1 migrations apply reely --remote
+        env:
+          CI: 'true'
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
       - run: pnpm run deploy:full
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

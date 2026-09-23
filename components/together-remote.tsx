@@ -19,6 +19,8 @@ import { remoteView } from '@/lib/watch-together'
 // server sees the room but the buttons do nothing.
 interface TogetherRemoteProps {
   code: string
+  /** The host's capability, from the QR — the Worker refuses a press without it. */
+  remoteKey: string
 }
 
 const remoteStatus = (
@@ -30,7 +32,7 @@ const remoteStatus = (
   return ` · ${formatPlaybackTime(beat.position)}`
 }
 
-export function TogetherRemote({ code }: TogetherRemoteProps) {
+export function TogetherRemote({ code, remoteKey }: TogetherRemoteProps) {
   const [beat, setBeat] = React.useState<{
     position: number
     playing: boolean
@@ -45,7 +47,7 @@ export function TogetherRemote({ code }: TogetherRemoteProps) {
       // every 4s. The next poll reconciles whatever the host actually applied.
       setBeat({ position, playing })
       try {
-        await togetherRemoteApi({ code, position, playing })
+        await togetherRemoteApi({ code, key: remoteKey, position, playing })
       } catch (error) {
         if (error instanceof ApiError && error.status === 404) {
           setEnded(true)
@@ -54,7 +56,7 @@ export function TogetherRemote({ code }: TogetherRemoteProps) {
         toast('Could not reach the room')
       }
     },
-    [code]
+    [code, remoteKey]
   )
 
   React.useEffect(() => {

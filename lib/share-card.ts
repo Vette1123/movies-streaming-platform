@@ -4,11 +4,12 @@ import {
   CARD_HEIGHT,
   CARD_WIDTH,
   drawBloom,
-  fitText,
   INK,
+  layoutHeadline,
   MUTED,
   SANS,
 } from '@/lib/canvas-card'
+import { demoteFromPrimary, getNextImageFallback } from '@/lib/tmdbConfig'
 
 /**
  * The title as a picture somebody can post.
@@ -114,30 +115,37 @@ const IMAGE_TIMEOUT_MS = 8000
  *
  * data: URIs (the empty-path placeholder) are treated as no art: they would
  * load fine and paint a transparent pixel over the whole frame.
+ *
+ * A failed host walks the same chain every <img> on the page walks
+ * (getNextImageFallback: ImageKit → wsrv.nl → TMDB origin), and starts past
+ * ImageKit when the session already knows it is down — all inside the one
+ * timeout, so a dead chain costs the same wait as a dead host.
  */
 function loadArt(
   url: string | null | undefined
 ): Promise<HTMLImageElement | null> {
   if (!url || url.startsWith('data:')) return Promise.resolve(null)
   return new Promise((resolve) => {
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
     let settled = false
     const done = (image: HTMLImageElement | null) => {
       if (settled) return
       settled = true
+      clearTimeout(timer)
       resolve(image)
     }
     const timer = setTimeout(() => done(null), IMAGE_TIMEOUT_MS)
-    img.onload = () => {
-      clearTimeout(timer)
-      done(img.naturalWidth > 0 ? img : null)
+    const attempt = (src: string) => {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.onload = () => done(img.naturalWidth > 0 ? img : null)
+      img.onerror = () => {
+        const next = getNextImageFallback(src)
+        if (next && !settled) attempt(next)
+        else done(null)
+      }
+      img.src = src
     }
-    img.onerror = () => {
-      clearTimeout(timer)
-      done(null)
-    }
-    img.src = url
+    attempt(demoteFromPrimary(url))
   })
 }
 
@@ -227,9 +235,23 @@ export async function renderShareCard({
   context.letterSpacing = '0px'
 
   context.fillStyle = INK
-  const headlineSize = fitText(context, title, CARD_WIDTH - margin * 2, 84)
-  context.font = `700 ${headlineSize}px ${SANS}`
-  context.fillText(title, margin, CARD_HEIGHT - 340)
+  const headline = layoutHeadline(
+    title,
+    CARD_WIDTH - margin * 2,
+    (text, size) => {
+      context.font = `700 ${size}px ${SANS}`
+      return context.measureText(text).width
+    }
+  )
+  context.font = `700 ${headline.size}px ${SANS}`
+  // The LAST line sits on the baseline the single-line headline always used,
+  // so the meta and score lines below never move; a second line grows upward
+  // into the scrim, which is 640px tall for exactly this kind of room.
+  const lineHeight = Math.round(headline.size * 1.08)
+  headline.lines.forEach((line, i) => {
+    const fromBottom = headline.lines.length - 1 - i
+    context.fillText(line, margin, CARD_HEIGHT - 340 - fromBottom * lineHeight)
+  })
 
   const meta = shareCardMetaLine(year, genres)
   let y = CARD_HEIGHT - 268

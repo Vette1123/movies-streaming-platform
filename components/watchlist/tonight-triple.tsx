@@ -6,6 +6,7 @@ import { Dices } from 'lucide-react'
 import { convertMinutesToHours } from '@/lib/utils'
 import {
   daySeed,
+  EVENING_MINUTES,
   minutesFor,
   pickTriple,
   sittingLabel,
@@ -57,7 +58,11 @@ export const TonightTriple = () => {
           <p className="text-sm text-muted-foreground">
             Three from your watchlist — about{' '}
             <span className="tabular-nums">{convertMinutesToHours(total)}</span>
-            .
+            {/* Only when nothing on the list fits the evening — say so rather
+                than let "about 5 hours" pass as a normal night. */}
+            {total > EVENING_MINUTES
+              ? ', a long night — nothing shorter fits.'
+              : '.'}
           </p>
         </div>
         {/* Exactly three saved: every spin is the same three, reordered. */}

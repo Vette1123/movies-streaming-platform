@@ -22,6 +22,7 @@ import {
   shareCardRatingLine,
 } from '@/lib/share-card'
 import { cn, getImageURL } from '@/lib/utils'
+import { useIntentProps } from '@/hooks/use-prefetch-intent'
 import { shareOrDownloadFile } from '@/hooks/use-share'
 import { Button } from '@/components/ui/button'
 import {
@@ -60,21 +61,51 @@ export const ShareCardButton = React.memo(function ShareCardButton({
     })
   }
 
-  const handleShare = async () => {
+  // The card, drawn once and kept. Started on INTENT (hover, focus, the first
+  // touch) rather than on the click: `navigator.share` has to run inside the
+  // browser's user-activation window, and every millisecond of art load spent
+  // before the click is one not spent inside it.
+  //
+  // Keyed by id: a client navigation can hand this same instance the next
+  // title. A failed render resolves null (a hover nobody followed up must not
+  // surface as an unhandled rejection) and is forgotten, so the next press
+  // draws again.
+  const card = React.useRef<{
+    id: number
+    blob: Promise<Blob | null>
+  } | null>(null)
+  const warm = React.useCallback(() => {
     const title = getMediaTitle(media)
-    if (!title) return
-    setBusy(true)
-    try {
-      const artPath = artPathOf(media)
-      const blob = await renderShareCard({
+    if (!title || card.current?.id === media.id) return
+    const artPath = artPathOf(media)
+    const entry = {
+      id: media.id,
+      blob: renderShareCard({
         title,
         year: getReleaseYear(getMediaReleaseDate(media)),
         genres: genreNames(media.genres),
         rating: shareCardRatingLine(media.imdbRating, media.vote_average),
         artUrl: artPath ? getImageURL(artPath) : null,
-      })
+      }).catch(() => {
+        if (card.current === entry) card.current = null
+        return null
+      }),
+    }
+    card.current = entry
+  }, [media])
+  const intent = useIntentProps(warm)
+
+  const handleShare = async () => {
+    const title = getMediaTitle(media)
+    if (!title) return
+    setBusy(true)
+    try {
+      warm()
+      const blob = await card.current?.blob
       if (!blob) {
-        toast('This browser cannot draw the card')
+        // A failed draw, or a browser with no canvas: either way, a retry is
+        // the only move, and a failed draw has already been forgotten.
+        toast('Could not draw the card — try again')
         return
       }
       const file = new File([blob], shareCardFileName(title), {
@@ -93,9 +124,10 @@ export const ShareCardButton = React.memo(function ShareCardButton({
         toast.success(`Saved ${file.name}`)
       }
     } catch {
-      // Only the render can land here now — the share itself falls back to a
-      // download (see lessons/2026-08-24-a-failed-share-sheet-is-not-a-dismissal).
-      toast.error('Could not draw the card')
+      // The draw resolves null on failure and the share falls back to a
+      // download (see lessons/2026-08-24-a-failed-share-sheet-is-not-a-dismissal),
+      // so this is the belt to those braces.
+      toast.error('Could not share the card')
     } finally {
       setBusy(false)
     }
@@ -110,6 +142,7 @@ export const ShareCardButton = React.memo(function ShareCardButton({
       // readers at every width.
       aria-label="Share card"
       disabled={busy}
+      {...intent}
       onClick={() => void handleShare()}
       className={cn(heroActionButtonBase, heroActionButtonIdle, className)}
     >
