@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { airingLabel } from '@/lib/airing'
+import { airingLabel, episodeCode, withEpisode } from '@/lib/airing'
 
 // A fixed "now": 2026-09-22T12:00:00Z — noon UTC, mid-day, so floor-to-UTC
 // midnight is unambiguous in either direction of a timezone.
@@ -78,5 +78,27 @@ describe('airingLabel', () => {
     expect(airingLabel('2026-09-22T23:59:59Z', NOW, 0)?.label).toBe(
       'Airs today'
     )
+  })
+})
+
+describe('episodeCode + withEpisode', () => {
+  it('names a regular episode', () => {
+    expect(episodeCode({ season_number: 2, episode_number: 5 })).toBe('S2 E5')
+  })
+
+  it('gives specials, missing and junk numbers no code', () => {
+    expect(episodeCode({ season_number: 0, episode_number: 3 })).toBeNull()
+    expect(episodeCode({ season_number: 2, episode_number: 0 })).toBeNull()
+    expect(episodeCode({ season_number: 2 })).toBeNull()
+    expect(episodeCode({ season_number: 1.5, episode_number: 2 })).toBeNull()
+    expect(episodeCode(null)).toBeNull()
+  })
+
+  it('leads the label with the code and lowercases what follows', () => {
+    expect(withEpisode('Airs tomorrow', 'S2 E5')).toBe('S2 E5 airs tomorrow')
+    expect(withEpisode('Airs in 3 days', 'S1 E10')).toBe(
+      'S1 E10 airs in 3 days'
+    )
+    expect(withEpisode('Airs today', null)).toBe('Airs today')
   })
 })

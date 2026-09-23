@@ -1,9 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import { Copy, QrCode, Users } from 'lucide-react'
+import { QrCode, UserPlus, Users } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
-import { toast } from 'sonner'
 
 import { ApiError, togetherBeatApi, togetherStateApi } from '@/lib/api-client'
 import { parseEmbedProgress } from '@/lib/embed-progress'
@@ -14,6 +13,7 @@ import {
   planRemoteCommand,
   remoteHref,
 } from '@/lib/watch-together'
+import { useShare } from '@/hooks/use-share'
 import {
   Dialog,
   DialogContent,
@@ -111,6 +111,7 @@ export function WatchTogetherBar({
 
   // Phone-as-remote QR dialog (host only).
   const [remoteOpen, setRemoteOpen] = React.useState(false)
+  const { share } = useShare()
 
   // The newest remote command the host loop has already drained. Commands are
   // one-shot: `cmd_at` older than this ref means "applied, do not re-apply".
@@ -284,13 +285,21 @@ export function WatchTogetherBar({
           // inviteHref drops `host=1` and the remote key: an invitee opening
           // this URL must poll as a guest — not spin up a second host loop
           // fighting over the beat, and not steer the host's player.
-          void navigator.clipboard?.writeText(inviteHref(location.href))
-          toast('Invite link copied')
+          const invite = new URL(inviteHref(location.href))
+          // The share sheet on a phone (an invite goes to a chat app, and
+          // copy-then-switch-apps was the only way before), clipboard + toast
+          // on desktop: the same path every other share button takes.
+          void share({
+            title: 'Watch Together on Reely',
+            path: `${invite.pathname}${invite.search}`,
+            text: 'Join my Watch Together room on Reely',
+            copied: 'Invite link copied',
+          })
         }}
         className="tap-target inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 px-2 py-0.5 font-medium transition hover:border-primary/60"
       >
-        <Copy className="size-3" aria-hidden />
-        Copy link
+        <UserPlus className="size-3" aria-hidden />
+        Invite
       </button>
       <Dialog open={remoteOpen} onOpenChange={setRemoteOpen}>
         <DialogContent className="max-w-sm">

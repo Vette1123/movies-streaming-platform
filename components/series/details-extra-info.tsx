@@ -22,10 +22,8 @@ export const SeriesDetailsExtraInfo = ({
       title={series.name}
       badgeDate={series.first_air_date}
       // An ended show can keep a stale future date on TMDB; no chip for it.
-      nextAirDate={
-        ENDED_STATUSES.has(series.status)
-          ? null
-          : series.next_episode_to_air?.air_date
+      nextEpisode={
+        ENDED_STATUSES.has(series.status) ? null : series.next_episode_to_air
       }
       tagline={series.tagline}
       overview={series.overview}

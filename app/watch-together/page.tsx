@@ -2,11 +2,13 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
+import { Search, Smartphone, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { createTogetherRoomApi } from '@/lib/api-client'
 import { matchCardHref, type MatchCard } from '@/lib/match-night'
 import { hostHref } from '@/lib/watch-together'
+import { Chip } from '@/components/ui/chip'
 import { MediaSearchPicker } from '@/components/media-search-picker'
 
 // Watch Together, step one: pick a title, mint a room, land on the detail
@@ -34,21 +36,25 @@ export default function WatchTogetherPage() {
     }
   }
 
+  // The picker leads: it is the one thing to do on this page. The steps sit
+  // under it as the explanation, where they used to sit above it as a list
+  // to read before being allowed to act.
   return (
-    <section className="container min-h-svh py-20 lg:py-32">
-      <h1 className="text-2xl font-bold lg:text-3xl">Watch Together (beta)</h1>
-      <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+    <section className="container min-h-svh max-w-3xl py-20 lg:py-32">
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
+          Watch Together
+        </h1>
+        <Chip variant="outline" className="static">
+          Beta
+        </Chip>
+      </div>
+      <p className="mt-3 max-w-[60ch] leading-relaxed text-muted-foreground">
         One of you presses play and everyone follows. Pauses and seeks sync for
         the whole room, so nobody is 40 seconds ahead spoiling the twist.
       </p>
 
-      <ol className="mt-6 max-w-md list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
-        <li>Search the film or series you want to watch</li>
-        <li>Picking it opens a room and takes you to the player</li>
-        <li>Send the invite from the bar. Anyone who opens it follows you</li>
-      </ol>
-
-      <div className="mt-8 max-w-md">
+      <div className="mt-10 max-w-xl">
         <MediaSearchPicker
           inputId="together-search"
           label="What are you watching?"
@@ -58,9 +64,50 @@ export default function WatchTogetherPage() {
         />
       </div>
 
-      <p className="mt-8 text-xs text-muted-foreground">
-        Guests: open the link the host sent. It already carries the room code.
+      <ol className="mt-14 grid gap-8 border-t border-white/10 pt-10 sm:grid-cols-3 sm:gap-6">
+        {STEPS.map(({ Icon, title, body }, index) => (
+          <li key={title} className="space-y-2">
+            <span className="flex items-center gap-2 text-sm font-semibold">
+              <span
+                aria-hidden
+                className="grid size-7 place-items-center rounded-full bg-primary/15 text-primary"
+              >
+                <Icon className="size-3.5" />
+              </span>
+              <span>
+                <span className="sr-only">Step {index + 1}: </span>
+                {title}
+              </span>
+            </span>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {body}
+            </p>
+          </li>
+        ))}
+      </ol>
+
+      <p className="mt-10 text-sm text-muted-foreground">
+        Joining someone? Open the link they sent. It already carries the room
+        code.
       </p>
     </section>
   )
 }
+
+const STEPS = [
+  {
+    Icon: Search,
+    title: 'Pick the title',
+    body: 'Picking it opens a room and takes you straight to the player.',
+  },
+  {
+    Icon: UserPlus,
+    title: 'Send the invite',
+    body: 'Invite, on the bar over the player. Anyone who opens it follows you.',
+  },
+  {
+    Icon: Smartphone,
+    title: 'Press play',
+    body: 'Everyone stays in step. Your phone can be the remote: tap Remote and scan.',
+  },
+] as const

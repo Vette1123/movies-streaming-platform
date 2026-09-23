@@ -37,3 +37,29 @@ export function airingLabel(
   if (days <= 7) return { label: `Airs in ${days} days`, urgent: false }
   return { label: `Airs ${dateFormatter(airDate, true)}`, urgent: false }
 }
+
+/** The numbers the chip needs off TMDB's `next_episode_to_air`. */
+export interface NextEpisode {
+  air_date?: string | null
+  season_number?: number | null
+  episode_number?: number | null
+}
+
+/**
+ * "S2 E5", or null when the numbers are missing or are not a regular episode.
+ * Season 0 is TMDB's "Specials" bucket, where "S0 E3" names nothing a viewer
+ * would recognise, so it gets the plain label.
+ */
+export function episodeCode(episode: NextEpisode | null | undefined) {
+  const season = episode?.season_number
+  const number = episode?.episode_number
+  if (!Number.isInteger(season) || !Number.isInteger(number)) return null
+  if ((season as number) < 1 || (number as number) < 1) return null
+  return `S${season} E${number}`
+}
+
+/** "Airs tomorrow" + "S2 E5" → "S2 E5 airs tomorrow"; no code, no change. */
+export function withEpisode(label: string, code: string | null): string {
+  if (!code) return label
+  return `${code} ${label.charAt(0).toLowerCase()}${label.slice(1)}`
+}

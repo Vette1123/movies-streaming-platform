@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
-import { GitCompare, SearchX } from 'lucide-react'
+import { GitCompare, SearchX, Share2 } from 'lucide-react'
 
 import { ApiError, getJson } from '@/lib/api-client'
 import {
@@ -14,6 +14,7 @@ import {
 } from '@/lib/profile/match'
 import type { ProfileTitle, PublicProfile } from '@/lib/profile/routes'
 import { cn } from '@/lib/utils'
+import { useShare } from '@/hooks/use-share'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Input } from '@/components/ui/input'
@@ -270,6 +271,7 @@ const HandleField = React.forwardRef<HTMLInputElement, HandleFieldProps>(
 
 function CompareResultView({ result }: { result: CompareResult }) {
   const { a, b, match } = result
+  const { share } = useShare()
 
   if (!a || !b || !match) {
     const both = !a && !b
@@ -318,6 +320,25 @@ function CompareResultView({ result }: { result: CompareResult }) {
             <ProfileLink profile={a} /> and <ProfileLink profile={b} />.{' '}
             {matchBlurb(match)}
           </p>
+          {/* A result is a link (the handles ride the query string), and
+              sending it is the point of the page: sheet on a phone, clipboard
+              on desktop. The canonical handles, not whatever was typed. */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() =>
+              void share({
+                title: `Taste match: ${whoA} and ${whoB}`,
+                path: `/compare?a=${encodeURIComponent(result.handleA)}&b=${encodeURIComponent(result.handleB)}`,
+                text: `${whoA} and ${whoB} are ${match.score}% in common on Reely`,
+              })
+            }
+          >
+            <Share2 className="size-4" aria-hidden />
+            Share result
+          </Button>
         </div>
       </header>
 

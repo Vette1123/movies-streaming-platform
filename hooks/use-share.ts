@@ -10,6 +10,10 @@ interface ShareInput {
   /** Path like /movie/123-slug — made absolute here so shares always land on
    * the canonical host, whatever page the sharer was reading. */
   path: string
+  /** The sheet's message line. Defaults to "Watch <title> on Reely". */
+  text?: string
+  /** The toast when the link lands on the clipboard instead of a sheet. */
+  copied?: string
 }
 
 /** The only rejection that means "the user decided". */
@@ -53,27 +57,35 @@ export const shareOrDownloadFile = async (
 export const useShare = () => {
   const [nativeShared, setNativeShared] = React.useState(false)
 
-  const share = React.useCallback(async ({ title, path }: ShareInput) => {
-    const url = `${siteConfig.websiteURL}${path}`
-    try {
-      if (typeof navigator.share === 'function') {
-        await navigator.share({ title, text: `Watch ${title} on Reely`, url })
-        setNativeShared(true)
-        return true
+  const share = React.useCallback(
+    async ({
+      title,
+      path,
+      text = `Watch ${title} on Reely`,
+      copied = 'Link copied. Share it anywhere.',
+    }: ShareInput) => {
+      const url = `${siteConfig.websiteURL}${path}`
+      try {
+        if (typeof navigator.share === 'function') {
+          await navigator.share({ title, text, url })
+          setNativeShared(true)
+          return true
+        }
+      } catch (error) {
+        // Dismissing the sheet is the user saying no — that is the one failure
+        // that must NOT be second-guessed with a clipboard write.
+        if (isDismissal(error)) return false
+        // Everything else means the sheet never opened: the API exists but the
+        // platform cannot service it (desktop Chrome outside a share target,
+        // a page without transient activation, a locked-down webview). Before
+        // this, the tap did nothing at all and said nothing.
       }
-    } catch (error) {
-      // Dismissing the sheet is the user saying no — that is the one failure
-      // that must NOT be second-guessed with a clipboard write.
-      if (isDismissal(error)) return false
-      // Everything else means the sheet never opened: the API exists but the
-      // platform cannot service it (desktop Chrome outside a share target,
-      // a page without transient activation, a locked-down webview). Before
-      // this, the tap did nothing at all and said nothing.
-    }
-    await navigator.clipboard?.writeText(url)
-    toast('Link copied — share it anywhere')
-    return false
-  }, [])
+      await navigator.clipboard?.writeText(url)
+      toast(copied)
+      return false
+    },
+    []
+  )
 
   return { share, nativeShared }
 }

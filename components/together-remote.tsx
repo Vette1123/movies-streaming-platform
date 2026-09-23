@@ -86,6 +86,40 @@ export function TogetherRemote({ code, remoteKey }: TogetherRemoteProps) {
     }
   }, [code, ended])
 
+  // A remote that sleeps is a remote you have to unlock mid-scene. Hold a
+  // screen wake lock while the pad is live. The system drops it whenever the
+  // tab hides, so take it back on return. Unsupported, or refused (battery
+  // saver), just means the phone sleeps as it always did: the pad still works.
+  React.useEffect(() => {
+    if (ended || !('wakeLock' in navigator)) return
+    let lock: WakeLockSentinel | null = null
+    let cancelled = false
+    const acquire = async () => {
+      if (document.visibilityState !== 'visible' || lock) return
+      try {
+        const next = await navigator.wakeLock.request('screen')
+        if (cancelled) {
+          void next.release()
+          return
+        }
+        lock = next
+        next.addEventListener('release', () => {
+          if (lock === next) lock = null
+        })
+      } catch {
+        // Refused; nothing to undo.
+      }
+    }
+    void acquire()
+    const onVisibility = () => void acquire()
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      cancelled = true
+      document.removeEventListener('visibilitychange', onVisibility)
+      void lock?.release()
+    }
+  }, [ended])
+
   // The fixed bottom widgets (install nudge, tip jar) would sit under the pad's
   // thumb zone; styles/globals.css hides them and pads the page while it is up.
   React.useEffect(() => {

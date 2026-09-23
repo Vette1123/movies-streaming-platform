@@ -2,18 +2,24 @@
 
 import React from 'react'
 
-import { airingLabel } from '@/lib/airing'
+import {
+  airingLabel,
+  episodeCode,
+  withEpisode,
+  type NextEpisode,
+} from '@/lib/airing'
 import { useMounted } from '@/hooks/use-mounted'
 import { Chip } from '@/components/ui/chip'
 
 interface AiringChipProps {
-  /** TMDB `next_episode_to_air.air_date` — a calendar date, or absent. */
-  airDate?: string | null
+  /** TMDB `next_episode_to_air`: its air date drives the chip, its numbers
+   * name the episode ("S2 E5 airs tomorrow"). Absent for most titles. */
+  episode?: NextEpisode | null
   className?: string
 }
 
 /**
- * "Airs today" / "Airs tomorrow" / … chip for an upcoming episode.
+ * "S2 E5 airs today" / "Airs tomorrow" / … chip for an upcoming episode.
  *
  * Mount-gated for the same reason as NewBadgeWhenRecent: `airingLabel` reads
  * Date.now(), so deciding presence during render is non-deterministic between
@@ -23,13 +29,13 @@ interface AiringChipProps {
  * The caller reserves the badge row (`min-h-7`) so this landing post-hydration
  * does not shove the title down.
  */
-export const AiringChip = ({ airDate, className }: AiringChipProps) => {
+export const AiringChip = ({ episode, className }: AiringChipProps) => {
   const isMounted = useMounted()
-  const label = isMounted ? airingLabel(airDate) : null
+  const label = isMounted ? airingLabel(episode?.air_date) : null
   if (!label) return null
   return (
     <Chip variant={label.urgent ? 'primary' : 'neutral'} className={className}>
-      {label.label}
+      {withEpisode(label.label, episodeCode(episode))}
     </Chip>
   )
 }
