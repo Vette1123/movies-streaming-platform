@@ -18,31 +18,87 @@
 
 import { siteConfig } from '@/config/site'
 
-/** What a SERP renders before it truncates, with a character of slack. */
-const MAX_LENGTH = 158
+/**
+ * The window every description lands in: Bing's 150-160 guidance.
+ *
+ * The floor was 120 until 2026-10-09, when Bing's report flagged 95 pages as
+ * "too short" — genre hubs at 132-149, the disclaimer at 150, synopses of 130+
+ * left to stand alone, and every head that fell between two of the three old
+ * offers ("Stupor Mundi (1997) — history, drama movie." + the 80-character
+ * offer = 123).
+ */
+export const MIN_LENGTH = 150
+export const MAX_LENGTH = 160
 
 /**
  * A synopsis at least this long carries the description by itself; anything
  * shorter gets the title/genre line and an offer appended.
  */
-const SELF_SUFFICIENT = 130
+const SELF_SUFFICIENT = MIN_LENGTH
+
+const N = siteConfig.name
 
 /**
- * The closing sentence, longest first. Whichever one still fits is used, so a
- * one-line synopsis and a missing one both land near the 158 budget instead of
- * one of them coming out at 90 characters.
+ * The closing sentence, longest first; the longest that still fits is used.
+ * The window is ten characters wide, so no two neighbours may be more than ten
+ * apart, and the longest has to lift the shortest possible head ("Up (1980) —
+ * movie.", 18 characters) over the floor. tests/seo-surfaces.test.ts walks
+ * every head length to hold both.
  */
 const TITLE_OFFERS = [
-  `Read the synopsis, browse the full cast and crew, and see ratings, trailers and where to watch it online, on ${siteConfig.name}.`,
-  `Full cast and crew, ratings, trailers and where to watch it online, on ${siteConfig.name}.`,
-  `Cast, ratings, trailers and where to watch, on ${siteConfig.name}.`,
+  `Read the synopsis, browse the full cast and crew, and see ratings, trailers, similar titles and where to watch it online, on ${N}.`,
+  `Read the synopsis, browse the full cast and crew, and see ratings, trailers, similar titles and where to watch, on ${N}.`,
+  `Read the synopsis, browse the full cast and crew, and see ratings, trailers and where to watch it online, on ${N}.`,
+  `Browse the full cast and crew, and see ratings, trailers, similar titles and where to watch it online, on ${N}.`,
+  `Browse the full cast and crew, and see ratings, trailers, similar titles and where to watch, on ${N}.`,
+  `Browse the full cast and crew, and see ratings, trailers and where to watch it online, on ${N}.`,
+  `See the full cast and crew, ratings, trailers and where to watch it online, on ${N}.`,
+  `Full cast and crew, ratings, trailers and where to watch it online, on ${N}.`,
+  `Cast and crew, ratings, trailers and where to watch it online, on ${N}.`,
+  `Cast, ratings, trailers and where to watch it online, on ${N}.`,
+  `Cast, ratings, trailers and where to watch, on ${N}.`,
+  `Cast, trailers and where to watch, on ${N}.`,
+  `Cast and where to watch, on ${N}.`,
+  `Where to watch it, on ${N}.`,
+  `Trailer and cast on ${N}.`,
+  `Trailers on ${N}.`,
+  `Cast on ${N}.`,
+  `On ${N}.`,
 ]
 
 /** The same idea for a franchise page, which lists films rather than a cast. */
 const COLLECTION_OFFERS = [
-  `Every film in order, with release dates, ratings and where to watch each one, on ${siteConfig.name}.`,
-  `Every film in order, with ratings and where to watch each one, on ${siteConfig.name}.`,
-  `In order, with ratings and where to watch, on ${siteConfig.name}.`,
+  `Every film in the series in order, with release dates, ratings, cast, trailers and where to watch each one online, on ${N}.`,
+  `Every film in the series in order, with release dates, ratings, trailers and where to watch each one online, on ${N}.`,
+  `Every film in the series in order, with release dates, ratings and where to watch each one online, on ${N}.`,
+  `Every film in order, with release dates, ratings, trailers and where to watch each one online, on ${N}.`,
+  `Every film in order, with release dates, ratings and where to watch each one online, on ${N}.`,
+  `Every film in order, with release dates, ratings and where to watch each one, on ${N}.`,
+  `Every film in order, with release dates, ratings and where to watch, on ${N}.`,
+  `Every film in order, with ratings and where to watch each one, on ${N}.`,
+  `Every film in order, with ratings and where to watch, on ${N}.`,
+  `Every film in order, with where to watch each, on ${N}.`,
+  `In order, with ratings and where to watch, on ${N}.`,
+  `Every film in order and where to watch, on ${N}.`,
+  `In order, with where to watch, on ${N}.`,
+  `Where to watch each film, on ${N}.`,
+  `Every film in order, on ${N}.`,
+  `Every film, on ${N}.`,
+  `Films on ${N}.`,
+  `On ${N}.`,
+]
+
+/** A genre hub: the noun is "films" or "series". */
+const genreOffers = (noun: string) => [
+  `Browse top-rated and trending ${noun} with ratings, cast, trailers and where to stream each one online, on ${N}.`,
+  `Browse top-rated and trending ${noun} with ratings, cast, trailers and where to stream each one, on ${N}.`,
+  `Browse top-rated and trending ${noun} with ratings, trailers and where to stream each one online, on ${N}.`,
+  `Browse top-rated and trending ${noun} with ratings, trailers and where to stream each one, on ${N}.`,
+  `Browse top-rated and trending ${noun} with ratings, trailers and where to stream them, on ${N}.`,
+  `Browse top-rated and trending ${noun} with ratings, trailers and where to watch, on ${N}.`,
+  `Top-rated and trending ${noun} with ratings, trailers and where to watch, on ${N}.`,
+  `Top-rated and trending ${noun}, with ratings and where to watch, on ${N}.`,
+  `Top-rated and trending ${noun} and where to watch, on ${N}.`,
 ]
 
 const squash = (value?: string | null) =>
@@ -93,14 +149,32 @@ const assemble = (head: string, offers: string[]) => {
   return offer ? `${head} ${offer}` : clamp(head)
 }
 
+const inWindow = (text: string) =>
+  text.length >= MIN_LENGTH && text.length <= MAX_LENGTH
+
+/**
+ * The first head that lands in the window whole, then the first that lands in
+ * it at all, then the first. Heads come richest first, so a dropped fact line
+ * or a dropped credit is what gives way — never a sentence cut in half when a
+ * shorter head would have fitted.
+ */
+const bestOf = (heads: string[], offers: string[]) => {
+  const built = heads.map((head) => assemble(head, offers))
+  return (
+    built.find((text) => inWindow(text) && !text.endsWith('…')) ??
+    built.find(inWindow) ??
+    built[0]
+  )
+}
+
 export function mediaDescription(input: MediaDescriptionInput): string {
   const synopsis = squash(input.overview)
   if (synopsis.length >= SELF_SUFFICIENT) return clamp(synopsis)
 
-  const head = [synopsis && endSentence(synopsis), factLine(input)]
-    .filter(Boolean)
-    .join(' ')
-  return assemble(head, TITLE_OFFERS)
+  const fact = factLine(input)
+  if (!synopsis) return assemble(fact, TITLE_OFFERS)
+  const sentence = endSentence(synopsis)
+  return bestOf([`${sentence} ${fact}`, sentence], TITLE_OFFERS)
 }
 
 /**
@@ -114,10 +188,60 @@ export function collectionDescription(
   const synopsis = squash(overview)
   if (synopsis.length >= SELF_SUFFICIENT) return clamp(synopsis)
 
-  const head = [synopsis && endSentence(synopsis), `The ${name}, complete.`]
-    .filter(Boolean)
-    .join(' ')
-  return assemble(head, COLLECTION_OFFERS)
+  const complete = `The ${name}, complete.`
+  if (!synopsis) return assemble(complete, COLLECTION_OFFERS)
+  const sentence = endSentence(synopsis)
+  return bestOf([`${sentence} ${complete}`, sentence], COLLECTION_OFFERS)
+}
+
+/**
+ * A genre hub: "The most popular war movies right now." plus the longest offer
+ * that fits. The name appears in the head only — repeated in the offer as well,
+ * "War" and "Action & Adventure" landed 36 characters apart.
+ */
+export const genreDescription = (
+  genre: string,
+  kind: 'movie' | 'series'
+): string => {
+  const plural = kind === 'movie' ? 'movies' : 'TV shows'
+  const head = `The most popular ${genre.toLowerCase()} ${plural} right now.`
+  return assemble(head, genreOffers(kind === 'movie' ? 'films' : 'series'))
+}
+
+const PERSON_OFFERS = [
+  `See the full filmography with characters played, ratings, trailers, release dates and where to stream each title online, on ${N}.`,
+  `See the full filmography with characters played, ratings, trailers, release dates and where to stream each one, on ${N}.`,
+  `See the full filmography with characters played, ratings, trailers and where to stream each title online, on ${N}.`,
+  `See the full filmography with characters played, ratings, trailers and where to stream each one, on ${N}.`,
+  `See the full filmography with ratings, trailers and where to stream each title online, on ${N}.`,
+  `Full filmography with ratings, trailers and where to stream each title online, on ${N}.`,
+  `Full filmography with ratings, trailers and where to stream each one, on ${N}.`,
+  `Full filmography with ratings and where to stream each one, on ${N}.`,
+  `Full filmography with ratings and where to stream, on ${N}.`,
+  `Ratings, trailers and where to stream each one, on ${N}.`,
+  `Ratings, streaming and what to watch next, on ${N}.`,
+  `Ratings and where to stream them, on ${N}.`,
+  `Ratings and where to stream, on ${N}.`,
+  `Where to stream each one, on ${N}.`,
+  `Where to stream, on ${N}.`,
+  `Ratings on ${N}.`,
+  `On ${N}.`,
+]
+
+/**
+ * A person page: what they have been in, which is the query somebody typed.
+ *
+ * Up to three known titles, dropping from the end until the head leaves room
+ * for an offer — three long titles alone ran a description to 225 characters.
+ */
+export const personDescription = (name: string, known: string[]): string => {
+  const heads = known.length
+    ? known.map(
+        (_, index) =>
+          `Every film and series ${name} has been in, including ${known.slice(0, known.length - index).join(', ')}.`
+      )
+    : [`Films and series featuring ${name}.`]
+  return bestOf(heads, PERSON_OFFERS)
 }
 
 /**

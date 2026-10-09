@@ -5,7 +5,7 @@ import { siteConfig } from '@/config/site'
 export const metadata: Metadata = {
   title: 'Match Night',
   description:
-    'Two people, one deck, one code. Swipe what you would watch tonight — when you both like the same title, it is a match and the decision is made.',
+    'Two people, one deck, one code. Swipe what you would watch tonight — when you both like the same title, it is a match and the movie-night decision is made.',
   alternates: { canonical: '/match-night' },
   openGraph: {
     title: 'Match Night',

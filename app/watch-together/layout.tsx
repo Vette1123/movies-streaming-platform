@@ -5,7 +5,7 @@ import { siteConfig } from '@/config/site'
 export const metadata: Metadata = {
   title: 'Watch Together (beta)',
   description:
-    'Start a title, share a code, and everyone stays on the same second — play, pause and seeks follow the host automatically.',
+    'Start a title, share a code, and everyone stays on the same second — play, pause and seeks follow the host automatically, so movie night works from anywhere.',
   alternates: { canonical: '/watch-together' },
   openGraph: {
     title: 'Watch Together (beta)',

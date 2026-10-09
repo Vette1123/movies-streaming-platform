@@ -29,7 +29,7 @@ export const MOVIES_LIST_CONFIG: MediaListPageConfig = {
   title: 'Movies',
   ogTitle: 'Movies — Browse Popular, Trending & Top Rated',
   description:
-    'Browse popular, trending, and top-rated movies. Filter by genre, year, and rating to find your next watch on Reely.',
+    'Browse popular, trending and top-rated movies. Filter by genre, year, rating and streaming service to find your next watch, with trailers and cast, on Reely.',
   keywords: [
     'popular movies',
     'trending movies',
@@ -44,7 +44,7 @@ export const TV_LIST_CONFIG: MediaListPageConfig = {
   title: 'TV Shows',
   ogTitle: 'TV Shows — Browse Popular, Trending & Top Rated',
   description:
-    'Browse popular, trending, and top-rated TV shows. Track what you watch, discover new series, and never miss an episode on Reely.',
+    'Browse popular, trending and top-rated TV shows. Track what you watch, discover new series and see every season, cast and where to stream them on Reely.',
   keywords: [
     'popular tv shows',
     'trending series',

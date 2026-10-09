@@ -57,13 +57,28 @@ export const mediaHeading = ({ title, year }: MediaTitleInput) =>
  * docs/marketing/launch-kit.md — the rule covers anything rendered, and a SERP
  * title is rendered more than any asset the site ships.
  */
-const TITLE_INTENT: Record<MediaTitleInput['kind'], string> = {
-  movie: 'Cast, Trailer & Where to Watch',
-  series: 'Seasons, Cast & Where to Watch',
+//
+// Longest first, and only as long as the whole `<title>` stays within
+// TITLE_MAX. Bing flags a title over 70 characters as "too long" (High
+// severity, 2026-10-09: "My Years as the Dragon-Seeking Master (2026) —
+// Seasons, Cast & Where to Watch | Reely", 91), and a SERP truncates it there
+// anyway, so the modifier that does not fit is the one that gets cut — the
+// name never is.
+const TITLE_INTENTS: Record<MediaTitleInput['kind'], string[]> = {
+  movie: ['Cast, Trailer & Where to Watch', 'Where to Watch'],
+  series: ['Seasons, Cast & Where to Watch', 'Where to Watch'],
 }
 
-export const mediaDocHeading = (input: MediaTitleInput) =>
-  `${mediaHeading(input)} — ${TITLE_INTENT[input.kind]}`
+/** The whole `<title>`, site name included. */
+export const TITLE_MAX = 70
+
+export const mediaDocHeading = (input: MediaTitleInput) => {
+  const heading = mediaHeading(input)
+  const fitted = TITLE_INTENTS[input.kind]
+    .map((intent) => `${heading} — ${intent}`)
+    .find((candidate) => docTitle(candidate).length <= TITLE_MAX)
+  return fitted ?? heading
+}
 
 /**
  * The two rail headings on a detail page, which used to be the same eight

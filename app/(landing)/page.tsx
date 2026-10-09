@@ -31,7 +31,7 @@ import { SectionErrorBoundary } from '@/components/section-error-boundary'
 export const revalidate = false
 
 const HOME_DESCRIPTION =
-  'Discover trending movies and TV shows, track what you watch, and never miss a release. Reely brings the latest, top-rated, and popular titles into one seamless experience.'
+  'Discover trending movies and TV shows, track what you watch and never miss a release. The latest, top-rated and most popular titles, all in one place on Reely.'
 
 export const metadata: Metadata = {
   // Absolute, so the root template does not append "| Reely" to a title that

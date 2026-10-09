@@ -33,9 +33,22 @@ const first = (html, re) => re.exec(html)?.[1] ?? null
 const robotsOf = (html) => first(html, /<meta name="robots" content="([^"]*)"/i)
 const descOf = (html) =>
   first(html, /<meta name="description" content="([^"]*)"/i) ?? ''
-// What Bing calls "too short". It reported 53 pages at this, all of them detail
-// pages whose TMDB overview is one line — see lib/seo-description.ts.
-const MIN_DESCRIPTION = 110
+// Bing's window. It reported 53 pages "too short" at 110 (one-line TMDB
+// overviews), then 95 more at 2026-10-09 against a floor of 150 — genre and
+// year hubs, the legal pages, person pages. See lib/seo-description.ts.
+const MIN_DESCRIPTION = 150
+const MAX_DESCRIPTION = 160
+// Bing's "Title too long" (High severity) — lib/seo-title.ts TITLE_MAX.
+const MAX_TITLE = 70
+/** The text a crawler reads, not the bytes: `&amp;` is one character. */
+const decode = (text) =>
+  text
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;|&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+const titleOf = (html) => decode(first(html, /<title>([^<]*)<\/title>/i) ?? '')
 const canonicalOf = (html) =>
   first(html, /<link rel="canonical" href="([^"]*)"/i)
 const h1sOf = (html) =>
@@ -95,7 +108,7 @@ for (const path of [...new Set(INDEXABLE)]) {
   const robots = robotsOf(html) ?? ''
   const canonical = canonicalOf(html)
   const h1s = h1sOf(html)
-  const description = descOf(html)
+  const description = decode(descOf(html))
   const wantCanonical = `${ORIGIN.replace('https://', 'https://www.')}${path === '/' ? '' : path}`
   const ok =
     status === 200 &&
@@ -107,6 +120,47 @@ for (const path of [...new Set(INDEXABLE)]) {
     `indexable  ${path}`,
     ok,
     `${status} robots="${robots}" h1=${h1s.length} desc=${description.length} canonical=${canonical === wantCanonical ? 'self' : canonical}`
+  )
+}
+
+// ---- snippet lengths -------------------------------------------------------
+// Every page template that writes its own description, once each. Detail and
+// tail pages are covered by INDEXABLE above; these are the hand-written ones
+// that drifted out of the window without anything noticing.
+const SNIPPET_PAGES = [
+  ...INDEXABLE,
+  '/tv-shows/genre/kids',
+  '/movies/genre/war',
+  '/movies/year/2020',
+  '/tv-shows/year/2020',
+  '/people',
+  '/start',
+  '/mood',
+  '/reels',
+  '/match-night',
+  '/watch-together',
+  '/support',
+  '/disclaimer',
+  '/privacy',
+  '/terms',
+  '/dmca',
+  ...locs
+    .map((u) => new URL(u).pathname)
+    .filter((p) => p.startsWith('/person/'))
+    .slice(0, 3),
+]
+
+for (const path of [...new Set(SNIPPET_PAGES)]) {
+  const { status, html } = await get(path)
+  const description = decode(descOf(html))
+  const title = titleOf(html)
+  check(
+    `snippet    ${path}`,
+    status === 200 &&
+      description.length >= MIN_DESCRIPTION &&
+      description.length <= MAX_DESCRIPTION &&
+      title.length <= MAX_TITLE,
+    `desc=${description.length} (${MIN_DESCRIPTION}-${MAX_DESCRIPTION}) title=${title.length} (<=${MAX_TITLE})`
   )
 }
 

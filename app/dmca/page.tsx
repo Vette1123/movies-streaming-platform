@@ -4,7 +4,7 @@ import { Metadata } from 'next'
 import { siteConfig } from '@/config/site'
 import { DmcaContent } from '@/components/disclaimer/dmca-content'
 
-const DESCRIPTION = `How to report copyrighted material on ${siteConfig.name}, what happens after a report arrives, and how long it takes.`
+const DESCRIPTION = `How to report copyrighted material on ${siteConfig.name}, what a takedown notice needs to include, what happens after a report arrives, and how long a response takes.`
 
 export const metadata: Metadata = {
   title: 'Copyright & takedown requests',

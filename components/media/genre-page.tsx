@@ -15,6 +15,7 @@ import {
   TV_GENRES_WITH_SLUG,
 } from '@/lib/genres'
 import { toListEntries } from '@/lib/media'
+import { genreDescription } from '@/lib/seo-description'
 import {
   breadcrumbJsonLd,
   collectionPageJsonLd,
@@ -51,8 +52,7 @@ export const MOVIE_GENRE_PAGE_CONFIG: GenrePageConfig = {
   genres: MOVIE_GENRES_WITH_SLUG,
   findBySlug: findMovieGenreBySlug,
   discover: discoverMovies,
-  metaDescription: (name) =>
-    `Watch the most popular ${name.toLowerCase()} movies. Browse top-rated and trending ${name.toLowerCase()} films with ratings, trailers and where to stream them, on Reely.`,
+  metaDescription: (name) => genreDescription(name, 'movie'),
 }
 
 export const TV_GENRE_PAGE_CONFIG: GenrePageConfig = {
@@ -64,8 +64,7 @@ export const TV_GENRE_PAGE_CONFIG: GenrePageConfig = {
   genres: TV_GENRES_WITH_SLUG,
   findBySlug: findTvGenreBySlug,
   discover: discoverSeries,
-  metaDescription: (name) =>
-    `Watch the most popular ${name.toLowerCase()} TV shows. Browse top-rated and trending ${name.toLowerCase()} series with ratings, trailers and where to watch, on Reely.`,
+  metaDescription: (name) => genreDescription(name, 'series'),
 }
 
 export function genreStaticParams(config: GenrePageConfig) {

@@ -2,11 +2,17 @@ import { describe, expect, it } from 'vitest'
 
 import type { Credit } from '@/types/credit'
 import { castNames, crewNamesByJob, trimCredits } from '@/lib/credits'
+import { MOVIE_GENRES_WITH_SLUG, TV_GENRES_WITH_SLUG } from '@/lib/genres'
 import {
   collectionDescription,
+  genreDescription,
+  MAX_LENGTH,
   mediaDescription,
+  MIN_LENGTH,
+  personDescription,
   trimBiography,
 } from '@/lib/seo-description'
+import { docTitle, mediaDocHeading, TITLE_MAX } from '@/lib/seo-title'
 import { itemListJsonLd, movieJsonLd } from '@/lib/structured-data'
 import { listSentence } from '@/lib/utils'
 import { FIRST_YEAR, isValidYear } from '@/components/media/year-page'
@@ -181,8 +187,8 @@ describe('mediaDescription', () => {
 
   it('fills the slot when TMDB has no overview at all', () => {
     const description = mediaDescription({ ...base, overview: undefined })
-    expect(description.length).toBeGreaterThanOrEqual(120)
-    expect(description.length).toBeLessThanOrEqual(158)
+    expect(description.length).toBeGreaterThanOrEqual(MIN_LENGTH)
+    expect(description.length).toBeLessThanOrEqual(MAX_LENGTH)
     expect(description).toContain('Forbidden Daughters (1927)')
     expect(description).toContain('drama, romance movie')
   })
@@ -192,14 +198,14 @@ describe('mediaDescription', () => {
       ...base,
       overview: 'Japanese nunsploitation movie from 1998',
     })
-    expect(description.length).toBeGreaterThanOrEqual(120)
-    expect(description.length).toBeLessThanOrEqual(158)
+    expect(description.length).toBeGreaterThanOrEqual(MIN_LENGTH)
+    expect(description.length).toBeLessThanOrEqual(MAX_LENGTH)
     expect(description).toContain('Japanese nunsploitation movie from 1998.')
   })
 
   it('leaves a long overview alone, cut on a word boundary', () => {
     const description = mediaDescription({ ...base, overview: LONG_OVERVIEW })
-    expect(description.length).toBeLessThanOrEqual(158)
+    expect(description.length).toBeLessThanOrEqual(MAX_LENGTH)
     expect(description.endsWith('…')).toBe(true)
     // The old slice(0, 200) ended '...do not e'. Nothing may be cut mid-word.
     expect(LONG_OVERVIEW).toContain(description.slice(0, -1))
@@ -212,7 +218,7 @@ describe('mediaDescription', () => {
         ...base,
         overview: 'word '.repeat(Math.ceil(length / 5)).slice(0, length),
       })
-      expect(description.length).toBeLessThanOrEqual(158)
+      expect(description.length).toBeLessThanOrEqual(MAX_LENGTH)
       // An ellipsis is only ever the synopsis being trimmed — the closing
       // sentence is either present whole or not at all.
       expect(description).not.toMatch(/on Reel…?$/)
@@ -231,13 +237,121 @@ describe('mediaDescription', () => {
     expect(description).toContain('House of Rock — series.')
     expect(description).not.toMatch(/\s{2}/)
   })
+
+  // Bing, 2026-10-09: 95 pages "too short". "Stupor Mundi (1997) — history,
+  // drama movie." fell between two offers and came out at 123.
+  it('lands in the 150-160 window for every title and synopsis length', () => {
+    for (let titleLength = 1; titleLength <= 60; titleLength++) {
+      for (let overview = 0; overview <= 260; overview += 7) {
+        const description = mediaDescription({
+          title: 'T'.repeat(titleLength),
+          year: '2001',
+          kind: titleLength % 2 ? 'movie' : 'series',
+          genres: titleLength % 3 ? ['History', 'Drama'] : undefined,
+          overview: 'word '.repeat(60).slice(0, overview),
+        })
+        expect(description.length, description).toBeGreaterThanOrEqual(
+          MIN_LENGTH
+        )
+        expect(description.length, description).toBeLessThanOrEqual(MAX_LENGTH)
+      }
+    }
+  })
+})
+
+describe('genreDescription', () => {
+  it.each([
+    ...MOVIE_GENRES_WITH_SLUG.map((g) => [g.name, 'movie'] as const),
+    ...TV_GENRES_WITH_SLUG.map((g) => [g.name, 'series'] as const),
+  ])('%s (%s) lands in the 150-160 window', (name, kind) => {
+    const description = genreDescription(name, kind)
+    expect(description.length, description).toBeGreaterThanOrEqual(MIN_LENGTH)
+    expect(description.length, description).toBeLessThanOrEqual(MAX_LENGTH)
+    expect(description).toContain(name.toLowerCase())
+  })
+})
+
+describe('personDescription', () => {
+  it('lands in the window for short and long names and credits', () => {
+    const cases: [string, string[]][] = [
+      ['Al', ['Up']],
+      ['Al', []],
+      ['Maria Grazia Cucinotta', []],
+      ['Tom Hanks', ['Forrest Gump', 'Cast Away', 'Big']],
+      [
+        'Sarah Michelle Gellar',
+        [
+          'Buffy the Vampire Slayer',
+          'I Know What You Did Last Summer',
+          'Scooby-Doo 2: Monsters Unleashed',
+        ],
+      ],
+    ]
+    for (const [name, known] of cases) {
+      const description = personDescription(name, known)
+      expect(description.length, description).toBeGreaterThanOrEqual(MIN_LENGTH)
+      expect(description.length, description).toBeLessThanOrEqual(MAX_LENGTH)
+      expect(description).toContain(name)
+    }
+  })
+
+  it('drops a trailing credit rather than cutting one in half', () => {
+    const description = personDescription('Sarah Michelle Gellar', [
+      'Buffy the Vampire Slayer',
+      'I Know What You Did Last Summer',
+      'The Grudge',
+    ])
+    expect(description).toContain('Buffy the Vampire Slayer')
+    expect(description.endsWith('…')).toBe(false)
+  })
+})
+
+describe('mediaDocHeading', () => {
+  it('keeps the full search modifiers when they fit', () => {
+    expect(
+      mediaDocHeading({ title: 'Power', year: '2014', kind: 'series' })
+    ).toBe('Power (2014) — Seasons, Cast & Where to Watch')
+  })
+
+  // Bing, 2026-10-09: "Title too long" (High) on /tv-shows/331756, 91 chars.
+  it('drops to the short modifier before the title passes 70', () => {
+    const heading = mediaDocHeading({
+      title: 'My Years as the Dragon-Seeking Master',
+      year: '2026',
+      kind: 'series',
+    })
+    expect(heading).toBe(
+      'My Years as the Dragon-Seeking Master (2026) — Where to Watch'
+    )
+    expect(docTitle(heading).length).toBeLessThanOrEqual(TITLE_MAX)
+  })
+
+  it('never cuts the name itself', () => {
+    const title =
+      '李志 - 2016北京降噪Ⅳ摇滚·民谣系列音乐会专场 and a very long subtitle'
+    expect(mediaDocHeading({ title, year: '2016', kind: 'movie' })).toBe(
+      `${title} (2016)`
+    )
+  })
+
+  it('fits every title whose bare name fits', () => {
+    // 55 + " (2001)" + " | Reely" = 70. Past that only the name is left.
+    for (let length = 1; length <= 55; length++) {
+      const heading = mediaDocHeading({
+        title: 'T'.repeat(length),
+        year: '2001',
+        kind: 'movie',
+      })
+      expect(docTitle(heading).length).toBeLessThanOrEqual(TITLE_MAX)
+    }
+  })
 })
 
 describe('collectionDescription', () => {
   it('fills the slot for the franchise pages TMDB leaves blank', () => {
     const description = collectionDescription('Lilo & Stitch Collection', '')
-    expect(description.length).toBeGreaterThanOrEqual(120)
-    expect(description.length).toBeLessThanOrEqual(158)
+    expect(description.length).toBeGreaterThanOrEqual(MIN_LENGTH)
+    expect(description.length).toBeLessThanOrEqual(MAX_LENGTH)
     expect(description).toContain('The Lilo & Stitch Collection, complete.')
     expect(description.endsWith('on Reely.')).toBe(true)
   })
@@ -250,7 +364,18 @@ describe('collectionDescription', () => {
     expect(description.startsWith('The crew of a commercial towing ship')).toBe(
       true
     )
-    expect(description.length).toBeLessThanOrEqual(158)
+    expect(description.length).toBeLessThanOrEqual(MAX_LENGTH)
+  })
+
+  it('lands in the window for every franchise name length', () => {
+    for (let length = 1; length <= 50; length++) {
+      const description = collectionDescription(
+        `${'N'.repeat(length)} Collection`,
+        ''
+      )
+      expect(description.length, description).toBeGreaterThanOrEqual(MIN_LENGTH)
+      expect(description.length, description).toBeLessThanOrEqual(MAX_LENGTH)
+    }
   })
 })
 

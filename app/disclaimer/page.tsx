@@ -4,7 +4,7 @@ import { Metadata } from 'next'
 import { siteConfig } from '@/config/site'
 import { DisclaimerContent } from '@/components/disclaimer/disclaimer-content'
 
-const DESCRIPTION = `Legal disclaimer for ${siteConfig.name}: where the film and TV information comes from, who owns the rights to it, and what this site is and is not responsible for.`
+const DESCRIPTION = `Legal disclaimer for ${siteConfig.name}: where the film and TV information on this site comes from, who owns the rights to it, and what ${siteConfig.name} is and is not responsible for.`
 
 export const metadata: Metadata = {
   title: 'Disclaimer',

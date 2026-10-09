@@ -5,7 +5,7 @@ import { siteConfig } from '@/config/site'
 export const metadata: Metadata = {
   title: 'Reels — trailer feed',
   description:
-    'Swipe through trending trailers and start watching in one tap. A full-screen feed of what is worth your next two hours.',
+    'Swipe through trending trailers and start watching in one tap. A full-screen feed of new and popular movies and shows worth your next two hours, on Reely.',
   alternates: { canonical: '/reels' },
   openGraph: {
     title: 'Reels — trailer feed',

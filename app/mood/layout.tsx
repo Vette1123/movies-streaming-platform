@@ -5,7 +5,7 @@ import { siteConfig } from '@/config/site'
 export const metadata: Metadata = {
   title: "What's your mood?",
   description:
-    'Pick a mood — cozy, adrenaline, mind-bending, scare me — and get a hand-tuned stack of movies and shows that fit it right now.',
+    'Pick a mood — cozy, adrenaline, mind-bending, scare me — and get a hand-tuned stack of movies and shows that fit it right now, with trailers and where to watch.',
   alternates: { canonical: '/mood' },
   openGraph: {
     title: "What's your mood?",

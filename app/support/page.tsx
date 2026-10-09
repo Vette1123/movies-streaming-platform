@@ -23,7 +23,7 @@ import { SupporterCount } from '@/components/support/supporter-count'
 
 export const metadata: Metadata = {
   title: pageTitle(`Support ${siteConfig.name}`),
-  description: `Reely is free and stays free. Supporting it keeps your library on every device, unlocks lists, alerts and more, and pays for the running costs.`,
+  description: `Reely is free and stays free. Supporting it keeps your library on every device, unlocks lists, alerts and more, and pays for the servers that keep it running.`,
   alternates: { canonical: '/support' },
   openGraph: {
     title: `Support ${siteConfig.name}`,

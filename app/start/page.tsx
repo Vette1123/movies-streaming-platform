@@ -8,7 +8,7 @@ import { TastePicker } from '@/components/start/taste-picker'
 
 export const metadata: Metadata = {
   title: 'What should I watch?',
-  description: `Pick a few films and shows you like and ${siteConfig.name} works out what to watch next — no account, no sign-up, no waiting.`,
+  description: `Pick a few films and shows you like and ${siteConfig.name} works out what to watch next — no account, no sign-up, no waiting. Personal picks in under a minute, for free.`,
   alternates: { canonical: '/start' },
 }
 

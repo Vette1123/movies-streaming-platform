@@ -5,7 +5,7 @@ import { getPeopleWithPages, populatePersonPage } from '@/services/people'
 
 import { siteConfig } from '@/config/site'
 import { toListEntries } from '@/lib/media'
-import { trimBiography } from '@/lib/seo-description'
+import { personDescription, trimBiography } from '@/lib/seo-description'
 import {
   breadcrumbJsonLd,
   itemListJsonLd,
@@ -55,13 +55,10 @@ export async function generateMetadata(props: {
   const known = credits
     .slice(0, 3)
     .map((credit) => credit.title || credit.name)
-    .filter(Boolean)
-    .join(', ')
+    .filter((title): title is string => Boolean(title))
   // The description is what a search result shows, so it answers the query
   // somebody actually typed: what this person has been in.
-  const description = known
-    ? `Every film and series ${person.name} has been in, including ${known}. Ratings, streaming, and what to watch next.`
-    : `Films and series featuring ${person.name} on ${siteConfig.name}.`
+  const description = personDescription(person.name, known)
 
   return {
     title: `${person.name} — movies and TV shows`,
