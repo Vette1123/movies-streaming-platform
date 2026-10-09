@@ -11,6 +11,7 @@ import {
   trackMediaPlayed,
 } from '@/lib/analytics'
 import { isTitleBlocked } from '@/lib/blocked-titles'
+import { notePlayForSupportNudge } from '@/lib/support-nudge'
 import { useAccount } from '@/hooks/use-account'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { useSeasonEpisodes } from '@/hooks/use-season-episodes'
@@ -131,6 +132,7 @@ export const SeriesDetailsHero = ({
       if (playedKeyRef.current === key) return
       playedKeyRef.current = key
       if (target && options?.track) {
+        notePlayForSupportNudge()
         trackMediaPlayed({
           ...buildMediaEventBase(series, 'tv'),
           season: target.season,

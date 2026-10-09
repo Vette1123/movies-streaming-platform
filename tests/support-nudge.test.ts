@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { shouldNudge } from '@/lib/support-nudge'
+import {
+  shouldArmOnPlay,
+  shouldNudge,
+  shouldShowArmed,
+} from '@/lib/support-nudge'
 
 /**
  * The one place Reely asks for money without being asked first. Everything else
@@ -38,5 +42,53 @@ describe('shouldNudge', () => {
   it('ignores a watchlist that has gone backwards', () => {
     expect(at(0)).toBe(false)
     expect(at(-1)).toBe(false)
+  })
+})
+
+/**
+ * The play trigger. A third saved title reached two people in 38 days; the
+ * third play is where most visitors actually are.
+ */
+describe('shouldArmOnPlay', () => {
+  const play = (
+    playCount: number,
+    extra: Partial<Parameters<typeof shouldArmOnPlay>[0]> = {}
+  ) =>
+    shouldArmOnPlay({ playCount, pro: false, alreadyNudged: false, ...extra })
+
+  it('arms on the third play, not before or after', () => {
+    expect(play(2)).toBe(false)
+    expect(play(3)).toBe(true)
+    expect(play(4)).toBe(false)
+  })
+
+  it('never arms for a supporter, or after the one ask was spent', () => {
+    expect(play(3, { pro: true })).toBe(false)
+    expect(play(3, { alreadyNudged: true })).toBe(false)
+  })
+})
+
+describe('shouldShowArmed', () => {
+  const show = (extra: Partial<Parameters<typeof shouldShowArmed>[0]> = {}) =>
+    shouldShowArmed({
+      armed: true,
+      alreadyNudged: false,
+      pro: false,
+      playerOpen: false,
+      ...extra,
+    })
+
+  it('speaks once armed and nothing is playing', () => {
+    expect(show()).toBe(true)
+  })
+
+  it('never speaks over a playing title', () => {
+    expect(show({ playerOpen: true })).toBe(false)
+  })
+
+  it('stays quiet unarmed, already asked, or for a supporter', () => {
+    expect(show({ armed: false })).toBe(false)
+    expect(show({ alreadyNudged: true })).toBe(false)
+    expect(show({ pro: true })).toBe(false)
   })
 })

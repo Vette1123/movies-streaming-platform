@@ -2,9 +2,20 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { AlertTriangle, ChevronDown, Server, Sparkles } from 'lucide-react'
+import {
+  AlertTriangle,
+  ChevronDown,
+  LogIn,
+  Server,
+  Sparkles,
+} from 'lucide-react'
 
-import { HAS_FALLBACK_SOURCE, REELY_SOURCE_ID } from '@/config/sources'
+import {
+  HAS_FALLBACK_SOURCE,
+  REELY_SOURCE_ID,
+  RICH_SOURCE,
+} from '@/config/sources'
+import { signInHref } from '@/lib/account'
 import { trackPlayerFailed, trackSupportCtaClicked } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 import { type StreamSourceControl } from '@/hooks/use-stream-source'
@@ -99,11 +110,65 @@ function StallNotice({ children }: { children: React.ReactNode }) {
  * a different icon, a different name, a line of copy and a heading separating
  * it from the servers — a fifth signal there is decoration.
  */
-function ProMark() {
+function ProMark({ label = 'PRO' }: { label?: string }) {
   return (
     <span className="rounded-full bg-black/35 px-1.5 py-px text-[9px] leading-tight font-bold tracking-wider text-white/95">
-      PRO
+      {label}
     </span>
+  )
+}
+
+/** The house gradient, shared by the trigger and the trial offer. */
+const HOUSE_GRADIENT =
+  'bg-linear-to-r from-amber-500 via-rose-500 to-fuchsia-600 text-white ring-1 ring-white/25 ring-inset shadow-[0_1px_10px_-3px_rgba(244,63,94,0.55)]'
+
+const PILL_FOCUS =
+  'focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/60 focus-visible:outline-hidden'
+
+/**
+ * The offer that replaced "Supporters get backup servers".
+ *
+ * That line sold the wrong thing to the wrong people: backup servers are free
+ * with an account, so it asked for money for what a sign-in gives away. What
+ * support actually buys is the Reely Player, and the moment a free server has
+ * just failed is the one moment showing it beats describing it - so this plays
+ * the title on it, once a day, instead of linking to a page about it.
+ */
+function TrialOffer({
+  status,
+  onStart,
+}: {
+  status: 'available' | 'used'
+  onStart: () => void
+}) {
+  if (status === 'available') {
+    return (
+      <button
+        type="button"
+        onClick={onStart}
+        className={cn(
+          'tap-target pointer-events-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-semibold transition-shadow hover:shadow-[0_2px_14px_-3px_rgba(244,63,94,0.8)]',
+          HOUSE_GRADIENT,
+          PILL_FOCUS
+        )}
+      >
+        <Sparkles className="size-3.5 shrink-0" aria-hidden />
+        Watch free on the Reely Player
+      </button>
+    )
+  }
+  return (
+    <Link
+      href="/support"
+      onClick={() => trackSupportCtaClicked({ surface: 'player_stall' })}
+      className={cn(
+        'tap-target pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 font-semibold text-black transition-colors hover:bg-white/90',
+        PILL_FOCUS
+      )}
+    >
+      <Sparkles className="size-3.5 shrink-0" aria-hidden />
+      Get the Reely Player on every title
+    </Link>
   )
 }
 
@@ -129,6 +194,16 @@ function triggerClass(onHouse: boolean, open: boolean): string {
     'font-medium text-white/90 hover:bg-white/15 hover:text-white',
     open && 'bg-white/15 text-white'
   )
+}
+
+/** What the house row says, by where this visitor stands with it. */
+function houseSubtitleFor(
+  status: 'available' | 'active' | 'used' | 'none'
+): string {
+  if (status === 'available') return 'Free on one title today'
+  if (status === 'active') return 'Free today on this title'
+  if (status === 'used') return 'Free again tomorrow. Support for every title'
+  return 'Subtitles, quality and resume'
 }
 
 export function SourceSwitcher({
@@ -196,7 +271,42 @@ export function SourceSwitcher({
   // moment it stalls is the one moment the offer is genuinely useful, and it is
   // the most honest place on the site to make it: this is the problem, and that
   // is what fixes it.
+  const trial = control.trial
+  const onTrial = trial.status === 'active' && source.id === REELY_SOURCE_ID
+
   if (!control.canSwitch) {
+    // Watching today's free title: say what this is and what it costs to keep,
+    // once, in the band above the picture rather than over it.
+    if (onTrial) {
+      return (
+        <div className={cn('flex justify-center px-4 text-xs', className)}>
+          <Bar>
+            <span
+              className={cn(
+                'inline-flex h-8 items-center gap-1.5 rounded-full px-3 font-semibold',
+                HOUSE_GRADIENT
+              )}
+            >
+              <Sparkles className="size-3.5 shrink-0" aria-hidden />
+              Reely Player
+              <ProMark label="FREE TODAY" />
+            </span>
+            <Link
+              href="/support"
+              onClick={() =>
+                trackSupportCtaClicked({ surface: 'player_trial' })
+              }
+              className={cn(
+                'tap-target inline-flex h-8 items-center rounded-full px-3 font-medium whitespace-nowrap text-white/90 hover:bg-white/15 hover:text-white',
+                PILL_FOCUS
+              )}
+            >
+              Every title
+            </Link>
+          </Bar>
+        </div>
+      )
+    }
     if (!showWarning) return null
     return (
       <div
@@ -206,14 +316,27 @@ export function SourceSwitcher({
         )}
       >
         <StallNotice>This server is not responding</StallNotice>
-        <Link
-          href="/support"
-          onClick={() => trackSupportCtaClicked({ surface: 'player_stall' })}
-          className="tap-target pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 font-semibold text-black transition-colors hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/60 focus-visible:outline-hidden"
-        >
-          <Server className="size-3.5 shrink-0" aria-hidden />
-          Supporters get backup servers
-        </Link>
+        <div className="flex flex-wrap items-center justify-center gap-1.5">
+          {trial.status === 'available' || trial.status === 'used' ? (
+            <TrialOffer status={trial.status} onStart={trial.start} />
+          ) : null}
+          {/* Backup servers are free with an account - so that is how they
+              are offered, not sold. */}
+          <a
+            href={signInHref(
+              typeof window === 'undefined'
+                ? undefined
+                : window.location.pathname
+            )}
+            className={cn(
+              'tap-target pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-black/75 px-3 py-1.5 font-medium text-white ring-1 ring-white/15 backdrop-blur-md transition-colors hover:bg-black/90',
+              PILL_FOCUS
+            )}
+          >
+            <LogIn className="size-3.5 shrink-0" aria-hidden />
+            Sign in for more servers
+          </a>
+        </div>
       </div>
     )
   }
@@ -222,10 +345,16 @@ export function SourceSwitcher({
   // the list on its own rather than sitting in a run of Server N. Found by id
   // rather than taken from position 0: the order the tier hands us is a fact
   // about entitlement, not something this list should depend on.
-  const house = sources.find((entry) => entry.id === REELY_SOURCE_ID)
+  // Supporters have the player in their list. A free account sees it too, as
+  // today's trial (or, once spent, as the way to keep it) - the row that makes
+  // the case for support by being the thing support buys.
+  const house =
+    sources.find((entry) => entry.id === REELY_SOURCE_ID) ??
+    (trial.status === 'none' ? undefined : (RICH_SOURCE ?? undefined))
   const embeds = sources.filter((entry) => entry.id !== REELY_SOURCE_ID)
   const onHouse = source.id === REELY_SOURCE_ID
   const TriggerIcon = onHouse ? Sparkles : Server
+  const houseSubtitle = houseSubtitleFor(trial.status)
 
   return (
     <div
@@ -240,6 +369,9 @@ export function SourceSwitcher({
             ? 'That server did not respond. Trying another'
             : 'This server is not responding'}
         </StallNotice>
+      ) : null}
+      {showWarning && !onHouse && trial.status === 'available' ? (
+        <TrialOffer status="available" onStart={trial.start} />
       ) : null}
 
       <Bar>
@@ -268,7 +400,9 @@ export function SourceSwitcher({
               ) : null}
               <TriggerIcon className="size-3.5 shrink-0" aria-hidden />
               <span className="truncate">{source.label}</span>
-              {onHouse ? <ProMark /> : null}
+              {onHouse ? (
+                <ProMark label={onTrial ? 'FREE TODAY' : 'PRO'} />
+              ) : null}
               <ChevronDown
                 aria-hidden
                 className={cn(
@@ -291,14 +425,27 @@ export function SourceSwitcher({
             <div role="group" aria-label="Streaming server">
               {house ? (
                 <>
-                  <PopoverRow
-                    Icon={Sparkles}
-                    iconClassName="text-fuchsia-400"
-                    title={house.label}
-                    subtitle="Subtitles, quality and resume"
-                    pressed={house.id === source.id}
-                    onClick={() => select(house.id)}
-                  />
+                  {trial.status === 'used' && !onHouse ? (
+                    <PopoverRow
+                      Icon={Sparkles}
+                      iconClassName="text-fuchsia-400"
+                      title={house.label}
+                      subtitle={houseSubtitle}
+                      href="/support"
+                      onClick={() =>
+                        trackSupportCtaClicked({ surface: 'server_menu' })
+                      }
+                    />
+                  ) : (
+                    <PopoverRow
+                      Icon={Sparkles}
+                      iconClassName="text-fuchsia-400"
+                      title={house.label}
+                      subtitle={houseSubtitle}
+                      pressed={house.id === source.id}
+                      onClick={() => select(house.id)}
+                    />
+                  )}
                   <PopoverHeading>Other servers</PopoverHeading>
                 </>
               ) : null}

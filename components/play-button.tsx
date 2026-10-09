@@ -6,6 +6,7 @@ import { MovieDetails } from '@/types/movie-details'
 import { SeriesDetails } from '@/types/series-details'
 import { buildMediaEventBase, trackMediaPlayed } from '@/lib/analytics'
 import { getMediaTitle } from '@/lib/media'
+import { notePlayForSupportNudge } from '@/lib/support-nudge'
 import { cn } from '@/lib/utils'
 import { readSeasonEpisodeParams } from '@/hooks/use-search-params'
 import { useWatchedMedia } from '@/hooks/use-watched-media'
@@ -51,6 +52,7 @@ export function PlayButton({
     const isMovie = 'title' in media && !!media.title
     const season = target?.season || seasonQueryINT || 1
     const episode = target?.episode || episodeQueryINT || 1
+    notePlayForSupportNudge()
     trackMediaPlayed({
       ...buildMediaEventBase(media, isMovie ? 'movie' : 'tv'),
       ...(isMovie ? {} : { season, episode, is_resume: Boolean(isResume) }),

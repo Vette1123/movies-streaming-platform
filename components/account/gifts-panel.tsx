@@ -1,11 +1,15 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Check, Copy, Gift, Plus, Users } from 'lucide-react'
+import { Check, Copy, Gift, Plus, Share2, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { siteConfig } from '@/config/site'
+import { trackInviteShared } from '@/lib/analytics'
 import { REFERRALS_PER_MONTH } from '@/lib/billing/gifts'
+import { invitePath } from '@/lib/invite'
 import { useAccount } from '@/hooks/use-account'
+import { useShare } from '@/hooks/use-share'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -23,6 +27,9 @@ interface Overview {
   referrals: number
   earned: number
   toNext: number
+  /** Absent only if the Worker predates invite links. */
+  inviteCode?: string
+  maxMonths?: number
 }
 
 /**
@@ -34,7 +41,8 @@ interface Overview {
  *
  * Redeeming is open to everyone, including people who have never paid. It has to
  * be: being given a month is how somebody finds out what they would be paying
- * for.
+ * for. So is the invite link, for the same reason: three friends in is how a
+ * free account gets a month of everything without paying.
  */
 export function GiftsPanel() {
   const { pro, signedIn } = useAccount()
@@ -107,19 +115,21 @@ export function GiftsPanel() {
         onRedeem={(code) => send({ action: 'redeem', code })}
       />
 
+      <Referrals
+        referrals={data.referrals}
+        earned={data.earned}
+        toNext={data.toNext}
+        inviteCode={data.inviteCode}
+        maxMonths={data.maxMonths}
+        pro={pro === true}
+      />
+
       {pro && (
-        <>
-          <GiveAway
-            codes={data.codes}
-            busy={busy}
-            onMint={() => send({ action: 'mint' })}
-          />
-          <Referrals
-            referrals={data.referrals}
-            earned={data.earned}
-            toNext={data.toNext}
-          />
-        </>
+        <GiveAway
+          codes={data.codes}
+          busy={busy}
+          onMint={() => send({ action: 'mint' })}
+        />
       )}
     </div>
   )
@@ -247,24 +257,35 @@ function Referrals({
   referrals,
   earned,
   toNext,
+  inviteCode,
+  maxMonths,
+  pro,
 }: {
   referrals: number
   earned: number
   toNext: number
+  inviteCode?: string
+  maxMonths?: number
+  pro: boolean
 }) {
+  const capped = maxMonths !== undefined && earned >= maxMonths
+
   return (
     <section className="space-y-3 border-t pt-6">
       <div>
         <p className="flex items-center gap-2 text-sm font-medium">
           <Users className="size-4" />
-          People who joined from your page
+          Invite {REFERRALS_PER_MONTH} friends, get a month free
         </p>
         <p className="mt-1 max-w-[62ch] text-sm leading-relaxed text-muted-foreground">
-          Every {REFERRALS_PER_MONTH} sign-ups from your public page is a free
-          month, added automatically. Nothing to claim and nothing to chase — it
-          is on your account the moment the third person joins.
+          Every {REFERRALS_PER_MONTH} people who make an account from your link
+          {pro ? ' or your public page' : ''} is a month of everything
+          supporters get, added automatically
+          {maxMonths ? `, up to ${maxMonths} months` : ''}. Nothing to claim and
+          no card.
         </p>
       </div>
+      {inviteCode && <InviteLink code={inviteCode} />}
       <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
         <Figure value={referrals} label="signed up" />
         <Figure
@@ -272,10 +293,43 @@ function Referrals({
           label={earned === 1 ? 'month earned' : 'months earned'}
         />
         <p className="text-sm text-muted-foreground">
-          {toNext} more for the next one.
+          {capped
+            ? 'That is every month invites can earn. Thank you.'
+            : `${toNext} more for the next one.`}
         </p>
       </div>
     </section>
+  )
+}
+
+/** Through `useShare`: a phone gets the native sheet, a desktop the clipboard. */
+function InviteLink({ code }: { code: string }) {
+  const { share } = useShare()
+  const path = invitePath(code)
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <code className="max-w-full truncate rounded-md bg-muted px-3 py-2 font-mono text-sm">
+        {siteConfig.websiteURL}
+        {path}
+      </code>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={async () => {
+          const native = await share({
+            title: 'Reely',
+            path,
+            text: 'Films and shows, free. Make an account with my link:',
+            copied: 'Invite link copied.',
+          })
+          trackInviteShared({ method: native ? 'share' : 'copy' })
+        }}
+      >
+        <Share2 className="mr-2 size-4" />
+        Share invite link
+      </Button>
+    </div>
   )
 }
 

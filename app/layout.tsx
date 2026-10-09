@@ -21,8 +21,10 @@ import { AccountBoot } from '@/components/account/account-boot'
 import { IconSprite } from '@/components/icon-sprite'
 import { Footer } from '@/components/layouts/footer'
 import { SiteHeader } from '@/components/layouts/site-header'
+import { InviteCapture } from '@/components/profile/referral-cookie'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register'
+import { SupportNudgeHost } from '@/components/support/support-nudge-host'
 import { APPLE_SPLASH } from '@/app/_icons/apple-splash'
 import { versionedIcon } from '@/app/_icons/version'
 
@@ -359,6 +361,8 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <ToastProvider />
           <ServiceWorkerRegister />
           <InstallPrompt />
+          <SupportNudgeHost />
+          <InviteCapture />
           {/* Renders nothing: library sync + appearance, mounted once. */}
           <AccountBoot />
         </div>

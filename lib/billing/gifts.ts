@@ -4,7 +4,8 @@
  * Both are the same transaction seen from two sides: an account spends
  * something to put time on another account. A gift is deliberate — a supporter
  * mints a code and sends it. A referral is automatic — somebody signs up from
- * your public page, and at REFERRALS_PER_MONTH of them you get a month.
+ * your invite link (or your public page), and at REFERRALS_PER_MONTH of them
+ * you get a month. Referrals are open to free accounts too.
  *
  * The money is not involved in either. Nothing is charged, nothing recurs, and
  * no processor hears about it: both end up in `grantMonths`, which writes the
@@ -14,6 +15,8 @@
 import { loadSession, sessionCookieOf } from '@/lib/auth/session'
 import { isEntitled } from '@/lib/billing/entitlement'
 import { grantMonths } from '@/lib/billing/months'
+import { mintInviteCode, parseInviteCode } from '@/lib/invite'
+import { normaliseHandle } from '@/lib/profile/routes'
 
 /** One month per code. Simple to explain, simple to mint, hard to game. */
 export const GIFT_MONTHS = 1
@@ -21,6 +24,15 @@ export const GIFT_MONTHS = 1
 export const MAX_LIVE_CODES = 5
 /** Sign-ups from your page that earn you a month. */
 export const REFERRALS_PER_MONTH = 3
+/**
+ * The most months referrals ever earn one account.
+ *
+ * ponytail: free accounts can refer now, and a Google account costs nothing,
+ * so three throwaways would otherwise be a month forever. Six months bounds the
+ * worst case; the upgrade path is crediting a referral only once the new
+ * account has done something (a play, a save) rather than on account creation.
+ */
+export const MAX_REFERRAL_MONTHS = 6
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
 const CODE_LENGTH = 10
@@ -53,6 +65,53 @@ export function normaliseCode(value: unknown): string | null {
   if (code.length !== CODE_LENGTH) return null
   if (![...code].every((char) => ALPHABET.includes(char))) return null
   return code
+}
+
+/** Whether the sign-up that took a referrer to `count` earns them a month. */
+export function referralEarnsMonth(count: number): boolean {
+  if (count <= 0 || count % REFERRALS_PER_MONTH !== 0) return false
+  return count / REFERRALS_PER_MONTH <= MAX_REFERRAL_MONTHS
+}
+
+/**
+ * Which column the referral cookie names somebody by.
+ *
+ * It carries either an invite code or a public handle; the two formats cannot
+ * overlap (a handle has no underscore), so the shape decides.
+ */
+export function referrerLookup(
+  raw: unknown
+): { column: 'invite_code' | 'handle'; value: string } | null {
+  const invite = parseInviteCode(raw)
+  if (invite) return { column: 'invite_code', value: invite }
+  const handle = normaliseHandle(raw)
+  return handle ? { column: 'handle', value: handle } : null
+}
+
+/**
+ * This account's invite code, minted the first time anybody asks for it.
+ *
+ * The conditional UPDATE means two tabs opening the panel at once agree on one
+ * code: the loser's write changes nothing and the read-back returns the winner.
+ */
+async function inviteCodeFor(db: D1Database, userId: string): Promise<string> {
+  const read = () =>
+    db
+      .prepare('SELECT invite_code FROM users WHERE id = ?')
+      .bind(userId)
+      .first<{ invite_code: string | null }>()
+
+  const existing = (await read())?.invite_code
+  if (existing) return existing
+
+  const code = mintInviteCode()
+  await db
+    .prepare(
+      'UPDATE users SET invite_code = ? WHERE id = ? AND invite_code IS NULL'
+    )
+    .bind(code, userId)
+    .run()
+  return (await read())?.invite_code ?? code
 }
 
 /** How many more sign-ups until the next free month, and how many are banked. */
@@ -208,7 +267,7 @@ async function redeem(
 
 /** The codes this account minted, and how its referrals are going. */
 async function overview(db: D1Database, userId: string, now: number) {
-  const [codes, referrals] = await Promise.all([
+  const [codes, referrals, inviteCode] = await Promise.all([
     db
       .prepare(
         `SELECT code, months, created_at, redeemed_by, redeemed_at
@@ -221,6 +280,7 @@ async function overview(db: D1Database, userId: string, now: number) {
       .prepare('SELECT COUNT(*) AS n FROM users WHERE referred_by = ?')
       .bind(userId)
       .first<{ n: number }>(),
+    inviteCodeFor(db, userId),
   ])
 
   const count = referrals?.n ?? 0
@@ -234,6 +294,8 @@ async function overview(db: D1Database, userId: string, now: number) {
       used: row.redeemed_by !== null,
     })),
     referrals: count,
+    inviteCode,
+    maxMonths: MAX_REFERRAL_MONTHS,
     ...referralProgress(count),
   }
 }

@@ -10,10 +10,9 @@
 import { ALERT_REGION_IDS } from '@/config/regions'
 import { claimSupporterGrants } from '@/lib/billing/bmc'
 import { isEntitled, isProAt } from '@/lib/billing/entitlement'
-import { REFERRALS_PER_MONTH } from '@/lib/billing/gifts'
+import { referralEarnsMonth, referrerLookup } from '@/lib/billing/gifts'
 import { grantMonths } from '@/lib/billing/months'
 import { normalisePresets } from '@/lib/filter-presets'
-import { normaliseHandle } from '@/lib/profile/routes'
 import { normaliseQuietHours } from '@/lib/push/quiet'
 import { ACCESS_TOKEN_TTL_MS, signToken } from '@/lib/token'
 
@@ -383,9 +382,9 @@ export async function handleAuthCallback(
 }
 
 /**
- * Credit whoever's public page sent this person here.
+ * Credit whoever's invite link or public page sent this person here.
  *
- * The handle in the cookie is resolved to an account, the new row is stamped
+ * The invite code or handle in the cookie is resolved to an account, the new row is stamped
  * with it, and if that took the referrer over the line they are given a month.
  * The count is read back from the table rather than incremented, so two
  * sign-ups landing at once cannot both think they were the third.
@@ -396,12 +395,13 @@ async function creditReferrer(
   cookieHeader: string | null,
   now: number
 ): Promise<void> {
-  const handle = normaliseHandle(readNamed(cookieHeader, REFERRAL_COOKIE))
-  if (!handle) return
+  const lookup = referrerLookup(readNamed(cookieHeader, REFERRAL_COOKIE))
+  if (!lookup) return
 
+  // The column comes from a two-value union, never from the cookie itself.
   const referrer = await db
-    .prepare('SELECT id FROM users WHERE handle = ?')
-    .bind(handle)
+    .prepare(`SELECT id FROM users WHERE ${lookup.column} = ?`)
+    .bind(lookup.value)
     .first<{ id: string }>()
   if (!referrer || referrer.id === newUserId) return
 
@@ -415,7 +415,7 @@ async function creditReferrer(
     .bind(referrer.id)
     .first<{ n: number }>()
 
-  if ((count?.n ?? 0) % REFERRALS_PER_MONTH === 0) {
+  if (referralEarnsMonth(count?.n ?? 0)) {
     await grantMonths(db, referrer.id, 1, now)
   }
 }

@@ -102,6 +102,43 @@ const looksHeadlessDesktop = (): boolean => {
   return /swiftshader|llvmpipe|software/i.test(renderer)
 }
 
+/** The two screens the fleet reports, and nothing else. */
+const FLEET_SCREENS = new Set(['1920x1080', '1440x900'])
+
+/**
+ * The third fleet, which renders on a real GPU and so walks past the check
+ * above.
+ *
+ * Measured 2026-10-09 (since 2026-09-20): desktop Chrome in `Asia/Shanghai`
+ * with `zh-CN` - 856 people on Chrome 144 / Windows / 1920x1080, 408 on
+ * Chrome 151 / Windows / 1920x1080, 120 on Chrome 150 / Linux / 1440x900 -
+ * and ZERO plays between all 1,384. Across every Shanghai-timezone session
+ * since the bot block there were 13 plays in 3,290 people, so the rule is held
+ * to those exact screens and that exact locale, and the handful of real
+ * visitors at other sizes keep their data.
+ *
+ * Pure so it can be tested; `isAutomated` feeds it the live values.
+ */
+export function isShanghaiDesktopFleet({
+  ua,
+  timeZone,
+  language,
+  screenWidth,
+  screenHeight,
+}: {
+  ua: string
+  timeZone: string
+  language: string
+  screenWidth: number
+  screenHeight: number
+}): boolean {
+  if (timeZone !== 'Asia/Shanghai' || language !== 'zh-CN') return false
+  if (!ua.includes('Chrome/') || !/Windows NT|Linux x86_64/.test(ua))
+    return false
+  if (/Mobile|Android/.test(ua)) return false
+  return FLEET_SCREENS.has(`${screenWidth}x${screenHeight}`)
+}
+
 const isAutomated = (): boolean => {
   try {
     // Set by every CDP-driven browser (Puppeteer, Playwright, Selenium) unless
@@ -110,6 +147,17 @@ const isAutomated = (): boolean => {
     if (
       window.innerWidth === HEADLESS_VIEWPORT.width &&
       window.innerHeight === HEADLESS_VIEWPORT.height
+    ) {
+      return true
+    }
+    if (
+      isShanghaiDesktopFleet({
+        ua: navigator.userAgent,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        language: navigator.language,
+        screenWidth: screen.width,
+        screenHeight: screen.height,
+      })
     ) {
       return true
     }

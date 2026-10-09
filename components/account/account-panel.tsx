@@ -701,9 +701,9 @@ function PlanSection({ account }: { account: AccountState }) {
         <p className="mt-2 max-w-[60ch] leading-relaxed text-muted-foreground">
           Nothing you use today depends on paying, and nothing ever will.
           Supporting Reely adds the things an account makes possible: your
-          library everywhere, backup servers when a stream will not start, your
-          watchlist as a live feed in your own calendar, lists worth sharing,
-          alerts when a new episode lands, and a say in what gets built.
+          library everywhere, the Reely Player on every title, your watchlist as
+          a live feed in your own calendar, lists worth sharing, alerts when a
+          new episode lands, and a say in what gets built.
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Link href="/support" className={buttonVariants()}>

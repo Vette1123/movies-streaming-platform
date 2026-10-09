@@ -1,8 +1,9 @@
 import { Heart } from 'lucide-react'
 
-import { SUPPORT_URL, supportPriceLine } from '@/config/support'
+import { supportPriceLine } from '@/config/support'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
+import { CheckoutLink } from '@/components/support/checkout-link'
 
 /**
  * The button that takes the money, and the line of prices beside it.
@@ -14,26 +15,31 @@ import { buttonVariants } from '@/components/ui/button'
 export function SupportCta({
   className,
   note = 'default',
+  surface = 'support_page',
+  hint = true,
 }: {
   className?: string
   /** `cancel` adds the reassurance the last ask on the page needs. */
   note?: 'default' | 'cancel' | 'none'
+  /** Where on the page, for checkout_started. */
+  surface?: string
+  /** Off where the layout places `CheckoutHint` itself. */
+  hint?: boolean
 }) {
   return (
     <div
-      className={cn('flex flex-wrap items-center gap-x-4 gap-y-3', className)}
+      className={cn('flex flex-wrap items-start gap-x-4 gap-y-3', className)}
     >
-      <a
-        href={SUPPORT_URL}
-        target="_blank"
-        rel="noreferrer"
+      <CheckoutLink
+        surface={surface}
+        hint={hint}
         className={buttonVariants({ size: 'lg' })}
       >
         <Heart className="mr-2 size-4" />
         Support Reely
-      </a>
+      </CheckoutLink>
       {note !== 'none' && (
-        <span className="text-sm text-muted-foreground">
+        <span className="pt-2.5 text-sm text-muted-foreground">
           {supportPriceLine()}
           {note === 'cancel' && ' Cancel in one click.'}
         </span>

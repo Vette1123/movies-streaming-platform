@@ -1,10 +1,14 @@
 'use client'
 
+import * as React from 'react'
 import Link from 'next/link'
 import { Lock } from 'lucide-react'
 
 import { supportPriceLine } from '@/config/support'
-import { trackSupportCtaClicked } from '@/lib/analytics'
+import {
+  trackSupportCtaClicked,
+  trackSupporterGateShown,
+} from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 
@@ -34,6 +38,12 @@ export function SupporterGate({
   Icon?: React.ComponentType<{ className?: string }>
   cta?: string
 }) {
+  // An impression per gate, keyed by its title (each feature's is its own), so
+  // gate views can be set against clicks instead of guessed at.
+  React.useEffect(() => {
+    trackSupporterGateShown({ feature: title })
+  }, [title])
+
   return (
     <div
       className={cn(

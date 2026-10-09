@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 
 import { applyAppearance } from '@/lib/appearance'
+import { noteAccountState } from '@/lib/checkout'
 import { useAccount } from '@/hooks/use-account'
 import { useLibrarySync } from '@/hooks/use-library-sync'
 
@@ -34,6 +35,13 @@ export function AccountBoot() {
     if (signedIn !== true) return
     applyAppearance(pro ? accent : undefined, pro ? density : undefined)
   }, [accent, density, pro, signedIn])
+
+  // The funnel's last two steps - signed in, became a supporter - counted the
+  // moment this browser sees them happen (lib/checkout.ts).
+  useEffect(() => {
+    if (signedIn === undefined) return
+    noteAccountState({ signedIn, pro })
+  }, [pro, signedIn])
 
   return null
 }

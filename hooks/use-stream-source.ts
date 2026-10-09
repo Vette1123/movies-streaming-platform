@@ -3,11 +3,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
+  REELY_SOURCE_ID,
   resolveSourceId,
+  RICH_SOURCE,
   visibleSourcesFor,
   type StreamSource,
 } from '@/config/sources'
 import { savePrefs } from '@/lib/account'
+import { trackPlayerTrialStarted } from '@/lib/analytics'
+import {
+  readTrial,
+  trialStatus,
+  writeTrial,
+  type TrialRecord,
+  type TrialStatus,
+} from '@/lib/player-trial'
 import { useAccount, useAccountIdentity } from '@/hooks/use-account'
 
 /**
@@ -107,6 +117,18 @@ export interface StreamSourceControl {
    * let a caller hop servers with no UI to show for it.
    */
   canSwitch: boolean
+  /**
+   * Today's free title on the Reely Player, for non-supporters (see
+   * lib/player-trial.ts). `none` for supporters, who have it on every title,
+   * and on a deployment without the player.
+   */
+  trial: {
+    status: TrialStatus | 'none'
+    /** Spend today's trial on this title and switch to the Reely Player. */
+    start: () => void
+    /** Leave the player for this title (it failed, or they chose a server). */
+    end: () => void
+  }
 }
 
 export function useStreamSource(mediaKey: string): StreamSourceControl {
@@ -121,6 +143,13 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
   const [devicePreference, setDevicePreference] = useState('')
   const [byTitle, setByTitle] = useState<ByTitle>({})
   const [switched, setSwitched] = useState(false)
+  const [trialRecord, setTrialRecord] = useState<TrialRecord | null>(null)
+  // Set when the trial's player fails or the visitor picks a server instead:
+  // the trial stays spent, the title just stops being forced onto the player.
+  const [trialLeft, setTrialLeft] = useState(false)
+  // When the trial record was read: the 24h window is judged against the page
+  // visit, not re-read from the clock on every render.
+  const [trialClock, setTrialClock] = useState(0)
 
   useEffect(() => {
     // localStorage has no server answer, so the first client pass is the
@@ -130,6 +159,8 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setByTitle(readJson<ByTitle>(BY_TITLE_KEY, {}))
     setDevicePreference(readJson<string>(DEVICE_KEY, ''))
+    setTrialRecord(readTrial())
+    setTrialClock(Date.now())
   }, [])
 
   /**
@@ -159,12 +190,44 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
     [byTitle, devicePreference, mediaKey, prefs.source, pro, sources]
   )
 
+  // Supporters have the player on every title; nobody has it where it is not
+  // deployed. Everyone else gets one title a day.
+  const trialOffered = !pro && !!RICH_SOURCE
+  const status: TrialStatus | 'none' = trialOffered
+    ? trialStatus(trialRecord, mediaKey, trialClock)
+    : 'none'
+  const onTrial = status === 'active' && !trialLeft
+
   // Resolve within the visitor's own list; an id that is not in it (a source
-  // remembered before opting out) falls to the site default.
-  const source = sources.find((entry) => entry.id === currentId) ?? sources[0]
+  // remembered before opting out) falls to the site default. A title on its
+  // free trial plays on the Reely Player whatever else was remembered.
+  const source =
+    (onTrial ? RICH_SOURCE : null) ??
+    sources.find((entry) => entry.id === currentId) ??
+    sources[0]
+
+  const startTrial = useCallback(() => {
+    if (!trialOffered) return
+    if (trialStatus(trialRecord, mediaKey, Date.now()) === 'used') return
+    const record = { key: mediaKey, at: Date.now() }
+    setTrialRecord(record)
+    setTrialClock(record.at)
+    setTrialLeft(false)
+    writeTrial(record)
+    trackPlayerTrialStarted({ signedIn: signedIn === true })
+  }, [mediaKey, signedIn, trialOffered, trialRecord])
+
+  const endTrial = useCallback(() => setTrialLeft(true), [])
 
   const select = useCallback(
     (id: string) => {
+      // The Reely Player row in a free account's list is the trial; any
+      // other row while on it is a choice to leave it for this title.
+      if (id === REELY_SOURCE_ID && trialOffered) {
+        startTrial()
+        return
+      }
+      if (onTrial) setTrialLeft(true)
       if (!canSwitch) return
       if (!sources.some((entry) => entry.id === id)) return
       setSwitched(true)
@@ -189,7 +252,16 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
       // while the network decides.
       void savePrefs({ source: id })
     },
-    [byTitle, canSwitch, mediaKey, pro, sources]
+    [
+      byTitle,
+      canSwitch,
+      mediaKey,
+      onTrial,
+      pro,
+      sources,
+      startTrial,
+      trialOffered,
+    ]
   )
 
   const next = canSwitch ? sourceAfter(sources, source.id) : null
@@ -209,5 +281,11 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
     advance,
     switched,
     canSwitch,
+    trial: {
+      // Left after starting: spent for today, even though it is this title.
+      status: status === 'active' && trialLeft ? 'used' : status,
+      start: startTrial,
+      end: endTrial,
+    },
   }
 }

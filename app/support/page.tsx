@@ -15,6 +15,8 @@ import { FLAGSHIP_FEATURES, SUPPORT_FEATURES } from '@/config/support-features'
 import { pageTitle } from '@/lib/seo-title'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
+import { CheckoutHint } from '@/components/support/checkout-link'
+import { CheckoutWatcher } from '@/components/support/checkout-watcher'
 import { PlanView } from '@/components/support/plan-view'
 import { SupportCta } from '@/components/support/support-cta'
 import { SupporterCount } from '@/components/support/supporter-count'
@@ -130,7 +132,7 @@ const FAQ = [
   },
   {
     q: 'A stream would not play. Does support fix that?',
-    a: 'Often, yes — and that is the honest answer rather than a promise. The Reely Player, Reely’s own player, is now where streams start; behind it sit third-party servers Reely does not run. Supporters get one-tap switching between every backup and an automatic hop when one stops responding. If nothing carries a title, no plan can conjure it.',
+    a: 'Often, yes — and that is the honest answer rather than a promise. The Reely Player, Reely’s own player, is now where streams start; behind it sit third-party servers Reely does not run. Any free account gets one-tap switching between every backup and an automatic hop when one stops responding; supporters start every title on the Reely Player. If nothing carries a title, no plan can conjure it.',
   },
   {
     q: 'Can I cancel?',
@@ -148,10 +150,11 @@ const FAQ = [
 
 const FREE_FOREVER = [
   'The whole catalogue, every filter, and search',
-  'The player, on everything',
+  'The player, on everything, with no account needed',
   'Watchlist, history and episode tracking, kept in this browser',
+  'Every backup server and one-tap switching, with a free account',
+  'The Reely Player on one title a day',
   'The installable app, offline shell included',
-  'No account required for any of it',
 ] as const
 
 /**
@@ -182,6 +185,8 @@ const SECTION = 'container max-w-(--breakpoint-xl)'
 export default function SupportPage() {
   return (
     <div className="pb-24">
+      {/* Renders nothing unless a checkout was started from here. */}
+      <CheckoutWatcher />
       {/* Everything below is the pitch, and a supporter is shown their own plan
           instead — they came here to change it, not to be sold it again. The
           prerendered HTML is still the full pitch, so crawlers and automated
@@ -223,14 +228,17 @@ function Hero() {
           Everything here stays free for everyone. Supporting it moves your
           library off this one browser and unlocks the rest.
         </p>
-        <div className="flex flex-wrap items-center gap-3">
-          <SupportCta note="none" />
-          <Link
-            href="/account"
-            className={buttonVariants({ size: 'lg', variant: 'outline' })}
-          >
-            Your account
-          </Link>
+        <div className="space-y-2.5">
+          <div className="flex flex-wrap items-center gap-3">
+            <SupportCta note="none" surface="support_hero" hint={false} />
+            <Link
+              href="/account"
+              className={buttonVariants({ size: 'lg', variant: 'outline' })}
+            >
+              Your account
+            </Link>
+          </div>
+          <CheckoutHint />
         </div>
         <SupporterCount />
       </div>
@@ -371,7 +379,7 @@ function TheRest() {
           </article>
         ))}
       </div>
-      <SupportCta className="mt-14" />
+      <SupportCta className="mt-14" surface="support_features" />
     </section>
   )
 }
@@ -444,7 +452,7 @@ function HowItReachesYou() {
           </li>
         ))}
       </ol>
-      <SupportCta className="mt-12" />
+      <SupportCta className="mt-12" surface="support_money" />
     </section>
   )
 }
@@ -465,7 +473,7 @@ function Faq() {
           </div>
         ))}
       </dl>
-      <SupportCta className="mt-12" note="cancel" />
+      <SupportCta className="mt-12" note="cancel" surface="support_faq" />
     </section>
   )
 }

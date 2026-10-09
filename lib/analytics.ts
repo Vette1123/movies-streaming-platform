@@ -68,6 +68,15 @@ export const EVENTS = {
   // sends people to the plans, and that is a breakdown, not six funnels.
   SUPPORT_CTA_CLICKED: 'support_cta_clicked',
   SUPPORT_NUDGE_SHOWN: 'support_nudge_shown',
+  // The rest of the funnel. Until these existed nothing past /support was
+  // measured at all: 33 people reached the plans in 38 days and whether any of
+  // them left for checkout, signed in, or paid was unknowable from here.
+  CHECKOUT_STARTED: 'checkout_started',
+  SUPPORTER_GATE_SHOWN: 'supporter_gate_shown',
+  SIGNED_IN: 'signed_in',
+  SUPPORTER_ACTIVATED: 'supporter_activated',
+  INVITE_SHARED: 'invite_shared',
+  PLAYER_TRIAL_STARTED: 'player_trial_started',
   // Infrastructure
   IMAGE_HOST_FALLBACK: 'image_host_fallback',
 } as const
@@ -311,6 +320,48 @@ export function trackSupportCtaClicked(props: { surface: string }): void {
 /** The one-time earned nudge was actually shown to someone. */
 export function trackSupportNudgeShown(props: { trigger: string }): void {
   track(EVENTS.SUPPORT_NUDGE_SHOWN, props)
+}
+
+/**
+ * Somebody left for the payment page. `plan` is the card they pressed, and
+ * `signedIn` matters because a payment only lands on an account whose email
+ * matches the one paid with - see components/support/checkout-guard.tsx.
+ */
+export function trackCheckoutStarted(props: {
+  plan: 'monthly' | 'yearly' | 'lifetime' | 'any'
+  signedIn: boolean
+  surface: string
+}): void {
+  track(EVENTS.CHECKOUT_STARTED, props)
+}
+
+/** A locked supporter feature was put in front of somebody. */
+export function trackSupporterGateShown(props: { feature: string }): void {
+  track(EVENTS.SUPPORTER_GATE_SHOWN, props)
+}
+
+/** This browser went from signed out to signed in (once per browser). */
+export function trackSignedIn(): void {
+  track(EVENTS.SIGNED_IN, {})
+}
+
+/**
+ * This browser saw its account become a supporter. The conversion itself:
+ * payment happens on Buy Me a Coffee and lands through the webhook, so this is
+ * the first point the site can see the money arrive.
+ */
+export function trackSupporterActivated(props: { surface: string }): void {
+  track(EVENTS.SUPPORTER_ACTIVATED, props)
+}
+
+/** Today's free title on the Reely Player was started (lib/player-trial.ts). */
+export function trackPlayerTrialStarted(props: { signedIn: boolean }): void {
+  track(EVENTS.PLAYER_TRIAL_STARTED, props)
+}
+
+/** Somebody copied or shared their invite link. */
+export function trackInviteShared(props: { method: 'copy' | 'share' }): void {
+  track(EVENTS.INVITE_SHARED, props)
 }
 
 // ---- Navigation health ------------------------------------------------------

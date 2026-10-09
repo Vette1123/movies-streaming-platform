@@ -11,7 +11,6 @@ import {
   MonitorPlay,
   Palette,
   RefreshCw,
-  Server,
   Sparkles,
   Star,
   ThumbsDown,
@@ -84,12 +83,6 @@ export const SUPPORT_FEATURES: SupportFeature[] = [
     title: 'Suggestions that read your history',
     short: 'Recommendations built from what you actually finished',
     body: 'Not “more like the page you are on” — what to watch tonight, worked out from the last films and shows you actually finished, with everything already on your watchlist or in your history taken back out. Each one tells you which of your titles it came from.',
-  },
-  {
-    Icon: Server,
-    title: 'A stalled stream is not the end of the night',
-    short: 'Every backup server, one-tap switching, automatic failover',
-    body: 'Streams come from a third party, and third parties have bad days. Supporters get every backup server Reely has: one tap to switch, an automatic hop the moment one stops responding, and a memory of which server worked for which title.',
   },
   {
     Icon: BellRing,

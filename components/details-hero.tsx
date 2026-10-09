@@ -158,6 +158,13 @@ export const DetailsHero = ({
   // let the switcher reflect it, exactly like a stalled server would.
   const onReelyUnavailable = React.useCallback(() => {
     if (!sourceControl) return
+    // A free trial cannot "select" its way off - an anonymous visitor has no
+    // switching at all - so leaving the trial is its own exit, back to the
+    // server they had before.
+    if (sourceControl.trial.status === 'active') {
+      sourceControl.trial.end()
+      return
+    }
     const fallback = sourceControl.sources.find((s) => s.id !== REELY_SOURCE_ID)
     if (fallback) sourceControl.select(fallback.id)
   }, [sourceControl])
