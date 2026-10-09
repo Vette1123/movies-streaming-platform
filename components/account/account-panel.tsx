@@ -178,7 +178,7 @@ const SECTIONS: SectionDef[] = [
     id: 'gifts',
     label: 'Gifts',
     title: 'Gifts and referrals',
-    lede: 'Hand somebody a month, redeem one you were given, and earn one for every three people who join from your page.',
+    lede: 'Hand somebody a month, redeem one you were given, and earn one for every three friends who join with your invite link.',
     Icon: Gift,
     Panel: GiftsPanel,
   },
