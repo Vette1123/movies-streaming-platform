@@ -4,9 +4,9 @@ import Link from 'next/link'
 import { EyeOff, Languages, Sparkles } from 'lucide-react'
 
 import {
+  DEFAULT_SOURCE_ID,
   HAS_FALLBACK_SOURCE,
   RICH_SOURCE,
-  STREAM_SOURCES,
   visibleSourcesFor,
 } from '@/config/sources'
 import { savePrefs } from '@/lib/account'
@@ -260,7 +260,7 @@ function ServerSection() {
   if (!signedIn) return null
   if (!HAS_FALLBACK_SOURCE && !pro) return null
 
-  const current = prefs.source ?? STREAM_SOURCES[0]?.id
+  const current = prefs.source ?? DEFAULT_SOURCE_ID
   // The same list the player's switcher resolves for this account: the rich
   // surface appears here only for entitled accounts, so a stored choice for
   // it never dangles after support lapses.

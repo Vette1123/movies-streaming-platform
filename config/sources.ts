@@ -129,12 +129,15 @@ const hostOf = (base: string): string => {
   }
 }
 
+const trimBase = (base?: string): string =>
+  base?.trim().replace(/\/$/, '') ?? ''
+
 function buildSources(): StreamSource[] {
   const seen = new Set<string>()
   const built: StreamSource[] = []
 
   for (const slot of SLOTS) {
-    const trimmed = slot.base?.trim().replace(/\/$/, '')
+    const trimmed = trimBase(slot.base)
     if (!trimmed) continue
     const id = hostOf(trimmed)
     if (seen.has(id)) continue
@@ -152,22 +155,22 @@ function buildSources(): StreamSource[] {
     })
   }
 
-  // Lead with the default slot so position 0 is what every fresh visitor —
-  // and the resolution fallbacks below — treat as "the server". Stable sort
-  // keeps the remaining slots in their configured order.
-  const defaultLabel =
-    SLOTS.find((s) => s.slot === DEFAULT_SLOT)?.label ?? 'Server 1'
-  built.sort(
-    (a, b) =>
-      Number(b.label === defaultLabel) - Number(a.label === defaultLabel)
-  )
-
+  // Slot order, always. The default used to be sorted to the front, which
+  // made a signed-in switcher read "Server 2, Server 1, Server 3" — the
+  // default is picked by id below instead, never by position.
   return built
 }
 
 export const STREAM_SOURCES: StreamSource[] = buildSources()
 
-export const DEFAULT_SOURCE_ID: string = STREAM_SOURCES[0]?.id ?? ''
+/** The default slot's server, or the first configured one when it is empty. */
+const DEFAULT_SOURCE: StreamSource = ((): StreamSource => {
+  const base = trimBase(SLOTS.find((s) => s.slot === DEFAULT_SLOT)?.base)
+  const id = base ? hostOf(base) : ''
+  return STREAM_SOURCES.find((s) => s.id === id) ?? STREAM_SOURCES[0]
+})()
+
+export const DEFAULT_SOURCE_ID: string = DEFAULT_SOURCE?.id ?? ''
 
 /** True only when there is somewhere else to go. The UI hides itself otherwise. */
 export const HAS_FALLBACK_SOURCE = STREAM_SOURCES.length > 1
@@ -222,13 +225,13 @@ export const visibleSourcesFor = (
   signedIn: boolean,
   pro: boolean
 ): StreamSource[] => {
-  if (!signedIn) return STREAM_SOURCES.slice(0, 1)
+  if (!signedIn) return DEFAULT_SOURCE ? [DEFAULT_SOURCE] : []
   if (pro && RICH_SOURCE) return [RICH_SOURCE, ...STREAM_SOURCES]
   return STREAM_SOURCES
 }
 
 export const sourceById = (id: string | null | undefined): StreamSource =>
-  STREAM_SOURCES.find((source) => source.id === id) ?? STREAM_SOURCES[0]
+  STREAM_SOURCES.find((source) => source.id === id) ?? DEFAULT_SOURCE
 
 /** Fill a slot's path template. Unknown tokens pass through untouched. */
 const fillPath = (

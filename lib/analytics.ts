@@ -62,6 +62,7 @@ export const EVENTS = {
   PWA_INSTALLED: 'pwa_installed',
   PWA_PROMPTED: 'pwa_prompted',
   PLAYER_STREAM_PATH: 'player_stream_path',
+  PLAYER_FAILED: 'player_failed',
   // Support / monetisation. One event with a `surface` property rather than an
   // event per placement: the only question worth asking of it is which surface
   // sends people to the plans, and that is a breakdown, not six funnels.
@@ -418,14 +419,30 @@ export function trackWatchHistoryCleared(props: { item_count: number }): void {
 
 // ---- PWA install lifecycle --------------------------------------------------
 
-/** Browser reports the app is installable (`beforeinstallprompt` fired). */
+const PWA_INSTALLABLE_KEY = 'reely:pwa-installable'
+
+/**
+ * Browser reports the app is installable (`beforeinstallprompt` fired).
+ *
+ * Once per tab session: Chrome re-fires the event on every full page load, and
+ * it used to be listened for twice as well, so PostHog counted ~5 per person
+ * (2,126 events / 406 people over 14 days to 2026-10-09).
+ */
 export function trackPwaInstallable(): void {
+  try {
+    if (sessionStorage.getItem(PWA_INSTALLABLE_KEY)) return
+    sessionStorage.setItem(PWA_INSTALLABLE_KEY, '1')
+  } catch {
+    // Storage blocked: count it rather than lose it.
+  }
   track(EVENTS.PWA_INSTALLABLE)
 }
 
 /** App was installed to the home screen / desktop (`appinstalled` fired). */
 export function trackPwaInstalled(): void {
   track(EVENTS.PWA_INSTALLED)
+  // The person trait, so installers can be filtered on without an event join.
+  ph((posthog) => posthog.setPersonProperties({ pwa_installed: true }))
 }
 
 /**
@@ -456,6 +473,22 @@ export function trackPwaPrompted(props: {
  */
 export function trackPlayerStreamPath(props: { native: boolean }): void {
   track(EVENTS.PLAYER_STREAM_PATH, props)
+}
+
+/**
+ * A server did not play: the 9s stall (any embed) or the house player saying
+ * its stream could not be resolved.
+ *
+ * Both were handled on screen and invisible here, so when `vidsrcme.ru` lapsed
+ * on 2026-10-08 and every Reely Beta play went black, PostHog showed nothing at
+ * all. `source` is the stable source id; break down by it to see which server
+ * is down.
+ */
+export function trackPlayerFailed(props: {
+  source: string
+  reason: 'stall' | 'unavailable'
+}): void {
+  track(EVENTS.PLAYER_FAILED, props)
 }
 
 // ---- Infrastructure ---------------------------------------------------------

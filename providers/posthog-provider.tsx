@@ -4,11 +4,7 @@ import { PropsWithChildren, Suspense, useEffect, useRef } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import type { CaptureResult, ConfigDefaults } from 'posthog-js'
 
-import {
-  trackImageHostFallback,
-  trackPwaInstallable,
-  trackPwaInstalled,
-} from '@/lib/analytics'
+import { trackImageHostFallback } from '@/lib/analytics'
 import { shouldDropException } from '@/lib/error-noise'
 import { onIdle } from '@/lib/idle'
 import { enrichPersonProfile } from '@/lib/person'
@@ -290,30 +286,6 @@ function PostHogIdentity() {
 }
 
 /**
- * Tracks PWA install lifecycle: when the browser reports the app is
- * installable, and when it actually gets installed (also flips the person
- * profile's pwa_installed trait to true).
- */
-function PwaInstallTracker() {
-  useEffect(() => {
-    const onBeforeInstallPrompt = () => trackPwaInstallable()
-    const onAppInstalled = () => {
-      trackPwaInstalled()
-      ph((posthog) => posthog.setPersonProperties({ pwa_installed: true }))
-    }
-
-    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt)
-    window.addEventListener('appinstalled', onAppInstalled)
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt)
-      window.removeEventListener('appinstalled', onAppInstalled)
-    }
-  }, [])
-
-  return null
-}
-
-/**
  * Reports the one infrastructure failure the app is deliberately silent about:
  * the primary image CDN going down (a spent ImageKit quota fails every image
  * for the rest of the month). The fallback chain keeps the pictures on screen,
@@ -340,7 +312,6 @@ export function CSPostHogProvider({ children }: PropsWithChildren) {
     <>
       <SuspendedPageView />
       <PostHogIdentity />
-      <PwaInstallTracker />
       <ImageHostTracker />
       {children}
     </>

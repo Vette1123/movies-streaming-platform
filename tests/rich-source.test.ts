@@ -32,7 +32,29 @@ describe('slot defaults and labels', () => {
   it('defaults to slot 2 (the more resilient embed)', async () => {
     const mod = await importWithEnv(BASE_ENV)
     expect(mod.DEFAULT_SOURCE_ID).toBe('b.example')
-    expect(mod.STREAM_SOURCES[0].id).toBe('b.example')
+    expect(mod.visibleSourcesFor(false, false).map((s) => s.id)).toEqual([
+      'b.example',
+    ])
+    expect(mod.sourceById('nope').id).toBe('b.example')
+  })
+
+  // The default used to be sorted to the front, so a signed-in switcher read
+  // "Server 2, Server 1, Server 3". The default is picked by id, not position.
+  it('lists servers in slot order whatever the default is', async () => {
+    const mod = await importWithEnv({
+      ...BASE_ENV,
+      NEXT_PUBLIC_STREAM_SOURCE_3: 'https://c.example/embed',
+    })
+    expect(mod.STREAM_SOURCES.map((s) => s.label)).toEqual([
+      'Server 1',
+      'Server 2',
+      'Server 3',
+    ])
+    expect(mod.visibleSourcesFor(true, false).map((s) => s.id)).toEqual([
+      'a.example',
+      'b.example',
+      'c.example',
+    ])
   })
 
   it('honours NEXT_PUBLIC_STREAM_DEFAULT_SLOT', async () => {
@@ -112,11 +134,11 @@ describe('visibleSourcesFor tiers', () => {
     expect(list[0].id).toBe('b.example')
   })
 
-  it('signed-in free: every embed, no self-host, default first', async () => {
+  it('signed-in free: every embed in slot order, no self-host', async () => {
     const mod = await importWithEnv(TRIAL_ENV)
     const list = mod.visibleSourcesFor(true, false)
     expect(list.some((s) => s.id === mod.REELY_SOURCE_ID)).toBe(false)
-    expect(list.map((s) => s.id)).toEqual(['b.example', 'a.example'])
+    expect(list.map((s) => s.id)).toEqual(['a.example', 'b.example'])
   })
 
   it('supporters: our player first, then every embed', async () => {

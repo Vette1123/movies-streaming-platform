@@ -45,7 +45,7 @@ const PRESETS = [
     'YouTube (positive control — must pass)',
     'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
   ],
-  ['vidsrcme.ru', 'https://vidsrcme.ru/embed/movie/550'],
+  ['vidsrc.sh', 'https://vidsrc.sh/embed/movie/550'],
   ['vidsrc.to', 'https://vidsrc.to/embed/movie/550'],
 ]
 

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { AlertTriangle, ChevronDown, Server, Sparkles } from 'lucide-react'
 
 import { HAS_FALLBACK_SOURCE, REELY_SOURCE_ID } from '@/config/sources'
-import { trackSupportCtaClicked } from '@/lib/analytics'
+import { trackPlayerFailed, trackSupportCtaClicked } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 import { type StreamSourceControl } from '@/hooks/use-stream-source'
 import {
@@ -165,6 +165,7 @@ export function SourceSwitcher({
     // inheriting the last one's expired clock.
     const timer = setTimeout(() => {
       setStalledId(currentId)
+      if (currentId) trackPlayerFailed({ source: currentId, reason: 'stall' })
       // The one automatic hop. The guard is a ref because it has to be read and
       // written in the same tick as the call it protects — a state read here
       // would still hold the previous value and hop twice.

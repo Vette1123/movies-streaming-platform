@@ -2,7 +2,8 @@
 
 import * as React from 'react'
 
-import { trackPlayerStreamPath } from '@/lib/analytics'
+import { REELY_SOURCE_ID } from '@/config/sources'
+import { trackPlayerFailed, trackPlayerStreamPath } from '@/lib/analytics'
 import { STREAM_EMBED_ALLOW } from '@/lib/embed-policy'
 import {
   clearPosition,
@@ -146,6 +147,7 @@ export function ReelyPlayer({
         // source that supporters are given by default.
         if (!failed.current) {
           failed.current = true
+          trackPlayerFailed({ source: REELY_SOURCE_ID, reason: 'unavailable' })
           unavailableRef.current()
         }
       }
