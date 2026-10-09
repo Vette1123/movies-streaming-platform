@@ -12,6 +12,7 @@ import {
   trackHeroAutoplayToggled,
   trackHeroWatchClicked,
 } from '@/lib/analytics'
+import { heroTitleState } from '@/lib/hero-title'
 import { onIdleAfterLoad } from '@/lib/idle'
 import { COVER_BACKDROP_SIZES, COVER_POSTER_SIZES } from '@/lib/image-sizes'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
@@ -297,12 +298,26 @@ export function HeroSlide({
 
   const href = mediaDetailHref(mediaType, movie.id)
 
-  const showLogo = !!logoPath && !logoError
-  // Keep the plain title hidden while the logo's outcome is still pending
-  // (extras in flight, or a known logo not yet decoded) — unless the grace cap
-  // has passed, at which point the text is revealed as the fallback.
-  const holdTitleText =
-    !titleGraceElapsed && (!extrasReady || (showLogo && !logoLoaded))
+  // Logo vs text: see lib/hero-title.ts. The wordmark is visible from the
+  // server HTML on; JS only ever decides whether the text covers for it.
+  const { logo: showLogo, text: showTitleText } = heroTitleState({
+    hasLogo: !!logoPath,
+    logoLoaded,
+    logoError,
+    extrasReady,
+    graceElapsed: titleGraceElapsed,
+  })
+
+  // Warm the wordmark of the slides parked either side once the page has
+  // finished loading, so swiping to one paints its title immediately instead
+  // of starting the download as it slides in. Lazy until then on purpose: at
+  // load those were 2-3 extra downloads racing the hero backdrop (see the
+  // note on the <img>). After `load`, nothing is left to race.
+  const [warmLogo, setWarmLogo] = React.useState(false)
+  React.useEffect(() => {
+    if (priority || !logoPath) return
+    return onIdleAfterLoad(() => setWarmLogo(true), 3000)
+  }, [priority, logoPath])
 
   // "Cinematic takeover": while the trailer actually plays, the editorial copy
   // recedes and the text-scrim softens so the video owns the frame. Purely a
@@ -490,10 +505,12 @@ export function HeroSlide({
                     <div className="relative flex min-h-16 w-full items-end sm:min-h-20 lg:min-h-32">
                       <h2
                         aria-hidden={logoLoaded}
-                        className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md transition-opacity duration-500 ease-out sm:text-4xl lg:text-6xl ${
-                          logoLoaded || holdTitleText
-                            ? 'opacity-0'
-                            : 'opacity-100'
+                        // Fades IN only (as a fallback); it leaves instantly when
+                        // the wordmark lands, so the two never overlap on screen.
+                        className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md sm:text-4xl lg:text-6xl ${
+                          showTitleText
+                            ? 'opacity-100 transition-opacity duration-300 ease-out'
+                            : 'opacity-0'
                         }`}
                       >
                         {title}
@@ -519,23 +536,27 @@ export function HeroSlide({
                         // an off-stage slide fetches its logo when it slides in,
                         // behind the title-text fallback the crossfade already
                         // has for exactly this case.
-                        loading={priority ? 'eager' : 'lazy'}
+                        // Until the page has loaded, that is (warmLogo above);
+                        // and the slide on stage always loads its own.
+                        loading={
+                          priority || active || warmLogo ? 'eager' : 'lazy'
+                        }
                         // Same reason as every image in BlurredImage: a native
                         // image drag would ghost the logo and eat the gesture.
                         draggable={false}
                         onError={markLogoError}
                         onLoad={markLogoLoaded}
-                        className={`absolute bottom-0 left-0 max-h-16 w-auto max-w-[80%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] transition-all duration-700 ease-out sm:max-h-20 lg:max-h-32 ${
-                          logoLoaded
-                            ? 'blur-0 translate-y-0 opacity-100'
-                            : 'pointer-events-none translate-y-2 opacity-0 blur-[2px]'
-                        }`}
+                        // No opacity gate, no fade, no blur: the browser paints
+                        // the wordmark the instant it decodes, before React has
+                        // even hydrated. Gating it on `logoLoaded` is what held a
+                        // 150ms download back for the whole hydration plus 700ms.
+                        className="absolute bottom-0 left-0 max-h-16 w-auto max-w-[80%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] sm:max-h-20 lg:max-h-32"
                       />
                     </div>
                   ) : (
                     <h2
-                      className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md transition-opacity duration-500 ease-out sm:text-4xl lg:text-6xl ${
-                        holdTitleText ? 'opacity-0' : 'opacity-100'
+                      className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md transition-opacity duration-300 ease-out sm:text-4xl lg:text-6xl ${
+                        showTitleText ? 'opacity-100' : 'opacity-0'
                       }`}
                     >
                       {title}
