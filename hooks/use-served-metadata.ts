@@ -62,9 +62,13 @@ const upsert = (
   value?: string
 ) => {
   if (!value) return
-  const existing = document.head.querySelector(selector)
-  const element = existing ?? document.head.appendChild(create())
-  element.setAttribute(attribute, value)
+  // Every match, not the first: two canonicals that disagree are read as no
+  // canonical at all, and the shell's copy can sit after the Worker's.
+  const existing = [...document.head.querySelectorAll(selector)]
+  const elements = existing.length
+    ? existing
+    : [document.head.appendChild(create())]
+  for (const element of elements) element.setAttribute(attribute, value)
 }
 
 const named = (name: string, value?: string) =>
@@ -126,15 +130,12 @@ export function useServedMetadata(meta: ServedMetadata | null): void {
     meta ?? {}
 
   useEffect(() => {
-    if (!title) return
-    const heading = title
+    // The canonical needs nothing but the URL, so it goes back on the first
+    // effect rather than waiting for the data. Until it does, the head says
+    // what the shell's metadata says — canonical: the homepage — and a renderer
+    // that snapshots before the fetch lands, or never gets it, files the page
+    // as a duplicate of `/`.
     const canonical = canonicalOf()
-
-    // The tab and the SERP title carry the site name; og:title and
-    // twitter:title below do not — that is what the prerendered pages do.
-    document.title = docTitle(docHeading || heading)
-    named('robots', indexable === false ? 'noindex, nofollow' : 'index, follow')
-    named('description', description)
     upsert(
       'link[rel="canonical"]',
       () => {
@@ -145,10 +146,19 @@ export function useServedMetadata(meta: ServedMetadata | null): void {
       'href',
       canonical
     )
+    property('og:url', canonical)
+
+    if (!title) return
+    const heading = title
+
+    // The tab and the SERP title carry the site name; og:title and
+    // twitter:title below do not — that is what the prerendered pages do.
+    document.title = docTitle(docHeading || heading)
+    named('robots', indexable === false ? 'noindex, nofollow' : 'index, follow')
+    named('description', description)
 
     property('og:title', heading)
     property('og:description', description)
-    property('og:url', canonical)
     property('og:type', ogType || 'website')
     property('og:site_name', siteConfig.name)
     property('og:image', image)

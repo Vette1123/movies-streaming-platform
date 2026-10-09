@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { shellMetadata } from '@/lib/shell-metadata'
+
 // An implementation detail of the static export: cloudflare/worker.js serves
 // this route's exported HTML under /l/<slug>, rewriting the <head> as it goes.
 //
@@ -10,6 +12,9 @@ import React from 'react'
 // pages ended up in Search Console under "Excluded by 'noindex' tag". The
 // bare URL is kept out of the index by robots.txt and by the X-Robots-Tag in
 // public/_headers, both of which apply to the URL and not to the body.
+//
+// Nor the root layout's canonical, which is the homepage: lib/shell-metadata.ts.
+export const metadata = shellMetadata
 
 export default function ListFallbackLayout({
   children,

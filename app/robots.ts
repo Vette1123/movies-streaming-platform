@@ -35,6 +35,20 @@ const CRAWL_ALLOW = [
   '/apple-touch-icon.png',
   '/android-chrome-192x192.png',
   '/android-chrome-512x512.png',
+  // The data each fallback shell fetches once it boots. Every detail, list and
+  // profile URL outside the prerendered set IS one of those shells, and
+  // hydration resets its head to the shell's own metadata — canonical: the
+  // homepage. useServedMetadata writes the real head back, but only once this
+  // fetch returns, and Googlebot's renderer honours robots.txt for
+  // subresources. With these under `Disallow: /api/` it never returned: ~15,000
+  // tail pages went into Search Console as "Alternative page with proper
+  // canonical tag", user-declared canonical https://www.reely.space/. Each is
+  // longer than `/api/`, so each wins the conflict on its own; everything else
+  // under /api/ stays blocked. One cached Worker invocation per render.
+  '/api/media/',
+  '/api/collection/',
+  '/api/list/',
+  '/api/profile/',
 ]
 
 // One list rather than the same nine lines copied into each rule block.
