@@ -177,6 +177,10 @@ const HighlightedText = React.memo(function HighlightedText({
 const mediaHref = (movie: MediaType) =>
   mediaDetailHref(resolveMediaType(movie), movie.id)
 
+// The cmdk value of a result row — one place, because the row and the
+// "select the first result" step must agree on it exactly.
+const resultValue = (movie: MediaType) => `${movie.id}-${movie.title}`
+
 export function CommandMenu({ ...props }: CommandDialogProps) {
   const { open, setOpen, runCommand, isLoading, setIsLoading } =
     useCMDKListener()
@@ -187,6 +191,10 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
   // What actually produced these results, when it was not what they typed.
   const [matchedQuery, setMatchedQuery] = React.useState<string | null>(null)
   const [mediaFilter, setMediaFilter] = React.useState<MediaFilter>('all')
+  // The highlighted row, held here instead of inside cmdk — see the comment
+  // above `resultsShown` for why cmdk cannot be left to pick it.
+  const [selected, setSelected] = React.useState('')
+  const listRef = React.useRef<HTMLDivElement>(null)
   const { recent, add: addRecent, remove: removeRecent } = useRecentSearches()
   const router = useRouter()
   const { ready, pro } = useAccountIdentity()
@@ -268,6 +276,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
 
   const handleValueChange = (value: string) => {
     setQuery(value)
+    setSelected('')
     const trimmed = value.trim()
     if (!trimmed) {
       debouncedRunSearch.cancel()
@@ -297,6 +306,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
       setMatchedQuery(null)
       setIsLoading(false)
       setMediaFilter('all')
+      setSelected('')
     }
   }
 
@@ -334,6 +344,26 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
         : visibleResults.filter((m) => m.media_type === effectiveFilter),
     [visibleResults, effectiveFilter]
   )
+
+  // Why the selection is ours, and the fix for a results list you could not
+  // scroll on a phone. cmdk re-selects "the first item" on every keystroke and
+  // scrolls the row that WAS highlighted into view — but search is async, so at
+  // that moment the only rows are the shortcuts. A finger resting on the open
+  // palette highlights one (touch-move selects), typing scrolled it into view,
+  // the results landed above it, and scroll anchoring held the shortcut in
+  // place: with the keyboard up the list sat at its end, a swipe for the
+  // results moved nothing, and Enter opened the shortcut. So a keystroke clears
+  // the highlight (nothing stale to scroll to), and each new result set — a new
+  // query or a filter chip — selects its first row and starts at the top.
+  // `pnpm search:probe` pins all three.
+  const [resultsShown, setResultsShown] = React.useState(filteredResults)
+  if (resultsShown !== filteredResults) {
+    setResultsShown(filteredResults)
+    setSelected(filteredResults[0] ? resultValue(filteredResults[0]) : '')
+  }
+  React.useLayoutEffect(() => {
+    listRef.current?.scrollTo({ top: 0 })
+  }, [filteredResults])
 
   const status: SearchStatus = computeSearchStatus(
     trimmedQuery,
@@ -375,6 +405,8 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
         open={open}
         onOpenChange={handleOpenChange}
         shouldFilter={false}
+        value={selected}
+        onValueChange={setSelected}
       >
         <CommandInput
           placeholder="Type a command or search..."
@@ -420,7 +452,10 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
             ))}
           </div>
         )}
-        <CommandList className="max-h-[75dvh] min-h-0 flex-1 sm:max-h-[74dvh] sm:basis-115">
+        <CommandList
+          ref={listRef}
+          className="max-h-[75dvh] min-h-0 flex-1 sm:max-h-[74dvh] sm:basis-115"
+        >
           <CommandGroup heading={resultsHeading}>
             {/* When the typed query found nothing and a looser one did, say
                 which one. Quietly answering a different question is how a
@@ -556,7 +591,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                 return (
                   <CommandItem
                     key={`${movie.media_type ?? 'movie'}-${movie.id}`}
-                    value={`${movie.id}-${movie.title}`}
+                    value={resultValue(movie)}
                     className="group/command-item cursor-pointer transition-colors duration-200 hover:bg-accent"
                     onSelect={() => {
                       trackSearchResultClicked({

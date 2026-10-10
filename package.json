@@ -37,6 +37,7 @@
     "cf:cpu": "node scripts/cf-cpu.mjs",
     "posthog:query": "node scripts/posthog-query.mjs",
     "bmc:probe": "node scripts/bmc-probe.mjs",
+    "search:probe": "node scripts/search-scroll-probe.mjs",
     "pro": "node scripts/grant-pro.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
