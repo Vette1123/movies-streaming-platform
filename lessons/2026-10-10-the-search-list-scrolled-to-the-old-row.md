@@ -30,6 +30,11 @@ reset to the top. `pnpm search:probe` pins it.
   run was hitting the unfixed server. Read the dev log's port line.
 - The first probe tapped the shortcut to highlight it, which opened Home and
   closed the palette. A finger _on_ a list is a drag, not a tap.
+- The first committed version cleared the highlight whenever a result set was
+  empty, so "No results" and "Search didn't answer" had no active row and Enter
+  did nothing. The probe could not see it (it only searches for hits). Caught in
+  the edge-flow pass before the push. Now it only takes over the highlight when
+  there is a first result.
 
 ## What worked
 

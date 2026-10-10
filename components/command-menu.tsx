@@ -359,7 +359,8 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
   const [resultsShown, setResultsShown] = React.useState(filteredResults)
   if (resultsShown !== filteredResults) {
     setResultsShown(filteredResults)
-    setSelected(filteredResults[0] ? resultValue(filteredResults[0]) : '')
+    // No results: keep the row cmdk picked, so something is always active.
+    if (filteredResults[0]) setSelected(resultValue(filteredResults[0]))
   }
   React.useLayoutEffect(() => {
     listRef.current?.scrollTo({ top: 0 })
