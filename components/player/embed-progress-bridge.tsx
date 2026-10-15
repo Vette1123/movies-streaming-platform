@@ -8,6 +8,7 @@ import {
 } from '@/lib/embed-progress'
 import {
   clearPosition,
+  isFinishedAt,
   playbackKey,
   writePosition,
 } from '@/lib/playback-positions'
@@ -34,6 +35,7 @@ export const EmbedProgressBridge = ({
   season,
   episode,
   frameRef,
+  onFinished,
 }: {
   /** The embed URL currently loaded. Empty = nothing playing, no listener. */
   src?: string
@@ -42,7 +44,14 @@ export const EmbedProgressBridge = ({
   season?: number
   episode?: number
   frameRef: React.RefObject<HTMLIFrameElement | null>
+  /** Ended, or past the credits threshold. Once per title; see ReelyPlayer. */
+  onFinished?: () => void
 }) => {
+  const finishedRef = React.useRef(onFinished)
+  React.useEffect(() => {
+    finishedRef.current = onFinished
+  }, [onFinished])
+
   React.useEffect(() => {
     if (!src) return
 
@@ -56,6 +65,13 @@ export const EmbedProgressBridge = ({
     // Last position we actually persisted, for the write throttle. A ref, not
     // state: it changes many times a minute and must never re-render the hero.
     let lastWrittenSeconds: number | null = null
+    // Per title: the effect re-runs for the next episode.
+    let finishedSent = false
+    const finish = () => {
+      if (finishedSent) return
+      finishedSent = true
+      finishedRef.current?.()
+    }
 
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== playerOrigin) return
@@ -68,7 +84,11 @@ export const EmbedProgressBridge = ({
       if (progress.kind === 'ended') {
         clearPosition(key)
         lastWrittenSeconds = null
+        finish()
         return
+      }
+      if (isFinishedAt(progress.positionSeconds, progress.durationSeconds)) {
+        finish()
       }
 
       // A seek backwards is a real move too — shouldWriteEmbedProgress uses

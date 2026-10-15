@@ -27,10 +27,11 @@
 // Run: pnpm dev   then   pnpm search:probe [url]
 // CHROME_PATH overrides the browser; default is the stock install location.
 
-import { spawn } from 'node:child_process'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import {
+  openHeadlessChrome,
+  requireServer,
+  sleep,
+} from './lib/headless-chrome.mjs'
 
 const url = process.argv[2] ?? 'http://localhost:3000/movies'
 const PORT = Number(process.env.SEARCH_PROBE_PORT) || 9333
@@ -38,18 +39,10 @@ const WIDTH = 390
 const HEIGHT = 420
 const RESULT_COUNT = 20
 
-const DEFAULT_CHROME = {
-  win32: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
-  darwin: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  linux: 'google-chrome',
-}
-const chromePath = process.env.CHROME_PATH ?? DEFAULT_CHROME[process.platform]
-
 const fail = (message) => {
   console.error(`✗ ${message}`)
   process.exitCode = 1
 }
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const results = Array.from({ length: RESULT_COUNT }, (_, i) => ({
   id: 900000 + i,
@@ -73,80 +66,26 @@ const searchBody = Buffer.from(
 ).toString('base64')
 
 try {
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  await requireServer(url, 'start `pnpm dev` first')
 } catch (error) {
-  console.error(
-    `✗ ${url} is not answering (${error.message}) — start \`pnpm dev\` first`
-  )
+  console.error(`✗ ${error.message}`)
   process.exit(1)
 }
 
-const profile = mkdtempSync(join(tmpdir(), 'search-probe-'))
-const chrome = spawn(
-  chromePath,
-  [
-    '--headless=new',
-    `--remote-debugging-port=${PORT}`,
-    `--user-data-dir=${profile}`,
-    '--no-first-run',
-    'about:blank',
-  ],
-  { stdio: 'ignore' }
-)
-
-let ws
-try {
-  let page
-  for (let i = 0; i < 50 && !page; i++) {
-    await sleep(200)
-    try {
-      const targets = await (
-        await fetch(`http://127.0.0.1:${PORT}/json`)
-      ).json()
-      page = targets.find((t) => t.type === 'page')
-    } catch {}
-  }
-  if (!page)
-    throw new Error(`Chrome never opened a debugging port at ${chromePath}`)
-
-  ws = new WebSocket(page.webSocketDebuggerUrl)
-  await new Promise((resolve) => ws.addEventListener('open', resolve))
-  let seq = 0
-  const pending = new Map()
-  const send = (method, params = {}) =>
-    new Promise((resolve) => {
-      const id = ++seq
-      pending.set(id, resolve)
-      ws.send(JSON.stringify({ id, method, params }))
-    })
-  ws.addEventListener('message', (event) => {
-    const msg = JSON.parse(event.data)
-    if (msg.id && pending.has(msg.id)) {
-      pending.get(msg.id)(msg)
-      pending.delete(msg.id)
-    }
-    // Answer every /api/search with the synthetic page.
-    if (msg.method === 'Fetch.requestPaused') {
-      send('Fetch.fulfillRequest', {
-        requestId: msg.params.requestId,
-        responseCode: 200,
-        responseHeaders: [{ name: 'content-type', value: 'application/json' }],
-        body: searchBody,
-      })
-    }
+const browser = await openHeadlessChrome({ port: PORT, label: 'search-probe' })
+const { send, evaluate } = browser
+// Answer every /api/search with the synthetic page.
+browser.onEvent((msg) => {
+  if (msg.method !== 'Fetch.requestPaused') return
+  send('Fetch.fulfillRequest', {
+    requestId: msg.params.requestId,
+    responseCode: 200,
+    responseHeaders: [{ name: 'content-type', value: 'application/json' }],
+    body: searchBody,
   })
-  const evaluate = async (expression) => {
-    const r = await send('Runtime.evaluate', {
-      expression,
-      returnByValue: true,
-      awaitPromise: true,
-    })
-    const err = r.result?.exceptionDetails
-    if (err)
-      throw new Error(`in page: ${err.exception?.description ?? err.text}`)
-    return r.result?.result?.value
-  }
+})
+
+try {
   const touch = (type, x, y) =>
     send('Input.dispatchTouchEvent', {
       type,
@@ -282,10 +221,5 @@ try {
 } catch (error) {
   fail(error.message)
 } finally {
-  ws?.close()
-  chrome.kill()
-  await sleep(300)
-  try {
-    rmSync(profile, { recursive: true, force: true })
-  } catch {}
+  await browser.close()
 }

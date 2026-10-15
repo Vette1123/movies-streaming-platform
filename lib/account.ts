@@ -15,6 +15,7 @@
  */
 import { HINT_COOKIE } from '@/lib/auth/cookies'
 import type { FilterPreset } from '@/lib/filter-presets'
+import type { PlaybackPrefs } from '@/lib/playback-prefs'
 import type { QuietHours } from '@/lib/push/quiet'
 
 /** Refresh this far before expiry, so an action never races the deadline. */
@@ -52,10 +53,7 @@ export interface AccountPrefs {
   /** Saved browse filters. See lib/filter-presets.ts for why they live here. */
   presets?: FilterPreset[]
   /** Reely Player preferences. See lib/playback-prefs.ts. */
-  playback?: {
-    sub?: string
-    subSize?: 's' | 'm' | 'l'
-  }
+  playback?: PlaybackPrefs
   /**
    * Hours not to be buzzed in, and one buzz a day instead of one per event.
    *

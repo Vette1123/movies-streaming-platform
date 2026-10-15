@@ -6,6 +6,7 @@ import { MovieDetails } from '@/types/movie-details'
 import { movieStreamUrl } from '@/config/sources'
 import { buildMediaEventBase, trackMediaDetailViewed } from '@/lib/analytics'
 import { isTitleBlocked } from '@/lib/blocked-titles'
+import { useCompletedMedia } from '@/hooks/use-completed-media'
 import { useStreamSource } from '@/hooks/use-stream-source'
 import { DetailsHero } from '@/components/details-hero'
 
@@ -23,6 +24,14 @@ export const MovieDetailsHero = ({
   // that landed while the ref was empty did nothing at all and said nothing.)
   const [playing, setPlaying] = React.useState(false)
   const sourceControl = useStreamSource(`movie:${movie?.id}`)
+  const { isMovieCompleted, toggleMovieCompleted } = useCompletedMedia()
+
+  // Watched to the credits: tick it off, which is what takes it out of "pick
+  // up where you left off". It used to stay there as "Resume" forever.
+  const handleFinished = React.useCallback(() => {
+    if (!movie?.id || isMovieCompleted(movie.id)) return
+    toggleMovieCompleted(movie)
+  }, [isMovieCompleted, movie, toggleMovieCompleted])
 
   React.useEffect(() => {
     if (!movie?.id) return
@@ -57,6 +66,7 @@ export const MovieDetailsHero = ({
       }}
       trailerKey={trailerKey}
       sourceControl={sourceControl}
+      onFinished={handleFinished}
       selfHost={
         movie?.id && !blocked
           ? {

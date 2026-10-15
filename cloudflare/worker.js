@@ -1486,6 +1486,9 @@ async function handleListsDirectory(request, env, ctx, url) {
   )
 }
 
+/** The rungs the player can pin (reely-pro-player src/quality.mjs). */
+const PLAYER_QUALITY_RUNGS = [4320, 2160, 1440, 1080, 720, 480, 360, 240, 144]
+
 /**
  * POST /api/pro/ticket — mint one 90-second playback ticket for the private
  * player worker.
@@ -1654,6 +1657,10 @@ async function handleProTicket(request, env, url) {
     // Only the "on" case travels: the player's default is off, and a device
     // that was told directly overrides whatever the account says.
     if (prefs.miniBar === true) params.set('mini', '1')
+    // A quality rung picked in the player (1080 = 1080p). Absent is Auto.
+    if (PLAYER_QUALITY_RUNGS.includes(prefs.quality)) {
+      params.set('q', String(prefs.quality))
+    }
   }
 
   return new Response(

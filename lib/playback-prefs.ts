@@ -8,11 +8,16 @@
 //
 //   - the synced account (`prefs.playback`, via savePrefs) — the source of
 //     truth, carried across devices;
-//   - a localStorage mirror — what the ticket request actually reads, so the
-//     player boots with the right subtitles even before any account refresh.
+//   - a localStorage mirror — what a visitor with no account (or no answer
+//     from the account yet) boots with.
 //
-// The mirror is a cache of the user's own choice, never a credential; losing
-// it costs nothing because the next settings save rewrites it.
+// They are set from three places: Settings, the gear over the player, and the
+// player's OWN subtitle and quality menus, which post their picks back here
+// (components/player/reely-player.tsx). That last one is the one people use,
+// and until it reported anything a language picked in the player was gone by
+// the next episode.
+import { accountSnapshot, savePrefs } from '@/lib/account'
+import { dropWarmTickets } from '@/lib/pro/ticket-cache'
 
 export interface PlaybackPrefs {
   /**
@@ -28,45 +33,101 @@ export interface PlaybackPrefs {
    * screen it is a bright strip across the picture for the whole film.
    */
   miniBar?: boolean
+  /**
+   * A quality rung picked in the player (1080 = 1080p). Absent means Auto.
+   * The player pins the closest rendition at or under it on boot.
+   */
+  quality?: number
 }
 
 const KEY = 'reely_playback_prefs'
 
-/** What the player should apply right now: mirror first, then account. */
-export function readPlaybackPrefs(
-  accountPrefs?: PlaybackPrefs | null
-): PlaybackPrefs {
-  let local: PlaybackPrefs = {}
-  if (typeof window !== 'undefined') {
-    try {
-      const raw = window.localStorage.getItem(KEY)
-      if (raw) local = JSON.parse(raw) as PlaybackPrefs
-    } catch {
-      local = {}
-    }
-  }
-  return {
-    sub: local.sub ?? accountPrefs?.sub,
-    subSize: local.subSize ?? accountPrefs?.subSize,
-    miniBar: local.miniBar ?? accountPrefs?.miniBar,
+/** The rungs the player names (reely-pro-player src/quality.mjs). */
+const QUALITY_RUNGS = [4320, 2160, 1440, 1080, 720, 480, 360, 240, 144]
+
+const isRung = (value: unknown): value is number =>
+  typeof value === 'number' && QUALITY_RUNGS.includes(value)
+
+const SUB_CODE = /^(off|[a-z]{2,3})$/
+
+const readMirror = (): PlaybackPrefs => {
+  if (typeof window === 'undefined') return {}
+  try {
+    const raw = window.localStorage.getItem(KEY)
+    return raw ? (JSON.parse(raw) as PlaybackPrefs) : {}
+  } catch {
+    return {}
   }
 }
 
-/** Persist everywhere the preference lives, and return what was written. */
-export async function writePlaybackPrefs(
-  prefs: PlaybackPrefs
-): Promise<PlaybackPrefs> {
-  const clean: PlaybackPrefs = {
-    ...(prefs.sub ? { sub: prefs.sub } : { sub: 'off' }),
-    ...(prefs.subSize ? { subSize: prefs.subSize } : {}),
-    ...(prefs.miniBar ? { miniBar: true } : {}),
+/**
+ * What the player should apply right now: the account first, then this
+ * device's mirror.
+ *
+ * The account wins because it is the only copy another device can have moved,
+ * and savePrefs updates it optimistically, so it also already holds anything
+ * this tab just wrote. The mirror used to win, and a phone that had picked
+ * Arabic once kept Arabic forever, whatever was chosen everywhere else.
+ */
+export function readPlaybackPrefs(
+  accountPrefs?: PlaybackPrefs | null
+): PlaybackPrefs {
+  const local = readMirror()
+  return {
+    sub: accountPrefs?.sub ?? local.sub,
+    subSize: accountPrefs?.subSize ?? local.subSize,
+    miniBar: accountPrefs?.miniBar ?? local.miniBar,
+    quality: accountPrefs?.quality ?? local.quality,
   }
+}
+
+/** The prefs in force for this visitor, from wherever they live. */
+export const currentPlaybackPrefs = (): PlaybackPrefs =>
+  readPlaybackPrefs(accountSnapshot().prefs.playback)
+
+/** Drop anything malformed, and spell out "off" so an account copy overrides a mirror. */
+const cleanPrefs = (prefs: PlaybackPrefs): PlaybackPrefs => ({
+  sub: prefs.sub && SUB_CODE.test(prefs.sub) ? prefs.sub : 'off',
+  ...(prefs.subSize ? { subSize: prefs.subSize } : {}),
+  ...(prefs.miniBar ? { miniBar: true } : {}),
+  ...(isRung(prefs.quality) ? { quality: prefs.quality } : {}),
+})
+
+/**
+ * Persist a change everywhere the preference lives, and return the whole set
+ * as written. Takes a PATCH: the player reports one field at a time.
+ */
+export async function writePlaybackPrefs(
+  patch: PlaybackPrefs
+): Promise<PlaybackPrefs> {
+  const clean = cleanPrefs({ ...currentPlaybackPrefs(), ...patch })
   try {
     window.localStorage.setItem(KEY, JSON.stringify(clean))
   } catch {
     // Storage denied — the account copy still carries it.
   }
-  const { savePrefs } = await import('@/lib/account')
-  void savePrefs({ playback: clean })
+  // A ticket warmed before this change carries the old prefs in its URL.
+  dropWarmTickets()
+  // Signed out (a free trial play): the mirror is the whole store, and a
+  // savePrefs here would mark an account that does not exist as changed.
+  if (accountSnapshot().signedIn) void savePrefs({ playback: clean })
   return clean
+}
+
+/**
+ * The patch a `{ kind: 'prefs' }` message from the player carries, or null when
+ * it carries nothing usable. The message crosses an origin boundary, so every
+ * field is checked rather than trusted. `quality: 0` is the player saying Auto.
+ */
+export function prefsFromPlayer(data: {
+  sub?: unknown
+  quality?: unknown
+}): PlaybackPrefs | null {
+  const patch: PlaybackPrefs = {}
+  if (typeof data.sub === 'string' && SUB_CODE.test(data.sub)) {
+    patch.sub = data.sub
+  }
+  if (data.quality === 0) patch.quality = undefined
+  else if (isRung(data.quality)) patch.quality = data.quality
+  return Object.keys(patch).length ? patch : null
 }

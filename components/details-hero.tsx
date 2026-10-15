@@ -64,6 +64,7 @@ export const DetailsHero = ({
   sourceControl,
   selfHost,
   onEnded,
+  onFinished,
   blocked = false,
 }: {
   movie?: MovieDetails
@@ -116,6 +117,12 @@ export const DetailsHero = ({
    * it to start the next episode; a movie page passes nothing.
    */
   onEnded?: () => void
+  /**
+   * What is playing has been watched: it ended, or got past the credits
+   * threshold, on the house player or an embed that reports progress. Both
+   * pages tick it off, which is what moves "continue" past it.
+   */
+  onFinished?: () => void
 }) => {
   const media = (movie || series) as MovieDetails & SeriesDetails
   const title = getMediaTitle(media)
@@ -381,6 +388,7 @@ export const DetailsHero = ({
                 onReady={() => setLoadedSrc(`reely:${key}`)}
                 onUnavailable={onReelyUnavailable}
                 onEnded={onEnded}
+                onFinished={onFinished}
                 frameRef={reelyFrameRef}
               />
             </PlayerStage>
@@ -428,6 +436,7 @@ export const DetailsHero = ({
                   season={selfHost?.season}
                   episode={selfHost?.episode}
                   frameRef={iframeRef}
+                  onFinished={onFinished}
                 />
               )}
             </PlayerStage>

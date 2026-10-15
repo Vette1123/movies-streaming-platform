@@ -3,17 +3,14 @@
 import { useMemo } from 'react'
 
 import { Season, SeriesDetails } from '@/types/series-details'
+import { resumeEpisode, type ResumeTarget } from '@/lib/nextup/progress'
 import { useCompletedMedia } from '@/hooks/use-completed-media'
 import { useLocalStorage, type WatchedItem } from '@/hooks/use-local-storage'
 import { useMounted } from '@/hooks/use-mounted'
 
-export interface ResumePoint {
-  season: number
-  episode: number
-  // false: the stored episode was never finished, so pick it back up.
-  // true: it IS finished, so this is the following episode (a real "up next").
-  isNext: boolean
-}
+// false: the stored episode was never finished, so pick it back up.
+// true: it IS finished, so this is the first unfinished one after it.
+export type ResumePoint = ResumeTarget
 
 export interface SeriesProgress {
   // Null while localStorage is still unread (server render + first paint) and
@@ -40,25 +37,21 @@ const bySeasonNumber = (a: Season, b: Season) =>
 
 const episodeKey = (season?: number, episode?: number) => `${season}:${episode}`
 
-const findSeriesEntry = (items: WatchedItem[], seriesId: number) =>
-  items.find((item) => item.type === 'series' && item.id === seriesId)
+const stampOf = (item: WatchedItem) =>
+  Date.parse(item.modified_at || item.added_at || '') || 0
 
-// Where to go after finishing (season, episode): the next episode of the same
-// season, else episode 1 of the next regular season, else null — the user has
-// reached the end of what has aired.
-const nextAfter = (
-  seasons: Season[],
-  season: number,
-  episode: number
-): ResumePoint | null => {
-  const index = seasons.findIndex((entry) => entry.season_number === season)
-  if (index === -1) return null
-  if (episode < seasons[index].episode_count) {
-    return { season, episode: episode + 1, isNext: true }
+// The NEWEST entry for this show with an episode on it. Sync can leave two
+// (another device's row arrives under a different season:episode key, and
+// nothing tombstones this one), and `find` returned whichever was first in the
+// array — routinely the older episode.
+const newestEpisodeEntry = (items: WatchedItem[], seriesId: number) => {
+  let newest: WatchedItem | undefined
+  for (const item of items) {
+    if (item.type !== 'series' || item.id !== seriesId) continue
+    if (!item.season || !item.episode) continue
+    if (!newest || stampOf(item) > stampOf(newest)) newest = item
   }
-  const following = seasons[index + 1]
-  if (!following) return null
-  return { season: following.season_number, episode: 1, isNext: true }
+  return newest
 }
 
 // Continue-watching state for ONE series, derived from the two localStorage
@@ -95,15 +88,21 @@ export function useSeriesProgress(series?: SeriesDetails): SeriesProgress {
     return keys
   }, [completedItems, seriesId])
 
+  // The same walk the homepage queue answers with (lib/nextup/progress), so
+  // "Pick up where you left off" and this page's play button cannot disagree:
+  // the episode last played, else the newest one ticked off, then forward.
   const resume = useMemo(() => {
     if (!seriesId) return null
-    const last = findSeriesEntry(watchedItems, seriesId)
+    const last =
+      newestEpisodeEntry(watchedItems, seriesId) ??
+      newestEpisodeEntry(completedItems, seriesId)
     if (!last?.season || !last?.episode) return null
-    if (!completedKeys.has(episodeKey(last.season, last.episode))) {
-      return { season: last.season, episode: last.episode, isNext: false }
-    }
-    return nextAfter(seasons, last.season, last.episode)
-  }, [completedKeys, seasons, seriesId, watchedItems])
+    return resumeEpisode(
+      { season: last.season, episode: last.episode },
+      completedKeys,
+      seasons
+    )
+  }, [completedItems, completedKeys, seasons, seriesId, watchedItems])
 
   // Clamp: a user can tick episodes that TMDB later reshuffles, and a count
   // above the total would render a >100% bar.

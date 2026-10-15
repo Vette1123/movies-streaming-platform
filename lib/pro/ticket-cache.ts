@@ -5,7 +5,7 @@ import {
   readPosition,
   resumableSeconds,
 } from '@/lib/playback-positions'
-import { readPlaybackPrefs } from '@/lib/playback-prefs'
+import { currentPlaybackPrefs } from '@/lib/playback-prefs'
 import { type SelfHostTarget } from '@/lib/stream-resolver'
 
 /**
@@ -20,6 +20,12 @@ import { type SelfHostTarget } from '@/lib/stream-resolver'
  * Entry tickets live ~90 seconds. A warm entry is dropped well before that, or
  * a visitor who hesitated would be handed an expired one and told their session
  * had expired.
+ *
+ * A held ticket is SPENT by the player that boots from it. Its URL carries the
+ * start position and the subtitle choice as they were at mint time, so handing
+ * the same one to a second mount (the settings gear remounts the player) came
+ * back on the old subtitles and restarted the episode from wherever the first
+ * boot began.
  */
 const TICKET_FRESH_MS = 45000
 
@@ -47,9 +53,9 @@ const mintTicket = async (target: SelfHostTarget): Promise<string | null> => {
       ...(target.year ? { year: target.year } : {}),
       ...(target.imdb ? { imdb: target.imdb } : {}),
       start,
-      // Applied by the player on boot; read synchronously from the local
-      // mirror so no account round trip delays first play.
-      playback: readPlaybackPrefs(),
+      // Applied by the player on boot; read synchronously (account store,
+      // then the local mirror) so no round trip delays first play.
+      playback: currentPlaybackPrefs(),
     }),
   })
   if (!res.ok) throw new Error(`ticket ${res.status}`)
@@ -88,7 +94,7 @@ const preconnect = (url: string) => {
 }
 
 /** The play URL for this title, minting one only when nothing fresh is held. */
-export const ticketFor = (target: SelfHostTarget): Promise<string | null> => {
+const heldTicket = (target: SelfHostTarget): Promise<string | null> => {
   const key = ticketKey(target)
   const warm = tickets.get(key)
   if (warm && Date.now() - warm.at < TICKET_FRESH_MS) return warm.url
@@ -101,7 +107,17 @@ export const ticketFor = (target: SelfHostTarget): Promise<string | null> => {
     .then((minted) => {
       if (minted) preconnect(minted)
     })
-    .catch(() => tickets.delete(key))
+    .catch(() => {
+      // Only if it is still ours: a newer warm may have replaced it.
+      if (tickets.get(key)?.url === url) tickets.delete(key)
+    })
+  return url
+}
+
+/** For the player's mount: the warm ticket when one is held, and it is spent. */
+export const takeTicket = (target: SelfHostTarget): Promise<string | null> => {
+  const url = heldTicket(target)
+  tickets.delete(ticketKey(target))
   return url
 }
 
@@ -111,8 +127,8 @@ export const ticketFor = (target: SelfHostTarget): Promise<string | null> => {
  * player's own mount does the real attempt and owns the fallback.
  */
 export const warmReelyTicket = (target: SelfHostTarget): void => {
-  void ticketFor(target).catch(() => undefined)
+  void heldTicket(target).catch(() => undefined)
 }
 
-/** Test seam: the module-level cache is shared by every caller in the tab. */
-export const __clearTicketCache = () => tickets.clear()
+/** Forget every warm ticket — a playback setting changed under them. */
+export const dropWarmTickets = () => tickets.clear()

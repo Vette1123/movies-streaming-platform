@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest'
 import {
   groupProgress,
   mergeQueue,
-  nextEpisode,
   percentWatched,
+  queueTarget,
+  resumeEpisode,
   type QueueRow,
 } from '@/lib/nextup/progress'
 
@@ -68,17 +69,31 @@ describe('mergeQueue — anything you played is in the queue', () => {
     })
   })
 
-  it('keeps a show started at S01E01 alive even with nothing ticked off', () => {
+  it('keeps a show started at S01E01 alive, and resumes that episode', () => {
     // The old queue dropped these entirely: pressing play on the first
-    // episode marks nothing "completed", so the show did not exist.
+    // episode marks nothing "completed", so the show did not exist. Then it
+    // counted the play AS a finish and answered E2, while the show's own page
+    // said "Resume S1 · E1". Pressing play is not finishing.
     const entries = mergeQueue([row('history', 'series:1396:1:1', 100)])
     expect(entries).toHaveLength(1)
     expect(entries[0].kind).toBe('series')
-    expect([...entries[0].watched]).toEqual(['1:1'])
-    // And the walk answers E2, not "no such show".
-    expect(nextEpisode(entries[0].watched, SEASONS)).toEqual({
+    expect([...entries[0].watched]).toEqual([])
+    expect(queueTarget(entries[0], SEASONS)).toEqual({
       season: 1,
-      episode: 2,
+      episode: 1,
+      isNext: false,
+    })
+  })
+
+  it('resumes the episode last played, never the first gap', () => {
+    // The reported bug: a show started mid-way, or finished on a player that
+    // never said so, and "pick up where you left off" opened S01E01 because
+    // that was the first episode nobody had ticked off.
+    const entries = mergeQueue([row('history', 'series:1399:2:1', 100)])
+    expect(queueTarget(entries[0], SEASONS)).toEqual({
+      season: 2,
+      episode: 1,
+      isNext: false,
     })
   })
 
@@ -93,9 +108,47 @@ describe('mergeQueue — anything you played is in the queue', () => {
     expect(entries).toHaveLength(1)
     expect(entries[0].lastAt).toBe(200)
     expect([...entries[0].watched]).toEqual(['1:1', '1:2', '1:3'])
-    expect(nextEpisode(entries[0].watched, SEASONS)).toEqual({
+    expect(queueTarget(entries[0], SEASONS)).toEqual({
       season: 2,
       episode: 1,
+      isNext: false,
+    })
+  })
+
+  it('moves on once the last-played episode is finished', () => {
+    const entries = mergeQueue([
+      row('history', 'series:1399:1:3', 100),
+      row('completed', 'series:1399:1:3', 150),
+    ])
+    expect(queueTarget(entries[0], SEASONS)).toEqual({
+      season: 2,
+      episode: 1,
+      isNext: true,
+    })
+  })
+
+  it('follows the newest play when two devices left two history rows', () => {
+    const entries = mergeQueue([
+      row('history', 'series:1399:1:2', 100),
+      row('history', 'series:1399:2:2', 300),
+      row('history', 'series:1399:1:3', 200),
+    ])
+    expect(entries).toHaveLength(1)
+    expect(queueTarget(entries[0], SEASONS)).toMatchObject({
+      season: 2,
+      episode: 2,
+    })
+  })
+
+  it('walks on from the newest tick when nothing was ever played', () => {
+    const entries = mergeQueue([
+      row('completed', 'series:1399:1:2', 200),
+      row('completed', 'series:1399:1:1', 100),
+    ])
+    expect(queueTarget(entries[0], SEASONS)).toEqual({
+      season: 1,
+      episode: 3,
+      isNext: true,
     })
   })
 
@@ -127,46 +180,60 @@ describe('mergeQueue — anything you played is in the queue', () => {
   })
 })
 
-describe('nextEpisode', () => {
-  it('starts at the first episode when nothing has been watched', () => {
-    expect(nextEpisode(watched(), SEASONS)).toEqual({ season: 1, episode: 1 })
-  })
+describe('resumeEpisode', () => {
+  const at = (season: number, episode: number) => ({ season, episode })
 
-  it('returns the first GAP, not the one after the highest watched', () => {
-    // Watched S02E01 out of curiosity, then went back and started season one.
-    // The honest answer is where the hole is, not where the bookmark would be.
-    expect(nextEpisode(watched('1:1', '2:1'), SEASONS)).toEqual({
+  it('picks an unfinished episode back up', () => {
+    expect(resumeEpisode(at(1, 2), watched('1:1'), SEASONS)).toEqual({
       season: 1,
       episode: 2,
+      isNext: false,
     })
   })
 
-  it('rolls into the next season', () => {
-    expect(nextEpisode(watched('1:1', '1:2', '1:3'), SEASONS)).toEqual({
+  it('goes to the following episode once it is finished', () => {
+    expect(resumeEpisode(at(1, 1), watched('1:1'), SEASONS)).toEqual({
+      season: 1,
+      episode: 2,
+      isNext: true,
+    })
+  })
+
+  it('skips episodes already ticked off ahead of it', () => {
+    expect(
+      resumeEpisode(at(1, 1), watched('1:1', '1:2', '1:3'), SEASONS)
+    ).toEqual({ season: 2, episode: 1, isNext: true })
+  })
+
+  it('never walks back to an earlier gap', () => {
+    // Skipped S01E02. The bookmark is where you are; the hole is history.
+    expect(resumeEpisode(at(2, 1), watched('1:1', '2:1'), SEASONS)).toEqual({
+      season: 2,
+      episode: 2,
+      isNext: true,
+    })
+  })
+
+  it('rolls into the next season, never into the specials', () => {
+    expect(resumeEpisode(at(1, 3), watched('1:3'), SEASONS)).toEqual({
       season: 2,
       episode: 1,
+      isNext: true,
     })
   })
 
-  it('skips specials entirely', () => {
-    // Season 0 has four episodes and none are watched; it must never be offered.
-    const next = nextEpisode(watched(), SEASONS)
-    expect(next?.season).not.toBe(0)
-  })
-
-  it('returns null when the show is finished', () => {
-    expect(
-      nextEpisode(watched('1:1', '1:2', '1:3', '2:1', '2:2'), SEASONS)
-    ).toBeNull()
+  it('returns null when everything aired is behind you', () => {
+    expect(resumeEpisode(at(2, 2), watched('2:2'), SEASONS)).toBeNull()
   })
 
   it('ignores seasons TMDB reports as empty', () => {
     expect(
-      nextEpisode(watched(), [
-        { season_number: 1, episode_count: 0 },
-        { season_number: 2, episode_count: 1 },
+      resumeEpisode(at(1, 1), watched('1:1'), [
+        { season_number: 1, episode_count: 1 },
+        { season_number: 2, episode_count: 0 },
+        { season_number: 3, episode_count: 1 },
       ])
-    ).toEqual({ season: 2, episode: 1 })
+    ).toEqual({ season: 3, episode: 1, isNext: true })
   })
 })
 

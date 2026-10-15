@@ -13,10 +13,12 @@ import {
 import { isTitleBlocked } from '@/lib/blocked-titles'
 import { notePlayForSupportNudge } from '@/lib/support-nudge'
 import { useAccount } from '@/hooks/use-account'
+import { useCompletedMedia } from '@/hooks/use-completed-media'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { useSeasonEpisodes } from '@/hooks/use-season-episodes'
 import { useSeriesProgress } from '@/hooks/use-series-progress'
 import { useStreamSource } from '@/hooks/use-stream-source'
+import { useWatchedMedia } from '@/hooks/use-watched-media'
 import { DetailsHero } from '@/components/details-hero'
 import { ContinueWatching } from '@/components/series/continue-watching'
 import { useSeriesPlayback } from '@/components/series/playback-context'
@@ -47,6 +49,27 @@ const SeriesDeepLinkReader = ({
 const playbackKey = (target: DeepLink | null) =>
   target ? `${target.season}:${target.episode}` : 'default'
 
+const sameEpisode = (a?: DeepLink | null, b?: DeepLink | null) =>
+  !!a && !!b && a.season === b.season && a.episode === b.episode
+
+/**
+ * What the hero's play button starts: the episode the URL names, else
+ * continue-watching. Except a link to an episode already FINISHED while there
+ * is somewhere to go on to. That is nearly always this tab's own URL from the
+ * last sitting (pressing play mirrors the episode into it), or a homepage tile
+ * computed before the finish synced, and handing back the credits of what you
+ * just watched is the "resume does not work" people reported.
+ */
+const pickPlayTarget = (
+  deepLink: DeepLink | null,
+  resumeTarget: DeepLink | null,
+  deepLinkFinished: boolean
+): DeepLink | null => {
+  if (!deepLink) return resumeTarget
+  if (deepLinkFinished && resumeTarget) return resumeTarget
+  return deepLink
+}
+
 export const SeriesDetailsHero = ({
   series,
   trailerKey,
@@ -70,6 +93,8 @@ export const SeriesDetailsHero = ({
   // Which episode we have already counted as played (see startPlayback).
   const playedKeyRef = React.useRef<string | null>(null)
   const router = useRouter()
+  const { isEpisodeCompleted, markEpisodesCompleted } = useCompletedMedia()
+  const { handleWatchMedia } = useWatchedMedia()
 
   const progress = useSeriesProgress(series)
   const resume = progress.resume
@@ -91,9 +116,15 @@ export const SeriesDetailsHero = ({
     () => (resume ? { season: resume.season, episode: resume.episode } : null),
     [resume]
   )
-  // What the hero play button will start: the episode named by the URL if the
-  // visitor arrived on one, else continue-watching, else the series default.
-  const playTarget = deepLink ?? resumeTarget
+  // What the hero play button will start (see pickPlayTarget), else the series
+  // default.
+  const playTarget = pickPlayTarget(
+    deepLink,
+    resumeTarget,
+    !!deepLink &&
+      !!series?.id &&
+      isEpisodeCompleted(series.id, deepLink.season, deepLink.episode)
+  )
 
   // Stable identity, and a no-op when the values are unchanged, so the reader's
   // effect can't drive a setState → re-render loop.
@@ -144,11 +175,10 @@ export const SeriesDetailsHero = ({
   )
 
   const playDefaultSeries = () => {
-    // A URL deep-link always wins; otherwise fall back to continue-watching.
     const target = playTarget
     // PlayButton already fired media_played for this click (with is_resume).
     startPlayback(target)
-    if (target && !deepLink) {
+    if (target && !sameEpisode(target, deepLink)) {
       // Mirror the resume into the URL so the episode list highlights what is
       // playing and the tab stays shareable. `replace`, not `push`: an implicit
       // resume shouldn't add a back-button step.
@@ -193,16 +223,59 @@ export const SeriesDetailsHero = ({
     const next = playingTarget.episode + 1
     if (next > seasonCount) return
     const target = { season: playingTarget.season, episode: next }
+    // The bookmark moves with it. Only the play button and the episode list
+    // used to write history, so a night of autoplay left "continue" on the
+    // episode it started from.
+    handleWatchMedia(series, target)
     startPlayback(target, { track: true })
     router.replace(`?season=${target.season}&episode=${target.episode}`, {
       scroll: false,
     })
-  }, [autoNext, playingTarget, router, seasonCount, startPlayback])
+  }, [
+    autoNext,
+    handleWatchMedia,
+    playingTarget,
+    router,
+    seasonCount,
+    series,
+    startPlayback,
+  ])
+
+  // Watched to the credits: tick it off, so "continue" moves past it instead
+  // of offering the same episode back from the top. Nothing did this before; an
+  // episode only ever counted as finished once a LATER one was started from
+  // the list.
+  const handleFinished = React.useCallback(() => {
+    if (!series?.id) return
+    const target = playingTarget ?? { season: 1, episode: 1 }
+    markEpisodesCompleted([
+      {
+        showId: series.id,
+        season: target.season,
+        episode: target.episode,
+        seriesName: series.name,
+        overview: '',
+        backdrop_path: series.backdrop_path ?? '',
+        poster_path: series.poster_path ?? '',
+      },
+    ])
+  }, [markEpisodesCompleted, playingTarget, series])
 
   // Playback disabled following a copyright notice — see
   // config/blocked-titles.json. A show is blocked whole: a notice names the
   // work, and every episode of it is that work.
   const blocked = isTitleBlocked('tv', series?.id)
+
+  // What the house player plays, and also what it warms a ticket for while the
+  // thumb is still on its way to the button. It used to stay undefined until
+  // play, so on a series page the ticket round trip was always paid after the
+  // tap — the warm-up only ever worked on films.
+  const hostTarget = (playingTarget === undefined
+    ? playTarget
+    : playingTarget) ?? {
+    season: 1,
+    episode: 1,
+  }
 
   const src =
     blocked || playingTarget === undefined || !series?.id
@@ -232,16 +305,17 @@ export const SeriesDetailsHero = ({
         }}
         trailerKey={trailerKey}
         playTarget={playTarget}
-        isResume={Boolean(resumeTarget)}
+        isResume={sameEpisode(playTarget, resumeTarget)}
         onEnded={handleEnded}
+        onFinished={handleFinished}
         selfHost={
-          blocked || playingTarget === undefined || !series?.id
+          blocked || !series?.id
             ? undefined
             : {
                 type: 'tv',
                 id: series.id,
-                season: playingTarget?.season ?? 1,
-                episode: playingTarget?.episode ?? 1,
+                season: hostTarget.season,
+                episode: hostTarget.episode,
                 title: series.name,
                 year: Number(series.first_air_date?.slice(0, 4)) || undefined,
                 imdb: series.external_ids?.imdb_id || undefined,

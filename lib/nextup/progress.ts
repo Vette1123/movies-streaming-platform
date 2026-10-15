@@ -6,9 +6,11 @@
  * have already seen, or skips one, and both feel like the app being careless
  * with the only thing it is supposed to remember.
  *
- * The only input is the set of episodes ticked off. Reely does not store a
- * "progress" number anywhere — it stores one row per finished episode, which is
- * the truth that survives watching things out of order.
+ * Two inputs: the episode last pressed play on (the `history` row, one per
+ * show) and the set of episodes ticked off (`completed`, one row per finished
+ * episode). The bookmark is the play; the ticks only say whether to move past
+ * it. The show page's own "Resume S2 · E4" caption (hooks/use-series-progress)
+ * walks the same function, so the homepage and the page cannot disagree.
  */
 
 /** `series:1399:3:2` — the sync key of one finished episode. */
@@ -41,6 +43,11 @@ export interface QueueRow {
 
 export type QueueKind = 'movie' | 'series'
 
+export interface EpisodeRef {
+  season: number
+  episode: number
+}
+
 /**
  * One "pick up where you left off" candidate, before TMDB resolution.
  */
@@ -49,8 +56,13 @@ export interface QueueEntry {
   kind: QueueKind
   /** Newest touch wins the top of the row. */
   lastAt: number
-  /** Series only: every ticked-or-played episode, as 's:e'. */
+  /** Series only: every episode ticked off, as 's:e'. Never a mere play. */
   watched: Set<string>
+  /**
+   * Series only: the bookmark. The newest episode pressed play on, else — for
+   * a show only ever ticked off by hand — the newest episode ticked off.
+   */
+  last?: EpisodeRef
   /** Movies carry these straight from the history payload. */
   title?: string
   posterPath?: string | null
@@ -66,40 +78,73 @@ function parsePayload(payload: string | null): ResumePayload | null {
   }
 }
 
+/** `series:<id>:<s>:<e>` → its parts, or null for anything else. */
+function episodeOf(parts: string[]): (EpisodeRef & { id: string }) | null {
+  if (parts.length !== 4 || parts[0] !== 'series') return null
+  const [, id, season, episode] = parts
+  if (!/^\d+$/.test(id) || !/^\d+$/.test(season) || !/^\d+$/.test(episode)) {
+    return null
+  }
+  return { id, season: Number(season), episode: Number(episode) }
+}
+
+interface Mark {
+  at: EpisodeRef
+  stamp: number
+}
+
+/** One show while the rows are read: its ticks, plus both kinds of bookmark. */
+interface ShowRows {
+  lastAt: number
+  watched: Set<string>
+  played?: Mark
+  ticked?: Mark
+}
+
+/** Keeps whichever of two marks is newer. Row order is never relied on. */
+const newer = (current: Mark | undefined, next: Mark): Mark =>
+  current && current.stamp >= next.stamp ? current : next
+
 /**
  * Merge every store that knows what you played into one queue.
  *
- * Three sources, one pass each:
- *
- * - **completed** episodes group per show exactly as before — the truth that
- *   survives out-of-order watching.
+ * - **completed** episodes group per show — what you finished, which survives
+ *   watching out of order. A film ticked off here is finished, and finished
+ *   things do not come back as resume cards.
  * - **history** rows are what "I pressed play" writes. A FILM here becomes a
- *   queue entry of its own (resume target: the film), which is the part the
- *   old queue silently dropped: starting a movie made it vanish from "where
- *   you left off". A SERIES row carries the episode that was playing; when the
- *   show has no completed episodes yet — anything started at S01E01 — it seeds
- *   one, so nextEpisode answers E2 instead of the show not existing.
- * - A film also ticked off in **completed** is finished, and finished things do
- *   not come back as resume cards.
+ *   queue entry of its own (resume target: the film). A SERIES row is the
+ *   bookmark. Two devices can leave two rows for one show (the key carries the
+ *   episode), so the newest one wins.
+ *
+ * A play is deliberately NOT counted as a finish. It used to seed the ticked
+ * set, which made a show started at S01E01 answer E2 — and made a show started
+ * anywhere else answer S01E01, the first episode nobody had ticked off.
  */
 export function mergeQueue(rows: QueueRow[]): QueueEntry[] {
-  const shows = new Map<string, QueueEntry>()
+  const shows = new Map<string, ShowRows>()
   const films = new Map<string, QueueEntry>()
   const finishedFilms = new Set<string>()
 
+  const showOf = (id: string, stamp: number) => {
+    const existing = shows.get(id)
+    if (existing) {
+      existing.lastAt = Math.max(existing.lastAt, stamp)
+      return existing
+    }
+    const created: ShowRows = { lastAt: stamp, watched: new Set<string>() }
+    shows.set(id, created)
+    return created
+  }
+
   for (const row of rows) {
     const parts = row.item_key.split(':')
+    const episode = episodeOf(parts)
 
     if (row.store === 'completed') {
-      const grouped = groupRow(parts, row.updated_at)
-      if (grouped) {
-        const existing = shows.get(grouped.id)
-        if (existing) {
-          grouped.watched.forEach((key) => existing.watched.add(key))
-          existing.lastAt = Math.max(existing.lastAt, grouped.lastAt)
-        } else {
-          shows.set(grouped.id, grouped)
-        }
+      if (episode) {
+        const show = showOf(episode.id, row.updated_at)
+        show.watched.add(`${episode.season}:${episode.episode}`)
+        show.ticked = newer(show.ticked, { at: episode, stamp: row.updated_at })
         continue
       }
       // `movie:<id>` — a finished film is remembered only as an exclusion.
@@ -109,67 +154,50 @@ export function mergeQueue(rows: QueueRow[]): QueueEntry[] {
       continue
     }
 
-    if (row.store === 'history') {
-      // `movie:<id>` — pressed play on a film.
-      if (parts.length === 2 && parts[0] === 'movie') {
-        const payload = parsePayload(row.payload)
-        if (!payload) continue
-        const existing = films.get(parts[1])
-        if (existing) {
-          existing.lastAt = Math.max(existing.lastAt, row.updated_at)
-          continue
-        }
-        films.set(parts[1], {
-          id: parts[1],
-          kind: 'movie',
-          lastAt: row.updated_at,
-          watched: new Set(),
-          title: payload.title ?? undefined,
-          posterPath: payload.poster_path ?? null,
-        })
+    if (row.store !== 'history') continue
+
+    if (episode) {
+      const show = showOf(episode.id, row.updated_at)
+      show.played = newer(show.played, { at: episode, stamp: row.updated_at })
+      continue
+    }
+
+    // `movie:<id>` — pressed play on a film.
+    if (parts.length === 2 && parts[0] === 'movie') {
+      const payload = parsePayload(row.payload)
+      if (!payload) continue
+      const existing = films.get(parts[1])
+      if (existing) {
+        existing.lastAt = Math.max(existing.lastAt, row.updated_at)
         continue
       }
-      // `series:<id>:<s>:<e>` — pressed play on an episode. If completion has
-      // nothing on this show, the played episode itself seeds the walk.
-      if (parts.length === 4 && parts[0] === 'series') {
-        const grouped = groupRow(parts, row.updated_at)
-        if (!grouped) continue
-        const existing = shows.get(grouped.id)
-        if (existing) {
-          existing.lastAt = Math.max(existing.lastAt, row.updated_at)
-          continue
-        }
-        shows.set(grouped.id, grouped)
-      }
+      films.set(parts[1], {
+        id: parts[1],
+        kind: 'movie',
+        lastAt: row.updated_at,
+        watched: new Set(),
+        title: payload.title ?? undefined,
+        posterPath: payload.poster_path ?? null,
+      })
     }
   }
 
-  return [...shows.values(), ...films.values()]
+  const series: QueueEntry[] = [...shows].map(([id, show]) => {
+    const mark = show.played ?? show.ticked
+    return {
+      id,
+      kind: 'series',
+      lastAt: show.lastAt,
+      watched: show.watched,
+      ...(mark
+        ? { last: { season: mark.at.season, episode: mark.at.episode } }
+        : {}),
+    }
+  })
+
+  return [...series, ...films.values()]
     .filter((entry) => !(entry.kind === 'movie' && finishedFilms.has(entry.id)))
     .sort((a, b) => b.lastAt - a.lastAt)
-}
-
-/** One valid episode key → a single-show Progress, or null for anything else. */
-function groupRow(
-  parts: string[],
-  updatedAt: number
-): {
-  id: string
-  kind: QueueKind
-  lastAt: number
-  watched: Set<string>
-} | null {
-  if (parts.length !== 4 || parts[0] !== 'series') return null
-  const [, id, season, episode] = parts
-  if (!/^\d+$/.test(id) || !/^\d+$/.test(season) || !/^\d+$/.test(episode)) {
-    return null
-  }
-  return {
-    id,
-    kind: 'series',
-    lastAt: updatedAt,
-    watched: new Set([`${Number(season)}:${Number(episode)}`]),
-  }
 }
 
 export interface SeasonShape {
@@ -177,17 +205,11 @@ export interface SeasonShape {
   episode_count: number
 }
 
-export interface NextEpisode {
-  season: number
-  episode: number
-}
-
 /**
  * Group finished-episode keys by series.
  *
  * A thin view over `mergeQueue` restricted to what completion alone knows —
- * kept because the walk (`nextEpisode`) reasons about one show at a time, and
- * because the existing tests pin it directly.
+ * kept because the existing tests pin it directly.
  */
 export function groupProgress(
   rows: { item_key: string; updated_at: number }[]
@@ -208,35 +230,63 @@ export function groupProgress(
     }))
 }
 
+export interface ResumeTarget extends EpisodeRef {
+  /**
+   * false: the bookmarked episode is unfinished, so pick it back up.
+   * true: it is finished, and this is the first unfinished one after it.
+   */
+  isNext: boolean
+}
+
 /**
- * The first episode not ticked off, walking seasons in order.
+ * Where "continue" lands: the bookmarked episode while it is unfinished, else
+ * the first unfinished episode after it. Null when everything from there to
+ * the last aired episode is ticked off.
  *
- * Not "the one after the highest you watched": somebody who watched S02E05 out
- * of curiosity and then went back to S01E01 is mid-season one, and the highest
- * number would march them past everything they have not seen. The first gap is
- * the honest answer, and it is also self-correcting — tick the gap off and the
- * next call moves on.
+ * It only ever walks FORWARD. An episode skipped earlier in the run is not
+ * where somebody is — the bookmark is — and walking back to the first gap is
+ * exactly what sent people from S03 to S01E01.
  *
- * Season 0 is skipped. TMDB files specials there, they are almost never watched
- * in order, and a show would otherwise permanently suggest a Christmas special
- * from 2011.
+ * Season 0 is never walked into: TMDB files specials there and they are almost
+ * never watched in order. A bookmark already IN season 0 is still honoured
+ * while it is unfinished.
  */
-export function nextEpisode(
+export function resumeEpisode(
+  last: EpisodeRef,
   watched: Set<string>,
   seasons: SeasonShape[]
-): NextEpisode | null {
+): ResumeTarget | null {
+  if (!watched.has(`${last.season}:${last.episode}`)) {
+    return { season: last.season, episode: last.episode, isNext: false }
+  }
   const ordered = [...seasons]
     .filter((season) => season.season_number > 0 && season.episode_count > 0)
     .sort((a, b) => a.season_number - b.season_number)
+  const from = ordered.findIndex(
+    (season) => season.season_number === last.season
+  )
+  if (from === -1) return null
 
-  for (const season of ordered) {
-    for (let episode = 1; episode <= season.episode_count; episode++) {
+  let episode = last.episode + 1
+  for (let index = from; index < ordered.length; index++) {
+    const season = ordered[index]
+    for (; episode <= season.episode_count; episode++) {
       if (!watched.has(`${season.season_number}:${episode}`)) {
-        return { season: season.season_number, episode }
+        return { season: season.season_number, episode, isNext: true }
       }
     }
+    episode = 1
   }
   return null
+}
+
+/** The queue's answer for one show, or null when it is caught up. */
+export function queueTarget(
+  entry: QueueEntry,
+  seasons: SeasonShape[]
+): ResumeTarget | null {
+  if (!entry.last) return null
+  return resumeEpisode(entry.last, entry.watched, seasons)
 }
 
 /** How much of a show is behind you, 0–100, for the bar under each row. */

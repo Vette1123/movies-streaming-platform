@@ -36,6 +36,20 @@ export const playbackKey = (
     : `${type}:${id}`
 
 /**
+ * Past this share of the runtime a title counts as watched: the rest is
+ * credits. One number for both questions it answers — "is there anything left
+ * to resume" and "should this tick itself off" — so they cannot disagree.
+ */
+const FINISHED_SHARE = 0.95
+
+/** True once a position is far enough in that the title is finished. */
+export const isFinishedAt = (position: number, duration?: number): boolean =>
+  Number.isFinite(position) &&
+  typeof duration === 'number' &&
+  duration > 0 &&
+  position >= duration * FINISHED_SHARE
+
+/**
  * A position worth picking back up, or null when there is effectively none:
  * shorter than the intro-skip margin, or close enough to the end that the
  * right move is starting over rather than landing on the credits.
@@ -47,10 +61,7 @@ export const resumableSeconds = (
   if (!entry) return null
   const { position_seconds: position } = entry
   if (!Number.isFinite(position) || position < 20) return null
-  const total = duration ?? entry.duration_seconds
-  if (typeof total === 'number' && total > 0 && position >= total * 0.95) {
-    return null
-  }
+  if (isFinishedAt(position, duration ?? entry.duration_seconds)) return null
   return position
 }
 

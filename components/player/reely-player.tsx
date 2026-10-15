@@ -7,10 +7,12 @@ import { trackPlayerFailed, trackPlayerStreamPath } from '@/lib/analytics'
 import { STREAM_EMBED_ALLOW } from '@/lib/embed-policy'
 import {
   clearPosition,
+  isFinishedAt,
   playbackKey,
   writePosition,
 } from '@/lib/playback-positions'
-import { ticketFor } from '@/lib/pro/ticket-cache'
+import { prefsFromPlayer, writePlaybackPrefs } from '@/lib/playback-prefs'
+import { takeTicket } from '@/lib/pro/ticket-cache'
 import { type SelfHostTarget } from '@/lib/stream-resolver'
 
 /**
@@ -26,6 +28,9 @@ import { type SelfHostTarget } from '@/lib/stream-resolver'
  * contentWindow so a rogue frame cannot spoof progress):
  *   { source:'reely-player', kind:'progress', t, dur } -> playback store
  *   { source:'reely-player', kind:'ended' }            -> clear position
+ *   { source:'reely-player', kind:'prefs', sub?, quality? }
+ *       -> a subtitle or quality picked IN the player, saved like any setting
+ *          so the next title boots with it
  *
  * `onReady` fires when the shell has loaded (the switcher's stall detector
  * uses it); `onUnavailable` when no ticket can be minted — 402 once the
@@ -37,6 +42,7 @@ export function ReelyPlayer({
   onReady,
   onUnavailable,
   onEnded,
+  onFinished,
   frameRef: exposedRef,
 }: {
   target: SelfHostTarget
@@ -48,6 +54,14 @@ export function ReelyPlayer({
    * it and the stored position is cleared either way.
    */
   onEnded?: () => void
+  /**
+   * The title is watched: it ended, or played past the credits threshold
+   * (lib/playback-positions isFinishedAt). Fires once per mount. Series pages
+   * tick the episode off with it, which is what moves "continue" on to the
+   * next one; most people close the tab during the credits and never see
+   * `ended` at all.
+   */
+  onFinished?: () => void
   /** Handed out so a Watch Together room can steer THIS frame. The house
    * player is the default source, so without it the guest half of a room was
    * posting into an embed iframe that is not on screen. */
@@ -72,6 +86,17 @@ export function ReelyPlayer({
   React.useEffect(() => {
     unavailableRef.current = onUnavailable
   }, [onUnavailable])
+  const finishedRef = React.useRef(onFinished)
+  React.useEffect(() => {
+    finishedRef.current = onFinished
+  }, [onFinished])
+  // Once per mount: progress keeps arriving through the credits.
+  const finishedSent = React.useRef(false)
+  const finish = React.useCallback(() => {
+    if (finishedSent.current) return
+    finishedSent.current = true
+    finishedRef.current?.()
+  }, [])
 
   const key = `${target.type}:${target.id}:${target.season ?? ''}:${target.episode ?? ''}`
 
@@ -81,7 +106,7 @@ export function ReelyPlayer({
 
     void (async () => {
       try {
-        const warmed = await ticketFor(target)
+        const warmed = await takeTicket(target)
         if (!warmed) throw new Error('no url')
         setUrl(warmed)
       } catch {
@@ -114,6 +139,8 @@ export function ReelyPlayer({
             t?: number
             dur?: number
             native?: boolean
+            sub?: unknown
+            quality?: unknown
           }
         | undefined
       if (!data || data.source !== 'reely-player') return
@@ -124,14 +151,20 @@ export function ReelyPlayer({
         target.episode
       )
       if (data.kind === 'progress' && Number.isFinite(data.t)) {
-        writePosition(
-          pKey,
-          data.t as number,
-          Number.isFinite(data.dur) ? (data.dur as number) : undefined
-        )
+        const duration = Number.isFinite(data.dur)
+          ? (data.dur as number)
+          : undefined
+        writePosition(pKey, data.t as number, duration)
+        if (isFinishedAt(data.t as number, duration)) finish()
       } else if (data.kind === 'ended') {
         clearPosition(pKey)
+        finish()
         endedRef.current?.()
+      } else if (data.kind === 'prefs') {
+        // No reload: the player has already applied it. This is only so the
+        // NEXT boot - next episode, next title, another device - starts there.
+        const patch = prefsFromPlayer(data)
+        if (patch) void writePlaybackPrefs(patch)
       } else if (data.kind === 'capability') {
         // Counts the one thing that decides what a viewer costs us. See
         // trackPlayerStreamPath — this is how a platform change that frees a

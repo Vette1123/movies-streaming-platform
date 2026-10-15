@@ -22,8 +22,8 @@ import { fetchClient } from '@/lib/fetch-client'
 
 import {
   mergeQueue,
-  nextEpisode,
   percentWatched,
+  queueTarget,
   type QueueEntry,
   type QueueRow,
 } from './progress'
@@ -98,7 +98,7 @@ async function resolve(entry: QueueEntry): Promise<NextUpItem | null> {
     }))
     .filter((season) => Number.isFinite(season.season_number))
 
-  const next = nextEpisode(entry.watched, seasons)
+  const next = queueTarget(entry, seasons)
   // Caught up. Deliberately absent rather than listed as "nothing to watch":
   // this panel is a queue, and a queue that lists finished things is a list.
   if (!next) return null

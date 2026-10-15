@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
-  __clearTicketCache,
-  ticketFor,
+  dropWarmTickets,
+  takeTicket,
   warmReelyTicket,
 } from '@/lib/pro/ticket-cache'
 
@@ -18,7 +18,7 @@ const ok = (url: string) =>
 let calls: number
 
 beforeEach(() => {
-  __clearTicketCache()
+  dropWarmTickets()
   calls = 0
   vi.useFakeTimers()
   vi.stubGlobal(
@@ -35,25 +35,40 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('ticketFor', () => {
+describe('takeTicket', () => {
   it('serves a warm ticket without a second request', async () => {
     warmReelyTicket(target)
-    const url = await ticketFor(target)
+    const url = await takeTicket(target)
     expect(url).toBe('https://play.example/p?n=1')
     expect(calls).toBe(1)
   })
 
+  it('spends it: a second mount of the same title mints its own', async () => {
+    // The settings gear remounts the player. Reusing the first boot's URL
+    // brought back the old subtitles AND the old start position, so the
+    // episode restarted from wherever the first boot began.
+    warmReelyTicket(target)
+    expect(await takeTicket(target)).toBe('https://play.example/p?n=1')
+    expect(await takeTicket(target)).toBe('https://play.example/p?n=2')
+  })
+
+  it('drops warm tickets when a playback setting changes', async () => {
+    warmReelyTicket(target)
+    dropWarmTickets()
+    expect(await takeTicket(target)).toBe('https://play.example/p?n=2')
+  })
+
   it('mints again once the entry is older than the freshness window', async () => {
-    await ticketFor(target)
+    await takeTicket(target)
     vi.advanceTimersByTime(46000)
-    expect(await ticketFor(target)).toBe('https://play.example/p?n=2')
+    expect(await takeTicket(target)).toBe('https://play.example/p?n=2')
     expect(calls).toBe(2)
   })
 
   it('keeps tickets for different episodes apart', async () => {
     const ep = { type: 'tv' as const, id: 1399, season: 1, episode: 2 }
-    await ticketFor(target)
-    await ticketFor(ep)
+    await takeTicket(target)
+    await takeTicket(ep)
     expect(calls).toBe(2)
   })
 
@@ -66,9 +81,9 @@ describe('ticketFor', () => {
         return ok('https://play.example/p?n=2')
       })
     )
-    await expect(ticketFor(target)).rejects.toThrow('ticket 503')
+    await expect(takeTicket(target)).rejects.toThrow('ticket 503')
     // Same tick, so only the eviction — not the clock — can save this.
-    expect(await ticketFor(target)).toBe('https://play.example/p?n=2')
+    expect(await takeTicket(target)).toBe('https://play.example/p?n=2')
   })
 
   it('never throws out of the warm path', async () => {
@@ -79,6 +94,6 @@ describe('ticketFor', () => {
       })
     )
     expect(() => warmReelyTicket(target)).not.toThrow()
-    await expect(ticketFor(target)).rejects.toThrow('offline')
+    await expect(takeTicket(target)).rejects.toThrow('offline')
   })
 })
