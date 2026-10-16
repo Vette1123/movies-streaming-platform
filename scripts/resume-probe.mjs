@@ -19,9 +19,14 @@
 //   2. hovering Play starts the player's stream lookup for S2E3 before the
 //      tap, and the tap spends that hover's ticket instead of minting another;
 //      the ticket asks for S2E3 at 600s with the ACCOUNT's prefs (fr, 720)
-//   3. the player boots pinned at or under 720p and fetches French subtitles
-//   4. a quality and a subtitle picked in the player's menus are saved
+//   3. the player boots pinned at or under 720p and fetches French subtitles;
+//      the volume slider opens above its button and sets a level, and the
+//      button mutes
+//   4. a quality, a subtitle and an audio language picked in the player's
+//      menus are saved, and reach the account
 //   5. watching past the credits ticks S2E3 off, and the page then offers E4
+//   6. S2E4's player boots with the Italian audio (via the ticket), and with
+//      the level and the mute left on this device
 //
 // Limits: the account and ticket are mocked here, so the Worker's own param
 // building is not exercised (bmc/seo probes cover production); Chromium only.
@@ -90,10 +95,13 @@ const answer = (path, body) => {
       season: String(body.season),
       episode: String(body.episode),
     })
-    // The same three the Worker passes through (cloudflare/worker.js).
+    // The same ones the Worker passes through (cloudflare/worker.js).
     if (body.playback?.sub) params.set('sub', body.playback.sub)
     if (body.playback?.subSize) params.set('subs', body.playback.subSize)
     if (body.playback?.quality) params.set('q', String(body.playback.quality))
+    if (body.playback?.audio) params.set('al', body.playback.audio)
+    if (typeof body.playback?.miniBar === 'boolean')
+      params.set('mini', body.playback.miniBar ? '1' : '0')
     return { success: true, url: `${PLAYER}/play?${params}` }
   }
   if (path === '/api/account') {
@@ -249,14 +257,16 @@ try {
 
   // 3. Into the player's frame. Same site (localhost), so one process and an
   // isolated world on the frame is enough to read and click its DOM.
-  const frameId = await waitFor('the player frame', async () => {
-    const { result } = await send('Page.getFrameTree')
-    const walk = (node) =>
-      node.frame.url.startsWith(PLAYER)
-        ? node.frame.id
-        : (node.childFrames ?? []).map(walk).find(Boolean)
-    return walk(result.frameTree)
-  })
+  const findPlayer = () =>
+    waitFor('the player frame', async () => {
+      const { result } = await send('Page.getFrameTree')
+      const walk = (node) =>
+        node.frame.url.startsWith(PLAYER)
+          ? node.frame.id
+          : (node.childFrames ?? []).map(walk).find(Boolean)
+      return walk(result.frameTree)
+    })
+  let frameId = await findPlayer()
   const inPlayer = async (expression) => {
     const { result } = await send('Page.createIsolatedWorld', {
       frameId,
@@ -284,6 +294,64 @@ try {
     )
   )
   if (french) pass('player fetched the saved French subtitles')
+
+  // 3b. Volume. ArtPlayer draws its slider ABOVE the button, and the left
+  // control group clipped it: the slider was invisible and a click only
+  // toggled mute. Hover the button, hit-test the slider, set a level with it.
+  const frameBox = await evaluate(`(() => {
+    const r = document.querySelector('iframe[src^=${JSON.stringify(PLAYER)}]').getBoundingClientRect()
+    return { x: r.x, y: r.y }
+  })()`)
+  const mouse = (type, point) =>
+    send('Input.dispatchMouseEvent', {
+      type,
+      x: frameBox.x + point.x,
+      y: frameBox.y + point.y,
+      button: 'left',
+      clickCount: 1,
+    })
+  const volumeIcon = await inPlayer(`(() => {
+    const r = document.querySelector('.art-control-volume').getBoundingClientRect()
+    return { x: r.x + r.width / 2, y: r.y + r.height / 2 }
+  })()`)
+  await mouse('mouseMoved', volumeIcon)
+  await sleep(600)
+  const slider = await inPlayer(`(() => {
+    const s = document.querySelector('.art-volume-slider').getBoundingClientRect()
+    const point = { x: s.x + s.width / 2, y: s.bottom - s.height * 0.3 }
+    const hit = document.elementFromPoint(point.x, point.y)
+    return { ...point, reachable: !!hit?.closest('.art-volume-panel') }
+  })()`)
+  let level = null
+  if (!slider.reachable) {
+    fail('hovering the volume button shows no slider: it is clipped or covered')
+  } else {
+    await mouse('mouseMoved', slider)
+    await mouse('mousePressed', slider)
+    await mouse('mouseReleased', slider)
+    level = await waitFor(
+      'the volume to follow the slider',
+      () =>
+        inPlayer(`(() => {
+          const v = document.querySelector('video').volume
+          return v > 0.1 && v < 0.5 ? v : null
+        })()`),
+      3000
+    ).catch(() => null)
+    if (level) pass(`the volume slider set ${Math.round(level * 100)}%`)
+    else fail('clicking the volume slider did not change the level')
+  }
+  // Muted from the button itself, so the next boot has a mute to remember.
+  await mouse('mouseMoved', volumeIcon)
+  await mouse('mousePressed', volumeIcon)
+  await mouse('mouseReleased', volumeIcon)
+  const muted = await waitFor(
+    'the mute',
+    () => inPlayer(`document.querySelector('video').muted || null`),
+    3000
+  ).catch(() => null)
+  if (muted) pass('the volume button mutes')
+  else fail('the volume button did not mute')
 
   // 4. Picks in the player's own menus are saved.
   const pickRow = (control, match) =>
@@ -321,6 +389,19 @@ try {
   }).catch((error) => fail(error.message))
   if (savedSub) pass('subtitle picked in the player was saved')
 
+  const audioPick = await pickRow(
+    'audio-track',
+    `b.textContent.includes('Italian')`
+  )
+  console.log(`audio menu: ${audioPick}`)
+  const savedAudio = await waitFor('the saved audio language', async () => {
+    const prefs = await readStore('reely_playback_prefs')
+    return prefs?.audio === 'it' ? prefs.audio : null
+  }).catch((error) => fail(error.message))
+  if (savedAudio && saves.some((s) => s.prefs?.playback?.audio === 'it'))
+    pass('audio language picked in the player was saved and synced')
+  else if (savedAudio) fail('the audio pick never reached the account')
+
   // 5. Past the credits.
   await inPlayer(`(async () => {
     const v = document.querySelector('video')
@@ -354,6 +435,44 @@ try {
   if (!/season 2 episode 4/.test(next))
     fail(`after finishing S2E3 the hero should offer S2E4, says "${next}"`)
   else pass('the page now offers S2 · E4')
+
+  // 6. The next episode's player starts the way the last one was left: the
+  // audio language through the account and the ticket, the level and the mute
+  // on this device.
+  await evaluate(
+    `document.querySelector('button[aria-label*="season"]').click()`
+  )
+  const nextTicket = await waitFor('the S2E4 ticket', () =>
+    tickets.find((t) => t.episode === 4)
+  )
+  if (nextTicket.playback?.audio !== 'it')
+    fail(`S2E4 ticket prefs ${JSON.stringify(nextTicket.playback)}, no audio`)
+  else pass('the S2E4 ticket carries the Italian audio')
+  frameId = await findPlayer()
+  const booted = await waitFor(
+    'the S2E4 player',
+    () =>
+      inPlayer(`(() => {
+        const v = document.querySelector('video')
+        return v && v.readyState > 0 ? { volume: v.volume, muted: v.muted } : null
+      })()`),
+    30000
+  ).catch((error) => fail(error.message))
+  if (booted && !booted.muted) fail('the next player forgot the mute')
+  else if (booted) pass('the next player starts muted, as left')
+  if (booted && level && Math.abs(booted.volume - level) > 0.02)
+    fail(`the next player is at ${booted.volume}, was left at ${level}`)
+  else if (booted && level) pass('the next player keeps the volume level')
+  const italian = await waitFor(
+    'the Italian audio rendition',
+    () =>
+      inPlayer(
+        `performance.getEntriesByType('resource').some((e) => e.name.includes('audio_ita'))`
+      ),
+    20000
+  ).catch(() => false)
+  if (italian) pass('the next player plays the Italian audio')
+  else fail('the next player did not switch to the saved Italian audio')
 
   if (!process.exitCode) console.log('✓ resume and playback prefs round-trip')
 } catch (error) {

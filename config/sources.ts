@@ -51,8 +51,9 @@ export interface StreamSource {
    * NEXT_PUBLIC_STREAM_SOURCE_N_QUERY env var. How a slot carries player
    * customisation (brand colors, autoplay) for providers that accept it.
    * Empty by default — never append junk to a provider whose URLs are signed.
-   * A `{start}` token becomes the synced resume second (see fillStart), for a
-   * provider that takes a start time: `startAt={start}`.
+   * Tokens carry this viewer's playback into a provider that takes them (see
+   * fillTokens): `{start}` the synced resume second, `{sub}` the saved
+   * subtitle language — `startAt={start}&ds_lang={sub}`.
    */
   query?: string
 }
@@ -245,11 +246,19 @@ const fillPath = (
     .replace('{s}', String(vars.s ?? 1))
     .replace('{e}', String(vars.e ?? 1))
 
+/** What an embed URL may carry for this viewer, through a slot's tokens. */
+export interface EmbedTokens {
+  /** `{start}`: the synced resume second. */
+  start?: number | null
+  /** `{sub}`: the saved subtitle language (ISO 639-1). */
+  sub?: string | null
+}
+
 /** The film URL, honoring the source's path shape. */
 export const movieStreamUrl = (
   source: StreamSource,
   id: number,
-  start?: number | null
+  tokens?: EmbedTokens | null
 ): string =>
   withSourceQuery(
     `${source.base}${(source.paths?.movie ?? '/movie/{id}').replace(
@@ -257,7 +266,7 @@ export const movieStreamUrl = (
       String(id)
     )}`,
     source,
-    start
+    tokens
   )
 
 /**
@@ -271,33 +280,48 @@ export const seriesStreamUrl = (
   source: StreamSource,
   id: number,
   target?: { season: number; episode: number } | null,
-  start?: number | null
+  tokens?: EmbedTokens | null
 ): string => {
   const t = target ?? { season: 1, episode: 1 }
   const template = source.paths?.tv ?? '/tv/{id}/{s}/{e}'
   return withSourceQuery(
     `${source.base}${fillPath(template, { id, s: t.season, e: t.episode })}`,
     source,
-    start
+    tokens
   )
 }
 
 /**
- * Fill a slot query's `{start}` token with the resume second.
- *
- * How an embed that takes a start time (`startAt={start}`) resumes where the
- * last device stopped: positions sync through the account, but the embed's own
- * progress lives in ITS storage on the device that played. With nothing to
- * resume, the whole `name={start}` pair is dropped, so a provider never sees an
- * empty or zero start it might read as an instruction.
+ * Each token's value for this viewer, or null when there is none to send.
+ * A subtitle preference of 'off' sends nothing: the provider's own default
+ * stands, which is what "no preference" has always meant on an embed.
  */
-const fillStart = (query: string, start?: number | null): string =>
+const TOKEN_VALUES: Record<string, (tokens: EmbedTokens) => string | null> = {
+  '{start}': ({ start }) =>
+    start && Number.isFinite(start) && start > 0
+      ? String(Math.floor(start))
+      : null,
+  '{sub}': ({ sub }) =>
+    sub && sub !== 'off' && /^[a-z]{2,3}$/.test(sub) ? sub : null,
+}
+
+/**
+ * Fill a slot query's tokens with this viewer's playback.
+ *
+ * How an embed resumes where the last device stopped, and opens on the
+ * subtitle language chosen anywhere in Reely: positions and prefs sync through
+ * the account, but an embed keeps its own only in ITS storage, on the device
+ * that played. A token with no value drops its whole `name=` pair, so a
+ * provider never sees an empty or zero value it might read as an instruction.
+ */
+const fillTokens = (query: string, tokens: EmbedTokens): string =>
   query
     .split('&')
     .flatMap((pair) => {
-      if (!pair.includes('{start}')) return [pair]
-      if (!start || !Number.isFinite(start) || start <= 0) return []
-      return [pair.replace('{start}', String(Math.floor(start)))]
+      const token = Object.keys(TOKEN_VALUES).find((key) => pair.includes(key))
+      if (!token) return [pair]
+      const value = TOKEN_VALUES[token](tokens)
+      return value === null ? [] : [pair.replace(token, value)]
     })
     .join('&')
 
@@ -305,9 +329,9 @@ const fillStart = (query: string, start?: number | null): string =>
 const withSourceQuery = (
   url: string,
   source: StreamSource,
-  start?: number | null
+  tokens?: EmbedTokens | null
 ): string => {
-  const query = source.query ? fillStart(source.query, start) : ''
+  const query = source.query ? fillTokens(source.query, tokens ?? {}) : ''
   return query ? `${url}${url.includes('?') ? '&' : '?'}${query}` : url
 }
 

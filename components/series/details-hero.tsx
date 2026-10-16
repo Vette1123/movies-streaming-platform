@@ -11,11 +11,10 @@ import {
   trackMediaPlayed,
 } from '@/lib/analytics'
 import { isTitleBlocked } from '@/lib/blocked-titles'
-import { startSecondsFor } from '@/lib/playback-positions'
 import { notePlayForSupportNudge } from '@/lib/support-nudge'
 import { useAccount } from '@/hooks/use-account'
 import { useCompletedMedia } from '@/hooks/use-completed-media'
-import { useFrameStart } from '@/hooks/use-frame-start'
+import { readFrameTokens, useFrameTokens } from '@/hooks/use-frame-tokens'
 import { useSearchQueryParams } from '@/hooks/use-search-params'
 import { useSeasonEpisodes } from '@/hooks/use-season-episodes'
 import { useSeriesProgress } from '@/hooks/use-series-progress'
@@ -284,22 +283,22 @@ export const SeriesDetailsHero = ({
   // every provider on the list and cannot be second-guessed.
   const frameTarget = playingTarget ?? { season: 1, episode: 1 }
   const framing = !blocked && playingTarget !== undefined && !!series?.id
-  const frameStart = useFrameStart(
+  const frameTokens = useFrameTokens(
     framing
       ? `${sourceControl.source.id}:${frameTarget.season}:${frameTarget.episode}`
       : null,
     () =>
       series?.id
-        ? startSecondsFor(
+        ? readFrameTokens(
             'tv',
             series.id,
             frameTarget.season,
             frameTarget.episode
           )
-        : null
+        : {}
   )
   const src = framing
-    ? seriesStreamUrl(sourceControl.source, series.id, frameTarget, frameStart)
+    ? seriesStreamUrl(sourceControl.source, series.id, frameTarget, frameTokens)
     : ''
 
   return (

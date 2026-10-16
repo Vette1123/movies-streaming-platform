@@ -10,7 +10,7 @@ import {
   parseEmbedProgress,
   shouldWriteEmbedProgress,
 } from '@/lib/embed-progress'
-import { latchStart } from '@/hooks/use-frame-start'
+import { latchTokens } from '@/hooks/use-frame-tokens'
 
 describe('parseEmbedProgress', () => {
   const timeupdate = (currentTime: number, duration?: number) => ({
@@ -187,65 +187,126 @@ describe('source query passthrough', () => {
   })
 })
 
-describe('embed start time', () => {
-  // Positions sync through the account, but an embed's own progress lives in
-  // its storage on the device that played, so on any other device it started
-  // from zero. A slot whose provider takes a start time names it with {start}.
+describe('embed tokens', () => {
+  // Positions and prefs sync through the account, but an embed keeps its own
+  // only in its storage on the device that played, so on any other device it
+  // started from zero and on its default subtitles. A slot whose provider
+  // takes these names them with tokens.
   const resuming: StreamSource = {
     id: 'r',
     label: 'Server R',
     base: 'https://embed.example',
-    query: 'primaryColor=63b8bc&startAt={start}',
+    query: 'primaryColor=63b8bc&startAt={start}&ds_lang={sub}',
   }
 
-  it('fills {start} with the whole resume second', () => {
-    expect(movieStreamUrl(resuming, 550, 1834.7)).toBe(
-      'https://embed.example/movie/550?primaryColor=63b8bc&startAt=1834'
+  it('fills {start} with the whole resume second and {sub} with the language', () => {
+    expect(movieStreamUrl(resuming, 550, { start: 1834.7, sub: 'fr' })).toBe(
+      'https://embed.example/movie/550?primaryColor=63b8bc&startAt=1834&ds_lang=fr'
     )
     expect(
-      seriesStreamUrl(resuming, 1396, { season: 2, episode: 3 }, 600)
-    ).toBe('https://embed.example/tv/1396/2/3?primaryColor=63b8bc&startAt=600')
+      seriesStreamUrl(
+        resuming,
+        1396,
+        { season: 2, episode: 3 },
+        { start: 600, sub: 'ar' }
+      )
+    ).toBe(
+      'https://embed.example/tv/1396/2/3?primaryColor=63b8bc&startAt=600&ds_lang=ar'
+    )
   })
 
-  it('drops the pair when there is nothing to resume', () => {
+  it('drops a pair with nothing to send', () => {
     for (const start of [null, undefined, 0, Number.NaN]) {
-      expect(movieStreamUrl(resuming, 550, start)).toBe(
-        'https://embed.example/movie/550?primaryColor=63b8bc'
+      expect(movieStreamUrl(resuming, 550, { start, sub: 'en' })).toBe(
+        'https://embed.example/movie/550?primaryColor=63b8bc&ds_lang=en'
       )
     }
-    const onlyStart = { ...resuming, query: 'startAt={start}' }
-    expect(movieStreamUrl(onlyStart, 550)).toBe(
+    // "Off" is no preference: the provider's own default stands.
+    for (const sub of [null, undefined, 'off', '<b>']) {
+      expect(movieStreamUrl(resuming, 550, { start: 90, sub })).toBe(
+        'https://embed.example/movie/550?primaryColor=63b8bc&startAt=90'
+      )
+    }
+    const onlyTokens = { ...resuming, query: 'startAt={start}&sub={sub}' }
+    expect(movieStreamUrl(onlyTokens, 550)).toBe(
       'https://embed.example/movie/550'
     )
   })
 
-  it('ignores a start on a slot that does not ask for one', () => {
+  it('ignores tokens on a slot that does not ask for them', () => {
     expect(
-      movieStreamUrl({ ...resuming, query: 'primaryColor=63b8bc' }, 550, 900)
+      movieStreamUrl({ ...resuming, query: 'primaryColor=63b8bc' }, 550, {
+        start: 900,
+        sub: 'fr',
+      })
     ).toBe('https://embed.example/movie/550?primaryColor=63b8bc')
   })
 })
 
-describe('latchStart', () => {
-  // The start rides the frame URL. Read live, every position the progress
+describe('latchTokens', () => {
+  // The tokens ride the frame URL. Read live, every position the progress
   // bridge wrote would re-point the iframe and restart the embed.
-  const idle = { identity: null, start: null }
+  const idle = { identity: null, tokens: null }
 
   it('reads once when a frame starts, then holds while it plays', () => {
-    const read = vi.fn(() => 600)
-    const playing = latchStart(idle, 'r:2:3', read)
-    expect(playing.start).toBe(600)
-    read.mockReturnValue(642)
-    expect(latchStart(playing, 'r:2:3', read)).toBe(playing)
+    const read = vi.fn(() => ({ start: 600, sub: 'fr' }))
+    const playing = latchTokens(idle, 'r:2:3', read)
+    expect(playing.tokens).toEqual({ start: 600, sub: 'fr' })
+    read.mockReturnValue({ start: 642, sub: 'fr' })
+    expect(latchTokens(playing, 'r:2:3', read)).toBe(playing)
     expect(read).toHaveBeenCalledTimes(1)
   })
 
   it('reads again for a new episode or server, and nothing when idle', () => {
-    const read = vi.fn(() => 600)
-    const first = latchStart(idle, 'r:2:3', read)
-    read.mockReturnValue(30)
-    expect(latchStart(first, 'r:2:4', read).start).toBe(30)
-    expect(latchStart(first, null, read)).toEqual(idle)
+    const read = vi.fn(() => ({ start: 600 }))
+    const first = latchTokens(idle, 'r:2:3', read)
+    read.mockReturnValue({ start: 30 })
+    expect(latchTokens(first, 'r:2:4', read).tokens).toEqual({ start: 30 })
+    expect(latchTokens(first, null, read)).toEqual(idle)
     expect(read).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('parseEmbedProgress, status-style players', () => {
+  // A second player family reports `player_status` / `player_progress` /
+  // `player_duration` (its own docs), every ~5s while playing. The parser
+  // knew only `event: 'timeupdate'`, so nothing played on it was ever
+  // remembered: no resume, and no tick when it finished.
+  const status = (
+    player_status: string,
+    progress?: number,
+    duration?: number
+  ) => ({
+    type: 'PLAYER_EVENT',
+    data: {
+      player_info: { tmdb: 1396, mediaType: 'tv', season: 2, episode: 3 },
+      player_status,
+      ...(progress !== undefined ? { player_progress: progress } : {}),
+      ...(duration !== undefined ? { player_duration: duration } : {}),
+    },
+  })
+
+  it('reads playing, paused and seeked as a position', () => {
+    for (const state of ['playing', 'paused', 'seeked']) {
+      expect(parseEmbedProgress(status(state, 754.2, 2820))).toEqual({
+        kind: 'progress',
+        positionSeconds: 754.2,
+        durationSeconds: 2820,
+      })
+    }
+  })
+
+  it('reads completed as the end, in either nesting', () => {
+    expect(parseEmbedProgress(status('completed', 2820, 2820))).toEqual({
+      kind: 'ended',
+      positionSeconds: 0,
+    })
+    const reposted = { type: 'PLAYER_EVENT', event: status('completed').data }
+    expect(parseEmbedProgress(reposted)?.kind).toBe('ended')
+  })
+
+  it('refuses a status with no position', () => {
+    expect(parseEmbedProgress(status('playing'))).toBeNull()
+    expect(parseEmbedProgress(status('buffering', 10))).toBeNull()
   })
 })

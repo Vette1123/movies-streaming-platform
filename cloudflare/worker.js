@@ -1654,12 +1654,19 @@ async function handleProTicket(request, env, url) {
     ) {
       params.set('subs', prefs.subSize)
     }
-    // Only the "on" case travels: the player's default is off, and a device
-    // that was told directly overrides whatever the account says.
-    if (prefs.miniBar === true) params.set('mini', '1')
+    // Both values travel. Every toggle, the player's own included, now lands
+    // in the account, so it is the newest choice and the player obeys it over
+    // its device copy; absent means nobody has chosen.
+    if (typeof prefs.miniBar === 'boolean') {
+      params.set('mini', prefs.miniBar ? '1' : '0')
+    }
     // A quality rung picked in the player (1080 = 1080p). Absent is Auto.
     if (PLAYER_QUALITY_RUNGS.includes(prefs.quality)) {
       params.set('q', String(prefs.quality))
+    }
+    // The audio language picked in the player's audio menu (ISO code).
+    if (typeof prefs.audio === 'string' && /^[a-z]{2,3}$/.test(prefs.audio)) {
+      params.set('al', prefs.audio)
     }
   }
 

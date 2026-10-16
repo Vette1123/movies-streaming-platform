@@ -23,6 +23,10 @@ interface PlayerEventPayload {
   event?: unknown
   currentTime?: unknown
   duration?: unknown
+  /** The status-style family: 'playing' | 'paused' | 'seeked' | 'completed'. */
+  player_status?: unknown
+  player_progress?: unknown
+  player_duration?: unknown
 }
 
 /**
@@ -48,8 +52,17 @@ interface PlayerEventEnvelope {
   event?: PlayerEventPayload
 }
 
-/** Player events that mean the title finished, across the two player families. */
-const ENDED_EVENTS = new Set(['ended', 'complete'])
+/** Player events that mean the title finished, across the player families. */
+const ENDED_EVENTS = new Set(['ended', 'complete', 'completed'])
+
+/**
+ * Statuses that carry a position in the status-style family. It reports
+ * `player_status` / `player_progress` / `player_duration` instead of
+ * `event` / `currentTime` / `duration` (its own docs), about every five
+ * seconds while playing. Unrecognised, nothing played on it was remembered:
+ * no resume, and no tick when it finished.
+ */
+const POSITION_STATUSES = new Set(['playing', 'paused', 'seeked'])
 
 const finiteNumber = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0
@@ -68,13 +81,21 @@ export const parseEmbedProgress = (data: unknown): EmbedProgress | null => {
   const inner = envelope.data ?? envelope.event
   if (!inner || typeof inner !== 'object') return null
 
-  if (typeof inner.event === 'string' && ENDED_EVENTS.has(inner.event))
+  const status =
+    typeof inner.player_status === 'string' ? inner.player_status : null
+  const event = typeof inner.event === 'string' ? inner.event : status
+  if (event && ENDED_EVENTS.has(event))
     return { kind: 'ended', positionSeconds: 0 }
 
-  if (inner.event !== 'timeupdate') return null
-  const position = finiteNumber(inner.currentTime)
+  const reportsPosition = status
+    ? POSITION_STATUSES.has(status)
+    : inner.event === 'timeupdate'
+  if (!reportsPosition) return null
+  const position = finiteNumber(
+    status ? inner.player_progress : inner.currentTime
+  )
   if (position === null) return null
-  const duration = finiteNumber(inner.duration)
+  const duration = finiteNumber(status ? inner.player_duration : inner.duration)
   return {
     kind: 'progress',
     positionSeconds: position,

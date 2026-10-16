@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { isFinishedAt, resumableSeconds } from '@/lib/playback-positions'
-import { prefsFromPlayer, readPlaybackPrefs } from '@/lib/playback-prefs'
+import {
+  cleanPrefs,
+  prefsFromPlayer,
+  readPlaybackPrefs,
+} from '@/lib/playback-prefs'
 
 // A preference is only a preference if the next boot gets it. These pin the
 // two places that decided otherwise: which copy wins when the device and the
@@ -75,6 +79,38 @@ describe('prefsFromPlayer', () => {
     expect(prefsFromPlayer({ sub: '<script>' })).toBeNull()
     expect(prefsFromPlayer({ sub: 42, quality: 881 })).toBeNull()
     expect(prefsFromPlayer({ quality: '1080' })).toBeNull()
+    expect(prefsFromPlayer({ audio: 'Italian', miniBar: 'yes' })).toBeNull()
+  })
+
+  it('takes an audio language and the full-screen bar switch', () => {
+    // Both used to be dropped: an audio pick lasted one episode, and the bar
+    // switch inside the player never left this device.
+    expect(prefsFromPlayer({ audio: 'it' })).toEqual({ audio: 'it' })
+    expect(prefsFromPlayer({ miniBar: false })).toEqual({ miniBar: false })
+    expect(prefsFromPlayer({ miniBar: true })).toEqual({ miniBar: true })
+  })
+})
+
+describe('cleanPrefs', () => {
+  it('keeps an explicit "bar off", so the account can say it', () => {
+    expect(cleanPrefs({ miniBar: false })).toHaveProperty('miniBar', false)
+    expect(cleanPrefs({})).not.toHaveProperty('miniBar')
+  })
+
+  it('keeps a valid audio language and drops a malformed one', () => {
+    expect(cleanPrefs({ audio: 'it' })).toHaveProperty('audio', 'it')
+    expect(cleanPrefs({ audio: 'Italian' })).not.toHaveProperty('audio')
+  })
+})
+
+describe('readPlaybackPrefs audio', () => {
+  it('takes the account audio over the device mirror', () => {
+    window.localStorage.setItem(
+      'reely_playback_prefs',
+      JSON.stringify({ audio: 'en' })
+    )
+    expect(readPlaybackPrefs({ audio: 'it' }).audio).toBe('it')
+    expect(readPlaybackPrefs(null).audio).toBe('en')
   })
 })
 

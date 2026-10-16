@@ -12,7 +12,8 @@
 //     from the account yet) boots with.
 //
 // They are set from three places: Settings, the gear over the player, and the
-// player's OWN subtitle and quality menus, which post their picks back here
+// player's OWN subtitle, quality and audio menus and its full-screen bar
+// switch, which post their picks back here
 // (components/player/reely-player.tsx). That last one is the one people use,
 // and until it reported anything a language picked in the player was gone by
 // the next episode.
@@ -38,6 +39,11 @@ export interface PlaybackPrefs {
    * The player pins the closest rendition at or under it on boot.
    */
   quality?: number
+  /**
+   * The audio language picked in the player's audio menu (ISO code). Absent
+   * means the stream's own default; a title without it keeps its default.
+   */
+  audio?: string
 }
 
 const KEY = 'reely_playback_prefs'
@@ -49,6 +55,7 @@ const isRung = (value: unknown): value is number =>
   typeof value === 'number' && QUALITY_RUNGS.includes(value)
 
 const SUB_CODE = /^(off|[a-z]{2,3})$/
+const LANG_CODE = /^[a-z]{2,3}$/
 
 const readMirror = (): PlaybackPrefs => {
   if (typeof window === 'undefined') return {}
@@ -78,6 +85,7 @@ export function readPlaybackPrefs(
     subSize: accountPrefs?.subSize ?? local.subSize,
     miniBar: accountPrefs?.miniBar ?? local.miniBar,
     quality: accountPrefs?.quality ?? local.quality,
+    audio: accountPrefs?.audio ?? local.audio,
   }
 }
 
@@ -85,12 +93,18 @@ export function readPlaybackPrefs(
 export const currentPlaybackPrefs = (): PlaybackPrefs =>
   readPlaybackPrefs(accountSnapshot().prefs.playback)
 
-/** Drop anything malformed, and spell out "off" so an account copy overrides a mirror. */
-const cleanPrefs = (prefs: PlaybackPrefs): PlaybackPrefs => ({
+/**
+ * Drop anything malformed, and spell out "off" so an account copy overrides a
+ * mirror. `miniBar: false` is kept for the same reason: it used to be dropped,
+ * so turning the bar off anywhere left the account silent and every device's
+ * own old "on" decided instead.
+ */
+export const cleanPrefs = (prefs: PlaybackPrefs): PlaybackPrefs => ({
   sub: prefs.sub && SUB_CODE.test(prefs.sub) ? prefs.sub : 'off',
   ...(prefs.subSize ? { subSize: prefs.subSize } : {}),
-  ...(prefs.miniBar ? { miniBar: true } : {}),
+  ...(typeof prefs.miniBar === 'boolean' ? { miniBar: prefs.miniBar } : {}),
   ...(isRung(prefs.quality) ? { quality: prefs.quality } : {}),
+  ...(prefs.audio && LANG_CODE.test(prefs.audio) ? { audio: prefs.audio } : {}),
 })
 
 /**
@@ -122,11 +136,17 @@ export async function writePlaybackPrefs(
 export function prefsFromPlayer(data: {
   sub?: unknown
   quality?: unknown
+  audio?: unknown
+  miniBar?: unknown
 }): PlaybackPrefs | null {
   const patch: PlaybackPrefs = {}
   if (typeof data.sub === 'string' && SUB_CODE.test(data.sub)) {
     patch.sub = data.sub
   }
+  if (typeof data.audio === 'string' && LANG_CODE.test(data.audio)) {
+    patch.audio = data.audio
+  }
+  if (typeof data.miniBar === 'boolean') patch.miniBar = data.miniBar
   if (data.quality === 0) patch.quality = undefined
   else if (isRung(data.quality)) patch.quality = data.quality
   return Object.keys(patch).length ? patch : null
