@@ -39,29 +39,15 @@ const POSTER_SIZES =
  * is layout, so nothing happened. From `md` the poster and the copy fill the
  * row between them and the gutter does not exist.
  *
- * Callers add their own stacking direction for the narrow case — the movie page
- * puts the poster first, the series page puts the synopsis first and the poster
- * after it (`order-*` on each child; see components/series/details-content.tsx)
- * — and both resolve to the same row here.
+ * Callers add `flex-col` for the narrow case, where the poster stacks above
+ * the information on both pages.
  *
- * `md:flex-wrap` is what lets ONE constant serve both pages, which have a
- * different number of columns. The movie row is poster + information and never
- * wraps. The series row has a third child, the season navigator, and that aside
- * is `w-full` until `lg` — dropped into a row at `md` unwrapped it would claim
- * the whole line and crush the synopsis to about 90px. Wrapping, it takes its
- * own line under the poster and the copy until `xl` makes it a real column (see
- * NAVIGATOR_BOX in components/series/season-navigator.tsx), at which point all
- * three fit against a 1208px container and the line stops breaking on its own.
- *
- * The information column must be `flex-1` (i.e. `flex: 1 1 0%`) for that to be
- * deterministic: a zero flex-basis means it never contributes width to the
- * wrapping decision, so where the line breaks depends only on the poster and the
- * aside, not on how long a synopsis happens to be.
- *
- * Wrapping is scoped to `md` and up on purpose — below it the container is a
- * COLUMN, where `flex-wrap` would break on height instead.
+ * The row used to wrap from `md` so the series page could fit a third child,
+ * a 288px season navigator, beside the two. The episodes are a full-width
+ * section above this row now (components/series/details-content.tsx), so both
+ * pages have the same two columns and nothing wraps.
  */
-export const DETAILS_ROW = 'flex gap-8 md:flex-row md:flex-wrap'
+export const DETAILS_ROW = 'flex gap-8 md:flex-row'
 
 export const DetailsPoster = ({
   path,
@@ -70,7 +56,6 @@ export const DetailsPoster = ({
 }: {
   path: string
   alt: string
-  /** Order/stack overrides — the series page resequences this box on mobile. */
   className?: string
 }) => (
   <div

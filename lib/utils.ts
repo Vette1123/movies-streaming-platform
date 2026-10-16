@@ -3,7 +3,6 @@ import { twMerge } from 'tailwind-merge'
 
 import { MovieGenre } from '@/types/movie-genre'
 import { ItemType } from '@/types/movie-result'
-import { Season } from '@/types/series-details'
 import { MOVIES_GENRE, TV_GENRE } from '@/lib/genres'
 import { apiConfig } from '@/lib/tmdbConfig'
 
@@ -183,19 +182,6 @@ function convertMinutesToHours(minutes: number): string {
   return [hoursString, minString].filter(Boolean).join(' ')
 }
 
-function seasonsFormatter(seasons: Season[]) {
-  return seasons.map((season) => {
-    if (season.season_number === 0) return null
-    return {
-      id: season.id,
-      name: season.name,
-      poster_path: season.poster_path,
-      season_number: season.season_number,
-      air_date: season.air_date,
-    }
-  })
-}
-
 /**
  * A list of names as a sentence reads it: "Max", "Max and Hulu",
  * "Max, Hulu and Netflix".
@@ -228,5 +214,4 @@ export {
   itemRedirect,
   moneyFormatter,
   convertMinutesToHours,
-  seasonsFormatter,
 }

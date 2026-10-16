@@ -12,24 +12,19 @@ import {
   trackHeroAutoplayToggled,
   trackHeroWatchClicked,
 } from '@/lib/analytics'
-import { heroTitleState } from '@/lib/hero-title'
 import { onIdleAfterLoad } from '@/lib/idle'
 import { COVER_BACKDROP_SIZES, COVER_POSTER_SIZES } from '@/lib/image-sizes'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
-import {
-  cn,
-  getImageURL,
-  getLogoImageSrcSet,
-  getLogoImageURL,
-} from '@/lib/utils'
+import { getImageURL } from '@/lib/utils'
 import { useHasHoverPointer, useLowPowerDevice } from '@/hooks/use-device-tier'
 import { useHeroAutoplay } from '@/hooks/use-hero-autoplay'
 import { useHeroExtras } from '@/hooks/use-hero-extras'
-import { buttonVariants } from '@/components/ui/button'
+import { heroWatchButton } from '@/components/ui/hero-action-button'
 import { BlurredImage } from '@/components/blurred-image'
 import { CarouselPauseContext } from '@/components/carousel'
 import { HeroRatesInfos } from '@/components/header/hero-rates-info'
 import { HeroTrailerPreview } from '@/components/header/hero-trailer-preview'
+import { HeroWordmark } from '@/components/header/hero-wordmark'
 import { Icons } from '@/components/icons'
 import { MediaLink } from '@/components/media/media-link'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
@@ -97,35 +92,11 @@ export function HeroSlide({
   } = useHeroExtras(movie.id, mediaType)
 
   const reduce = useReducedMotion()
-  const [logoError, setLogoError] = React.useState(false)
-  // Gates the title-logo crossfade: the text title holds the frame until the
-  // logo image has actually decoded, then they crossfade — no hard text→logo pop.
-  const [logoLoaded, setLogoLoaded] = React.useState(false)
-
-  const markLogoLoaded = React.useCallback(() => {
+  // The wordmark settling (decoded or failed) ends the first-paint hold for
+  // every slide after it — see the grace note below.
+  const settleFirstPaint = React.useCallback(() => {
     firstPaintSettled = true
-    setLogoLoaded(true)
   }, [])
-  const markLogoError = React.useCallback(() => {
-    firstPaintSettled = true
-    setLogoError(true)
-  }, [])
-  // onLoad alone is NOT enough for a server-rendered <img>. The logo ships in the
-  // SSR HTML, so on a warm cache the browser decodes it before React hydrates and
-  // attaches the listener — the event has already fired, nothing is listening,
-  // and logoLoaded stays false forever. The logo then sits at opacity-0 while the
-  // text title stays held, which is why the hero showed the plain title (or, on a
-  // remounted slide, no title at all). A ref callback runs at attach time and can
-  // read img.complete, catching exactly the case the event misses. naturalWidth
-  // distinguishes a decoded image from a completed-but-broken one.
-  const logoRef = React.useCallback(
-    (node: HTMLImageElement | null) => {
-      if (!node?.complete) return
-      if (node.naturalWidth > 0) markLogoLoaded()
-      else markLogoError()
-    },
-    [markLogoLoaded, markLogoError]
-  )
   // First (uncached) paint: hold the fallback-font text back until we know the
   // logo's fate — resolves to no-logo, or the logo decodes and crossfades in —
   // so the styled logo is never pre-empted by a flash of the plain title. A
@@ -297,16 +268,6 @@ export function HeroSlide({
   }, [hasHover, reduce, trailerKey, active, autoplayEnabled])
 
   const href = mediaDetailHref(mediaType, movie.id)
-
-  // Logo vs text: see lib/hero-title.ts. The wordmark is visible from the
-  // server HTML on; JS only ever decides whether the text covers for it.
-  const { logo: showLogo, text: showTitleText } = heroTitleState({
-    hasLogo: !!logoPath,
-    logoLoaded,
-    logoError,
-    extrasReady,
-    graceElapsed: titleGraceElapsed,
-  })
 
   // Warm the wordmark of the slides parked either side once the page has
   // finished loading, so swiping to one paints its title immediately instead
@@ -495,73 +456,29 @@ export function HeroSlide({
                   aria-label={`More about ${title}`}
                   className="block w-full"
                 >
-                  {showLogo ? (
-                    // Stack the text title and the official logo in one bottom-
-                    // aligned box that reserves the logo's height, so there's no
-                    // layout jump and no hard swap: the text shows immediately and
-                    // holds the frame, then crossfades out as the decoded logo
-                    // rises in. Plain <img> so we don't fight next/image over the
-                    // logo's arbitrary aspect ratio; falls back to text on error.
-                    <div className="relative flex min-h-16 w-full items-end sm:min-h-20 lg:min-h-32">
-                      <h2
-                        aria-hidden={logoLoaded}
-                        // Fades IN only (as a fallback); it leaves instantly when
-                        // the wordmark lands, so the two never overlap on screen.
-                        className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md sm:text-4xl lg:text-6xl ${
-                          showTitleText
-                            ? 'opacity-100 transition-opacity duration-300 ease-out'
-                            : 'opacity-0'
-                        }`}
-                      >
-                        {title}
-                      </h2>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        ref={logoRef}
-                        src={getLogoImageURL(logoPath!)}
-                        // A plain <img> gets no srcset from next/image, so the
-                        // density pair is written by hand: the wordmark lays out
-                        // at ~500 CSS px, which retina paints at 1000.
-                        srcSet={getLogoImageSrcSet(logoPath!)}
-                        alt={title}
-                        // The first slide's wordmark is part of the LCP frame and
-                        // races a fallback timer; tell the browser so it isn't
-                        // queued behind the rails' posters.
-                        fetchPriority={priority ? 'high' : 'auto'}
-                        // The carousel keeps a slide mounted either side, and
-                        // their wordmarks are parked a stage-width away where
-                        // nobody can see them. Eager, they were 3 logo downloads
-                        // on load — measured at 24/59/67 KB once the 2x file
-                        // exists, i.e. more than the hero backdrop itself. Lazy,
-                        // an off-stage slide fetches its logo when it slides in,
-                        // behind the title-text fallback the crossfade already
-                        // has for exactly this case.
-                        // Until the page has loaded, that is (warmLogo above);
-                        // and the slide on stage always loads its own.
-                        loading={
-                          priority || active || warmLogo ? 'eager' : 'lazy'
-                        }
-                        // Same reason as every image in BlurredImage: a native
-                        // image drag would ghost the logo and eat the gesture.
-                        draggable={false}
-                        onError={markLogoError}
-                        onLoad={markLogoLoaded}
-                        // No opacity gate, no fade, no blur: the browser paints
-                        // the wordmark the instant it decodes, before React has
-                        // even hydrated. Gating it on `logoLoaded` is what held a
-                        // 150ms download back for the whole hydration plus 700ms.
-                        className="absolute bottom-0 left-0 max-h-16 w-auto max-w-[80%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] sm:max-h-20 lg:max-h-32"
-                      />
-                    </div>
-                  ) : (
-                    <h2
-                      className={`text-3xl font-bold tracking-tight text-balance text-white drop-shadow-md transition-opacity duration-300 ease-out sm:text-4xl lg:text-6xl ${
-                        showTitleText ? 'opacity-100' : 'opacity-0'
-                      }`}
-                    >
-                      {title}
-                    </h2>
-                  )}
+                  <HeroWordmark
+                    as="h2"
+                    title={title}
+                    logoPath={logoPath}
+                    extrasReady={extrasReady}
+                    graceElapsed={titleGraceElapsed}
+                    onSettle={settleFirstPaint}
+                    // The first slide's wordmark is part of the LCP frame and
+                    // races a fallback timer; tell the browser so it isn't
+                    // queued behind the rails' posters.
+                    fetchPriority={priority ? 'high' : 'auto'}
+                    // The carousel keeps a slide mounted either side, and
+                    // their wordmarks are parked a stage-width away where
+                    // nobody can see them. Eager, they were 3 logo downloads
+                    // on load — measured at 24/59/67 KB once the 2x file
+                    // exists, i.e. more than the hero backdrop itself. Lazy,
+                    // an off-stage slide fetches its logo when it slides in,
+                    // behind the title-text fallback the crossfade already
+                    // has for exactly this case. Until the page has loaded,
+                    // that is (warmLogo above); and the slide on stage always
+                    // loads its own.
+                    loading={priority || active || warmLogo ? 'eager' : 'lazy'}
+                  />
                 </MediaLink>
               </div>
               <HeroRatesInfos movie={movie} genreTable={genreTable} />
@@ -607,17 +524,9 @@ export function HeroSlide({
                     media_type: mediaType,
                   })
                 }
-                // cn(), not buttonVariants' own `className` slot: cva only
-                // concatenates, so the size's px-12 would still win over the
-                // mobile override. twMerge actually replaces it.
-                className={cn(
-                  buttonVariants({ variant: 'watchNow', size: '2xl' }),
-                  // Tighter pill below sm. At 367px wide the full-size pill made
-                  // the row 345px against a 327px container, so Save wrapped to a
-                  // second row and ate ~54px of vertical space the copy needed.
-                  // Narrower = one row, everything on screen; full size from sm up.
-                  'rounded-full px-5 text-lg sm:px-12 sm:text-xl'
-                )}
+                // Shared with the detail hero's play button; see the note on
+                // heroWatchButton for the sizing.
+                className={heroWatchButton}
               >
                 <Icons.watch className="mr-2" />
                 Watch Now

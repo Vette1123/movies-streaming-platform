@@ -3,41 +3,47 @@
 import React from 'react'
 
 import { SeriesDetails } from '@/types/series-details'
+import { seasonMeta, seasonTabsOf } from '@/lib/season-tabs'
 import { useEpisodeHandler } from '@/hooks/use-episode-handler'
 import { useSeriesProgress } from '@/hooks/use-series-progress'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Episodes } from '@/components/series/episodes'
-import { SeasonsSelector } from '@/components/series/selector'
+import { Episodes, EpisodeSkeletons } from '@/components/series/episodes'
+import {
+  EPISODES_PANEL_ID,
+  SeasonsSelector,
+  seasonTabId,
+} from '@/components/series/selector'
 
-/**
- * The box the season navigator claims inside the details row.
- *
- * Full width — its own line under the poster and the synopsis — until there is
- * genuinely room for it to be a third COLUMN beside them. That is `xl`, not
- * `lg`: at `lg` the poster has already grown to 400px, so a 288px navigator on
- * the same 952px line left the synopsis and cast column 200px, narrower than
- * the poster sitting next to it. The row wraps (see DETAILS_ROW in
- * components/media/details-poster.tsx), so below `xl` this simply falls to the
- * next line and gets the full width instead of squeezing two siblings.
- *
- * Written once because the Suspense fallback and the real navigator must claim
- * the SAME box — if they disagree the page reflows the moment the seasons land.
- */
-// `order-3` pairs with the series details row's mobile stack: synopsis first,
-// poster second, episodes last (md:order-0 rejoins the desktop row).
-const NAVIGATOR_BOX = 'order-3 w-full md:order-0 xl:w-72 xl:shrink-0'
-
-// Reserves the navigator's exact box while the subtree hydrates. The season
-// selector reads ?season during render, which under a static prerender bails
-// its Suspense boundary to CSR — this is what that boundary renders into the
-// HTML, so it has to match the real aside's dimensions or the page shifts.
+// What the Suspense boundary renders into the HTML while the subtree hydrates:
+// the season selector reads ?season during render, which under a static
+// prerender bails this boundary to CSR. Same shapes as the real thing — a row
+// of season pills over the episode skeletons — so it reads as loading, not as
+// a different layout that then swaps out.
 export const SeasonNavigatorFallback = () => (
-  <aside className={NAVIGATOR_BOX} aria-hidden>
-    <div className="mb-3 h-11 w-full rounded-md bg-muted/50" />
-    <div className="h-104 w-full rounded-xl border bg-card/40 shadow-sm lg:h-136" />
-  </aside>
+  <div aria-hidden>
+    <div className="flex gap-2 overflow-hidden">
+      {[0, 1, 2, 3].map((index) => (
+        <span
+          key={index}
+          className="h-11 w-28 shrink-0 animate-pulse rounded-full bg-muted/50"
+        />
+      ))}
+    </div>
+    <div className="mt-6 sm:mt-8">
+      <EpisodeSkeletons />
+    </div>
+  </div>
 )
 
+/**
+ * Season tabs over the season's episodes, full width, directly under the hero.
+ *
+ * It used to be a 288px column at the far end of the synopsis row: below the
+ * fold on a laptop, and on a phone ~5000px down, after the synopsis, the facts,
+ * eight cast portraits and the poster. On the page whose whole point is picking
+ * an episode, the picker was the last thing on it. The section and its heading
+ * live in SeriesDetailsContent (server-rendered, so the heading is in the HTML
+ * even while this hydrates); this is the interactive part.
+ */
 export const SeasonNavigator = ({ series }: { series: SeriesDetails }) => {
   const { resume } = useSeriesProgress(series)
   // Opens on the season the user is actually part-way through instead of
@@ -51,21 +57,34 @@ export const SeasonNavigator = ({ series }: { series: SeriesDetails }) => {
     isEpisodesError,
     retryEpisodes,
   } = useEpisodeHandler(series?.id, resume?.season)
+  const meta = React.useMemo(
+    () =>
+      seasonMeta(
+        seasonTabsOf(series?.seasons).find(
+          (tab) => String(tab.season) === selectedSeason
+        )
+      ),
+    [series?.seasons, selectedSeason]
+  )
 
   return (
-    // Named, and with a heading. This panel is the whole point of a TV page
-    // and it had neither: the outline ran h1 -> "Cast" with the episode list
-    // nowhere in it, and the landmark announced as an unnamed complementary.
-    // The heading is screen-reader-only because the season <Select> below is
-    // the visible label, and it says WHICH season rather than what this is.
-    <aside className={NAVIGATOR_BOX} aria-label="Episodes">
-      <h2 className="sr-only">Episodes</h2>
+    <div>
       <SeasonsSelector
         series={series}
         selectedSeason={selectedSeason}
         onSeasonChange={selectSeason}
       />
-      <ScrollArea className="h-104 w-full rounded-xl border bg-card/40 shadow-sm lg:h-136">
+      {meta ? (
+        <p className="mt-3 text-sm text-muted-foreground tabular-nums">
+          {meta}
+        </p>
+      ) : null}
+      <div
+        role="tabpanel"
+        id={EPISODES_PANEL_ID}
+        aria-labelledby={seasonTabId(selectedSeason)}
+        className="mt-5 sm:mt-6"
+      >
         <Episodes
           episodes={episodes}
           selectedSeason={selectedSeason}
@@ -78,7 +97,7 @@ export const SeasonNavigator = ({ series }: { series: SeriesDetails }) => {
           series_name={series?.name}
           resume={resume}
         />
-      </ScrollArea>
-    </aside>
+      </div>
+    </div>
   )
 }

@@ -89,6 +89,7 @@ const TVSeries = async (props: PageDetailsProps) => {
     recommendedSeries,
     trailerKey,
     trailerPublishedAt,
+    logoPath,
   } = result!
   if (!seriesDetails?.id) notFound()
 
@@ -133,7 +134,11 @@ const TVSeries = async (props: PageDetailsProps) => {
           playback, the hero owns the embed. Server children pass straight
           through, so the page stays server-rendered. */}
       <SeriesPlaybackProvider>
-        <SeriesDetailsHero series={seriesDetails} trailerKey={trailerKey} />
+        <SeriesDetailsHero
+          series={seriesDetails}
+          trailerKey={trailerKey}
+          logoPath={logoPath}
+        />
         <SeriesDetailsContent
           series={seriesDetails}
           seriesCredits={seriesCredits}

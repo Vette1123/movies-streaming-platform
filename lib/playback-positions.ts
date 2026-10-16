@@ -134,3 +134,22 @@ export const formatPlaybackTime = (totalSeconds: number): string => {
   const hours = Math.floor(whole / 3600)
   return hours > 0 ? `${hours}:${minutes}:${seconds}` : `${minutes}:${seconds}`
 }
+
+/**
+ * How far into an episode the viewer stopped, 0-1, for the bar on its
+ * thumbnail. Null when there is nothing to resume — never started, barely
+ * started, or finished (a finished episode is shown ticked off instead) — so
+ * the bar and the resume point can never disagree. TMDB's runtime stands in
+ * when the player never reported a duration (an embed that only sends time).
+ */
+export const resumeShare = (
+  entry: PlaybackPosition | null | undefined,
+  runtimeMinutes?: number | null
+): number | null => {
+  const duration =
+    entry?.duration_seconds ||
+    (runtimeMinutes ? runtimeMinutes * 60 : undefined)
+  const position = resumableSeconds(entry, duration)
+  if (position === null || !duration) return null
+  return Math.min(1, position / duration)
+}

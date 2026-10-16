@@ -6,10 +6,12 @@ import { MovieDetails } from '@/types/movie-details'
 import { SeriesDetails } from '@/types/series-details'
 import { buildMediaEventBase, trackMediaPlayed } from '@/lib/analytics'
 import { getMediaTitle } from '@/lib/media'
+import { playCue } from '@/lib/play-cue'
 import { notePlayForSupportNudge } from '@/lib/support-nudge'
 import { cn } from '@/lib/utils'
 import { readSeasonEpisodeParams } from '@/hooks/use-search-params'
 import { useWatchedMedia } from '@/hooks/use-watched-media'
+import { heroWatchButton } from '@/components/ui/hero-action-button'
 import { Icons } from '@/components/icons'
 
 interface PlayButtonProps {
@@ -21,27 +23,21 @@ interface PlayButtonProps {
   target?: { season: number; episode: number } | null
   // The target came from stored progress, not from the URL.
   isResume?: boolean
+  // ...and that stored episode was finished, so this one starts from the top.
+  isNext?: boolean
+  className?: string
 }
 
 // The hero click is the ONLY tracker of a resume play: SeriesDetailsHero mirrors
 // the target into ?season/?episode right after, and startPlayback there skips
 // re-tracking the episode already playing.
-const playVerb = (isResume?: boolean) => (isResume ? 'Resume' : 'Watch')
-
-const playButtonLabel = (
-  title: string,
-  target?: { season: number; episode: number } | null,
-  isResume?: boolean
-) => {
-  if (!target) return `Watch ${title}`
-  return `${playVerb(isResume)} ${title}, season ${target.season} episode ${target.episode}`
-}
-
 export function PlayButton({
   onClick,
   media,
   target,
   isResume,
+  isNext,
+  className,
 }: PlayButtonProps) {
   const { handleWatchMedia } = useWatchedMedia()
 
@@ -61,35 +57,36 @@ export function PlayButton({
     onClick()
   }
 
+  const cue = playCue({
+    title: getMediaTitle(media) || 'now',
+    target,
+    isResume,
+    isNext,
+  })
+
   return (
     <button
       type="button"
       onClick={handleClick}
-      aria-label={playButtonLabel(
-        getMediaTitle(media) || 'now',
-        target,
-        isResume
-      )}
-      // The accent, not a literal colour.
+      // The visible text says which episode; the name adds the title and spells
+      // the numbers out. Both start with the same verb (see lib/play-cue.ts).
+      aria-label={cue.label}
+      // The same pill as the homepage hero's Watch Now (heroWatchButton), so a
+      // title looks like one product on both pages. It used to be a bare round
+      // play glyph whose only words were in its aria-label: a series page
+      // never SHOWED that it would resume S2 · E3 rather than start the pilot.
       //
-      // This was `from-purple-600 to-blue-500` with a hover into indigo, purple
-      // and pink — hard-coded, and the largest control on a detail page. The
-      // note beside the supporter accents in styles/globals.css claims "every
-      // accented surface in this codebase already reads --primary rather than a
-      // literal colour", and this button was the exception that made it untrue:
-      // on ember, ocean, forest or rose the page's primary action stayed purple
-      // while every other control moved. Measured on production with ember set.
-      //
-      // `--primary-fill` rather than `--primary` because the glyph on top is
-      // solid `--primary-foreground`; that is the pair the token comment says to
-      // use wherever a label sits on the accent.
+      // The accent, not a literal colour: watchNow pairs --primary-fill with
+      // --primary-foreground, the pair the token comment in styles/globals.css
+      // says holds AA across every supporter palette.
       className={cn(
-        'cursor-pointer rounded-full bg-primary-fill text-center font-medium text-primary-foreground transition-[background-color,transform] duration-300 hover:bg-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden active:scale-[0.97] motion-reduce:transition-none'
+        heroWatchButton,
+        'active:scale-[0.97] motion-reduce:transition-none',
+        className
       )}
     >
-      <Icons.playIcon
-        className={cn('size-16 cursor-pointer sm:size-20 lg:size-24')}
-      />
+      <Icons.watch className="mr-2 shrink-0" aria-hidden />
+      <span className="tabular-nums">{cue.text}</span>
     </button>
   )
 }

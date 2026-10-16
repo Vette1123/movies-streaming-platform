@@ -105,6 +105,10 @@ export const similarHeading = (title: string, kind: MediaTitleInput['kind']) =>
 
 export const recommendedHeading = (title: string) => `If you liked ${title}`
 
+// The synopsis section on a detail page. Named for the title, like the rails
+// under it, so the heading says what it is about out of context too.
+export const aboutHeading = (title: string) => `About ${title}`
+
 /**
  * A page title that already names the site, without the site name twice.
  *

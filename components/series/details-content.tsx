@@ -37,39 +37,45 @@ export const SeriesDetailsContent = ({
   )?.name
   return (
     <>
-      <section className="container max-w-(--breakpoint-2xl) pt-8 pb-6 sm:pt-12 lg:pb-10">
-        {/* flex-col (not -reverse) + order: below `md` the stack must read
-            synopsis → poster → episodes, because flex-col-reverse put the
-            season navigator ABOVE the h1 — the page's only heading sat under
-            a season <Select> on every phone. `order-0` at md restores DOM
-            order for the row layout. */}
+      {/* Episodes first, straight under the hero: it is what a series page is
+          for. The heading is rendered here, on the server, so the section is
+          named in the HTML while the picker under it hydrates — and the id is
+          what the hero's "Episodes" action jumps to (scroll-mt clears the fixed
+          header). Own Suspense boundary: the picker reads ?season during
+          render, and without it the bailout would take the entire page
+          client-side. Own ERROR boundary too — episode lists load per season
+          over /api, and a failure there should not take the synopsis, cast and
+          rails down with it. */}
+      <section
+        id="episodes"
+        aria-labelledby="episodes-heading"
+        className="container max-w-(--breakpoint-2xl) scroll-mt-20 pt-6 sm:pt-10"
+      >
+        <h2
+          id="episodes-heading"
+          className="mb-4 text-xl font-bold tracking-tight sm:mb-5 sm:text-2xl"
+        >
+          Episodes
+        </h2>
+        <SectionErrorBoundary
+          section="series_seasons"
+          title="Episodes didn't load"
+        >
+          <Suspense fallback={<SeasonNavigatorFallback />}>
+            <SeasonNavigator series={series} />
+          </Suspense>
+        </SectionErrorBoundary>
+      </section>
+      <section className="container max-w-(--breakpoint-2xl) pt-12 pb-6 sm:pt-16 lg:pb-10">
         <div className={cn(DETAILS_ROW, 'flex-col')}>
-          <DetailsPoster
-            path={series.poster_path}
-            alt={series.name}
-            className="order-2 md:order-0"
-          />
-          <section className="order-1 flex min-w-0 flex-1 flex-col gap-4 md:order-0">
+          <DetailsPoster path={series.poster_path} alt={series.name} />
+          <section className="flex min-w-0 flex-1 flex-col gap-4">
             <SeriesDetailsExtraInfo series={series} director={director} />
             <DetailsCredits
               movieCredits={seriesCredits}
               linkedPersonIds={linkedPersonIds}
             />
           </section>
-          {/* Own Suspense boundary: the selector reads ?season during render,
-              and without this the bailout would take the entire page
-              client-side. Own ERROR boundary too — episode lists load per
-              season through a Server Action, and a failure there should not
-              take the synopsis, cast, and rails down with it. */}
-          <SectionErrorBoundary
-            section="series_seasons"
-            title="Episodes didn't load"
-            className="order-3 md:order-0"
-          >
-            <Suspense fallback={<SeasonNavigatorFallback />}>
-              <SeasonNavigator series={series} />
-            </Suspense>
-          </SectionErrorBoundary>
         </div>
       </section>
       {/* Full-bleed rails — same width/gutter as the homepage rows. */}

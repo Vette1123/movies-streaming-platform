@@ -88,6 +88,7 @@ const MoviePage = async (props: PageDetailsProps) => {
     recommendedMovies,
     trailerKey,
     trailerPublishedAt,
+    logoPath,
   } = result!
   if (!movieDetails?.id) notFound()
 
@@ -128,7 +129,11 @@ const MoviePage = async (props: PageDetailsProps) => {
           { name: movieDetails.title, url: `/movies/${movieDetails.id}` },
         ])}
       />
-      <MovieDetailsHero movie={movieDetails} trailerKey={trailerKey} />
+      <MovieDetailsHero
+        movie={movieDetails}
+        trailerKey={trailerKey}
+        logoPath={logoPath}
+      />
       <MoviesDetailsContent
         movie={movieDetails}
         movieCredits={movieCredits}

@@ -7,28 +7,28 @@ export const movieExtraInfoFormatter = (
   director: string | undefined
 ) => [
   {
-    name: 'Runtime:',
+    name: 'Runtime',
     value: convertMinutesToHours(movie?.runtime),
   },
   {
-    name: 'Status:',
+    name: 'Status',
     value: movie?.status,
   },
   {
-    name: 'Original Language:',
+    name: 'Original Language',
     value: movie?.original_language,
     className: 'uppercase',
   },
   {
-    name: 'Budget:',
+    name: 'Budget',
     value: moneyFormatter(movie?.budget),
   },
   {
-    name: 'Revenue:',
+    name: 'Revenue',
     value: moneyFormatter(movie?.revenue),
   },
   {
-    name: 'Director:',
+    name: 'Director',
     value: director,
     isLink: true,
   },
@@ -39,38 +39,38 @@ export const seriesExtraInfoFormatter = (
   director: string | undefined
 ) => [
   {
-    name: 'First Air Date:',
+    name: 'First Air Date',
     value: series?.first_air_date,
   },
   {
-    name: 'Last Air Date:',
+    name: 'Last Air Date',
     value: series?.last_air_date,
   },
   {
-    name: 'Status:',
+    name: 'Status',
     value: series?.status,
   },
   {
-    name: 'Original Country:',
+    name: 'Original Country',
     value: series?.origin_country?.join(', '),
   },
   {
-    name: 'Original Language:',
+    name: 'Original Language',
     value: series?.original_language,
     className: 'uppercase',
   },
   {
-    name: 'Number of Seasons:',
+    name: 'Number of Seasons',
     value: series?.number_of_seasons,
   },
   {
-    name: 'Number of Episodes:',
+    name: 'Number of Episodes',
     value: series?.number_of_episodes,
   },
   ...(director
     ? [
         {
-          name: 'Director:',
+          name: 'Director',
           value: director,
           isLink: true,
         },
@@ -79,7 +79,7 @@ export const seriesExtraInfoFormatter = (
   ...(series?.created_by?.length
     ? [
         {
-          name: 'Created By:',
+          name: 'Created By',
           value: series?.created_by?.map((creator) => creator.name).at(0),
           isLink: true,
         },

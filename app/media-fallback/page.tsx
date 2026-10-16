@@ -114,6 +114,7 @@ export default function MediaFallbackPage() {
           <SeriesDetailsHero
             series={data.seriesDetails}
             trailerKey={data.trailerKey}
+            logoPath={data.logoPath}
           />
           <SeriesDetailsContent
             series={data.seriesDetails}
@@ -131,6 +132,7 @@ export default function MediaFallbackPage() {
       <MovieDetailsHero
         movie={data.movieDetails}
         trailerKey={data.trailerKey}
+        logoPath={data.logoPath}
       />
       <MoviesDetailsContent
         movie={data.movieDetails}

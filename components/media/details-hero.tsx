@@ -14,9 +14,11 @@ import { DetailsHero } from '@/components/details-hero'
 export const MovieDetailsHero = ({
   movie,
   trailerKey,
+  logoPath,
 }: {
   movie: MovieDetails
   trailerKey?: string
+  logoPath?: string | null
 }) => {
   // Whether play was pressed, not the URL it produced. The URL is derived, so
   // switching server re-points the frame without a second piece of state that
@@ -72,6 +74,7 @@ export const MovieDetailsHero = ({
         setPlaying(true)
       }}
       trailerKey={trailerKey}
+      logoPath={logoPath}
       sourceControl={sourceControl}
       onFinished={handleFinished}
       selfHost={

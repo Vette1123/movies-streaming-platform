@@ -8,12 +8,10 @@ interface ContinueWatchingProps {
   progress: SeriesProgress
   // Resolved from the season list the navigator already fetched, so it arrives a
   // beat after the season/episode numbers. The caption reads fine without it.
+  // The caller leaves it out when the play button is aimed somewhere else (a
+  // ?season/?episode link), so the name never captions the wrong episode.
   episodeName?: string
 }
-
-// "Up next" only when the stored episode is finished and we advanced past it;
-// otherwise the user is mid-episode and the honest verb is "Resume".
-const resumeVerb = (isNext: boolean) => (isNext ? 'Up next' : 'Resume')
 
 const progressLabel = (progress: SeriesProgress) => {
   if (progress.isFinished)
@@ -21,10 +19,12 @@ const progressLabel = (progress: SeriesProgress) => {
   return `${progress.completedCount} of ${progress.totalEpisodes} episodes watched`
 }
 
-// Caption under the hero play button: what pressing play will actually start,
-// plus how far through the series the user is. Renders nothing until
-// localStorage has been read (hydration safety) and nothing at all for a series
-// with no history, so a first-time visitor sees the untouched hero.
+// Caption above the hero play button: the name of the episode it starts, and
+// how far through the series the user is. The season and episode themselves
+// are on the button ("Resume S2 · E3"), so they are not repeated here. Renders
+// nothing until localStorage has been read (hydration safety) and nothing at
+// all for a series with no history, so a first-time visitor sees the untouched
+// hero.
 export const ContinueWatching = ({
   progress,
   episodeName,
@@ -34,39 +34,31 @@ export const ContinueWatching = ({
   if (!resume && !completedCount) return null
 
   return (
-    // Its own scrim: the backdrop behind the hero is a different image on every
-    // series (and can be near-white), so the caption cannot rely on the page
-    // gradient for contrast the way the action buttons can.
-    <div className="flex w-[min(22rem,80vw)] flex-col items-center gap-2.5 rounded-2xl bg-black/45 px-4 py-3 ring-1 ring-white/10 backdrop-blur-sm">
-      {resume && (
-        <p className="text-center text-sm leading-snug text-white">
-          <span className="text-white/70">{resumeVerb(resume.isNext)}</span>{' '}
-          <span className="font-semibold tabular-nums">
-            S{resume.season} · E{resume.episode}
-          </span>
-          {episodeName && (
-            <span className="mt-0.5 line-clamp-1 block text-white/80">
-              {episodeName}
-            </span>
-          )}
+    // No box of its own any more: it sits in the hero's copy column, over the
+    // bottom-up scrim that already carries the title and synopsis, and takes
+    // the same text shadow they do.
+    <div className="flex w-full max-w-md flex-col gap-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.8)]">
+      {resume && episodeName && (
+        <p className="line-clamp-1 text-sm font-medium text-white/90">
+          “{episodeName}”
         </p>
       )}
       {totalEpisodes > 0 && (
-        <div className="flex w-full flex-col items-center gap-1.5">
+        <div className="flex w-full items-center gap-3">
           <div
             role="progressbar"
             aria-valuenow={percent}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-label="Series progress"
-            className="h-1 w-full overflow-hidden rounded-full bg-white/25"
+            className="h-1 min-w-16 flex-1 overflow-hidden rounded-full bg-white/25"
           >
             <div
               className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out motion-reduce:transition-none"
               style={{ width: `${percent}%` }}
             />
           </div>
-          <span className="text-xs text-white/70 tabular-nums">
+          <span className="shrink-0 text-xs text-white/80 tabular-nums">
             {progressLabel(progress)}
           </span>
         </div>

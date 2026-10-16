@@ -21,8 +21,9 @@ import {
 import { HERO_LIMIT, RAIL_LIMIT } from '@/lib/constants'
 import { trimCredits } from '@/lib/credits'
 import { fetchClient, isNotFoundError } from '@/lib/fetch-client'
+import { pickLogoPath } from '@/lib/logos'
 import { capListOverviews } from '@/lib/media'
-import { detailAppend } from '@/lib/tmdb-append'
+import { detailQuery } from '@/lib/tmdb-append'
 import { movieType } from '@/lib/tmdbConfig'
 import { pickTrailer } from '@/lib/videos'
 
@@ -163,7 +164,7 @@ const populateHomePageData = async (): Promise<MultiRequestProps> => {
 const getMovieWithExtras = cache(async (id: string, params: Param = {}) => {
   // `videos` rides along on the same append_to_response — still ONE TMDB
   // request / one KV write — and powers the "Watch Trailer" CTA.
-  const url = `movie/${id}?language=en-US&append_to_response=${detailAppend()}`
+  const url = `movie/${id}?language=en-US&${detailQuery()}`
   return fetchClient.get<MovieDetailsWithExtras>(url, params, true)
 })
 
@@ -200,7 +201,8 @@ const populateMovieDetailsPage = async (
     // a second time. That was 16 KB of the 28 KB payload: half the JSON the
     // Worker stringifies on /api/media/*, its most expensive route, and half of
     // what every prerendered detail page carries in its flight data.
-    const { credits, similar, recommendations, videos, ...details } = data
+    const { credits, similar, recommendations, videos, images, ...details } =
+      data
     const trailer = pickTrailer(videos?.results)
     return {
       movieDetails: {
@@ -212,6 +214,7 @@ const populateMovieDetailsPage = async (
       recommendedMovies: (recommendations?.results ?? []).slice(0, RAIL_LIMIT),
       trailerKey: trailer?.key,
       trailerPublishedAt: trailer?.published_at,
+      logoPath: pickLogoPath(images?.logos) ?? null,
     }
   } catch (error: any) {
     // An unknown id is not a fault: cloudflare/worker.js turns it into a 404 and

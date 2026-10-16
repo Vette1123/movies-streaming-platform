@@ -11,7 +11,8 @@ import { SeriesResponse } from '@/types/series-result'
 import { RAIL_LIMIT } from '@/lib/constants'
 import { trimCredits } from '@/lib/credits'
 import { fetchClient, isNotFoundError } from '@/lib/fetch-client'
-import { detailAppend } from '@/lib/tmdb-append'
+import { pickLogoPath } from '@/lib/logos'
+import { detailQuery } from '@/lib/tmdb-append'
 import { tvType } from '@/lib/tmdbConfig'
 import { pickTrailer } from '@/lib/videos'
 
@@ -63,7 +64,7 @@ const getAllTimeTopRatedSeries = async (params: Param = {}) => {
 const getSeriesWithExtras = cache(async (id: string, params: Param = {}) => {
   // `videos` rides along on the same append_to_response — still ONE TMDB
   // request / one KV write — and powers the "Watch Trailer" CTA.
-  const url = `tv/${id}?language=en-US&append_to_response=${detailAppend(['external_ids'])}`
+  const url = `tv/${id}?language=en-US&${detailQuery(['external_ids'])}`
   return fetchClient.get<SeriesDetailsWithExtras>(url, params, true)
 })
 
@@ -86,7 +87,8 @@ const populateSeriesDetailsPageData = async (
     // Same peel as populateMovieDetailsPage — see the note there. `external_ids`
     // stays on seriesDetails: unlike the others it is not re-exposed in a
     // sibling field, and it is what imdbRating is derived from.
-    const { credits, similar, recommendations, videos, ...details } = data
+    const { credits, similar, recommendations, videos, images, ...details } =
+      data
     const trailer = pickTrailer(videos?.results)
     return {
       seriesDetails: {
@@ -104,6 +106,7 @@ const populateSeriesDetailsPageData = async (
       ).slice(0, RAIL_LIMIT),
       trailerKey: trailer?.key,
       trailerPublishedAt: trailer?.published_at,
+      logoPath: pickLogoPath(images?.logos) ?? null,
     }
   } catch (error: any) {
     // Same as populateMovieDetailsPage — an unknown id is a normal answer, not a

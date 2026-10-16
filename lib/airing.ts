@@ -63,3 +63,16 @@ export function withEpisode(label: string, code: string | null): string {
   if (!code) return label
   return `${code} ${label.charAt(0).toLowerCase()}${label.slice(1)}`
 }
+
+// TMDB's terminal series statuses. An ended show can keep a stale future date
+// in `next_episode_to_air`, and a chip announcing it would be a false promise.
+const ENDED_STATUSES = new Set(['Ended', 'Canceled'])
+
+/** The episode an airing chip should announce, or null when there is none. */
+export function upcomingEpisode(series?: {
+  status?: string
+  next_episode_to_air?: NextEpisode | null
+}): NextEpisode | null {
+  if (!series || ENDED_STATUSES.has(series.status ?? '')) return null
+  return series.next_episode_to_air ?? null
+}

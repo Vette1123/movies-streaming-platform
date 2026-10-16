@@ -74,9 +74,11 @@ const pickPlayTarget = (
 export const SeriesDetailsHero = ({
   series,
   trailerKey,
+  logoPath,
 }: {
   series: SeriesDetails
   trailerKey?: string
+  logoPath?: string | null
 }) => {
   // WHAT is playing, not the URL it produced. The URL is derived below, so
   // switching server re-points the frame at the same episode instead of needing
@@ -91,6 +93,7 @@ export const SeriesDetailsHero = ({
   // Supporter-only in practice: nothing but the Reely Player reports an ending.
   const { prefs } = useAccount()
   const autoNext = prefs.autoNext === true
+  const spoilerFree = prefs.spoilerFree === true
   // Which episode we have already counted as played (see startPlayback).
   const playedKeyRef = React.useRef<string | null>(null)
   const router = useRouter()
@@ -126,6 +129,13 @@ export const SeriesDetailsHero = ({
       !!series?.id &&
       isEpisodeCompleted(series.id, deepLink.season, deepLink.episode)
   )
+
+  const isResume = sameEpisode(playTarget, resumeTarget)
+  // The caption names the episode only when the button is aimed at it, and
+  // not when that name is still ahead of the viewer with spoiler-free on — the
+  // episode list masks the same title (see maskedName in episodes.tsx).
+  const captionName =
+    isResume && !(spoilerFree && resume?.isNext) ? resumeEpisodeName : undefined
 
   // Stable identity, and a no-op when the values are unchanged, so the reader's
   // effect can't drive a setState → re-render loop.
@@ -316,8 +326,10 @@ export const SeriesDetailsHero = ({
           playDefaultSeries()
         }}
         trailerKey={trailerKey}
+        logoPath={logoPath}
         playTarget={playTarget}
-        isResume={sameEpisode(playTarget, resumeTarget)}
+        isResume={isResume}
+        isNext={isResume && resume?.isNext === true}
         onEnded={handleEnded}
         onFinished={handleFinished}
         selfHost={
@@ -334,10 +346,7 @@ export const SeriesDetailsHero = ({
               }
         }
         resumeSlot={
-          <ContinueWatching
-            progress={progress}
-            episodeName={resumeEpisodeName}
-          />
+          <ContinueWatching progress={progress} episodeName={captionName} />
         }
       />
     </>

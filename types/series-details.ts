@@ -5,6 +5,7 @@ import { MovieGenre } from '@/types/movie-genre'
 import { ProductionCompany, ProductionCountry } from '@/types/production'
 import { SeriesResponse } from '@/types/series-result'
 import { VideosResponse } from '@/types/video'
+import type { TMDBLogo } from '@/lib/logos'
 import type { TmdbWatchProviders } from '@/lib/push/providers'
 
 type Season = {
@@ -79,6 +80,8 @@ interface MultiSeriesDetailsRequestProps {
   trailerKey?: string
   // That clip's real publish date, for the VideoObject in the page's JSON-LD.
   trailerPublishedAt?: string
+  // The official title wordmark — see MultiMovieDetailsRequestProps.
+  logoPath?: string | null
   // Where it streams, in ONE region, and only where a page is being rendered —
   // see lib/tmdb-append.ts for why the Worker never fetches this.
 }
@@ -90,6 +93,7 @@ interface SeriesDetailsWithExtras extends SeriesDetails {
   similar?: SeriesResponse
   recommendations?: SeriesResponse
   videos?: VideosResponse
+  images?: { logos?: TMDBLogo[] }
   // TMDB names an appended block after its endpoint path, slash included. Only
   // ever present on a build/dev fetch — see lib/tmdb-append.ts.
   'watch/providers'?: TmdbWatchProviders

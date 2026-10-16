@@ -2,6 +2,7 @@ import { Credit } from '@/types/credit'
 import { MovieGenre } from '@/types/movie-genre'
 import { Movie, MovieResponse } from '@/types/movie-result'
 import { VideosResponse } from '@/types/video'
+import type { TMDBLogo } from '@/lib/logos'
 import type { TmdbWatchProviders } from '@/lib/push/providers'
 
 interface MovieDetails {
@@ -59,6 +60,9 @@ interface MultiMovieDetailsRequestProps {
   trailerKey?: string
   // That clip's real publish date, for the VideoObject in the page's JSON-LD.
   trailerPublishedAt?: string
+  // The official title wordmark the hero shows instead of plain text, or null
+  // when TMDB has no raster English one (see pickLogoPath).
+  logoPath?: string | null
   // Where it streams, in ONE region, and only where a page is being rendered —
   // see lib/tmdb-append.ts for why the Worker never fetches this.
 }
@@ -70,6 +74,7 @@ interface MovieDetailsWithExtras extends MovieDetails {
   similar?: MovieResponse
   recommendations?: MovieResponse
   videos?: VideosResponse
+  images?: { logos?: TMDBLogo[] }
   // TMDB names an appended block after its endpoint path, slash included. Only
   // ever present on a build/dev fetch — see lib/tmdb-append.ts.
   'watch/providers'?: TmdbWatchProviders

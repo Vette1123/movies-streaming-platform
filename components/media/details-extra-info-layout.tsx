@@ -2,13 +2,11 @@ import React from 'react'
 import Link from 'next/link'
 
 import { MovieGenre } from '@/types/movie-genre'
-import type { NextEpisode } from '@/lib/airing'
 import { SEARCH_ACTOR_GOOGLE } from '@/lib/constants'
+import { aboutHeading } from '@/lib/seo-title'
 import { cn } from '@/lib/utils'
-import { AiringChip } from '@/components/airing-chip'
 import { Icons } from '@/components/icons'
 import { GenreChips } from '@/components/media/genre-chips'
-import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 
 // One row of the key/value info grid. `value` is a string for movies and can be
 // a number for series counts; only non-numeric people fields ever set isLink.
@@ -21,82 +19,68 @@ export interface ExtraInfoRow {
 
 interface DetailsExtraInfoLayoutProps {
   title: string
-  // Date that drives the mount-gated "New" badge (release / first-air).
-  badgeDate?: string
-  // TMDB next_episode_to_air — series only; drives the airing chip.
-  nextEpisode?: NextEpisode | null
-  tagline?: string
   overview: string
   genres?: MovieGenre[]
   mediaType: 'movie' | 'tv'
-  // Rendered <HeroRatesInfos .../> — passed in so this layout stays agnostic of
-  // the movie-vs-series discriminated props that component takes.
-  heroRates: React.ReactNode
   extraInfo: ExtraInfoRow[]
 }
 
 // Shared body for the movie and series "extra info" detail panels — the two were
 // ~95% identical (only field names, the formatter, and the media type differed).
+//
+// The title, tagline, chips and score row used to open this panel under a plain
+// <h1>. They belong to the hero now (components/details-hero.tsx), set in the
+// wordmark the homepage uses, so this panel starts at the synopsis under a
+// section heading in the same type as "Cast" below it.
 export const DetailsExtraInfoLayout = ({
   title,
-  badgeDate,
-  nextEpisode,
-  tagline,
   overview,
   genres,
   mediaType,
-  heroRates,
   extraInfo,
 }: DetailsExtraInfoLayoutProps) => {
   return (
-    <section>
-      {/* Reserve the badge row so the mount-gated "New" and airing chips don't
-          shove the title down post-hydration (CLS). `static` keeps them in
-          normal flow inside the reserved box instead of the base `absolute`. */}
-      <div className="mb-2 flex min-h-7 flex-wrap items-center gap-2">
-        <NewBadgeWhenRecent date={badgeDate} className="static" />
-        <AiringChip episode={nextEpisode} className="static" />
-      </div>
-      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-        {title}
-      </h1>
-      {tagline && (
-        <p className="mt-1 text-sm text-muted-foreground italic sm:text-base lg:text-lg">
-          {tagline}
-        </p>
-      )}
-      {heroRates}
-      <p className="max-w-[68ch] text-sm leading-relaxed font-medium prose-invert sm:text-base lg:text-lg">
+    <section aria-labelledby="details-about">
+      <h2
+        id="details-about"
+        className="mb-3 text-base font-semibold md:text-xl lg:text-2xl"
+      >
+        {aboutHeading(title)}
+      </h2>
+      <p className="max-w-[68ch] text-sm leading-relaxed text-foreground/90 sm:text-base lg:text-lg">
         {overview}
       </p>
-      <GenreChips genres={genres} mediaType={mediaType} className="mt-4" />
-      <div className="my-4 flex max-w-lg flex-col space-y-1">
+      <GenreChips genres={genres} mediaType={mediaType} className="mt-5" />
+      {/* A definition list: these are labelled facts, and a screen reader
+          announces them as pairs. Label column sized to its longest label
+          rather than half the panel, so a value sits next to its name instead
+          of across a gutter. */}
+      <dl className="my-5 grid max-w-xl grid-cols-[auto_1fr] gap-x-8 gap-y-2.5 text-sm sm:text-base">
         {extraInfo.map((info) => (
-          <div
-            key={info.name}
-            className="grid grid-cols-2 gap-3 text-sm font-semibold sm:text-base lg:text-lg"
-          >
-            <p className="text-muted-foreground">{info.name}</p>
-            {info.isLink ? (
-              <Link
-                href={`${SEARCH_ACTOR_GOOGLE}${info.value}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group w-fit transition-all ease-in-out hover:text-cyan-200"
-              >
-                <span className="inline-flex items-center gap-1">
+          <React.Fragment key={info.name}>
+            <dt className="text-muted-foreground">{info.name}</dt>
+            <dd className="font-medium">
+              {info.isLink ? (
+                <Link
+                  href={`${SEARCH_ACTOR_GOOGLE}${info.value}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex w-fit items-center gap-1 transition-colors hover:text-cyan-200"
+                >
                   <span className="underline underline-offset-4">
                     {info.value}
                   </span>
-                  <Icons.arrowRight className="size-5 transition-transform group-hover:translate-x-2" />
+                  <Icons.arrowRight className="size-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none" />
+                </Link>
+              ) : (
+                <span className={cn('tabular-nums', info.className)}>
+                  {info.value}
                 </span>
-              </Link>
-            ) : (
-              <p className={cn(info.className)}>{info.value}</p>
-            )}
-          </div>
+              )}
+            </dd>
+          </React.Fragment>
         ))}
-      </div>
+      </dl>
     </section>
   )
 }
