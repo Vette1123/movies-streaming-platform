@@ -51,6 +51,8 @@ export interface StreamSource {
    * NEXT_PUBLIC_STREAM_SOURCE_N_QUERY env var. How a slot carries player
    * customisation (brand colors, autoplay) for providers that accept it.
    * Empty by default — never append junk to a provider whose URLs are signed.
+   * A `{start}` token becomes the synced resume second (see fillStart), for a
+   * provider that takes a start time: `startAt={start}`.
    */
   query?: string
 }
@@ -244,13 +246,18 @@ const fillPath = (
     .replace('{e}', String(vars.e ?? 1))
 
 /** The film URL, honoring the source's path shape. */
-export const movieStreamUrl = (source: StreamSource, id: number): string =>
+export const movieStreamUrl = (
+  source: StreamSource,
+  id: number,
+  start?: number | null
+): string =>
   withSourceQuery(
     `${source.base}${(source.paths?.movie ?? '/movie/{id}').replace(
       '{id}',
       String(id)
     )}`,
-    source
+    source,
+    start
   )
 
 /**
@@ -263,19 +270,46 @@ export const movieStreamUrl = (source: StreamSource, id: number): string =>
 export const seriesStreamUrl = (
   source: StreamSource,
   id: number,
-  target?: { season: number; episode: number } | null
+  target?: { season: number; episode: number } | null,
+  start?: number | null
 ): string => {
   const t = target ?? { season: 1, episode: 1 }
   const template = source.paths?.tv ?? '/tv/{id}/{s}/{e}'
   return withSourceQuery(
     `${source.base}${fillPath(template, { id, s: t.season, e: t.episode })}`,
-    source
+    source,
+    start
   )
 }
 
+/**
+ * Fill a slot query's `{start}` token with the resume second.
+ *
+ * How an embed that takes a start time (`startAt={start}`) resumes where the
+ * last device stopped: positions sync through the account, but the embed's own
+ * progress lives in ITS storage on the device that played. With nothing to
+ * resume, the whole `name={start}` pair is dropped, so a provider never sees an
+ * empty or zero start it might read as an instruction.
+ */
+const fillStart = (query: string, start?: number | null): string =>
+  query
+    .split('&')
+    .flatMap((pair) => {
+      if (!pair.includes('{start}')) return [pair]
+      if (!start || !Number.isFinite(start) || start <= 0) return []
+      return [pair.replace('{start}', String(Math.floor(start)))]
+    })
+    .join('&')
+
 /** Append the slot's configured query, if any. Never touches signed params. */
-const withSourceQuery = (url: string, source: StreamSource): string =>
-  source.query ? `${url}${url.includes('?') ? '&' : '?'}${source.query}` : url
+const withSourceQuery = (
+  url: string,
+  source: StreamSource,
+  start?: number | null
+): string => {
+  const query = source.query ? fillStart(source.query, start) : ''
+  return query ? `${url}${url.includes('?') ? '&' : '?'}${query}` : url
+}
 
 /**
  * Which source a visitor plays from, given everything known about their intent.

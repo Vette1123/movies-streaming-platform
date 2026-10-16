@@ -1,10 +1,6 @@
 'use client'
 
-import {
-  playbackKey,
-  readPosition,
-  resumableSeconds,
-} from '@/lib/playback-positions'
+import { startSecondsFor } from '@/lib/playback-positions'
 import { currentPlaybackPrefs } from '@/lib/playback-prefs'
 import { type SelfHostTarget } from '@/lib/stream-resolver'
 
@@ -35,10 +31,11 @@ const ticketKey = (target: SelfHostTarget) =>
   `${target.type}:${target.id}:${target.season ?? ''}:${target.episode ?? ''}`
 
 const mintTicket = async (target: SelfHostTarget): Promise<string | null> => {
-  const start = resumableSeconds(
-    readPosition(
-      playbackKey(target.type, target.id, target.season, target.episode)
-    )
+  const start = startSecondsFor(
+    target.type,
+    target.id,
+    target.season,
+    target.episode
   )
   const res = await fetch('/api/pro/ticket', {
     method: 'POST',
@@ -93,6 +90,62 @@ const preconnect = (url: string) => {
   document.head.appendChild(link)
 }
 
+/**
+ * The player's own stream lookup for a ticket, or null for a URL that does not
+ * name a title.
+ *
+ * Built from the ticket URL because that is the one place the player origin
+ * and the signed ticket both live; the coordinates are copied, never invented,
+ * so the lookup cannot drift from what the player will ask for.
+ */
+export const resolveUrlOf = (ticketUrl: string): string | null => {
+  let play: URL
+  try {
+    play = new URL(ticketUrl)
+  } catch {
+    return null
+  }
+  const q = play.searchParams
+  const ticket = q.get('t')
+  const type = q.get('type')
+  const id = q.get('id')
+  if (!ticket || !type || !id) return null
+  const lookup = new URLSearchParams({ type, id })
+  if (type === 'tv') {
+    lookup.set('season', q.get('season') ?? '1')
+    lookup.set('episode', q.get('episode') ?? '1')
+  }
+  lookup.set('t', ticket)
+  return `${play.origin}/api/stream/resolve?${lookup}`
+}
+
+/**
+ * Start the stream lookup while the visitor is still deciding.
+ *
+ * A title nobody has played in the last hour costs the relay a full provider
+ * walk (~1.2s measured 2026-10-16), and it used to start only after the tap,
+ * the iframe, the shell and the bundle. Asked here, on intent, the relay is
+ * already walking — or done, and caching it — by the time the player asks the
+ * same question; it shares an in-flight walk rather than starting a second.
+ *
+ * `no-cors` because the answer is not ours to read: the point is the side
+ * effect in the relay's cache, and an opaque request needs no CORS from the
+ * player origin. A failure is swallowed: the player's own lookup is the real
+ * attempt and owns the fallback.
+ */
+const prewalk = (ticketUrl: string) => {
+  const lookup = resolveUrlOf(ticketUrl)
+  if (!lookup) return
+  void fetch(lookup, { mode: 'no-cors', credentials: 'omit' }).catch(
+    () => undefined
+  )
+}
+
+const isFresh = (key: string) => {
+  const warm = tickets.get(key)
+  return !!warm && Date.now() - warm.at < TICKET_FRESH_MS
+}
+
 /** The play URL for this title, minting one only when nothing fresh is held. */
 const heldTicket = (target: SelfHostTarget): Promise<string | null> => {
   const key = ticketKey(target)
@@ -122,12 +175,19 @@ export const takeTicket = (target: SelfHostTarget): Promise<string | null> => {
 }
 
 /**
- * Pay for the ticket while the visitor is still deciding. Safe to call on every
- * pointer intent: a fresh entry is reused, and a failure is swallowed — the
- * player's own mount does the real attempt and owns the fallback.
+ * Pay for the ticket — and the stream lookup behind it — while the visitor is
+ * still deciding. Safe to call on every pointer intent: a fresh entry is reused
+ * and walks nothing again, and a failure is swallowed — the player's own mount
+ * does the real attempt and owns the fallback.
  */
 export const warmReelyTicket = (target: SelfHostTarget): void => {
-  void heldTicket(target).catch(() => undefined)
+  const minted = !isFresh(ticketKey(target))
+  const url = heldTicket(target)
+  void url
+    .then((ticketUrl) => {
+      if (minted && ticketUrl) prewalk(ticketUrl)
+    })
+    .catch(() => undefined)
 }
 
 /** Forget every warm ticket — a playback setting changed under them. */

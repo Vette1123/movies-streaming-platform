@@ -16,7 +16,9 @@
 // against a public test stream. It asserts:
 //
 //   1. the hero offers "Resume S2 · E3", not S1 · E1
-//   2. the ticket asks for S2E3 at 600s with the ACCOUNT's prefs (fr, 720)
+//   2. hovering Play starts the player's stream lookup for S2E3 before the
+//      tap, and the tap spends that hover's ticket instead of minting another;
+//      the ticket asks for S2E3 at 600s with the ACCOUNT's prefs (fr, 720)
 //   3. the player boots pinned at or under 720p and fetches French subtitles
 //   4. a quality and a subtitle picked in the player's menus are saved
 //   5. watching past the credits ticks S2E3 off, and the page then offers E4
@@ -207,6 +209,23 @@ try {
     )
   )
   await sleep(500)
+
+  // 2a. Intent: hovering Play mints the ticket AND starts the player's stream
+  // lookup, so the relay is walking (or done) before the tap.
+  const box = await evaluate(`(() => {
+    const r = document.querySelector('button[aria-label*="season"]').getBoundingClientRect()
+    return { x: r.x + r.width / 2, y: r.y + r.height / 2 }
+  })()`)
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...box })
+  const prewalk = await waitFor('the stream lookup on hover', () =>
+    evaluate(
+      `performance.getEntriesByType('resource').map((e) => e.name).find((n) => n.startsWith(${JSON.stringify(`${PLAYER}/api/stream/resolve`)})) ?? null`
+    )
+  ).catch((error) => fail(error.message))
+  if (prewalk && /season=2&episode=3/.test(prewalk))
+    pass('hovering Play started the stream lookup for S2E3')
+  else if (prewalk) fail(`hover looked up the wrong episode: ${prewalk}`)
+
   await evaluate(
     `document.querySelector('button[aria-label*="season"]').click()`
   )
@@ -219,6 +238,9 @@ try {
   else pass('ticket is for S2E3')
   if (ticket.start !== 600) fail(`ticket start ${ticket.start}, expected 600`)
   else pass('ticket resumes at 600s')
+  if (tickets.length !== 1)
+    fail(`${tickets.length} tickets minted; the tap should spend the hover's`)
+  else pass("the tap spent the hover's ticket")
   if (ticket.playback?.sub !== 'fr' || ticket.playback?.quality !== 720)
     fail(
       `ticket prefs ${JSON.stringify(ticket.playback)} — expected the account's fr/720 over the stale ar/480 mirror`

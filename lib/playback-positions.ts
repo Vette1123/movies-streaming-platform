@@ -90,6 +90,19 @@ export const readPosition = (key: string): PlaybackPosition | null => {
   return readPositionMap()[key] ?? null
 }
 
+/**
+ * Where a player should start this title or episode: the stored position when
+ * there is one worth resuming, else null. One read for both surfaces that ask —
+ * the house player's ticket and an embed's `{start}` — so they cannot differ.
+ */
+export const startSecondsFor = (
+  type: 'movie' | 'tv',
+  id: number,
+  season?: number,
+  episode?: number
+): number | null =>
+  resumableSeconds(readPosition(playbackKey(type, id, season, episode)))
+
 export const writePosition = (
   key: string,
   positionSeconds: number,

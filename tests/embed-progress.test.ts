@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import {
   movieStreamUrl,
@@ -10,6 +10,7 @@ import {
   parseEmbedProgress,
   shouldWriteEmbedProgress,
 } from '@/lib/embed-progress'
+import { latchStart } from '@/hooks/use-frame-start'
 
 describe('parseEmbedProgress', () => {
   const timeupdate = (currentTime: number, duration?: number) => ({
@@ -183,5 +184,68 @@ describe('source query passthrough', () => {
 
   it('leaves plain sources untouched', () => {
     expect(movieStreamUrl(base, 550)).toBe('https://embed.example/movie/550')
+  })
+})
+
+describe('embed start time', () => {
+  // Positions sync through the account, but an embed's own progress lives in
+  // its storage on the device that played, so on any other device it started
+  // from zero. A slot whose provider takes a start time names it with {start}.
+  const resuming: StreamSource = {
+    id: 'r',
+    label: 'Server R',
+    base: 'https://embed.example',
+    query: 'primaryColor=63b8bc&startAt={start}',
+  }
+
+  it('fills {start} with the whole resume second', () => {
+    expect(movieStreamUrl(resuming, 550, 1834.7)).toBe(
+      'https://embed.example/movie/550?primaryColor=63b8bc&startAt=1834'
+    )
+    expect(
+      seriesStreamUrl(resuming, 1396, { season: 2, episode: 3 }, 600)
+    ).toBe('https://embed.example/tv/1396/2/3?primaryColor=63b8bc&startAt=600')
+  })
+
+  it('drops the pair when there is nothing to resume', () => {
+    for (const start of [null, undefined, 0, Number.NaN]) {
+      expect(movieStreamUrl(resuming, 550, start)).toBe(
+        'https://embed.example/movie/550?primaryColor=63b8bc'
+      )
+    }
+    const onlyStart = { ...resuming, query: 'startAt={start}' }
+    expect(movieStreamUrl(onlyStart, 550)).toBe(
+      'https://embed.example/movie/550'
+    )
+  })
+
+  it('ignores a start on a slot that does not ask for one', () => {
+    expect(
+      movieStreamUrl({ ...resuming, query: 'primaryColor=63b8bc' }, 550, 900)
+    ).toBe('https://embed.example/movie/550?primaryColor=63b8bc')
+  })
+})
+
+describe('latchStart', () => {
+  // The start rides the frame URL. Read live, every position the progress
+  // bridge wrote would re-point the iframe and restart the embed.
+  const idle = { identity: null, start: null }
+
+  it('reads once when a frame starts, then holds while it plays', () => {
+    const read = vi.fn(() => 600)
+    const playing = latchStart(idle, 'r:2:3', read)
+    expect(playing.start).toBe(600)
+    read.mockReturnValue(642)
+    expect(latchStart(playing, 'r:2:3', read)).toBe(playing)
+    expect(read).toHaveBeenCalledTimes(1)
+  })
+
+  it('reads again for a new episode or server, and nothing when idle', () => {
+    const read = vi.fn(() => 600)
+    const first = latchStart(idle, 'r:2:3', read)
+    read.mockReturnValue(30)
+    expect(latchStart(first, 'r:2:4', read).start).toBe(30)
+    expect(latchStart(first, null, read)).toEqual(idle)
+    expect(read).toHaveBeenCalledTimes(2)
   })
 })

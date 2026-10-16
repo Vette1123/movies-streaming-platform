@@ -6,7 +6,9 @@ import { MovieDetails } from '@/types/movie-details'
 import { movieStreamUrl } from '@/config/sources'
 import { buildMediaEventBase, trackMediaDetailViewed } from '@/lib/analytics'
 import { isTitleBlocked } from '@/lib/blocked-titles'
+import { startSecondsFor } from '@/lib/playback-positions'
 import { useCompletedMedia } from '@/hooks/use-completed-media'
+import { useFrameStart } from '@/hooks/use-frame-start'
 import { useStreamSource } from '@/hooks/use-stream-source'
 import { DetailsHero } from '@/components/details-hero'
 
@@ -50,9 +52,15 @@ export const MovieDetailsHero = ({
   // this page at all.
   const blocked = isTitleBlocked('movie', movie?.id)
 
+  const frameStart = useFrameStart(
+    !blocked && playing && movie?.id
+      ? `${sourceControl.source.id}:${movie.id}`
+      : null,
+    () => (movie?.id ? startSecondsFor('movie', movie.id) : null)
+  )
   const src =
     !blocked && playing && movie?.id
-      ? movieStreamUrl(sourceControl.source, movie.id)
+      ? movieStreamUrl(sourceControl.source, movie.id, frameStart)
       : ''
 
   return (
