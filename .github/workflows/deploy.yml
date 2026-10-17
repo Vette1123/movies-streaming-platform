@@ -278,19 +278,29 @@ jobs:
           CF_ZONE_NAME: reely.space
           WAF_PERMISSIVE: ${{ vars.WAF_PERMISSIVE }}
 
-      # Post-deploy smoke test = our 5xx alert. Curl the critical routes and FAIL
-      # the job (→ GitHub emails on the red run) if any returns a 5xx. This is what
-      # catches a regression like the homepage 500 ("Too many subrequests by single
-      # Worker invocation") seconds after rollout instead of from user reports.
-      # Browser UA clears the WAF scraper challenge (empty-UA → managed challenge).
-      # A short retry absorbs the first-hit cold render / edge-cache warm-up.
-      - name: Smoke test (fail on 5xx)
+      # Post-deploy smoke test = our outage alert. Curl the critical routes and
+      # FAIL the job (→ GitHub emails on the red run) unless every one answers
+      # 2xx. This is what catches a regression like the homepage 500 ("Too many
+      # subrequests by single Worker invocation") seconds after rollout instead
+      # of from user reports. A short retry absorbs the first-hit cold render /
+      # edge-cache warm-up.
+      - name: Smoke test (every page 2xx)
         run: |
           # GitHub's default shell is `bash -eo pipefail`; disable errexit so a
           # transient curl failure (exit≠0) can't abort the step before the
-          # numeric 5xx/000 checks below decide pass/fail.
+          # status checks below decide pass/fail.
           set +e
-          UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          # A CURRENT browser, read from Google's release feed every run. This
+          # used to be a hard-coded Chrome 120, which on 2026-09-01 became one
+          # of the frozen scraper fingerprints our own WAF blocks
+          # (STALE_BROWSER_UAS in scripts/cf-waf-setup.mjs): every path but `/`
+          # answered 403 and, with only a 5xx failing, passed for six weeks.
+          # The number after `CHROME=` is the fallback for an unreachable feed
+          # (tests/smoke-test-ua.test.ts keeps it off the WAF's list).
+          CHROME=$(curl -s --max-time 10 'https://versionhistory.googleapis.com/v1/chrome/platforms/win/channels/stable/versions?pageSize=1' | jq -r '.versions[0].version // empty' | cut -d. -f1)
+          case "$CHROME" in ''|*[!0-9]*) CHROME=156 ;; esac
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$CHROME.0.0.0 Safari/537.36"
+          echo "Smoke test as Chrome $CHROME"
           BASE='https://www.reely.space'
           # /imdb-ratings/0.json intentionally omitted — the shards ship only when
           # NEXT_PUBLIC_IMDB_RATINGS is 'true'; re-add it here if you flip that on.
@@ -300,16 +310,15 @@ jobs:
             code=0
             for attempt in 1 2 3; do
               code=$(curl -s -o /dev/null -w '%{http_code}' -A "$UA" --max-time 20 "$BASE$p")
-              # 2xx/3xx/4xx are fine here; only a 5xx (or curl failure = 000) is a deploy failure.
-              if [ "$code" -lt 500 ] && [ "$code" != "000" ]; then break; fi
+              # Each of these is a public page a visitor lands on, so anything
+              # but a 2xx fails: a 5xx, a WAF 403, a curl failure (000).
+              case "$code" in 2??) break ;; esac
               echo "  $p -> $code (attempt $attempt), retrying…"; sleep 5
             done
-            if [ "$code" -ge 500 ] || [ "$code" = "000" ]; then
-              echo "::error::Smoke test FAILED: $BASE$p returned $code"
-              fail=1
-            else
-              echo "OK  $p -> $code"
-            fi
+            case "$code" in
+              2??) echo "OK  $p -> $code" ;;
+              *) echo "::error::Smoke test FAILED: $BASE$p returned $code"; fail=1 ;;
+            esac
           done
           exit $fail
 

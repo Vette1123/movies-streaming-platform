@@ -24,6 +24,15 @@ GitHub announced `ubuntu-latest` moves to Ubuntu 26.04 between 2026-10-19 and
 Every action was already on its latest major (checkout v7, setup-node v7,
 pnpm/action-setup v6, cache v6).
 
+Verifying the runs turned up a blind alarm. The post-deploy smoke test sent a
+hard-coded Chrome 120 user-agent, which since 2026-09-01 is one of the frozen
+scraper fingerprints our own WAF blocks. `/movies`, `/tv-shows` and
+`/movies/550` answered 403 on every deploy for six weeks, and the step passed,
+because only a 5xx failed it. It now reads the current Chrome version from
+Google's release feed (a pinned fallback, kept off the WAF list by
+`tests/smoke-test-ua.test.ts`) and fails on anything but a 2xx. It was seen
+red with the old string.
+
 ## Mistakes
 
 - pnpm 12 refused the lockfile: its default `minimumReleaseAge` (1 day)
@@ -59,3 +68,5 @@ pnpm/action-setup v6, cache v6).
 - A tool's new default that contradicts the project's policy gets set
   explicitly, with the reason beside it.
 - Never downgrade to satisfy a tool. Change the tool's setting, or ask.
+- A health check that only rejects 5xx cannot see a block. Assert the status
+  you expect, and read what the check actually returned, not just its colour.
