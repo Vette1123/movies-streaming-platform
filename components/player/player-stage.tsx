@@ -109,7 +109,13 @@ export function PlayerStage({
       // about each other there.
       data-banner={bannerInset ? '' : undefined}
     >
-      {controls ? (
+      {/* Only while on screen. The bar is not just chrome: the server switcher
+          in it starts a 9s stall clock on mount and hops server when it runs
+          out. Mounted under a hidden stage it fired on every page load with
+          nothing playing, reported a failure that never happened and saved the
+          hop as this title's server (and, on a free account, as the default on
+          every device). */}
+      {active && controls ? (
         // justify-end so the bar sits flush against the top of the picture and
         // anything that appears above it (the stall notice) grows upward into
         // the band instead of pushing the video down.

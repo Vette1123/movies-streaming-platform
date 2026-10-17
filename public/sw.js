@@ -64,6 +64,15 @@ function putInCache(request, response) {
   caches.open(CACHE).then((cache) => cache.put(request, copy))
 }
 
+// A cached response keeps the URL it was first fetched from, and Next's router
+// hard-navigates to a payload's `response.url` whenever the payload fails its
+// checks (stale build, not a flight response). Handing back the stored object
+// sent a click on S2E5 to whatever ?season=&episode= had filled the cache.
+// Rebuilt, it has no URL of its own and the browser reports the request's.
+function asRequested(response) {
+  return new Response(response.body, response)
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event
 
@@ -95,20 +104,23 @@ self.addEventListener('fetch', (event) => {
   // the cache first. The origin fetch still runs and still overwrites, so a
   // same-build re-deploy is picked up on the next visit either way.
   if (url.searchParams.has('_rsc')) {
-    // ignoreSearch, because `_rsc` is the router's own cache-buster and the
-    // path already identifies the payload uniquely. Matching on the full URL
-    // would make every entry a one-shot: the value is stable per URL today, but
-    // it is Next's to change, and a cache that silently stops hitting is worse
-    // than no cache at all. No other query string reaches these paths.
+    // Keyed by the PATH, which is the payload file. The query is not part of
+    // it: `_rsc` is the router's cache-buster, and the page's own query rides
+    // along too (?season=2&episode=5 on a series page — the comment here used
+    // to say none did). Keyed by full URL and matched with ignoreSearch, every
+    // query got its own entry and the FIRST one answered for all of them, so
+    // the background refresh never replaced it: a payload stored from another
+    // build was served forever.
+    const key = url.origin + url.pathname
     event.respondWith(
-      caches.match(request, { ignoreSearch: true }).then((cached) => {
+      caches.match(key).then((cached) => {
         const network = fetch(request)
           .then((res) => {
-            putInCache(request, res)
+            putInCache(key, res)
             return res
           })
-          .catch(() => cached)
-        return cached || network
+          .catch(() => cached && asRequested(cached))
+        return cached ? asRequested(cached) : network
       })
     )
     return
