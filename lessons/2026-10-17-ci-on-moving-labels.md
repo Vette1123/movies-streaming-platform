@@ -33,6 +33,10 @@ pnpm/action-setup v6, cache v6).
   project whose standing rule is "latest". A new tool default that conflicts
   with a standing rule of the project is a setting to change, not a reason to
   move the project. `minimumReleaseAge: 0`, and the versions went back.
+- Took `lts/*` to mean the newest LTS. Without `check-latest`, setup-node uses
+  any matching version already on the runner image: the first run got 24.21.0
+  three days after 24.22.0 shipped. Read the resolved version in the log;
+  "Resolved .nvmrc as lts/*" says nothing about which one.
 - Told the research agent the repo had no `.npmrc`. It had one. Check before
   briefing.
 - Read prettier's whole-file diff on `deploy.yml` as a formatting problem. It

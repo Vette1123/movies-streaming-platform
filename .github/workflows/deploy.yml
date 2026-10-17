@@ -94,11 +94,14 @@ jobs:
 
       # One Node line for CI and local: .nvmrc says `lts/*`, the line nodejs.org
       # recommends, so CI moves to the next LTS the day it is promoted. A manual
-      # run's `node` input wins over the file when set.
+      # run's `node` input wins over the file when set. check-latest because
+      # otherwise any matching version already on the image wins: the first run
+      # got 24.21.0 out of the tool cache a few days after 24.22.0 shipped.
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ inputs.node }}
           node-version-file: .nvmrc
+          check-latest: true
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -341,6 +344,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
+          check-latest: true
 
       - name: Build release notes
         id: notes
