@@ -144,21 +144,46 @@ export default function MediaFallbackPage() {
   )
 }
 
-// Mirrors the detail hero's footprint so the paint doesn't shift the page.
-// 100svh, not 70vh: the hero is exactly one small-viewport height, so a 70vh
-// skeleton collapsed by ~30% the moment the real hero landed on a tail id.
+// The detail hero with nothing loaded into it yet, not a slab standing in for
+// one. 100svh, not 70vh: the hero is exactly one small-viewport height, so a
+// 70vh skeleton collapsed by ~30% the moment the real hero landed on a tail id.
+// The column copies DetailsHero's own box (container, gutters, bottom padding
+// that clears the install prompt) and holds a bar where each line will land, so
+// the page fills in where it stands instead of replacing a grey rectangle; the
+// backdrop then fades up behind it (see BlurredImage's intro branch).
 function MediaFallbackSkeleton() {
   return (
-    <div className="relative">
+    <section
+      aria-busy
+      aria-label="Loading"
+      className="relative isolate w-full overflow-hidden"
+      style={{ height: '100svh' }}
+    >
+      <div className="absolute inset-0 bg-slate-900" aria-hidden />
       <div
-        className="w-full animate-pulse bg-muted/30"
-        style={{ height: '100svh' }}
+        aria-hidden
+        className="absolute inset-0 bg-linear-to-t from-background via-background/55 via-40% to-black/30"
       />
-      <div className="container mt-8 space-y-4">
-        <div className="h-8 w-2/3 animate-pulse rounded bg-muted/30" />
-        <div className="h-4 w-full animate-pulse rounded bg-muted/30" />
-        <div className="h-4 w-5/6 animate-pulse rounded bg-muted/30" />
+      <div className="relative container h-full max-w-(--breakpoint-2xl)">
+        <div
+          aria-hidden
+          className="absolute inset-0 flex animate-pulse flex-col justify-end px-5 pt-20 pb-28 motion-reduce:animate-none sm:px-8 lg:pb-24"
+        >
+          <div className="flex w-full max-w-3xl flex-col items-start gap-3">
+            <div className="mb-1 h-7" />
+            <div className="h-14 w-3/4 max-w-md rounded-lg bg-white/10 sm:h-20" />
+            <div className="h-6 w-56 rounded-full bg-white/10" />
+            <div className="h-4 w-full max-w-2xl rounded bg-white/10" />
+            <div className="h-4 w-5/6 max-w-xl rounded bg-white/10" />
+            <div className="mt-3 flex w-full items-center gap-3">
+              <div className="h-12 w-full rounded-full bg-white/15 sm:w-40" />
+              <div className="hidden size-12 rounded-full bg-white/10 sm:block" />
+              <div className="hidden size-12 rounded-full bg-white/10 sm:block" />
+              <div className="hidden size-12 rounded-full bg-white/10 sm:block" />
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   )
 }

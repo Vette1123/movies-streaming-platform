@@ -80,6 +80,7 @@ export function StaticRail({
               >
                 <MediaLink
                   href={`${itemRedirect(itemType)}/${item.id}`}
+                  art={item}
                   className="block w-full"
                 >
                   {item?.poster_path ? (

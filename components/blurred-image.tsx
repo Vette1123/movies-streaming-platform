@@ -36,7 +36,7 @@ interface BlurImageProps extends ImageProps {
 //
 // Set here rather than at the call sites so a new poster somewhere can't quietly
 // reintroduce the default. Any caller can still pass its own `quality` and win.
-const HERO_QUALITY = 65
+export const HERO_QUALITY = 65
 // Exported because the `intro` branch (blur-up reveal) defaults to the BACKDROP
 // number, and two posters render through it — the big details poster and the
 // cast portraits. They are posters wearing the hero's reveal, so they name the
@@ -46,6 +46,8 @@ export const POSTER_QUALITY = 70
 // Stable server snapshot for useSyncExternalStore — an inline `() => false`
 // would be a new function every render.
 const returnFalse = () => false
+const returnTrue = () => true
+const subscribeNever = () => () => {}
 
 // The <picture> that wraps every image below is the frame a `fill` image fills,
 // and it has to say so. A bare <picture> is `display:inline; position:static`,
@@ -215,12 +217,30 @@ export const BlurredImage = React.memo(function BlurredImage({
   const hasIntrinsic =
     typeof props.width === 'number' && typeof props.height === 'number'
 
+  // True for the server render and the hydration pass over it, false for
+  // anything mounted on the client afterwards (a navigation, a remount).
+  const fromServer = React.useSyncExternalStore(
+    subscribeNever,
+    returnFalse,
+    returnTrue
+  )
+
   if (intro) {
-    // Hero / large single posters: deliberate blur-up reveal behind network time.
-    const blurClassName = cn(className, 'duration-700 ease-in-out', {
-      'blur-lg': isLoading,
-      'blur-0': !isLoading,
-    })
+    // Hero / large single posters. These were a blur-up: drawn at blur-lg
+    // until onLoad, then eased sharp over 700ms. A cold detail page measured
+    // dark at 1.27s, a smear at 1.57s and the picture at 2.2s — three looks
+    // before the page settled, and the blur was the image ALREADY THERE being
+    // held back. Now a fade from the dark backing, and only where nothing was
+    // drawn yet: in server HTML the picture is never hidden, because hiding it
+    // until hydration would keep the LCP image off screen until the scripts
+    // ran. The hydration pass renders it visible to match; the client pass
+    // after it, if the image is still on its way, takes it to 0 and back.
+    const veiled = isLoading && !fromServer
+    const blurClassName = cn(
+      className,
+      'transition-opacity duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none',
+      veiled && 'opacity-0'
+    )
     return (
       <>
         {props.fill ? <ImageBacking /> : null}

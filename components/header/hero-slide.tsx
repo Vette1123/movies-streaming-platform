@@ -453,6 +453,7 @@ export function HeroSlide({
                     a detail page every time a swipe failed to take. */}
                 <MediaLink
                   href={href}
+                  art={movie}
                   aria-label={`More about ${title}`}
                   className="block w-full"
                 >
@@ -495,6 +496,7 @@ export function HeroSlide({
                   send them there rather than leaving the click on the floor. */}
               <MediaLink
                 href={href}
+                art={movie}
                 aria-label={`More about ${title}`}
                 className={`mt-2 line-clamp-2 block max-w-xl text-sm leading-relaxed text-white/85 drop-shadow-sm transition-opacity duration-500 ease-out hover:opacity-100 sm:line-clamp-3 lg:mt-3 lg:max-w-2xl lg:text-lg [@media(max-height:600px)]:line-clamp-1 ${
                   cinematic ? 'opacity-65' : 'opacity-100'
@@ -518,6 +520,7 @@ export function HeroSlide({
                   fetch hurts most. */}
               <MediaLink
                 href={href}
+                art={movie}
                 onClick={() =>
                   trackHeroWatchClicked({
                     media_id: movie.id,

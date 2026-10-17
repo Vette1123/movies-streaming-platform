@@ -44,6 +44,7 @@ export function WatchedItemCard({ item, onRemove }: WatchedItemCardProps) {
   return (
     <MediaLink
       href={href}
+      art={item}
       className="group h-fit"
       onClick={() =>
         trackWatchHistoryItemClicked({

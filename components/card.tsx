@@ -142,6 +142,7 @@ const CardComponent = ({
   const cardLink = (
     <MediaLink
       href={href}
+      art={item}
       // Block-level so the poster's `w-full` resolves against the grid track
       // / rail item width instead of an inline <a>'s shrink-to-fit box.
       className="block w-full"

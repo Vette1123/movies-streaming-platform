@@ -1,14 +1,51 @@
 import React from 'react'
+import { preload } from 'react-dom'
 
 import { MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
 import { SeriesDetails } from '@/types/series-details'
+import { avifSrcSet } from '@/lib/image-loader'
 import { COVER_BACKDROP_SIZES, COVER_POSTER_SIZES } from '@/lib/image-sizes'
 import { getMediaTitle } from '@/lib/media'
 import { getImageURL } from '@/lib/utils'
-import { BlurredImage } from '@/components/blurred-image'
+import { BlurredImage, HERO_QUALITY } from '@/components/blurred-image'
 
 export type HeroImageMedia = (Movie | MovieDetails) & SeriesDetails
+
+/**
+ * Fetch the hero's picture before the hero exists.
+ *
+ * Exactly what the hero's AVIF <source> offers — same srcset, same `sizes` —
+ * so the browser picks the same candidate and the <img> finds it in the cache.
+ * `type` keeps it honest: a browser that cannot decode AVIF skips the preload
+ * along with the <source>, and fetches nothing twice.
+ *
+ * This is the preload the comment below gave up, without what it gave up for.
+ * next/image's `priority` preload names the WebP srcset, so it bought a
+ * ~130ms head start at the price of the AVIF bytes; this names the AVIF one.
+ * Two callers: the page itself (rendered into <head>, ahead of the stylesheet
+ * and scripts the preload scanner would otherwise reach first) and MediaLink at
+ * the moment of a click, so the picture downloads alongside the page payload
+ * instead of after it.
+ */
+export function preloadHeroImage(
+  media?: { backdrop_path?: string | null; poster_path?: string | null } | null
+) {
+  const path = media?.backdrop_path || media?.poster_path
+  if (!path) return
+  const src = getImageURL(path)
+  const imageSrcSet = avifSrcSet(src, HERO_QUALITY)
+  if (!imageSrcSet) return
+  preload(src, {
+    as: 'image',
+    type: 'image/avif',
+    imageSrcSet,
+    imageSizes: media?.backdrop_path
+      ? COVER_BACKDROP_SIZES
+      : COVER_POSTER_SIZES,
+    fetchPriority: 'high',
+  })
+}
 interface HeroImageProps {
   movie?: HeroImageMedia
   // The one image on the page that is worth fetching eagerly (the LCP). Every
@@ -28,6 +65,7 @@ interface HeroImageProps {
 export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
   const media = movie
   const alt = (media && getMediaTitle(media)) || 'ALT TEXT'
+  if (priority) preloadHeroImage(media)
   // The landscape backdrop fills the hero edge-to-edge on every breakpoint
   // (no side bars). Only when there's no backdrop do we fall back to the
   // portrait poster, cover-cropped so it still fills the frame full width.
