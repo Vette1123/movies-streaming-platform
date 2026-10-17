@@ -10,7 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 pnpm dev                # dev server (Turbopack) — http://localhost:3000
-pnpm lint               # next lint (ESLint 9)
+pnpm lint               # ESLint 10 (its typescript-eslint runs on TS 6 — see .pnpmfile.cjs)
+pnpm typecheck          # tsc --noEmit on TypeScript 7 (native)
 pnpm prettier:check     # verify formatting; prettier:format to write
 pnpm build              # next build (rarely needed locally — see below)
 

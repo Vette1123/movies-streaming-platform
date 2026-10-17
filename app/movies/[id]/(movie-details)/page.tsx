@@ -17,6 +17,7 @@ import { linkablePersonIds } from '@/lib/person-links'
 import { breadcrumbJsonLd, JsonLd, movieJsonLd } from '@/lib/structured-data'
 import { MoviesDetailsContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
+import { DetailsPageTransition } from '@/components/media/details-page-transition'
 
 // 24h: movie metadata is essentially static and CI redeploys twice daily,
 // repopulating the site with fresh data. A shorter window buys no freshness —
@@ -120,28 +121,30 @@ const MoviePage = async (props: PageDetailsProps) => {
   })
 
   return (
-    <header className="relative">
-      <JsonLd data={jsonLd} />
-      <JsonLd
-        data={breadcrumbJsonLd([
-          { name: 'Home', url: '/' },
-          { name: 'Movies', url: '/movies' },
-          { name: movieDetails.title, url: `/movies/${movieDetails.id}` },
-        ])}
-      />
-      <MovieDetailsHero
-        movie={movieDetails}
-        trailerKey={trailerKey}
-        logoPath={logoPath}
-      />
-      <MoviesDetailsContent
-        movie={movieDetails}
-        movieCredits={movieCredits}
-        similarMovies={similarMovies}
-        recommendedMovies={recommendedMovies}
-        linkedPersonIds={linkedPersonIds}
-      />
-    </header>
+    <DetailsPageTransition>
+      <header className="relative">
+        <JsonLd data={jsonLd} />
+        <JsonLd
+          data={breadcrumbJsonLd([
+            { name: 'Home', url: '/' },
+            { name: 'Movies', url: '/movies' },
+            { name: movieDetails.title, url: `/movies/${movieDetails.id}` },
+          ])}
+        />
+        <MovieDetailsHero
+          movie={movieDetails}
+          trailerKey={trailerKey}
+          logoPath={logoPath}
+        />
+        <MoviesDetailsContent
+          movie={movieDetails}
+          movieCredits={movieCredits}
+          similarMovies={similarMovies}
+          recommendedMovies={recommendedMovies}
+          linkedPersonIds={linkedPersonIds}
+        />
+      </header>
+    </DetailsPageTransition>
   )
 }
 

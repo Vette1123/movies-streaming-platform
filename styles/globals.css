@@ -404,6 +404,28 @@
     transform: translate3d(-28vw, -22vh, 0) scale(1.06);
   }
 }
+/* Into a details page from a detail link: a 200ms crossfade instead of a cut
+   (components/media/details-page-transition.tsx). The arriving page is its own
+   snapshot; the rest of the screen is the root's, retimed only for this
+   transition type so nothing else the router does picks up a fade. Opacity
+   only, so it stays for reduced motion too — nothing moves. */
+::view-transition-new(.details-enter),
+:root:active-view-transition-type(to-details)::view-transition-old(root),
+:root:active-view-transition-type(to-details)::view-transition-new(root),
+::view-transition-group(site-header) {
+  animation-duration: 200ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* That page snapshot paints above everything in the root, and the fixed nav
+   lives in the root: it blinked out under the arriving hero for the whole
+   fade. Its own group, held on top, for this transition only. */
+:root:active-view-transition-type(to-details) .site-header {
+  view-transition-name: site-header;
+}
+::view-transition-group(site-header) {
+  z-index: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .site-aurora::before,
   .site-aurora::after {

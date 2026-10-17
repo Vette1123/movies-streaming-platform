@@ -74,6 +74,11 @@ const baseConfig = {
     // lucide-react is the big one: icons are imported per-name across ~40 files,
     // and without this the whole icon set bloats the client bundle.
     optimizePackageImports: ['framer-motion', 'lucide-react'],
+    // The project is on TypeScript 7, whose package has no JS compiler API for
+    // Next's in-process checker; without this `next dev` and `next build`
+    // refuse to start. The build's type check runs `tsc` instead (the native
+    // 7.x one). The linter keeps its own TypeScript 6 — see .pnpmfile.cjs.
+    useTypeScriptCli: true,
   },
 }
 

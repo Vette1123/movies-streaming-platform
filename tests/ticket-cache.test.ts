@@ -16,7 +16,7 @@ const target = { type: 'movie' as const, id: 603, title: 'The Matrix' }
 const ok = (url: string) =>
   ({ ok: true, json: async () => ({ url }) }) as unknown as Response
 
-let calls: number
+let calls = 0
 /** Stream lookups started on intent, as [url, init]. */
 let walks: [string, RequestInit | undefined][]
 

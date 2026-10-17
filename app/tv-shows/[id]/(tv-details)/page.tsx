@@ -15,6 +15,7 @@ import { getMediaHeroImageUrl } from '@/lib/media'
 import { buildDetailsMetadata, buildMediaStaticParams } from '@/lib/media-page'
 import { linkablePersonIds } from '@/lib/person-links'
 import { breadcrumbJsonLd, JsonLd, tvSeriesJsonLd } from '@/lib/structured-data'
+import { DetailsPageTransition } from '@/components/media/details-page-transition'
 import { SeriesDetailsContent } from '@/components/series/details-content'
 import { SeriesDetailsHero } from '@/components/series/details-hero'
 import { SeriesPlaybackProvider } from '@/components/series/playback-context'
@@ -121,33 +122,35 @@ const TVSeries = async (props: PageDetailsProps) => {
   })
 
   return (
-    <header className="relative">
-      <JsonLd data={jsonLd} />
-      <JsonLd
-        data={breadcrumbJsonLd([
-          { name: 'Home', url: '/' },
-          { name: 'TV Shows', url: '/tv-shows' },
-          { name: seriesDetails.name, url: `/tv-shows/${seriesDetails.id}` },
-        ])}
-      />
-      {/* Client provider around both halves: the episode list asks for
-          playback, the hero owns the embed. Server children pass straight
-          through, so the page stays server-rendered. */}
-      <SeriesPlaybackProvider>
-        <SeriesDetailsHero
-          series={seriesDetails}
-          trailerKey={trailerKey}
-          logoPath={logoPath}
+    <DetailsPageTransition>
+      <header className="relative">
+        <JsonLd data={jsonLd} />
+        <JsonLd
+          data={breadcrumbJsonLd([
+            { name: 'Home', url: '/' },
+            { name: 'TV Shows', url: '/tv-shows' },
+            { name: seriesDetails.name, url: `/tv-shows/${seriesDetails.id}` },
+          ])}
         />
-        <SeriesDetailsContent
-          series={seriesDetails}
-          seriesCredits={seriesCredits}
-          similarSeries={similarSeries}
-          recommendedSeries={recommendedSeries}
-          linkedPersonIds={linkedPersonIds}
-        />
-      </SeriesPlaybackProvider>
-    </header>
+        {/* Client provider around both halves: the episode list asks for
+            playback, the hero owns the embed. Server children pass straight
+            through, so the page stays server-rendered. */}
+        <SeriesPlaybackProvider>
+          <SeriesDetailsHero
+            series={seriesDetails}
+            trailerKey={trailerKey}
+            logoPath={logoPath}
+          />
+          <SeriesDetailsContent
+            series={seriesDetails}
+            seriesCredits={seriesCredits}
+            similarSeries={similarSeries}
+            recommendedSeries={recommendedSeries}
+            linkedPersonIds={linkedPersonIds}
+          />
+        </SeriesPlaybackProvider>
+      </header>
+    </DetailsPageTransition>
   )
 }
 

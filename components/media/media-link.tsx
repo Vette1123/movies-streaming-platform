@@ -24,6 +24,8 @@ type MediaLinkProps = React.ComponentPropsWithRef<'a'> & {
   art?: { backdrop_path?: string | null; poster_path?: string | null } | null
 }
 
+const TO_DETAILS = ['to-details']
+
 /** Run the caller's handler and then ours — neither wins, both fire. */
 function chain<E>(theirs?: (event: E) => void, ours?: (event: E) => void) {
   return (event: E) => {
@@ -93,7 +95,18 @@ export function MediaLink({
   )
 
   return (
-    <Link ref={ref} href={href} prefetch={false} {...rest} {...handlers}>
+    <Link
+      ref={ref}
+      href={href}
+      prefetch={false}
+      // Names the navigation for the details hero's <ViewTransition>, which
+      // fades in only for this type. Next 16.4 hands it to React's
+      // addTransitionType; it also reaches CSS as
+      // :active-view-transition-type(to-details).
+      transitionTypes={TO_DETAILS}
+      {...rest}
+      {...handlers}
+    >
       {children}
       <LinkPendingBar />
     </Link>

@@ -217,7 +217,20 @@ interface RootLayoutProps {
 // full-page navigation, which is what a hard load or a shared link always did.
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    // The inline name is what keeps the page being left on screen during the
+    // crossfade into a details page (components/media/details-page-transition.tsx).
+    // When nothing outside a <ViewTransition> boundary "updates", React hides
+    // the root's snapshot for the transition — unless <html> carries an inline
+    // view-transition-name — so the old page cut to bare background and the new
+    // one faded in over nothing: a 200ms blank, the very flash this replaced.
+    // ponytail: leans on React 19.3's cancel check reading the inline style;
+    // if a React upgrade brings the cut back, wrap the source pages in an
+    // exiting <ViewTransition> instead.
+    <html
+      lang="en"
+      suppressHydrationWarning
+      style={{ viewTransitionName: 'root' }}
+    >
       <head>
         {/*
           Preconnect to the host that actually serves the LCP hero image. With
