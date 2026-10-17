@@ -11,9 +11,23 @@ overrides:
   # together with the sharp devDependency.
   sharp: 0.35.5
 
-# Allow the PostHog CLI to run its postinstall (downloads the native binary the
-# webpack sourcemap plugin shells out to at build time). workerd is OpenNext's
-# Cloudflare runtime and also needs its postinstall.
-onlyBuiltDependencies:
-  - "@posthog/cli"
-  - workerd
+# Off: this project tracks the newest release of everything, the day it ships.
+# pnpm 11+ defaults to a 1-day quarantine (1440 minutes) that refuses any
+# version younger than that — it resolved eslint, wrangler and lucide-react a
+# release back, and failed `pnpm install --frozen-lockfile` in CI on a lockfile
+# upgraded the same day.
+minimumReleaseAge: 0
+
+# Every dependency with an install script is named here, because pnpm 11+
+# fails the install on one it has not been told about. The PostHog CLI's
+# postinstall downloads the native binary the sourcemap upload shells out to at
+# build time, and workerd's fetches the runtime wrangler dev and deploy run on.
+# The other three were never run and nothing missed them: esbuild and
+# unrs-resolver find their platform binary through optionalDependencies, and
+# core-js only prints a banner.
+allowBuilds:
+  "@posthog/cli": true
+  workerd: true
+  core-js: false
+  esbuild: false
+  unrs-resolver: false

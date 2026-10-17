@@ -34,6 +34,23 @@ on:
     - cron: '0 12 * * *' # 14:00 winter / 15:00 summer Egypt — midday refresh
     - cron: '0 18 * * *' # 20:00 winter / 21:00 summer Egypt — evening refresh
   workflow_dispatch:
+    # The toolchain tracks moving labels: `ubuntu-latest` and Node `lts/*`
+    # (.nvmrc). Both move on someone else's schedule, so a manual run can name
+    # the NEXT image or Node line and push the real build + deploy through it
+    # before the label gets there. Empty = the same labels a push uses.
+    inputs:
+      runner:
+        description: 'Runner image, e.g. ubuntu-26.04 (empty = ubuntu-latest)'
+        type: string
+        default: ''
+      node:
+        description: 'Node version, e.g. 26 (empty = lts/* from .nvmrc)'
+        type: string
+        default: ''
+      upload_secrets:
+        description: 'Re-put the Worker secrets from GitHub (after rotating a key)'
+        type: boolean
+        default: true
 
 # Least privilege: the job only reads the repo (checkout). Everything that
 # mutates Cloudflare/PostHog authenticates with its own token/secret, not the
@@ -49,7 +66,7 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     # A full build + deploy + waf + smoke was ~3-5 min at ~1,100 prerendered
     # detail pages, and ~4 min at 1,921 routes (52s of that generating pages).
     # The 2026-08-03 widening in lib/media-page.ts roughly doubles both, so 30
@@ -71,14 +88,28 @@ jobs:
         with:
           persist-credentials: false
 
+      # pnpm comes from package.json's `packageManager`, the one place it is
+      # pinned. Before setup-node, whose pnpm cache needs it installed.
       - uses: pnpm/action-setup@v6
 
+      # One Node line for CI and local: .nvmrc says `lts/*`, the line nodejs.org
+      # recommends, so CI moves to the next LTS the day it is promoted. A manual
+      # run's `node` input wins over the file when set.
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: ${{ inputs.node }}
+          node-version-file: .nvmrc
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      # Nothing else lints: ESLint 10 runs on its own TypeScript 6 while the
+      # app is on 7 (.pnpmfile.cjs), and that split breaks silently if a
+      # dependency bump undoes it. Not on the cron: those runs rebuild code
+      # that already passed here on its push.
+      - name: Lint
+        if: github.event_name != 'schedule'
+        run: pnpm lint
 
       # ~2s. The account/billing/sync/together logic is only covered here; a
       # red suite once shipped because nothing ran it (invitees became hosts).
@@ -110,11 +141,13 @@ jobs:
       # on every push/cron is redundant and bumps an extra Worker version each run.
       # Run this once via "Run workflow" after rotating a key or recreating the
       # Worker; normal push/scheduled deploys reuse the already-stored secrets.
+      # Untick `upload_secrets` for a manual run that is only trying a runner
+      # image or Node line.
       # `printf %s` (not `echo`) so no trailing newline is baked into the secret
       # value — a stray \n in TMDB_HEADER_KEY would corrupt the Authorization
       # header. Secrets come in via env, never interpolated into the shell body.
       - name: Upload Worker secrets
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' && inputs.upload_secrets
         run: |
           printf '%s' "$TMDB_API_KEY" | pnpm wrangler secret put TMDB_API_KEY
           printf '%s' "$TMDB_HEADER_KEY" | pnpm wrangler secret put TMDB_HEADER_KEY
@@ -307,7 +340,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: .nvmrc
 
       - name: Build release notes
         id: notes
