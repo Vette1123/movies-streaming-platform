@@ -14,6 +14,7 @@ import { castNames } from '@/lib/credits'
 import { getMediaHeroImageUrl } from '@/lib/media'
 import { buildDetailsMetadata, buildMediaStaticParams } from '@/lib/media-page'
 import { linkablePersonIds } from '@/lib/person-links'
+import { getMediaRatings } from '@/lib/ratings'
 import { breadcrumbJsonLd, JsonLd, tvSeriesJsonLd } from '@/lib/structured-data'
 import { DetailsPageTransition } from '@/components/media/details-page-transition'
 import { SeriesDetailsContent } from '@/components/series/details-content'
@@ -121,6 +122,16 @@ const TVSeries = async (props: PageDetailsProps) => {
     originalLanguage: seriesDetails.original_language,
   })
 
+  // The four ratings, resolved here because this page is a server component:
+  // the content component it renders is in the client graph (the fallback
+  // shell imports it), and an async component there is React error #482.
+  const ratings = await getMediaRatings({
+    imdbId: seriesDetails.imdb_id ?? seriesDetails.external_ids?.imdb_id,
+    imdbRating: seriesDetails.imdbRating,
+    tmdbAverage: seriesDetails.vote_average,
+    tmdbVotes: seriesDetails.vote_count,
+  })
+
   return (
     <DetailsPageTransition>
       <header className="relative">
@@ -147,6 +158,7 @@ const TVSeries = async (props: PageDetailsProps) => {
             similarSeries={similarSeries}
             recommendedSeries={recommendedSeries}
             linkedPersonIds={linkedPersonIds}
+            ratings={ratings}
           />
         </SeriesPlaybackProvider>
       </header>

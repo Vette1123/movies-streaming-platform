@@ -3,7 +3,7 @@ import React, { Suspense } from 'react'
 import { Credit } from '@/types/credit'
 import { MediaType } from '@/types/media'
 import { SeriesDetails } from '@/types/series-details'
-import { getMediaRatings } from '@/lib/ratings'
+import { RatingTile } from '@/lib/ratings'
 import { recommendedHeading, similarHeading } from '@/lib/seo-title'
 import { cn } from '@/lib/utils'
 import { List } from '@/components/list'
@@ -25,27 +25,24 @@ interface SeriesDetailsContentProps {
   recommendedSeries: MediaType[]
   /** Cast ids with a person page — see lib/person-links.ts. */
   linkedPersonIds?: number[]
+  /** The four ratings, resolved by the page. Empty on the fallback shell. */
+  ratings?: RatingTile[]
 }
 
-export const SeriesDetailsContent = async ({
+// NOT async, and that is load-bearing: this module is imported by
+// app/media-fallback/page.tsx, which is 'use client', so an async component
+// here is React error #482. The ratings are resolved by the page instead.
+export const SeriesDetailsContent = ({
   series,
   seriesCredits,
   similarSeries,
   recommendedSeries,
   linkedPersonIds,
+  ratings,
 }: SeriesDetailsContentProps) => {
   const director = seriesCredits?.crew?.find(
     (crew) => crew.job === 'Director'
   )?.name
-  // The four ratings, in one place. The IMDb score comes from the free
-  // dataset shard, the Tomatometer and the Metascore from OMDb — none of it
-  // costs a TMDB request, because the payload already carries the imdb_id.
-  const ratings = await getMediaRatings({
-    imdbId: series.imdb_id ?? series.external_ids?.imdb_id,
-    imdbRating: series.imdbRating,
-    tmdbAverage: series.vote_average,
-    tmdbVotes: series.vote_count,
-  })
   return (
     <>
       {/* Episodes first, straight under the hero: it is what a series page is
@@ -81,7 +78,7 @@ export const SeriesDetailsContent = async ({
         <div className={cn(DETAILS_ROW, 'flex-col')}>
           <DetailsPoster path={series.poster_path} alt={series.name} />
           <section className="flex min-w-0 flex-1 flex-col gap-4">
-            <RatingsStrip tiles={ratings} />
+            <RatingsStrip tiles={ratings ?? []} />
             <SeriesDetailsExtraInfo series={series} director={director} />
             <DetailsCredits
               movieCredits={seriesCredits}

@@ -3,7 +3,7 @@ import React, { Suspense } from 'react'
 import { Credit } from '@/types/credit'
 import { MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
-import { getMediaRatings } from '@/lib/ratings'
+import { RatingTile } from '@/lib/ratings'
 import { recommendedHeading, similarHeading } from '@/lib/seo-title'
 import { cn } from '@/lib/utils'
 import { List } from '@/components/list'
@@ -14,12 +14,20 @@ import { DetailsExtraInfo } from '@/components/media/details-extra-info'
 import { DETAILS_ROW, DetailsPoster } from '@/components/media/details-poster'
 import { RatingsStrip } from '@/components/media/ratings-strip'
 
-export const MoviesDetailsContent = async ({
+// NOT async, and that is load-bearing.
+//
+// This module is imported by app/media-fallback/page.tsx, which is 'use
+// client' — so this module is in the CLIENT graph, and an async component in
+// the client graph is React error #482 ("an unknown Component is an async
+// Client Component"). The ratings are resolved by the page (a server
+// component) and handed in instead.
+export const MoviesDetailsContent = ({
   movie,
   movieCredits,
   similarMovies,
   recommendedMovies,
   linkedPersonIds,
+  ratings,
 }: {
   movie: MovieDetails
   movieCredits: Credit
@@ -27,26 +35,19 @@ export const MoviesDetailsContent = async ({
   recommendedMovies: Movie[]
   /** Cast ids with a person page — see lib/person-links.ts. */
   linkedPersonIds?: number[]
+  /** The four ratings, resolved by the page. Empty on the fallback shell. */
+  ratings?: RatingTile[]
 }) => {
   const director = movieCredits?.crew?.find(
     (crew) => crew.job === 'Director'
   )?.name
-  // The four ratings, in one place. The IMDb score comes from the free
-  // dataset shard, the Tomatometer and the Metascore from OMDb — none of it
-  // costs a TMDB request, because the payload already carries the imdb_id.
-  const ratings = await getMediaRatings({
-    imdbId: movie.imdb_id,
-    imdbRating: movie.imdbRating,
-    tmdbAverage: movie.vote_average,
-    tmdbVotes: movie.vote_count,
-  })
   return (
     <>
       <section className="container max-w-(--breakpoint-2xl) pt-8 pb-6 sm:pt-12 lg:pb-10">
         <div className={cn(DETAILS_ROW, 'flex-col')}>
           <DetailsPoster path={movie.poster_path} alt={movie.title} />
           <section className="flex min-w-0 flex-1 flex-col gap-4">
-            <RatingsStrip tiles={ratings} />
+            <RatingsStrip tiles={ratings ?? []} />
             <DetailsExtraInfo movie={movie} director={director} />
             <DetailsCredits
               movieCredits={movieCredits}
