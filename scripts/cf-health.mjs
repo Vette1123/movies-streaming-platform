@@ -30,6 +30,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadLocalEnv } from './load-env.mjs'
+import { isCrawlerFire } from './lib/crawler-403.mjs'
 
 loadLocalEnv()
 
@@ -227,7 +228,7 @@ const SEO_CRAWLERS = /Googlebot|bingbot|DuckDuckBot|Applebot/i
  * the app itself.
  *
  * A 404 here is fine and expected: crawlers replay dead URLs for months and 404
- * is the honest answer. A 403 is not — Search Console files it as "Blocked due
+ * is the correct answer. A 403 is not — Search Console files it as "Blocked due
  * to access forbidden", which is a worse signal than the truth, and a 5xx makes
  * Google slow its crawl rate. Both are invisible to every other check in this
  * script, because the pages a human visits are fine.
@@ -235,19 +236,35 @@ const SEO_CRAWLERS = /Googlebot|bingbot|DuckDuckBot|Applebot/i
  * This exists because on 2026-08-03 a hand-written query found Googlebot-Image
  * and bingbot each taking ~14 403s/day from the dead-extension WAF rule, which
  * had been added the same day and matched before the verified-bot allowlist.
+ *
+ * Not EVERY 403 to a crawler is that. Two are the site working: a path the
+ * WAF refuses by design (a scanner asking for /.env), and a scraper wearing
+ * Googlebot's name. Both used to count, and the check was permanently red —
+ * which is the failure this script's own header warns about: a check that
+ * fails on a refusal the operator chose is a check that gets ignored. The
+ * verdict lives in scripts/lib/crawler-403.mjs, where it is tested.
  */
 async function checkCrawlers(zone) {
   const filter = `datetime_geq:"${SINCE}",datetime_leq:"${UNTIL}",requestSource:"eyeball",edgeResponseStatus_geq:400`
   const { zones } = await gql(`query{viewer{zones(filter:{zoneTag:"${zone}"}){
     httpRequestsAdaptiveGroups(limit:2000,filter:{${filter}},orderBy:[count_DESC]){
-      count dimensions{userAgent edgeResponseStatus}}}}}`)
+      count dimensions{userAgent edgeResponseStatus clientRequestPath}}}}}`)
 
   const offenders = new Map()
   for (const row of zones[0].httpRequestsAdaptiveGroups) {
-    const { userAgent, edgeResponseStatus: status } = row.dimensions
+    const {
+      userAgent,
+      edgeResponseStatus: status,
+      clientRequestPath: path,
+    } = row.dimensions
     if (!SEO_CRAWLERS.test(userAgent ?? '')) continue
     // 404 is the correct answer to a request for something that isn't there.
     if (status !== 403 && status < 500) continue
+    if (
+      !isCrawlerFire({ userAgent, path, status })
+    ) {
+      continue
+    }
     const name = SEO_CRAWLERS.exec(userAgent)[0]
     const key = `${name} ${status}`
     offenders.set(key, (offenders.get(key) ?? 0) + row.count)
@@ -262,7 +279,7 @@ async function checkCrawlers(zone) {
     `Search crawlers: ${total} blocked/failed requests to Googlebot &c.`,
     offenders.size
       ? [...offenders].map(([key, count]) => `${key}×${count}`).join(' ')
-      : '403s and 5xx only — 404 is the correct answer to a dead URL and is not counted'
+      : '403s and 5xx only — 404 is the correct answer to a dead URL, and a 403 the WAF chose is not counted'
   )
 }
 
