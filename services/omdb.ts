@@ -19,6 +19,7 @@
 // Not the TMDB client: this is a different host with a different quota, and the
 // governor in lib/fetch-client exists to protect TMDB's.
 
+import { readCommittedRatings } from '@/lib/media-ratings'
 import {
   FRESH_MS,
   MISSING_MS,
@@ -138,6 +139,32 @@ export const isOmdbQuotaSpent = (): boolean => quotaSpent
 let announced = false
 
 /**
+ * The titles a build wanted a rating for.
+ *
+ * The build knows which titles it renders; the refresh command
+ * (`pnpm ratings:refresh`) needs to know which titles are still missing, and
+ * it cannot see the build's memory. So the build leaves a note: a list of the
+ * ids it asked about, next to the answers, in the same directory the CI
+ * cache carries between deploys.
+ */
+const noteWantedTitle = async (imdbId: string): Promise<void> => {
+  try {
+    const { mkdir, readFile, writeFile } = await import('node:fs/promises')
+    const path = await import('node:path')
+    const dir = path.join(process.cwd(), '.cache', 'media-ratings')
+    const file = path.join(dir, 'wanted.json')
+    await mkdir(dir, { recursive: true })
+    const current = JSON.parse(
+      await readFile(file, 'utf8').catch(() => '[]')
+    ) as string[]
+    if (current.includes(imdbId)) return
+    await writeFile(file, JSON.stringify([...current, imdbId]), 'utf8')
+  } catch {
+    // The note is a convenience, not a requirement.
+  }
+}
+
+/**
  * The ratings for one title, or null.
  *
  * The key is read from the environment: `OMDB_API_KEY` locally, and a GitHub
@@ -153,7 +180,7 @@ export const getOmdbRatings = async (
   imdbId?: string | null
 ): Promise<OmdbRatings | null> => {
   const key = process.env.OMDB_API_KEY
-  if (!key || !imdbId || !/^tt\d{7,8}$/.test(imdbId)) return null
+  if (!imdbId || !/^tt\d{7,8}$/.test(imdbId)) return null
 
   // 1. The cache. A rating that has been seen is not fetched again for a
   //    month; a title OMDb does not know is re-checked weekly, so a title it
@@ -165,8 +192,27 @@ export const getOmdbRatings = async (
     if (age < life) return cached.value
   }
 
-  // 2. The day's budget. Refused means no request, and the title waits for
-  //    the next day rather than being asked and refused.
+  // 2. The committed snapshot (data/media-ratings.json). This is the floor:
+  //    the build does not need OMDb, a key, or a request to show a rating
+  //    that is already known. It is what makes the feature work when OMDb
+  //    is over its daily limit, down, or gone.
+  const committed = (await readCommittedRatings())[imdbId]
+  if (committed) {
+    const entry: OmdbRatings = {
+      imdbRating: committed.imdb,
+      imdbVotes: committed.votes
+        ? Number(committed.votes.replace(/\D/g, ''))
+        : undefined,
+      rottenTomatoes: committed.rt,
+      metacritic: committed.mc,
+    }
+    const hasAny = Object.values(entry).some((value) => value !== undefined)
+    if (hasAny) return entry
+  }
+
+  // 3. Ask OMDb — only if there is a key, only if the day's budget has room,
+  //    and never again after it says no.
+  if (!key) return null
   if (quotaSpent) return null
   if (!(await takeOmdbBudget())) {
     quotaSpent = true
@@ -181,6 +227,7 @@ export const getOmdbRatings = async (
       `[omdb] fetching ratings, ${await omdbBudgetLeft()} request(s) left in today's budget`
     )
   }
+  await noteWantedTitle(imdbId)
 
   try {
     // No `type`: OMDb would then answer for a MOVIE only, and a series would

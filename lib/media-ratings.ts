@@ -35,3 +35,35 @@ export interface MediaRatingEntry {
   /** How many people voted on IMDb, as OMDb writes it ("3,235,958"). */
   votes?: string
 }
+
+const RATINGS_FILE = 'data/media-ratings.json'
+
+let committed: Record<string, MediaRatingEntry> | null = null
+
+/**
+ * The committed snapshot, read from disk.
+ *
+ * Read from disk rather than imported, for the same reason the IMDb shards
+ * are: the file is a BUILD INPUT, and importing it would put it in the
+ * Worker bundle — which never shows a rating, and whose startup parses
+ * everything it ships.
+ *
+ * Memoised per process: the build asks for a thousand titles and the file
+ * holds a thousand answers.
+ */
+export const readCommittedRatings = async (): Promise<
+  Record<string, MediaRatingEntry>
+> => {
+  if (committed) return committed
+  committed = {}
+  try {
+    const { readFile } = await import('node:fs/promises')
+    const path = await import('node:path')
+    const raw = await readFile(path.join(process.cwd(), RATINGS_FILE), 'utf8')
+    const parsed = JSON.parse(raw) as Record<string, MediaRatingEntry>
+    if (parsed && typeof parsed === 'object') committed = parsed
+  } catch {
+    // No snapshot yet — the page falls back to the IMDb dataset and TMDB.
+  }
+  return committed
+}
