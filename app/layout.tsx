@@ -25,6 +25,7 @@ import { InviteCapture } from '@/components/profile/referral-cookie'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register'
 import { SupportNudgeHost } from '@/components/support/support-nudge-host'
+import { ViewTransitionGuard } from '@/components/view-transition-guard'
 import { APPLE_SPLASH } from '@/app/_icons/apple-splash'
 import { versionedIcon } from '@/app/_icons/version'
 
@@ -376,6 +377,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <InstallPrompt />
           <SupportNudgeHost />
           <InviteCapture />
+          {/* Renders nothing: the view-transition abort guard, so a skipped
+              transition cannot become an unhandled rejection (lib/view-transition.ts). */}
+          <ViewTransitionGuard />
           {/* Renders nothing: library sync + appearance, mounted once. */}
           <AccountBoot />
         </div>

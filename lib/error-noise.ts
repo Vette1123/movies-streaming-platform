@@ -40,6 +40,15 @@ import {
  *   assumed a string payload got an object instead. We register no message
  *   listener anywhere (the YouTube embed is postMessage-out only), and these
  *   arrive with zero stack frames from our bundle — it's injected page script.
+ * - "AbortError: Transition was skipped": a view transition the browser
+ *   abandoned (a second navigation interrupted the first, or the tab was
+ *   hidden mid-animation). React 19.3 hangs `.finally()` off the transition's
+ *   `ready` and `finished` promises without catching them, so the browser
+ *   reports the abort as an unhandled rejection. The guard in
+ *   lib/view-transition.ts stops the rejection at the source; this rule is the
+ *   net under it, for the transitions that start before the guard is
+ *   installed (the one during hydration) and for any browser that reports the
+ *   abort another way.
  */
 const NOISE_EXCEPTION_PATTERNS = [
   /Minified React error #418\b/i,
@@ -57,6 +66,7 @@ const NOISE_EXCEPTION_PATTERNS = [
   /_internal_videoInjector/i,
   /\bstandardSelectors\b/,
   /\bdata\.split is not a function/i,
+  /Transition was skipped/i,
 ]
 
 interface ExceptionFrame {

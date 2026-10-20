@@ -95,6 +95,23 @@ describe('shouldDropException', () => {
       )
     ).toBe(false)
   })
+
+  it('drops an abandoned view transition', () => {
+    // The browser skipped a transition (a second navigation interrupted the
+    // first). React 19.3 hangs .finally() off the transition's promises
+    // without catching them, so the abort arrives as an unhandled rejection.
+    // lib/view-transition.ts stops it at the source; this is the net under it.
+    expect(
+      shouldDropException(exception('AbortError: Transition was skipped'))
+    ).toBe(true)
+    expect(
+      shouldDropException(
+        exception('DOMException: Transition was skipped', [
+          { filename: CHUNK },
+        ])
+      )
+    ).toBe(true)
+  })
 })
 
 describe('api error status', () => {
