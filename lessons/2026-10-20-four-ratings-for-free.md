@@ -83,6 +83,16 @@ tooltip from `sm` up, and `whitespace-nowrap` so nothing breaks in half.
   budget, and the budget is what decides whether a request happens at all. The
   test that actually holds is "is this the Worker bundle" — `NODE_ENV` is
   inlined as `"production"` there and nowhere else that matters.
+- **Made a component async and broke every tail page.** Resolving the ratings
+  inside the details content meant making it `async` — and
+  `app/media-fallback/page.tsx` is `'use client'` and imports it, which makes
+  the details content a CLIENT module, where an async component is React
+  error #482. Nothing in the file says "client": a module without
+  `'use client'` is a server component until something in the client graph
+  imports it, and then it is not. The 1,000 prerendered pages never touch
+  the fallback shell and never saw it, which is how it reached a deploy.
+  The ratings are resolved by the page (a server component) and handed in as
+  a prop instead, and `tests/client-graph-async.test.ts` pins it.
 - **The OMDb key has to be ACTIVATED.** The signup email carries a
   verification link; until it is clicked, every request answers 401
   `Invalid API key!` — which reads exactly like a wrong key. The key is also
@@ -143,3 +153,7 @@ tooltip from `sm` up, and `whitespace-nowrap` so nothing breaks in half.
   thing it exists for.
 - **A label that has to fit in 48px is one word.** The full phrase belongs in
   the tooltip, where there is room for it.
+- **"Server component" is a property of the graph, not of the file.** A module
+  without `'use client'` is a client component the moment something in the
+  client graph imports it, and then `async` is a runtime error. Resolve on the
+  server, pass the result down.
