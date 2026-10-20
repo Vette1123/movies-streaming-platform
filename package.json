@@ -36,6 +36,7 @@
     "cf:health": "node scripts/cf-health.mjs",
     "cf:cpu": "node scripts/cf-cpu.mjs",
     "posthog:query": "node scripts/posthog-query.mjs",
+    "errors:triage": "node scripts/errors-triage.mjs",
     "bmc:probe": "node scripts/bmc-probe.mjs",
     "search:probe": "node scripts/search-scroll-probe.mjs",
     "vt:probe": "node scripts/view-transition-probe.mjs",
