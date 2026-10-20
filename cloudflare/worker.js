@@ -138,7 +138,11 @@ function copyEnv(env) {
     'NEXT_PUBLIC_TMDB_BASEURL',
     'NEXT_PUBLIC_BASE_URL',
     'NEXT_PUBLIC_IMAGE_CACHE_HOST_URL',
-    'NEXT_PUBLIC_IMDB_RATINGS',
+    // The IMDb rating shards are deliberately NOT copied here. The Worker never
+    // shows a rating (the details pages that do are prerendered), and copying
+    // the flag in would make every tail request read a shard — one more
+    // subrequest and one more JSON parse on the route that is 63% of all
+    // invocations. See services/imdb.ts.
     // Accounts. All secrets, all read through `process.env` by lib/auth and
     // lib/billing for the same reason the TMDB keys are: those modules are
     // plain TypeScript that also has to run under `next dev`, where the only

@@ -73,9 +73,15 @@ Replaced OpenNext on 2026-08-03. Under OpenNext, prod was killing **25–40% of 
 
 The embed provider list lives in `config/sources.ts` and comes **entirely from the environment** — `NEXT_PUBLIC_STREAMING_MOVIES_API_URL` plus `NEXT_PUBLIC_STREAM_SOURCE_2/3/4/5`, mirrored as GitHub secrets **and mapped into the build step of `.github/workflows/deploy.yml`** — a secret added to GitHub without a workflow mapping is silently absent from prod (Turbopack only inlines what exists at build time). No provider host is checked in (this repo is public) and the UI labels them "Server N". Screen any candidate with `pnpm embed:probe` before adding it. Switching, the one automatic hop after a 9s stall, and the per-title memory need a **free account** (`canSwitch` in `hooks/use-stream-source.ts`); anonymous visitors get the default server. Supporters start every title on the Reely Player; everyone else gets it on **one title a day** (`lib/player-trial.ts`, offered on the stall screen; client-side only, see its `ponytail:`). Both detail heroes hold _what_ is playing and derive the URL from the chosen server — never store the URL.
 
-### IMDb ratings (feature-flagged OFF)
+### Ratings on the details page (free, no paid API)
 
-`NEXT_PUBLIC_IMDB_RATINGS` gates all IMDb code. **Off by default**: enriching list rows fired one TMDB `external_ids` subrequest per item and blew the free-plan **50-subrequests/invocation** cap (homepage 500 / Error 1102). When on, ratings come from prebuilt static shards (`public/imdb-ratings/*.json`, 256 shards, `pnpm imdb:ratings`), read at runtime via the **Workers `ASSETS` binding — not a public self-fetch** (the WAF challenges the empty-UA subrequest and returns HTML). `NUM_SHARDS` must stay in sync between `services/imdb.ts` and `scripts/build-imdb-ratings.mjs`.
+Four scores on every details page — IMDb, Rotten Tomatoes, Metacritic, TMDB — in `components/media/ratings-strip.tsx`, and **not one of them costs a TMDB request**, which is the whole constraint: the detail payload already carries the `imdb_id`.
+
+- **IMDb** — the free Non-Commercial dataset, prebuilt into 256 shards (`public/imdb-ratings/*.json`, `pnpm imdb:ratings`) and read off disk at build. Gated by **`IMDB_RATING_SHARDS`** (CI env, ON). It is deliberately **not** a `NEXT_PUBLIC_*` var: those are inlined into the Worker bundle, which would switch the Worker's detail path on too — one more subrequest and one more JSON parse on the route that is 63% of all invocations.
+- **Rotten Tomatoes + Metacritic** — OMDb's free tier (1,000 requests/day, no card) via `services/omdb.ts`, key in `OMDB_API_KEY`. There is **no free official RT API**; the unofficial ones are somebody else's server. Answers are cached on disk (`.cache/media-ratings/<imdb_id>.json`) and the cache travels between deploys, so after the first day a build makes **no OMDb request at all** — the quota is only ever spent on titles nobody has looked up yet.
+- **Per-item enrichment of LIST rows** is a different flag (`IMDB_RATING_LISTS`) and stays **OFF**: one `external_ids` subrequest per row is what blew the free-plan **50-subrequests/invocation** cap (homepage 500 / Error 1102). `NUM_SHARDS` must stay in sync between `services/imdb.ts` and `scripts/build-imdb-ratings.mjs`.
+
+The strip is **server-rendered into the prerendered pages**: zero Worker CPU, zero subrequests, and the numbers are in the HTML for a crawler. The Worker's tail-id fallback does not show ratings (it serves the exported shell).
 
 ### Client state & URL
 

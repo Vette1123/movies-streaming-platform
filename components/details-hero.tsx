@@ -50,11 +50,19 @@ import { WatchedButton } from '@/components/watched-button'
 // it. The shadow is what makes it legible over a bright still — opacity alone
 // cannot be tuned for an image nobody chose.
 //
-// Fixed width so two-word captions wrap under the circle. aria-hidden, because
-// every action already carries an aria-label and the caption would be read as
-// a second, stray line of text.
+// Fixed width so the captions line up under their circles, and never wrapped:
+// six actions share ONE row on a 360px phone (318px against 320), so the width
+// is what sets the row's width, and a caption that broke across two lines
+// ("Add to" / "list") read as a mistake rather than a label. The phone labels
+// are therefore ONE word each — the full phrase is still there from `sm` up,
+// in the tooltip. `whitespace-nowrap` is the belt to that braces: a label that
+// is somehow longer than its box overflows into its neighbour instead of
+// breaking in half.
+//
+// aria-hidden, because every action already carries an aria-label and the
+// caption would be read as a second, stray line of text.
 const captionBase =
-  'w-12 text-center text-[10px] leading-tight font-medium text-white/90 [text-shadow:0_1px_3px_rgba(0,0,0,0.85)]'
+  'w-12 text-center text-[10px] leading-tight font-medium whitespace-nowrap text-white/90 [text-shadow:0_1px_3px_rgba(0,0,0,0.85)]'
 // For the actions that print their own label from `sm` up (Trailer).
 const phoneCaption = cn(captionBase, 'sm:hidden')
 // For the circles: a caption on a phone, a tooltip from `sm`.
@@ -65,19 +73,39 @@ const tooltipCaption = cn(
 
 const HeroAction = ({
   caption,
+  phoneLabel,
   tooltip = true,
   children,
 }: {
   caption: string
+  /**
+   * The one-word label for a phone, where the caption has to fit inside a
+   * 48px box without breaking. From `sm` up the tooltip carries the full
+   * `caption` instead.
+   */
+  phoneLabel?: string
   /** False for an action that shows its own label from `sm` up. */
   tooltip?: boolean
   children: React.ReactNode
 }) => (
   <div className="group/act relative flex flex-col items-center gap-1.5">
     {children}
-    <span aria-hidden className={tooltip ? tooltipCaption : phoneCaption}>
-      {caption}
-    </span>
+    {phoneLabel ? (
+      <>
+        <span aria-hidden className={cn(captionBase, 'sm:hidden')}>
+          {phoneLabel}
+        </span>
+        {tooltip ? (
+          <span aria-hidden className={cn(tooltipCaption, 'hidden sm:block')}>
+            {caption}
+          </span>
+        ) : null}
+      </>
+    ) : (
+      <span aria-hidden className={tooltip ? tooltipCaption : phoneCaption}>
+        {caption}
+      </span>
+    )}
   </div>
 )
 
@@ -446,7 +474,11 @@ export const DetailsHero = ({
                         with a trailer) share ONE row on a 360px phone — 318px
                         against 320. */}
                     {trailerKey && (
-                      <HeroAction caption="Play trailer" tooltip={false}>
+                      <HeroAction
+                        caption="Play trailer"
+                        phoneLabel="Trailer"
+                        tooltip={false}
+                      >
                         <TrailerDialog
                           trailerKey={trailerKey}
                           mediaId={media?.id}
@@ -460,7 +492,7 @@ export const DetailsHero = ({
                         hydration, and the section's scroll margin clears the
                         fixed header. */}
                     {series && (
-                      <HeroAction caption="Episodes">
+                      <HeroAction caption="Episodes" phoneLabel="Episodes">
                         <a
                           href="#episodes"
                           aria-label="Episodes"
@@ -478,13 +510,13 @@ export const DetailsHero = ({
                         </a>
                       </HeroAction>
                     )}
-                    <HeroAction caption="Add to list">
+                    <HeroAction caption="Save to watchlist" phoneLabel="Save">
                       <SaveButton
                         media={media}
                         className={heroActionIconOnly}
                       />
                     </HeroAction>
-                    <HeroAction caption="Rate it">
+                    <HeroAction caption="Rate it" phoneLabel="Rate">
                       <RateButton
                         media={media}
                         className={heroActionIconOnly}
@@ -494,14 +526,14 @@ export const DetailsHero = ({
                         the movie-level toggle only shows for movies; series
                         completion is tracked per-episode in the episode list. */}
                     {isMovie && movie && (
-                      <HeroAction caption="Watched">
+                      <HeroAction caption="Watched" phoneLabel="Watched">
                         <WatchedButton
                           movie={movie}
                           className={heroActionIconOnly}
                         />
                       </HeroAction>
                     )}
-                    <HeroAction caption="Share">
+                    <HeroAction caption="Share" phoneLabel="Share">
                       <ShareButton
                         title={title}
                         mediaId={media?.id}
@@ -511,7 +543,7 @@ export const DetailsHero = ({
                     </HeroAction>
                     {/* Second share action: the spoiler-free picture, next to
                         the link share it mirrors. */}
-                    <HeroAction caption="Share card">
+                    <HeroAction caption="Share card" phoneLabel="Card">
                       <ShareCardButton
                         media={media}
                         className={heroActionIconOnly}

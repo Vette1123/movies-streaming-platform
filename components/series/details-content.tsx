@@ -3,12 +3,14 @@ import React, { Suspense } from 'react'
 import { Credit } from '@/types/credit'
 import { MediaType } from '@/types/media'
 import { SeriesDetails } from '@/types/series-details'
+import { getMediaRatings } from '@/lib/ratings'
 import { recommendedHeading, similarHeading } from '@/lib/seo-title'
 import { cn } from '@/lib/utils'
 import { List } from '@/components/list'
 import { SliderHorizontalListLoader } from '@/components/loaders/slider-horizontal-list-loader'
 import { DetailsCredits } from '@/components/media/details-credits'
 import { DETAILS_ROW, DetailsPoster } from '@/components/media/details-poster'
+import { RatingsStrip } from '@/components/media/ratings-strip'
 import { SectionErrorBoundary } from '@/components/section-error-boundary'
 import { SeriesDetailsExtraInfo } from '@/components/series/details-extra-info'
 import {
@@ -25,7 +27,7 @@ interface SeriesDetailsContentProps {
   linkedPersonIds?: number[]
 }
 
-export const SeriesDetailsContent = ({
+export const SeriesDetailsContent = async ({
   series,
   seriesCredits,
   similarSeries,
@@ -35,6 +37,15 @@ export const SeriesDetailsContent = ({
   const director = seriesCredits?.crew?.find(
     (crew) => crew.job === 'Director'
   )?.name
+  // The four ratings, in one place. The IMDb score comes from the free
+  // dataset shard, the Tomatometer and the Metascore from OMDb — none of it
+  // costs a TMDB request, because the payload already carries the imdb_id.
+  const ratings = await getMediaRatings({
+    imdbId: series.imdb_id ?? series.external_ids?.imdb_id,
+    imdbRating: series.imdbRating,
+    tmdbAverage: series.vote_average,
+    tmdbVotes: series.vote_count,
+  })
   return (
     <>
       {/* Episodes first, straight under the hero: it is what a series page is
@@ -70,6 +81,7 @@ export const SeriesDetailsContent = ({
         <div className={cn(DETAILS_ROW, 'flex-col')}>
           <DetailsPoster path={series.poster_path} alt={series.name} />
           <section className="flex min-w-0 flex-1 flex-col gap-4">
+            <RatingsStrip tiles={ratings} />
             <SeriesDetailsExtraInfo series={series} director={director} />
             <DetailsCredits
               movieCredits={seriesCredits}

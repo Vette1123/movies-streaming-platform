@@ -23,15 +23,30 @@ export const setImdbAssetsBinding = (binding: AssetsBinding | null): void => {
 // missing (shard absent, obscure title, ingest not run) fails soft to null so
 // the UI falls back to the TMDB rating.
 //
-// Feature flag — IMDb ratings are OFF by default. Enriching every list row cost
-// one TMDB `external_ids` subrequest per item; a full homepage render fanned out
-// ~120+ subrequests and blew the Cloudflare free-plan 50-subrequests/invocation
-// cap ("Too many subrequests by single Worker invocation"), which cascaded into
-// the hero fetch failing and the whole page 500ing. Gated off so ALL IMDb calls
-// (external_ids lookups AND shard reads) are skipped and the UI falls back to the
-// TMDB rating. Flip on only with `NEXT_PUBLIC_IMDB_RATINGS=true` — do NOT enable
-// on the free plan while list rows enrich per-item, or the subrequest cap returns.
-const IMDB_ENABLED = process.env.NEXT_PUBLIC_IMDB_RATINGS === 'true'
+// Two flags, because the two uses cost different things.
+//
+// IMDB_RATING_SHARDS — the rating shards are shipped, and the details page
+// reads them for the imdb_id the TMDB payload ALREADY carries, so it costs a
+// local file read (build) and NO TMDB request at all. That is why this is
+// safe to turn on.
+//
+// The flag is deliberately NOT `NEXT_PUBLIC_*`. Next and the Worker bundle
+// inline every `NEXT_PUBLIC_*` at build time, so a public flag would switch
+// the WORKER on too — and the Worker's detail path would then read a shard
+// per request: one more subrequest and one more JSON parse on the route that
+// is 63% of all invocations. A server-only env var stays a runtime lookup in
+// the Worker, where it is undefined, so the Worker's CPU and subrequest
+// profile is exactly what it is today.
+//
+// IMDB_RATING_LISTS — per-item enrichment of LIST rows. A TMDB list endpoint
+// does not carry imdb_id, so every row needs an `external_ids` lookup first: a
+// full homepage render fanned out ~120+ subrequests and blew the Cloudflare
+// free-plan 50-subrequests/invocation cap ("Too many subrequests by single
+// Worker invocation"), which cascaded into the hero fetch failing and the
+// whole page 500ing. OFF unless somebody asks for it, and then only on a plan
+// with room for it.
+const IMDB_SHARDS = process.env.IMDB_RATING_SHARDS === 'true'
+const IMDB_LISTS = process.env.IMDB_RATING_LISTS === 'true'
 
 // NUM_SHARDS MUST stay in sync with scripts/build-imdb-ratings.mjs.
 const NUM_SHARDS = 256
@@ -46,7 +61,22 @@ const shardFor = (tconst: string): number => {
   return Number.isFinite(n) ? n % NUM_SHARDS : 0
 }
 
-const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
+// Where the shards can be read from disk: the build and `next dev` both have
+// a filesystem and a project root, and the Worker has neither.
+//
+// The dev case matters more than it looks: the runtime path reads the shard
+// over HTTP, and the URL it uses is NEXT_PUBLIC_BASE_URL — production. So a
+// local `pnpm dev` would only show IMDb ratings once the shards had been
+// DEPLOYED, which is a confusing way to find out whether a feature works. The
+// local shards are the same files, in the same place, so they are the ones to
+// read.
+//
+// The Worker bundle inlines NODE_ENV as "production" (scripts/build-worker.mjs),
+// so this is false there and the Worker never touches a filesystem — no extra
+// CPU, no extra subrequest, no chance of a workerd "not implemented" throw.
+const hasLocalShards =
+  process.env.NEXT_PHASE === 'phase-production-build' ||
+  process.env.NODE_ENV === 'development'
 
 const loadShard = async (shard: number): Promise<Record<string, string>> => {
   const cached = shardCache.get(shard)
@@ -54,8 +84,8 @@ const loadShard = async (shard: number): Promise<Record<string, string>> => {
 
   let data: Record<string, string> = {}
   try {
-    if (isBuildPhase) {
-      // Build (Node): read the generated shard directly from public/.
+    if (hasLocalShards) {
+      // Build or dev (Node): read the generated shard straight off disk.
       const [{ readFile }, path] = await Promise.all([
         import('node:fs/promises'),
         import('node:path'),
@@ -132,7 +162,7 @@ const loadShard = async (shard: number): Promise<Record<string, string>> => {
  */
 const getImdbRating = cache(
   async (imdbId?: string | null): Promise<string | null> => {
-    if (!IMDB_ENABLED || !imdbId) return null
+    if (!IMDB_SHARDS || !imdbId) return null
     const shard = await loadShard(shardFor(imdbId))
     return shard[imdbId] ?? null
   }
@@ -147,7 +177,7 @@ const IMDB_ID_REVALIDATE = 60 * 60 * 24 * 30 // 30 days
 
 const getImdbRatingByTmdbId = cache(
   async (id: number, mediaType: 'movie' | 'tv'): Promise<string | null> => {
-    if (!IMDB_ENABLED || !id) return null
+    if (!IMDB_LISTS || !id) return null
     try {
       const { imdb_id } = await fetchClient.get<{ imdb_id?: string | null }>(
         `${mediaType}/${id}/external_ids`,
@@ -174,7 +204,7 @@ const attachImdbRatings = async <T extends { id: number }>(
 ): Promise<(T & { imdbRating: string | null })[]> => {
   // Flag off: skip the per-item external_ids fan-out entirely (this is the fetch
   // storm that tripped the subrequest cap). Cards fall back to the TMDB rating.
-  if (!IMDB_ENABLED) {
+  if (!IMDB_LISTS) {
     return items.map((item) => ({ ...item, imdbRating: null }))
   }
   return Promise.all(

@@ -74,13 +74,21 @@ jobs:
     # default — raise this, don't shrink the prerender set, if a build ever
     # brushes it.
     timeout-minutes: 30
-    # Single toggle for the IMDb ratings feature. 'false' (default) skips the
-    # shard build + upload entirely — no ~10MB dataset download, no 256 dead
-    # /imdb-ratings/*.json assets shipped to the Worker — and leaves the app on
-    # TMDB ratings. Flip to 'true' to re-enable end to end (build, ship, and the
-    # runtime read in services/imdb.ts). Must match NEXT_PUBLIC_IMDB_RATINGS there.
+    # Single toggle for the IMDb rating shards. 'true' ships them, and the
+    # details page reads them for the imdb_id the TMDB payload already
+    # carries — a local file at build time, one static asset in the Worker,
+    # and NO extra TMDB request, so it is safe on the free plan.
+    #
+    # NOT a NEXT_PUBLIC_ var on purpose: those are inlined into the Worker
+    # bundle, which would switch the Worker's detail path on too — one more
+    # subrequest and one more JSON parse on the route that is 63% of all
+    # invocations. See services/imdb.ts.
+    #
+    # The per-ITEM enrichment of list rows (an external_ids lookup per card)
+    # is a different flag and stays OFF: that is the fan-out that blew the
+    # 50-subrequests/invocation cap.
     env:
-      NEXT_PUBLIC_IMDB_RATINGS: 'false'
+      IMDB_RATING_SHARDS: 'true'
     steps:
       - uses: actions/checkout@v7
         # This job never pushes to git — everything mutates Cloudflare/PostHog
@@ -130,15 +138,34 @@ jobs:
 
       - name: Cache IMDb rating shards (daily)
         id: imdb-cache
-        if: env.NEXT_PUBLIC_IMDB_RATINGS == 'true'
+        if: env.IMDB_RATING_SHARDS == 'true'
         uses: actions/cache@v6
         with:
           path: public/imdb-ratings
           key: imdb-ratings-${{ steps.today.outputs.day }}
 
       - name: Build IMDb rating shards
-        if: env.NEXT_PUBLIC_IMDB_RATINGS == 'true' && steps.imdb-cache.outputs.cache-hit != 'true'
+        if: env.IMDB_RATING_SHARDS == 'true' && steps.imdb-cache.outputs.cache-hit != 'true'
         run: pnpm imdb:ratings
+
+      # The OMDb answers (Rotten Tomatoes, Metacritic, the IMDb vote count).
+      # OMDb's free tier allows 1,000 requests a DAY and the details build
+      # renders about a thousand pages, so a build that fetched every rating
+      # every time would spend the whole quota on the first run and fail every
+      # day after it.
+      #
+      # So each answer is cached on disk (lib/omdb-cache.ts) and the cache
+      # travels between deploys: a day-keyed entry (so today's builds share
+      # one copy) restored from the most recent one (so the answers ACCUMULATE
+      # and the quota is only ever spent on titles nobody has looked up yet).
+      # After the first day, a build makes no OMDb request at all.
+      - name: Cache OMDb ratings
+        id: omdb-cache
+        uses: actions/cache@v6
+        with:
+          path: .cache/media-ratings
+          key: media-ratings-${{ steps.today.outputs.day }}
+          restore-keys: media-ratings-
 
       # Manual-only: Cloudflare secrets persist across deploys, so re-putting them
       # on every push/cron is redundant and bumps an extra Worker version each run.
@@ -237,11 +264,20 @@ jobs:
           # The supporters-only opt-in for OUR player. Needs the playback
           # worker + gado-proxy tier live, or the toggle only advertises.
           NEXT_PUBLIC_PRO_TRIAL_SELFHOST: ${{ secrets.NEXT_PUBLIC_PRO_TRIAL_SELFHOST }}
+          # OMDb (free tier, 1,000 requests/day): the Rotten Tomatoes and
+          # Metacritic scores on the details page. Server-side only, so it is
+          # read at BUILD time and baked into the prerendered pages — no key
+          # ever reaches the browser. Absent = the details page shows the
+          # ratings it can get without it.
+          OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
           NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE: ${{ secrets.NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE }}
           NEXT_PUBLIC_IMAGE_CACHE_HOST_URL: ${{ secrets.NEXT_PUBLIC_IMAGE_CACHE_HOST_URL }}
           NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
           NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
-          NEXT_PUBLIC_IMDB_RATINGS: ${{ env.NEXT_PUBLIC_IMDB_RATINGS }}
+          # The IMDb rating shards, for the details page. Server-side only, so
+          # it is read at BUILD time — the Worker never sees it (see
+          # services/imdb.ts for why it is not a NEXT_PUBLIC_ var).
+          IMDB_RATING_SHARDS: ${{ env.IMDB_RATING_SHARDS }}
           # The push subscribe call needs the VAPID public key in the browser
           # bundle, and NEXT_PUBLIC_* is inlined at build time — missing here it
           # is simply absent in prod, and the alerts panel reports "this browser
@@ -302,8 +338,8 @@ jobs:
           UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$CHROME.0.0.0 Safari/537.36"
           echo "Smoke test as Chrome $CHROME"
           BASE='https://www.reely.space'
-          # /imdb-ratings/0.json intentionally omitted — the shards ship only when
-          # NEXT_PUBLIC_IMDB_RATINGS is 'true'; re-add it here if you flip that on.
+          # /imdb-ratings/0.json intentionally omitted — the shards are a build
+          # input, and the smoke test is about the pages a visitor lands on.
           PATHS='/ /movies /tv-shows /movies/550'
           fail=0
           for p in $PATHS; do

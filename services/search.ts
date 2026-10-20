@@ -20,7 +20,7 @@ const searchOnce = async (params: Param) => {
   const dto = searchDTO(rawData)
 
   // Attach real IMDb scores per result (search/multi mixes movies + TV; people
-  // have no rating). A no-op while NEXT_PUBLIC_IMDB_RATINGS is off, and soft-
+  // have no rating). A no-op while IMDB_RATING_LISTS is off, and soft-
   // fails to the TMDB average, so a slow lookup never blocks the picker.
   const results = await Promise.all(
     dto.results.map(async (item) => {

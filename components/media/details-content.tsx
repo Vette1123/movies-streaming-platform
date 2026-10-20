@@ -3,6 +3,7 @@ import React, { Suspense } from 'react'
 import { Credit } from '@/types/credit'
 import { MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
+import { getMediaRatings } from '@/lib/ratings'
 import { recommendedHeading, similarHeading } from '@/lib/seo-title'
 import { cn } from '@/lib/utils'
 import { List } from '@/components/list'
@@ -11,8 +12,9 @@ import { CollectionBanner } from '@/components/media/collection-banner'
 import { DetailsCredits } from '@/components/media/details-credits'
 import { DetailsExtraInfo } from '@/components/media/details-extra-info'
 import { DETAILS_ROW, DetailsPoster } from '@/components/media/details-poster'
+import { RatingsStrip } from '@/components/media/ratings-strip'
 
-export const MoviesDetailsContent = ({
+export const MoviesDetailsContent = async ({
   movie,
   movieCredits,
   similarMovies,
@@ -29,12 +31,22 @@ export const MoviesDetailsContent = ({
   const director = movieCredits?.crew?.find(
     (crew) => crew.job === 'Director'
   )?.name
+  // The four ratings, in one place. The IMDb score comes from the free
+  // dataset shard, the Tomatometer and the Metascore from OMDb — none of it
+  // costs a TMDB request, because the payload already carries the imdb_id.
+  const ratings = await getMediaRatings({
+    imdbId: movie.imdb_id,
+    imdbRating: movie.imdbRating,
+    tmdbAverage: movie.vote_average,
+    tmdbVotes: movie.vote_count,
+  })
   return (
     <>
       <section className="container max-w-(--breakpoint-2xl) pt-8 pb-6 sm:pt-12 lg:pb-10">
         <div className={cn(DETAILS_ROW, 'flex-col')}>
           <DetailsPoster path={movie.poster_path} alt={movie.title} />
           <section className="flex min-w-0 flex-1 flex-col gap-4">
+            <RatingsStrip tiles={ratings} />
             <DetailsExtraInfo movie={movie} director={director} />
             <DetailsCredits
               movieCredits={movieCredits}
