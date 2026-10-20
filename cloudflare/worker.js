@@ -31,7 +31,6 @@
 import { discoverMovies, discoverSeries } from '@/services/discover'
 import { fetchGenreList } from '@/services/genres'
 import { getHeroExtras } from '@/services/hero-extras'
-import { setImdbAssetsBinding } from '@/services/imdb'
 import { getMediaSummary } from '@/services/media-summary'
 import {
   getCollectionById,
@@ -138,11 +137,14 @@ function copyEnv(env) {
     'NEXT_PUBLIC_TMDB_BASEURL',
     'NEXT_PUBLIC_BASE_URL',
     'NEXT_PUBLIC_IMAGE_CACHE_HOST_URL',
-    // The IMDb rating shards are deliberately NOT copied here. The Worker never
-    // shows a rating (the details pages that do are prerendered), and copying
-    // the flag in would make every tail request read a shard — one more
+    // The IMDb rating shards are deliberately NOT here, and neither is their
+    // flag. The shards are a build input now (services/imdb.ts reads them off
+    // disk while the pages render) and the score they carry is baked into the
+    // prerendered HTML: the Worker never shows a rating, and the tail-id
+    // fallback serves the exported shell, which has none in it. Copying the
+    // flag in would make every tail request look for a shard — one more
     // subrequest and one more JSON parse on the route that is 63% of all
-    // invocations. See services/imdb.ts.
+    // invocations.
     // Accounts. All secrets, all read through `process.env` by lib/auth and
     // lib/billing for the same reason the TMDB keys are: those modules are
     // plain TypeScript that also has to run under `next dev`, where the only
@@ -1705,7 +1707,6 @@ const worker = {
 
   async fetch(request, env, ctx) {
     copyEnv(env)
-    setImdbAssetsBinding(env.ASSETS ?? null)
 
     const url = new URL(request.url)
     const { pathname } = url

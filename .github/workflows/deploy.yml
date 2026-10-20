@@ -141,7 +141,11 @@ jobs:
         if: env.IMDB_RATING_SHARDS == 'true'
         uses: actions/cache@v6
         with:
-          path: public/imdb-ratings
+          # A BUILD INPUT, not an asset: the shards are read off disk while the
+          # pages render, and the score they carry is baked into the
+          # prerendered HTML. Nothing fetches them at runtime, so they are not
+          # in the static export and not in the Worker's assets.
+          path: .cache/imdb-ratings
           key: imdb-ratings-${{ steps.today.outputs.day }}
 
       - name: Build IMDb rating shards

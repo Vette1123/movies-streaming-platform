@@ -1,12 +1,17 @@
 // Downloads IMDb's free Non-Commercial "title.ratings" dataset and shards it
-// into small static JSON files under public/imdb-ratings/ for O(1) runtime
-// lookup by tconst. No API key, no rate limit. The data is licensed for
-// personal/non-commercial use (https://developer.imdb.com/non-commercial-datasets).
+// into small static JSON files for O(1) lookup by tconst. No API key, no rate
+// limit. The data is licensed for personal/non-commercial use (https://developer.imdb.com/non-commercial-datasets).
 //
 // Run via `pnpm imdb:ratings`. In CI it runs once per UTC day (the result is
 // cached across the day's deploys — see .github/workflows/deploy.yml). Fails
 // SOFT: on any download/parse error it logs a warning and exits 0 so the build
 // still succeeds — the app just falls back to TMDB ratings until next ingest.
+//
+// The shards live in `.cache/`, NOT in `public/`: they are a BUILD INPUT, not
+// something the site serves. In `public/` they became 256 dead files in the
+// static export — 256 of the 20,000-file asset cap that is the real ceiling
+// on this site's size — for a rating that is baked into the prerendered HTML
+// and never fetched by anything at runtime.
 //
 // NUM_SHARDS MUST stay in sync with services/imdb.ts.
 import { mkdir, rm, writeFile } from 'node:fs/promises'
@@ -16,7 +21,7 @@ import { Readable } from 'node:stream'
 import { createGunzip } from 'node:zlib'
 
 const DATASET_URL = 'https://datasets.imdbws.com/title.ratings.tsv.gz'
-const OUT_DIR = path.join(process.cwd(), 'public', 'imdb-ratings')
+const OUT_DIR = path.join(process.cwd(), '.cache', 'imdb-ratings')
 const NUM_SHARDS = 256
 // Titles below this vote count are too obscure to matter and just bloat the
 // shards; they transparently fall back to TMDB. Lower this to widen coverage.

@@ -1,0 +1,22 @@
+# The repository stores LF; the working tree does too, on every platform.
+#
+# Without this, git's `core.autocrlf=true` (the Windows default) checks the
+# files out as CRLF, and `pnpm prettier:check` then reports every file in the
+# repo as unformatted — because prettier is configured with `endOfLine: 'lf'`
+# and the working tree disagrees with it. The 134 "failures" were a line-ending
+# artefact of the machine, not of the code, and they made a real check
+# unreadable.
+#
+# `text=auto eol=lf` says: normalise to LF in the repository, and check out
+# with LF too. Nothing changes in the history — the blobs were already LF.
+* text=auto eol=lf
+
+# Binary files: never touched.
+*.ico binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ico binary

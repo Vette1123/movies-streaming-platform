@@ -70,6 +70,14 @@ tooltip from `sm` up, and `whitespace-nowrap` so nothing breaks in half.
   so a build that is refused mid-way cannot lock the rest of the catalogue out
   of the quota for good. A 401 from OMDb stops the whole build: asking the
   other thousand titles again would spend nothing and gain nothing.
+- **Shipped the shards, then took them back.** The IMDb shards were written to
+  `public/`, which put 256 files in the static export for a rating nothing
+  fetches at runtime — 256 of the 20,000-file asset cap that is the real
+  ceiling on this site's size, and 1.9MB of deployment. They are a BUILD
+  INPUT, so they live in `.cache/` now (with the OMDb answers), and the
+  Worker's shard-read path went with them: the score is baked into the
+  prerendered HTML, and the tail-id fallback serves the exported shell, which
+  has no ratings in it.
 - **`NEXT_PHASE` is not set in `next dev`.** Measured, twice, and wrong both
   times: the first version gated the cache on it, so dev had no cache and no
   budget, and the budget is what decides whether a request happens at all. The
@@ -128,7 +136,8 @@ tooltip from `sm` up, and `whitespace-nowrap` so nothing breaks in half.
   The cap is the design constraint; the cache is what makes it sustainable.
 - **If the whole feature is a build-time input, keep it out of `public/`.**
   `public/` is what the site serves, and the export's copy step is not
-  something to bet a build on.
+  something to bet a build on. Every file in `public/` is also a file against
+  the asset cap.
 - **A check that is permanently red is a check nobody reads.** Fix the
   classifier, not the threshold — and prove the new one still fires on the
   thing it exists for.
