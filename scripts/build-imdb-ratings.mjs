@@ -75,7 +75,7 @@ async function main() {
 
   console.log(
     `[imdb-ratings] wrote ${kept.toLocaleString()} of ${total.toLocaleString()} titles ` +
-      `(>= ${MIN_VOTES} votes) across ${NUM_SHARDS} shards → public/imdb-ratings/`
+      `(>= ${MIN_VOTES} votes) across ${NUM_SHARDS} shards → .cache/imdb-ratings/`
   )
 }
 

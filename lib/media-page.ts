@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 
 import { MediaResponse } from '@/types/media'
+import catalogue from '@/config/catalogue.json'
 import { siteConfig } from '@/config/site'
 import { RAIL_LIMIT } from '@/lib/constants'
 import { genreNames } from '@/lib/media'
@@ -141,11 +142,14 @@ type PagedFetcher = (args: {
 // pages are TMDB's live lists, deduped against each other, and the collection
 // set is whatever those movies happen to belong to. It moves by tens of routes
 // between builds on its own, so treat any exact figure here as "about".
-const LIST_DEPTH = {
-  popular: 33,
-  topRated: 16,
-  trending: 6,
-} as const
+// How deep into each TMDB list the build prerenders.
+//
+// One source of truth, in a JSON file, because two things need it and they
+// must not disagree: the build (which prerenders the head of the traffic
+// distribution) and scripts/refresh-people.mjs (which derives the people who
+// get a page from the SAME titles the build prerenders — a person page for
+// somebody who is in none of our titles is a page about a film we do not have).
+const LIST_DEPTH = catalogue.listDepth
 
 // Prerender the head of the traffic distribution: popular, all-time top rated,
 // and today's trending, deduped, baked into static assets so they never
