@@ -128,7 +128,11 @@ export function HeroWordmark({
           AVIF at the same width and quality. A <picture> with a <source>
           puts the AVIF first and leaves the WebP in the <img> for every
           browser that cannot decode it. */}
-      <picture>
+      {/* `contents` so the <picture> generates no box of its own: the wordmark
+          inside it is absolutely positioned against the hero, and an inline
+          <picture> would sit in the flow as an empty line box inside the h1.
+          The <source> still selects the format - that is not a box thing. */}
+      <picture className="contents">
         <source
           type="image/avif"
           srcSet={getLogoImageAvifSrcSet(logoPath!)}
