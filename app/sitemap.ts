@@ -184,6 +184,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     // Two entry pages that exist to be found: one answers "what should I watch"
     // for somebody with no account, the other indexes what people published.
+    // The press kit: the page a journalist, a newsletter or a podcaster lands
+    // on from a link, and the one place the site's story is written down in
+    // copy-pasteable blocks. It earns its place in the sitemap because it is
+    // meant to be found, not because it is a page about the site.
+    {
+      url: `${baseUrl}/press`,
+      lastModified: CONTENT_REFRESHED_AT,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
     {
       url: `${baseUrl}/start`,
       lastModified: SITE_LAUNCH_DATE,

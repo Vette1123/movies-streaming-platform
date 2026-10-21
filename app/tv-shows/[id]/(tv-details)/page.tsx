@@ -148,12 +148,12 @@ const TVSeries = async (props: PageDetailsProps) => {
             through, so the page stays server-rendered. */}
         <SeriesPlaybackProvider>
           <SeriesDetailsHero
-            series={seriesDetails}
+            series={{ ...seriesDetails, ratings }}
             trailerKey={trailerKey}
             logoPath={logoPath}
           />
           <SeriesDetailsContent
-            series={seriesDetails}
+            series={{ ...seriesDetails, ratings }}
             seriesCredits={seriesCredits}
             similarSeries={similarSeries}
             recommendedSeries={recommendedSeries}

@@ -18,6 +18,10 @@ const SITE_LINKS = [
   { href: '/support', label: 'Support Reely' },
   { href: '/account', label: 'Account' },
   { href: '/stats', label: 'Your year in Reely' },
+  // The press kit: what a journalist, a newsletter or a podcaster needs
+  // without asking for them. It is a distribution asset, not a page about
+  // the site's own features.
+  { href: '/press', label: 'Press' },
   { href: '/privacy', label: 'Privacy' },
   { href: '/terms', label: 'Terms' },
   { href: '/disclaimer', label: 'Disclaimer' },

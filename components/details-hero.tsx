@@ -24,6 +24,7 @@ import { AiringChip } from '@/components/airing-chip'
 import { HeroImage } from '@/components/header/hero-image'
 import { HeroRatesInfos } from '@/components/header/hero-rates-info'
 import { HeroWordmark } from '@/components/header/hero-wordmark'
+import { RatingsPills } from '@/components/media/ratings-strip'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 import { PlayButton } from '@/components/play-button'
 import { EmbedProgressBridge } from '@/components/player/embed-progress-bridge'
@@ -434,6 +435,11 @@ export const DetailsHero = ({
                     </p>
                   )}
                   <HeroRatesInfos movieDetails={movie} seriesDetails={series} />
+                  {/* The four scores, in the hero, where the eye lands first - and
+                      labelled, because a bare star does not say which source a
+                      number came from. The full strip (with the vote counts) sits
+                      below the fold. */}
+                  <RatingsPills tiles={media.ratings ?? []} className="mt-2" />
                   {/* The whole synopsis is in the section below; this is the
                       homepage's clamp, stepping down a whole line on a short
                       viewport rather than slicing one in half. */}

@@ -4,6 +4,7 @@ import { Movie, MovieResponse } from '@/types/movie-result'
 import { VideosResponse } from '@/types/video'
 import type { TMDBLogo } from '@/lib/logos'
 import type { TmdbWatchProviders } from '@/lib/push/providers'
+import type { RatingTile } from '@/lib/ratings'
 
 interface MovieDetails {
   adult: boolean
@@ -49,6 +50,8 @@ interface MovieDetails {
   vote_average: number
   vote_count: number
   imdbRating?: string | null
+  // The four ratings for the hero's pills (lib/ratings.ts).
+  ratings?: RatingTile[]
 }
 
 interface MultiMovieDetailsRequestProps {

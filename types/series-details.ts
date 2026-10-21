@@ -7,6 +7,7 @@ import { SeriesResponse } from '@/types/series-result'
 import { VideosResponse } from '@/types/video'
 import type { TMDBLogo } from '@/lib/logos'
 import type { TmdbWatchProviders } from '@/lib/push/providers'
+import type { RatingTile } from '@/lib/ratings'
 
 type Season = {
   air_date: string
@@ -69,6 +70,8 @@ interface SeriesDetails {
   vote_average: number
   vote_count: number
   imdbRating?: string | null
+  // The four ratings for the hero's pills (lib/ratings.ts).
+  ratings?: RatingTile[]
 }
 
 interface MultiSeriesDetailsRequestProps {

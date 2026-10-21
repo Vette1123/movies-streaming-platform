@@ -143,12 +143,12 @@ const MoviePage = async (props: PageDetailsProps) => {
           ])}
         />
         <MovieDetailsHero
-          movie={movieDetails}
+          movie={{ ...movieDetails, ratings }}
           trailerKey={trailerKey}
           logoPath={logoPath}
         />
         <MoviesDetailsContent
-          movie={movieDetails}
+          movie={{ ...movieDetails, ratings }}
           movieCredits={movieCredits}
           similarMovies={similarMovies}
           recommendedMovies={recommendedMovies}

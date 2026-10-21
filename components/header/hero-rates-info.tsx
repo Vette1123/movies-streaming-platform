@@ -9,7 +9,6 @@ import { mediaGenreBasePath, resolveMediaType } from '@/lib/media'
 import { dateFormatter, getGenres } from '@/lib/utils'
 import { Chip } from '@/components/ui/chip'
 import { GenreLink } from '@/components/media/genre-link'
-import { ScoreChip } from '@/components/media/score-chip'
 
 interface HeroRatesInfosProps {
   movie?: Movie
@@ -80,7 +79,6 @@ export const HeroRatesInfos = React.memo(function HeroRatesInfos({
           Adult
         </Chip>
       )}
-      <ScoreChip voteAverage={item?.vote_average} size="md" />
       <p className="text-xs text-white/90 drop-shadow-sm lg:text-sm">
         {dateFormatter(item?.release_date || item?.first_air_date)}
       </p>
