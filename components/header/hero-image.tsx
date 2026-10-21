@@ -78,7 +78,7 @@ export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
         <BlurredImage
           src={getImageURL(media?.backdrop_path)}
           alt={alt}
-          className="block size-full animate-hero-kenburns object-cover object-center will-change-transform motion-reduce:animate-none"
+          className="block size-full animate-hero-kenburns object-cover object-center motion-reduce:animate-none"
           fill
           sizes={COVER_BACKDROP_SIZES}
           intro
@@ -113,7 +113,7 @@ export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
             // screens.
             src={getImageURL(media?.poster_path)}
             alt={alt}
-            className="block size-full animate-hero-kenburns object-cover object-center will-change-transform motion-reduce:animate-none"
+            className="block size-full animate-hero-kenburns object-cover object-center motion-reduce:animate-none"
             fill
             sizes={COVER_POSTER_SIZES}
             intro
