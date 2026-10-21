@@ -297,7 +297,7 @@ export function HeroSlide({
         <BlurredImage
           src={getImageURL(media.backdrop_path)}
           alt={title}
-          className="block size-full object-cover object-top"
+          className={`block size-full object-cover object-center ${kenBurns(active, lowPower)}`}
           fill
           // Full-bleed AND `object-cover`, which is why this is not `100vw`:
           // on any viewport taller than 16:9 the cover math paints the backdrop
