@@ -82,7 +82,10 @@ export default function WatchTogetherPage() {
           either way, and they fit. */}
       <ol className="mt-8 grid gap-5 border-t border-white/10 pt-6 sm:mt-10 sm:grid-cols-3 sm:gap-6 sm:pt-8">
         {STEPS.map(({ Icon, title, body }, index) => (
-          <li key={title} className="flex items-start gap-3 sm:block sm:space-y-2">
+          <li
+            key={title}
+            className="flex items-start gap-3 sm:block sm:space-y-2"
+          >
             <span className="flex shrink-0 items-center gap-2 text-sm font-semibold">
               <span
                 aria-hidden
