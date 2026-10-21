@@ -27,7 +27,14 @@ export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
     <div className="relative overflow-hidden">
       {/* Must precede the Carousel — the hook reads the cache on first render. */}
       <HeroExtrasSeeder seed={heroExtras} />
-      <Carousel stageClassName="min-h-[86svh] sm:min-h-[70svh] lg:min-h-svh">
+      {/* No autoplay: the hero is a poster, not a slot machine. A slide that
+          changes on its own is motion the reader did not ask for, and it
+          moves the thing they are reading. The swipe and the dots are still
+          there - a visitor picks the slide. */}
+      <Carousel
+        stageClassName="min-h-[86svh] sm:min-h-[70svh] lg:min-h-svh"
+        autoPlay={false}
+      >
         {movies?.map((movie, index) => {
           const isTv = resolveMediaType(movie) === 'tv'
           return (
