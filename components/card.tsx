@@ -46,10 +46,6 @@ const CardComponent = ({
   const releaseDate = getMediaReleaseDate(item)
   const year = releaseDate?.slice(0, 4)
   const overview = item?.overview ?? ''
-  // Prefer the real IMDb score (attached to list items server-side) and mark it
-  // with the IMDb wordmark; the TMDB average is the labelled-star fallback.
-  const imdbRating = item?.imdbRating
-
   // Read-only "watched" indicator. localStorage is client-only, so gate on mount
   // to stay hydration-safe (matches NewBadgeWhenRecent). Only movies carry a
   // title-level completed flag; series completion is tracked per-episode.
@@ -129,11 +125,7 @@ const CardComponent = ({
 
       {/* Bottom gradient with rating + year for at-a-glance context */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-2 rounded-b-lg bg-linear-to-t from-black/85 to-transparent px-3 pt-8 pb-2.5 text-[11px] font-medium text-white opacity-0 transition-opacity duration-500 ease-out group-hover/card:opacity-100">
-        <ScoreChip
-          imdbRating={imdbRating}
-          voteAverage={item.vote_average}
-          size="sm"
-        />
+        <ScoreChip voteAverage={item.vote_average} size="sm" />
         {year && <span className="text-white/60">· {year}</span>}
       </div>
     </>
@@ -221,11 +213,7 @@ const CardComponent = ({
               {title}
               {year ? ` (${year})` : ''}
             </p>
-            <ScoreChip
-              imdbRating={imdbRating}
-              voteAverage={item.vote_average}
-              size="md"
-            />
+            <ScoreChip voteAverage={item.vote_average} size="md" />
           </div>
           {overview && (
             <p className="text-sm text-muted-foreground">

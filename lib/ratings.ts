@@ -18,7 +18,6 @@
 // subrequest to a Worker invocation, which is the cap that broke the homepage
 // once.
 import { cache } from 'react'
-
 import { getOmdbRatings } from '@/services/omdb'
 
 export type RatingSourceId = 'imdb' | 'rottenTomatoes' | 'metacritic' | 'tmdb'
@@ -68,8 +67,14 @@ const votesDetail = (votes?: number | null): string | undefined => {
  */
 
 /**
- * The tiles, in the order a reader expects them: the two scores people quote
- * (IMDb and Rotten Tomatoes) first, then the critics' aggregate, then our own.
+ * The tiles, in the order a reader expects them.
+ *
+ * TMDB FIRST, and that is the whole point: TMDB's average is the score the
+ * site shows EVERYWHERE else - on every card, on the homepage hero, on the
+ * details hero, and in the JSON-LD's aggregateRating. A reader who saw "8"
+ * on a card and then "IMDb 9.3" on the details page had no way to know those
+ * were two sources rather than one number that changed. So the canonical
+ * score leads, and the three other sources follow it, each labelled.
  *
  * A source with no score is not rendered at all. An empty box saying "NR" is
  * a claim about the film; a missing box is not.
@@ -83,6 +88,21 @@ export const buildRatingTiles = (input: {
   tmdbVotes?: number | null
 }): RatingTile[] => {
   const tiles: RatingTile[] = []
+
+  if (
+    input.tmdbAverage !== undefined &&
+    input.tmdbAverage !== null &&
+    Number.isFinite(input.tmdbAverage) &&
+    input.tmdbAverage > 0
+  ) {
+    tiles.push({
+      id: 'tmdb',
+      label: 'TMDB',
+      score: input.tmdbAverage.toFixed(1),
+      detail: votesDetail(input.tmdbVotes),
+      tone: 'tmdb',
+    })
+  }
 
   const imdbScore =
     typeof input.imdbRating === 'string'
@@ -133,21 +153,6 @@ export const buildRatingTiles = (input: {
           : score >= 50
             ? 'metacritic-mid'
             : 'metacritic-bad',
-    })
-  }
-
-  if (
-    input.tmdbAverage !== undefined &&
-    input.tmdbAverage !== null &&
-    Number.isFinite(input.tmdbAverage) &&
-    input.tmdbAverage > 0
-  ) {
-    tiles.push({
-      id: 'tmdb',
-      label: 'TMDB',
-      score: input.tmdbAverage.toFixed(1),
-      detail: votesDetail(input.tmdbVotes),
-      tone: 'tmdb',
     })
   }
 

@@ -93,6 +93,14 @@ tooltip from `sm` up, and `whitespace-nowrap` so nothing breaks in half.
   the fallback shell and never saw it, which is how it reached a deploy.
   The ratings are resolved by the page (a server component) and handed in as
   a prop instead, and `tests/client-graph-async.test.ts` pins it.
+- **The site showed two numbers for the same film.** The card and the hero
+  chip showed TMDB's average ("8"), the details hero showed IMDb's ("IMDb
+  9.3") and the ratings strip led with IMDb again. A reader had no way to
+  know that was two SOURCES rather than one number that changed between
+  pages. So there is now ONE canonical score — TMDB's, the one the JSON-LD's
+  aggregateRating already used — and it leads everywhere: the card, both
+  heroes, and the first tile of the strip, all in one decimal ("8.0", never
+  "8"). The other three sources are the details page's labelled extras.
 - **The OMDb key has to be ACTIVATED.** The signup email carries a
   verification link; until it is clicked, every request answers 401
   `Invalid API key!` — which reads exactly like a wrong key. The key is also
@@ -157,3 +165,10 @@ tooltip from `sm` up, and `whitespace-nowrap` so nothing breaks in half.
   without `'use client'` is a client component the moment something in the
   client graph imports it, and then `async` is a runtime error. Resolve on the
   server, pass the result down.
+- **One score, one number, one place.** If two pages can show a rating for
+  the same film, they had better show the SAME one, or the difference reads
+  as a bug. Pick the source the site already publishes everywhere (here:
+  TMDB's, the one in the JSON-LD) and let the rest be labelled extras.
+- **A number that is formatted two ways is two numbers.** "8" on a card and
+  "8.0" on a details page is an inconsistency in a different font. One
+  formatter, everywhere.

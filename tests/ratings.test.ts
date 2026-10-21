@@ -16,7 +16,7 @@ import { buildRatingTiles, formatVotes } from '@/lib/ratings'
  */
 
 describe('buildRatingTiles', () => {
-  it('reads every source it is given, in the order a reader expects', () => {
+  it('reads every source it is given, TMDB first', () => {
     const tiles = buildRatingTiles({
       imdbRating: '8.6',
       imdbVotes: 2_948_373,
@@ -26,20 +26,34 @@ describe('buildRatingTiles', () => {
       tmdbVotes: 12_400,
     })
 
+    // TMDB leads because it is the score the site shows everywhere else - on
+    // every card, on the hero, and in the JSON-LD. A reader who saw "8" on a
+    // card and "IMDb 9.3" on the details page had no way to know that was two
+    // sources rather than one number that changed.
     expect(tiles.map((tile) => tile.id)).toEqual([
+      'tmdb',
       'imdb',
       'rottenTomatoes',
       'metacritic',
-      'tmdb',
     ])
     expect(tiles[0]).toMatchObject({
+      label: 'TMDB',
+      score: '8.1',
+      detail: '12.4K votes',
+    })
+    expect(tiles[1]).toMatchObject({
       label: 'IMDb',
       score: '8.6',
       detail: '2.9M votes',
     })
-    expect(tiles[1]).toMatchObject({ label: 'Rotten Tomatoes', score: '93%' })
-    expect(tiles[2]).toMatchObject({ label: 'Metacritic', score: '82' })
-    expect(tiles[3]).toMatchObject({ label: 'TMDB', score: '8.1' })
+    expect(tiles[2]).toMatchObject({ label: 'Rotten Tomatoes', score: '93%' })
+    expect(tiles[3]).toMatchObject({ label: 'Metacritic', score: '82' })
+  })
+
+  it('writes the same number the card writes', () => {
+    // The card's chip says "8.1", so the strip must not say "8".
+    const tiles = buildRatingTiles({ tmdbAverage: 8 })
+    expect(tiles[0].score).toBe('8.0')
   })
 
   it('leaves out a source with no score instead of showing an empty box', () => {

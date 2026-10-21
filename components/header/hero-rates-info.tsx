@@ -58,9 +58,11 @@ export const HeroRatesInfos = React.memo(function HeroRatesInfos({
     genreTable
   )
 
-  // Prefer the real IMDb score (detail pages only) and label it as such; the
-  // TMDB average is the fallback and keeps its star treatment.
-  const imdbRating = movieDetails?.imdbRating ?? seriesDetails?.imdbRating
+  // The site's canonical score, and the same one the cards and the ratings
+  // strip show. The IMDb score is the DETAILS PAGE's extra (it is in the
+  // strip, labelled); showing it HERE as well made the same film read "9.3"
+  // on a details page and "8" on a card, and nobody could tell that was two
+  // sources rather than one number that changed.
 
   // my-2 on mobile: this row wraps to two lines on a phone (language, rating,
   // score, date + up to three genres), so its own margins are the cheapest
@@ -78,11 +80,7 @@ export const HeroRatesInfos = React.memo(function HeroRatesInfos({
           Adult
         </Chip>
       )}
-      <ScoreChip
-        imdbRating={imdbRating}
-        voteAverage={item?.vote_average}
-        size="md"
-      />
+      <ScoreChip voteAverage={item?.vote_average} size="md" />
       <p className="text-xs text-white/90 drop-shadow-sm lg:text-sm">
         {dateFormatter(item?.release_date || item?.first_air_date)}
       </p>
