@@ -36,7 +36,7 @@ const RAIL_LIMIT = 12
 // not seen - which is what made it read as stale.
 //
 // 6 still leaves a visitor something to swipe through, and the dots fit.
-const HERO_LIMIT = 6
+const HERO_LIMIT = 12
 
 export {
   TOP_OFFSET,

@@ -8,7 +8,6 @@ import { MovieDetails } from '@/types/movie-details'
 import { MovieGenre } from '@/types/movie-genre'
 import { ItemType, Movie } from '@/types/movie-result'
 import { SeriesDetails } from '@/types/series-details'
-import type { RatingTile } from '@/lib/ratings'
 import {
   trackHeroAutoplayToggled,
   trackHeroWatchClicked,
@@ -16,6 +15,7 @@ import {
 import { onIdleAfterLoad } from '@/lib/idle'
 import { COVER_BACKDROP_SIZES, COVER_POSTER_SIZES } from '@/lib/image-sizes'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
+import type { RatingTile } from '@/lib/ratings'
 import { getImageURL } from '@/lib/utils'
 import { useHasHoverPointer, useLowPowerDevice } from '@/hooks/use-device-tier'
 import { useHeroAutoplay } from '@/hooks/use-hero-autoplay'
@@ -24,19 +24,20 @@ import { heroWatchButton } from '@/components/ui/hero-action-button'
 import { BlurredImage } from '@/components/blurred-image'
 import { CarouselPauseContext } from '@/components/carousel'
 import { HeroRatesInfos } from '@/components/header/hero-rates-info'
-import { RatingsPills } from '@/components/media/ratings-strip'
 import { HeroTrailerPreview } from '@/components/header/hero-trailer-preview'
 import { HeroWordmark } from '@/components/header/hero-wordmark'
 import { Icons } from '@/components/icons'
 import { MediaLink } from '@/components/media/media-link'
+import { RatingsPills } from '@/components/media/ratings-strip'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 import { SaveButton } from '@/components/save-button'
 import { TrailerDialog } from '@/components/trailer-dialog'
 
-export type HeroSlideMedia = (Movie | MovieDetails) & SeriesDetails & {
-  /** The four ratings, resolved by the page for the hero's slides. */
-  ratings?: RatingTile[]
-}
+export type HeroSlideMedia = (Movie | MovieDetails) &
+  SeriesDetails & {
+    /** The four ratings, resolved by the page for the hero's slides. */
+    ratings?: RatingTile[]
+  }
 
 interface HeroSlideProps {
   movie: Movie
@@ -70,10 +71,7 @@ const TOUCH_PREVIEW_DELAY = 1200
 // backdrop being scaled for 14s straight — continuous compositor work for as
 // long as the slide is up, which is most of the time. See
 // hooks/use-device-tier.ts for what counts as weak.
-const kenBurns = (active: boolean, lowPower: boolean) =>
-  active && !lowPower
-    ? 'animate-hero-kenburns will-change-transform motion-reduce:animate-none'
-    : ''
+const kenBurns = () => ''
 
 // Whether the hero has resolved its title treatment once for this page load.
 // Module-scoped on purpose: it must survive a slide unmounting, which is exactly
@@ -492,7 +490,9 @@ export function HeroSlide({
                   hero and the details page must never give two different
                   answers for the same film. */}
               <RatingsPills
-                tiles={media.ratings ?? []}
+                tiles={(media.ratings ?? []).filter(
+                  (tile) => tile.id !== 'tmdb'
+                )}
                 className="mt-2 mb-1"
               />
               {/* The clamp steps down by a WHOLE line on very short viewports
