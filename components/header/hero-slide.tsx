@@ -48,6 +48,16 @@ interface HeroSlideProps {
   active?: boolean
 }
 
+// Ken Burns runs on the slide you can SEE, and nowhere else: the carousel
+// keeps a slide either side mounted so their artwork is decoded before they
+// scroll in, and animating those would mean three full-viewport backdrops
+// scaling at once. Off-slides are invisible, so they get no animation and no
+// promotion. On a weak device, nowhere at all.
+const kenBurns = (active: boolean, lowPower: boolean) =>
+  active && !lowPower
+    ? 'animate-hero-kenburns will-change-transform motion-reduce:animate-none'
+    : ''
+
 const HOVER_PREVIEW_DELAY = 500
 const TOUCH_PREVIEW_DELAY = 1200
 
