@@ -121,6 +121,18 @@ const apiConfig = {
       (path) =>
         `${IMAGE_CACHE_HOST_URL}/tr:w-${width},q-70,f-auto,c-at_max/original${path}`
     ),
+  // The same logo, asked for as AVIF by name. `f-auto` only offers what the
+  // account allows, and AVIF is off there, so a plain <img> gets WebP - the
+  // heaviest title logo measured 190KB of WebP against 115KB of AVIF at the
+  // same width and quality. Asking by name works regardless of the setting,
+  // and the <picture> that uses it keeps the WebP for every browser that
+  // cannot decode AVIF.
+  logoImageAvif: (imgPath: string | null | undefined, width = 500) =>
+    withImagePath(
+      imgPath,
+      (path) =>
+        `${IMAGE_CACHE_HOST_URL}/tr:w-${width},q-70,f-avif,c-at_max/original${path}`
+    ),
   w185Image: (imgPath: string | null | undefined) =>
     withImagePath(
       imgPath,

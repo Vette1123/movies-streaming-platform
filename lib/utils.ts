@@ -51,6 +51,16 @@ function getLogoImageSrcSet(path: string | null | undefined) {
   return `${apiConfig.logoImage(path, 500)} 1x, ${apiConfig.logoImage(path, 1000)} 2x`
 }
 
+// The same density ladder, asked for as AVIF. The wordmark is the heaviest
+// image on the homepage and a plain <img> cannot ask for AVIF by itself - the
+// transform's f-auto negotiates WebP, because the account's AVIF setting is
+// off. Measured on the heaviest title logo: 190KB of WebP against 115KB of
+// AVIF at the same width and quality.
+function getLogoImageAvifSrcSet(path: string | null | undefined) {
+  if (!path) return undefined
+  return `${apiConfig.logoImageAvif(path, 500)} 1x, ${apiConfig.logoImageAvif(path, 1000)} 2x`
+}
+
 // Both search-result thumbs paint in the same 96x54 box, and both are rendered
 // `unoptimized` (a fixed-size <img> with no srcset), so the file has to cover
 // the densest screen on its own: 96 CSS px at dpr 3 is 288. w185 could not —
@@ -201,6 +211,7 @@ export {
   getImageURL,
   getLogoImageURL,
   getLogoImageSrcSet,
+  getLogoImageAvifSrcSet,
   getPosterImageURL,
   getThumbPosterURL,
   getThumbBackdropURL,
