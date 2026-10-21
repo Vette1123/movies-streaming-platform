@@ -3,29 +3,30 @@
  * Refresh data/media-ratings.json — the committed ratings snapshot.
  *
  * The details page shows IMDb, Rotten Tomatoes, Metacritic and TMDB. IMDb and
- * TMDB are free and always there; Rotten Tomatoes and Metacritic come from
- * OMDb's free tier, which allows 1,000 requests a DAY. That is a budget, not
- * a source: the build must never depend on it, or a title without a cached
- * answer is a title without a score.
+ * TMDB are free and keyless. Rotten Tomatoes and Metacritic are not: there is
+ * no free official RT API, and OMDb's free tier allows 1,000 requests a DAY.
  *
- * So the answers live in the repository. This command is the only thing that
- * asks OMDb for them, it merges what it gets into the file, and the build
- * reads the file — no key, no quota, no network, no failure mode.
+ * So the answers live in the repository, and this script is the only thing
+ * that asks OMDb for them. It runs once a day in CI (workflows/ratings.yml)
+ * and commits what it learns, which means:
  *
- *   pnpm ratings:refresh          # fill in what is missing
- *   pnpm ratings:refresh --limit 50
+ *   - the BUILD never calls OMDb at all. It reads the file. A deploy is
+ *     quota-free, and a deploy cannot be slowed by a third party's cap.
+ *   - the daily quota is only ever spent on titles nobody has looked up yet.
+ *     After the first two days the catalogue is covered and the quota is
+ *     untouched; from then on the script spends a handful of requests a day
+ *     on whatever is new.
+ *   - the file is the floor. If OMDb is down, over its limit, or gone, every
+ *     title keeps the scores it already had, and the build does not notice.
  *
- * The titles it asks about are the ones the build wanted: the build leaves a
- * list of the ids it rendered (next to its answers, in the same directory the
- * CI cache carries), and this reads it. Run a build first, or the list is
- * empty and the command has nothing to do.
+ *   pnpm ratings:refresh                # fill in what is missing
+ *   pnpm ratings:refresh --limit 900    # ...and never spend more than this
  *
  * Its limits, stated so nobody is surprised:
- *   - it spends the DAILY quota. A day's quota is a day's quota: if this
- *     runs at 23:50 it may be refused for the rest of the day, and the
- *     missing titles wait for tomorrow.
+ *   - it spends the DAILY quota, once a day, on purpose.
  *   - it merges; it never removes. A rating that stops being published stays.
- *   - it does not read the web, only OMDb.
+ *   - it needs TMDB (free, no quota) to find which titles the site carries,
+ *     and OMDb (free, 1,000/day) for the scores.
  */
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -37,19 +38,78 @@ loadLocalEnv()
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const FILE = path.join(root, 'data', 'media-ratings.json')
-const CACHE_DIR = path.join(root, '.cache', 'media-ratings')
+const CONFIG = path.join(root, 'config', 'catalogue.json')
 
+const BASE = process.env.NEXT_PUBLIC_TMDB_BASEURL
+const TOKEN = process.env.TMDB_HEADER_KEY
 const KEY = process.env.OMDB_API_KEY
-const BASE = 'https://www.omdbapi.com/'
 
-/** How many to ask for in one run. The daily cap is 1,000; stay well under. */
+/**
+ * How many requests one run may spend.
+ *
+ * The free tier allows 1,000 a day and the workflow runs once a day, so this
+ * leaves the day's cap for a second run (a manual one, or a re-run of a failed
+ * job) instead of walking into it.
+ */
 const limitIndex = process.argv.indexOf('--limit')
-const LIMIT = limitIndex >= 0 ? Number(process.argv[limitIndex + 1]) || 50 : 200
+const LIMIT =
+  limitIndex >= 0 ? Number(process.argv[limitIndex + 1]) || 900 : 900
 
-const readJson = async (file, fallback) =>
-  JSON.parse(await readFile(file, 'utf8').catch(() => fallback))
+const get = async (endpoint) => {
+  const res = await fetch(`${BASE}${endpoint}`, {
+    headers: { Authorization: `Bearer ${TOKEN}`, accept: 'application/json' },
+  })
+  if (!res.ok) throw new Error(`${endpoint} -> ${res.status}`)
+  return res.json()
+}
+
+/**
+ * The titles the site carries — the same lists, the same depths, from the same
+ * config the build reads (config/catalogue.json). A rating for a title the site
+ * does not have is a rating nobody will ever see.
+ */
+const catalogueIds = async () => {
+  const { listDepth } = JSON.parse(await readFile(CONFIG, 'utf8'))
+  const lists = [
+    { type: 'movie', list: 'popular', pages: listDepth.popular },
+    { type: 'movie', list: 'top_rated', pages: listDepth.topRated },
+    { type: 'movie', list: 'trending/day', pages: listDepth.trending },
+    { type: 'tv', list: 'popular', pages: listDepth.popular },
+    { type: 'tv', list: 'top_rated', pages: listDepth.topRated },
+    { type: 'tv', list: 'trending/day', pages: listDepth.trending },
+  ]
+  const ids = new Map()
+  for (const { type, list, pages } of lists) {
+    const responses = await Promise.allSettled(
+      Array.from({ length: pages }, (_, index) =>
+        get(`${type}/${list}?language=en-US&page=${index + 1}`)
+      )
+    )
+    for (const response of responses) {
+      if (response.status !== 'fulfilled') continue
+      for (const item of response.value?.results ?? []) {
+        if (item?.id) ids.set(`${type}-${item.id}`, { type, id: item.id })
+      }
+    }
+  }
+  return [...ids.values()]
+}
+
+/** The IMDb id of a title — the key the whole file hangs on. */
+const imdbIdFor = async ({ type, id }) => {
+  const data = await get(`${type}/${id}/external_ids?language=en-US`).catch(
+    () => null
+  )
+  return data?.imdb_id ?? null
+}
+
+const percent = (value) => {
+  const number = Number.parseFloat(String(value ?? '').replace('%', ''))
+  return Number.isFinite(number) ? number : undefined
+}
 
 async function main() {
+  if (!BASE || !TOKEN) throw new Error('TMDB_HEADER_KEY / base URL missing')
   if (!KEY) {
     console.error(
       'OMDB_API_KEY is not set. The free key is at https://www.omdbapi.com/apikey.aspx'
@@ -57,67 +117,36 @@ async function main() {
     process.exit(1)
   }
 
-  const committed = await readJson(FILE, '{}')
-
-  // First, fold in what the last build learned: its answers are in the cache
-  // directory, one file per title, and they are fresher than the file.
-  const { readdir } = await import('node:fs/promises')
-  const files = await readdir(CACHE_DIR).catch(() => [])
-  let folded = 0
-  for (const file of files) {
-    if (!file.endsWith('.json') || file === 'budget.json') continue
-    const raw = await readJson(path.join(CACHE_DIR, file), 'null')
-    if (!raw?.value) continue
-    const id = file.replace('.json', '')
-    const entry = {}
-    if (raw.value.rottenTomatoes !== undefined)
-      entry.rt = raw.value.rottenTomatoes
-    if (raw.value.metacritic !== undefined) entry.mc = raw.value.metacritic
-    if (raw.value.imdbRating !== undefined) entry.imdb = raw.value.imdbRating
-    if (raw.value.imdbVotes !== undefined)
-      entry.votes = String(raw.value.imdbVotes)
-    if (!Object.keys(entry).length) continue
-    const known = committed[id]
-    if (
-      known &&
-      known.rt === entry.rt &&
-      known.mc === entry.mc &&
-      known.imdb === entry.imdb
-    ) {
-      continue
-    }
-    committed[id] = entry
-    folded++
-  }
-  if (folded) console.log(`[ratings] folded ${folded} answer(s) from the cache`)
-
-  const wanted = await readJson(path.join(CACHE_DIR, 'wanted.json'), '[]')
-
-  // Everything the build asked about, minus what we already know.
-  const ids = [...new Set([...wanted])].filter(
-    (id) => typeof id === 'string' && !committed[id]
-  )
+  const known = JSON.parse(await readFile(FILE, 'utf8').catch(() => '{}'))
+  const titles = await catalogueIds()
   console.log(
-    `[ratings] ${Object.keys(committed).length} known, ${ids.length} missing`
+    `[ratings] ${Object.keys(known).length} known, ${titles.length} titles in the catalogue`
   )
-  if (!ids.length) {
-    await writeFile(FILE, `${JSON.stringify(committed, null, 2)}\n`)
-    console.log('[ratings] nothing to fetch')
-    return
-  }
 
-  const batch = ids.slice(0, LIMIT)
   let fetched = 0
-  let refused = 0
-  for (const id of batch) {
-    const res = await fetch(`${BASE}?apikey=${KEY}&i=${id}`).catch(() => null)
+  let spent = 0
+  for (const title of titles) {
+    if (spent >= LIMIT) {
+      console.log(`[ratings] stopping at the ${LIMIT}-request limit`)
+      break
+    }
+    const imdbId = await imdbIdFor(title)
+    if (!imdbId || known[imdbId]) continue
+
+    spent++
+    const res = await fetch(
+      `https://www.omdbapi.com/?apikey=${KEY}&i=${imdbId}`
+    ).catch(() => null)
     if (!res) continue
     if (res.status === 401) {
-      refused++
+      console.warn(
+        '[ratings] OMDb refused the request — the daily cap is spent'
+      )
       break
     }
     const body = await res.json().catch(() => null)
     if (!body || body.Response !== 'True') continue
+
     const entry = {}
     const rotten = (body.Ratings ?? []).find(
       (row) => row.Source?.toLowerCase() === 'rotten tomatoes'
@@ -125,26 +154,22 @@ async function main() {
     const meta = (body.Ratings ?? []).find(
       (row) => row.Source?.toLowerCase() === 'metacritic'
     )
-    const percent = (value) => {
-      const number = Number.parseFloat(String(value ?? '').replace('%', ''))
-      return Number.isFinite(number) ? number : undefined
-    }
     if (rotten) entry.rt = percent(rotten.Value)
     if (meta) entry.mc = percent(meta.Value)
     if (body.imdbRating && body.imdbRating !== 'N/A') {
       entry.imdb = Number.parseFloat(body.imdbRating)
     }
-    if (body.imdbVotes && body.imdbVotes !== 'N/A') entry.votes = body.imdbVotes
-    if (Object.keys(entry).length) {
-      committed[id] = entry
-      fetched++
+    if (body.imdbVotes && body.imdbVotes !== 'N/A') {
+      entry.votes = body.imdbVotes
     }
+    if (!Object.keys(entry).length) continue
+    known[imdbId] = entry
+    fetched++
   }
 
-  await writeFile(FILE, `${JSON.stringify(committed, null, 2)}\n`)
+  await writeFile(FILE, `${JSON.stringify(known, null, 2)}\n`)
   console.log(
-    `[ratings] fetched ${fetched}, now ${Object.keys(committed).length} known` +
-      (refused ? ' (OMDb refused — the daily cap is spent; try tomorrow)' : '')
+    `[ratings] fetched ${fetched} (${spent} requests spent), ${Object.keys(known).length} known`
   )
 }
 

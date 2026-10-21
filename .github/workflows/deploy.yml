@@ -152,25 +152,6 @@ jobs:
         if: env.IMDB_RATING_SHARDS == 'true' && steps.imdb-cache.outputs.cache-hit != 'true'
         run: pnpm imdb:ratings
 
-      # The OMDb answers (Rotten Tomatoes, Metacritic, the IMDb vote count).
-      # OMDb's free tier allows 1,000 requests a DAY and the details build
-      # renders about a thousand pages, so a build that fetched every rating
-      # every time would spend the whole quota on the first run and fail every
-      # day after it.
-      #
-      # So each answer is cached on disk (lib/omdb-cache.ts) and the cache
-      # travels between deploys: a day-keyed entry (so today's builds share
-      # one copy) restored from the most recent one (so the answers ACCUMULATE
-      # and the quota is only ever spent on titles nobody has looked up yet).
-      # After the first day, a build makes no OMDb request at all.
-      - name: Cache OMDb ratings
-        id: omdb-cache
-        uses: actions/cache@v6
-        with:
-          path: .cache/media-ratings
-          key: media-ratings-${{ steps.today.outputs.day }}
-          restore-keys: media-ratings-
-
       # Manual-only: Cloudflare secrets persist across deploys, so re-putting them
       # on every push/cron is redundant and bumps an extra Worker version each run.
       # Run this once via "Run workflow" after rotating a key or recreating the
@@ -268,12 +249,11 @@ jobs:
           # The supporters-only opt-in for OUR player. Needs the playback
           # worker + gado-proxy tier live, or the toggle only advertises.
           NEXT_PUBLIC_PRO_TRIAL_SELFHOST: ${{ secrets.NEXT_PUBLIC_PRO_TRIAL_SELFHOST }}
-          # OMDb (free tier, 1,000 requests/day): the Rotten Tomatoes and
-          # Metacritic scores on the details page. Server-side only, so it is
-          # read at BUILD time and baked into the prerendered pages — no key
-          # ever reaches the browser. Absent = the details page shows the
-          # ratings it can get without it.
-          OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
+          # NO OMDb key here, on purpose. The build reads the committed
+          # ratings snapshot (data/media-ratings.json) and never asks OMDb
+          # anything: a deploy is quota-free, and cannot be slowed by a third
+          # party's daily cap. The job that DOES ask (workflows/ratings.yml)
+          # runs once a day and commits what it learns.
           NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE: ${{ secrets.NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE }}
           NEXT_PUBLIC_IMAGE_CACHE_HOST_URL: ${{ secrets.NEXT_PUBLIC_IMAGE_CACHE_HOST_URL }}
           NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}

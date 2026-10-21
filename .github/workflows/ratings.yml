@@ -1,0 +1,70 @@
+# Keep the ratings snapshot current.
+#
+# The Rotten Tomatoes and Metacritic scores come from OMDb's free tier, which
+# allows 1,000 requests a DAY. The build therefore never asks OMDb anything:
+# it reads data/media-ratings.json, which this job keeps up to date and
+# commits back.
+#
+# That is the whole shape of it:
+#   - a deploy is quota-free, and cannot be slowed by a third party's cap;
+#   - the daily quota is spent once, on purpose, on titles nobody has looked
+#     up yet;
+#   - the file is the floor. If OMDb is down or over its limit, every title
+#     keeps the scores it already had.
+#
+# The job commits only when the file actually changed, so an idle day leaves
+# the history alone.
+name: Ratings
+
+on:
+  schedule:
+    # 04:17 UTC - after the OMDb daily counter resets, and off the hour so
+    # it does not land with every other scheduled job on the planet.
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ratings
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          check-latest: true
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Fetch the ratings we are missing
+        run: pnpm ratings:refresh
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          TMDB_HEADER_KEY: ${{ secrets.TMDB_HEADER_KEY }}
+          NEXT_PUBLIC_TMDB_BASEURL: ${{ secrets.NEXT_PUBLIC_TMDB_BASEURL }}
+          OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
+
+      - name: Commit what we learned
+        run: |
+          if git diff --quiet -- data/media-ratings.json; then
+            echo "nothing new — the file is already current"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/media-ratings.json
+          git commit -m "chore(ratings): the ratings snapshot grows"
+          git push
