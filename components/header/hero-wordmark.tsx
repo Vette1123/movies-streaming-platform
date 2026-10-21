@@ -138,7 +138,7 @@ export function HeroWordmark({
           srcSet={getLogoImageAvifSrcSet(logoPath!)}
           sizes="(max-width: 640px) 80vw, 640px"
         />
-        { }
+        {}
         <img
           ref={logoRef}
           src={getLogoImageURL(logoPath!)}
