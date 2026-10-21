@@ -25,17 +25,18 @@ import { useCarousel } from '@/hooks/use-carousel'
 // and no blur-in — the flash of the previous/blank slide disappears entirely.
 const WINDOW = 1
 
-// NO MOTION. The hero does not animate: a slide does not travel, it CHANGES,
-// and the change is instant.
+// Damping is just past critical for this stiffness, so it settles (~300ms) with
+// no overshoot - a carousel that wobbles past its stop looks broken, not springy.
 //
-// A spring settled the track over ~300ms after every swipe, and the slides
-// advanced on their own every few seconds - the page was quietly moving, which
-// is exactly what a hero should not do to somebody who came to read. Dragging
-// still tracks your finger (direct manipulation, not animation); letting go
-// now snaps to the stop.
+// The spring is the SWIPE: the track follows your finger and settles when you
+// let go, and that is the one motion on the page that is not the page's
+// own idea. The hero does not move by itself (no autoplay); when a slide
+// changes, it travels there.
 const SLIDE_SPRING = {
-  type: 'tween' as const,
-  duration: 0,
+  type: 'spring' as const,
+  stiffness: 320,
+  damping: 36,
+  mass: 1,
 }
 
 // NOTHING SCALES. The swipe is a pure horizontal translate of one element, and
