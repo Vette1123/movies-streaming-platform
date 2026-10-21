@@ -55,7 +55,7 @@ interface HeroSlideProps {
 // promotion. On a weak device, nowhere at all.
 const kenBurns = (active: boolean, lowPower: boolean) =>
   active && !lowPower
-    ? 'animate-hero-kenburns will-change-transform motion-reduce:animate-none'
+    ? 'animate-hero-kenburns motion-reduce:animate-none'
     : ''
 
 const HOVER_PREVIEW_DELAY = 500
