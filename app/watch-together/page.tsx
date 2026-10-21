@@ -39,8 +39,15 @@ export default function WatchTogetherPage() {
   // The picker leads: it is the one thing to do on this page. The steps sit
   // under it as the explanation, where they used to sit above it as a list
   // to read before being allowed to act.
+  //
+  // And on a phone it all has to FIT. It used to be two and a half screens:
+  // a title, a paragraph, a field, and then three steps in a stack with a
+  // screen's worth of air between them. The steps are now a compact list
+  // (the number, the title, one short line), so the whole page - heading,
+  // field, and how it works - is one screen on a 390px phone, and the field
+  // is above the fold.
   return (
-    <section className="container min-h-svh max-w-3xl py-20 lg:py-32">
+    <section className="container min-h-svh max-w-3xl pt-24 pb-10 lg:py-32">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
           Watch Together
@@ -49,12 +56,14 @@ export default function WatchTogetherPage() {
           Beta
         </Chip>
       </div>
-      <p className="mt-3 max-w-[60ch] leading-relaxed text-muted-foreground">
+      <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-muted-foreground sm:text-base">
         One of you presses play and everyone follows. Pauses and seeks sync for
         the whole room, so nobody is 40 seconds ahead spoiling the twist.
       </p>
 
-      <div className="mt-10 max-w-xl">
+      {/* The one thing to do, in a card: a field floating in a page of text
+          reads as an afterthought, and this is the button the page exists for. */}
+      <div className="mt-6 max-w-xl rounded-xl border border-white/10 bg-white/3 p-4 sm:mt-8 sm:p-5">
         <MediaSearchPicker
           inputId="together-search"
           label="What are you watching?"
@@ -62,12 +71,19 @@ export default function WatchTogetherPage() {
           takenLabel="Opening…"
           onPick={(card) => void start(card)}
         />
+        <p className="mt-3 text-xs text-muted-foreground">
+          Picking a title opens a room and drops you straight into the player.
+        </p>
       </div>
 
-      <ol className="mt-14 grid gap-8 border-t border-white/10 pt-10 sm:grid-cols-3 sm:gap-6">
+      {/* How it works, compactly: the number and the title on one line, one
+          short line under it. The three steps were a grid of three on a
+          desktop and a tall stack on a phone; at this size they are a list
+          either way, and they fit. */}
+      <ol className="mt-8 grid gap-5 border-t border-white/10 pt-6 sm:mt-10 sm:grid-cols-3 sm:gap-6 sm:pt-8">
         {STEPS.map(({ Icon, title, body }, index) => (
-          <li key={title} className="space-y-2">
-            <span className="flex items-center gap-2 text-sm font-semibold">
+          <li key={title} className="flex gap-3 sm:block sm:space-y-2">
+            <span className="flex shrink-0 items-center gap-2 text-sm font-semibold">
               <span
                 aria-hidden
                 className="grid size-7 place-items-center rounded-full bg-primary/15 text-primary"
@@ -79,15 +95,15 @@ export default function WatchTogetherPage() {
                 {title}
               </span>
             </span>
-            <p className="text-sm leading-relaxed text-muted-foreground">
+            <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
               {body}
             </p>
           </li>
         ))}
       </ol>
 
-      <p className="mt-10 text-sm text-muted-foreground">
-        Joining someone? Open the link they sent. It already carries the room
+      <p className="mt-8 text-xs text-muted-foreground sm:mt-10 sm:text-sm">
+        Joining someone? Open the link they sent — it already carries the room
         code.
       </p>
     </section>

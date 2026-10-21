@@ -51,27 +51,17 @@ interface HeroSlideProps {
 const HOVER_PREVIEW_DELAY = 500
 const TOUCH_PREVIEW_DELAY = 1200
 
-// Ken Burns runs on the slide you can SEE, and nowhere else.
+// No Ken Burns, and not by accident.
 //
-// The carousel keeps a slide either side mounted so their artwork is decoded
-// before they scroll in, but those two are parked a full stage-width away and
-// clipped. Animating them was three full-viewport backdrops scaling forever
-// instead of one, and `will-change: transform` pinned all three as compositor
-// layers permanently — the animation is `both`, so the layer never demoted even
-// after the 14s finished. On a throttled phone that was the whole problem:
-// a swipe then had to composite three oversized promoted textures while the
-// track sprang. Measured 94.7ms/frame average, 351ms worst.
+// The slow push-in over the backdrop is gone: a full-viewport image scaling
+// for fourteen seconds is continuous compositor work for as long as the slide
+// is up - which is most of the time - and it read as a stale picture rather
+// than a considered one. The carousel keeps a slide either side mounted so
+// their artwork is decoded before they scroll in, so the animation also meant
+// three full-viewport backdrops promoted at once.
 //
-// Off-slides get no animation and no promotion; they are invisible, so there is
-// nothing to lose. The class swap restarts the animation as a slide becomes
-// active, which is the correct behaviour anyway — the pan should begin when the
-// slide takes the frame, not partway through.
-//
-// And on a weak device, nowhere at all. Even one instance is a full-viewport
-// backdrop being scaled for 14s straight — continuous compositor work for as
-// long as the slide is up, which is most of the time. See
-// hooks/use-device-tier.ts for what counts as weak.
-const kenBurns = () => ''
+// The first paint is now a static image: cheaper to composite, and stable
+// (a moving backdrop is a moving LCP candidate, which is the worst kind).
 
 // Whether the hero has resolved its title treatment once for this page load.
 // Module-scoped on purpose: it must survive a slide unmounting, which is exactly
@@ -297,7 +287,7 @@ export function HeroSlide({
         <BlurredImage
           src={getImageURL(media.backdrop_path)}
           alt={title}
-          className={`block size-full object-cover object-top ${kenBurns()}`}
+          className="block size-full object-cover object-top"
           fill
           // Full-bleed AND `object-cover`, which is why this is not `100vw`:
           // on any viewport taller than 16:9 the cover math paints the backdrop
@@ -325,7 +315,7 @@ export function HeroSlide({
             // the width the layout asks for, so a bigger source costs nothing.
             src={getImageURL(media.poster_path)}
             alt={title}
-            className={`block size-full object-cover object-center ${kenBurns()}`}
+            className="block size-full object-cover object-center"
             fill
             sizes={COVER_POSTER_SIZES}
             intro
