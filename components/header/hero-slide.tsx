@@ -8,6 +8,7 @@ import { MovieDetails } from '@/types/movie-details'
 import { MovieGenre } from '@/types/movie-genre'
 import { ItemType, Movie } from '@/types/movie-result'
 import { SeriesDetails } from '@/types/series-details'
+import type { RatingTile } from '@/lib/ratings'
 import {
   trackHeroAutoplayToggled,
   trackHeroWatchClicked,
@@ -23,6 +24,7 @@ import { heroWatchButton } from '@/components/ui/hero-action-button'
 import { BlurredImage } from '@/components/blurred-image'
 import { CarouselPauseContext } from '@/components/carousel'
 import { HeroRatesInfos } from '@/components/header/hero-rates-info'
+import { RatingsPills } from '@/components/media/ratings-strip'
 import { HeroTrailerPreview } from '@/components/header/hero-trailer-preview'
 import { HeroWordmark } from '@/components/header/hero-wordmark'
 import { Icons } from '@/components/icons'
@@ -31,7 +33,10 @@ import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
 import { SaveButton } from '@/components/save-button'
 import { TrailerDialog } from '@/components/trailer-dialog'
 
-export type HeroSlideMedia = (Movie | MovieDetails) & SeriesDetails
+export type HeroSlideMedia = (Movie | MovieDetails) & SeriesDetails & {
+  /** The four ratings, resolved by the page for the hero's slides. */
+  ratings?: RatingTile[]
+}
 
 interface HeroSlideProps {
   movie: Movie
@@ -483,6 +488,13 @@ export function HeroSlide({
                 </MediaLink>
               </div>
               <HeroRatesInfos movie={movie} genreTable={genreTable} />
+              {/* The same four scores the details page shows, in one line: the
+                  hero and the details page must never give two different
+                  answers for the same film. */}
+              <RatingsPills
+                tiles={media.ratings ?? []}
+                className="mt-2 mb-1"
+              />
               {/* The clamp steps down by a WHOLE line on very short viewports
                   (~600px and under, e.g. a small phone with browser chrome)
                   rather than letting the block get sliced through a line box.

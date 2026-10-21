@@ -186,3 +186,56 @@ export const getMediaRatings = cache(
     })
   }
 )
+
+/**
+ * The ratings for a handful of titles the build renders as a HERO.
+ *
+ * The hero is the one surface that is not a details page, and it used to show
+ * a single number where the details page shows four - the same film, two
+ * answers, on two screens. So the hero resolves the same four scores.
+ *
+ * A list item carries no imdb_id (TMDB's list endpoints do not return one), so
+ * each one costs one external_ids lookup. That is fine HERE and only here:
+ * the hero is six slides, resolved once at BUILD time, and nothing here runs
+ * in the Worker - a list page's rows keep the canonical score for exactly
+ * that reason.
+ */
+export const getRatingsForItems = cache(
+  async (
+    items: {
+      id: number
+      mediaType: 'movie' | 'tv'
+      voteAverage?: number | null
+      voteCount?: number | null
+    }[]
+  ): Promise<Record<number, RatingTile[]>> => {
+    const out: Record<number, RatingTile[]> = {}
+    for (const item of items) {
+      out[item.id] = await getMediaRatings({
+        imdbId: await lookupImdbId(item.id, item.mediaType),
+        tmdbAverage: item.voteAverage,
+        tmdbVotes: item.voteCount,
+      })
+    }
+    return out
+  }
+)
+
+/** The IMDb id of a title, for the few places that need it. */
+const lookupImdbId = async (
+  id: number,
+  mediaType: 'movie' | 'tv'
+): Promise<string | null> => {
+  try {
+    const { fetchClient } = await import('@/lib/fetch-client')
+    const { imdb_id } = await fetchClient.get<{ imdb_id?: string | null }>(
+      `${mediaType}/${id}/external_ids`,
+      {},
+      true,
+      60 * 60 * 24 * 30
+    )
+    return imdb_id ?? null
+  } catch {
+    return null
+  }
+}

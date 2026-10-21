@@ -9,6 +9,8 @@ import {
   JsonLd,
   webApplicationJsonLd,
 } from '@/lib/structured-data'
+import { resolveMediaType } from '@/lib/media'
+import { getRatingsForItems } from '@/lib/ratings'
 import { HeroSlider } from '@/components/header/hero-slider'
 import { FullScreenLoader } from '@/components/loaders/intro-pages-loader'
 import { ContinueWatching } from '@/components/main-page/continue-watching'
@@ -75,6 +77,23 @@ async function IndexPage() {
     popularSeries,
     allTimeTopRatedSeries,
   } = await populateHomePageData()
+
+  // The hero carries the same four ratings the details page does, so the same
+  // film never shows two different answers on two screens. Six slides, six
+  // lookups, once at build time - nothing here runs in the Worker.
+  const heroRatings = await getRatingsForItems(
+    (trendingMediaForHero ?? []).map((movie) => ({
+      id: movie.id,
+      mediaType: resolveMediaType(movie) === 'tv' ? 'tv' : 'movie',
+      voteAverage: movie.vote_average,
+      voteCount: movie.vote_count,
+    }))
+  )
+  const heroSlides = (trendingMediaForHero ?? []).map((movie) => ({
+    ...movie,
+    ratings: heroRatings[movie.id],
+  }))
+
   return (
     <section className="h-full">
       {/* Single page-level h1 for SEO. Visually hidden (sr-only) so it doesn't
@@ -102,7 +121,7 @@ async function IndexPage() {
           homepage, even though every poster row below had rendered fine. */}
       <SectionErrorBoundary section="home_hero" title="The hero didn't load">
         <Suspense fallback={<FullScreenLoader />}>
-          <HeroSlider movies={trendingMediaForHero} />
+          <HeroSlider movies={heroSlides} />
         </Suspense>
       </SectionErrorBoundary>
       {/* Smooth handoff: the hero fades to near-black at its base, and this

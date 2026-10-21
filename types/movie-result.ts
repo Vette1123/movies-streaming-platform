@@ -1,4 +1,5 @@
 import { MediaType } from '@/types/media'
+import type { RatingTile } from '@/lib/ratings'
 
 type Movie = {
   adult: boolean
@@ -22,6 +23,10 @@ type Movie = {
   // services/imdb.ts. List endpoints don't return imdb_id, so this is resolved via
   // a cached external_ids lookup; null when unavailable (card falls back to TMDB).
   imdbRating?: string | null
+  // The four ratings (TMDB, IMDb, Rotten Tomatoes, Metacritic) for a title
+  // the build resolved - the homepage hero's slides, so the hero carries the
+  // same scores the details page does. See lib/ratings.ts.
+  ratings?: RatingTile[]
 }
 
 interface MovieResponse {

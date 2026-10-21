@@ -74,3 +74,47 @@ export function RatingsStrip({
     </section>
   )
 }
+
+/**
+ * The same four scores, in one line.
+ *
+ * For a place that has no room for a grid of tiles - the hero's rating row -
+ * and it is not a smaller version of the strip, it is the same information
+ * with the same colours: the source's name, its score, and the source's own
+ * accent. A reader who learns the tiles on the details page reads the pills
+ * on the hero without a second thought, which is the point of them being the
+ * same four sources in the same order.
+ */
+export function RatingsPills({
+  tiles,
+  className,
+}: {
+  tiles: RatingTile[]
+  className?: string
+}) {
+  if (tiles.length < 2) return null
+  return (
+    <ul
+      className={cn(
+        'flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] leading-none font-semibold',
+        className
+      )}
+    >
+      {tiles.map((tile) => (
+        <li
+          key={tile.id}
+          className="flex items-center gap-1 rounded-full bg-black/45 px-2 py-1 ring-1 ring-white/10 backdrop-blur-sm"
+        >
+          <span className="text-[10px] font-medium tracking-wide text-white/60 uppercase">
+            {tile.label}
+          </span>
+          <span
+            className={cn('font-bold tabular-nums', TONE_CLASS[tile.tone])}
+          >
+            {tile.score}
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
