@@ -213,7 +213,10 @@ const CardComponent = ({
               {title}
               {year ? ` (${year})` : ''}
             </p>
-            <ScoreChip voteAverage={item.vote_average} size="md" />
+            {/* The chip that sits in front of a reader has room to say which
+                source the number came from; the hover one does not, and carries it
+                in its accessible name instead. */}
+            <ScoreChip voteAverage={item.vote_average} size="md" showSource />
           </div>
           {overview && (
             <p className="text-sm text-muted-foreground">
