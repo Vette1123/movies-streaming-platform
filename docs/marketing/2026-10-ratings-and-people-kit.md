@@ -72,13 +72,13 @@ every name on a movie page is a link instead of a dead end.
 
 The pages we now answer, that we did not answer before:
 
-| Query | The page |
-|---|---|
-| `<actor> movies` | `/person/<id>` — the filmography, 764 of them |
+| Query                           | The page                                                                  |
+| ------------------------------- | ------------------------------------------------------------------------- |
+| `<actor> movies`                | `/person/<id>` — the filmography, 764 of them                             |
 | `<title> rotten tomatoes score` | `/movies/<id>` — the Tomatometer in the HTML, next to IMDb and Metacritic |
-| `<title> metascore` | the same page |
-| `<title> imdb rating` | the same page, with the vote count |
-| `<director> filmography` | `/person/<id>` |
+| `<title> metascore`             | the same page                                                             |
+| `<title> imdb rating`           | the same page, with the vote count                                        |
+| `<director> filmography`        | `/person/<id>`                                                            |
 
 The person pages were the biggest gap: every title page named a cast member,
 and almost none of those names had a page here. They are in the sitemap
