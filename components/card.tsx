@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useRef } from 'react'
 import { motion } from 'framer-motion'
 import { CalendarDays, Check } from 'lucide-react'
 
@@ -24,6 +24,7 @@ import { MediaLink } from '@/components/media/media-link'
 import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
 import { ScoreChip } from '@/components/media/score-chip'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
+import { useTilt } from '@/hooks/use-tilt'
 
 interface CardProps {
   item: MediaType
@@ -69,6 +70,8 @@ const CardComponent = ({
   // post-hydration state meant a desktop had NO hover response at all until the
   // client bundle had landed. That is what "the hover is gone" was.
   const hasHover = useHasHoverPointer()
+  const cardRef = useRef<HTMLDivElement>(null)
+  useTilt(cardRef, 4)
 
   const href = `${itemRedirect(itemType)}/${item.id}`
 
@@ -181,6 +184,7 @@ const CardComponent = ({
              and it lives on THIS branch, so a touch device never pays for a layer
              promotion it can never use. */
           <motion.div
+            ref={cardRef}
             whileHover={{ scale: 1.05, y: -10 }}
             transition={{
               type: 'spring',
@@ -193,7 +197,9 @@ const CardComponent = ({
             {frame}
           </motion.div>
         ) : (
-          <div className={CARD_FRAME}>{frame}</div>
+          <div ref={cardRef} className={CARD_FRAME}>
+            {frame}
+          </div>
         )}
       </div>
     </MediaLink>
