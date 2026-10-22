@@ -138,6 +138,17 @@
   }
 }
 
+/* Scroll-reveal sections: start hidden, crossfade up when they enter the
+   viewport. One shared IntersectionObserver (components/scroll-reveal.tsx)
+   toggles the `revealed` class, so this stays compositor-only. */
+.reveal-base {
+  opacity: 0;
+  transform: translatey(4px);
+}
+.reveal-base.revealed {
+  animation: rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 @utility container {
   margin-inline: auto;
   /* Phones get a tighter gutter so hero copy and rows aren't cramped into the

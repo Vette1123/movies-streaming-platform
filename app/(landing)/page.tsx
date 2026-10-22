@@ -16,6 +16,7 @@ import { FullScreenLoader } from '@/components/loaders/intro-pages-loader'
 import { ContinueWatching } from '@/components/main-page/continue-watching'
 import { MoviesIntroSection } from '@/components/main-page/intro-section'
 import { SectionErrorBoundary } from '@/components/section-error-boundary'
+import { ScrollReveal } from '@/components/scroll-reveal'
 
 // Fully static: rendered ONLY at build, served from static assets, never on the
 // Worker. Freshness comes from the 4x/day CI redeploy — not on-demand ISR. This
@@ -134,25 +135,29 @@ async function IndexPage() {
             watching outranks what is popular this week. Renders nothing at all
             until it has rows, so the homepage's first paint is unchanged for
             everyone signed out. */}
-        <SectionErrorBoundary
-          section="home_continue"
-          title="This row didn't load"
-        >
-          <ContinueWatching />
-        </SectionErrorBoundary>
-        <SectionErrorBoundary
-          section="home_rails"
-          title="These rows didn't load"
-        >
-          <MoviesIntroSection
-            latestTrendingMovies={latestTrendingMovies}
-            allTimeTopRatedMovies={allTimeTopRatedMovies}
-            popularMovies={popularMovies}
-            latestTrendingSeries={latestTrendingSeries}
-            popularSeries={popularSeries}
-            allTimeTopRatedSeries={allTimeTopRatedSeries}
-          />
-        </SectionErrorBoundary>
+        <ScrollReveal delay={0.2}>
+          <SectionErrorBoundary
+            section="home_continue"
+            title="This row didn't load"
+          >
+            <ContinueWatching />
+          </SectionErrorBoundary>
+        </ScrollReveal>
+        <ScrollReveal delay={0.4}>
+          <SectionErrorBoundary
+            section="home_rails"
+            title="These rows didn't load"
+          >
+            <MoviesIntroSection
+              latestTrendingMovies={latestTrendingMovies}
+              allTimeTopRatedMovies={allTimeTopRatedMovies}
+              popularMovies={popularMovies}
+              latestTrendingSeries={latestTrendingSeries}
+              popularSeries={popularSeries}
+              allTimeTopRatedSeries={allTimeTopRatedSeries}
+            />
+          </SectionErrorBoundary>
+        </ScrollReveal>
       </div>
     </section>
   )
