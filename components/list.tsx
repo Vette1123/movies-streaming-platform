@@ -177,12 +177,14 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
           // per-card storm the card links below still have to avoid.
           className="flex w-fit min-w-0 items-center gap-2"
         >
-          <h2 className="flex min-w-0 items-center gap-2.5 text-2xl font-bold tracking-tight transition-colors duration-200 ease-in group-hover/heading:text-cyan-200">
+          <h2 className="flex min-w-0 items-center gap-2.5 text-2xl font-bold tracking-tight transition-colors duration-200 ease-in group-hover/heading:text-white group-hover/heading:drop-shadow-[0_0_16px_rgba(103,232,249,0.4)]">
             <span
               aria-hidden
               className="h-5 w-[3px] shrink-0 origin-center rounded-full bg-linear-to-b from-cyan-300 to-cyan-500 opacity-85 shadow-[0_0_8px_rgba(103,232,249,0.5)] transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/heading:scale-y-[1.35] group-hover/heading:opacity-100 motion-reduce:transition-none"
             />
-            <span className="truncate">{title}</span>
+            <span className="truncate bg-linear-to-r from-white via-cyan-200 to-white bg-clip-text text-transparent transition-all duration-300 group-hover/heading:from-cyan-300 group-hover/heading:via-cyan-100 group-hover/heading:to-cyan-300">
+              {title}
+            </span>
           </h2>
         </Link>
         <SeeAllLink href={itemRedirect(itemType)} label={title} />
@@ -230,13 +232,17 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
               'no-scrollbar -mx-4 -my-6 scroll-pl-4 gap-6 px-4 py-6'
             )}
           >
-            {items.map((item) => (
+            {items.map((item, index) => (
               // Responsive width matching SliderHorizontalListLoader so the
               // Suspense skeleton → real card swap doesn't jump the rail (the
               // card poster is now w-full of this box, not a fixed 250px).
               <div
                 key={item.id}
-                className="w-40 shrink-0 snap-start sm:w-[190px] lg:w-[230px] 2xl:w-[250px]"
+                className={cn(
+                  'w-40 shrink-0 animate-rise-in snap-start',
+                  'sm:w-[190px] lg:w-[230px] 2xl:w-[250px]'
+                )}
+                style={{ animationDelay: `${index * 0.04}s` }}
               >
                 <Card item={item} itemType={itemType} />
               </div>

@@ -35,7 +35,7 @@ interface CardProps {
 // the hover card cannot drift apart. Only the wrapper differs: a framer
 // motion.div where a hover can happen, a plain div where it cannot.
 const CARD_FRAME =
-  'group-hover/card:ring-primary/60 relative cursor-pointer rounded-lg shadow-lg ring-1 ring-transparent transition-shadow duration-500 ease-out group-hover/card:shadow-2xl'
+  'group-hover/card:ring-primary/60 relative cursor-pointer rounded-lg shadow-lg ring-1 ring-transparent transition-shadow duration-500 ease-out group-hover/card:shadow-2xl group-hover/card:shadow-[0_0_40px_rgba(99,102,241,0.25)]'
 
 const CardComponent = ({
   item,
