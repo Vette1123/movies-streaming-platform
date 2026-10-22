@@ -57,6 +57,11 @@ interface MovieDetails {
 interface MultiMovieDetailsRequestProps {
   movieDetails: MovieDetails
   movieCredits: Credit
+  // Full cast/crew arrays for person-page link resolution. `movieCredits` is
+  // trimmed (10 cast, directors only); these hold every name TMDB returned so
+  // link resolution can ask about all of them without changing what renders.
+  movieCast: Credit['cast']
+  movieCrew: Credit['crew']
   similarMovies: Movie[]
   recommendedMovies: Movie[]
   // Best YouTube trailer/teaser key, if any (see lib/videos.ts).

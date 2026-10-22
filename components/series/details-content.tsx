@@ -21,6 +21,8 @@ import {
 interface SeriesDetailsContentProps {
   series: SeriesDetails
   seriesCredits: Credit
+  /** Full crew array (all jobs) for person-page link resolution. */
+  seriesCrew?: Credit['crew']
   similarSeries: MediaType[]
   recommendedSeries: MediaType[]
   /** Cast ids with a person page — see lib/person-links.ts. */
@@ -35,6 +37,7 @@ interface SeriesDetailsContentProps {
 export const SeriesDetailsContent = ({
   series,
   seriesCredits,
+  seriesCrew,
   similarSeries,
   recommendedSeries,
   linkedPersonIds,
@@ -82,6 +85,7 @@ export const SeriesDetailsContent = ({
             <SeriesDetailsExtraInfo series={series} director={director} />
             <DetailsCredits
               movieCredits={seriesCredits}
+              movieCrew={seriesCrew}
               linkedPersonIds={linkedPersonIds}
             />
           </section>

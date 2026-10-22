@@ -1,12 +1,19 @@
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 import { Metadata } from 'next'
 import Link from 'next/link'
-import { History } from 'lucide-react'
+import { History, Download, Upload } from 'lucide-react'
 
 import { siteConfig } from '@/config/site'
 import { RescueBanner } from '@/components/account/rescue-banner'
 import { SupportPrompt } from '@/components/support/support-prompt'
 import { WatchlistContainer } from '@/components/watchlist/watchlist'
+import { useWatchlist } from '@/hooks/use-watchlist'
+import { Button } from '@/components/ui/button'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 
 export const metadata: Metadata = {
   title: 'My Watchlist',
@@ -26,10 +33,55 @@ export const metadata: Metadata = {
 }
 
 function Watchlist() {
+  const { watchlist, exportWatchlist, importWatchlist } = useWatchlist()
+  const [importError, setImportError] = useState<string | null>(null)
+
+  const handleImport = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      setImportError(null)
+      const file = e.target.files?.[0]
+      if (!file) return
+      try {
+        await importWatchlist(file)
+        e.target.value = ''
+      } catch (err) {
+        setImportError(err instanceof Error ? err.message : 'Import failed.')
+      }
+    },
+    [importWatchlist]
+  )
+
   return (
     <section className="container h-full min-h-svh py-20 lg:py-36">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold lg:text-3xl">My Watchlist</h1>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <h1 className="text-2xl font-bold lg:text-3xl">My Watchlist</h1>
+          {watchlist.length > 0 && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" onClick={exportWatchlist}>
+                  <Download className="mr-2 size-4" />
+                  Export
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-56 p-3">
+                <label className="block cursor-pointer rounded border border-border/50 p-2 hover:bg-accent">
+                  <Upload className="mr-2 size-4" />
+                  Import watchlist
+                  <input
+                    type="file"
+                    accept=".json"
+                    className="sr-only"
+                    onChange={handleImport}
+                  />
+                </label>
+              </PopoverContent>
+            </Popover>
+          )}
+        </div>
+        {importError && (
+          <span className="text-sm text-destructive">{importError}</span>
+        )}
         {/* Watch history lives one click from its sibling personal page: it
             left the main nav to keep the header lean, but "what was I
             watching?" still needs an obvious door. */}

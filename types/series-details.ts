@@ -77,6 +77,11 @@ interface SeriesDetails {
 interface MultiSeriesDetailsRequestProps {
   seriesDetails: SeriesDetails
   seriesCredits: Credit
+  // Full cast/crew arrays for person-page link resolution. `seriesCredits` is
+  // trimmed (10 cast, directors only); these hold every name TMDB returned so
+  // link resolution can ask about all of them without changing what renders.
+  seriesCast: Credit['cast']
+  seriesCrew: Credit['crew']
   similarSeries: MediaType[]
   recommendedSeries: MediaType[]
   // Best YouTube trailer/teaser key, if any (see lib/videos.ts).

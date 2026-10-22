@@ -495,6 +495,39 @@ async function handleApi(pathname, url, request, ctx, env) {
     )
   }
 
+  // ---- Newsletter -----------------------------------------------------------
+  // Single opt-in capture for the weekly digest. The sender (the support page,
+  // Buy Me a Coffee, or a mailer) handles confirmation; this just stores the
+  // email so it can be exported. No D1 = no-op 202 so the form never breaks a
+  // deploy that hasn't run migrations yet.
+  if (pathname === '/api/newsletter/subscribe' && request.method === 'POST') {
+    const db = env.DB
+    if (!db) return liveJson({ ok: true }, { status: 202 })
+    let body
+    try {
+      body = await request.json()
+    } catch {
+      return liveJson({ error: 'invalid json' }, { status: 400 })
+    }
+    const email = String(body?.email || '').trim().toLowerCase()
+    const source = String(body?.source || 'footer')
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return liveJson({ error: 'invalid email' }, { status: 400 })
+    }
+    const now = Date.now()
+    try {
+      await db
+        .prepare(
+          'INSERT OR IGNORE INTO newsletter_subscribers (email, source, subscribed_at) VALUES (?, ?, ?)'
+        )
+        .bind(email, source, now)
+        .run()
+      return liveJson({ ok: true })
+    } catch {
+      return liveJson({ error: 'internal error' }, { status: 500 })
+    }
+  }
+
   // ---- Match Night + Watch Together --------------------------------------
   // Ephemeral D1 rooms, no TMDB traffic, no auth - a party code is the whole
   // credential. Both features sweep their own dead rooms on every create, so

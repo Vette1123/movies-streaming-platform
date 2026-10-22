@@ -85,6 +85,8 @@ const MoviePage = async (props: PageDetailsProps) => {
   }
   const {
     movieCredits,
+    movieCast,
+    movieCrew,
     movieDetails,
     similarMovies,
     recommendedMovies,
@@ -94,11 +96,21 @@ const MoviePage = async (props: PageDetailsProps) => {
   } = result!
   if (!movieDetails?.id) notFound()
 
-  // Which of this film's cast have a page on this site. Resolved on the
-  // server so the client only ever receives the handful that do.
-  const linkedPersonIds = await linkablePersonIds(
-    (movieCredits?.cast ?? []).slice(0, 10).map((person) => person.id)
-  )
+  // Which of this film's cast and crew have a page on this site. Resolved on
+  // the server so the client only ever receives the handful that do. Cast is
+  // billed order; crew is Director, Writer, Producer — the jobs a person page
+  // is worth linking to.
+  const linkedPersonIds = await linkablePersonIds([
+    ...movieCast.map((person) => person.id),
+    ...movieCrew
+      .filter(
+        (person) =>
+          person.job === 'Director' ||
+          person.job === 'Writer' ||
+          person.job === 'Producer'
+      )
+      .map((person) => person.id),
+  ])
 
   const jsonLd = movieJsonLd({
     id: movieDetails.id,
@@ -150,6 +162,7 @@ const MoviePage = async (props: PageDetailsProps) => {
         <MoviesDetailsContent
           movie={{ ...movieDetails, ratings }}
           movieCredits={movieCredits}
+          movieCrew={movieCrew}
           similarMovies={similarMovies}
           recommendedMovies={recommendedMovies}
           linkedPersonIds={linkedPersonIds}

@@ -6,6 +6,7 @@ import { SUPPORT_EMAIL, supportMailto } from '@/config/support'
 import { COMPANION_APPS } from '@/lib/apps'
 import { cn } from '@/lib/utils'
 import { FooterSupportCard } from '@/components/support/footer-support-card'
+import { NewsletterSignup } from '@/components/newsletter-signup'
 
 import { Icons } from '../icons'
 import { StoreLink } from '../store-link'
@@ -13,6 +14,7 @@ import { buttonVariants } from '../ui/button'
 
 const SITE_LINKS = [
   { href: '/start', label: 'What should I watch?' },
+  { href: '/rss.xml', label: 'RSS feed' },
   { href: '/lists', label: 'Lists and people' },
   { href: '/people', label: 'Actors and directors' },
   { href: '/support', label: 'Support Reely' },
@@ -136,6 +138,7 @@ export function Footer() {
             which is most of why nobody followed it. A supporter gets the other
             side of the same card — see FooterSupportCard. */}
         <FooterSupportCard />
+        <NewsletterSignup />
       </div>
 
       <div className="border-t border-border/60">

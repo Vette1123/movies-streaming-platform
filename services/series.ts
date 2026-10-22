@@ -96,6 +96,11 @@ const populateSeriesDetailsPageData = async (
         imdbRating: await getImdbRating(data.external_ids?.imdb_id),
       },
       seriesCredits: trimCredits(credits, data.id),
+      // Full cast/crew arrays for person-page link resolution. The trimmed
+      // `seriesCredits` above is what renders; these are only used to ask which
+      // names have a page on this site.
+      seriesCast: credits?.cast ?? [],
+      seriesCrew: credits?.crew ?? [],
       similarSeries: (similar ? seriesDTO(similar).results : []).slice(
         0,
         RAIL_LIMIT

@@ -87,6 +87,8 @@ const TVSeries = async (props: PageDetailsProps) => {
   const {
     seriesDetails,
     seriesCredits,
+    seriesCast,
+    seriesCrew,
     similarSeries,
     recommendedSeries,
     trailerKey,
@@ -95,9 +97,19 @@ const TVSeries = async (props: PageDetailsProps) => {
   } = result!
   if (!seriesDetails?.id) notFound()
 
-  const linkedPersonIds = await linkablePersonIds(
-    (seriesCredits?.cast ?? []).slice(0, 10).map((person) => person.id)
-  )
+  // Which of this series' cast and crew have a page on this site. Resolved on
+  // the server so the client only ever receives the handful that do.
+  const linkedPersonIds = await linkablePersonIds([
+    ...seriesCast.map((person) => person.id),
+    ...seriesCrew
+      .filter(
+        (person) =>
+          person.job === 'Director' ||
+          person.job === 'Writer' ||
+          person.job === 'Producer'
+      )
+      .map((person) => person.id),
+  ])
 
   const jsonLd = tvSeriesJsonLd({
     id: seriesDetails.id,
@@ -155,6 +167,7 @@ const TVSeries = async (props: PageDetailsProps) => {
           <SeriesDetailsContent
             series={{ ...seriesDetails, ratings }}
             seriesCredits={seriesCredits}
+            seriesCrew={seriesCrew}
             similarSeries={similarSeries}
             recommendedSeries={recommendedSeries}
             linkedPersonIds={linkedPersonIds}

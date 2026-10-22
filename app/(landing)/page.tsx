@@ -104,7 +104,7 @@ async function IndexPage() {
           answer Google's OAuth branding review; the review failed again with it
           in place, so it bought nothing and cost the hero its clean first
           screen. See lessons/2026-08-16-oauth-branding-review.md. */}
-      <h1 className="sr-only">
+      <h1 className="mb-4 text-xl font-semibold text-muted-foreground sm:text-2xl">
         {siteConfig.name} — Discover, track &amp; stream movies and TV shows
       </h1>
       <JsonLd

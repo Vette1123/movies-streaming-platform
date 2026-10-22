@@ -13,6 +13,7 @@ import { DetailsCredits } from '@/components/media/details-credits'
 import { DetailsExtraInfo } from '@/components/media/details-extra-info'
 import { DETAILS_ROW, DetailsPoster } from '@/components/media/details-poster'
 import { RatingsStrip } from '@/components/media/ratings-strip'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
 
 // NOT async, and that is load-bearing.
 //
@@ -24,6 +25,7 @@ import { RatingsStrip } from '@/components/media/ratings-strip'
 export const MoviesDetailsContent = ({
   movie,
   movieCredits,
+  movieCrew,
   similarMovies,
   recommendedMovies,
   linkedPersonIds,
@@ -31,6 +33,8 @@ export const MoviesDetailsContent = ({
 }: {
   movie: MovieDetails
   movieCredits: Credit
+  /** Full crew array (all jobs) for person-page link resolution. */
+  movieCrew?: Credit['crew']
   similarMovies: Movie[]
   recommendedMovies: Movie[]
   /** Cast ids with a person page — see lib/person-links.ts. */
@@ -44,6 +48,14 @@ export const MoviesDetailsContent = ({
   return (
     <>
       <section className="container max-w-(--breakpoint-2xl) pt-8 pb-6 sm:pt-12 lg:pb-10">
+        <Breadcrumb
+          items={[
+            { label: 'Home', href: '/' },
+            { label: 'Movies', href: '/movies' },
+            { label: movie.title, href: `/movies/${movie.id}` },
+          ]}
+          className="mb-6"
+        />
         <div className={cn(DETAILS_ROW, 'flex-col')}>
           <DetailsPoster path={movie.poster_path} alt={movie.title} />
           <section className="flex min-w-0 flex-1 flex-col gap-4">
@@ -51,6 +63,7 @@ export const MoviesDetailsContent = ({
             <DetailsExtraInfo movie={movie} director={director} />
             <DetailsCredits
               movieCredits={movieCredits}
+              movieCrew={movieCrew}
               linkedPersonIds={linkedPersonIds}
             />
           </section>

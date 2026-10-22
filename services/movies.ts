@@ -210,6 +210,13 @@ const populateMovieDetailsPage = async (
         imdbRating: await getImdbRating(data.imdb_id),
       },
       movieCredits: trimCredits(credits, data.id),
+      // Full cast/crew arrays for person-page link resolution. The trimmed
+      // `movieCredits` above is what renders; these are only used to ask which
+      // names have a page on this site. Keeping them separate means the
+      // prerendered HTML stays byte-identical while the link resolution gets
+      // every name, not just the first ten.
+      movieCast: credits?.cast ?? [],
+      movieCrew: credits?.crew ?? [],
       similarMovies: (similar?.results ?? []).slice(0, RAIL_LIMIT),
       recommendedMovies: (recommendations?.results ?? []).slice(0, RAIL_LIMIT),
       trailerKey: trailer?.key,

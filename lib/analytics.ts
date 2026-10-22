@@ -68,6 +68,7 @@ export const EVENTS = {
   // sends people to the plans, and that is a breakdown, not six funnels.
   SUPPORT_CTA_CLICKED: 'support_cta_clicked',
   SUPPORT_NUDGE_SHOWN: 'support_nudge_shown',
+  NEWSLETTER_SUBSCRIBED: 'newsletter_subscribed',
   // The rest of the funnel. Until these existed nothing past /support was
   // measured at all: 33 people reached the plans in 38 days and whether any of
   // them left for checkout, signed in, or paid was unknowable from here.
@@ -320,6 +321,12 @@ export function trackSupportCtaClicked(props: { surface: string }): void {
 /** The one-time earned nudge was actually shown to someone. */
 export function trackSupportNudgeShown(props: { trigger: string }): void {
   track(EVENTS.SUPPORT_NUDGE_SHOWN, props)
+}
+
+/** Subscribed to the weekly digest. `source` is where from — `footer`,
+ * `support`, etc. */
+export function trackNewsletterSubscribed(props: { source: string }): void {
+  track(EVENTS.NEWSLETTER_SUBSCRIBED, props)
 }
 
 /**

@@ -8,17 +8,18 @@ import { getPeopleWithPages } from '@/services/people'
  * page, and now some of those names have a page here instead. Only *some*:
  * /person/[id] is prerendered for a bounded set (see services/people.ts), and a
  * link to an id outside it would be a 404 — so the page asks, per title, which
- * of ITS ten names are in the set and links only those.
+ * of ITS names are in the set and links only those.
  *
- * Ten numbers, not two hundred: resolving here rather than shipping the whole
- * id set to the client keeps this at a few dozen bytes on each of ~2,100
- * prerendered pages instead of a kilobyte and a half.
+ * The caller passes every cast and crew id worth linking, and gets back just
+ * the ones with pages. Crew links up to three jobs: Director, Writer,
+ * Producer. Casting beyond position 10 is still worth a link, so the caller
+ * decides the slice — this helper just filters.
+ *
+ * Module-scope, not React `cache()`: this is immutable build-time data read
+ * once per page, and React's cache is per-request — which would have re-read it
+ * two thousand times. Never runs in the production Worker (React does not run
+ * there at all).
  */
-
-// Module-scope, not React `cache()`: this is immutable build-time data read
-// once per page, and React's cache is per-request — which would have re-read it
-// two thousand times. Never runs in the production Worker (React does not run
-// there at all); a stray isolate would only ever hold one Set.
 let pageIds: Promise<Set<number>> | undefined
 
 const loadPageIds = async (): Promise<Set<number>> => {

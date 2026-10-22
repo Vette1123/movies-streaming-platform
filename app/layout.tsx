@@ -229,6 +229,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
     // exiting <ViewTransition> instead.
     <html
       lang="en"
+      dir="ltr"
       suppressHydrationWarning
       style={{ viewTransitionName: 'root' }}
     >

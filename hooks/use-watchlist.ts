@@ -27,6 +27,10 @@ interface WatchlistHookResult {
   isSaved: (id: number) => boolean
   toggle: (media: MediaItem) => void
   remove: (id: number) => void
+  /** Download the watchlist as a JSON file. */
+  exportWatchlist: () => void
+  /** Parse an exported JSON file and merge it into the watchlist. */
+  importWatchlist: (file: File) => Promise<void>
 }
 
 export function useWatchlist(): WatchlistHookResult {
@@ -74,5 +78,56 @@ export function useWatchlist(): WatchlistHookResult {
     [watchlist, setWatchlist, isSaved, remove]
   )
 
-  return { watchlist, isSaved, toggle, remove }
+  const exportWatchlist = useCallback(() => {
+    const data = JSON.stringify(watchlist, null, 2)
+    const blob = new Blob([data], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `reely-watchlist-${new Date().toISOString().slice(0, 10)}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }, [watchlist])
+
+  const importWatchlist = useCallback(
+    async (file: File): Promise<void> => {
+      const text = await file.text()
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(text)
+      } catch {
+        throw new Error('That file is not valid JSON.')
+      }
+      if (!Array.isArray(parsed)) {
+        throw new Error('The watchlist file must be a JSON array of titles.')
+      }
+      const incoming = parsed as Partial<WatchedItem>[]
+      const existingIds = new Set(watchlist.map((item) => item.id))
+      const added: WatchedItem[] = []
+      for (const item of incoming) {
+        if (!item.id || !item.title || existingIds.has(item.id)) continue
+        const normalized: WatchedItem = {
+          id: item.id,
+          type: (item.type === 'series' ? 'series' : 'movie') as WatchedItem['type'],
+          title: item.title,
+          overview: item.overview ?? '',
+          backdrop_path: item.backdrop_path ?? '',
+          poster_path: item.poster_path ?? '',
+          added_at: item.added_at ?? new Date().toISOString(),
+          modified_at: new Date().toISOString(),
+          ...(item.season !== undefined && { season: item.season }),
+          ...(item.episode !== undefined && { episode: item.episode }),
+        }
+        existingIds.add(item.id)
+        added.push(normalized)
+      }
+      if (!added.length) return
+      setWatchlist([...watchlist, ...added])
+    },
+    [watchlist, setWatchlist]
+  )
+
+  return { watchlist, isSaved, toggle, remove, exportWatchlist, importWatchlist }
 }

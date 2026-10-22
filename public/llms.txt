@@ -1,0 +1,43 @@
+Reely
+https://www.reely.space
+
+A free, open-source movie and TV discovery app built on the TMDB API. Browse trending, popular and top-rated titles; filter by genre, rating, runtime, year, language, certification and streaming provider; search with ⌘K from any page; keep a watchlist and watch history; stream titles in-page through an external source you configure. Installs as a PWA.
+
+Site: https://www.reely.space
+Repo: https://github.com/Vette1123/movies-streaming-platform
+
+Pages:
+/ — Homepage: trending hero slider, trending/top-rated/popular rails
+/movies — Browse movies with live-applying filters
+/tv-shows — Browse TV series with live-applying filters
+/genre/<slug> — Movie genre pages
+/tv-shows/genre/<slug> — TV genre pages
+/year/<year> — Movies by year
+/tv-shows/year/<year> — TV by year
+/movies/<id> — Movie detail page: cast, trailer, similar, recommendations, ratings (IMDb, Rotten Tomatoes, Metacritic, TMDB), where to watch
+/tv-shows/<id> — TV series detail page
+/collection/<id> — Franchise / collection pages
+/person/<id> — Actor / director filmography (764 people)
+/people — Actors and directors index
+/lists — User lists
+/reels — Swipeable trailer feed
+/mood — Mood-based discovery (8 moods)
+/match-night — Two-person mutual-like movie picker
+/watch-together — Synchronized playback room
+/watchlist — Saved titles to watch
+/watch-history — Finished titles
+/start — What should I watch?
+/press — Press kit
+/support — Support / membership
+/disclaimer — In-app disclaimer
+/dmca — Copyright & takedowns
+/privacy — Privacy
+/terms — Terms
+/stats — Your year in Reely
+/account — Account
+/sitemap.xml — Sitemap
+/rss.xml — Trending feed
+
+Structured data: JSON-LD WebSite, WebApplication, Organization, Movie, TVSeries, Person, CollectionPage, BreadcrumbList, ItemList. Open Graph and Twitter Cards on every page.
+
+API: /api/* handled by a Cloudflare Worker (search, filter, infinite scroll, season details, watch providers). Static export — Next.js does not run in production.

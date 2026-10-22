@@ -1,0 +1,74 @@
+# Reely — movie and TV discovery app
+
+**URL:** https://www.reely.space  
+**Repo:** https://github.com/Vette1123/movies-streaming-platform (MIT)  
+**Author:** Mohamed Gado (https://www.mohamedgado.com/)  
+**Tagline:** Find what to watch, then keep track.
+
+## What it is
+
+Reely is a free, open-source movie and TV discovery app built on the TMDB API. It answers "what should I watch" and remembers what you decided. It hosts no video; playback happens in-page through an external source you configure, behind an in-app disclaimer.
+
+## Core features
+
+- **Catalog** — Trending, popular, top-rated, now-playing and on-the-air movies and TV shows from TMDB.
+- **Browse & filter** — Dedicated movies and TV listing pages with deep, live-applying filters: sort, tri-state genre pills (include/exclude/off), TMDB rating, vote count, runtime, release year (decade chips + range slider), original language, age certification, where-to-watch streaming-provider grid + region picker. Filters live-apply on a 300ms debounce, no Save button, and every filter lives in the URL (nuqs) so filtered views are shareable and back-button friendly.
+- **Detail pages** — Synopsis, cast, similar titles, recommendations, trailer, and four ratings (IMDb, Rotten Tomatoes, Metacritic, TMDB) — fetched in a single TMDB `append_to_response` call. IMDb ratings come from IMDb's free Non-Commercial dataset (static shards); Rotten Tomatoes and Metacritic come from OMDb's free tier, committed to the repo and refreshed daily.
+- **In-page streaming player** — Watch movies and TV episodes via a configurable external source. Quality/speed/audio popovers, double-tap seek, click-anywhere dismiss. Supporters use the Reely Player (house player with subtitles in 50+ languages); free accounts get one title a day; anonymous visitors get the default server.
+- **Season & episode navigator** — Drill into any TV show by season and episode.
+- **Trailers** — YouTube trailer dialog plus hero trailer preview.
+- **Collections** — Franchise / collection pages that group a series of films.
+- **Command-palette search (⌘K)** — Instant debounced search across movies and TV, with All / Movies / TV chips and remembered recent searches. No page reload.
+- **Genre pages & chips** — Jump straight into any genre for movies or TV.
+- **Watchlist** — Save titles you want to watch (localStorage, no account required).
+- **Watch history** — Track watched movies and episodes; remove single items or clear everything.
+- **Web Share** — Share any title through the native share sheet.
+- **Privacy-first** — Watchlist, history and recent searches live entirely in the browser; there is no login and nothing is stored on a server. Signing in with Google is optional and only syncs the library across devices.
+- **SEO & structured data** — Full JSON-LD (WebSite, WebApplication, Organization, CollectionPage, BreadcrumbList, ItemList, Movie, TVSeries, Person), Open Graph, Twitter Cards, sitemap, robots.txt, per-title meta descriptions, dynamic OG images, RSS feed.
+- **Accessible & responsive** — Skip-to-content link, ARIA roles, dedicated mobile nav, dark aurora UI that scales cleanly to phones.
+- **Installable PWA** — "Add to Home Screen" on Android and iOS, app shortcuts (Browse Movies, Browse TV Shows), offline-resilient shell with a hand-written service worker, maskable icons, theme colors.
+- **Analytics** — PostHog, client-side only, all events centralized in lib/analytics.ts.
+
+## Architecture
+
+Next.js 16 (App Router, RSC, Turbopack, static export) + React 19 + TypeScript 6 + Tailwind CSS 4 + shadcn/ui. Shipped as a static export on Cloudflare Workers Static Assets with one hand-written Worker for the parts that cannot be static (search, filter, infinite scroll, tail detail ids). Next.js does not run in production at all.
+
+## Pages and routes
+
+| Route | Purpose |
+|---|---|
+| / | Homepage: trending hero, trending/top-rated/popular rails |
+| /movies | Browse movies with filters |
+| /tv-shows | Browse TV series with filters |
+| /movies/genre/:slug | Movie genre pages |
+| /tv-shows/genre/:slug | TV genre pages |
+| /movies/year/:year | Movies by year |
+| /tv-shows/year/:year | TV by year |
+| /movies/:id | Movie detail page |
+| /tv-shows/:id | TV series detail page |
+| /collection/:id | Franchise / collection pages |
+| /person/:id | Actor / director filmography |
+| /people | Actors and directors index |
+| /lists | User lists |
+| /reels | Swipeable trailer feed |
+| /mood | Mood-based discovery |
+| /match-night | Two-person mutual-like movie picker |
+| /watch-together | Synchronized playback room |
+| /watchlist | Saved titles |
+| /watch-history | Finished titles |
+| /start | What should I watch? |
+| /press | Press kit |
+| /support | Support / membership |
+| /disclaimer | In-app disclaimer |
+| /dmca | Copyright & takedowns |
+| /privacy | Privacy |
+| /terms | Terms |
+| /stats | Your year in Reely |
+| /account | Account |
+
+## Data sources
+
+- TMDB API (themoviedb.org) — primary catalog data
+- IMDb Non-Commercial dataset — IMDb ratings (build-time static shards)
+- OMDb free tier — Rotten Tomatoes and Metacritic scores (committed to repo, refreshed daily)
+- ImageKit / wsrv.nl — image CDN with automatic fallback

@@ -7,6 +7,12 @@ import { getPosterImageURL } from '@/lib/utils'
 import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
 
 /**
+ * Crew jobs worth linking to a person page. Director is the one the extra-info
+ * panel already highlights; Writer and Producer are the next most searched.
+ */
+const CREW_JOBS = new Set(['Director', 'Writer', 'Producer'])
+
+/**
  * A cast name goes to this site's own page for that person when there is one,
  * and to a Google search when there is not.
  *
@@ -17,20 +23,28 @@ import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
 const castHref = (id: number, name: string, linked: Set<number>) =>
   linked.has(id) ? `/person/${id}` : `${SEARCH_ACTOR_GOOGLE}${name}`
 
-export const DetailsCredits = ({
-  movieCredits,
-  linkedPersonIds = [],
-}: {
+const crewHref = (id: number, name: string, linked: Set<number>) =>
+  linked.has(id) ? `/person/${id}` : `${SEARCH_ACTOR_GOOGLE}${name}`
+
+interface DetailsCreditsProps {
   movieCredits: Credit
   /** Cast ids this build prerendered a person page for. */
   linkedPersonIds?: number[]
-}) => {
+  /** Full crew array (all jobs); only Director/Writer/Producer are rendered. */
+  movieCrew?: Credit['crew']
+}
+
+export const DetailsCredits = ({
+  movieCredits,
+  linkedPersonIds = [],
+  movieCrew,
+}: DetailsCreditsProps) => {
   const linked = new Set(linkedPersonIds)
   return (
     <>
       <h2 className="text-base font-semibold md:text-xl lg:text-2xl">Cast</h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5">
-        {movieCredits?.cast?.slice(0, 10)?.map((cast) => (
+        {movieCredits?.cast?.map((cast) => (
           <Link
             href={castHref(cast.id, cast.name, linked)}
             key={cast.id}
@@ -46,15 +60,7 @@ export const DetailsCredits = ({
                   alt={cast.name}
                   fill
                   className="cursor-pointer object-cover"
-                  // 10vw above lg, not 15: the cast grid is 5 columns of a
-                  // COLUMN of the page, not of the page — measured at 192 CSS
-                  // px on a movie page and 128 on a series page (which gives a
-                  // slice to the season navigator), where 15vw claimed 227 and
-                  // bought a 500px file for a 128px box.
                   sizes="(max-width: 640px) 45vw, (max-width: 768px) 30vw, (max-width: 1024px) 25vw, 10vw"
-                  // A portrait, not a backdrop: the `intro` reveal below would
-                  // otherwise hand it the 65 tuned for full-bleed photos under
-                  // a scrim. These are faces at thumbnail size.
                   quality={POSTER_QUALITY}
                   intro
                 />
@@ -71,6 +77,49 @@ export const DetailsCredits = ({
           </Link>
         ))}
       </div>
+      {movieCrew && movieCrew.length > 0 && (
+        <>
+          <h2 className="mt-10 mb-3 text-base font-semibold md:text-xl lg:text-2xl">
+            Crew
+          </h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5">
+            {movieCrew
+              .filter((person) => CREW_JOBS.has(person.job))
+              .map((crew) => (
+                <Link
+                  href={crewHref(crew.id, crew.name, linked)}
+                  key={crew.id}
+                  {...(linked.has(crew.id)
+                    ? {}
+                    : { target: '_blank', rel: 'noopener noreferrer' })}
+                  className="flex flex-col transition-all duration-300 ease-in-out hover:scale-105"
+                >
+                  {crew.profile_path ? (
+                    <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg shadow-md">
+                      <BlurredImage
+                        src={getPosterImageURL(crew.profile_path)}
+                        alt={crew.name}
+                        fill
+                        className="cursor-pointer object-cover"
+                        sizes="(max-width: 640px) 45vw, (max-width: 768px) 30vw, (max-width: 1024px) 25vw, 10vw"
+                        quality={POSTER_QUALITY}
+                        intro
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative aspect-2/3 w-full rounded-lg bg-muted shadow-md"></div>
+                  )}
+                  <p className="mt-1 truncate text-sm sm:text-base">
+                    {crew.name}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {crew.job}
+                  </p>
+                </Link>
+              ))}
+          </div>
+        </>
+      )}
     </>
   )
 }
