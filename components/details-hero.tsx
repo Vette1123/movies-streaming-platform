@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ListVideo } from 'lucide-react'
 
@@ -11,8 +11,10 @@ import { getMediaTitle } from '@/lib/media'
 import { warmReelyTicket } from '@/lib/pro/ticket-cache'
 import { cn } from '@/lib/utils'
 import { REMOTE_KEY_PARAM } from '@/lib/watch-together'
+import { useHasHoverPointer } from '@/hooks/use-device-tier'
 import { useMounted } from '@/hooks/use-mounted'
 import { useIntentProps } from '@/hooks/use-prefetch-intent'
+import { useMagnetic } from '@/hooks/use-magnetic'
 import { type StreamSourceControl } from '@/hooks/use-stream-source'
 import { buttonVariants } from '@/components/ui/button'
 import {
@@ -77,6 +79,7 @@ const HeroAction = ({
   phoneLabel,
   tooltip = true,
   children,
+  magnetic = false,
 }: {
   caption: string
   /**
@@ -88,27 +91,35 @@ const HeroAction = ({
   /** False for an action that shows its own label from `sm` up. */
   tooltip?: boolean
   children: React.ReactNode
-}) => (
-  <div className="group/act relative flex flex-col items-center gap-1.5">
-    {children}
-    {phoneLabel ? (
-      <>
-        <span aria-hidden className={cn(captionBase, 'sm:hidden')}>
-          {phoneLabel}
-        </span>
-        {tooltip ? (
-          <span aria-hidden className={cn(tooltipCaption, 'hidden sm:block')}>
-            {caption}
+  /** Gently pulls the action toward the cursor on hover-capable devices. */
+  magnetic?: boolean
+}) => {
+  const ref = useRef<HTMLDivElement>(null)
+  const hasHover = useHasHoverPointer()
+  useMagnetic(ref, 8, magnetic && hasHover)
+
+  return (
+    <div ref={ref} className="group/act relative flex flex-col items-center gap-1.5">
+      {children}
+      {phoneLabel ? (
+        <>
+          <span aria-hidden className={cn(captionBase, 'sm:hidden')}>
+            {phoneLabel}
           </span>
-        ) : null}
-      </>
-    ) : (
-      <span aria-hidden className={tooltip ? tooltipCaption : phoneCaption}>
-        {caption}
-      </span>
-    )}
-  </div>
-)
+          {tooltip ? (
+            <span aria-hidden className={cn(tooltipCaption, 'hidden sm:block')}>
+              {caption}
+            </span>
+          ) : null}
+        </>
+      ) : (
+        <span aria-hidden className={tooltip ? tooltipCaption : phoneCaption}>
+          {caption}
+        </span>
+      )}
+    </div>
+  )
+}
 
 // The embed is driven by a `src` STRING, not by writing `.src` on a ref.
 //
@@ -484,6 +495,7 @@ export const DetailsHero = ({
                         caption="Play trailer"
                         phoneLabel="Trailer"
                         tooltip={false}
+                        magnetic
                       >
                         <TrailerDialog
                           trailerKey={trailerKey}
@@ -516,13 +528,13 @@ export const DetailsHero = ({
                         </a>
                       </HeroAction>
                     )}
-                    <HeroAction caption="Save to watchlist" phoneLabel="Save">
+                    <HeroAction caption="Save to watchlist" phoneLabel="Save" magnetic>
                       <SaveButton
                         media={media}
                         className={heroActionIconOnly}
                       />
                     </HeroAction>
-                    <HeroAction caption="Rate it" phoneLabel="Rate">
+                    <HeroAction caption="Rate it" phoneLabel="Rate" magnetic>
                       <RateButton
                         media={media}
                         className={heroActionIconOnly}
@@ -532,14 +544,14 @@ export const DetailsHero = ({
                         the movie-level toggle only shows for movies; series
                         completion is tracked per-episode in the episode list. */}
                     {isMovie && movie && (
-                      <HeroAction caption="Watched" phoneLabel="Watched">
+                      <HeroAction caption="Watched" phoneLabel="Watched" magnetic>
                         <WatchedButton
                           movie={movie}
                           className={heroActionIconOnly}
                         />
                       </HeroAction>
                     )}
-                    <HeroAction caption="Share" phoneLabel="Share">
+                    <HeroAction caption="Share" phoneLabel="Share" magnetic>
                       <ShareButton
                         title={title}
                         mediaId={media?.id}
@@ -549,7 +561,7 @@ export const DetailsHero = ({
                     </HeroAction>
                     {/* Second share action: the spoiler-free picture, next to
                         the link share it mirrors. */}
-                    <HeroAction caption="Share card" phoneLabel="Card">
+                    <HeroAction caption="Share card" phoneLabel="Card" magnetic>
                       <ShareCardButton
                         media={media}
                         className={heroActionIconOnly}
