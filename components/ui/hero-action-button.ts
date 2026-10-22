@@ -45,5 +45,5 @@ export const heroActionIconOnly = 'sm:w-11 sm:gap-0 sm:px-0 sm:[&>span]:hidden'
 // row and ate ~54px of vertical space the copy needed.
 export const heroWatchButton = cn(
   buttonVariants({ variant: 'watchNow', size: '2xl' }),
-  'rounded-full px-5 text-lg sm:px-12 sm:text-xl'
+  'hero-pulse rounded-full px-5 text-lg sm:px-12 sm:text-xl'
 )

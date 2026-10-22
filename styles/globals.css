@@ -126,6 +126,17 @@
       transform: scaleX(1);
     }
   }
+  /* A soft, slow outer-glow pulse on the primary Watch button so it breathes
+     and draws the eye without demanding a click. Reduced motion freezes it. */
+  @keyframes hero-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+    }
+  }
   @keyframes nav-pending {
     from {
       opacity: 1;
@@ -147,6 +158,17 @@
 }
 .reveal-base.revealed {
   animation: rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* A soft, slow outer-glow pulse on the primary Watch button so it breathes
+   and draws the eye without demanding a click. Reduced motion freezes it. */
+.hero-pulse {
+  animation: hero-pulse 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-pulse {
+    animation: none;
+  }
 }
 
 @utility container {
