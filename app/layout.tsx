@@ -315,6 +315,11 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <script dangerouslySetInnerHTML={{ __html: BMC_WIDGET_SCRIPT }} />
         <JsonLd data={websiteJsonLd} />
         <JsonLd data={organizationJsonLd} />
+        {/* Cross-document view transition: poster → hero image crossfades when
+            navigating list → detail. Chrome captures both page snapshots and
+            crossfades matching view-transition-name elements; same-origin only,
+            and every page ships the same meta so it works in both directions. */}
+        <meta name="view-transition" content="same-origin" />
       </head>
       <body
         // Browser extensions (Grammarly, password managers, translators) inject

@@ -93,6 +93,10 @@ const CardComponent = ({
           alt={title ?? 'Poster'}
           width={250}
           height={375}
+          // Shared element view transition: the poster's name matches the detail
+          // hero backdrop, so Chrome crossfades the picture instead of cutting
+          // the whole page when you open a title from a rail.
+          style={{ viewTransitionName: `poster-${item.id}` }}
           className="rounded-lg object-cover transition-transform duration-500 ease-out group-hover/card:scale-105"
         />
       ) : (

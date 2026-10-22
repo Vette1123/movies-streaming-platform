@@ -90,7 +90,12 @@ export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
       {media?.backdrop_path ? (
         <div
           className="absolute inset-0 z-0"
-          style={{ transform: parallax }}
+          style={{
+            transform: parallax,
+            viewTransitionName: media.id
+              ? `poster-${media.id}`
+              : undefined,
+          }}
         >
           <BlurredImage
             src={getImageURL(media?.backdrop_path)}
@@ -148,6 +153,9 @@ export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
             fill
             sizes={COVER_POSTER_SIZES}
             intro
+            style={{
+              viewTransitionName: media.id ? `poster-${media.id}` : undefined,
+            }}
             loading={priority ? 'eager' : 'lazy'}
             fetchPriority={priority ? 'high' : 'auto'}
           />
