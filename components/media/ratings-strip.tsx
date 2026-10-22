@@ -1,7 +1,19 @@
 import React from 'react'
 
+import { useCountUp } from '@/lib/use-count-up'
 import { RatingTile } from '@/lib/ratings'
 import { cn } from '@/lib/utils'
+
+/**
+ * Counts a score up from 0 when it mounts, so the rating lands with a small
+ * pop instead of appearing fully-formed. Reduced motion snaps it at once.
+ */
+const CountUpNumber = ({ score }: { score: string }) => {
+  const target = Number(score)
+  const value = useCountUp(isNaN(target) ? null : target)
+  const show = value === null ? score : value.toFixed(1)
+  return <span>{show}</span>
+}
 
 /**
  * The score wears the SOURCE's accent, not the theme's: IMDb's own yellow,
@@ -61,7 +73,7 @@ export function RatingsStrip({
                 TONE_CLASS[tile.tone]
               )}
             >
-              {tile.score}
+              <CountUpNumber score={tile.score} />
             </span>
             {tile.detail ? (
               <span className="mt-1.5 text-[11px] text-white/55">
@@ -111,7 +123,7 @@ export function RatingsPills({
           <span
             className={cn('font-bold tabular-nums', TONE_CLASS[tile.tone])}
           >
-            {tile.score}
+            <CountUpNumber score={tile.score} />
           </span>
         </li>
       ))}
