@@ -475,6 +475,44 @@
   }
 }
 
+/* Premium hero glow — a soft, slow-roaming radial bloom behind the hero slide's
+   backdrop, so the artwork feels like it's emitting light rather than sitting
+   flat on the page. Only `transform` animates (compositor-only). Reduced motion
+   freezes it. */
+.hero-glow {
+  position: absolute;
+  inset: -20%;
+  z-index: 0;
+  filter: blur(60px);
+  opacity: 0.45;
+  will-change: transform;
+  background: radial-gradient(
+    circle at 50% 50%,
+    hsl(221 83% 53% / 0.5),
+    transparent 70%
+  );
+  animation: hero-glow 20s ease-in-out infinite alternate;
+}
+@keyframes hero-glow {
+  from {
+    transform: translate3d(-20vw, -20vh, 0) scale(1.1);
+  }
+  to {
+    transform: translate3d(20vw, 20vh, 0) scale(1.3);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-glow {
+    animation: none;
+    transform: none;
+  }
+}
+@media (hover: none) {
+  .hero-glow {
+    display: none;
+  }
+}
+
 /* Moving sparkles. Two tiled star fields, each a single repeating background so
    there's no per-star DOM. They drift by exactly one tile (seamless loop) and
    twinkle via opacity — both compositor-only, so hundreds of "stars" cost about

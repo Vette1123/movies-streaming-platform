@@ -23,8 +23,24 @@ export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
     ),
   ])
 
+  // Animation titles (TMDB genre id 16, both movie and TV tables) are kept out
+  // of the hero — flat graphic illustration doesn't benefit from the backdrop
+  // treatment, and the hero is for cinematic titles.
+  const ANIMATION_ID = 16
+  const animationIds = new Set([ANIMATION_ID])
+  const isAnimation = (media: Movie) => {
+    const ids = 'genre_ids' in media ? (media.genre_ids ?? []) : []
+    return ids.some((id) => animationIds.has(id))
+  }
+
+  const eligible = (movies ?? []).filter((m) => !isAnimation(m))
+
   return (
     <div className="relative overflow-hidden">
+      {/* Premium glow behind the hero stage — a slow roaming bloom that makes
+          the backdrop feel like it's emitting light. Only on hover-capable
+          devices; phones skip it (it sits behind an opaque hero anyway). */}
+      <div className="hero-glow" aria-hidden="true" />
       {/* Must precede the Carousel — the hook reads the cache on first render. */}
       <HeroExtrasSeeder seed={heroExtras} />
       {/* No autoplay: the hero is a poster, not a slot machine. A slide that
@@ -32,10 +48,10 @@ export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
           moves the thing they are reading. The swipe and the dots are still
           there - a visitor picks the slide. */}
       <Carousel
-        stageClassName="min-h-[86svh] sm:min-h-[70svh] lg:min-h-svh"
+        stageClassName="min-h-[86svh] sm:min-h-[70svh] lg:min-h-svh border border-white/5 backdrop-blur-sm"
         autoPlay={false}
       >
-        {movies?.map((movie, index) => {
+        {eligible?.map((movie, index) => {
           const isTv = resolveMediaType(movie) === 'tv'
           return (
             <HeroSlide

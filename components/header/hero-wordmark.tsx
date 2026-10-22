@@ -26,7 +26,7 @@ interface HeroWordmarkProps {
   /** The logo lookup has resolved, so `logoPath` is final. */
   extrasReady: boolean
   /** The first-paint grace is over; a slow logo may be covered by text. */
-  graceElapsed: boolean
+  graceElapsed?: boolean
   loading: 'eager' | 'lazy'
   fetchPriority?: 'high' | 'auto'
   /** The wordmark decoded or failed — its fate is known. */
@@ -78,7 +78,7 @@ export function HeroWordmark({
     logoLoaded,
     logoError,
     extrasReady,
-    graceElapsed,
+    graceElapsed: graceElapsed ?? true,
   })
 
   if (!showLogo) {
