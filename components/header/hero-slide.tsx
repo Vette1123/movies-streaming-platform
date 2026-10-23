@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { useReducedMotion } from 'framer-motion'
+import { motion, useReducedMotion, type Variants } from 'framer-motion'
 import { Maximize, Video, VideoOff, Volume2, VolumeX } from 'lucide-react'
 
 import { MovieDetails } from '@/types/movie-details'
@@ -57,6 +57,26 @@ const kenBurns = (active: boolean, lowPower: boolean) =>
   active && !lowPower
     ? 'animate-hero-kenburns motion-reduce:animate-none'
     : ''
+
+// Hero copy fades up in sequence: title → ratings → synopsis → actions.
+// Only on first mount per slide; reduced motion keeps it static.
+const copyVariants: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring' as const, stiffness: 300, damping: 22, mass: 1 },
+  },
+}
+
+const copyChildVariants: Variants = {
+  hidden: { opacity: 0, y: 8 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { delay: 0.1, type: 'spring' as const, stiffness: 300, damping: 22 },
+  },
+}
 
 const HOVER_PREVIEW_DELAY = 500
 const TOUCH_PREVIEW_DELAY = 1200
@@ -376,7 +396,12 @@ export function HeroSlide({
               {/* Title, badge and rating stay put during the takeover so the movie
                   is always identifiable; only the long overview recedes (below) to
                   give the trailer more of the frame. */}
-            <div className="max-w-2xl">
+            <motion.div
+              className="max-w-2xl"
+              initial="hidden"
+              animate="show"
+              variants={copyVariants}
+            >
               {/* The badge is its own row ABOVE the title, always. It used to
                   share a bottom-aligned column with the text title inside the
                   logo's reserved box — but the logo is absolutely positioned at
@@ -472,7 +497,7 @@ export function HeroSlide({
               >
                 {movie.overview}
               </MediaLink>
-            </div>
+            </motion.div>
 
             {/* Actions: primary Watch + Trailer + Save. Left-aligned to match the
                 copy column on every breakpoint. */}
