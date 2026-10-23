@@ -471,29 +471,13 @@ export function HeroSlide({
                   date={movie.release_date || movie.first_air_date}
                   className="relative top-0 left-0 mb-2 px-2.5 py-1 text-[11px] lg:text-xs"
                 />
-                {/* The title is a link, because the synopsis under it already is.
-                    That paragraph was made one when it turned out to be the
-                    most-clicked dead element on the home page, and the reasoning
-                    there applies with more force here: the wordmark is the
-                    biggest, most obviously "this is the thing" target on the
-                    page, and it did nothing. It rides the same MediaLink the
-                    overview and Watch Now use, so the carousel's tap resolver
-                    (TAP_SLOP in components/carousel.tsx — it arms for
-                    `a[href], button` only) already tells a tap on it apart from
-                    a swipe that started on it.
-                    NOT made a link: the artwork around this column. Those clicks
-                    exist in PostHog too, but they land on the layout box above
-                    the copy, they come from both phones and desktops, and on a
-                    stage whose primary gesture is a horizontal drag the likeliest
-                    reading of a click on bare artwork is a swipe that never
-                    travelled. Turning that into navigation would send people to
-                    a detail page every time a swipe failed to take. */}
-                <MediaLink
-                  href={href}
-                  art={movie}
-                  aria-label={`More about ${title}`}
-                  className="block w-full"
-                >
+                {/* The title is NOT a link, and neither is the synopsis. The
+                    stage's gesture is a horizontal drag, and a link is natively
+                    draggable: pressing the wordmark picked up a ghost of the
+                    link instead of moving the slide, so the biggest thing on
+                    the hero was the one place you could not swipe from. Only
+                    the buttons act on a click; everything else swipes. */}
+                <div className="w-full">
                   <HeroWordmark
                     as="h2"
                     title={title}
@@ -517,7 +501,7 @@ export function HeroSlide({
                     // loads its own.
                     loading={priority || active || warmLogo ? 'eager' : 'lazy'}
                   />
-                </MediaLink>
+                </div>
               </div>
               <HeroRatesInfos movie={movie} genreTable={genreTable} />
               {/* The same four scores the details page shows, in one line: the
@@ -535,23 +519,14 @@ export function HeroSlide({
                   (~600px and under, e.g. a small phone with browser chrome)
                   rather than letting the block get sliced through a line box.
                   Clamped text always ends on an ellipsis, never a half-glyph. */}
-              {/* Clamped text ending in an ellipsis is an invitation, and
-                  people took it: this paragraph was the most-clicked dead
-                  element on the home page. It never did anything, because the
-                  whole copy column was inert — the only link in the slide was
-                  the Watch button. A click here means "tell me more about
-                  this", and the rest of the synopsis is on the detail page, so
-                  send them there rather than leaving the click on the floor. */}
-              <MediaLink
-                href={href}
-                art={movie}
-                aria-label={`More about ${title}`}
-                className={`mt-2 line-clamp-2 block max-w-xl text-sm leading-relaxed text-white/85 drop-shadow-sm transition-opacity duration-500 ease-out hover:opacity-100 sm:line-clamp-3 lg:mt-3 lg:max-w-2xl lg:text-lg [@media(max-height:600px)]:line-clamp-1 ${
+              {/* Plain text, like the title: a press here swipes. */}
+              <p
+                className={`mt-2 line-clamp-2 max-w-xl text-sm leading-relaxed text-white/85 drop-shadow-sm transition-opacity duration-500 ease-out sm:line-clamp-3 lg:mt-3 lg:max-w-2xl lg:text-lg [@media(max-height:600px)]:line-clamp-1 ${
                   cinematic ? 'opacity-65' : 'opacity-100'
                 }`}
               >
                 {movie.overview}
-              </MediaLink>
+              </p>
             </motion.div>
 
             {/* Actions: primary Watch + Trailer + Save. Left-aligned to match the

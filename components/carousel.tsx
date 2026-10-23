@@ -283,6 +283,19 @@ export function Carousel({
 
   const trackRef = React.useRef<HTMLDivElement>(null)
 
+  // No native drag anywhere on the stage. Links and images are draggable by
+  // default, and `user-select: none` does not stop that: pressing the backdrop,
+  // the wordmark or a genre chip picked up a ghost image, the browser cancelled
+  // the pointer, and the slide never moved. Cancelled here, a press anywhere on
+  // the hero is a swipe; buttons and chips still click (no drag is involved).
+  React.useEffect(() => {
+    const track = trackRef.current
+    if (!track) return
+    const cancel = (e: DragEvent) => e.preventDefault()
+    track.addEventListener('dragstart', cancel)
+    return () => track.removeEventListener('dragstart', cancel)
+  }, [])
+
   useIsoLayoutEffect(() => {
     const prev = prevIndexRef.current
     if (prev === currentIndex) return
