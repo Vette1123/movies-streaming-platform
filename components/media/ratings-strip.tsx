@@ -3,6 +3,7 @@ import React from 'react'
 import { useCountUp } from '@/lib/use-count-up'
 import { RatingTile } from '@/lib/ratings'
 import { cn } from '@/lib/utils'
+import { Icons } from '@/components/icons'
 
 /**
  * Counts a score up from 0 when it mounts, so the rating lands with a small
@@ -34,12 +35,21 @@ const TONE_CLASS: Record<RatingTile['tone'], string> = {
   tmdb: 'text-amber-300',
 }
 
+/** Each source's own mark — the logo a reader already knows from the source
+ * itself. Coloured to match the tone, never themed away. */
+const SOURCE_ICON: Record<RatingTile['id'], React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
+  imdb: Icons.ratingImdb,
+  rottenTomatoes: Icons.ratingRottenTomatoes,
+  metacritic: Icons.ratingMetacritic,
+  tmdb: Icons.ratingTmdb,
+}
+
 /**
  * The ratings row on a details page: IMDb, Rotten Tomatoes, Metacritic and
- * TMDB, side by side, with the vote count under the scores that have one.
+ * TMDB, side by side, each with its own mark and score.
  *
- * The score is the largest thing in its tile and the source name is the
- * smallest — the number is the answer, the name is the attribution.
+ * The score is the largest thing in its tile and the source mark is the
+ * smallest — the number is the answer, the mark is the attribution.
  *
  * Renders nothing when there is no rating to show. A row of empty boxes
  * ("NR" everywhere) is a claim about the film; a missing row is not.
@@ -59,29 +69,45 @@ export function RatingsStrip({
         Ratings
       </h2>
       <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {tiles.map((tile) => (
-          <li
-            key={tile.id}
-            className="flex flex-col rounded-lg border border-white/10 bg-secondary/40 px-3 py-2.5 ring-1 ring-white/5 ring-inset"
-          >
-            <span className="text-[10px] font-semibold tracking-[0.08em] text-white/60 uppercase">
-              {tile.label}
-            </span>
-            <span
+        {tiles.map((tile) => {
+          const Icon = SOURCE_ICON[tile.id]
+          return (
+            <li
+              key={tile.id}
               className={cn(
-                'mt-1 text-2xl leading-none font-bold tabular-nums',
-                TONE_CLASS[tile.tone]
+                'flex flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-secondary/40 p-3 ring-1 ring-white/5 transition-all duration-300 ring-inset hover:bg-secondary/60 hover:shadow-[0_0_24px_rgba(255,255,255,0.08)] hover:ring-white/10',
+                TONE_CLASS[tile.tone] === 'text-[#f5c518]'
+                  ? 'hover:shadow-[0_0_32px_rgba(245,197,24,0.25)]'
+                  : TONE_CLASS[tile.tone] === 'text-emerald-400' ||
+                    TONE_CLASS[tile.tone] === 'text-amber-300'
+                  ? 'hover:shadow-[0_0_32px_rgba(34,211,238,0.18)]'
+                  : 'hover:shadow-[0_0_32px_rgba(255,15,15,0.2)]'
               )}
             >
-              <CountUpNumber score={tile.score} />
-            </span>
-            {tile.detail ? (
-              <span className="mt-1.5 text-[11px] text-white/55">
-                {tile.detail}
+              <div
+                className={cn(
+                  'flex size-8 items-center justify-center rounded-full bg-white/5 text-white shadow-[0_0_12px_rgba(255,255,255,0.15)]',
+                  TONE_CLASS[tile.tone]
+                )}
+              >
+                <Icon height={16} width={16} />
+              </div>
+              <span
+                className={cn(
+                  'mt-0.5 text-2xl leading-none font-bold tabular-nums',
+                  TONE_CLASS[tile.tone]
+                )}
+              >
+                <CountUpNumber score={tile.score} />
               </span>
-            ) : null}
-          </li>
-        ))}
+              {tile.detail ? (
+                <span className="mt-0.5 text-[10px] tracking-wider text-white/55 uppercase">
+                  {tile.detail}
+                </span>
+              ) : null}
+            </li>
+          )
+        })}
       </ul>
     </section>
   )
@@ -112,21 +138,28 @@ export function RatingsPills({
         className
       )}
     >
-      {tiles.map((tile) => (
-        <li
-          key={tile.id}
-          className="flex items-center gap-1 rounded-full bg-black/45 px-2 py-1 ring-1 ring-white/10 backdrop-blur-sm"
-        >
-          <span className="text-[10px] font-medium tracking-wide text-white/60 uppercase">
-            {tile.label}
-          </span>
-          <span
-            className={cn('font-bold tabular-nums', TONE_CLASS[tile.tone])}
+      {tiles.map((tile) => {
+        const Icon = SOURCE_ICON[tile.id]
+        return (
+          <li
+            key={tile.id}
+            className={cn(
+              'flex items-center gap-1.5 rounded-full bg-black/45 px-2 py-1 ring-1 ring-white/10 backdrop-blur-sm transition-all duration-200 hover:bg-black/55 hover:ring-white/20',
+              TONE_CLASS[tile.tone]
+            )}
           >
-            <CountUpNumber score={tile.score} />
-          </span>
-        </li>
-      ))}
+            <Icon height={12} width={12} />
+            <span className="text-[10px] font-medium tracking-wide text-white/60 uppercase">
+              {tile.label}
+            </span>
+            <span
+              className={cn('font-bold tabular-nums', TONE_CLASS[tile.tone])}
+            >
+              <CountUpNumber score={tile.score} />
+            </span>
+          </li>
+        )
+      })}
     </ul>
   )
 }

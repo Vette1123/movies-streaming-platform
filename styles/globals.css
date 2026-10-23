@@ -160,6 +160,21 @@
   animation: rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Premium gradient hero title — cyan to blue, so the headline reads like a
+   film marquee rather than plain text. Reduced motion keeps it static. */
+.hero-gradient-text {
+  background: linear-gradient(135deg, #fff 0%, #67e8f9 50%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-gradient-text {
+    background: white;
+    -webkit-text-fill-color: white;
+  }
+}
+
 /* A soft, slow outer-glow pulse on the primary Watch button so it breathes
    and draws the eye without demanding a click. Reduced motion freezes it. */
 .hero-pulse {

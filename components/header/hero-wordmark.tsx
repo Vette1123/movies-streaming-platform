@@ -113,9 +113,9 @@ export function HeroWordmark({
         // lands, so the two never overlap on screen.
         className={cn(
           HERO_TITLE_TEXT,
-          showText
-            ? 'opacity-100 transition-opacity duration-300 ease-out'
-            : 'opacity-0'
+          'transition-opacity duration-300 ease-out',
+          showText ? 'hero-gradient-text opacity-100' : 'opacity-0',
+          className
         )}
       >
         {title}
