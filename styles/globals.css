@@ -222,21 +222,33 @@
     rgba(0, 239, 255, 0.8) 75%,
     rgba(245, 197, 24, 0.8) 100%
   );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box,
+  background-size: 300% 300%;
+  /* Both forms: Chromium/Firefox read the standard pair, Safari the prefixed
+     one. With only -webkit-mask the fill was never cut out. */
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   mask-composite: exclude;
-  animation: rotate-gradient 3s linear infinite;
+  /* The gradient travels, not the box: rotating the pseudo-element swung its
+     corners outside a rectangular card. */
+  animation: card-gradient-shift 3s linear infinite;
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
   opacity: 0;
   transition: opacity 0.3s ease;
 }
-.group-hover/card.card-gradient-border::before {
-  opacity: 1;
+@media (hover: hover) {
+  .group\/card:hover .card-gradient-border::before {
+    opacity: 1;
+  }
 }
-@keyframes rotate-gradient {
+@keyframes card-gradient-shift {
   to {
-    transform: rotate(360deg);
+    background-position: 300% 300%;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -886,12 +898,11 @@
       'calt' 1;
     /* Subtle radial gradient overlay so the site never reads as one flat
        colour — deep blue-violet at the edges, slightly lighter toward centre. */
-    background-image:
-      radial-gradient(
-        circle at 50% 50%,
-        hsl(221 83% 53% / 0.10),
-        hsl(222.2 84% 4.9%) 60%
-      );
+    background-image: radial-gradient(
+      circle at 50% 50%,
+      hsl(221 83% 53% / 0.1),
+      hsl(222.2 84% 4.9%) 60%
+    );
   }
   /*
     Tailwind v4's Preflight no longer sets `cursor: pointer` on buttons, so
