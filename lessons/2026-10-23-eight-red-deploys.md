@@ -52,3 +52,11 @@ react-query, wrangler, postcss, @posthog/nextjs-config, @typescript-eslint/parse
   `app/` must stay server-rendered.
 - A visual effect is not done until it has been seen on screen. "The rule
   exists" is not the same as "the rule paints".
+
+## Follow-up: dangling source-map comments
+
+The PostHog upload deletes the .map files but, in Turbopack debug-id mode, leaves
+`//# sourceMappingURL=` behind (24 of 25 live chunks pointed at a 404). `scripts/strip-map-comments.mjs`
+now runs in `build:cf` after the export and drops only comments whose map is absent;
+the `debugId` PostHog matches on stays. The plugin has the same stripper, but it is not
+in its `exports` map, so a deep import would break on upgrade.

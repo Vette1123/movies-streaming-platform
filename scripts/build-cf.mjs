@@ -22,4 +22,7 @@ function run(command, extraEnv = {}) {
 const buildCode = run('pnpm next build', { DEPLOY_TARGET: 'cloudflare' })
 if (buildCode !== 0) process.exit(buildCode)
 
+const stripCode = run('node scripts/strip-map-comments.mjs')
+if (stripCode !== 0) process.exit(stripCode)
+
 process.exit(run('node scripts/build-worker.mjs'))
