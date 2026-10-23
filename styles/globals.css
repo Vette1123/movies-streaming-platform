@@ -487,7 +487,21 @@
    The scale is kept, but CONSTANT — same value at both stops — so the blobs sit
    at the size they always did and the animation is pure translation. What is
    gone is a 25%-over-24s size pulse on a heavily blurred, 38%-opacity blob.
-   Same trade, and the same reasoning, as the scales removed from the carousel. */
+   Same trade, and the same reasoning, as the scales removed from the carousel.
+
+   On mobile (`hover: none`) the blobs stay visible but smaller and slower —
+   they add colour depth behind the hero without the GPU cost of full-screen
+   blur layers. */
+@media (hover: none) {
+  .site-aurora::before,
+  .site-aurora::after {
+    filter: blur(40px);
+    width: 70vw;
+    height: 70vw;
+    animation-duration: 40s;
+  }
+}
+
 @keyframes aurora-a {
   from {
     transform: translate3d(0, 0, 0) scale(1.12);
@@ -579,7 +593,10 @@
 @media (hover: none) {
   .site-aurora::before,
   .site-aurora::after {
-    display: none;
+    filter: blur(40px);
+    width: 70vw;
+    height: 70vw;
+    animation-duration: 40s;
   }
 }
 
@@ -617,7 +634,9 @@
 }
 @media (hover: none) {
   .hero-glow {
-    display: none;
+    filter: blur(40px);
+    opacity: 0.3;
+    animation-duration: 40s;
   }
 }
 
@@ -727,14 +746,18 @@
 }
 
 /* Same call as the blobs above, for the same reason. Two more viewport-sized
-   layers (inset -35%, so ~170% of the viewport each) animating forever behind an
-   opaque hero. Cheaper per frame than a 70px blur — translate and opacity only —
-   but still two permanently-composited full-screen layers a phone is painting
-   for something it cannot see. */
+   layers (inset -35%, so ~170% of the viewport each) animating forever behind
+   an opaque hero. Cheaper per frame than a 70px blur — translate and opacity
+   only — but still two permanently-composited full-screen layers a phone is
+   painting for something it cannot see.
+
+   On mobile (`hover: none`) the stars stay visible but slower — they add a
+   subtle sparkle behind the hero without the GPU cost of full-speed drift. */
 @media (hover: none) {
   .aurora-stars--1,
   .aurora-stars--2 {
-    display: none;
+    animation-duration: 120s;
+    opacity: 0.4;
   }
 }
 
@@ -861,6 +884,14 @@
     font-feature-settings:
       'rlig' 1,
       'calt' 1;
+    /* Subtle radial gradient overlay so the site never reads as one flat
+       colour — deep blue-violet at the edges, slightly lighter toward centre. */
+    background-image:
+      radial-gradient(
+        circle at 50% 50%,
+        hsl(221 83% 53% / 0.10),
+        hsl(222.2 84% 4.9%) 60%
+      );
   }
   /*
     Tailwind v4's Preflight no longer sets `cursor: pointer` on buttons, so
