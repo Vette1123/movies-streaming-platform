@@ -470,12 +470,18 @@ export function HeroSlide({
               {/* The same four scores the details page shows, in one line: the
                   hero and the details page must never give two different
                   answers for the same film. */}
-              <RatingsPills
-                tiles={(media.ratings ?? []).filter(
-                  (tile) => tile.id !== 'tmdb'
-                )}
+              <motion.div
+                initial="hidden"
+                animate="show"
+                variants={copyChildVariants}
                 className="mt-2 mb-1"
-              />
+              >
+                <RatingsPills
+                  tiles={(media.ratings ?? []).filter(
+                    (tile) => tile.id !== 'tmdb'
+                  )}
+                />
+              </motion.div>
               {/* The clamp steps down by a WHOLE line on very short viewports
                   (~600px and under, e.g. a small phone with browser chrome)
                   rather than letting the block get sliced through a line box.
@@ -504,7 +510,12 @@ export function HeroSlide({
             {/* gap-2 below sm: at 320px the three controls plus 2.5-gaps came to
                 exactly the 280px content box and tipped Save onto its own row.
                 8px gaps leave the row 4px of slack on the narrowest phone. */}
-            <div className="mt-5 flex flex-wrap items-center justify-start gap-2 sm:mt-6 sm:gap-3">
+              <motion.div
+                initial="hidden"
+                animate="show"
+                variants={copyChildVariants}
+                className="mt-5 flex flex-wrap items-center justify-start gap-2 sm:mt-6 sm:gap-3"
+              >
               {/* Skips viewport auto-prefetch (the heavy watch route) and warms
                   on intent instead — see components/media/media-link.tsx. It
                   used to be a hand-rolled onMouseEnter/onFocus pair here, which
@@ -543,7 +554,7 @@ export function HeroSlide({
               <SaveButton
                 media={media as unknown as MovieDetails & SeriesDetails}
               />
-            </div>
+            </motion.div>
           </div>
         </div>
 
