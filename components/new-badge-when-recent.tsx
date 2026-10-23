@@ -1,10 +1,18 @@
-'use client'
-
 import React from 'react'
 
 import { isRecentlyReleased } from '@/lib/utils'
-import { useMounted } from '@/hooks/use-mounted'
 import { NewBadge } from '@/components/new-badge'
+
+/**
+ * When this build was made (next.config.mjs pins it; Next inlines it into the
+ * prerendered HTML and the client bundle alike).
+ *
+ * ponytail: "new" is judged against the BUILD, not the visit, so a title can
+ * keep its badge for up to one deploy interval (6h cron) past the window.
+ * Upgrade path: a client effect that re-checks against Date.now() and only
+ * ever REMOVES the badge, never adds one.
+ */
+const BUILD_TIME = Number(process.env.NEXT_PUBLIC_BUILD_TIME)
 
 interface NewBadgeWhenRecentProps {
   /** Release / air date to test against the recency window. */
@@ -16,21 +24,17 @@ interface NewBadgeWhenRecentProps {
 }
 
 /**
- * The single hydration-safe way to render the "New" badge.
+ * The single way to render the "New" badge.
  *
- * isRecentlyReleased() reads Date.now(), so deciding badge presence during
- * render is non-deterministic between the server-baked HTML (frozen at
- * prerender/revalidate time) and client hydration: a title can cross the
- * recency window in between — or stale ISR HTML from an older deploy can
- * disagree with fresh client JS — flipping the badge and tripping a hydration
- * mismatch (React error #418).
- *
- * Gating on mount makes the server render and the first client render always
- * agree (nothing), then reveals the badge after hydration. This is why every
- * badge must go through this component.
+ * Deciding it against `Date.now()` during render would disagree between the
+ * prerendered HTML and hydration (React #418), which is why it used to be
+ * gated on mount — and why the badge popped in only after the whole page had
+ * hydrated, visibly late on a details page. A static export ships its HTML and
+ * its JS from the same build, so judging against the build's own clock is
+ * deterministic on both sides: the badge is in the server HTML, with no wait.
  *
  * DO NOT call isRecentlyReleased() inline in render to drive a badge anywhere
- * else — that reintroduces #418. Always render <NewBadgeWhenRecent /> instead.
+ * else. Always render <NewBadgeWhenRecent />.
  */
 export const NewBadgeWhenRecent = ({
   date,
@@ -38,7 +42,6 @@ export const NewBadgeWhenRecent = ({
   className,
   label,
 }: NewBadgeWhenRecentProps) => {
-  const isMounted = useMounted()
-  if (!isMounted || !isRecentlyReleased(date, withinDays)) return null
+  if (!isRecentlyReleased(date, withinDays, BUILD_TIME)) return null
   return <NewBadge className={className} label={label} />
 }

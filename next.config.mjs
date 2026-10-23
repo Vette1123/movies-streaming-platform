@@ -146,6 +146,13 @@ const serverOnlyConfig = {
   },
 }
 
+// The clock "New" badges are judged against (components/new-badge-when-recent.tsx).
+// One value per build, shared by the prerendered HTML and the client bundle,
+// so the badge can render on the server without a hydration mismatch. `??=`
+// pins it in process.env before Next forks its render workers, which inherit
+// it — re-reading Date.now() per worker would let two pages disagree.
+process.env.NEXT_PUBLIC_BUILD_TIME ??= String(Date.now())
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   ...baseConfig,

@@ -49,14 +49,20 @@ describe('nothing animates forever that nobody is looking at', () => {
     expect(css).not.toMatch(/\.hero-glow\b/)
   })
 
-  it('phones get the aurora and stars still, not animating', () => {
-    const phone = css
-      .split('@media (hover: none)')
-      .slice(1)
-      .map((block) => block.slice(0, block.indexOf('\n}\n')))
-      .filter((block) => /site-aurora|aurora-stars/.test(block))
-    expect(phone.length).toBeGreaterThan(0)
-    for (const block of phone) expect(block).toMatch(/animation: none/)
+  it('the site-wide backdrop is still, on every device, with no blur', () => {
+    // Measured at 46% GPU on an idle homepage while it roamed and twinkled.
+    for (const selector of [
+      '.site-aurora::before,\n.site-aurora::after',
+      '.site-aurora::before',
+      '.site-aurora::after',
+      '.aurora-stars',
+      '.aurora-stars--1',
+      '.aurora-stars--2',
+    ]) {
+      const body = ruleBody(selector)
+      expect(body, selector).not.toMatch(/animation|will-change|filter/)
+    }
+    expect(css).not.toMatch(/@keyframes (aurora-|stars-)/)
   })
 
   it('scroll reveal never hides content waiting for JS', () => {

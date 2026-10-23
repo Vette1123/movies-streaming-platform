@@ -12,9 +12,9 @@ import { warmReelyTicket } from '@/lib/pro/ticket-cache'
 import { cn } from '@/lib/utils'
 import { REMOTE_KEY_PARAM } from '@/lib/watch-together'
 import { useHasHoverPointer } from '@/hooks/use-device-tier'
+import { useMagnetic } from '@/hooks/use-magnetic'
 import { useMounted } from '@/hooks/use-mounted'
 import { useIntentProps } from '@/hooks/use-prefetch-intent'
-import { useMagnetic } from '@/hooks/use-magnetic'
 import { type StreamSourceControl } from '@/hooks/use-stream-source'
 import { buttonVariants } from '@/components/ui/button'
 import {
@@ -99,7 +99,10 @@ const HeroAction = ({
   useMagnetic(ref, 8, magnetic && hasHover)
 
   return (
-    <div ref={ref} className="group/act relative flex flex-col items-center gap-1.5">
+    <div
+      ref={ref}
+      className="group/act relative flex flex-col items-center gap-1.5"
+    >
       {children}
       {phoneLabel ? (
         <>
@@ -372,322 +375,353 @@ export const DetailsHero = ({
   // bundle; object-cover fills the box edge-to-edge (a little crop on the 16:9
   // backdrop is the trade for fitting the viewport).
   return (
-    <section
-      className="relative isolate w-full overflow-hidden"
-      style={{ height: '100svh' }}
-    >
-      <HeroImage movie={media} priority />
-      <div className="relative z-50 container h-full max-w-(--breakpoint-2xl)">
-        <div className="flex h-full items-center justify-center">
-          <AnimatePresence>
-            {!isIframeShown && (
-              <motion.div
-                transition={{ type: 'spring', stiffness: 500 }}
-                // No entrance: the copy is in the server HTML where it belongs,
-                // and the page's <h1> lives in it. It used to rise in from
-                // opacity 0 once React hydrated, which hid the heading from the
-                // HTML and moved the play button while a thumb was on its way.
-                initial={false}
-                exit={{ opacity: 0, x: -150 }}
-                // absolute, NOT in flow — this is the layout shift on "Watch".
-                // The copy and the player are siblings in one flex box, so for
-                // the ~300ms the exit animation was still running BOTH were
-                // laid out: the iframe was sized next to a stack that was on
-                // its way out, then snapped to full width the frame it
-                // unmounted. Out of flow, the iframe gets the whole box from
-                // the moment it appears and the exit animates over the top.
-                //
-                // The padding is the container's own gutter (the container
-                // utility in styles/globals.css): absolute inset-0 spans its
-                // padding box, so without it the copy would not line up with
-                // the sections below.
-                //
-                // Bottom-anchored, left-aligned: the homepage hero's editorial
-                // column, so a title reads the same on both pages. pt-20 keeps
-                // the top of the column under the fixed header on a short phone.
-                // The bottom padding is NOT spacing: the install prompt and the
-                // tip-jar button are fixed to the bottom of the viewport, and
-                // measured in the first screenshot round they sat on this row's
-                // buttons (a prompt over a button swallows the tap — see the
-                // player-open rule beside it). 112px clears the prompt on a
-                // phone; from lg it is 96px, clear of the tip jar at the left.
-                className="absolute inset-0 flex flex-col justify-end px-5 pt-20 pb-28 sm:px-8 lg:pb-24"
-                // On the stack, not the button: a touch anywhere in it bubbles
-                // up here, and every control in it leads to the same player.
-                {...stackIntent}
-              >
-                <div className="flex w-full max-w-3xl flex-col items-start">
-                  {/* Reserved whether or not a chip lands in it: both are
+    <>
+      <section
+        className="relative isolate w-full overflow-hidden"
+        style={{ height: '100svh' }}
+      >
+        <HeroImage movie={media} priority />
+        <div className="relative z-50 container h-full max-w-(--breakpoint-2xl)">
+          <div className="flex h-full items-center justify-center">
+            <AnimatePresence>
+              {!isIframeShown && (
+                <motion.div
+                  transition={{ type: 'spring', stiffness: 500 }}
+                  // No entrance: the copy is in the server HTML where it belongs,
+                  // and the page's <h1> lives in it. It used to rise in from
+                  // opacity 0 once React hydrated, which hid the heading from the
+                  // HTML and moved the play button while a thumb was on its way.
+                  initial={false}
+                  exit={{ opacity: 0, x: -150 }}
+                  // absolute, NOT in flow — this is the layout shift on "Watch".
+                  // The copy and the player are siblings in one flex box, so for
+                  // the ~300ms the exit animation was still running BOTH were
+                  // laid out: the iframe was sized next to a stack that was on
+                  // its way out, then snapped to full width the frame it
+                  // unmounted. Out of flow, the iframe gets the whole box from
+                  // the moment it appears and the exit animates over the top.
+                  //
+                  // The padding is the container's own gutter (the container
+                  // utility in styles/globals.css): absolute inset-0 spans its
+                  // padding box, so without it the copy would not line up with
+                  // the sections below.
+                  //
+                  // Bottom-anchored, left-aligned: the homepage hero's editorial
+                  // column, so a title reads the same on both pages. pt-20 keeps
+                  // the top of the column under the fixed header on a short phone.
+                  // The bottom padding is NOT spacing: the install prompt and the
+                  // tip-jar button are fixed to the bottom of the viewport, and
+                  // measured in the first screenshot round they sat on this row's
+                  // buttons (a prompt over a button swallows the tap — see the
+                  // player-open rule beside it). 112px clears the prompt on a
+                  // phone; from lg it is 96px, clear of the tip jar at the left.
+                  className="absolute inset-0 flex flex-col justify-end px-5 pt-20 pb-28 sm:px-8 lg:pb-24"
+                  // On the stack, not the button: a touch anywhere in it bubbles
+                  // up here, and every control in it leads to the same player.
+                  {...stackIntent}
+                >
+                  <div className="flex w-full max-w-3xl flex-col items-start">
+                    {/* Reserved whether or not a chip lands in it: both are
                       decided after mount (they read the clock), and without the
                       row the title would drop a line a beat after paint. */}
-                  <div className="mb-3 flex min-h-7 flex-wrap items-center gap-2">
-                    <NewBadgeWhenRecent
-                      date={media?.release_date || media?.first_air_date}
-                      className="static"
-                    />
-                    {series && (
-                      <AiringChip
-                        episode={upcomingEpisode(series)}
+                    <div className="mb-3 flex min-h-7 flex-wrap items-center gap-2">
+                      <NewBadgeWhenRecent
+                        date={media?.release_date || media?.first_air_date}
                         className="static"
                       />
+                      {series && (
+                        <AiringChip
+                          episode={upcomingEpisode(series)}
+                          className="static"
+                        />
+                      )}
+                    </div>
+                    <HeroWordmark
+                      as="h1"
+                      title={title ?? ''}
+                      logoPath={logoPath}
+                      extrasReady
+                      graceElapsed={titleGrace}
+                      loading="eager"
+                      // The title, in the first screen: it must not queue at
+                      // default priority behind the page's other images, or
+                      // the name visibly arrives after everything around it.
+                      fetchPriority="high"
+                    />
+                    {media?.tagline && (
+                      <p className="mt-2 text-base text-white/85 italic drop-shadow-sm sm:text-lg [@media(max-height:640px)]:hidden">
+                        {media.tagline}
+                      </p>
                     )}
-                  </div>
-                  <HeroWordmark
-                    as="h1"
-                    title={title ?? ''}
-                    logoPath={logoPath}
-                    extrasReady
-                    graceElapsed={titleGrace}
-                    loading="eager"
-                  />
-                  {media?.tagline && (
-                    <p className="mt-2 text-base text-white/85 italic drop-shadow-sm sm:text-lg [@media(max-height:640px)]:hidden">
-                      {media.tagline}
-                    </p>
-                  )}
-                  <HeroRatesInfos movieDetails={movie} seriesDetails={series} />
-                  {/* The four scores, in the hero, where the eye lands first - and
+                    <HeroRatesInfos
+                      movieDetails={movie}
+                      seriesDetails={series}
+                    />
+                    {/* The four scores, in the hero, where the eye lands first - and
                       labelled, because a bare star does not say which source a
                       number came from. The full strip (with the vote counts) sits
                       below the fold. */}
-                  <RatingsPills tiles={media.ratings ?? []} className="mt-2" />
-                  {/* The whole synopsis is in the section below; this is the
+                    <RatingsPills
+                      tiles={media.ratings ?? []}
+                      className="mt-2"
+                    />
+                    {/* The whole synopsis is in the section below; this is the
                       homepage's clamp, stepping down a whole line on a short
                       viewport rather than slicing one in half. */}
-                  <p className="line-clamp-2 max-w-2xl text-sm leading-relaxed text-white/85 drop-shadow-sm sm:line-clamp-3 lg:text-lg [@media(max-height:640px)]:line-clamp-1">
-                    {media?.overview}
-                  </p>
-                  {resumeSlot ? (
-                    <div className="mt-4 w-full empty:hidden">{resumeSlot}</div>
-                  ) : null}
-                  <div className="mt-5 flex w-full flex-wrap items-start justify-between gap-x-1.5 gap-y-4 sm:mt-6 sm:items-center sm:justify-start sm:gap-3">
-                    {blocked ? (
-                      <div
-                        role="status"
-                        className="w-full max-w-md rounded-lg bg-black/70 px-5 py-4 ring-1 ring-white/15"
-                      >
-                        <p className="text-sm font-medium text-white">
-                          Playback unavailable for this title
-                        </p>
-                        <p className="mt-1 text-xs leading-relaxed text-white/70">
-                          We disabled it after a copyright notice from the
-                          rights holder. Everything else on this page still
-                          works.
-                        </p>
+                    <p className="line-clamp-2 max-w-2xl text-sm leading-relaxed text-white/85 drop-shadow-sm sm:line-clamp-3 lg:text-lg [@media(max-height:640px)]:line-clamp-1">
+                      {media?.overview}
+                    </p>
+                    {resumeSlot ? (
+                      <div className="mt-4 w-full empty:hidden">
+                        {resumeSlot}
                       </div>
-                    ) : (
-                      <PlayButton
-                        onClick={playVideo}
-                        media={media}
-                        target={playTarget}
-                        isResume={isResume}
-                        isNext={isNext}
-                        // A full-width thumb target on a phone, where it is the
-                        // one thing most people came to press.
-                        className="w-full sm:w-auto"
-                      />
-                    )}
-                    {/* gap-x-1.5 + w-12 captions below sm: six actions (a title
+                    ) : null}
+                    <div className="mt-5 flex w-full flex-wrap items-start justify-between gap-x-1.5 gap-y-4 sm:mt-6 sm:items-center sm:justify-start sm:gap-3">
+                      {blocked ? (
+                        <div
+                          role="status"
+                          className="w-full max-w-md rounded-lg bg-black/70 px-5 py-4 ring-1 ring-white/15"
+                        >
+                          <p className="text-sm font-medium text-white">
+                            Playback unavailable for this title
+                          </p>
+                          <p className="mt-1 text-xs leading-relaxed text-white/70">
+                            We disabled it after a copyright notice from the
+                            rights holder. Everything else on this page still
+                            works.
+                          </p>
+                        </div>
+                      ) : (
+                        <PlayButton
+                          onClick={playVideo}
+                          media={media}
+                          target={playTarget}
+                          isResume={isResume}
+                          isNext={isNext}
+                          // A full-width thumb target on a phone, where it is the
+                          // one thing most people came to press.
+                          className="w-full sm:w-auto"
+                        />
+                      )}
+                      {/* gap-x-1.5 + w-12 captions below sm: six actions (a title
                         with a trailer) share ONE row on a 360px phone — 318px
                         against 320. */}
-                    {trailerKey && (
-                      <HeroAction
-                        caption="Play trailer"
-                        phoneLabel="Trailer"
-                        tooltip={false}
-                        magnetic
-                      >
-                        <TrailerDialog
-                          trailerKey={trailerKey}
-                          mediaId={media?.id}
-                          mediaType={isMovie ? 'movie' : 'tv'}
-                          title={title}
-                        />
-                      </HeroAction>
-                    )}
-                    {/* The way to the season picker, which sits directly under
+                      {trailerKey && (
+                        <HeroAction
+                          caption="Play trailer"
+                          phoneLabel="Trailer"
+                          tooltip={false}
+                          magnetic
+                        >
+                          <TrailerDialog
+                            trailerKey={trailerKey}
+                            mediaId={media?.id}
+                            mediaType={isMovie ? 'movie' : 'tv'}
+                            title={title}
+                          />
+                        </HeroAction>
+                      )}
+                      {/* The way to the season picker, which sits directly under
                         this hero. A plain in-page link: it works before
                         hydration, and the section's scroll margin clears the
                         fixed header. */}
-                    {series && (
-                      <HeroAction caption="Episodes" phoneLabel="Episodes">
-                        <a
-                          href="#episodes"
-                          aria-label="Episodes"
-                          className={cn(
-                            buttonVariants({ variant: 'ghost', size: 'lg' }),
-                            heroActionButtonBase,
-                            heroActionButtonIdle,
-                            heroActionIconOnly
-                          )}
-                        >
-                          <ListVideo
-                            className="size-5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
-                            aria-hidden
-                          />
-                        </a>
-                      </HeroAction>
-                    )}
-                    <HeroAction caption="Save to watchlist" phoneLabel="Save" magnetic>
-                      <SaveButton
-                        media={media}
-                        className={heroActionIconOnly}
-                      />
-                    </HeroAction>
-                    <HeroAction caption="Rate it" phoneLabel="Rate" magnetic>
-                      <RateButton
-                        media={media}
-                        className={heroActionIconOnly}
-                      />
-                    </HeroAction>
-                    {/* Whole-series "watched" is ambiguous (many episodes), so
-                        the movie-level toggle only shows for movies; series
-                        completion is tracked per-episode in the episode list. */}
-                    {isMovie && movie && (
-                      <HeroAction caption="Watched" phoneLabel="Watched" magnetic>
-                        <WatchedButton
-                          movie={movie}
+                      {series && (
+                        <HeroAction caption="Episodes" phoneLabel="Episodes">
+                          <a
+                            href="#episodes"
+                            aria-label="Episodes"
+                            className={cn(
+                              buttonVariants({ variant: 'ghost', size: 'lg' }),
+                              heroActionButtonBase,
+                              heroActionButtonIdle,
+                              heroActionIconOnly
+                            )}
+                          >
+                            <ListVideo
+                              className="size-5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
+                              aria-hidden
+                            />
+                          </a>
+                        </HeroAction>
+                      )}
+                      <HeroAction
+                        caption="Save to watchlist"
+                        phoneLabel="Save"
+                        magnetic
+                      >
+                        <SaveButton
+                          media={media}
                           className={heroActionIconOnly}
                         />
                       </HeroAction>
-                    )}
-                    <HeroAction caption="Share" phoneLabel="Share" magnetic>
-                      <ShareButton
-                        title={title}
-                        mediaId={media?.id}
-                        mediaType={isMovie ? 'movie' : 'tv'}
-                        className={heroActionIconOnly}
-                      />
-                    </HeroAction>
-                    {/* Second share action: the spoiler-free picture, next to
+                      <HeroAction caption="Rate it" phoneLabel="Rate" magnetic>
+                        <RateButton
+                          media={media}
+                          className={heroActionIconOnly}
+                        />
+                      </HeroAction>
+                      {/* Whole-series "watched" is ambiguous (many episodes), so
+                        the movie-level toggle only shows for movies; series
+                        completion is tracked per-episode in the episode list. */}
+                      {isMovie && movie && (
+                        <HeroAction
+                          caption="Watched"
+                          phoneLabel="Watched"
+                          magnetic
+                        >
+                          <WatchedButton
+                            movie={movie}
+                            className={heroActionIconOnly}
+                          />
+                        </HeroAction>
+                      )}
+                      <HeroAction caption="Share" phoneLabel="Share" magnetic>
+                        <ShareButton
+                          title={title}
+                          mediaId={media?.id}
+                          mediaType={isMovie ? 'movie' : 'tv'}
+                          className={heroActionIconOnly}
+                        />
+                      </HeroAction>
+                      {/* Second share action: the spoiler-free picture, next to
                         the link share it mirrors. */}
-                    <HeroAction caption="Share card" phoneLabel="Card" magnetic>
-                      <ShareCardButton
-                        media={media}
-                        className={heroActionIconOnly}
-                      />
-                    </HeroAction>
+                      <HeroAction
+                        caption="Share card"
+                        phoneLabel="Card"
+                        magnetic
+                      >
+                        <ShareCardButton
+                          media={media}
+                          className={heroActionIconOnly}
+                        />
+                      </HeroAction>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          {/* The copy above leaves with the play, and the page's <h1> with it.
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {/* The copy above leaves with the play, and the page's <h1> with it.
               The heading stays for anyone navigating by headings while the
               player is up. */}
-          {isIframeShown ? <h1 className="sr-only">{title}</h1> : null}
-          {useReely && selfHost ? (
-            <PlayerStage
-              loaded={reelyLoaded}
-              controls={controls}
-              bannerInset={!!together}
-            >
-              <ReelyPlayer
-                key={`${key}:${playerBoot}`}
-                target={selfHost}
-                onReady={() => setLoadedSrc(`reely:${key}`)}
-                onUnavailable={onReelyUnavailable}
-                onEnded={onEnded}
-                onFinished={onFinished}
-                frameRef={reelyFrameRef}
-              />
-            </PlayerStage>
-          ) : (
-            <PlayerStage
-              loaded={iframeLoaded}
-              // Not merely "do not draw the spinner": an inactive stage is
-              // display:none, because it is size-full and paints over the
-              // button stack it is a sibling of.
-              active={isIframeShown}
-              controls={controls}
-              bannerInset={!!together}
-            >
-              <iframe
-                ref={iframeRef}
-                className="size-full"
-                // Left undefined until play, so the embed is never requested on
-                // load. Re-rendering with the SAME string is a no-op for React,
-                // which is what keeps pressing play on the already-playing episode
-                // from restarting it.
-                src={src || undefined}
-                autoFocus
-                onLoad={() => setLoadedSrc(src ?? null)}
-                content="noindex,nofollow"
-                autoSave={title?.toLowerCase().trim()}
-                id={title}
-                name={title}
-                title={title}
-                about={media?.overview}
-                key={media?.id}
-                // The embed is a third party we do not control, funded by ads.
-                // There is deliberately NO `sandbox` here — the provider refuses
-                // to load inside one at all. See lib/embed-policy.ts before
-                // adding it back.
-                allow={STREAM_EMBED_ALLOW}
-              ></iframe>
-              {isIframeShown && (
-                // Progress out of embeds that publish it. Mounted only while
-                // playing; trusts the frame URL's own origin (never a
-                // hard-coded host) and the frame's own window.
-                <EmbedProgressBridge
-                  src={src}
-                  type={isMovie ? 'movie' : 'tv'}
-                  id={media.id}
-                  season={selfHost?.season}
-                  episode={selfHost?.episode}
-                  frameRef={iframeRef}
+            {isIframeShown ? <h1 className="sr-only">{title}</h1> : null}
+            {useReely && selfHost ? (
+              <PlayerStage
+                loaded={reelyLoaded}
+                controls={controls}
+                bannerInset={!!together}
+              >
+                <ReelyPlayer
+                  key={`${key}:${playerBoot}`}
+                  target={selfHost}
+                  onReady={() => setLoadedSrc(`reely:${key}`)}
+                  onUnavailable={onReelyUnavailable}
+                  onEnded={onEnded}
                   onFinished={onFinished}
+                  frameRef={reelyFrameRef}
                 />
-              )}
-            </PlayerStage>
-          )}
-          {/* Mounted whether or not the player is open: the room is what the
+              </PlayerStage>
+            ) : (
+              <PlayerStage
+                loaded={iframeLoaded}
+                // Not merely "do not draw the spinner": an inactive stage is
+                // display:none, because it is size-full and paints over the
+                // button stack it is a sibling of.
+                active={isIframeShown}
+                controls={controls}
+                bannerInset={!!together}
+              >
+                <iframe
+                  ref={iframeRef}
+                  className="size-full"
+                  // Left undefined until play, so the embed is never requested on
+                  // load. Re-rendering with the SAME string is a no-op for React,
+                  // which is what keeps pressing play on the already-playing episode
+                  // from restarting it.
+                  src={src || undefined}
+                  autoFocus
+                  onLoad={() => setLoadedSrc(src ?? null)}
+                  content="noindex,nofollow"
+                  autoSave={title?.toLowerCase().trim()}
+                  id={title}
+                  name={title}
+                  title={title}
+                  about={media?.overview}
+                  key={media?.id}
+                  // The embed is a third party we do not control, funded by ads.
+                  // There is deliberately NO `sandbox` here — the provider refuses
+                  // to load inside one at all. See lib/embed-policy.ts before
+                  // adding it back.
+                  allow={STREAM_EMBED_ALLOW}
+                ></iframe>
+                {isIframeShown && (
+                  // Progress out of embeds that publish it. Mounted only while
+                  // playing; trusts the frame URL's own origin (never a
+                  // hard-coded host) and the frame's own window.
+                  <EmbedProgressBridge
+                    src={src}
+                    type={isMovie ? 'movie' : 'tv'}
+                    id={media.id}
+                    season={selfHost?.season}
+                    episode={selfHost?.episode}
+                    frameRef={iframeRef}
+                    onFinished={onFinished}
+                  />
+                )}
+              </PlayerStage>
+            )}
+            {/* Mounted whether or not the player is open: the room is what the
               URL says, and a host who has not pressed play yet still needs the
               invite to send. Before play the guest loop has no frame to steer
               and simply idles. `remote=1` swaps the bar for the phone pad —
               the two never coexist: one device drives, one device follows. */}
-          {together && together.remoteKey ? (
-            <TogetherRemote
-              code={together.code}
-              remoteKey={together.remoteKey}
-            />
-          ) : null}
-          {together && !together.remoteKey ? (
-            <WatchTogetherBar
-              code={together.code}
-              isHost={together.isHost}
-              frameRef={useReely ? reelyFrameRef : iframeRef}
-            />
-          ) : null}
+            {together && together.remoteKey ? (
+              <TogetherRemote
+                code={together.code}
+                remoteKey={together.remoteKey}
+              />
+            ) : null}
+            {together && !together.remoteKey ? (
+              <WatchTogetherBar
+                code={together.code}
+                isHost={together.isHost}
+                frameRef={useReely ? reelyFrameRef : iframeRef}
+              />
+            ) : null}
+          </div>
         </div>
-      </div>
-      {/* Bottom-up, as on the homepage hero, so the copy column holds over any
+        {/* Bottom-up, as on the homepage hero, so the copy column holds over any
           artwork; it runs out into the page background, so the hero melts into
           the sections below instead of ending on a hard edge. From lg a
           left-to-right layer adds weight behind the column. While something
           plays, both give way to an even dim and the picture is the brightest
           thing on screen. */}
-      <div
-        aria-hidden
-        className={cn(
-          'pointer-events-none absolute inset-0 bg-linear-to-t from-background via-background/55 via-40% to-black/30 transition-opacity duration-500 motion-reduce:transition-none',
-          isIframeShown && 'opacity-0'
-        )}
-      />
-      <div
-        aria-hidden
-        className={cn(
-          'pointer-events-none absolute inset-0 hidden bg-linear-to-r from-black/60 via-black/15 via-45% to-transparent transition-opacity duration-500 motion-reduce:transition-none lg:block',
-          isIframeShown && 'opacity-0'
-        )}
-      />
-      <div
-        aria-hidden
-        className={cn(
-          'pointer-events-none absolute inset-0 bg-black/70 opacity-0 transition-opacity duration-500 motion-reduce:transition-none',
-          isIframeShown && 'opacity-100'
-        )}
-      />
-    </section>
+        <div
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute inset-0 bg-linear-to-t from-background via-background/55 via-40% to-black/30 transition-opacity duration-500 motion-reduce:transition-none',
+            isIframeShown && 'opacity-0'
+          )}
+        />
+        <div
+          aria-hidden
+          className={cn(
+            // Masked out toward the bottom: it darkened the left half of the
+            // hero's last row past the page colour, which drew a hard line
+            // against the seam below. Static mask, nothing per frame.
+            'pointer-events-none absolute inset-0 hidden bg-linear-to-r from-black/60 via-black/15 via-45% to-transparent mask-[linear-gradient(to_bottom,#000_70%,transparent)] transition-opacity duration-500 motion-reduce:transition-none lg:block',
+            isIframeShown && 'opacity-0'
+          )}
+        />
+        <div
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute inset-0 bg-black/70 opacity-0 transition-opacity duration-500 motion-reduce:transition-none',
+            isIframeShown && 'opacity-100'
+          )}
+        />
+      </section>
+      {/* Blends the hero into the page below (styles/globals.css). */}
+      <div aria-hidden className="hero-seam" />
+    </>
   )
 }

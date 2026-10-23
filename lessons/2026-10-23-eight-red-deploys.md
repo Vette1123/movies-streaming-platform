@@ -97,3 +97,28 @@ down. Kept every enhancement; fixed the cause of each:
 I fixed the build and pushed without opening the pages it deployed. A build
 fix that unblocks a queue of unreviewed commits IS a release of those commits.
 Check every page that queue touched before pushing the fix.
+
+## Follow-up: still 46% GPU, a morphing transition, late title and badge
+
+- The 46% was not last night's work: the site-wide aurora (two 58vw blobs
+  under blur(70px) roaming, two star layers at 170% of the viewport drifting
+  and twinkling) composited ~10 screens of pixels per frame on every page.
+  Now static everywhere, no blur filter, stars at viewport size. Same look.
+- The poster-to-backdrop morph drew the poster's own transition group above
+  the whole page, squeezing a portrait thumbnail into a full-screen backdrop
+  over the hero. Removed; the designed 200ms crossfade (DetailsPageTransition)
+  is what was meant to run.
+- "New" badge waited for full hydration (mount gate). Judged against the
+  BUILD's clock instead (next.config pins NEXT_PUBLIC_BUILD_TIME before the
+  render workers fork), it is in the server HTML with no #418 risk.
+- Hero ratings: the row dropped TMDB and needed two sources, so every new
+  release (most hero slides) had none. One source is enough now.
+- Hero/page seam: both heroes end in the page colour; a static strip below
+  fades it into the backdrop. A hidden-tab zoom that downsamples shows a
+  "line" that full resolution does not — check seams at 1:1.
+
+### Mistake
+
+"Fix the GPU" was answered with last night's diff only. Measure the idle page
+first (`document.getAnimations()` running count): the biggest cost was older
+than anything in the diff.

@@ -36,30 +36,38 @@ export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
   const eligible = (movies ?? []).filter((m) => !isAnimation(m))
 
   return (
-    <div className="relative overflow-hidden">
-      {/* Must precede the Carousel — the hook reads the cache on first render. */}
-      <HeroExtrasSeeder seed={heroExtras} />
-      {/* No autoplay: the hero is a poster, not a slot machine. A slide that
+    <>
+      <div className="relative overflow-hidden">
+        {/* Must precede the Carousel — the hook reads the cache on first render. */}
+        <HeroExtrasSeeder seed={heroExtras} />
+        {/* No autoplay: the hero is a poster, not a slot machine. A slide that
           changes on its own is motion the reader did not ask for, and it
           moves the thing they are reading. The swipe and the dots are still
           there - a visitor picks the slide. */}
-      <Carousel
-        stageClassName="min-h-[86svh] sm:min-h-[70svh] lg:min-h-svh"
-        autoPlay={false}
-      >
-        {eligible?.map((movie, index) => {
-          const isTv = resolveMediaType(movie) === 'tv'
-          return (
-            <HeroSlide
-              key={movie.id}
-              movie={movie}
-              genreTable={isTv ? tvGenres : movieGenres}
-              priority={index === 0}
-            />
-          )
-        })}
-      </Carousel>
-      <div className="pointer-events-none absolute bottom-0 h-32 w-full bg-linear-to-t from-black to-transparent" />
-    </div>
+        <Carousel
+          stageClassName="min-h-[86svh] sm:min-h-[70svh] lg:min-h-svh"
+          autoPlay={false}
+        >
+          {eligible?.map((movie, index) => {
+            const isTv = resolveMediaType(movie) === 'tv'
+            return (
+              <HeroSlide
+                key={movie.id}
+                movie={movie}
+                genreTable={isTv ? tvGenres : movieGenres}
+                priority={index === 0}
+              />
+            )
+          })}
+        </Carousel>
+        {/* Fades the slide (and a playing preview) into the page colour. z-20:
+            above the slides (z-10) so a video cannot cover it, below the dots
+            (z-30); h-24 stops at the copy's bottom padding so it never dims
+            the Watch button. The seam below carries the fade on. */}
+        <div className="pointer-events-none absolute bottom-0 z-20 h-24 w-full bg-linear-to-t from-background to-transparent" />
+      </div>
+      {/* Blends the hero into the page below (styles/globals.css). */}
+      <div aria-hidden className="hero-seam" />
+    </>
   )
 }

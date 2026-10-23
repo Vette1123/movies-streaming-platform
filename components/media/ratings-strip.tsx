@@ -119,7 +119,9 @@ export function RatingsPills({
   tiles: RatingTile[]
   className?: string
 }) {
-  if (tiles.length < 2) return null
+  // One source is enough. A new release usually has only TMDB's score, and
+  // requiring two hid the row on almost every hero slide.
+  if (!tiles.length) return null
   return (
     <ul
       className={cn(

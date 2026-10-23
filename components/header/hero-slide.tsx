@@ -529,11 +529,7 @@ export function HeroSlide({
                 animate="show"
                 variants={ratingsVariants}
               >
-                <RatingsPills
-                  tiles={(media.ratings ?? []).filter(
-                    (tile) => tile.id !== 'tmdb'
-                  )}
-                />
+                <RatingsPills tiles={media.ratings ?? []} />
               </motion.div>
               {/* The clamp steps down by a WHOLE line on very short viewports
                   (~600px and under, e.g. a small phone with browser chrome)

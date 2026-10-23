@@ -433,12 +433,17 @@
   background: #000;
 }
 
-/* Fixed animated aurora backdrop behind ALL content (mounted once in the root
-   layout, so it's on every page). A deep static base keeps corners from going
-   flat-black, and two big soft glow-blobs roam slowly across the viewport for a
-   living, cinematic feel. Fixed position = content scrolls over it (parallax).
-   Only `transform` animates (compositor-only, no scroll repaint since it's
-   fixed) so it stays cheap; reduced-motion freezes both blobs. */
+/* Fixed aurora backdrop behind ALL content (mounted once in the root layout,
+   so it's on every page): a deep base, two soft colour blooms and two star
+   fields. Fixed position = content scrolls over it.
+
+   It is STATIC, on every device. It used to animate forever — two 58vw blobs
+   under `filter: blur(70px)` roaming, two star layers at 170% of the viewport
+   drifting and twinkling — which on a wide desktop window meant compositing
+   ~10 screens of pixels every frame on every page (measured: 46% GPU idle on
+   the homepage). The look is the same still; the cost is one paint. The blooms
+   are radial gradients that already fade to transparent, so they need no
+   blur filter either. */
 .site-aurora {
   background-color: hsl(222.2 84% 4.9%);
   background-image:
@@ -458,8 +463,6 @@
   content: '';
   position: absolute;
   border-radius: 9999px;
-  filter: blur(70px);
-  will-change: transform;
 }
 .site-aurora::before {
   top: -18vw;
@@ -472,7 +475,7 @@
     hsl(199 89% 48% / 0.2) 45%,
     transparent 70%
   );
-  animation: aurora-a 24s ease-in-out infinite alternate;
+  transform: scale(1.12);
 }
 .site-aurora::after {
   right: -14vw;
@@ -485,40 +488,7 @@
     hsl(221 83% 53% / 0.18) 45%,
     transparent 70%
   );
-  animation: aurora-b 31s ease-in-out infinite alternate;
-}
-/* The blobs ROAM but never RESIZE, and that distinction is the whole cost here.
-   Each of these is a 58vw square carrying `filter: blur(70px)`, and it animates
-   forever, on every page. A translate of that is free: the compositor shifts a
-   texture it already has. A scale is not — a transform that changes SIZE cannot
-   be composited from the existing raster, so every frame re-blurred a
-   viewport-sized layer at a new scale, at 70px radius, for as long as the tab
-   was open. That is continuous raster work behind every page on the site, and it
-   is worst exactly where it can least be afforded.
-   The scale is kept, but CONSTANT — same value at both stops — so the blobs sit
-   at the size they always did and the animation is pure translation. What is
-   gone is a 25%-over-24s size pulse on a heavily blurred, 38%-opacity blob.
-   Same trade, and the same reasoning, as the scales removed from the carousel.
-
-   On mobile (`hover: none`) the blobs stay, smaller and STILL: the colour
-   depth behind the page without a full-screen blur re-rasterising every
-   frame. A static blurred layer is painted once and then only composited. */
-
-@keyframes aurora-a {
-  from {
-    transform: translate3d(0, 0, 0) scale(1.12);
-  }
-  to {
-    transform: translate3d(32vw, 20vh, 0) scale(1.12);
-  }
-}
-@keyframes aurora-b {
-  from {
-    transform: translate3d(0, 0, 0) scale(1.06);
-  }
-  to {
-    transform: translate3d(-28vw, -22vh, 0) scale(1.06);
-  }
+  transform: scale(1.06);
 }
 /* Into a details page from a detail link: a 200ms crossfade instead of a cut
    (components/media/details-page-transition.tsx). The arriving page is its own
@@ -543,10 +513,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .site-aurora::before,
-  .site-aurora::after {
-    animation: none;
-  }
   /* Same entrance, minus the movement. Redefining the keyframes keeps one class
      and one set of delays at the call site — and unlike framer's
      useReducedMotion, the preference is honoured by the first painted frame
@@ -577,38 +543,13 @@
   }
 }
 
-/* Phones get the static wash and nothing else.
-   These two blobs are the most expensive thing on the page, and it is not close:
-   each is a viewport-sized layer carrying `filter: blur(70px)`, permanently
-   promoted, animating for as long as the tab is open — on EVERY page. A CPU
-   profile of a carousel swipe on a 393px viewport at 6x throttle came back 74.7%
-   `(program)`: the swipe was not spending its time in JavaScript at all, it was
-   spending it in native paint/raster/composite, and this is the layer driving
-   that. It is also the least visible thing on the page, because on a phone it
-   sits behind a full-bleed opaque hero.
-   `.site-aurora` keeps its own two radial-gradients, which is where the colour
-   actually comes from — so the backdrop still reads as the same deep blue-violet
-   wash, just without two blurred blobs roaming across it. Desktop is untouched.
-   Keyed on `hover: none` rather than width: this is about the device's GPU, and
-   a coarse pointer identifies a phone better than a viewport that any desktop
-   can produce by narrowing a window. */
-@media (hover: none) {
-  .site-aurora::before,
-  .site-aurora::after {
-    filter: blur(40px);
-    width: 70vw;
-    height: 70vw;
-    animation: none;
-  }
-}
-
-/* Moving sparkles. Two tiled star fields, each a single repeating background so
-   there's no per-star DOM. They drift by exactly one tile (seamless loop) and
-   twinkle via opacity — both compositor-only, so hundreds of "stars" cost about
-   as much as one moving box. Different speeds/sizes give depth (parallax). */
+/* Sparkles. Two tiled star fields, each a single repeating background so
+   there's no per-star DOM. Still (see .site-aurora above), so viewport-sized:
+   the 170% overscan only existed to give the drift somewhere to go. Two tile
+   sizes and brightnesses still give the field depth. */
 .aurora-stars {
   position: absolute;
-  inset: -35%;
+  inset: 0;
   background-repeat: repeat;
 }
 .aurora-stars--1 {
@@ -644,12 +585,10 @@
       transparent
     );
   background-size: 340px 340px;
-  animation:
-    stars-drift-1 90s linear infinite,
-    stars-twinkle 6s ease-in-out infinite alternate;
+  opacity: 0.6;
 }
 .aurora-stars--2 {
-  opacity: 0.7;
+  opacity: 0.45;
   background-image:
     radial-gradient(
       2px 2px at 60px 90px,
@@ -672,55 +611,31 @@
       transparent
     );
   background-size: 260px 260px;
-  animation:
-    stars-drift-2 62s linear infinite,
-    stars-twinkle 4.5s ease-in-out infinite alternate;
 }
-@keyframes stars-drift-1 {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(-340px, -340px, 0);
-  }
+/* The seam under a hero. Both heroes end in the page's background colour, and
+   the starry backdrop below starts lighter, so the boundary read as a hard
+   line. This sits just below the hero (a zero-height sibling), fading that
+   colour out over the backdrop, under the page's content (z -1, above the
+   fixed backdrop at -10). Static: no mask, nothing to composite per frame. */
+.hero-seam {
+  position: relative;
+  height: 0;
 }
-@keyframes stars-drift-2 {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(260px, -260px, 0);
-  }
-}
-@keyframes stars-twinkle {
-  from {
-    opacity: 0.35;
-  }
-  to {
-    opacity: 0.9;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .aurora-stars--1,
-  .aurora-stars--2 {
-    animation: none;
-  }
-}
-
-/* Same call as the blobs above, for the same reason. Two more viewport-sized
-   layers (inset -35%, so ~170% of the viewport each) animating forever behind
-   an opaque hero. Cheaper per frame than a 70px blur — translate and opacity
-   only — but still two permanently-composited full-screen layers a phone is
-   painting for something it cannot see.
-
-   On mobile (`hover: none`) the stars stay visible but still — the sparkle
-   without two full-screen layers animating forever. */
-@media (hover: none) {
-  .aurora-stars--1,
-  .aurora-stars--2 {
-    animation: none;
-    opacity: 0.4;
-  }
+.hero-seam::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 14rem;
+  background: linear-gradient(
+    to bottom,
+    hsl(var(--background)) 0%,
+    hsl(var(--background) / 0.85) 25%,
+    hsl(var(--background) / 0.4) 60%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: -1;
 }
 
 @layer base {
@@ -846,13 +761,6 @@
     font-feature-settings:
       'rlig' 1,
       'calt' 1;
-    /* Subtle radial gradient overlay so the site never reads as one flat
-       colour — deep blue-violet at the edges, slightly lighter toward centre. */
-    background-image: radial-gradient(
-      circle at 50% 50%,
-      hsl(221 83% 53% / 0.1),
-      hsl(222.2 84% 4.9%) 60%
-    );
   }
   /*
     Tailwind v4's Preflight no longer sets `cursor: pointer` on buttons, so

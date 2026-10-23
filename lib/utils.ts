@@ -128,13 +128,14 @@ const RECENTLY_RELEASED_DAYS = 30
  */
 function isRecentlyReleased(
   date?: string,
-  withinDays: number = RECENTLY_RELEASED_DAYS
+  withinDays: number = RECENTLY_RELEASED_DAYS,
+  now: number = Date.now()
 ) {
   if (!date) return false
   const released = new Date(date)
   if (Number.isNaN(released.getTime())) return false
 
-  const diffMs = Date.now() - released.getTime()
+  const diffMs = now - released.getTime()
   if (diffMs < 0) return false // not released yet
 
   const diffDays = diffMs / (1000 * 60 * 60 * 24)

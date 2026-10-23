@@ -38,22 +38,6 @@ interface CardProps {
 const CARD_FRAME =
   'group-hover/card:ring-primary/60 relative cursor-pointer rounded-lg shadow-lg ring-1 ring-transparent transition-shadow duration-500 ease-out group-hover/card:shadow-2xl group-hover/card:shadow-[0_0_40px_rgba(99,102,241,0.25)]'
 
-/**
- * Shared-element view transition: give THIS card's poster the name the detail
- * hero backdrop carries, so Chrome morphs one into the other.
- *
- * Named on click, never at render. A title often sits in two rails at once
- * (trending and popular), and two elements with one view-transition-name make
- * Chrome skip the transition outright — so a name on every card killed the
- * effect on exactly the page it was for. Any earlier claim is cleared first.
- */
-function nameClickedPoster(link: HTMLElement, id: number) {
-  for (const el of document.querySelectorAll<HTMLElement>('[data-vt-poster]'))
-    el.style.viewTransitionName = ''
-  const poster = link.querySelector<HTMLElement>('[data-vt-poster]')
-  if (poster) poster.style.viewTransitionName = `poster-${id}`
-}
-
 const CardComponent = ({
   item,
   itemType = 'movie',
@@ -112,7 +96,6 @@ const CardComponent = ({
           alt={title ?? 'Poster'}
           width={250}
           height={375}
-          data-vt-poster
           className="rounded-lg object-cover transition-transform duration-500 ease-out group-hover/card:scale-105"
         />
       ) : (
@@ -158,15 +141,14 @@ const CardComponent = ({
       // Block-level so the poster's `w-full` resolves against the grid track
       // / rail item width instead of an inline <a>'s shrink-to-fit box.
       className="block w-full"
-      onClick={(e) => {
-        nameClickedPoster(e.currentTarget, item.id)
+      onClick={() =>
         trackMediaCardClicked({
           media_id: item.id,
           media_type: itemType === 'tv' ? 'tv' : 'movie',
           title,
           source: 'card',
         })
-      }}
+      }
     >
       {/* No `pointer-events` branch here any more, and that is the fix, not a
           simplification: `pointer-events: none` also switches off `:hover`

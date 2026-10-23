@@ -62,10 +62,6 @@ interface HeroImageProps {
 // was the "details page looks blurry" report — nothing to do with the CDN, the
 // quality setting or the fallback chain. We asked for the wrong width, the same
 // class of bug as the wsrv `&we` fix in docs/image-cdn.md.
-/** The shared-element name the clicked card's poster carries. */
-const transitionStyle = (media?: { id?: number }): React.CSSProperties =>
-  media?.id ? { viewTransitionName: `poster-${media.id}` } : {}
-
 export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
   const media = movie
   const alt = (media && getMediaTitle(media)) || 'ALT TEXT'
@@ -79,10 +75,6 @@ export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
         // No ken-burns zoom here: the hero box is aspect-video (16:9) to match the
         // backdrop, so object-cover fills it with zero crop. A zoom animation
         // (scale >1) would re-introduce the truncation we just removed.
-        //
-        // viewTransitionName pairs with the poster in components/card.tsx (set
-        // only on the card that was clicked), so opening a title morphs the
-        // poster into this backdrop instead of cutting the page.
         <BlurredImage
           src={getImageURL(media?.backdrop_path)}
           alt={alt}
@@ -110,7 +102,6 @@ export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
           // 249 KB -> 204 KB with it.
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? 'high' : 'auto'}
-          style={transitionStyle(media)}
         />
       ) : (
         media?.poster_path && (
@@ -128,7 +119,6 @@ export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
             intro
             loading={priority ? 'eager' : 'lazy'}
             fetchPriority={priority ? 'high' : 'auto'}
-            style={transitionStyle(media)}
           />
         )
       )}
