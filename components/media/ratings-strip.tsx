@@ -24,20 +24,6 @@ const TONE_CLASS: Record<RatingTile['tone'], string> = {
   tmdb: 'text-amber-300',
 }
 
-/** The hover glow behind a tile, in the same family as its score. */
-const GLOW_YELLOW = 'hover:shadow-[0_0_32px_rgba(245,197,24,0.25)]'
-const GLOW_COOL = 'hover:shadow-[0_0_32px_rgba(34,211,238,0.18)]'
-const GLOW_RED = 'hover:shadow-[0_0_32px_rgba(255,15,15,0.2)]'
-const TONE_GLOW: Record<RatingTile['tone'], string> = {
-  imdb: GLOW_YELLOW,
-  fresh: GLOW_COOL,
-  rotten: GLOW_RED,
-  'metacritic-good': GLOW_COOL,
-  'metacritic-mid': GLOW_COOL,
-  'metacritic-bad': GLOW_RED,
-  tmdb: GLOW_COOL,
-}
-
 /** Each source's own mark — the logo a reader already knows from the source
  * itself. Coloured to match the tone, never themed away. */
 const SOURCE_ICON: Record<
@@ -82,10 +68,7 @@ export function RatingsStrip({
           return (
             <li
               key={tile.id}
-              className={cn(
-                'flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-secondary/40 p-3 ring-1 ring-white/5 transition-all duration-300 ring-inset hover:bg-secondary/60 hover:ring-white/5',
-                TONE_GLOW[tile.tone]
-              )}
+              className="flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-secondary/40 p-3"
             >
               <div
                 className={cn(
@@ -150,7 +133,7 @@ export function RatingsPills({
           <li
             key={tile.id}
             className={cn(
-              'flex items-center gap-1.5 rounded-full bg-black/45 px-2 py-1 ring-1 ring-white/10 backdrop-blur-sm transition-all duration-200 hover:bg-black/55 hover:ring-white/20',
+              'flex items-center gap-1.5 rounded-full bg-black/45 px-2 py-1 ring-1 ring-white/10 backdrop-blur-sm',
               TONE_CLASS[tile.tone]
             )}
           >

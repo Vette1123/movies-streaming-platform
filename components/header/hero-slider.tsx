@@ -37,10 +37,6 @@ export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
 
   return (
     <div className="relative overflow-hidden">
-      {/* Premium glow behind the hero stage — a slow roaming bloom that makes
-          the backdrop feel like it's emitting light. Only on hover-capable
-          devices; phones skip it (it sits behind an opaque hero anyway). */}
-      <div className="hero-glow" aria-hidden="true" />
       {/* Must precede the Carousel — the hook reads the cache on first render. */}
       <HeroExtrasSeeder seed={heroExtras} />
       {/* No autoplay: the hero is a poster, not a slot machine. A slide that
@@ -48,7 +44,7 @@ export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
           moves the thing they are reading. The swipe and the dots are still
           there - a visitor picks the slide. */}
       <Carousel
-        stageClassName="min-h-[86svh] sm:min-h-[70svh] lg:min-h-svh border border-white/5 backdrop-blur-sm"
+        stageClassName="min-h-[86svh] sm:min-h-[70svh] lg:min-h-svh"
         autoPlay={false}
       >
         {eligible?.map((movie, index) => {

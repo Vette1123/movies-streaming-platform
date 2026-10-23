@@ -9,8 +9,6 @@ import { COVER_BACKDROP_SIZES, COVER_POSTER_SIZES } from '@/lib/image-sizes'
 import { getMediaTitle } from '@/lib/media'
 import { getImageURL } from '@/lib/utils'
 import { BlurredImage, HERO_QUALITY } from '@/components/blurred-image'
-import { usePointerPosition } from '@/hooks/use-pointer-position'
-import { useReducedMotion } from 'framer-motion'
 
 export type HeroImageMedia = (Movie | MovieDetails) & SeriesDetails
 
@@ -64,81 +62,56 @@ interface HeroImageProps {
 // was the "details page looks blurry" report — nothing to do with the CDN, the
 // quality setting or the fallback chain. We asked for the wrong width, the same
 // class of bug as the wsrv `&we` fix in docs/image-cdn.md.
+/** The shared-element name the clicked card's poster carries. */
+const transitionStyle = (media?: { id?: number }): React.CSSProperties =>
+  media?.id ? { viewTransitionName: `poster-${media.id}` } : {}
+
 export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
   const media = movie
   const alt = (media && getMediaTitle(media)) || 'ALT TEXT'
   if (priority) preloadHeroImage(media)
-  const reduce = useReducedMotion()
-  // Pointer as a 0..1 point over the viewport, used for parallax and the
-  // spotlight. On reduced motion or touch there is no pointer to follow, so
-  // both effects stay at rest.
-  const [pointerX, pointerY] = usePointerPosition()
-
-  // Parallax moves the backdrop opposite the pointer, so the artwork feels
-  // like it sits behind a pane of glass rather than flat on the page. Kept
-  // tiny (±8px) so it reads as depth, not motion sickness — and off entirely
-  // under reduced motion, where a static image is the courtesy.
-  const parallax = reduce
-    ? 'none'
-    : `translate3d(${-pointerX * 16}px, ${-pointerY * 12}px, 0)`
-
+  // The landscape backdrop fills the hero edge-to-edge on every breakpoint
+  // (no side bars). Only when there's no backdrop do we fall back to the
+  // portrait poster, cover-cropped so it still fills the frame full width.
   return (
-    <div className="relative size-full overflow-hidden">
-      {/* Landscape backdrop fills the hero edge-to-edge on every breakpoint
-          (no side bars). Only when there's no backdrop do we fall back to the
-          portrait poster, cover-cropped so it still fills the frame full width. */}
+    <>
       {media?.backdrop_path ? (
-        <div
-          className="absolute inset-0 z-0"
-          style={{
-            transform: parallax,
-            viewTransitionName: media.id
-              ? `poster-${media.id}`
-              : undefined,
-          }}
-        >
-          <BlurredImage
-            src={getImageURL(media?.backdrop_path)}
-            alt={alt}
-            className="block size-full object-cover object-center motion-reduce:animate-none"
-            fill
-            sizes={COVER_BACKDROP_SIZES}
-            intro
-            // `loading="eager"` + `fetchPriority="high"` rather than `priority`,
-            // which is the same thing MINUS Next's `<link rel=preload
-            // imagesrcset>`. Losing the preload is what BUYS the AVIF: the
-            // preload names the WebP srcset, so an image that carries one can't
-            // also offer an AVIF <source> without risking the LCP image being
-            // downloaded twice (see components/blurred-image.tsx).
-            //
-            // Measured on this page, 1.6 Mbit / 4x CPU, cold cache, dpr 2, 4 runs
-            // each — the hero is 2560 px wide either way:
-            //
-            //   priority + WebP   110 KB   fetch starts ~320ms, done ~4.8s
-            //   eager    + AVIF    65 KB   fetch starts ~450ms, done ~3.3s
-            //
-            // The preload wins the start by ~130ms and loses the finish by ~1.4s,
-            // because the  is in the first screenful of the document anyway
-            // — the preload scanner finds it either way — and 45 KB is worth far
-            // more than a head start on a link this slow. Page image bytes go
-            // 249 KB -> 204 KB with it.
-            loading={priority ? 'eager' : 'lazy'}
-            fetchPriority={priority ? 'high' : 'auto'}
-          />
-          {/* Spotlight: a soft, bright pool that follows the pointer over the
-              dark artwork, so mousing across the hero "reveals" light on the
-              picture. Brightness concentrated at the cursor, fading to the
-              page's dark base at the edges — only on hover-capable devices,
-              never under reduced motion. */}
-          {!reduce && (
-            <div
-              className="pointer-events-none absolute inset-0 z-10"
-              style={{
-                background: `radial-gradient(900px circle at ${pointerX * 100}% ${pointerY * 100}%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 60%)`,
-              }}
-            />
-          )}
-        </div>
+        // No ken-burns zoom here: the hero box is aspect-video (16:9) to match the
+        // backdrop, so object-cover fills it with zero crop. A zoom animation
+        // (scale >1) would re-introduce the truncation we just removed.
+        //
+        // viewTransitionName pairs with the poster in components/card.tsx (set
+        // only on the card that was clicked), so opening a title morphs the
+        // poster into this backdrop instead of cutting the page.
+        <BlurredImage
+          src={getImageURL(media?.backdrop_path)}
+          alt={alt}
+          className="block size-full object-cover object-center"
+          fill
+          sizes={COVER_BACKDROP_SIZES}
+          intro
+          // `loading="eager"` + `fetchPriority="high"` rather than `priority`,
+          // which is the same thing MINUS Next's `<link rel=preload
+          // imagesrcset>`. Losing the preload is what BUYS the AVIF: the
+          // preload names the WebP srcset, so an image that carries one can't
+          // also offer an AVIF <source> without risking the LCP image being
+          // downloaded twice (see components/blurred-image.tsx).
+          //
+          // Measured on this page, 1.6 Mbit / 4x CPU, cold cache, dpr 2, 4 runs
+          // each — the hero is 2560 px wide either way:
+          //
+          //   priority + WebP   110 KB   fetch starts ~320ms, done ~4.8s
+          //   eager    + AVIF    65 KB   fetch starts ~450ms, done ~3.3s
+          //
+          // The preload wins the start by ~130ms and loses the finish by ~1.4s,
+          // because the <img> is in the first screenful of the document anyway
+          // — the preload scanner finds it either way — and 45 KB is worth far
+          // more than a head start on a link this slow. Page image bytes go
+          // 249 KB -> 204 KB with it.
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : 'auto'}
+          style={transitionStyle(media)}
+        />
       ) : (
         media?.poster_path && (
           <BlurredImage
@@ -149,18 +122,16 @@ export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
             // screens.
             src={getImageURL(media?.poster_path)}
             alt={alt}
-            className="block size-full object-cover object-center motion-reduce:animate-none"
+            className="block size-full object-cover object-center"
             fill
             sizes={COVER_POSTER_SIZES}
             intro
-            style={{
-              viewTransitionName: media.id ? `poster-${media.id}` : undefined,
-            }}
             loading={priority ? 'eager' : 'lazy'}
             fetchPriority={priority ? 'high' : 'auto'}
+            style={transitionStyle(media)}
           />
         )
       )}
-    </div>
+    </>
   )
 }

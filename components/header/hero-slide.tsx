@@ -54,28 +54,33 @@ interface HeroSlideProps {
 // scaling at once. Off-slides are invisible, so they get no animation and no
 // promotion. On a weak device, nowhere at all.
 const kenBurns = (active: boolean, lowPower: boolean) =>
-  active && !lowPower
-    ? 'animate-hero-kenburns motion-reduce:animate-none'
-    : ''
+  active && !lowPower ? 'animate-hero-kenburns motion-reduce:animate-none' : ''
 
-// Hero copy fades up in sequence: title → ratings → synopsis → actions.
-// Only on first mount per slide; reduced motion keeps it static.
+// Hero copy fades up when a slide arrives: title block, then ratings, then
+// the actions. NEVER on the page's first paint — the copy (and the page's
+// heading) must be in the server HTML at full opacity, and the LCP frame must
+// not wait for hydration. Only slides mounted after that (a swipe) animate.
+// The action row only fades: a Watch button that slides while a thumb is on
+// its way to it is the tap miss fixed once already.
 const copyVariants: Variants = {
   hidden: { opacity: 0, y: 12 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { type: 'spring' as const, stiffness: 300, damping: 22, mass: 1 },
+    transition: { type: 'spring', stiffness: 300, damping: 22, mass: 1 },
   },
 }
-
-const copyChildVariants: Variants = {
+const ratingsVariants: Variants = {
   hidden: { opacity: 0, y: 8 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { delay: 0.1, type: 'spring' as const, stiffness: 300, damping: 22 },
+    transition: { delay: 0.1, type: 'spring', stiffness: 300, damping: 22 },
   },
+}
+const actionsVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { delay: 0.15, duration: 0.3 } },
 }
 
 const HOVER_PREVIEW_DELAY = 500
@@ -92,6 +97,11 @@ const TOUCH_PREVIEW_DELAY = 1200
 //
 // The first paint is now a static image: cheaper to composite, and stable
 // (a moving backdrop is a moving LCP candidate, which is the worst kind).
+
+// Whether the hero has resolved its title treatment once for this page load.
+// Module-scoped on purpose: it must survive a slide unmounting, which is exactly
+// what the windowed carousel does every time you swipe. See titleGraceElapsed.
+let firstPaintSettled = false
 
 export function HeroSlide({
   movie,
@@ -110,7 +120,49 @@ export function HeroSlide({
   } = useHeroExtras(movie.id, mediaType)
 
   const reduce = useReducedMotion()
+  // Captured at mount: false for the first paint (server HTML + hydration),
+  // true for every slide that mounts after the hero has settled once.
+  const [animateIn] = React.useState(() => firstPaintSettled)
+  const entrance = animateIn && !reduce ? 'hidden' : false
+  // The wordmark settling (decoded or failed) ends the first-paint hold for
+  // every slide after it — see the grace note below.
+  const settleFirstPaint = React.useCallback(() => {
+    firstPaintSettled = true
+  }, [])
+  // First (uncached) paint: hold the fallback-font text back until we know the
+  // logo's fate — resolves to no-logo, or the logo decodes and crossfades in —
+  // so the styled logo is never pre-empted by a flash of the plain title. A
+  // grace cap still reveals the text if the logo is genuinely slow, so the title
+  // never stays hidden. Refresh is a cache hit: extras are ready synchronously
+  // and the logo decodes fast, so the text never shows at all.
+  // The grace only ever applied to the page's FIRST paint. Slides are windowed,
+  // so swiping unmounts and re-mounts them — each remount restarted a fresh
+  // 2.2s timer and the slide landed with NO title at all, which is the blank
+  // hero. After the first slide has resolved once, a brief flash of the plain
+  // title is strictly better than 2.2s of nothing, so skip the hold entirely.
+  const [titleGraceElapsed, setTitleGraceElapsed] = React.useState(
+    () => firstPaintSettled
+  )
+  React.useEffect(() => {
+    if (firstPaintSettled) return
+    const t = setTimeout(() => {
+      firstPaintSettled = true
+      setTitleGraceElapsed(true)
+    }, 2200)
+    return () => clearTimeout(t)
+  }, [])
+
+  // Desktop pointers get a slightly longer arm delay than touch (they can flick
+  // across slides). Also decides whether ambient autoplay is on by DEFAULT —
+  // see the note on useHeroAutoplay below.
+  //
+  // Reads the shared hydration-safe hook rather than matchMedia in a useState
+  // initialiser. The local copy was fine while this value only picked a timeout,
+  // but it now feeds rendered output (the autoplay toggle's pressed state), and
+  // an initialiser runs during hydration where matchMedia is real — the exact
+  // mismatch useHasHoverPointer exists to avoid.
   const hasHover = useHasHoverPointer()
+  // Whether this device gets the optional ambient effects at all.
   const lowPower = useLowPowerDevice()
   const [previewActive, setPreviewActive] = React.useState(false)
   const [dialogOpen, setDialogOpen] = React.useState(false)
@@ -352,8 +404,8 @@ export function HeroSlide({
           buttons over bright artwork. Softens during the trailer takeover so the
           video owns the frame. */}
       <div
-        className={`pointer-events-none absolute inset-0 z-10 bg-linear-to-t from-black/92 via-black/50 to-black/15 transition-opacity duration-500 ease-out ${
-          cinematic ? 'opacity-70' : 'opacity-100'
+        className={`pointer-events-none absolute inset-0 z-10 bg-linear-to-t from-black/95 via-black/55 to-black/25 transition-opacity duration-500 ease-out ${
+          cinematic ? 'opacity-60' : 'opacity-100'
         }`}
       />
 
@@ -392,13 +444,12 @@ export function HeroSlide({
               safe regardless: this whole block is z-30, strictly below the
               header's z-40, so it can never paint over the nav. */}
           <div className="mt-auto flex w-full min-w-0 grow-0 flex-col lg:mt-0 lg:flex-1">
-            <div className="relative z-10 flex w-full min-w-0 grow-0 flex-col rounded-2xl border border-white/10 bg-black/20 shadow-xl backdrop-blur-md lg:mt-0 lg:flex-1">
-              {/* Title, badge and rating stay put during the takeover so the movie
-                  is always identifiable; only the long overview recedes (below) to
-                  give the trailer more of the frame. */}
+            {/* Title, badge and rating stay put during the takeover so the movie
+                is always identifiable; only the long overview recedes (below) to
+                give the trailer more of the frame. */}
             <motion.div
               className="max-w-2xl"
-              initial="hidden"
+              initial={entrance}
               animate="show"
               variants={copyVariants}
             >
@@ -448,6 +499,8 @@ export function HeroSlide({
                     title={title}
                     logoPath={logoPath}
                     extrasReady={extrasReady}
+                    graceElapsed={titleGraceElapsed}
+                    onSettle={settleFirstPaint}
                     // The first slide's wordmark is part of the LCP frame and
                     // races a fallback timer; tell the browser so it isn't
                     // queued behind the rails' posters.
@@ -471,10 +524,10 @@ export function HeroSlide({
                   hero and the details page must never give two different
                   answers for the same film. */}
               <motion.div
-                initial="hidden"
-                animate="show"
-                variants={copyChildVariants}
                 className="mt-2 mb-1"
+                initial={entrance}
+                animate="show"
+                variants={ratingsVariants}
               >
                 <RatingsPills
                   tiles={(media.ratings ?? []).filter(
@@ -510,12 +563,12 @@ export function HeroSlide({
             {/* gap-2 below sm: at 320px the three controls plus 2.5-gaps came to
                 exactly the 280px content box and tipped Save onto its own row.
                 8px gaps leave the row 4px of slack on the narrowest phone. */}
-              <motion.div
-                initial="hidden"
-                animate="show"
-                variants={copyChildVariants}
-                className="mt-5 flex flex-wrap items-center justify-start gap-2 sm:mt-6 sm:gap-3"
-              >
+            <motion.div
+              className="mt-5 flex flex-wrap items-center justify-start gap-2 sm:mt-6 sm:gap-3"
+              initial={entrance}
+              animate="show"
+              variants={actionsVariants}
+            >
               {/* Skips viewport auto-prefetch (the heavy watch route) and warms
                   on intent instead — see components/media/media-link.tsx. It
                   used to be a hand-rolled onMouseEnter/onFocus pair here, which
@@ -556,7 +609,6 @@ export function HeroSlide({
               />
             </motion.div>
           </div>
-        </div>
 
           <div
             className={`hidden shrink-0 transition-all duration-500 ease-out lg:flex ${
@@ -604,6 +656,7 @@ export function HeroSlide({
           </div>
         </div>
       </div>
+
       {/* Control cluster — all top-level (not nested in the preview's z-[5]
           cover) so they clear the scrims/content and stay visible + clickable.
           Right → left: autoplay toggle (always, when a trailer exists), then

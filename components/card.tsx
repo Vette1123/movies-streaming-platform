@@ -12,6 +12,7 @@ import { cn, dateFormatter, getPosterImageURL, itemRedirect } from '@/lib/utils'
 import { useCompletedMedia } from '@/hooks/use-completed-media'
 import { useHasHoverPointer } from '@/hooks/use-device-tier'
 import { useMounted } from '@/hooks/use-mounted'
+import { useTilt } from '@/hooks/use-tilt'
 import { chipVariants } from '@/components/ui/chip'
 import {
   HoverCard,
@@ -24,7 +25,6 @@ import { MediaLink } from '@/components/media/media-link'
 import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
 import { ScoreChip } from '@/components/media/score-chip'
 import { NewBadgeWhenRecent } from '@/components/new-badge-when-recent'
-import { useTilt } from '@/hooks/use-tilt'
 
 interface CardProps {
   item: MediaType
@@ -37,6 +37,22 @@ interface CardProps {
 // motion.div where a hover can happen, a plain div where it cannot.
 const CARD_FRAME =
   'group-hover/card:ring-primary/60 relative cursor-pointer rounded-lg shadow-lg ring-1 ring-transparent transition-shadow duration-500 ease-out group-hover/card:shadow-2xl group-hover/card:shadow-[0_0_40px_rgba(99,102,241,0.25)]'
+
+/**
+ * Shared-element view transition: give THIS card's poster the name the detail
+ * hero backdrop carries, so Chrome morphs one into the other.
+ *
+ * Named on click, never at render. A title often sits in two rails at once
+ * (trending and popular), and two elements with one view-transition-name make
+ * Chrome skip the transition outright — so a name on every card killed the
+ * effect on exactly the page it was for. Any earlier claim is cleared first.
+ */
+function nameClickedPoster(link: HTMLElement, id: number) {
+  for (const el of document.querySelectorAll<HTMLElement>('[data-vt-poster]'))
+    el.style.viewTransitionName = ''
+  const poster = link.querySelector<HTMLElement>('[data-vt-poster]')
+  if (poster) poster.style.viewTransitionName = `poster-${id}`
+}
 
 const CardComponent = ({
   item,
@@ -70,8 +86,8 @@ const CardComponent = ({
   // post-hydration state meant a desktop had NO hover response at all until the
   // client bundle had landed. That is what "the hover is gone" was.
   const hasHover = useHasHoverPointer()
-  const cardRef = useRef<HTMLDivElement>(null)
-  useTilt(cardRef, 4)
+  const tiltRef = useRef<HTMLDivElement>(null)
+  useTilt(tiltRef, 4, hasHover)
 
   const href = `${itemRedirect(itemType)}/${item.id}`
 
@@ -96,10 +112,7 @@ const CardComponent = ({
           alt={title ?? 'Poster'}
           width={250}
           height={375}
-          // Shared element view transition: the poster's name matches the detail
-          // hero backdrop, so Chrome crossfades the picture instead of cutting
-          // the whole page when you open a title from a rail.
-          style={{ viewTransitionName: `poster-${item.id}` }}
+          data-vt-poster
           className="rounded-lg object-cover transition-transform duration-500 ease-out group-hover/card:scale-105"
         />
       ) : (
@@ -145,14 +158,15 @@ const CardComponent = ({
       // Block-level so the poster's `w-full` resolves against the grid track
       // / rail item width instead of an inline <a>'s shrink-to-fit box.
       className="block w-full"
-      onClick={() =>
+      onClick={(e) => {
+        nameClickedPoster(e.currentTarget, item.id)
         trackMediaCardClicked({
           media_id: item.id,
           media_type: itemType === 'tv' ? 'tv' : 'movie',
           title,
           source: 'card',
         })
-      }
+      }}
     >
       {/* No `pointer-events` branch here any more, and that is the fix, not a
           simplification: `pointer-events: none` also switches off `:hover`
@@ -184,7 +198,6 @@ const CardComponent = ({
              and it lives on THIS branch, so a touch device never pays for a layer
              promotion it can never use. */
           <motion.div
-            ref={cardRef}
             whileHover={{ scale: 1.05, y: -10 }}
             transition={{
               type: 'spring',
@@ -192,14 +205,23 @@ const CardComponent = ({
               damping: 21,
               mass: 1,
             }}
-            className={cn(CARD_FRAME, 'will-change-transform', 'card-gradient-border')}
+            className={cn(
+              CARD_FRAME,
+              'will-change-transform',
+              'card-gradient-border'
+            )}
           >
-            {frame}
+            {/* The tilt lives on its own layer: framer owns the outer
+                transform (the lift), and two writers on one transform fight. */}
+            <div
+              ref={tiltRef}
+              className="relative rounded-lg transition-transform duration-200 ease-out"
+            >
+              {frame}
+            </div>
           </motion.div>
         ) : (
-          <div ref={cardRef} className={cn(CARD_FRAME, 'card-gradient-border')}>
-            {frame}
-          </div>
+          <div className={CARD_FRAME}>{frame}</div>
         )}
       </div>
     </MediaLink>

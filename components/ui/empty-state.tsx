@@ -128,15 +128,11 @@ export function EmptyState({
       >
         <div
           aria-hidden
-          className="animate-hero-pulse absolute top-1/2 left-1/2 size-36 -translate-1/2 rounded-full bg-primary/20 blur-3xl"
+          className="absolute top-1/2 left-1/2 size-36 -translate-1/2 rounded-full bg-primary/20 blur-3xl"
         />
-        <PosterGhost
-          className="animate-float -mr-6 translate-y-3 -rotate-12 opacity-50"
-        />
+        <PosterGhost className="animate-float -mr-6 translate-y-3 -rotate-12 opacity-50" />
         <PosterGhost className="relative z-10 scale-105 opacity-95" />
-        <PosterGhost
-          className="animate-float -ml-6 translate-y-3 rotate-12 opacity-50"
-        />
+        <PosterGhost className="animate-float -ml-6 translate-y-3 rotate-12 opacity-50" />
         <div className="absolute top-1/2 left-1/2 z-20 grid size-16 -translate-1/2 place-items-center rounded-2xl border border-cyan-300/30 bg-background/70 text-cyan-300 shadow-xl ring-1 ring-primary/20 backdrop-blur-md">
           <Icon className="size-7" aria-hidden />
         </div>

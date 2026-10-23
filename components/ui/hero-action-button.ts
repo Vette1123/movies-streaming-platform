@@ -14,7 +14,7 @@ import { buttonVariants } from '@/components/ui/button'
 // Definition comes from the translucent fill, a soft inset top highlight, and a
 // hover drop-shadow instead.
 export const heroActionButtonBase =
-  'relative w-11 gap-0 rounded-full px-0 text-white shadow-none backdrop-blur-md transition-[transform,background-color,box-shadow] duration-200 will-change-transform [text-shadow:0_1px_3px_rgba(0,0,0,0.7)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95 sm:w-auto sm:gap-2 sm:px-8'
+  'relative w-11 gap-0 rounded-full px-0 text-white shadow-none backdrop-blur-md transition-[transform,background-color,box-shadow] duration-200 [text-shadow:0_1px_3px_rgba(0,0,0,0.7)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95 sm:w-auto sm:gap-2 sm:px-8'
 
 export const heroActionButtonIdle =
   'bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] hover:bg-white/20 hover:shadow-[0_10px_28px_-10px_rgba(0,0,0,0.7)]'

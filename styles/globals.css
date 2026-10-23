@@ -149,36 +149,37 @@
   }
 }
 
-/* Scroll-reveal sections: start hidden, crossfade up when they enter the
-   viewport. One shared IntersectionObserver (components/scroll-reveal.tsx)
-   toggles the `revealed` class, so this stays compositor-only. */
-.reveal-base {
-  opacity: 0;
-  transform: translatey(4px);
-}
-.reveal-base.revealed {
-  animation: rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+/* Scroll-reveal sections: pure CSS, scroll-driven. The section fades up as
+   it enters the viewport, on the compositor, with no JS and no observer.
+
+   It used to start at opacity 0 and wait for an IntersectionObserver to add a
+   class, so before hydration (or with JS failing) every section below the
+   hero was blank. Now a browser without scroll-driven animations simply shows
+   the content, and so does reduced motion. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal-base {
+      animation: rise-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 30%;
+    }
+  }
 }
 
-/* Premium gradient hero title — cyan to blue, so the headline reads like a
-   film marquee rather than plain text. Reduced motion keeps it static. */
+/* Gradient text title — white into cyan into blue, a film-marquee headline.
+   Static, so it is the same for reduced motion. */
 .hero-gradient-text {
   background: linear-gradient(135deg, #fff 0%, #67e8f9 50%, #3b82f6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-@media (prefers-reduced-motion: reduce) {
-  .hero-gradient-text {
-    background: white;
-    -webkit-text-fill-color: white;
-  }
-}
 
-/* A soft, slow outer-glow pulse on the primary Watch button so it breathes
-   and draws the eye without demanding a click. Reduced motion freezes it. */
+/* A soft outer-glow pulse on the primary Watch button that draws the eye on
+   arrival, then STOPS. box-shadow repaints every frame, so an infinite pulse
+   was a permanent repaint on every hero; three breaths is the whole point. */
 .hero-pulse {
-  animation: hero-pulse 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: hero-pulse 3s cubic-bezier(0.4, 0, 0.2, 1) 3;
 }
 @media (prefers-reduced-motion: reduce) {
   .hero-pulse {
@@ -203,8 +204,11 @@
   }
 }
 
-/* Animated gradient border — a premium "this card is alive" effect that
-   rotates around the poster on hover. Only on hover-capable devices. */
+/* Animated gradient border around a hovered poster. Hover-capable devices only.
+
+   The animation runs ONLY while hovered. It used to run on every card on the
+   page all the time at opacity 0 — 24+ background-position animations, each a
+   repaint per frame, for a border nobody could see. */
 .card-gradient-border {
   position: relative;
 }
@@ -233,28 +237,23 @@
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   mask-composite: exclude;
-  /* The gradient travels, not the box: rotating the pseudo-element swung its
-     corners outside a rectangular card. */
-  animation: card-gradient-shift 3s linear infinite;
   pointer-events: none;
+  /* Above the poster (which is later in the DOM), below the badges (z-10). */
   z-index: 1;
   opacity: 0;
   transition: opacity 0.3s ease;
 }
-@media (hover: hover) {
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .group\/card:hover .card-gradient-border::before {
     opacity: 1;
+    /* The gradient travels, not the box: rotating the pseudo-element swung
+       its corners outside a rectangular card. */
+    animation: card-gradient-shift 3s linear infinite;
   }
 }
 @keyframes card-gradient-shift {
   to {
     background-position: 300% 300%;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .card-gradient-border::before {
-    animation: none;
-    display: none;
   }
 }
 
@@ -501,18 +500,9 @@
    gone is a 25%-over-24s size pulse on a heavily blurred, 38%-opacity blob.
    Same trade, and the same reasoning, as the scales removed from the carousel.
 
-   On mobile (`hover: none`) the blobs stay visible but smaller and slower —
-   they add colour depth behind the hero without the GPU cost of full-screen
-   blur layers. */
-@media (hover: none) {
-  .site-aurora::before,
-  .site-aurora::after {
-    filter: blur(40px);
-    width: 70vw;
-    height: 70vw;
-    animation-duration: 40s;
-  }
-}
+   On mobile (`hover: none`) the blobs stay, smaller and STILL: the colour
+   depth behind the page without a full-screen blur re-rasterising every
+   frame. A static blurred layer is painted once and then only composited. */
 
 @keyframes aurora-a {
   from {
@@ -608,47 +598,7 @@
     filter: blur(40px);
     width: 70vw;
     height: 70vw;
-    animation-duration: 40s;
-  }
-}
-
-/* Premium hero glow — a soft, slow-roaming radial bloom behind the hero slide's
-   backdrop, so the artwork feels like it's emitting light rather than sitting
-   flat on the page. Only `transform` animates (compositor-only). Reduced motion
-   freezes it. */
-.hero-glow {
-  position: absolute;
-  inset: -20%;
-  z-index: 0;
-  filter: blur(60px);
-  opacity: 0.45;
-  will-change: transform;
-  background: radial-gradient(
-    circle at 50% 50%,
-    hsl(221 83% 53% / 0.5),
-    transparent 70%
-  );
-  animation: hero-glow 20s ease-in-out infinite alternate;
-}
-@keyframes hero-glow {
-  from {
-    transform: translate3d(-20vw, -20vh, 0) scale(1.1);
-  }
-  to {
-    transform: translate3d(20vw, 20vh, 0) scale(1.3);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .hero-glow {
     animation: none;
-    transform: none;
-  }
-}
-@media (hover: none) {
-  .hero-glow {
-    filter: blur(40px);
-    opacity: 0.3;
-    animation-duration: 40s;
   }
 }
 
@@ -763,12 +713,12 @@
    only — but still two permanently-composited full-screen layers a phone is
    painting for something it cannot see.
 
-   On mobile (`hover: none`) the stars stay visible but slower — they add a
-   subtle sparkle behind the hero without the GPU cost of full-speed drift. */
+   On mobile (`hover: none`) the stars stay visible but still — the sparkle
+   without two full-screen layers animating forever. */
 @media (hover: none) {
   .aurora-stars--1,
   .aurora-stars--2 {
-    animation-duration: 120s;
+    animation: none;
     opacity: 0.4;
   }
 }

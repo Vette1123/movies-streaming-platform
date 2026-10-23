@@ -1,36 +1,35 @@
-import { useEffect, useCallback, useRef } from 'react'
+import { useEffect } from 'react'
 
 /**
- * Tilts an element slightly based on the cursor's position within it, so a
- * card feels like a physical object catching the light. Only runs on
- * hover-capable devices; the element returns to flat when the pointer leaves.
- * Transforms are compositor-only.
+ * Tilts an element slightly toward the cursor, so a poster reads like a
+ * physical card catching the light, and lays it flat again on leave.
+ *
+ * Put it on an element NOTHING ELSE transforms. It used to sit on the card's
+ * framer motion.div, so it overwrote the hover lift on every mousemove and the
+ * two fought; and without `perspective()` the rotation looked flat anyway.
+ * Hover-capable pointers only (mousemove never fires for a finger) and off
+ * under reduced motion.
  */
-export function useTilt(ref: React.RefObject<HTMLElement | null>, strength = 4) {
-  const onMove = useCallback(
-    (e: MouseEvent) => {
-      const el = ref.current
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
-      // Rotate around the card's center: right side tilts down, left side up,
-      // bottom tilts toward the viewer, top away. Subtle degrees.
-      const rotateX = ((y / rect.height) - 0.5) * -strength
-      const rotateY = ((x / rect.width) - 0.5) * strength
-      el.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`
-    },
-    [ref, strength]
-  )
-
-  const onLeave = useCallback(() => {
-    const el = ref.current
-    if (el) el.style.transform = ''
-  }, [ref])
-
+export function useTilt(
+  ref: React.RefObject<HTMLElement | null>,
+  strength = 4,
+  enabled = true
+) {
   useEffect(() => {
     const el = ref.current
-    if (!el) return
+    if (!el || !enabled) return
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const onMove = (e: MouseEvent) => {
+      const rect = el.getBoundingClientRect()
+      const rotateX = ((e.clientY - rect.top) / rect.height - 0.5) * -strength
+      const rotateY = ((e.clientX - rect.left) / rect.width - 0.5) * strength
+      el.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`
+    }
+    const onLeave = () => {
+      el.style.transform = ''
+    }
+
     el.addEventListener('mousemove', onMove, { passive: true })
     el.addEventListener('mouseleave', onLeave, { passive: true })
     return () => {
@@ -38,5 +37,5 @@ export function useTilt(ref: React.RefObject<HTMLElement | null>, strength = 4) 
       el.removeEventListener('mouseleave', onLeave)
       el.style.transform = ''
     }
-  }, [ref, onMove, onLeave])
+  }, [ref, strength, enabled])
 }

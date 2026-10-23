@@ -3,20 +3,20 @@ import { Metadata } from 'next'
 import { populateHomePageData } from '@/services/movies'
 
 import { siteConfig } from '@/config/site'
+import { resolveMediaType } from '@/lib/media'
+import { getRatingsForItems } from '@/lib/ratings'
 import {
   breadcrumbJsonLd,
   collectionPageJsonLd,
   JsonLd,
   webApplicationJsonLd,
 } from '@/lib/structured-data'
-import { resolveMediaType } from '@/lib/media'
-import { getRatingsForItems } from '@/lib/ratings'
 import { HeroSlider } from '@/components/header/hero-slider'
 import { FullScreenLoader } from '@/components/loaders/intro-pages-loader'
 import { ContinueWatching } from '@/components/main-page/continue-watching'
 import { MoviesIntroSection } from '@/components/main-page/intro-section'
-import { SectionErrorBoundary } from '@/components/section-error-boundary'
 import { ScrollReveal } from '@/components/scroll-reveal'
+import { SectionErrorBoundary } from '@/components/section-error-boundary'
 
 // Fully static: rendered ONLY at build, served from static assets, never on the
 // Worker. Freshness comes from the 4x/day CI redeploy — not on-demand ISR. This
@@ -105,7 +105,7 @@ async function IndexPage() {
           answer Google's OAuth branding review; the review failed again with it
           in place, so it bought nothing and cost the hero its clean first
           screen. See lessons/2026-08-16-oauth-branding-review.md. */}
-      <h1 className="mb-4 text-xl font-semibold text-muted-foreground sm:text-2xl">
+      <h1 className="sr-only">
         {siteConfig.name} — Discover, track &amp; stream movies and TV shows
       </h1>
       <JsonLd
@@ -135,7 +135,7 @@ async function IndexPage() {
             watching outranks what is popular this week. Renders nothing at all
             until it has rows, so the homepage's first paint is unchanged for
             everyone signed out. */}
-        <ScrollReveal delay={0.2}>
+        <ScrollReveal>
           <SectionErrorBoundary
             section="home_continue"
             title="This row didn't load"
@@ -143,7 +143,7 @@ async function IndexPage() {
             <ContinueWatching />
           </SectionErrorBoundary>
         </ScrollReveal>
-        <ScrollReveal delay={0.4}>
+        <ScrollReveal>
           <SectionErrorBoundary
             section="home_rails"
             title="These rows didn't load"

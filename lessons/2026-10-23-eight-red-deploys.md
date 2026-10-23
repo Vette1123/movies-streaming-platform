@@ -60,3 +60,40 @@ The PostHog upload deletes the .map files but, in Turbopack debug-id mode, leave
 now runs in `build:cf` after the export and drops only comments whose map is absent;
 the `debugId` PostHog matches on stays. The plugin has the same stripper, but it is not
 in its `exports` map, so a deep import would break on upgrade.
+
+## Follow-up: the batch that went live with the fix
+
+Unblocking the build shipped all 16 UI commits at once, none of them ever
+seen running. On prod: 58 animations at once on the homepage, the hidden
+`<h1>` printed across the header, and the details-page actions pushed 2,400px
+down. Kept every enhancement; fixed the cause of each:
+
+- details hero: the parallax wrapper was `relative size-full` IN FLOW, so it
+  took a full 100svh and the copy rendered below it. Back to the absolute
+  backdrop; parallax + pointer spotlight dropped (a React re-render and a
+  full-screen gradient repaint per mousemove).
+- magnetic buttons: `window` mousemove with no distance cap (a far cursor
+  dragged buttons ~200px) plus a rAF loop per button forever. Now element-only,
+  clamped to strength/2, CSS transition, no loop.
+- card tilt fought framer's lift on one transform: moved to its own layer
+  with `perspective()`.
+- card border animated on every card at opacity 0: now only while hovered.
+- shared-element transition: names were on every card, and a title in two
+  rails gives a duplicate name, which makes Chrome skip the transition. Named
+  on click only.
+- hero copy entrance hid the copy until hydration and slid the Watch button:
+  no entrance on first paint, fade-only for the action row. The glass panel
+  (no padding, full-size backdrop-blur) and the roaming `.hero-glow` are gone,
+  and the first-paint title grace that was deleted is back.
+- scroll reveal held sections at opacity 0 until JS: now a CSS scroll-driven
+  animation that shows the content wherever unsupported.
+- phones: aurora and stars kept (that was the ask) but static.
+- Watch pulse: 3 breaths, not infinite.
+
+`tests/hero-motion-budget.test.ts` pins these.
+
+### Mistake (mine)
+
+I fixed the build and pushed without opening the pages it deployed. A build
+fix that unblocks a queue of unreviewed commits IS a release of those commits.
+Check every page that queue touched before pushing the fix.

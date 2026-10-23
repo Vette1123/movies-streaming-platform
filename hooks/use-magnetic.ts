@@ -1,49 +1,58 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
 /**
- * Makes an element gently follow the cursor (a "magnetic" button). Only runs
- * on hover-capable devices; touchscreens get nothing, which is exactly right
- * because a finger can't hover and a moving target under a thumb is hostile.
+ * Pulls an element a few pixels toward the cursor while the cursor is ON it
+ * (a "magnetic" button), and lets it settle back on leave.
  *
- * The element moves at most `strength` pixels in either axis, so it never
- * escapes under the finger or breaks a tap target. Transforms are compositor-
- * only, so this is cheap even across a grid of buttons.
+ * Bounded and event-driven on purpose. It used to listen on `window` with no
+ * distance cap and run a requestAnimationFrame loop forever: a cursor 1000px
+ * away dragged an 8px-strength button ~200px off its slot, so the hero actions
+ * wandered away from the pointer, and six of them burned a frame callback each
+ * for as long as the page was open.
+ *
+ * The offset never exceeds `strength / 2` px, so the button cannot slide out
+ * from under the pointer that is about to click it. Callers gate `enabled` on
+ * a hover pointer — a target that moves under a thumb is hostile.
  */
 export function useMagnetic(
   ref: React.RefObject<HTMLElement | null>,
-  strength = 12,
+  strength = 8,
   enabled = true
 ) {
-  const position = useRef({ x: 0, y: 0 })
-  const target = useRef({ x: 0, y: 0 })
-  const frame = useRef(0)
-
   useEffect(() => {
-    if (!enabled) return
     const el = ref.current
-    if (!el) return
+    if (!el || !enabled) return
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    const onMove = (e: MouseEvent) => {
-      const rect = el.getBoundingClientRect()
-      const centerX = rect.left + rect.width / 2
-      const centerY = rect.top + rect.height / 2
-      target.current.x = ((e.clientX - centerX) / rect.width) * strength
-      target.current.y = ((e.clientY - centerY) / rect.height) * strength
+    el.style.transition = 'transform 200ms cubic-bezier(0.22, 1, 0.36, 1)'
+    const onMove = (e: PointerEvent) => {
+      const { x, y } = magneticOffset(el.getBoundingClientRect(), e, strength)
+      el.style.transform = `translate(${x}px, ${y}px)`
     }
-
-    const render = () => {
-      position.current.x += (target.current.x - position.current.x) * 0.15
-      position.current.y += (target.current.y - position.current.y) * 0.15
-      el.style.transform = `translate(${position.current.x}px, ${position.current.y}px)`
-      frame.current = requestAnimationFrame(render)
-    }
-    frame.current = requestAnimationFrame(render)
-
-    window.addEventListener('mousemove', onMove, { passive: true })
-    return () => {
-      window.removeEventListener('mousemove', onMove)
-      cancelAnimationFrame(frame.current)
+    const onLeave = () => {
       el.style.transform = ''
     }
+
+    el.addEventListener('pointermove', onMove, { passive: true })
+    el.addEventListener('pointerleave', onLeave, { passive: true })
+    return () => {
+      el.removeEventListener('pointermove', onMove)
+      el.removeEventListener('pointerleave', onLeave)
+      el.style.transform = ''
+      el.style.transition = ''
+    }
   }, [ref, strength, enabled])
+}
+
+/** Offset toward the pointer, clamped to ±strength/2 on each axis. */
+export function magneticOffset(
+  rect: { left: number; top: number; width: number; height: number },
+  point: { clientX: number; clientY: number },
+  strength: number
+): { x: number; y: number } {
+  const half = strength / 2
+  const clamp = (v: number) => Math.max(-half, Math.min(half, v))
+  const dx = (point.clientX - (rect.left + rect.width / 2)) / rect.width
+  const dy = (point.clientY - (rect.top + rect.height / 2)) / rect.height
+  return { x: clamp(dx * strength), y: clamp(dy * strength) }
 }
