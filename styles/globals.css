@@ -203,6 +203,49 @@
   }
 }
 
+/* Animated gradient border — a premium "this card is alive" effect that
+   rotates around the poster on hover. Only on hover-capable devices. */
+.card-gradient-border {
+  position: relative;
+}
+.card-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(
+    135deg,
+    rgba(245, 197, 24, 0.8) 0%,
+    rgba(255, 15, 15, 0.8) 25%,
+    rgba(114, 114, 114, 0.8) 50%,
+    rgba(0, 239, 255, 0.8) 75%,
+    rgba(245, 197, 24, 0.8) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: rotate-gradient 3s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.group-hover/card.card-gradient-border::before {
+  opacity: 1;
+}
+@keyframes rotate-gradient {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-gradient-border::before {
+    animation: none;
+    display: none;
+  }
+}
+
 @utility container {
   margin-inline: auto;
   /* Phones get a tighter gutter so hero copy and rows aren't cramped into the

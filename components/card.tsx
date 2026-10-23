@@ -192,12 +192,12 @@ const CardComponent = ({
               damping: 21,
               mass: 1,
             }}
-            className={cn(CARD_FRAME, 'will-change-transform')}
+            className={cn(CARD_FRAME, 'will-change-transform', 'card-gradient-border')}
           >
             {frame}
           </motion.div>
         ) : (
-          <div ref={cardRef} className={CARD_FRAME}>
+          <div ref={cardRef} className={cn(CARD_FRAME, 'card-gradient-border')}>
             {frame}
           </div>
         )}
