@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Film, GitCompare, ListVideo, Star, Tv } from 'lucide-react'
 
+import { tintBackground } from '@/lib/monogram'
 import type { PublicProfile } from '@/lib/profile/routes'
 import { getThumbPosterURL, localMonthYear } from '@/lib/utils'
 import { PosterTile } from '@/components/media/poster-tile'
@@ -114,7 +115,15 @@ export function PublicProfileView({ profile }: { profile: PublicProfile }) {
                       className="aspect-2/3 w-12 shrink-0 rounded object-cover"
                     />
                   ) : (
-                    <div className="aspect-2/3 w-12 shrink-0 rounded bg-muted" />
+                    // An empty list: its name's tint and the list glyph, not
+                    // a grey slab.
+                    <span
+                      aria-hidden
+                      style={tintBackground(list.name)}
+                      className="grid aspect-2/3 w-12 shrink-0 place-items-center rounded text-white/80 ring-1 ring-white/10 ring-inset"
+                    >
+                      <ListVideo className="size-5" />
+                    </span>
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{list.name}</p>

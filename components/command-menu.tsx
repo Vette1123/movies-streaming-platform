@@ -31,6 +31,7 @@ import { searchMediaApi } from '@/lib/api-client'
 import { COMPANION_APPS, openStoreListing, storesLabel } from '@/lib/apps'
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
+import { tintBackground } from '@/lib/monogram'
 import { handleImageFallbackError } from '@/lib/tmdbConfig'
 import {
   cn,
@@ -54,6 +55,7 @@ import {
   CommandSeparator,
 } from '@/components/ui/command'
 import { Skeleton } from '@/components/ui/skeleton'
+import { APP_ICONS } from '@/components/companion-app-icon'
 import { Icons } from '@/components/icons'
 
 type SearchStatus = 'idle' | 'loading' | 'empty' | 'link' | 'failed' | 'results'
@@ -639,7 +641,10 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                           />
                         </div>
                       ) : (
-                        <div className="flex aspect-video h-[54px] shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground shadow-sm ring-1 ring-border/60">
+                        <div
+                          style={tintBackground(movie?.title ?? '')}
+                          className="flex aspect-video h-[54px] shrink-0 items-center justify-center rounded-md text-white/80 shadow-sm ring-1 ring-white/10 ring-inset"
+                        >
                           {movie?.media_type === 'tv' ? (
                             <Tv className="size-4" aria-hidden />
                           ) : (
@@ -787,26 +792,29 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                 Portfolio
               </div>
             </CommandItem>
-            {COMPANION_APPS.map((app) => (
-              <CommandItem
-                key={app.slug}
-                className="cursor-pointer"
-                onSelect={() => {
-                  trackCommandShortcutUsed({ shortcut: app.slug })
-                  runCommand(() => openStoreListing(app))
-                }}
-              >
-                <div className="flex items-center gap-4">
-                  <Icons.apps className="size-5" />
-                  <div className="flex flex-col">
-                    <span>{app.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {app.tagline} · {storesLabel(app)}
-                    </span>
+            {COMPANION_APPS.map((app) => {
+              const AppIcon = APP_ICONS[app.slug]
+              return (
+                <CommandItem
+                  key={app.slug}
+                  className="cursor-pointer"
+                  onSelect={() => {
+                    trackCommandShortcutUsed({ shortcut: app.slug })
+                    runCommand(() => openStoreListing(app))
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <AppIcon className="size-9" />
+                    <div className="flex flex-col">
+                      <span>{app.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {app.tagline} · {storesLabel(app)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </CommandItem>
-            ))}
+                </CommandItem>
+              )
+            })}
             <CommandItem
               className="cursor-pointer"
               onSelect={() => {

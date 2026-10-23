@@ -25,6 +25,7 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button'
 import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
 import { Card } from '@/components/card'
+import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
 
 /**
  * Five taps, then something to watch.
@@ -108,9 +109,11 @@ export function TastePicker({ candidates }: { candidates: TastePick[] }) {
                     className="aspect-2/3 w-full object-cover"
                   />
                 ) : (
-                  <span className="flex aspect-2/3 w-full items-center justify-center bg-muted p-2 text-center text-xs">
-                    {candidate.title}
-                  </span>
+                  <MediaPosterFallback
+                    itemType={candidate.type === 'series' ? 'tv' : 'movie'}
+                    title={candidate.title}
+                    className="rounded-none"
+                  />
                 )}
                 {on && (
                   <span className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground">

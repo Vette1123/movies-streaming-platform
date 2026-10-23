@@ -15,7 +15,7 @@ import {
 import { getPosterImageURL } from '@/lib/utils'
 import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
 import { Card } from '@/components/card'
-import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
+import { PersonPortraitFallback } from '@/components/media/person-portrait-fallback'
 
 // 24h, like the detail pages: a filmography changes about as often as a title
 // does, and the redeploy is what actually refreshes it either way.
@@ -140,7 +140,10 @@ const PersonPage = async (props: { params: Promise<{ id: string }> }) => {
                 className="object-cover"
               />
             ) : (
-              <MediaPosterFallback itemType="movie" title={person.name} />
+              <PersonPortraitFallback
+                name={person.name}
+                className="rounded-2xl"
+              />
             )}
           </div>
         </div>

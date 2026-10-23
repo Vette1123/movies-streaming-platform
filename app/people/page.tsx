@@ -7,6 +7,7 @@ import { siteConfig } from '@/config/site'
 import { breadcrumbJsonLd, itemListJsonLd, JsonLd } from '@/lib/structured-data'
 import { getPosterImageURL } from '@/lib/utils'
 import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
+import { PersonPortraitFallback } from '@/components/media/person-portrait-fallback'
 
 export const revalidate = 86400
 
@@ -73,16 +74,21 @@ const PeoplePage = async () => {
               className="group flex flex-col gap-2"
             >
               <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg shadow-md">
-                <BlurredImage
-                  src={getPosterImageURL(person.profile_path ?? '')}
-                  alt={person.name}
-                  fill
-                  // A 6-8 column grid of a contained page: the tile paints at
-                  // ~150 CSS px on a desktop and ~110 on a phone.
-                  sizes="(max-width: 640px) 30vw, (max-width: 1024px) 22vw, 12vw"
-                  quality={POSTER_QUALITY}
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                />
+                {person.profile_path ? (
+                  <BlurredImage
+                    src={getPosterImageURL(person.profile_path)}
+                    alt={person.name}
+                    fill
+                    // A 6-8 column grid of a contained page: the tile paints at
+                    // ~150 CSS px on a desktop and ~110 on a phone.
+                    sizes="(max-width: 640px) 30vw, (max-width: 1024px) 22vw, 12vw"
+                    quality={POSTER_QUALITY}
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  // No headshot: an empty src here requested a broken image.
+                  <PersonPortraitFallback name={person.name} />
+                )}
               </div>
               <span className="truncate text-sm font-medium">
                 {person.name}
