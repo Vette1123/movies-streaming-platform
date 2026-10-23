@@ -672,7 +672,7 @@ export function HeroSlide({
           type="button"
           onClick={toggleFullscreen}
           aria-label="Full view"
-          className="pointer-events-auto absolute top-20 right-30 z-60 flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:top-auto lg:bottom-16"
+          className="pointer-events-auto absolute top-20 right-30 z-60 flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/55 text-white transition hover:bg-black/60 lg:top-auto lg:bottom-16"
         >
           <Maximize className="size-5" />
         </button>
@@ -685,7 +685,7 @@ export function HeroSlide({
           onClick={() => setTrailerMuted((m) => !m)}
           aria-label={trailerMuted ? 'Unmute trailer' : 'Mute trailer'}
           aria-pressed={!trailerMuted}
-          className="pointer-events-auto absolute top-20 right-17 z-60 flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:top-auto lg:bottom-16"
+          className="pointer-events-auto absolute top-20 right-17 z-60 flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/55 text-white transition hover:bg-black/60 lg:top-auto lg:bottom-16"
         >
           {trailerMuted ? (
             <VolumeX className="size-5" />
@@ -716,7 +716,7 @@ export function HeroSlide({
               : 'Turn on trailer autoplay'
           }
           aria-pressed={autoplayEnabled}
-          className="pointer-events-auto absolute top-20 right-4 z-60 flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 lg:top-auto lg:bottom-16"
+          className="pointer-events-auto absolute top-20 right-4 z-60 flex size-10 items-center justify-center rounded-full border border-white/25 bg-black/55 text-white transition hover:bg-black/60 lg:top-auto lg:bottom-16"
         >
           {autoplayEnabled ? (
             <Video className="size-5" />

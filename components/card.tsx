@@ -120,7 +120,7 @@ const CardComponent = ({
           the mobile measurement in 9e89605 was actually about. */}
       {/* Hover scrim + play affordance. */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-black/35 opacity-0 transition-opacity duration-500 ease-out group-hover/card:opacity-100">
-        <span className="grid size-12 translate-y-1 place-items-center rounded-full bg-primary-fill/90 text-primary-foreground shadow-lg backdrop-blur-sm transition-transform duration-300 group-hover/card:translate-y-0">
+        <span className="grid size-12 translate-y-1 place-items-center rounded-full bg-primary-fill/90 text-primary-foreground shadow-lg transition-transform duration-300 group-hover/card:translate-y-0">
           {/* Sprite, not lucide: one per card in every rail and grid. */}
           <SpriteIcon name="play" className="size-5 translate-x-0.5" />
         </span>
@@ -176,9 +176,10 @@ const CardComponent = ({
              instances across a 100+ card grid vs a variant-propagating wrapper.
              Shadow+ring stay CSS group-hover (500ms ease-out to match the spring's
              unhurried feel); framer owns only the transform.
-             `will-change-transform` promotes the card so that spring is cheap —
-             and it lives on THIS branch, so a touch device never pays for a layer
-             promotion it can never use. */
+             No `will-change`: it kept every card on the page (100+ on the
+             homepage) permanently promoted to its own GPU layer for a hover
+             that touches one at a time. The browser promotes the hovered card
+             itself the moment the spring starts. */
           <motion.div
             whileHover={{ scale: 1.05, y: -10 }}
             transition={{
@@ -187,11 +188,7 @@ const CardComponent = ({
               damping: 21,
               mass: 1,
             }}
-            className={cn(
-              CARD_FRAME,
-              'will-change-transform',
-              'card-gradient-border'
-            )}
+            className={cn(CARD_FRAME, 'card-gradient-border')}
           >
             {/* The tilt lives on its own layer: framer owns the outer
                 transform (the lift), and two writers on one transform fight. */}

@@ -135,7 +135,10 @@ export function RatingsPills({
           <li
             key={tile.id}
             className={cn(
-              'flex items-center gap-1.5 rounded-full bg-black/45 px-2 py-1 ring-1 ring-white/10 backdrop-blur-sm',
+              // Solid tint, no backdrop-blur: on the home hero these sit over
+              // a playing trailer preview, and a backdrop-filter re-blurs
+              // what is behind each pill on every video frame.
+              'flex items-center gap-1.5 rounded-full bg-black/60 px-2 py-1 ring-1 ring-white/10',
               TONE_CLASS[tile.tone]
             )}
           >

@@ -71,3 +71,34 @@ describe('nothing animates forever that nobody is looking at', () => {
     expect(css).not.toMatch(/\n\.reveal-base \{[^}]*opacity: 0/)
   })
 })
+
+const source = (path: string) =>
+  readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
+
+describe('per-element costs that multiply across a page', () => {
+  it('cards are not permanently promoted to GPU layers', () => {
+    expect(source('components/card.tsx')).not.toMatch(/'will-change-/)
+  })
+
+  it('only the first few cards of a rail animate in', () => {
+    const list = source('components/list.tsx')
+    expect(list).toMatch(/index < RAIL_ENTRANCE_COUNT && 'animate-rise-in'/)
+  })
+
+  it('the rating count-up never re-renders React per frame', () => {
+    expect(source('components/media/count-up-number.tsx')).not.toMatch(
+      /useState/
+    )
+  })
+
+  it('hero pills sit over video without a backdrop blur each', () => {
+    expect(source('components/media/ratings-strip.tsx')).not.toMatch(
+      /backdrop-blur-(sm|md|lg|xl|\[)/
+    )
+  })
+
+  it('opaque chips and the card play badge carry no invisible blur', () => {
+    expect(source('components/ui/chip.tsx')).not.toMatch(/backdrop-blur-/)
+    expect(source('components/card.tsx')).not.toMatch(/backdrop-blur-/)
+  })
+})

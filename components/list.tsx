@@ -32,6 +32,18 @@ const DRAG_THRESHOLD = 8
  * is plain CSS — nothing in this rail runs framer any more. Desktop keeps
  * click-drag and hover-reveal arrows for parity with the previous UX.
  */
+/**
+ * How many cards of a rail stagger in on load: about what the widest screen
+ * shows. Every card used to animate — ~120 across the homepage's six rails,
+ * nearly all off-screen, all inside the busiest second of the page load.
+ */
+const RAIL_ENTRANCE_COUNT = 6
+
+const railEntranceDelay = (index: number): React.CSSProperties | undefined =>
+  index < RAIL_ENTRANCE_COUNT
+    ? { animationDelay: `${index * 0.04}s` }
+    : undefined
+
 export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
   const railRef = React.useRef<HTMLDivElement>(null)
   const [canLeft, setCanLeft] = React.useState(false)
@@ -239,10 +251,11 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
               <div
                 key={item.id}
                 className={cn(
-                  'w-40 shrink-0 animate-rise-in snap-start',
-                  'sm:w-[190px] lg:w-[230px] 2xl:w-[250px]'
+                  'w-40 shrink-0 snap-start',
+                  'sm:w-[190px] lg:w-[230px] 2xl:w-[250px]',
+                  index < RAIL_ENTRANCE_COUNT && 'animate-rise-in'
                 )}
-                style={{ animationDelay: `${index * 0.04}s` }}
+                style={railEntranceDelay(index)}
               >
                 <Card item={item} itemType={itemType} />
               </div>

@@ -37,11 +37,14 @@ const chipVariants = cva(
         md: 'h-6 gap-1.5 px-2.5 text-xs',
       },
       variant: {
+        // No backdrop-blur on any variant: every fill here is opaque or nearly
+        // so, so the blur was invisible — and still recomputed every frame for
+        // each chip sitting over the hero's playing trailer (55 on the home).
         // Genres, meta labels. A solid `secondary` slate surface reads as a
         // distinct pill against the near-black page bg — alpha-of-foreground
         // fills sat too close to the background to be legible.
         neutral:
-          'border border-white/12 bg-secondary text-secondary-foreground shadow-sm backdrop-blur-sm',
+          'border border-white/12 bg-secondary text-secondary-foreground shadow-sm',
         // Certifications, language codes. Same visible surface, lighter edge so
         // it still reads as the "hollow" sibling of neutral.
         outline:
@@ -54,10 +57,10 @@ const chipVariants = cva(
         // TMDB star rating and similar amber-accented scores.
         rating: 'border border-amber-400/25 bg-amber-400/10 text-amber-200',
         // Freshness — glassy emerald, always uppercase.
-        new: 'border border-white/20 bg-emerald-400 font-bold tracking-wide text-emerald-950 uppercase shadow-lg ring-1 ring-emerald-300/40 backdrop-blur-md',
+        new: 'border border-white/20 bg-emerald-400 font-bold tracking-wide text-emerald-950 uppercase shadow-lg ring-1 ring-emerald-300/40',
         // Positive status (watched, completed) without the uppercase.
         success:
-          'border border-white/20 bg-emerald-500/90 text-white shadow-lg ring-1 ring-emerald-300/30 backdrop-blur-md',
+          'border border-white/20 bg-emerald-500/90 text-white shadow-lg ring-1 ring-emerald-300/30',
         // Adult / restricted.
         danger: 'border border-destructive/40 text-destructive',
       },
