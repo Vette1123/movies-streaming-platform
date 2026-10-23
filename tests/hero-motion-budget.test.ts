@@ -20,6 +20,18 @@ const ruleBody = (selector: string) => {
   return css.slice(start, css.indexOf('\n}', start))
 }
 
+// Full view showed a hairline across the middle of the trailer. The iframe was
+// centred with translate(-50%) (a half pixel at odd sizes) and blown up 1.35x
+// with `scale`, so Chrome composited a stretched iframe layer whose tile seam
+// showed. It is now sized and placed in whole pixels, with no transform.
+describe('the trailer iframe is laid out, not transformed', () => {
+  it('has no scale or translate, and rounds its box to whole pixels', () => {
+    const body = ruleBody('.hero-trailer-cover > iframe')
+    expect(body).not.toMatch(/\bscale:|\btranslate:|transform:/)
+    expect(body).toMatch(/round\(/)
+  })
+})
+
 describe('magnetic hero buttons stay under the pointer', () => {
   const rect = { left: 100, top: 100, width: 40, height: 40 }
 

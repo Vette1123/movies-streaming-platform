@@ -122,3 +122,17 @@ Check every page that queue touched before pushing the fix.
 "Fix the GPU" was answered with last night's diff only. Measure the idle page
 first (`document.getAnimations()` running count): the biggest cost was older
 than anything in the diff.
+
+## Follow-up: hairline across full view
+
+- The trailer iframe was centred with translate(-50%) and enlarged with
+  `scale: 1.35`: a transform-scaled iframe on a half pixel, which Chrome
+  composites as a stretched layer and can seam. Now the 1.35 is laid out
+  (width/height) and the box placed with CSS `round()` in whole pixels.
+  YouTube also sees the real box size, so it picks a sharper stream.
+
+### Mistake
+
+The automation tab cannot enter native fullscreen and its video frames are
+frozen, so the line was never seen here. The fix removes the known seam
+sources; confirm on a real display.

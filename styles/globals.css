@@ -415,18 +415,23 @@
   container-type: size;
 }
 .hero-trailer-cover > iframe {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  translate: -50% -50%;
-  height: max(100cqh, 56.25cqw);
-  width: max(100cqw, 177.78cqh);
-  border: 0;
   /* Most trailers are a 2.39:1 image letterboxed inside a 16:9 upload, so a
      perfect 16:9 cover still shows the source's baked-in black bars. Overscale
      to push those bars past the edges (2.39:1 needs ~1.34×) — an ambient,
-     cinematic crop; the title/meta overlay is the focus, not the frame edges. */
-  scale: 1.35;
+     cinematic crop; the title/meta overlay is the focus, not the frame edges.
+     The 1.35 is LAID OUT, not a `scale` transform, and the box is centred in
+     whole pixels, not with translate(-50%): a transform-scaled iframe sat on a
+     half pixel showed a hairline seam across the middle in full view, and
+     YouTube picked its stream for the unscaled (smaller) box. */
+  --trailer-h: round(calc(max(100cqh, 56.25cqw) * 1.35), 2px);
+  --trailer-w: round(calc(max(100cqw, 177.78cqh) * 1.35), 2px);
+  position: absolute;
+  top: round(calc(50% - var(--trailer-h) / 2), 1px);
+  left: round(calc(50% - var(--trailer-w) / 2), 1px);
+  height: var(--trailer-h);
+  width: var(--trailer-w);
+  max-width: none;
+  border: 0;
 }
 /* Full view (native fullscreen): keep the full-bleed crop, just a black base. */
 .hero-trailer-cover:fullscreen {
