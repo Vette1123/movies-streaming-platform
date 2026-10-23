@@ -24,6 +24,7 @@
     "fonts:og": "node scripts/build-og-fonts.mjs",
     "icons:build": "node scripts/build-app-icons.mjs",
     "icons:verify": "node scripts/verify-icons.mjs",
+    "apps:icons": "node scripts/build-companion-icons.mjs",
     "seo:verify": "node scripts/verify-seo.mjs",
     "og:build": "node scripts/build-og-image.mjs",
     "embed:probe": "node scripts/embed-probe.mjs",

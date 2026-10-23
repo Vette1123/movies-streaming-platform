@@ -16,6 +16,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { AccountControl } from '@/components/account/account-control'
+import { APP_ICONS } from '@/components/companion-app-icon'
 import { Icons } from '@/components/icons'
 import { BrandLogo, MainNav } from '@/components/layouts/main-nav'
 import { MobileNav } from '@/components/layouts/mobile-nav'
@@ -104,7 +105,8 @@ export function SiteHeader() {
                 {COMPANION_APPS.map((app) => (
                   <PopoverRow
                     key={app.slug}
-                    Icon={Icons.apps}
+                    Icon={APP_ICONS[app.slug]}
+                    iconClassName="size-9"
                     title={app.name}
                     subtitle={app.tagline}
                     onClick={() => openStoreListing(app)}

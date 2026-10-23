@@ -24,6 +24,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { AccountDrawerSection } from '@/components/account/account-drawer-section'
+import { APP_ICONS } from '@/components/companion-app-icon'
 import { Icons } from '@/components/icons'
 import {
   DrawerAction,
@@ -183,7 +184,8 @@ export function MobileNav({ items }: MobileNavProps) {
               {COMPANION_APPS.map((app) => (
                 <DrawerAction
                   key={app.slug}
-                  Icon={Icons.apps}
+                  Icon={APP_ICONS[app.slug]}
+                  iconClassName="size-7"
                   label={app.name}
                   hint={storesLabel(app)}
                   tone="brand"
