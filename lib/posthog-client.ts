@@ -139,6 +139,33 @@ export function isShanghaiDesktopFleet({
   return FLEET_SCREENS.has(`${screenWidth}x${screenHeight}`)
 }
 
+/**
+ * The fourth fleet: an anti-detect browser farm that randomises the screen,
+ * and gives itself away by randomising it into shapes no desktop monitor has.
+ *
+ * Measured 2026-10-24 over 14 days: desktop sessions whose screen is
+ * height/width 0.85-0.95 (1305x1162, 1302x1200, 1340x1245...) were 976
+ * "people" with ZERO plays, mostly SG/HK/CN/MX Chrome, and they were 94% of
+ * everyone the image-CDN breaker tripped for. Real desktops sit at 0.55-0.75
+ * (16:9, 16:10, 4:3) and played; a 5:4 monitor is exactly 0.80 and a portrait
+ * one is above 1, so both stay outside the band.
+ */
+export function isSquareScreenFleet({
+  ua,
+  screenWidth,
+  screenHeight,
+}: {
+  ua: string
+  screenWidth: number
+  screenHeight: number
+}): boolean {
+  if (!/Windows NT|Macintosh|X11; Linux/.test(ua)) return false
+  if (/Mobile|Android|iPhone|iPad/.test(ua)) return false
+  if (!screenWidth || !screenHeight) return false
+  const ratio = screenHeight / screenWidth
+  return ratio >= 0.85 && ratio <= 0.95
+}
+
 const isAutomated = (): boolean => {
   try {
     // Set by every CDP-driven browser (Puppeteer, Playwright, Selenium) unless
@@ -155,6 +182,15 @@ const isAutomated = (): boolean => {
         ua: navigator.userAgent,
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         language: navigator.language,
+        screenWidth: screen.width,
+        screenHeight: screen.height,
+      })
+    ) {
+      return true
+    }
+    if (
+      isSquareScreenFleet({
+        ua: navigator.userAgent,
         screenWidth: screen.width,
         screenHeight: screen.height,
       })
@@ -200,6 +236,22 @@ export const analyticsEnabled = (): boolean =>
 let instance: PostHog | null = null
 let loading: Promise<PostHog | null> | null = null
 const queued: ((posthog: PostHog) => void)[] = []
+let initialize: ((posthog: PostHog) => void) | null = null
+
+/**
+ * The provider's `posthog.init(...)`, run by loadPostHog BEFORE anything queued
+ * is replayed.
+ *
+ * The queue used to replay the moment the module import resolved, and init ran
+ * after that. Every register() made during page load (app_version, locale,
+ * display_mode) landed on an uninitialised instance and was dropped: on
+ * 2026-10-24, 830 of the week's ~840 people had no app_version on a single
+ * event. The error boundaries had the same hole, because a crash before the
+ * idle init loaded the module and never initialised it.
+ */
+export function setPostHogInitializer(fn: (posthog: PostHog) => void): void {
+  initialize = fn
+}
 
 /**
  * Fetch and cache the posthog-js module, then replay anything `ph()` queued
@@ -220,9 +272,12 @@ export function loadPostHog(): Promise<PostHog | null> {
   if (instance) return Promise.resolve(instance)
   if (!analyticsEnabled()) return Promise.resolve(null)
   loading ??= import('posthog-js').then((mod) => {
-    instance = mod.default
-    for (const fn of queued.splice(0)) fn(instance)
-    return instance
+    const posthog = mod.default
+    // Init first, then expose and replay: see setPostHogInitializer.
+    initialize?.(posthog)
+    instance = posthog
+    for (const fn of queued.splice(0)) fn(posthog)
+    return posthog
   })
   return loading
 }

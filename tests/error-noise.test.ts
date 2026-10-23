@@ -40,6 +40,9 @@ describe('shouldDropException', () => {
       "NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.",
       'NotFoundError: The object can not be found here.',
       'NotFoundError: Node.removeChild: The node to be removed is not a child of this node',
+      // The same collision on the insert side (open on the board 2026-10-23).
+      "NotFoundError: Failed to execute 'insertBefore' on 'Node': The node before which the new node is to be inserted is not a child of this node.",
+      'NotFoundError: Node.insertBefore: Child to insert before is not a child of this node',
     ]) {
       expect(shouldDropException(exception(value, [{ filename: CHUNK }]))).toBe(
         true
@@ -106,9 +109,7 @@ describe('shouldDropException', () => {
     ).toBe(true)
     expect(
       shouldDropException(
-        exception('DOMException: Transition was skipped', [
-          { filename: CHUNK },
-        ])
+        exception('DOMException: Transition was skipped', [{ filename: CHUNK }])
       )
     ).toBe(true)
   })

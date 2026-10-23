@@ -21,10 +21,19 @@ export const HUMAN_TRAFFIC_SINCE = '2026-09-02'
 export const TEST_COHORT_ID = 173293
 
 /**
- * Drop-in WHERE clause for "people, not us and not the pre-block fleet".
+ * The near-square desktop fleet (lib/posthog-client isSquareScreenFleet), for
+ * events captured before the client started dropping it: desktop screens with
+ * height/width 0.85-0.95 were 976 "people" and zero plays over 14 days.
+ * TRUE for an event to KEEP. Also applied as a project test-account filter by
+ * posthog:setup, so Trends and Funnels drop it too.
+ */
+export const NOT_FLEET = `NOT (properties.$os IN ('Windows', 'Mac OS X', 'Linux') AND ifNull(toFloat(properties.$screen_height) / nullIf(toFloat(properties.$screen_width), 0), 0) BETWEEN 0.85 AND 0.95)`
+
+/**
+ * Drop-in WHERE clause for "people, not us and not a bot fleet".
  * Expand `{humans}` in any query with it.
  */
-export const HUMANS = `timestamp > toDateTime('${HUMAN_TRAFFIC_SINCE}') AND (person_id IS NULL OR person_id NOT IN COHORT ${TEST_COHORT_ID})`
+export const HUMANS = `timestamp > toDateTime('${HUMAN_TRAFFIC_SINCE}') AND (person_id IS NULL OR person_id NOT IN COHORT ${TEST_COHORT_ID}) AND ${NOT_FLEET}`
 
 const POLL_MS = 2000
 const POLL_LIMIT = 90
@@ -79,7 +88,11 @@ export async function phApi(cfg, path, { method = 'GET', body } = {}) {
     json = { raw: text.slice(0, 400) }
   }
   if (!res.ok) {
-    const detail = json?.detail || json?.raw || JSON.stringify(json)
+    const detail =
+      json?.query_status?.error_message ||
+      json?.detail ||
+      json?.raw ||
+      JSON.stringify(json).slice(0, 400)
     throw new Error(`PostHog ${method} ${path} → ${res.status}: ${detail}`)
   }
   return json

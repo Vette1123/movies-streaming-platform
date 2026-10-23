@@ -78,9 +78,9 @@ const queries = {
   routes: `SELECT ${ROUTE} AS route, uniq(person_id) AS people
            FROM events WHERE {humans} AND ${now} AND event = '$pageview'
            GROUP BY route ORDER BY people DESC LIMIT 15`,
-  rage: `SELECT ${ROUTE} AS route, count() AS c
+  rage: `SELECT ${ROUTE} AS route, count() AS c, uniq(person_id) AS people
          FROM events WHERE {humans} AND ${now} AND event IN ('$rageclick', '$dead_click')
-         GROUP BY route ORDER BY c DESC LIMIT 10`,
+         GROUP BY route ORDER BY people DESC, c DESC LIMIT 10`,
   errors: `SELECT event, coalesce(nullIf(toString(properties.source), ''), toString(properties.$exception_types)) AS kind,
                   count() AS c, uniq(person_id) AS people
            FROM events WHERE {humans} AND ${now} AND event IN ('$exception', 'api_error')
@@ -176,6 +176,11 @@ try {
   for (const p of r.player) {
     console.log(
       `  ${String(p.source).padEnd(22)} plays ${String(p.plays).padStart(5)}  failures ${String(p.failures).padStart(5)}  (${pct(p.failures, Number(p.plays) + Number(p.failures))})`
+    )
+  }
+  if (r.player.some((p) => p.source === 'unknown' && Number(p.plays) > 0)) {
+    console.log(
+      '  ("unknown" = plays from builds before 2026-10-24, which did not record the server; failure % per server is only meaningful after that)'
     )
   }
 

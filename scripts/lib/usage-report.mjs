@@ -98,10 +98,12 @@ export function whatToDo({ reach, activation, player, support, rage }) {
       `${support.cta} people clicked a support CTA and nobody started checkout — the /support page is losing them.`
     )
   }
+  // People, not clicks: one person hammering a control is 30 clicks and one
+  // anecdote (the /movies "hotspot" of 124 was two people).
   const hot = rage[0]
-  if (hot && Number(hot.c) >= 10) {
+  if (hot && Number(hot.people) >= 5) {
     out.push(
-      `Rageclick hotspot: ${hot.route} (${hot.c}) — watch a replay there.`
+      `Frustration hotspot: ${hot.route} — ${hot.people} people rage/dead-clicked (${hot.c} clicks); watch a replay there.`
     )
   }
   return out

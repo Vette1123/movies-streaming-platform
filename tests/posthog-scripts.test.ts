@@ -113,10 +113,21 @@ describe('usage report', () => {
       activation: { new_people: 100, rate: 0.1 },
       player: [{ source: 'x', plays: 20, failures: 15 }],
       support: { cta: 12, checkout: 0 },
-      rage: [{ route: '/movies', c: 30 }],
+      rage: [{ route: '/movies', c: 30, people: 6 }],
     })
     expect(todo).toHaveLength(4)
     expect(todo[0]).toContain('10% of 100')
     expect(todo[1]).toContain('"x" failed 15 times')
+  })
+
+  it('does not call two people hammering a control a hotspot', () => {
+    const todo = whatToDo({
+      reach: [],
+      activation: { new_people: 0, rate: 0 },
+      player: [],
+      support: { cta: 0, checkout: 0 },
+      rage: [{ route: '/movies', c: 124, people: 2 }],
+    })
+    expect(todo).toEqual([])
   })
 })

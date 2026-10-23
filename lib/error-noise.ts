@@ -61,6 +61,10 @@ const NOISE_EXCEPTION_PATTERNS = [
   // Tracking from an iOS session while the Chromium pattern matched nothing.
   /NotFoundError: The object can not be found here/i,
   /The node to be removed is not a child of this node/i,
+  // The insert side of the same collision: the extension moved the node React
+  // meant to insert before. Chromium, then Firefox.
+  /Failed to execute 'insertBefore' on 'Node'/i,
+  /Node\.insertBefore: Child to insert before is not a child of this node/i,
   /Cannot read properties of null \(reading 'document'\)/i,
   /ResizeObserver loop/i,
   /_internal_videoInjector/i,

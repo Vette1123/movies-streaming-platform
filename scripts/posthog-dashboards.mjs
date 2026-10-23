@@ -20,7 +20,7 @@ import {
   retention,
   trends,
 } from './lib/posthog-insights.mjs'
-import { HUMANS } from './lib/posthog.mjs'
+import { HUMANS, NOT_FLEET, TEST_COHORT_ID } from './lib/posthog.mjs'
 
 const ROUTE = `coalesce(properties.route, replaceRegexpAll(properties.$pathname, '/[0-9][^/]*', '/:id'))`
 
@@ -28,6 +28,12 @@ export const PROJECT_SETTINGS = {
   name: 'Reely',
   product_description:
     'Reely (reely.space) — a free web app to discover, track and stream movies and TV shows, built on TMDB. Visitors browse and search titles, open a detail page, press play on an embedded or house player, keep a watchlist and watch history in the browser, and can sign in and become supporters (paid via Buy Me a Coffee). Global audience, mostly mobile. Core conversion: media_played. Activation: first_play. Every custom event carries `area`; pageviews carry a `route` template.',
+  // What "filter out internal and test users" means on every Trends/Funnel
+  // tile: our own browsers, and the near-square desktop bot fleet.
+  test_account_filters: [
+    { key: 'id', type: 'cohort', value: TEST_COHORT_ID, operator: 'not_in' },
+    { key: NOT_FLEET, type: 'hogql', value: null },
+  ],
 }
 
 export const DASHBOARDS = [

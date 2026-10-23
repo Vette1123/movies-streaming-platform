@@ -8,7 +8,11 @@ import { trackImageHostFallback, trackPageview } from '@/lib/analytics'
 import { shouldDropException } from '@/lib/error-noise'
 import { onIdle } from '@/lib/idle'
 import { enrichPersonProfile } from '@/lib/person'
-import { analyticsEnabled, loadPostHog } from '@/lib/posthog-client'
+import {
+  analyticsEnabled,
+  loadPostHog,
+  setPostHogInitializer,
+} from '@/lib/posthog-client'
 import { subscribePrimaryImageHost } from '@/lib/tmdbConfig'
 
 /**
@@ -163,17 +167,23 @@ let initialized = false
  * Nothing is lost by waiting: calls made before this resolves are queued by
  * lib/posthog-client and replayed in order the moment the module lands.
  */
-async function initPosthog() {
-  if (initialized || !analyticsEnabled()) return
-  initialized = true
-  const posthog = await loadPostHog()
-  if (!posthog) return
+// Registered at module scope so it is in place before anything — the idle
+// scheduler or an error boundary — can call loadPostHog(), which runs it
+// before replaying the queue.
+setPostHogInitializer((posthog) => {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
     ...POSTHOG_CONFIG,
     // Rolled here rather than in the const so it is a client-side decision made
     // at init, not a value baked in when the module first evaluates.
     disable_session_recording: !shouldRecordSession(),
   })
+})
+
+async function initPosthog() {
+  if (initialized || !analyticsEnabled()) return
+  initialized = true
+  const posthog = await loadPostHog()
+  if (!posthog) return
   // The deferred init means the first $pageview (which <PostHogPageView> gates
   // on `initialized`) was skipped during the pre-init window. Capture it now so
   // the landing visit is attributed — equivalent to the eager path.

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { isShanghaiDesktopFleet } from '@/lib/posthog-client'
+import {
+  isShanghaiDesktopFleet,
+  isSquareScreenFleet,
+} from '@/lib/posthog-client'
 
 const WIN_CHROME =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36'
@@ -52,5 +55,44 @@ describe('isShanghaiDesktopFleet', () => {
       isShanghaiDesktopFleet({ ...fleet, timeZone: 'Europe/London' })
     ).toBe(false)
     expect(isShanghaiDesktopFleet({ ...fleet, language: 'en-US' })).toBe(false)
+  })
+})
+
+describe('isSquareScreenFleet', () => {
+  it('catches the randomised near-square desktop screens', () => {
+    for (const [w, h] of [
+      [1305, 1162],
+      [1302, 1200],
+      [1340, 1245],
+      [1268, 1106],
+    ]) {
+      expect(
+        isSquareScreenFleet({ ua: WIN_CHROME, screenWidth: w, screenHeight: h })
+      ).toBe(true)
+    }
+  })
+
+  it('keeps every real desktop shape, and every phone', () => {
+    for (const [w, h] of [
+      [1920, 1080], // 16:9
+      [1440, 900], // 16:10
+      [1024, 768], // 4:3
+      [1280, 1024], // 5:4, exactly 0.80
+      [1080, 1920], // portrait monitor
+    ]) {
+      expect(
+        isSquareScreenFleet({ ua: WIN_CHROME, screenWidth: w, screenHeight: h })
+      ).toBe(false)
+    }
+    expect(
+      isSquareScreenFleet({
+        ua: ANDROID_CHROME,
+        screenWidth: 412,
+        screenHeight: 390,
+      })
+    ).toBe(false)
+    expect(
+      isSquareScreenFleet({ ua: MAC_SAFARI, screenWidth: 0, screenHeight: 0 })
+    ).toBe(false)
   })
 })

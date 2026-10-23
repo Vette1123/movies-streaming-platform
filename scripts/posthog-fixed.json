@@ -1,1 +1,12 @@
-{}
+{
+  "01a15a6c-50ca-7fb3-9de5-556438985ba9": {
+    "fixedOn": "2026-10-20",
+    "what": "React #482 — an async component in the client graph",
+    "commit": "4dd4803"
+  },
+  "01a15160-c403-7821-b2f6-5818a4fc8e0c": {
+    "fixedOn": "2026-10-20",
+    "what": "AbortError: Transition was skipped — unhandled view-transition rejection",
+    "commit": "311d571"
+  }
+}
