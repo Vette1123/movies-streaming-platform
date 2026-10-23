@@ -41,6 +41,13 @@ export interface RatingTile {
     | 'tmdb'
 }
 
+/** Metacritic's own bands: 75+ favourable, 50-74 mixed, below unfavourable. */
+const metacriticTone = (score: number): RatingTile['tone'] => {
+  if (score >= 75) return 'metacritic-good'
+  if (score >= 50) return 'metacritic-mid'
+  return 'metacritic-bad'
+}
+
 /** A vote count the way a person reads it: 2.9M, 12.4K, 843. */
 export const formatVotes = (votes?: number | null): string | undefined => {
   if (votes === undefined || votes === null || !Number.isFinite(votes)) {
@@ -132,6 +139,9 @@ export const buildRatingTiles = (input: {
       // says the same thing the number does, which is the point of a colour
       // here — it is not decoration.
       tone: critic >= 60 ? 'fresh' : 'rotten',
+      // The verdict in words, so the tile has the same caption line the vote
+      // counts give TMDB and IMDb.
+      detail: critic >= 60 ? 'Fresh' : 'Rotten',
     })
   }
 
@@ -145,14 +155,8 @@ export const buildRatingTiles = (input: {
       id: 'metacritic',
       label: 'Metacritic',
       score: String(score),
-      // Metacritic's own bands: 75+ is generally favourable, 50-74 mixed,
-      // below that unfavourable.
-      tone:
-        score >= 75
-          ? 'metacritic-good'
-          : score >= 50
-            ? 'metacritic-mid'
-            : 'metacritic-bad',
+      tone: metacriticTone(score),
+      detail: 'Metascore',
     })
   }
 

@@ -25,13 +25,36 @@ const TONE_CLASS: Record<RatingTile['tone'], string> = {
 }
 
 /**
- * The ratings row on a details page: IMDb, Rotten Tomatoes, Metacritic and
- * TMDB, side by side, each with its own mark and score.
+ * Each source's brand colour, as the tint a tile glows with from the top. The
+ * source's own colour, never the theme's, so the four tiles are told apart
+ * before a word is read — and Rotten Tomatoes follows its verdict, red tomato
+ * or green splat, exactly like its mark.
+ */
+const BRAND_TINT: Record<RatingTile['tone'], string> = {
+  imdb: '245 197 24',
+  tmdb: '1 180 228',
+  fresh: '250 50 10',
+  rotten: '10 200 85',
+  'metacritic-good': '255 204 52',
+  'metacritic-mid': '255 204 52',
+  'metacritic-bad': '255 204 52',
+}
+
+/** A static radial wash of the brand colour, centred on the mark. */
+const tintStyle = (tone: RatingTile['tone']): React.CSSProperties => ({
+  backgroundImage: `radial-gradient(120% 85% at 50% 0%, rgb(${BRAND_TINT[tone]} / 0.22), transparent 62%)`,
+})
+
+/**
+ * The ratings row on a details page: TMDB, IMDb, Rotten Tomatoes and
+ * Metacritic, side by side.
  *
- * Each tile leads with the source's real mark (components/media/rating-marks),
- * at a fixed height and its own width, so IMDb's badge reads as IMDb at a
- * glance. The score is the largest thing in the tile — the number is the
- * answer, the mark is the attribution.
+ * One centred axis per tile: the source's real mark (rating-marks.tsx) at
+ * 40px, the score under it as the largest thing on the tile, and its caption
+ * (votes, the Fresh/Rotten verdict, "Metascore") last. The number is the
+ * answer; the mark is the attribution; the tint is the brand, so the eye finds
+ * IMDb by colour before it reads a letter. All static: the tint is a
+ * background, not a layer, and nothing moves but the score's one-off count-up.
  *
  * Renders nothing when there is no rating to show. A row of empty boxes
  * ("NR" everywhere) is a claim about the film; a missing row is not.
@@ -50,30 +73,32 @@ export function RatingsStrip({
       <h2 className="mb-3 text-base font-semibold md:text-xl lg:text-2xl">
         Ratings
       </h2>
-      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {tiles.map((tile) => {
           const Mark = ratingMark(tile)
-          const tone = TONE_CLASS[tile.tone]
           return (
             <li
               key={tile.id}
-              className="flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-secondary/40 p-3"
+              style={tintStyle(tile.tone)}
+              className="flex min-w-0 flex-col items-center gap-3 rounded-2xl border border-white/10 bg-secondary/40 px-3 pt-6 pb-5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]"
             >
-              {/* The label below names the source for a screen reader. */}
-              <Mark aria-hidden className="h-8 w-auto shrink-0" />
-              <span className="text-[10px] font-semibold tracking-wider text-white/60 uppercase">
-                {tile.label}
-              </span>
+              {/* The source's name for a screen reader; the mark says it on
+                  screen. */}
+              <span className="sr-only">{tile.label}</span>
+              <Mark
+                aria-hidden
+                className="h-[40px] w-auto max-w-full shrink-0 drop-shadow-[0_4px_14px_rgba(0,0,0,0.45)]"
+              />
               <span
                 className={cn(
-                  'mt-0.5 text-3xl leading-none font-bold tabular-nums',
-                  tone
+                  'text-[40px] leading-none font-extrabold tracking-tight tabular-nums sm:text-[44px]',
+                  TONE_CLASS[tile.tone]
                 )}
               >
                 <CountUpNumber score={tile.score} />
               </span>
               {tile.detail ? (
-                <span className="mt-0.5 text-[10px] tracking-wider text-white/55 uppercase">
+                <span className="max-w-full truncate text-xs font-medium tracking-wider text-white/60 uppercase">
                   {tile.detail}
                 </span>
               ) : null}
@@ -108,7 +133,7 @@ export function RatingsPills({
   return (
     <ul
       className={cn(
-        'flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] leading-none font-semibold',
+        'flex flex-wrap items-center gap-2 text-[15px] leading-none font-semibold',
         className
       )}
     >
@@ -121,12 +146,12 @@ export function RatingsPills({
               // Solid tint, no backdrop-blur: on the home hero these sit over
               // a playing trailer preview, and a backdrop-filter re-blurs
               // what is behind each pill on every video frame.
-              'flex items-center gap-1.5 rounded-full bg-black/60 py-1 pr-2 pl-1.5 ring-1 ring-white/10',
+              'flex items-center gap-2 rounded-full bg-black/60 py-1.5 pr-3 pl-2 ring-1 ring-white/10',
               TONE_CLASS[tile.tone]
             )}
           >
             {/* The mark IS the label here: a TMDB badge already says TMDB. */}
-            <Mark aria-hidden className="h-3.5 w-auto shrink-0" />
+            <Mark aria-hidden className="h-[20px] w-auto shrink-0" />
             <span className="sr-only">{tile.label}</span>
             <span
               className={cn('font-bold tabular-nums', TONE_CLASS[tile.tone])}

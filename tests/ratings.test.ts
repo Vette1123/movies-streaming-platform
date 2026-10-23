@@ -176,3 +176,27 @@ describe('parseOmdbRatings', () => {
     expect(parseOmdbRatings({ Response: 'True' })).toBeNull()
   })
 })
+
+// Every tile carries a caption line, so the four tiles in the strip end on
+// the same row: votes for TMDB and IMDb, the verdict for Rotten Tomatoes,
+// "Metascore" for Metacritic.
+describe('rating tile captions and Metacritic bands', () => {
+  const tile = (input: Parameters<typeof buildRatingTiles>[0], id: string) =>
+    buildRatingTiles(input).find((t) => t.id === id)
+
+  it('captions Rotten Tomatoes with its verdict', () => {
+    expect(tile({ rottenTomatoes: 81 }, 'rottenTomatoes')?.detail).toBe('Fresh')
+    expect(tile({ rottenTomatoes: 59 }, 'rottenTomatoes')?.detail).toBe(
+      'Rotten'
+    )
+  })
+
+  it('captions Metacritic and bands it 75 / 50', () => {
+    expect(tile({ metacritic: 75 }, 'metacritic')).toMatchObject({
+      detail: 'Metascore',
+      tone: 'metacritic-good',
+    })
+    expect(tile({ metacritic: 50 }, 'metacritic')?.tone).toBe('metacritic-mid')
+    expect(tile({ metacritic: 49 }, 'metacritic')?.tone).toBe('metacritic-bad')
+  })
+})
