@@ -5,6 +5,7 @@ import { Bell, BellOff, Loader2 } from 'lucide-react'
 
 import { ALERT_REGIONS, DEFAULT_ALERT_REGION } from '@/config/regions'
 import { savePrefs } from '@/lib/account'
+import { trackApiError, trackFeatureUsed } from '@/lib/analytics'
 import type { QuietHours } from '@/lib/push/quiet'
 import { base64UrlDecode } from '@/lib/token'
 import { useAccount } from '@/hooks/use-account'
@@ -67,6 +68,12 @@ export function AlertsPanel() {
       const permission = await Notification.requestPermission()
       if (permission !== 'granted') {
         setState(permission === 'denied' ? 'blocked' : 'off')
+        trackFeatureUsed({
+          feature: 'push_alerts',
+          action: 'enable',
+          outcome: 'denied',
+          permission,
+        })
         return
       }
 
@@ -88,6 +95,11 @@ export function AlertsPanel() {
       })
       if (!response.ok) {
         await subscription.unsubscribe()
+        trackApiError({
+          source: 'push_subscribe',
+          message: `subscribe failed: ${response.status}`,
+          status: response.status,
+        })
         setError('Could not register this device. Try again.')
         setState('off')
         return
@@ -95,7 +107,13 @@ export function AlertsPanel() {
 
       await savePrefs({ alerts: true })
       setState('on')
-    } catch {
+    } catch (error) {
+      trackFeatureUsed({
+        feature: 'push_alerts',
+        action: 'enable',
+        outcome: 'failed',
+        error_name: error instanceof Error ? error.name : 'unknown',
+      })
       setError('This browser refused to set up notifications.')
       setState('off')
     }
@@ -119,7 +137,13 @@ export function AlertsPanel() {
       }
       await savePrefs({ alerts: false })
       setState('off')
-    } catch {
+    } catch (error) {
+      trackFeatureUsed({
+        feature: 'push_alerts',
+        action: 'disable',
+        outcome: 'failed',
+        error_name: error instanceof Error ? error.name : 'unknown',
+      })
       setState('off')
     }
   }

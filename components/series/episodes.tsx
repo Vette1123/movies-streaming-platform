@@ -4,6 +4,7 @@ import { Check, Eye, Play, Tv } from 'lucide-react'
 
 import { EpisodeDetails } from '@/types/episode'
 import {
+  trackEpisodeToggled,
   trackWatchHistoryAdded,
   trackWatchHistoryUpdated,
 } from '@/lib/analytics'
@@ -370,9 +371,15 @@ export const Episodes = ({
                   masked={masked}
                   share={share}
                   onPlay={() => handleWatchEpisode(episode)}
-                  onToggleWatched={() =>
+                  onToggleWatched={() => {
+                    trackEpisodeToggled({
+                      media_id: episode.show_id,
+                      season: Number(selectedSeason),
+                      episode: episode.episode_number,
+                      completed: !completed,
+                    })
                     toggleEpisodeCompleted(buildCompletionMeta(episode))
-                  }
+                  }}
                   onReveal={() => reveal(number)}
                 />
               </li>

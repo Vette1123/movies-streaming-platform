@@ -277,7 +277,7 @@ export const DetailsHero = ({
       return
     }
     const fallback = sourceControl.sources.find((s) => s.id !== REELY_SOURCE_ID)
-    if (fallback) sourceControl.select(fallback.id)
+    if (fallback) sourceControl.select(fallback.id, 'stall_auto')
   }, [sourceControl])
 
   // Bridge the blank gap between "Watch" click and the streaming iframe painting

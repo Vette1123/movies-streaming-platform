@@ -192,4 +192,45 @@ async function postDeploy() {
   }
   if (submitted)
     console.log(`✓ IndexNow pinged (${submitted}/${urlList.length} URLs)`)
+
+  await annotateDeploy()
+}
+
+/**
+ * A deploy marker on every PostHog chart, so "plays dropped on Tuesday" can be
+ * lined up with what shipped on Tuesday. Never fails the deploy: a key without
+ * the annotation scope only warns.
+ */
+async function annotateDeploy() {
+  const key = process.env.POSTHOG_API_KEY
+  if (!key) {
+    console.log(
+      '• skipping PostHog deploy annotation (POSTHOG_API_KEY not set)'
+    )
+    return
+  }
+  const project = process.env.POSTHOG_PROJECT_ID || '216915'
+  const host = process.env.POSTHOG_HOST || 'https://eu.posthog.com'
+  const sha = (process.env.GITHUB_SHA || 'local').slice(0, 7)
+  try {
+    const res = await fetch(`${host}/api/projects/${project}/annotations/`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        content: `Deploy ${sha}`,
+        date_marker: new Date().toISOString(),
+        scope: 'project',
+      }),
+    })
+    if (res.ok) console.log(`✓ PostHog deploy annotation (${sha})`)
+    else
+      console.warn(
+        `::warning::[cf-deploy] PostHog annotation HTTP ${res.status} — does POSTHOG_API_KEY carry annotation:write?`
+      )
+  } catch (err) {
+    console.warn(`[cf-deploy] PostHog annotation skipped: ${err.message}`)
+  }
 }

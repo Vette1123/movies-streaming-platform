@@ -2,6 +2,7 @@
 
 import { EyeOff, Undo2 } from 'lucide-react'
 
+import { trackFeatureUsed } from '@/lib/analytics'
 import { getPosterImageURL } from '@/lib/utils'
 import { useAccount } from '@/hooks/use-account'
 import { useHiddenMedia } from '@/hooks/use-hidden-media'
@@ -59,7 +60,18 @@ export function HiddenPanel() {
           {hidden.length} {hidden.length === 1 ? 'title is' : 'titles are'} kept
           out of your suggestions and browse results.
         </p>
-        <Button variant="outline" size="sm" onClick={clear}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            trackFeatureUsed({
+              feature: 'hidden_titles',
+              action: 'cleared',
+              items: hidden.length,
+            })
+            clear()
+          }}
+        >
           <Undo2 className="mr-2 size-4" />
           Show everything again
         </Button>

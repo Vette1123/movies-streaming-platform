@@ -2,6 +2,7 @@
 
 import { CloudOff, RotateCw } from 'lucide-react'
 
+import { trackRetryClicked } from '@/lib/analytics'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 
@@ -24,7 +25,13 @@ export const ListLoadError = ({ isEmpty, onRetry }: ListLoadErrorProps) => {
   // Swallow the click event: callers hand us react-query's `refetch` /
   // `fetchNextPage` directly, and those read their first argument as an options
   // object — a MouseEvent there is not what they expect.
-  const handleRetry = () => onRetry()
+  const handleRetry = () => {
+    trackRetryClicked({
+      surface: 'list_load',
+      scope: isEmpty ? 'page' : 'next_page',
+    })
+    onRetry()
+  }
 
   if (isEmpty) {
     return (

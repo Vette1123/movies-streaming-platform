@@ -17,6 +17,7 @@
  * Without it, deleting a title on your phone would have it reappear from your
  * laptop forever.
  */
+import { trackApiError } from '@/lib/analytics'
 import {
   readPositionMap,
   writePositionMap,
@@ -405,10 +406,22 @@ async function runSync(
       body: JSON.stringify({ since, changes }),
     })
   } catch {
+    trackApiError({
+      source: 'library_sync',
+      message: 'network failure',
+      expected: true,
+    })
     return { ok: false, more: false }
   }
 
-  if (!response.ok) return { ok: false, more: false }
+  if (!response.ok) {
+    trackApiError({
+      source: 'library_sync',
+      message: `sync failed: ${response.status}`,
+      status: response.status,
+    })
+    return { ok: false, more: false }
+  }
 
   const data = (await response.json().catch(() => null)) as {
     success?: boolean

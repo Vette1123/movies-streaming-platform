@@ -5,7 +5,11 @@ import { Check, Copy, Gift, Plus, Share2, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { siteConfig } from '@/config/site'
-import { trackInviteShared } from '@/lib/analytics'
+import {
+  trackApiError,
+  trackFeatureUsed,
+  trackInviteShared,
+} from '@/lib/analytics'
 import { REFERRALS_PER_MONTH } from '@/lib/billing/gifts'
 import { invitePath } from '@/lib/invite'
 import { useAccount } from '@/hooks/use-account'
@@ -63,6 +67,11 @@ export function GiftsPanel() {
       }
       setData((await response.json()) as Overview)
     } catch {
+      trackApiError({
+        source: 'gifts_load',
+        message: 'network failure',
+        expected: true,
+      })
       setData({
         codes: [],
         referrals: 0,
@@ -90,14 +99,27 @@ export function GiftsPanel() {
           body: JSON.stringify(body),
         })
         const payload = await response.json().catch(() => null)
+        const action = String(body.action ?? 'unknown')
         if (!response.ok || payload?.success !== true) {
           toast(payload?.error ?? 'That did not work. Try again.')
+          trackFeatureUsed({
+            feature: 'gifts',
+            action,
+            outcome: 'failed',
+            status: response.status,
+          })
           return false
         }
+        trackFeatureUsed({ feature: 'gifts', action, outcome: 'ok' })
         await load()
         return true
       } catch {
         toast('Could not reach the server.')
+        trackApiError({
+          source: 'gifts_action',
+          message: 'network failure',
+          expected: true,
+        })
         return false
       } finally {
         setBusy(false)
@@ -319,6 +341,7 @@ function InviteLink({ code }: { code: string }) {
         onClick={async () => {
           const native = await share({
             title: 'Reely',
+            surface: 'gift_invite',
             path,
             text: 'Films and shows, free. Make an account with my link:',
             copied: 'Invite link copied.',

@@ -111,7 +111,7 @@ export function AccountControl() {
         <PopoverRow
           Icon={LogOut}
           title="Sign out"
-          onClick={() => void signOut()}
+          onClick={() => void signOut(false, 'header')}
         />
       </PopoverContent>
     </Popover>

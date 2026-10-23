@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useInView } from 'react-intersection-observer'
 
+import { trackFeatureUsed, trackRetryClicked } from '@/lib/analytics'
 import { getReelsApi } from '@/lib/api-client'
 import { QUERY_KEYS } from '@/lib/queryKeys'
 import { getImageURL, getPosterImageURL } from '@/lib/utils'
@@ -346,7 +347,11 @@ function ReelSlide({
               caption="Share"
               testId="reel-share"
               onClick={() =>
-                void share({ title: reel.title, path: mediaHref(reel) })
+                void share({
+                  title: reel.title,
+                  surface: 'reels',
+                  path: mediaHref(reel),
+                })
               }
             >
               <Share2 className="size-6" />
@@ -499,10 +504,14 @@ export default function ReelsPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [root])
 
-  const onActive = React.useCallback(
-    (index: number) => setActiveIndex(index),
-    []
-  )
+  const onActive = React.useCallback((index: number) => {
+    setActiveIndex(index)
+    // depth = how far into the feed somebody scrolled; the first slide is
+    // the page load itself.
+    if (index > 0) {
+      trackFeatureUsed({ feature: 'reels', action: 'viewed', depth: index })
+    }
+  }, [])
 
   // The feed is chrome-free by design — the header and footer are hidden here —
   // so there was nowhere for a heading to sit and the page shipped without an
@@ -519,7 +528,13 @@ export default function ReelsPage() {
       <div className="flex h-dvh flex-col items-center justify-center gap-4 bg-black px-6 text-center">
         {heading}
         <p className="text-white/80">The trailer feed did not load.</p>
-        <Button onClick={() => void refetch()} className="gap-2 rounded-full">
+        <Button
+          onClick={() => {
+            trackRetryClicked({ surface: 'reels' })
+            void refetch()
+          }}
+          className="gap-2 rounded-full"
+        >
           <RotateCw className="size-4" aria-hidden />
           Try again
         </Button>
@@ -558,8 +573,20 @@ export default function ReelsPage() {
                 focused={focused && index === activeIndex}
                 muted={muted}
                 onActive={onActive}
-                onToggleMute={() => setMuted((m) => !m)}
-                onToggleFocus={() => setFocused((f) => !f)}
+                onToggleMute={() => {
+                  trackFeatureUsed({
+                    feature: 'reels',
+                    action: muted ? 'unmuted' : 'muted',
+                  })
+                  setMuted((m) => !m)
+                }}
+                onToggleFocus={() => {
+                  trackFeatureUsed({
+                    feature: 'reels',
+                    action: focused ? 'focus_off' : 'focus_on',
+                  })
+                  setFocused((f) => !f)
+                }}
                 showHint={index === 0 && activeIndex === 0}
               />
             </div>

@@ -4,11 +4,11 @@ import { PropsWithChildren, Suspense, useEffect, useRef } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import type { CaptureResult, ConfigDefaults } from 'posthog-js'
 
-import { trackImageHostFallback } from '@/lib/analytics'
+import { trackImageHostFallback, trackPageview } from '@/lib/analytics'
 import { shouldDropException } from '@/lib/error-noise'
 import { onIdle } from '@/lib/idle'
 import { enrichPersonProfile } from '@/lib/person'
-import { analyticsEnabled, loadPostHog, ph } from '@/lib/posthog-client'
+import { analyticsEnabled, loadPostHog } from '@/lib/posthog-client'
 import { subscribePrimaryImageHost } from '@/lib/tmdbConfig'
 
 /**
@@ -177,7 +177,7 @@ async function initPosthog() {
   // The deferred init means the first $pageview (which <PostHogPageView> gates
   // on `initialized`) was skipped during the pre-init window. Capture it now so
   // the landing visit is attributed — equivalent to the eager path.
-  posthog.capture('$pageview', { $current_url: window.location.href })
+  trackPageview(window.location.href, window.location.pathname)
 }
 
 /**
@@ -257,7 +257,7 @@ function PostHogPageView() {
     if (qs) url += `?${qs}`
     if (lastUrl.current === url) return
     lastUrl.current = url
-    ph((posthog) => posthog.capture('$pageview', { $current_url: url }))
+    trackPageview(url, pathname)
   }, [pathname, searchParams])
 
   return null

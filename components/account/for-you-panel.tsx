@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Sparkles, Star, X } from 'lucide-react'
 
+import { trackApiError } from '@/lib/analytics'
 import type { ForYouItem } from '@/lib/foryou/routes'
 import { getPosterImageURL } from '@/lib/utils'
 import { useAccount } from '@/hooks/use-account'
@@ -39,6 +40,11 @@ export function ForYouPanel() {
       const body = await response.json()
       if (!response.ok || !body?.success) {
         setState('failed')
+        trackApiError({
+          source: 'for_you',
+          message: `for-you failed: ${response.status}`,
+          status: response.status,
+        })
         return
       }
       setItems(body.items ?? [])
@@ -46,6 +52,11 @@ export function ForYouPanel() {
       setState('ready')
     } catch {
       setState('failed')
+      trackApiError({
+        source: 'for_you',
+        message: 'network failure',
+        expected: true,
+      })
     }
   }, [])
 

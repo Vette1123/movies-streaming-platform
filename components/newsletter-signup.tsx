@@ -1,13 +1,13 @@
 'use client'
 
 import React, { useState } from 'react'
-
 import { Mail } from 'lucide-react'
+
+import { trackApiError, trackNewsletterSubscribed } from '@/lib/analytics'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { cn } from '@/lib/utils'
-import { trackNewsletterSubscribed } from '@/lib/analytics'
 
 interface NewsletterSignupProps {
   className?: string
@@ -15,7 +15,9 @@ interface NewsletterSignupProps {
 
 export function NewsletterSignup({ className }: NewsletterSignupProps) {
   const [email, setEmail] = useState('')
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'ok' | 'error'>('idle')
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'ok' | 'error'>(
+    'idle'
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,9 +34,19 @@ export function NewsletterSignup({ className }: NewsletterSignupProps) {
         trackNewsletterSubscribed({ source: 'footer' })
       } else {
         setStatus('error')
+        trackApiError({
+          source: 'newsletter_subscribe',
+          message: `subscribe failed: ${res.status}`,
+          status: res.status,
+        })
       }
     } catch {
       setStatus('error')
+      trackApiError({
+        source: 'newsletter_subscribe',
+        message: 'network failure',
+        expected: true,
+      })
     }
   }
 
@@ -48,8 +60,8 @@ export function NewsletterSignup({ className }: NewsletterSignupProps) {
           </span>
         </div>
         <p className="text-xs leading-relaxed text-muted-foreground">
-          One email a week: what&apos;s trending, what&apos;s new, and what&apos;s worth your
-          time. No spam, unsubscribe anytime.
+          One email a week: what&apos;s trending, what&apos;s new, and
+          what&apos;s worth your time. No spam, unsubscribe anytime.
         </p>
         <form onSubmit={handleSubmit} className="flex gap-2 sm:flex-row">
           <Label htmlFor="newsletter-email" className="sr-only">

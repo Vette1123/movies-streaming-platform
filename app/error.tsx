@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { Home, RefreshCw, RotateCcw, TriangleAlert } from 'lucide-react'
 
+import { trackRetryClicked } from '@/lib/analytics'
 import { isStaleBundleError, reloadForStaleDeploy } from '@/lib/client-errors'
 import { loadPostHog } from '@/lib/posthog-client'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -70,7 +71,14 @@ export default function GlobalError({ error, reset }: ErrorProps) {
         headingLevel="h1"
         title={copy.title}
         description={copy.description}
-        primaryAction={{ label: 'Try again', onClick: reset, icon: RotateCcw }}
+        primaryAction={{
+          label: 'Try again',
+          onClick: () => {
+            trackRetryClicked({ surface: 'route_error' })
+            reset()
+          },
+          icon: RotateCcw,
+        }}
         secondaryAction={{ href: '/', label: 'Go home', icon: Home }}
       />
     </div>

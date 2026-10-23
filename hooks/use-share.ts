@@ -4,9 +4,12 @@ import * as React from 'react'
 import { toast } from 'sonner'
 
 import { siteConfig } from '@/config/site'
+import { trackShared } from '@/lib/analytics'
 
 interface ShareInput {
   title: string
+  /** Where the share started, for the `shared` event ('compare', 'reels', …). */
+  surface: string
   /** Path like /movie/123-slug — made absolute here so shares always land on
    * the canonical host, whatever page the sharer was reading. */
   path: string
@@ -14,6 +17,15 @@ interface ShareInput {
   text?: string
   /** The toast when the link lands on the clipboard instead of a sheet. */
   copied?: string
+}
+
+/** The `shared` event's method for a file share's outcome. */
+export const shareMethod = (
+  outcome: 'shared' | 'downloaded' | 'dismissed'
+): 'web_share' | 'download' | 'dismissed' => {
+  if (outcome === 'shared') return 'web_share'
+  if (outcome === 'downloaded') return 'download'
+  return 'dismissed'
 }
 
 /** The only rejection that means "the user decided". */
@@ -60,6 +72,7 @@ export const useShare = () => {
   const share = React.useCallback(
     async ({
       title,
+      surface,
       path,
       text = `Watch ${title} on Reely`,
       copied = 'Link copied. Share it anywhere.',
@@ -69,12 +82,16 @@ export const useShare = () => {
         if (typeof navigator.share === 'function') {
           await navigator.share({ title, text, url })
           setNativeShared(true)
+          trackShared({ surface, method: 'web_share' })
           return true
         }
       } catch (error) {
         // Dismissing the sheet is the user saying no — that is the one failure
         // that must NOT be second-guessed with a clipboard write.
-        if (isDismissal(error)) return false
+        if (isDismissal(error)) {
+          trackShared({ surface, method: 'dismissed' })
+          return false
+        }
         // Everything else means the sheet never opened: the API exists but the
         // platform cannot service it (desktop Chrome outside a share target,
         // a page without transient activation, a locked-down webview). Before
@@ -82,6 +99,7 @@ export const useShare = () => {
       }
       await navigator.clipboard?.writeText(url)
       toast(copied)
+      trackShared({ surface, method: 'clipboard' })
       return false
     },
     []

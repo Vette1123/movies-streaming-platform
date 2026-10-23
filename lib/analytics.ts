@@ -8,6 +8,14 @@
 // component or hook without needing the React context.
 
 import {
+  claim,
+  isClaimed,
+  milestonesFor,
+  noteActivity,
+  routeTemplate,
+  visitTraits,
+} from '@/lib/analytics-context'
+import {
   genreNames,
   getMediaReleaseDate,
   getMediaTitle,
@@ -80,7 +88,113 @@ export const EVENTS = {
   PLAYER_TRIAL_STARTED: 'player_trial_started',
   // Infrastructure
   IMAGE_HOST_FALLBACK: 'image_host_fallback',
+  // Once-ever milestones, derived inside track() (lib/analytics-context.ts) —
+  // never fired by a call site.
+  FIRST_PLAY: 'first_play',
+  FIRST_CORE_USE: 'first_core_use',
+  // Coverage for everything else. Consolidated the way masareef does it: one
+  // event per KIND of action with an enum property, rather than an event name
+  // per button, so a new control is a new literal and not a new dashboard.
+  PREF_CHANGED: 'pref_changed',
+  SHARED: 'shared',
+  RETRY_CLICKED: 'retry_clicked',
+  SIGNED_OUT: 'signed_out',
+  ACCOUNT_DELETED: 'account_deleted',
+  RATING_SAVED: 'rating_saved',
+  RATING_REMOVED: 'rating_removed',
+  EPISODE_TOGGLED: 'episode_toggled',
+  STREAM_SOURCE_SELECTED: 'stream_source_selected',
+  PLAYBACK_FINISHED: 'playback_finished',
+  FEATURE_USED: 'feature_used',
 } as const
+
+export type EventName = (typeof EVENTS)[keyof typeof EVENTS]
+
+/**
+ * The part of the product an event belongs to, stamped on every event as
+ * `area` (masareef's convention). It is what `pnpm posthog:usage` reports reach
+ * by, and what a dashboard breaks down on, so "is anybody using lists" is one
+ * filter instead of a remembered list of event names.
+ */
+export type EventArea =
+  | 'playback'
+  | 'detail'
+  | 'browse'
+  | 'search'
+  | 'home'
+  | 'library'
+  | 'sharing'
+  | 'account'
+  | 'support'
+  | 'pwa'
+  | 'health'
+  | 'activation'
+  | 'social'
+  | 'discover'
+  | 'onboarding'
+  | 'growth'
+
+// `satisfies` makes a new event without an area a compile error.
+export const EVENT_AREA = {
+  media_played: 'playback',
+  media_detail_viewed: 'detail',
+  media_card_clicked: 'browse',
+  load_more: 'browse',
+  filter_changed: 'browse',
+  filters_cleared: 'browse',
+  search_opened: 'search',
+  search_performed: 'search',
+  search_no_results: 'search',
+  search_result_clicked: 'search',
+  command_shortcut_used: 'search',
+  hero_watch_clicked: 'home',
+  trailer_played: 'detail',
+  hero_autoplay_toggled: 'home',
+  media_shared: 'sharing',
+  watchlist_added: 'library',
+  watchlist_removed: 'library',
+  not_interested: 'library',
+  not_interested_undone: 'library',
+  filter_preset_saved: 'browse',
+  filter_preset_applied: 'browse',
+  page_not_found: 'health',
+  api_error: 'health',
+  season_selected: 'detail',
+  watch_history_added: 'library',
+  watch_history_updated: 'library',
+  watch_history_item_clicked: 'library',
+  watch_history_item_removed: 'library',
+  watch_history_cleared: 'library',
+  pwa_installable: 'pwa',
+  pwa_installed: 'pwa',
+  pwa_prompted: 'pwa',
+  player_stream_path: 'playback',
+  player_failed: 'playback',
+  support_cta_clicked: 'support',
+  support_nudge_shown: 'support',
+  newsletter_subscribed: 'support',
+  checkout_started: 'support',
+  supporter_gate_shown: 'support',
+  signed_in: 'account',
+  supporter_activated: 'support',
+  invite_shared: 'sharing',
+  player_trial_started: 'playback',
+  image_host_fallback: 'health',
+  first_play: 'activation',
+  first_core_use: 'activation',
+  pref_changed: 'account',
+  shared: 'sharing',
+  retry_clicked: 'health',
+  signed_out: 'account',
+  account_deleted: 'account',
+  rating_saved: 'library',
+  rating_removed: 'library',
+  episode_toggled: 'library',
+  stream_source_selected: 'playback',
+  playback_finished: 'playback',
+  // Overridden per feature by FEATURE_AREA (see trackFeatureUsed).
+  feature_used: 'discover',
+} as const satisfies Record<EventName, EventArea>
 
 export type MediaKind = 'movie' | 'tv'
 
@@ -116,13 +230,71 @@ export function buildMediaEventBase(media: MediaEventMedia, type: MediaKind) {
 
 const isClient = () => typeof window !== 'undefined'
 
-/** Thin wrapper so every call is guarded and centrally typed. */
+// Visit traits are registered once per page load and again whenever a new
+// visit begins, not on every event: register() rewrites persistence each call.
+let visitRegistered = false
+
+/**
+ * Advance the visit counter and, when it moved, re-register the visit super
+ * properties so $autocapture / $exception / $web_vitals carry them too.
+ */
+function noteVisit(now: number) {
+  const visit = noteActivity(now)
+  if (visit.newVisit || !visitRegistered) {
+    visitRegistered = true
+    const traits = visitTraits(visit.record, now)
+    ph((posthog) => posthog.register(traits))
+  }
+  return visit.record
+}
+
+/**
+ * The one choke point every custom event passes. Typed to EVENTS so a typo is
+ * a compile error, stamps `area`, advances the visit counter, and derives the
+ * once-ever milestones (first_play, first_core_use) so no call site can forget
+ * them.
+ */
 export function track(
-  event: string,
+  event: EventName,
   properties?: Record<string, unknown>
 ): void {
   if (!isClient()) return
-  ph((posthog) => posthog.capture(event, properties))
+  const now = Date.now()
+  const record = noteVisit(now)
+  const milestones = milestonesFor(event, record, now, isClaimed)
+  for (const milestone of milestones) claim(milestone.key, now)
+  ph((posthog) => {
+    posthog.capture(event, { area: EVENT_AREA[event], ...properties })
+    for (const milestone of milestones) {
+      posthog.capture(milestone.key, {
+        area: EVENT_AREA[milestone.key],
+        ...milestone.properties,
+      })
+    }
+  })
+}
+
+/** Super properties carried on every later event (e.g. the current server). */
+export function registerAnalyticsContext(
+  properties: Record<string, string | number | boolean | null>
+): void {
+  if (!isClient()) return
+  ph((posthog) => posthog.register(properties))
+}
+
+/**
+ * $pageview with the route template on it, registered as a super property as
+ * well so every autocaptured click, rageclick and exception on the page can be
+ * broken down by screen instead of by 2,000 distinct pathnames.
+ */
+export function trackPageview(url: string, pathname: string): void {
+  if (!isClient()) return
+  noteVisit(Date.now())
+  const route = routeTemplate(pathname)
+  ph((posthog) => {
+    posthog.register({ route })
+    posthog.capture('$pageview', { $current_url: url, route })
+  })
 }
 
 // ---- Playback ---------------------------------------------------------------
@@ -407,7 +579,7 @@ export function trackApiError(props: {
   expected?: boolean
 }): void {
   if (!isClient()) return
-  ph((posthog) => posthog.capture(EVENTS.API_ERROR, props))
+  track(EVENTS.API_ERROR, props)
   if (props.expected) return
   // Built HERE, not inside the callback below. An Error captures its stack where
   // it is constructed, and `ph()` may not run its callback until posthog-js has
@@ -419,6 +591,10 @@ export function trackApiError(props: {
     try {
       posthog.captureException(error, {
         $exception_source: 'api',
+        // One issue per failing flow and status (rafiq's `flow:code`). Every
+        // one of these is built on the same line, so PostHog's stack-based
+        // grouping folded them all into a single "Error".
+        $exception_fingerprint: `api:${props.source}:${props.status ?? 'none'}`,
         ...props,
       })
     } catch {
@@ -561,4 +737,128 @@ export function trackPlayerFailed(props: {
  */
 export function trackImageHostFallback(): void {
   track(EVENTS.IMAGE_HOST_FALLBACK)
+}
+
+// ---- Coverage: the long tail -------------------------------------------------
+
+/**
+ * Every feature without an event of its own, and the area it reports under.
+ * Adding a feature is one line here; `satisfies` keeps the areas closed.
+ */
+export const FEATURE_AREA = {
+  match_night: 'social',
+  watch_together: 'social',
+  compare: 'social',
+  public_profile: 'social',
+  lists: 'library',
+  calendar: 'library',
+  stats: 'library',
+  watchlist_transfer: 'library',
+  hidden_titles: 'library',
+  mood: 'discover',
+  reels: 'discover',
+  tonight_triple: 'discover',
+  for_you: 'discover',
+  taste_picker: 'onboarding',
+  gifts: 'support',
+  library_import: 'account',
+  data_export: 'account',
+  library_sync: 'account',
+  push_alerts: 'account',
+  rescue_banner: 'account',
+  pwa_nudge: 'pwa',
+  store_link: 'growth',
+} as const satisfies Record<string, EventArea>
+
+export type Feature = keyof typeof FEATURE_AREA
+
+type Scalar = string | number | boolean | null | undefined
+
+/**
+ * A feature was used. `action` is a short literal at the call site ('created',
+ * 'joined', 'copied', …) and `outcome` says whether it worked. Counts, ids and
+ * enums only — never user text.
+ */
+export function trackFeatureUsed(props: {
+  feature: Feature
+  action: string
+  outcome?: 'ok' | 'failed' | 'denied' | 'empty'
+  [extra: string]: Scalar
+}): void {
+  track(EVENTS.FEATURE_USED, { area: FEATURE_AREA[props.feature], ...props })
+}
+
+/** One pref changed, through the account's single save path. */
+export function trackPrefChanged(props: {
+  key: string
+  value: string | number | boolean | null
+}): void {
+  track(EVENTS.PREF_CHANGED, props)
+}
+
+/** Anything shared that is not a title card (media_shared covers those). */
+export function trackShared(props: {
+  surface: string
+  method: 'web_share' | 'clipboard' | 'download' | 'dismissed'
+}): void {
+  track(EVENTS.SHARED, props)
+}
+
+/** A "Try again" was pressed: how often each surface fails in front of someone. */
+export function trackRetryClicked(props: {
+  surface: string
+  [extra: string]: Scalar
+}): void {
+  track(EVENTS.RETRY_CLICKED, props)
+}
+
+export function trackSignedOut(props: { all: boolean; surface: string }): void {
+  track(EVENTS.SIGNED_OUT, props)
+}
+
+export function trackAccountDeleted(props: { ok: boolean }): void {
+  track(EVENTS.ACCOUNT_DELETED, props)
+}
+
+export function trackRatingSaved(props: {
+  media_id: number
+  media_type: MediaKind
+  score: number
+  has_note: boolean
+}): void {
+  track(EVENTS.RATING_SAVED, props)
+}
+
+export function trackRatingRemoved(props: {
+  media_id: number
+  media_type: MediaKind
+}): void {
+  track(EVENTS.RATING_REMOVED, props)
+}
+
+/** An episode ticked or unticked by hand on the episode list. */
+export function trackEpisodeToggled(props: {
+  media_id: number
+  season: number
+  episode: number
+  completed: boolean
+}): void {
+  track(EVENTS.EPISODE_TOGGLED, props)
+}
+
+/** A server picked by the viewer, or by the automatic hop after a stall. */
+export function trackStreamSourceSelected(props: {
+  source: string
+  via: 'switcher' | 'stall_auto'
+}): void {
+  track(EVENTS.STREAM_SOURCE_SELECTED, props)
+}
+
+/** The player reported the end of the title. */
+export function trackPlaybackFinished(props: {
+  media_id: number
+  media_type: MediaKind
+  source?: string
+}): void {
+  track(EVENTS.PLAYBACK_FINISHED, props)
 }

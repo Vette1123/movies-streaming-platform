@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 
 import { applyAppearance } from '@/lib/appearance'
 import { noteAccountState } from '@/lib/checkout'
+import { syncAccountIdentity } from '@/lib/person'
 import { useAccount } from '@/hooks/use-account'
 import { useLibrarySync } from '@/hooks/use-library-sync'
 
@@ -24,7 +25,9 @@ import { useLibrarySync } from '@/hooks/use-library-sync'
 export function AccountBoot() {
   useLibrarySync()
 
-  const { signedIn, pro, prefs } = useAccount()
+  const { signedIn, pro, prefs, userId, plan } = useAccount()
+  const planStatus = plan?.status ?? null
+  const granted = plan?.granted === true
   const accent = prefs.accent
   const density = prefs.density
 
@@ -42,6 +45,13 @@ export function AccountBoot() {
     if (signedIn === undefined) return
     noteAccountState({ signedIn, pro })
   }, [pro, signedIn])
+
+  // Who this is, for PostHog: identify by account id, and stamp signed_in /
+  // supporter on every event (lib/person.ts).
+  useEffect(() => {
+    if (signedIn === undefined) return
+    syncAccountIdentity({ signedIn, userId, pro, planStatus, granted })
+  }, [granted, planStatus, pro, signedIn, userId])
 
   return null
 }

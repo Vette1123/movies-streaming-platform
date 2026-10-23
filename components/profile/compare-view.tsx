@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { GitCompare, SearchX, Share2 } from 'lucide-react'
 
+import { trackFeatureUsed } from '@/lib/analytics'
 import { ApiError, getJson } from '@/lib/api-client'
 import {
   handleFromInput,
@@ -123,6 +124,11 @@ export function CompareView() {
         loadProfile(handleA),
         loadProfile(handleB),
       ])
+      trackFeatureUsed({
+        feature: 'compare',
+        action: 'compared',
+        outcome: left && right ? 'ok' : 'empty',
+      })
       return {
         handleA,
         handleB,
@@ -331,6 +337,7 @@ function CompareResultView({ result }: { result: CompareResult }) {
             onClick={() =>
               void share({
                 title: `Taste match: ${whoA} and ${whoB}`,
+                surface: 'compare',
                 path: `/compare?a=${encodeURIComponent(result.handleA)}&b=${encodeURIComponent(result.handleB)}`,
                 text: `${whoA} and ${whoB} are ${match.score}% in common on Reely`,
               })

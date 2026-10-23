@@ -4,6 +4,7 @@ import * as React from 'react'
 import { QrCode, UserPlus, Users } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 
+import { trackFeatureUsed } from '@/lib/analytics'
 import { ApiError, togetherBeatApi, togetherStateApi } from '@/lib/api-client'
 import { parseEmbedProgress } from '@/lib/embed-progress'
 import { formatPlaybackTime } from '@/lib/playback-positions'
@@ -108,6 +109,22 @@ export function WatchTogetherBar({
   // seconds forever is a Worker invocation buying nothing, and the guest is
   // left reading "following the host" about a room that no longer exists.
   const [ended, setEnded] = React.useState(false)
+
+  // Joined (or opened as host) on mount, ended when the room is swept.
+  React.useEffect(() => {
+    trackFeatureUsed({
+      feature: 'watch_together',
+      action: isHost ? 'hosted' : 'joined',
+    })
+  }, [isHost])
+  React.useEffect(() => {
+    if (!ended) return
+    trackFeatureUsed({
+      feature: 'watch_together',
+      action: 'room_ended',
+      role: isHost ? 'host' : 'guest',
+    })
+  }, [ended, isHost])
 
   // Phone-as-remote QR dialog (host only).
   const [remoteOpen, setRemoteOpen] = React.useState(false)
@@ -272,7 +289,13 @@ export function WatchTogetherBar({
       {isHost && !ended && remoteHref(location.href) ? (
         <button
           type="button"
-          onClick={() => setRemoteOpen(true)}
+          onClick={() => {
+            setRemoteOpen(true)
+            trackFeatureUsed({
+              feature: 'watch_together',
+              action: 'remote_opened',
+            })
+          }}
           className="tap-target inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 px-2 py-0.5 font-medium transition hover:border-primary/60"
         >
           <QrCode className="size-3" aria-hidden />
@@ -291,6 +314,7 @@ export function WatchTogetherBar({
           // on desktop: the same path every other share button takes.
           void share({
             title: 'Watch Together on Reely',
+            surface: 'watch_together',
             path: `${invite.pathname}${invite.search}`,
             text: 'Join my Watch Together room on Reely',
             copied: 'Invite link copied',

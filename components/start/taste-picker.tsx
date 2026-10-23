@@ -7,6 +7,7 @@ import { ArrowRight, Check, Loader2, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 
 import type { MediaType } from '@/types/media'
+import { trackFeatureUsed } from '@/lib/analytics'
 import { discoverApi } from '@/lib/api-client'
 import {
   TASTE_MAX,
@@ -48,6 +49,21 @@ export function TastePicker({ candidates }: { candidates: TastePick[] }) {
       const page = await discoverApi(mediaType, params, { page: 1 })
       return { mediaType, results: (page.results ?? []).slice(0, 12) }
     },
+    onSuccess: (data, picks) =>
+      trackFeatureUsed({
+        feature: 'taste_picker',
+        action: 'suggested',
+        outcome: data.results.length > 0 ? 'ok' : 'empty',
+        picks: picks.length,
+        results: data.results.length,
+        media_type: data.mediaType,
+      }),
+    onError: () =>
+      trackFeatureUsed({
+        feature: 'taste_picker',
+        action: 'suggested',
+        outcome: 'failed',
+      }),
   })
 
   const toggle = (pick: TastePick) => {
@@ -75,6 +91,12 @@ export function TastePicker({ candidates }: { candidates: TastePick[] }) {
     }
     setWatchlist([...additions, ...watchlist])
     setSaved(true)
+    // Straight into the store, so watchlist_added never fires for these.
+    trackFeatureUsed({
+      feature: 'taste_picker',
+      action: 'saved_all',
+      added: additions.length,
+    })
     toast(`${additions.length} saved to your watchlist.`)
   }
 

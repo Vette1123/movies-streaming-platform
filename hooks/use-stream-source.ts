@@ -10,7 +10,11 @@ import {
   type StreamSource,
 } from '@/config/sources'
 import { savePrefs } from '@/lib/account'
-import { trackPlayerTrialStarted } from '@/lib/analytics'
+import {
+  registerAnalyticsContext,
+  trackPlayerTrialStarted,
+  trackStreamSourceSelected,
+} from '@/lib/analytics'
 import {
   readTrial,
   trialStatus,
@@ -100,7 +104,7 @@ export interface StreamSourceControl {
   source: StreamSource
   sources: StreamSource[]
   /** Switch, and remember the choice for this title. */
-  select: (id: string) => void
+  select: (id: string, via?: 'switcher' | 'stall_auto') => void
   /** The next provider in the list, or null when this is the last one. */
   next: StreamSource | null
   /** Move to `next`. A no-op on the last provider. */
@@ -220,7 +224,7 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
   const endTrial = useCallback(() => setTrialLeft(true), [])
 
   const select = useCallback(
-    (id: string) => {
+    (id: string, via: 'switcher' | 'stall_auto' = 'switcher') => {
       // The Reely Player row in a free account's list is the trial; any
       // other row while on it is a choice to leave it for this title.
       if (id === REELY_SOURCE_ID && trialOffered) {
@@ -231,6 +235,7 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
       if (!canSwitch) return
       if (!sources.some((entry) => entry.id === id)) return
       setSwitched(true)
+      trackStreamSourceSelected({ source: id, via })
       // Computed from the state this render already holds rather than inside the
       // updater: an updater has to be pure, and React may run it twice.
       const merged = trim({ ...byTitle, [mediaKey]: id })
@@ -266,8 +271,14 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
 
   const next = canSwitch ? sourceAfter(sources, source.id) : null
 
+  // Every event from here on — media_played above all — says which server it
+  // was on, so a failure rate per server is one breakdown.
+  useEffect(() => {
+    registerAnalyticsContext({ stream_source: source.id })
+  }, [source.id])
+
   const advance = useCallback(() => {
-    if (next) select(next.id)
+    if (next) select(next.id, 'stall_auto')
   }, [next, select])
 
   return {

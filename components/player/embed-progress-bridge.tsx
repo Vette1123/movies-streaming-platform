@@ -2,6 +2,7 @@
 
 import React from 'react'
 
+import { trackPlaybackFinished } from '@/lib/analytics'
 import {
   parseEmbedProgress,
   shouldWriteEmbedProgress,
@@ -70,6 +71,7 @@ export const EmbedProgressBridge = ({
     const finish = () => {
       if (finishedSent) return
       finishedSent = true
+      trackPlaybackFinished({ media_id: id, media_type: type, source: 'embed' })
       finishedRef.current?.()
     }
 

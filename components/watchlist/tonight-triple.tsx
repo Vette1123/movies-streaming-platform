@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react'
 import { Dices } from 'lucide-react'
 
+import { trackFeatureUsed } from '@/lib/analytics'
 import { convertMinutesToHours } from '@/lib/utils'
 import {
   daySeed,
@@ -81,7 +82,10 @@ export const TonightTriple = () => {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => setSpins((n) => n + 1)}
+            onClick={() => {
+              setSpins((n) => n + 1)
+              trackFeatureUsed({ feature: 'tonight_triple', action: 'spun' })
+            }}
             className="group mt-4 gap-2"
           >
             <Dices

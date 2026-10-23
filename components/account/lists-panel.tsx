@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Check, Copy, Globe, Plus, Star, Trash2, Wand2, X } from 'lucide-react'
 
+import { trackApiError, trackFeatureUsed, trackShared } from '@/lib/analytics'
 import { presetMediaType, type FilterPreset } from '@/lib/filter-presets'
 import type { ListItem, StoredList } from '@/lib/lists/routes'
 import { useAccount } from '@/hooks/use-account'
@@ -14,6 +15,10 @@ import { SkeletonRows } from '@/components/ui/skeleton'
 import { SmartListGrid } from '@/components/media/smart-list-grid'
 
 import { SupporterGate } from './supporter-gate'
+
+/** 'created' for a save without an id, else the API action itself. */
+const listAction = (body: Record<string, unknown>): string =>
+  body.id ? String(body.action) : 'created'
 
 /**
  * Lists: the part of an account that is actually creative rather than
@@ -42,6 +47,11 @@ export function ListsPanel() {
     } catch {
       setError('Could not load your lists.')
       setLists([])
+      trackApiError({
+        source: 'lists_load',
+        message: 'network failure',
+        expected: true,
+      })
     }
   }, [])
 
@@ -64,14 +74,27 @@ export function ListsPanel() {
           body: JSON.stringify(body),
         })
         const data = await response.json().catch(() => null)
+        const action = listAction(body)
         if (!response.ok || data?.success !== true) {
           setError(data?.error ?? 'That did not save. Try again.')
+          trackFeatureUsed({
+            feature: 'lists',
+            action,
+            outcome: 'failed',
+            status: response.status,
+          })
           return null
         }
+        trackFeatureUsed({ feature: 'lists', action, outcome: 'ok' })
         await load()
         return data as { id?: string; slug?: string | null }
       } catch {
         setError('Could not reach the server.')
+        trackApiError({
+          source: 'lists_save',
+          message: 'network failure',
+          expected: true,
+        })
         return null
       } finally {
         setBusy(false)
@@ -374,6 +397,7 @@ function ShareLink({ slug }: { slug: string }) {
       variant="secondary"
       onClick={() => {
         void navigator.clipboard?.writeText(url)
+        trackShared({ surface: 'list_link', method: 'clipboard' })
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
       }}

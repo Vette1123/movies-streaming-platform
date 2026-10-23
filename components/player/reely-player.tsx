@@ -3,7 +3,11 @@
 import * as React from 'react'
 
 import { REELY_SOURCE_ID } from '@/config/sources'
-import { trackPlayerFailed, trackPlayerStreamPath } from '@/lib/analytics'
+import {
+  trackPlaybackFinished,
+  trackPlayerFailed,
+  trackPlayerStreamPath,
+} from '@/lib/analytics'
 import { STREAM_EMBED_ALLOW } from '@/lib/embed-policy'
 import {
   clearPosition,
@@ -95,8 +99,13 @@ export function ReelyPlayer({
   const finish = React.useCallback(() => {
     if (finishedSent.current) return
     finishedSent.current = true
+    trackPlaybackFinished({
+      media_id: target.id,
+      media_type: target.type === 'movie' ? 'movie' : 'tv',
+      source: 'reely-player',
+    })
     finishedRef.current?.()
-  }, [])
+  }, [target.id, target.type])
 
   const key = `${target.type}:${target.id}:${target.season ?? ''}:${target.episode ?? ''}`
 

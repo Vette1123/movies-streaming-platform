@@ -3,6 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 
+import { trackFeatureUsed } from '@/lib/analytics'
 import { Mood, moodById, MOODS, moodToFilters } from '@/lib/moods'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
@@ -75,6 +76,12 @@ export default function MoodPage() {
     setActiveId(next)
     syncUrl(next, mediaType)
     if (next) {
+      trackFeatureUsed({
+        feature: 'mood',
+        action: 'picked',
+        mood: next,
+        media_type: mediaType,
+      })
       window.setTimeout(
         () => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }),
         60
@@ -85,6 +92,11 @@ export default function MoodPage() {
   const selectMedia = (type: MoodMedia) => {
     setMediaType(type)
     syncUrl(activeId, type)
+    trackFeatureUsed({
+      feature: 'mood',
+      action: 'media_switched',
+      media_type: type,
+    })
   }
 
   return (

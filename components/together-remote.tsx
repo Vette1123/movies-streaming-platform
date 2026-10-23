@@ -4,6 +4,7 @@ import * as React from 'react'
 import { Pause, Play, RotateCcw, RotateCw, Smartphone } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { trackApiError } from '@/lib/analytics'
 import { ApiError, togetherRemoteApi, togetherStateApi } from '@/lib/api-client'
 import { formatPlaybackTime } from '@/lib/playback-positions'
 import { remoteView } from '@/lib/watch-together'
@@ -55,6 +56,12 @@ export function TogetherRemote({ code, remoteKey }: TogetherRemoteProps) {
           return
         }
         toast('Could not reach the room')
+        trackApiError({
+          source: 'together_remote',
+          message: 'remote press failed',
+          status: error instanceof ApiError ? error.status : undefined,
+          expected: !(error instanceof ApiError),
+        })
       }
     },
     [code, remoteKey]

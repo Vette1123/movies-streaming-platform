@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Check, Copy, ImageDown, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { trackFeatureUsed, trackShared } from '@/lib/analytics'
 import {
   computeStats,
   hoursLabel,
@@ -20,7 +21,7 @@ import { useAccount } from '@/hooks/use-account'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useMounted } from '@/hooks/use-mounted'
 import { useRuntimeBackfill } from '@/hooks/use-runtime-backfill'
-import { shareOrDownloadFile } from '@/hooks/use-share'
+import { shareMethod, shareOrDownloadFile } from '@/hooks/use-share'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { chipVariants } from '@/components/ui/chip'
 import { Skeleton, SkeletonRows } from '@/components/ui/skeleton'
@@ -145,6 +146,7 @@ export function StatsPanel() {
           variant="outline"
           onClick={() => {
             void navigator.clipboard?.writeText(summary)
+            trackShared({ surface: 'stats_summary', method: 'clipboard' })
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
           }}
@@ -210,12 +212,18 @@ function ShareCard({
         )
         return
       }
-      await shareOrDownloadFile(file, {
+      const outcome = await shareOrDownloadFile(file, {
         title: year === null ? 'My year on Reely' : `My ${year} on Reely`,
       })
+      trackShared({ surface: 'stats_card', method: shareMethod(outcome) })
     } catch {
       // Only the render can land here: the share falls back to a download.
       toast('Could not draw the card. The summary above still copies.')
+      trackFeatureUsed({
+        feature: 'stats',
+        action: 'card_render',
+        outcome: 'failed',
+      })
     } finally {
       setBusy(false)
     }
@@ -276,7 +284,14 @@ function YearPicker({
             key={choice.key}
             type="button"
             aria-pressed={active}
-            onClick={() => onSelect(choice.value)}
+            onClick={() => {
+              onSelect(choice.value)
+              trackFeatureUsed({
+                feature: 'stats',
+                action: 'year_selected',
+                scope: choice.value === null ? 'all' : 'year',
+              })
+            }}
             className={chipVariants({
               variant: active ? 'primary' : 'neutral',
               interactive: active ? 'current' : true,

@@ -3,6 +3,7 @@
 import React from 'react'
 import { RefreshCw, RotateCcw, TriangleAlert } from 'lucide-react'
 
+import { trackRetryClicked } from '@/lib/analytics'
 import { isStaleBundleError, reloadForStaleDeploy } from '@/lib/client-errors'
 import { loadPostHog } from '@/lib/posthog-client'
 import { cn } from '@/lib/utils'
@@ -68,7 +69,10 @@ export class SectionErrorBoundary extends React.Component<
     )
   }
 
-  private retry = () => this.setState({ error: null })
+  private retry = () => {
+    trackRetryClicked({ surface: 'section_error', section: this.props.section })
+    this.setState({ error: null })
+  }
 
   render() {
     const { error } = this.state

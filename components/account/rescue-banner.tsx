@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { CloudOff, X } from 'lucide-react'
 
+import { trackFeatureUsed } from '@/lib/analytics'
 import { rescueLine, shouldOfferRescue } from '@/lib/rescue'
 import { useAccount } from '@/hooks/use-account'
 import { useLocalStorage } from '@/hooks/use-local-storage'
@@ -53,6 +54,7 @@ export function RescueBanner() {
         onClick={() => {
           localStorage.setItem(DISMISS_KEY, '1')
           setDismissed(true)
+          trackFeatureUsed({ feature: 'rescue_banner', action: 'dismissed' })
         }}
       >
         <X className="size-4" />

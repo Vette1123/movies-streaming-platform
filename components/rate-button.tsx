@@ -7,8 +7,12 @@ import { toast } from 'sonner'
 
 import { MovieDetails } from '@/types/movie-details'
 import { SeriesDetails } from '@/types/series-details'
-import { trackSupportCtaClicked } from '@/lib/analytics'
-import { getMediaTitle } from '@/lib/media'
+import {
+  trackRatingRemoved,
+  trackRatingSaved,
+  trackSupportCtaClicked,
+} from '@/lib/analytics'
+import { getMediaTitle, resolveMediaType } from '@/lib/media'
 import { cn } from '@/lib/utils'
 import { useAccountIdentity } from '@/hooks/use-account'
 import { useMounted } from '@/hooks/use-mounted'
@@ -195,6 +199,10 @@ function RateForm({
             className="mr-auto text-destructive hover:text-destructive"
             onClick={() => {
               clear()
+              trackRatingRemoved({
+                media_id: media.id,
+                media_type: resolveMediaType(media),
+              })
               toast(`Rating removed from “${title}”`)
               onDone()
             }}
@@ -205,6 +213,12 @@ function RateForm({
         <Button
           onClick={() => {
             save(score, text)
+            trackRatingSaved({
+              media_id: media.id,
+              media_type: resolveMediaType(media),
+              score,
+              has_note: text.trim().length > 0,
+            })
             toast.success(`You rated “${title}” ${score.toFixed(1)}`)
             onDone()
           }}

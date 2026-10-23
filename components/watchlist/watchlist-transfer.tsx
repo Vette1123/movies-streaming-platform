@@ -3,6 +3,7 @@
 import React, { useCallback, useState } from 'react'
 import { Download, Upload } from 'lucide-react'
 
+import { trackFeatureUsed } from '@/lib/analytics'
 import { useWatchlist } from '@/hooks/use-watchlist'
 import { Button } from '@/components/ui/button'
 
@@ -24,8 +25,18 @@ export function WatchlistTransfer() {
       try {
         await importWatchlist(file)
         e.target.value = ''
+        trackFeatureUsed({
+          feature: 'watchlist_transfer',
+          action: 'imported',
+          outcome: 'ok',
+        })
       } catch (err) {
         setImportError(err instanceof Error ? err.message : 'Import failed.')
+        trackFeatureUsed({
+          feature: 'watchlist_transfer',
+          action: 'imported',
+          outcome: 'failed',
+        })
       }
     },
     [importWatchlist]
@@ -34,7 +45,18 @@ export function WatchlistTransfer() {
   return (
     <div className="flex flex-wrap items-center gap-2">
       {watchlist.length > 0 && (
-        <Button variant="outline" size="sm" onClick={exportWatchlist}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            exportWatchlist()
+            trackFeatureUsed({
+              feature: 'watchlist_transfer',
+              action: 'exported',
+              items: watchlist.length,
+            })
+          }}
+        >
           <Download className="mr-2 size-4" />
           Export
         </Button>

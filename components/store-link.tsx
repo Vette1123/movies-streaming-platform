@@ -2,6 +2,7 @@
 
 import React from 'react'
 
+import { trackFeatureUsed } from '@/lib/analytics'
 import { CompanionApp, openStoreListing, storeHref } from '@/lib/apps'
 import { cn } from '@/lib/utils'
 
@@ -28,6 +29,11 @@ export function StoreLink({
       rel="noopener noreferrer"
       onClick={(e) => {
         e.preventDefault()
+        trackFeatureUsed({
+          feature: 'store_link',
+          action: 'opened',
+          app: app.slug,
+        })
         openStoreListing(app)
       }}
       className={cn(

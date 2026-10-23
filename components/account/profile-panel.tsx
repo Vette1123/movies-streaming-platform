@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Check, Copy, ExternalLink } from 'lucide-react'
 
+import { trackApiError, trackFeatureUsed } from '@/lib/analytics'
 import { normaliseHandle } from '@/lib/profile/routes'
 import { useAccount } from '@/hooks/use-account'
 import { Button } from '@/components/ui/button'
@@ -53,6 +54,11 @@ export function ProfilePanel() {
         if (data?.success) apply(data as Settings)
       } catch {
         setError('Could not reach the server.')
+        trackApiError({
+          source: 'profile_load',
+          message: 'network failure',
+          expected: true,
+        })
       }
     }
     void load()
@@ -69,13 +75,33 @@ export function ProfilePanel() {
           body: JSON.stringify(body),
         })
         const data = await response.json().catch(() => null)
+        // Which field, never its value: a handle or a bio is somebody's words.
+        const field = Object.keys(body)[0] ?? 'unknown'
         if (!response.ok || data?.success !== true) {
           setError(data?.error ?? 'That did not save. Try again.')
+          trackFeatureUsed({
+            feature: 'public_profile',
+            action: `saved_${field}`,
+            outcome: 'failed',
+            status: response.status,
+          })
           return
         }
         apply(data as Settings)
+        trackFeatureUsed({
+          feature: 'public_profile',
+          action: `saved_${field}`,
+          outcome: 'ok',
+          published:
+            typeof body.published === 'boolean' ? body.published : undefined,
+        })
       } catch {
         setError('Could not reach the server.')
+        trackApiError({
+          source: 'profile_save',
+          message: 'network failure',
+          expected: true,
+        })
       } finally {
         setBusy(false)
       }

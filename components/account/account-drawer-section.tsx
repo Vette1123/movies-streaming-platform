@@ -82,7 +82,7 @@ export function AccountDrawerSection({
         label="Sign out"
         onClick={() => {
           onNavigate()
-          void signOut()
+          void signOut(false, 'drawer')
         }}
       />
     </DrawerSection>

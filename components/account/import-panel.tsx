@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { Download, Loader2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { trackApiError, trackFeatureUsed } from '@/lib/analytics'
 import { parseImport, type ImportRow } from '@/lib/import/parse'
 import type { ResolvedRow } from '@/lib/import/routes'
 import { useAccount } from '@/hooks/use-account'
@@ -113,6 +114,12 @@ export function ImportPanel() {
       toast.error(
         'That does not look like a Letterboxd or IMDb export. Look for ratings.csv or watchlist.csv.'
       )
+      trackFeatureUsed({
+        feature: 'library_import',
+        action: 'parsed',
+        outcome: 'failed',
+        reason: parsed.kind === 'unknown' ? 'unrecognized_file' : 'empty_file',
+      })
       return
     }
 
@@ -159,6 +166,17 @@ export function ImportPanel() {
 
     setOutcome({ matched, unmatched, rated, destination })
     setPhase('done')
+    trackFeatureUsed({
+      feature: 'library_import',
+      action: 'completed',
+      outcome: matched > 0 ? 'ok' : 'empty',
+      source: parsed.kind,
+      destination,
+      rows: rows.length,
+      matched,
+      unmatched,
+      rated,
+    })
   }
 
   return (
@@ -230,9 +248,23 @@ async function resolveBatch(rows: ImportRow[]): Promise<ResolvedRow[]> {
       }),
     })
     const body = await response.json()
-    if (!response.ok || !body?.success) return []
+    if (!response.ok || !body?.success) {
+      // Reported, because the UI cannot tell this apart from a bad file: the
+      // whole batch is counted as "unmatched".
+      trackApiError({
+        source: 'import_resolve',
+        message: `resolve failed: ${response.status}`,
+        status: response.status,
+      })
+      return []
+    }
     return (body.resolved ?? []) as ResolvedRow[]
   } catch {
+    trackApiError({
+      source: 'import_resolve',
+      message: 'network failure',
+      expected: true,
+    })
     return []
   }
 }

@@ -35,14 +35,8 @@
 import { execFileSync } from 'node:child_process'
 import process from 'node:process'
 
-import { loadLocalEnv } from './load-env.mjs'
+import { posthogConfig, runQuery } from './lib/posthog.mjs'
 
-loadLocalEnv()
-
-const HOST = (
-  process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.posthog.com'
-).replace(/\/$/, '')
-const PROJECT = process.env.POSTHOG_PROJECT_ID || '216915'
 const KEY = process.env.POSTHOG_API_KEY
 const REPO =
   process.env.GITHUB_REPOSITORY || 'Vette1123/movies-streaming-platform'
@@ -70,50 +64,18 @@ async function posthogMessages() {
   // Both kinds of event: an uncaught error (which is what files an issue) and
   // an API failure (the react-query reporter's own event, which some issues
   // are about). The message is the join key in both.
+  //
+  // The LIMIT is load-bearing: without one HogQL silently stops at 100 rows,
+  // and every live message past the 100th would read as dead and be closed.
+  // runQuery throws if even this is truncated.
   const sql = `SELECT DISTINCT if(event = '$exception', properties.\`$exception_list\`[1].value, properties.message) AS message
     FROM events
-    WHERE timestamp > now() - INTERVAL ${DAYS} DAY AND event IN ('$exception', 'api_error')`
-  const res = await fetch(`${HOST}/api/projects/${PROJECT}/query/`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      query: { kind: 'HogQLQuery', query: sql },
-      refresh: 'async',
-    }),
-  })
-  const body = await res.json()
-  if (!res.ok) {
-    throw new Error(
-      `PostHog rejected the query (${res.status}): ${JSON.stringify(body).slice(0, 300)}`
-    )
-  }
-  const id = body.query_status?.id || body.id
-  let polled = body
-  for (let i = 0; i < 90; i++) {
-    const done =
-      polled.query_status?.complete === true ||
-      Array.isArray(polled.results) ||
-      Array.isArray(polled.query_status?.results?.results)
-    if (done) break
-    if (!id) break
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    const poll = await fetch(`${HOST}/api/projects/${PROJECT}/query/${id}/`, {
-      headers: { Authorization: `Bearer ${KEY}` },
-    })
-    polled = await poll.json()
-    const failure = polled.query_status?.error || polled.error
-    if (failure) throw new Error(String(failure))
-  }
-  // The same shape scripts/posthog-query.mjs reads: the rows live under
-  // query_status.results.results, or under results on a synchronous answer.
-  const payload = polled.query_status?.results ?? polled
-  const rows = payload.results ?? polled.results ?? []
+    WHERE timestamp > now() - INTERVAL ${DAYS} DAY AND event IN ('$exception', 'api_error')
+    LIMIT 10000`
+  const rows = await runQuery(posthogConfig(), sql)
   return new Set(
-    (Array.isArray(rows) ? rows : [])
-      .map((row) => (Array.isArray(row) ? row[0] : row.message))
+    rows
+      .map((row) => row.message)
       .filter((value) => typeof value === 'string' && value.length)
   )
 }

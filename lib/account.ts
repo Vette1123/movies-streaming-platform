@@ -13,6 +13,12 @@
  * render → effect → setState cascade, and lets a page paint the right control on
  * its first frame instead of after a round trip.
  */
+import {
+  trackAccountDeleted,
+  trackApiError,
+  trackPrefChanged,
+  trackSignedOut,
+} from '@/lib/analytics'
 import { HINT_COOKIE } from '@/lib/auth/cookies'
 import type { FilterPreset } from '@/lib/filter-presets'
 import type { PlaybackPrefs } from '@/lib/playback-prefs'
@@ -285,12 +291,21 @@ export async function refreshAccount(
       // unanswerable, not signed out.
       if (!response.ok) {
         markFailed()
+        trackApiError({
+          source: 'account_refresh',
+          message: `refresh failed: ${response.status}`,
+          status: response.status,
+        })
         return
       }
 
       const data = await response.json()
       if (!data?.success) {
         markFailed()
+        trackApiError({
+          source: 'account_refresh',
+          message: 'refresh answered without success',
+        })
         return
       }
 
@@ -313,6 +328,11 @@ export async function refreshAccount(
       // Network failure. Deliberately leaves the existing token and state in
       // place: a supporter must never be downgraded because one request failed.
       markFailed()
+      trackApiError({
+        source: 'account_refresh',
+        message: 'network failure',
+        expected: true,
+      })
     } finally {
       inFlight = null
     }
@@ -323,10 +343,14 @@ export async function refreshAccount(
 
 /** Save preferences, optimistically, and keep the profile cache in step. */
 export async function savePrefs(next: AccountPrefs): Promise<boolean> {
+  const changes = prefChanges(state.prefs, next)
   const merged = { ...state.prefs, ...next }
   state = { ...state, prefs: merged }
   notify()
   writeProfileCache(cacheFromState(state))
+  // Every settings control on the account page saves through here, so this is
+  // the one place that has to report them.
+  for (const change of changes) trackPrefChanged(change)
 
   try {
     const response = await fetch('/api/account', {
@@ -334,10 +358,47 @@ export async function savePrefs(next: AccountPrefs): Promise<boolean> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prefs: merged }),
     })
+    if (!response.ok) {
+      trackApiError({
+        source: 'save_prefs',
+        message: `save failed: ${response.status}`,
+        status: response.status,
+      })
+    }
     return response.ok
   } catch {
+    trackApiError({
+      source: 'save_prefs',
+      message: 'network failure',
+      expected: true,
+    })
     return false
   }
+}
+
+/**
+ * The prefs a save actually changes, as analytics-safe values: scalars as
+ * they are (accent, density and source are short enums), structured prefs
+ * (presets, playback, quiet hours) as 'changed' so nothing a person typed
+ * leaves the browser.
+ */
+export function prefChanges(
+  prev: AccountPrefs,
+  next: AccountPrefs
+): { key: string; value: string | number | boolean | null }[] {
+  const out: { key: string; value: string | number | boolean | null }[] = []
+  for (const [key, value] of Object.entries(next)) {
+    const before = (prev as Record<string, unknown>)[key]
+    if (JSON.stringify(before) === JSON.stringify(value)) continue
+    out.push({ key, value: prefValue(value) })
+  }
+  return out
+}
+
+function prefValue(value: unknown): string | number | boolean | null {
+  if (value === undefined || value === null) return null
+  if (typeof value === 'object') return 'changed'
+  return value as string | number | boolean
 }
 
 export async function deleteAccount(): Promise<{
@@ -352,23 +413,43 @@ export async function deleteAccount(): Promise<{
     })
     const data = await response.json().catch(() => null)
     if (!response.ok || data?.success !== true) {
+      trackAccountDeleted({ ok: false })
+      trackApiError({
+        source: 'delete_account',
+        message: `delete failed: ${response.status}`,
+        status: response.status,
+      })
       return {
         ok: false,
         error: data?.error ?? 'Could not delete the account.',
       }
     }
+    // Before settling: the event must still belong to the outgoing person.
+    trackAccountDeleted({ ok: true })
     settleSignedOut()
     return { ok: true }
   } catch {
+    trackAccountDeleted({ ok: false })
+    trackApiError({
+      source: 'delete_account',
+      message: 'network failure',
+      expected: true,
+    })
     return { ok: false, error: 'Could not reach the server.' }
   }
 }
 
-export async function signOut(all = false): Promise<void> {
+export async function signOut(all = false, surface = 'account'): Promise<void> {
+  trackSignedOut({ all, surface })
   try {
     await fetch(`/api/auth/logout${all ? '?all=1' : ''}`, { method: 'POST' })
   } catch {
     // The cookies are cleared server-side; a failure here means retrying.
+    trackApiError({
+      source: 'sign_out',
+      message: 'network failure',
+      expected: true,
+    })
   }
   settleSignedOut()
 }

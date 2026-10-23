@@ -4,6 +4,7 @@ import React from 'react'
 import { usePathname } from 'next/navigation'
 import { Download, Share, X } from 'lucide-react'
 
+import { trackFeatureUsed } from '@/lib/analytics'
 import { useMounted } from '@/hooks/use-mounted'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
 
@@ -123,7 +124,10 @@ export function InstallPrompt() {
       )}
       <button
         type="button"
-        onClick={remember}
+        onClick={() => {
+          trackFeatureUsed({ feature: 'pwa_nudge', action: 'dismissed' })
+          remember()
+        }}
         aria-label="Dismiss"
         className="relative z-10 grid size-7 shrink-0 place-items-center rounded-full text-white/60 transition hover:bg-white/10 hover:text-white"
       >

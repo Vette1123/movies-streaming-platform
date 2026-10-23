@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Clapperboard, LogOut, Share2, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { trackApiError, trackFeatureUsed } from '@/lib/analytics'
 import {
   createMatchRoomApi,
   getPopularApi,
@@ -315,7 +316,14 @@ export default function MatchNightPage() {
         mediaId: card.id,
         mediaType: card.mediaType,
         liked,
-      }).catch(() => toast('That swipe did not reach the room'))
+      }).catch(() => {
+        toast('That swipe did not reach the room')
+        trackApiError({
+          source: 'match_swipe',
+          message: 'swipe did not reach the room',
+          expected: true,
+        })
+      })
     },
     []
   )
@@ -356,8 +364,18 @@ export default function MatchNightPage() {
       const { code } = await createMatchRoomApi()
       setRoom(code)
       toast(`Room ${code} is open — send the invite`)
+      trackFeatureUsed({
+        feature: 'match_night',
+        action: 'room_created',
+        outcome: 'ok',
+      })
     } catch {
       toast('Could not open a room. Try again in a moment')
+      trackFeatureUsed({
+        feature: 'match_night',
+        action: 'room_created',
+        outcome: 'failed',
+      })
     } finally {
       setCreating(false)
     }
@@ -367,12 +385,30 @@ export default function MatchNightPage() {
     const code = raw.trim().toUpperCase()
     if (code.length !== 6) {
       toast('Room codes are 6 characters')
+      trackFeatureUsed({
+        feature: 'match_night',
+        action: 'room_joined',
+        outcome: 'failed',
+        reason: 'bad_code',
+      })
       return
     }
     setRoom(code)
+    trackFeatureUsed({
+      feature: 'match_night',
+      action: 'room_joined',
+      outcome: 'ok',
+    })
   }
 
   const leaveRoom = () => {
+    trackFeatureUsed({
+      feature: 'match_night',
+      action: 'room_left',
+      swipes: history.length,
+      likes: history.filter((entry) => entry.liked).length,
+      matches: matchState?.matches?.length ?? 0,
+    })
     setRoom(null)
     setHistory([])
     setQueued([])
@@ -408,6 +444,10 @@ export default function MatchNightPage() {
             onClick={() => {
               void navigator.clipboard?.writeText(room)
               toast('Code copied')
+              trackFeatureUsed({
+                feature: 'match_night',
+                action: 'code_copied',
+              })
             }}
             className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 font-mono text-base font-bold tracking-[0.2em] transition hover:border-white/25 sm:px-3 sm:py-1.5 sm:text-lg sm:tracking-[0.3em]"
             aria-label={`Room code ${room.split('').join(' ')}, copy`}
@@ -423,6 +463,7 @@ export default function MatchNightPage() {
             onClick={() =>
               void share({
                 title: 'Match Night on Reely',
+                surface: 'match_night',
                 path: `/match-night?room=${room}`,
               })
             }

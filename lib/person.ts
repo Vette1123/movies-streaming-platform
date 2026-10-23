@@ -1,7 +1,7 @@
 // Person-profile enrichment for PostHog.
 //
-// This app has no authentication, so we never call posthog.identify(). Instead,
-// with `person_profiles: 'always'` (see providers/posthog-provider.tsx) every
+// Most visitors never sign in, so identity is anonymous by default: with
+// `person_profiles: 'always'` (see providers/posthog-provider.tsx) every
 // visitor already gets a profile keyed on their anonymous distinct_id. These
 // helpers make that profile *rich*: setPersonProperties attaches durable traits
 // to the person, and register()/register_once() attach super properties that
@@ -125,4 +125,43 @@ export function syncWatchStats(items: WatchedItem[]): void {
         : undefined
     )
   )
+}
+
+export interface AccountAnalytics {
+  signedIn: boolean
+  userId: string | null
+  pro: boolean
+  planStatus: string | null
+  granted: boolean
+}
+
+/**
+ * Tie this browser to its account once the session settles, and carry
+ * `signed_in` / `supporter` on every event so any funnel can be cut by them.
+ *
+ * The distinct id is the account uuid, never the email (masareef's rule).
+ * identify() merges the anonymous history into the account, so a supporter's
+ * pre-sign-in browsing is attributed to them.
+ *
+ * ponytail: never reset() on sign-out. Watchlist and history live in this
+ * browser regardless of the account, so splitting the person there loses more
+ * than it gains. Ceiling: a shared browser signing into a second account stays
+ * on the first person; add reset() on an explicit sign-out click if that shows up.
+ */
+export function syncAccountIdentity(account: AccountAnalytics): void {
+  if (!isClient()) return
+  const traits = {
+    signed_in: account.signedIn,
+    supporter: account.pro,
+    plan_status: account.planStatus,
+    plan_granted: account.granted,
+  }
+  ph((posthog) => {
+    if (account.signedIn && account.userId) {
+      posthog.identify(account.userId, traits)
+    } else {
+      posthog.setPersonProperties(traits)
+    }
+    posthog.register({ signed_in: account.signedIn, supporter: account.pro })
+  })
 }

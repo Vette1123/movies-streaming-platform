@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const capture = vi.fn()
 
 vi.mock('@/lib/posthog-client', () => ({
-  ph: (fn: (posthog: { capture: typeof capture }) => void) => fn({ capture }),
+  ph: (
+    fn: (posthog: { capture: typeof capture; register: () => void }) => void
+  ) => fn({ capture, register: () => {} }),
 }))
 
 describe('trackPwaInstallable', () => {
@@ -26,7 +28,7 @@ describe('trackPwaInstallable', () => {
     trackPwaInstallable()
     trackPwaInstallable()
     expect(capture).toHaveBeenCalledTimes(1)
-    expect(capture).toHaveBeenCalledWith('pwa_installable', undefined)
+    expect(capture).toHaveBeenCalledWith('pwa_installable', { area: 'pwa' })
   })
 
   it('still counts when storage is blocked', async () => {

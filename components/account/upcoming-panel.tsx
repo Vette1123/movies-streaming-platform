@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { trackApiError, trackFeatureUsed } from '@/lib/analytics'
 import { buildIcs, type UpcomingItem } from '@/lib/upcoming/ics'
 import { useAccount } from '@/hooks/use-account'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -112,6 +113,11 @@ export function UpcomingPanel() {
       const body = (await response.json()) as Feed
       if (!response.ok || !body.success) {
         setState('failed')
+        trackApiError({
+          source: 'upcoming',
+          message: `upcoming failed: ${response.status}`,
+          status: response.status,
+        })
         return false
       }
       setItems(body.items ?? [])
@@ -122,6 +128,11 @@ export function UpcomingPanel() {
       return true
     } catch {
       setState('failed')
+      trackApiError({
+        source: 'upcoming',
+        message: 'network failure',
+        expected: true,
+      })
       return false
     }
   }, [])
@@ -265,6 +276,11 @@ function FeedSection({
   const rotate = async () => {
     const ok = await onRotate()
     toast(ok ? 'New calendar link ready' : 'Could not replace the link')
+    trackFeatureUsed({
+      feature: 'calendar',
+      action: 'rotated',
+      outcome: ok ? 'ok' : 'failed',
+    })
   }
 
   return (
@@ -291,6 +307,7 @@ function FeedSection({
           size="sm"
           onClick={() => {
             void navigator.clipboard?.writeText(url)
+            trackFeatureUsed({ feature: 'calendar', action: 'copied_ics' })
             setCopied('ics')
             setTimeout(() => setCopied(null), 2000)
           }}
@@ -313,7 +330,14 @@ function FeedSection({
           size="sm"
           variant="outline"
           disabled={items.length === 0}
-          onClick={() => downloadIcs(items)}
+          onClick={() => {
+            downloadIcs(items)
+            trackFeatureUsed({
+              feature: 'calendar',
+              action: 'downloaded_ics',
+              items: items.length,
+            })
+          }}
         >
           <CalendarPlus className="mr-2 size-4" />
           Download once
@@ -326,6 +350,7 @@ function FeedSection({
               void navigator.clipboard?.writeText(
                 `${window.location.origin}${rssPath}`
               )
+              trackFeatureUsed({ feature: 'calendar', action: 'copied_rss' })
               setCopied('rss')
               setTimeout(() => setCopied(null), 2000)
             }}

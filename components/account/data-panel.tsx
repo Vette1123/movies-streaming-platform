@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Download, Loader2, LogOut, Trash2 } from 'lucide-react'
 
 import { deleteAccount, signOut } from '@/lib/account'
+import { trackApiError, trackFeatureUsed } from '@/lib/analytics'
 import { clearSyncState, SYNCED_STORES } from '@/lib/library-sync'
 import { cn } from '@/lib/utils'
 import { useAccount } from '@/hooks/use-account'
@@ -51,6 +52,11 @@ async function buildExport(
       }
     } catch {
       // Offline. The file still carries everything held on this device.
+      trackApiError({
+        source: 'data_export_lists',
+        message: 'network failure',
+        expected: true,
+      })
     }
   }
 
@@ -90,6 +96,12 @@ export function DataPanel() {
               data,
               `reely-library-${new Date().toISOString().slice(0, 10)}.json`
             )
+            trackFeatureUsed({
+              feature: 'data_export',
+              action: 'downloaded',
+              outcome: 'ok',
+              with_lists: Array.isArray(data.lists),
+            })
             setBusy(false)
           }}
         >
@@ -113,7 +125,7 @@ export function DataPanel() {
             variant="outline"
             onClick={() => {
               clearSyncState()
-              void signOut()
+              void signOut(false, 'data_panel')
             }}
           >
             <LogOut className="mr-2 size-4" />
@@ -123,7 +135,7 @@ export function DataPanel() {
             variant="outline"
             onClick={() => {
               clearSyncState()
-              void signOut(true)
+              void signOut(true, 'data_panel')
             }}
           >
             Sign out everywhere

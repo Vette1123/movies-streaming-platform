@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { Check, CloudOff, RefreshCw, TriangleAlert } from 'lucide-react'
 
+import { trackFeatureUsed } from '@/lib/analytics'
 import { SYNCED_STORES } from '@/lib/library-sync'
 import { useAccount } from '@/hooks/use-account'
 import { useLibrarySync } from '@/hooks/use-library-sync'
@@ -67,7 +68,10 @@ export function LibraryPanel() {
         <Button
           size="sm"
           variant="outline"
-          onClick={() => void syncNow()}
+          onClick={() => {
+            trackFeatureUsed({ feature: 'library_sync', action: 'sync_now' })
+            void syncNow()
+          }}
           disabled={status === 'syncing'}
         >
           <RefreshCw

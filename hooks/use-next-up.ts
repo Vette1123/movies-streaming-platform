@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { trackApiError } from '@/lib/analytics'
 import { subscribeSyncSettled } from '@/lib/library-sync'
 import type { NextUpItem } from '@/lib/nextup/routes'
 import { PLAYBACK_STORAGE_KEY } from '@/lib/playback-positions'
@@ -75,6 +76,11 @@ export function useNextUp(enabled: boolean): {
       } | null
       if (!response.ok || !body?.success) {
         setState('failed')
+        trackApiError({
+          source: 'next_up',
+          message: `next-up failed: ${response.status}`,
+          status: response.status,
+        })
         return
       }
       setItems(body.items ?? [])
@@ -83,6 +89,11 @@ export function useNextUp(enabled: boolean): {
       lastLoadRef.current = Date.now()
     } catch {
       setState('failed')
+      trackApiError({
+        source: 'next_up',
+        message: 'network failure',
+        expected: true,
+      })
     } finally {
       loadingRef.current = false
     }
