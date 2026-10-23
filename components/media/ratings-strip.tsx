@@ -2,8 +2,8 @@ import React from 'react'
 
 import { RatingTile } from '@/lib/ratings'
 import { cn } from '@/lib/utils'
-import { Icons } from '@/components/icons'
 import { CountUpNumber } from '@/components/media/count-up-number'
+import { ratingMark } from '@/components/media/rating-marks'
 
 /**
  * The score wears the SOURCE's accent, not the theme's: IMDb's own yellow,
@@ -24,24 +24,13 @@ const TONE_CLASS: Record<RatingTile['tone'], string> = {
   tmdb: 'text-amber-300',
 }
 
-/** Each source's own mark — the logo a reader already knows from the source
- * itself. Coloured to match the tone, never themed away. */
-const SOURCE_ICON: Record<
-  RatingTile['id'],
-  React.ComponentType<React.SVGProps<SVGSVGElement>>
-> = {
-  imdb: Icons.ratingImdb,
-  rottenTomatoes: Icons.ratingRottenTomatoes,
-  metacritic: Icons.ratingMetacritic,
-  tmdb: Icons.ratingTmdb,
-}
-
 /**
  * The ratings row on a details page: IMDb, Rotten Tomatoes, Metacritic and
  * TMDB, side by side, each with its own mark and score.
  *
- * The source mark sits above the label in a coloured disc so it's unmistakable
- * at a glance. The score is the largest thing in the tile — the number is the
+ * Each tile leads with the source's real mark (components/media/rating-marks),
+ * at a fixed height and its own width, so IMDb's badge reads as IMDb at a
+ * glance. The score is the largest thing in the tile — the number is the
  * answer, the mark is the attribution.
  *
  * Renders nothing when there is no rating to show. A row of empty boxes
@@ -63,21 +52,15 @@ export function RatingsStrip({
       </h2>
       <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {tiles.map((tile) => {
-          const Icon = SOURCE_ICON[tile.id]
+          const Mark = ratingMark(tile)
           const tone = TONE_CLASS[tile.tone]
           return (
             <li
               key={tile.id}
               className="flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-secondary/40 p-3"
             >
-              <div
-                className={cn(
-                  'flex size-10 items-center justify-center rounded-full bg-white/6 text-white shadow-[0_0_16px_rgba(255,255,255,0.15)]',
-                  tone
-                )}
-              >
-                <Icon height={20} width={20} />
-              </div>
+              {/* The label below names the source for a screen reader. */}
+              <Mark aria-hidden className="h-8 w-auto shrink-0" />
               <span className="text-[10px] font-semibold tracking-wider text-white/60 uppercase">
                 {tile.label}
               </span>
@@ -130,7 +113,7 @@ export function RatingsPills({
       )}
     >
       {tiles.map((tile) => {
-        const Icon = SOURCE_ICON[tile.id]
+        const Mark = ratingMark(tile)
         return (
           <li
             key={tile.id}
@@ -138,14 +121,13 @@ export function RatingsPills({
               // Solid tint, no backdrop-blur: on the home hero these sit over
               // a playing trailer preview, and a backdrop-filter re-blurs
               // what is behind each pill on every video frame.
-              'flex items-center gap-1.5 rounded-full bg-black/60 px-2 py-1 ring-1 ring-white/10',
+              'flex items-center gap-1.5 rounded-full bg-black/60 py-1 pr-2 pl-1.5 ring-1 ring-white/10',
               TONE_CLASS[tile.tone]
             )}
           >
-            <Icon height={14} width={14} />
-            <span className="text-[10px] font-medium tracking-wide text-white/60 uppercase">
-              {tile.label}
-            </span>
+            {/* The mark IS the label here: a TMDB badge already says TMDB. */}
+            <Mark aria-hidden className="h-3.5 w-auto shrink-0" />
+            <span className="sr-only">{tile.label}</span>
             <span
               className={cn('font-bold tabular-nums', TONE_CLASS[tile.tone])}
             >
