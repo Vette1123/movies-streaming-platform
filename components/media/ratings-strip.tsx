@@ -48,8 +48,9 @@ const SOURCE_ICON: Record<RatingTile['id'], React.ComponentType<React.SVGProps<S
  * The ratings row on a details page: IMDb, Rotten Tomatoes, Metacritic and
  * TMDB, side by side, each with its own mark and score.
  *
- * The score is the largest thing in its tile and the source mark is the
- * smallest — the number is the answer, the mark is the attribution.
+ * The source mark sits above the label in a coloured disc so it's unmistakable
+ * at a glance. The score is the largest thing in the tile — the number is the
+ * answer, the mark is the attribution.
  *
  * Renders nothing when there is no rating to show. A row of empty boxes
  * ("NR" everywhere) is a claim about the film; a missing row is not.
@@ -71,31 +72,34 @@ export function RatingsStrip({
       <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {tiles.map((tile) => {
           const Icon = SOURCE_ICON[tile.id]
+          const tone = TONE_CLASS[tile.tone]
           return (
             <li
               key={tile.id}
               className={cn(
-                'flex flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-secondary/40 p-3 ring-1 ring-white/5 transition-all duration-300 ring-inset hover:bg-secondary/60 hover:shadow-[0_0_24px_rgba(255,255,255,0.08)] hover:ring-white/10',
-                TONE_CLASS[tile.tone] === 'text-[#f5c518]'
+                'flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-secondary/40 p-3 ring-1 ring-white/5 transition-all duration-300 ring-inset hover:bg-secondary/60 hover:ring-white/5',
+                tone === 'text-[#f5c518]'
                   ? 'hover:shadow-[0_0_32px_rgba(245,197,24,0.25)]'
-                  : TONE_CLASS[tile.tone] === 'text-emerald-400' ||
-                    TONE_CLASS[tile.tone] === 'text-amber-300'
-                  ? 'hover:shadow-[0_0_32px_rgba(34,211,238,0.18)]'
-                  : 'hover:shadow-[0_0_32px_rgba(255,15,15,0.2)]'
+                  : tone === 'text-emerald-400' || tone === 'text-amber-300'
+                    ? 'hover:shadow-[0_0_32px_rgba(34,211,238,0.18)]'
+                    : 'hover:shadow-[0_0_32px_rgba(255,15,15,0.2)]'
               )}
             >
               <div
                 className={cn(
-                  'flex size-8 items-center justify-center rounded-full bg-white/5 text-white shadow-[0_0_12px_rgba(255,255,255,0.15)]',
-                  TONE_CLASS[tile.tone]
+                  'flex size-10 items-center justify-center rounded-full bg-white/6 text-white shadow-[0_0_16px_rgba(255,255,255,0.15)]',
+                  tone
                 )}
               >
-                <Icon height={16} width={16} />
+                <Icon height={20} width={20} />
               </div>
+              <span className="text-[10px] font-semibold tracking-wider text-white/60 uppercase">
+                {tile.label}
+              </span>
               <span
                 className={cn(
-                  'mt-0.5 text-2xl leading-none font-bold tabular-nums',
-                  TONE_CLASS[tile.tone]
+                  'mt-0.5 text-3xl leading-none font-bold tabular-nums',
+                  tone
                 )}
               >
                 <CountUpNumber score={tile.score} />
@@ -148,7 +152,7 @@ export function RatingsPills({
               TONE_CLASS[tile.tone]
             )}
           >
-            <Icon height={12} width={12} />
+            <Icon height={14} width={14} />
             <span className="text-[10px] font-medium tracking-wide text-white/60 uppercase">
               {tile.label}
             </span>
