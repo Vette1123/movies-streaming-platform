@@ -263,11 +263,17 @@ export function track(
   const record = noteVisit(now)
   const milestones = milestonesFor(event, record, now, isClaimed)
   for (const milestone of milestones) claim(milestone.key, now)
+  // Read now, not from the `route` super property: that is registered by the
+  // $pageview effect, which on a client navigation can run after the new
+  // page's own effects, so their events carried the previous page's route.
+  const pathname = window.location?.pathname
+  const route = pathname ? { route: routeTemplate(pathname) } : {}
   ph((posthog) => {
-    posthog.capture(event, { area: EVENT_AREA[event], ...properties })
+    posthog.capture(event, { area: EVENT_AREA[event], ...route, ...properties })
     for (const milestone of milestones) {
       posthog.capture(milestone.key, {
         area: EVENT_AREA[milestone.key],
+        ...route,
         ...milestone.properties,
       })
     }
@@ -768,6 +774,7 @@ export const FEATURE_AREA = {
   rescue_banner: 'account',
   pwa_nudge: 'pwa',
   store_link: 'growth',
+  recent_searches: 'search',
 } as const satisfies Record<string, EventArea>
 
 export type Feature = keyof typeof FEATURE_AREA

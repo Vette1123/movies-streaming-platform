@@ -21,6 +21,7 @@ import { siteConfig } from '@/config/site'
 import { SUPPORT_PRICES } from '@/config/support'
 import {
   trackCommandShortcutUsed,
+  trackFeatureUsed,
   trackSearchNoResults,
   trackSearchOpened,
   trackSearchPerformed,
@@ -197,7 +198,12 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
   // above `resultsShown` for why cmdk cannot be left to pick it.
   const [selected, setSelected] = React.useState('')
   const listRef = React.useRef<HTMLDivElement>(null)
-  const { recent, add: addRecent, remove: removeRecent } = useRecentSearches()
+  const {
+    recent,
+    add: addRecent,
+    remove: removeRecent,
+    clear: clearRecent,
+  } = useRecentSearches()
   const router = useRouter()
   const { ready, pro } = useAccountIdentity()
   const supporter = ready && pro
@@ -475,32 +481,55 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
 
             {status === 'idle' &&
               (recent.length > 0 ? (
-                recent.map((term) => (
-                  <CommandItem
-                    key={term}
-                    value={`recent:${term}`}
-                    onSelect={() => submitSearch(term)}
-                    className="group/recent cursor-pointer hover:bg-accent"
-                  >
-                    <Clock
-                      className="mr-2 size-4 shrink-0 text-muted-foreground"
-                      aria-hidden
-                    />
-                    <span className="flex-1 truncate">{term}</span>
-                    <button
-                      type="button"
-                      aria-label={`Remove “${term}” from recent searches`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        removeRecent(term)
-                      }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      className="ml-2 shrink-0 cursor-pointer rounded p-0.5 text-muted-foreground/60 opacity-0 transition group-hover/recent:opacity-100 hover:text-foreground focus-visible:opacity-100"
+                <>
+                  {recent.map((term) => (
+                    <CommandItem
+                      key={term}
+                      value={`recent:${term}`}
+                      onSelect={() => submitSearch(term)}
+                      className="group/recent cursor-pointer hover:bg-accent"
                     >
-                      <X className="size-3.5" />
-                    </button>
-                  </CommandItem>
-                ))
+                      <Clock
+                        className="mr-2 size-4 shrink-0 text-muted-foreground"
+                        aria-hidden
+                      />
+                      <span className="flex-1 truncate">{term}</span>
+                      <button
+                        type="button"
+                        aria-label={`Remove “${term}” from recent searches`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          removeRecent(term)
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className="ml-2 shrink-0 cursor-pointer rounded p-0.5 text-muted-foreground/60 opacity-0 transition group-hover/recent:opacity-100 hover:text-foreground focus-visible:opacity-100"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </CommandItem>
+                  ))}
+                  {/* Removing several one X at a time shifts the list under the
+                      pointer, which PostHog logged as rage clicks. One row
+                      clears them all. */}
+                  {recent.length > 1 && (
+                    <CommandItem
+                      key="clear-recent"
+                      value="clear-recent"
+                      onSelect={() => {
+                        clearRecent()
+                        trackFeatureUsed({
+                          feature: 'recent_searches',
+                          action: 'cleared',
+                          count: recent.length,
+                        })
+                      }}
+                      className="cursor-pointer text-xs text-muted-foreground"
+                    >
+                      <X className="mr-2 size-4 shrink-0" aria-hidden />
+                      Clear recent searches
+                    </CommandItem>
+                  )}
+                </>
               ) : (
                 <div
                   role="status"
