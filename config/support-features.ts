@@ -14,6 +14,7 @@ import {
   Sparkles,
   Star,
   ThumbsDown,
+  Tv,
   Upload,
   UserRound,
   Wand2,
@@ -78,6 +79,12 @@ export const FLAGSHIP_FEATURES: SupportFeature[] = [
 
 /** Everything else, in the order it is worth reading. */
 export const SUPPORT_FEATURES: SupportFeature[] = [
+  {
+    Icon: Tv,
+    title: 'Reely on your TV, through Kodi',
+    short: 'A Kodi add-on that plays the Reely Player on your TV',
+    body: 'Browse Reely with the remote and play on the Reely Player in full screen, through an add-on for Kodi 19 or newer. Link the TV once by typing a short code on your phone at reely.space/link, which is also where the add-on lives. Works on Fire TV devices that run Fire OS; newer Vega OS sticks cannot install Kodi.',
+  },
   {
     Icon: Wand2,
     title: 'Suggestions that read your history',
