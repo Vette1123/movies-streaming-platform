@@ -36,3 +36,11 @@ export const COVER_BACKDROP_SIZES =
 // title has no backdrop at all. No brake needed: 67vh on a dpr-3 phone comes
 // out at 1696 and lands on the 1920 rung by itself.
 export const COVER_POSTER_SIZES = '(max-aspect-ratio: 2/3) 67vh, 100vw'
+
+// The rail's real card widths (w-40 / sm:190 / lg:230 / 2xl:250 in
+// components/list.tsx). The Card default of 50vw is honest for a two-column grid
+// and 25% too wide for a rail, which on a dpr-1.75 phone is the 384 rung where
+// 320 paints the same. List and StaticRail must share this, or the swap between
+// them refetches every poster at another width.
+export const RAIL_POSTER_SIZES =
+  '(max-width: 639px) 160px, (max-width: 1023px) 190px, (max-width: 1535px) 230px, 250px'

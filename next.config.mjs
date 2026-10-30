@@ -37,6 +37,10 @@ const baseConfig = {
     // own 75 default, which is what anything not going through BlurredImage
     // still asks for.
     qualities: [65, 70, 75],
+    // Next's list plus 320: what a 160px rail poster needs at dpr 1.75-2, which
+    // 256 under-serves and 384 overpays for by 40%. Keep CANDIDATE_WIDTHS in
+    // lib/image-loader.ts in step.
+    imageSizes: [32, 48, 64, 96, 128, 256, 320, 384],
     remotePatterns: [
       {
         protocol: 'https',
@@ -70,6 +74,9 @@ const baseConfig = {
   // in the build comes close to this, so the ceiling is generous on purpose.
   staticPageGenerationTimeout: 300,
   experimental: {
+    // Not `inlineCss`, measured: it writes the stylesheet into every document, its
+    // flight data and the Worker's four inlined shells, taking the Worker from
+    // 472KB to 2.8MB and every page's HTML up by 500KB.
     // Tree-shake barrel-imported libs so only the symbols actually used ship.
     // lucide-react is the big one: icons are imported per-name across ~40 files,
     // and without this the whole icon set bloats the client bundle.

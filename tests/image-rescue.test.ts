@@ -1,18 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { IMAGE_RESCUE_SCRIPT } from '@/lib/image-rescue'
 
 type Listener = (event: { target: unknown }) => void
-
-const installRescue = () => {
-  const added: { type: string; listener: Listener; capture: boolean }[] = []
-  const fakeDocument = {
-    addEventListener: (type: string, listener: Listener, capture: boolean) =>
-      added.push({ type, listener, capture }),
-  }
-  new Function('document', IMAGE_RESCUE_SCRIPT)(fakeDocument)
-  return added[0]
-}
 
 const fakeImage = (currentSrc: string, extra: Record<string, unknown> = {}) => {
   const removed: string[] = []
@@ -20,16 +10,45 @@ const fakeImage = (currentSrc: string, extra: Record<string, unknown> = {}) => {
     tagName: 'IMG',
     currentSrc,
     src: currentSrc,
+    complete: true,
+    loading: 'eager',
     removed,
     removeAttribute: (name: string) => removed.push(name),
     ...extra,
   }
 }
 
+const probes: { src?: string; onload?: () => void }[] = []
+
+const installRescue = (images: unknown[] = []) => {
+  const added: { type: string; listener: Listener; capture: boolean }[] = []
+  const fakeDocument = {
+    images,
+    addEventListener: (type: string, listener: Listener, capture: boolean) =>
+      added.push({ type, listener, capture }),
+  }
+  class FakeImage {
+    constructor() {
+      probes.push(this)
+    }
+  }
+  new Function('document', 'Image', IMAGE_RESCUE_SCRIPT)(
+    fakeDocument,
+    FakeImage
+  )
+  return added[0]
+}
+
 const WSRV =
   'https://wsrv.nl/?url=https://image.tmdb.org/t/p/original/abc.jpg&w=1200&q=65&output=webp&we&default=1'
 
-describe('IMAGE_RESCUE_SCRIPT', () => {
+beforeEach(() => {
+  vi.useFakeTimers()
+  probes.length = 0
+})
+afterEach(() => vi.useRealTimers())
+
+describe('IMAGE_RESCUE_SCRIPT, refused', () => {
   it('listens in the capture phase, because error does not bubble', () => {
     const { type, capture } = installRescue()
     expect(type).toBe('error')
@@ -65,5 +84,54 @@ describe('IMAGE_RESCUE_SCRIPT', () => {
     listener({ target: image })
     listener({ target: { tagName: 'SCRIPT' } })
     expect(image.src).toBe(origin)
+  })
+})
+
+describe('IMAGE_RESCUE_SCRIPT, hung', () => {
+  const pendingPoster =
+    'https://wsrv.nl/?url=https://image.tmdb.org/t/p/w500/p.jpg&w=320&q=70'
+
+  it('spends no request when nothing is waiting', () => {
+    installRescue([fakeImage(WSRV)])
+    vi.advanceTimersByTime(12_000)
+    expect(probes).toHaveLength(0)
+  })
+
+  it('probes with a 1px file once an eager image has waited 8s', () => {
+    installRescue([fakeImage(WSRV, { complete: false })])
+    vi.advanceTimersByTime(7_999)
+    expect(probes).toHaveLength(0)
+    vi.advanceTimersByTime(1)
+    expect(probes).toHaveLength(1)
+    expect(probes[0].src).toMatch(/\/original\/abc\.jpg&w=1$/)
+  })
+
+  it('moves everything still waiting when the probe gets no answer', () => {
+    const hero = fakeImage(WSRV, { complete: false })
+    const poster = fakeImage(pendingPoster, {
+      complete: false,
+      loading: 'lazy',
+    })
+    installRescue([hero, poster])
+    vi.advanceTimersByTime(12_000)
+    expect(hero.src).toBe('https://image.tmdb.org/t/p/w1280/abc.jpg')
+    expect(poster.src).toBe('https://image.tmdb.org/t/p/w500/p.jpg')
+  })
+
+  it('leaves a slow link alone: the host answered', () => {
+    const hero = fakeImage(WSRV, { complete: false })
+    installRescue([hero])
+    vi.advanceTimersByTime(9_000)
+    probes[0].onload?.()
+    vi.advanceTimersByTime(3_000)
+    expect(hero.src).toBe(WSRV)
+  })
+
+  it('does not wake for a lazy image the browser has not started', () => {
+    installRescue([
+      fakeImage(pendingPoster, { complete: false, loading: 'lazy' }),
+    ])
+    vi.advanceTimersByTime(12_000)
+    expect(probes).toHaveLength(0)
   })
 })

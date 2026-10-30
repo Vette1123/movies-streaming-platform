@@ -82,3 +82,24 @@ export function railArrowState(metrics: RailMetrics): {
 export function canPage(direction: 1 | -1, metrics: RailMetrics): boolean {
   return roomInDirection(direction, metrics) > SLACK
 }
+
+/**
+ * How many cards of a rail stagger in on load: about what the widest screen
+ * shows. Every card used to animate — ~120 across the homepage's six rails,
+ * nearly all off-screen, all inside the busiest second of the page load.
+ */
+export const RAIL_ENTRANCE_COUNT = 6
+
+export const railEntranceDelay = (index: number) =>
+  index < RAIL_ENTRANCE_COUNT
+    ? { animationDelay: `${index * 0.04}s` }
+    : undefined
+
+/**
+ * Whether a static rail renders this card's <img>. `loading="lazy"` does not hold
+ * back a card one swipe to the right, so every rail near the fold used to fetch
+ * nine posters while the hero was still downloading. The rest render when the
+ * interactive rail takes over, after the page has loaded.
+ */
+export const railPosterInStaticHtml = (index: number) =>
+  index < RAIL_ENTRANCE_COUNT

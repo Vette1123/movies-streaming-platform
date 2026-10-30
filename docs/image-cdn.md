@@ -29,13 +29,13 @@ External hosts (Unsplash, Twitter avatars) are left untouched.
 
 Measured 2026-10-30 at w1200 on a dense and a typical backdrop:
 
-| option        | dense  | typical | decision                                       |
-| ------------- | ------ | ------- | ---------------------------------------------- |
-| WebP q65      | 267 KB | 10.7 KB | what the site serves                           |
-| WebP q55      | 229 KB | 9.5 KB  | not worth the softness                         |
-| `&sharp=1`    | 434 KB | 16.7 KB | +55%, rejected                                 |
-| `output=jxl`  | 190 KB | 13.2 KB | larger on typical art, few browsers, rejected  |
-| `output=avif` | 400    | 400     | wsrv has no AVIF saver                         |
+| option        | dense  | typical | decision                                      |
+| ------------- | ------ | ------- | --------------------------------------------- |
+| WebP q65      | 267 KB | 10.7 KB | what the site serves                          |
+| WebP q55      | 229 KB | 9.5 KB  | not worth the softness                        |
+| `&sharp=1`    | 434 KB | 16.7 KB | +55%, rejected                                |
+| `output=jxl`  | 190 KB | 13.2 KB | larger on typical art, few browsers, rejected |
+| `output=avif` | 400    | 400     | wsrv has no AVIF saver                        |
 
 `&default=1` is always sent: a failed fetch redirects to the TMDB origin with no
 JavaScript, so it also works on the prerendered first screen. The homepage hero
@@ -53,7 +53,7 @@ included) and embedded data URIs, but not a remote `<image href>`.
 
 ## Before hydration
 
-`&default=1` covers a source wsrv cannot fetch. `lib/image-rescue.ts` covers wsrv itself failing: a capture-phase `error` listener in `<head>` moves the image to the TMDB origin before React is running, and stands aside once React owns the element. A host that hangs instead of failing fires no `error`, so it is not covered.
+`&default=1` covers a source wsrv cannot fetch. `lib/image-rescue.ts` covers wsrv itself failing: a capture-phase `error` listener in `<head>` moves the image to the TMDB origin before React is running, and stands aside once React owns the element. A host that hangs fires no `error`, so an eager image still waiting after 8s triggers one 1px request with a 4s limit, which tells a slow link from a dead host; everything still waiting then moves.
 
 ## Circuit breaker
 

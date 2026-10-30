@@ -30,6 +30,7 @@ interface CardProps {
   item: MediaType
   itemType?: ItemType
   isTruncateOverview?: boolean
+  posterSizes?: string
 }
 
 // The card's visual frame, shared by both branches below so the touch card and
@@ -42,6 +43,7 @@ const CardComponent = ({
   item,
   itemType = 'movie',
   isTruncateOverview = true,
+  posterSizes,
 }: CardProps) => {
   const title = getMediaTitle(item)
   const releaseDate = getMediaReleaseDate(item)
@@ -96,6 +98,7 @@ const CardComponent = ({
           alt={title ?? 'Poster'}
           width={250}
           height={375}
+          sizes={posterSizes}
           className="rounded-lg object-cover transition-transform duration-500 ease-out group-hover/card:scale-105"
         />
       ) : (

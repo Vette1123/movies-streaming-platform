@@ -39,6 +39,12 @@ not expose the threshold.
 - Compared one Lighthouse run against one baseline, and it looked like a regression.
   Four runs spanned TBT 1,150-2,500ms and LCP 3.2-7.3s. Never judge a single run.
 
+- Turned on `inlineCss` for FCP. The build showed the Worker at 2.8MB, because the
+  stylesheet landed in its four inlined shells as well as every page. Reverted. Read
+  the bundle size line after any config change.
+- Reported hung wsrv and untested share links as open items and stopped. Both had a
+  solution an hour's work away. A limit that can be engineered around is the next task.
+
 ## What worked
 
 - Looking at the filmstrip, then at byte offsets in the production HTML.
@@ -49,6 +55,8 @@ not expose the threshold.
 
 ## Rules
 
+- `pnpm share:probe` proves unfurls on production with real rows, and cleans up.
+- Hydrating cards is the page's blocking time. A homepage rail stays static until load.
 - A static route's above-the-fold content never sits inside Suspense or a
   loading.tsx. `tests/first-paint-shell.test.ts` and `pnpm seo:verify` pin it.
 - Read the filmstrip before reading the LCP subparts.
