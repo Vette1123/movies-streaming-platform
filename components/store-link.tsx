@@ -17,10 +17,13 @@ export function StoreLink({
   app,
   className,
   children = app.name,
+  onOpen,
 }: {
   app: CompanionApp
   className?: string
   children?: React.ReactNode
+  /** Extra measurement for a surface that wants its own click count. */
+  onOpen?: () => void
 }) {
   return (
     <a
@@ -34,6 +37,7 @@ export function StoreLink({
           action: 'opened',
           app: app.slug,
         })
+        onOpen?.()
         openStoreListing(app)
       }}
       className={cn(

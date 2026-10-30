@@ -5,8 +5,9 @@ import { siteConfig } from '@/config/site'
 import { SUPPORT_EMAIL, supportMailto } from '@/config/support'
 import { COMPANION_APPS } from '@/lib/apps'
 import { cn } from '@/lib/utils'
-import { FooterSupportCard } from '@/components/support/footer-support-card'
+import { MasareefPromo } from '@/components/masareef-promo'
 import { NewsletterSignup } from '@/components/newsletter-signup'
+import { FooterSupportCard } from '@/components/support/footer-support-card'
 
 import { Icons } from '../icons'
 import { StoreLink } from '../store-link'
@@ -84,6 +85,11 @@ export function Footer() {
 
   return (
     <footer className="site-footer mt-8 border-t border-border/60 text-sm text-muted-foreground">
+      <div className="border-b border-border/60">
+        <div className="container py-6">
+          <MasareefPromo placement="footer" />
+        </div>
+      </div>
       <div className="container grid gap-10 py-12 lg:grid-cols-[1.6fr_1fr_1.1fr] lg:gap-12">
         {/* The app named and explained on every page, not only the homepage:
             anyone who lands deep in the catalogue should be able to tell what
