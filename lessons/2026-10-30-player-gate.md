@@ -27,6 +27,13 @@ walks it on production, including the add-on's own code and an ffmpeg decode.
 - The client already handled a refused ticket by falling back to the embed, so the
   browser needed no behaviour change.
 
+- Testing in real Kodi 21.3 before the supporter got it: portable install, the
+  production zip, JSON-RPC on TCP 9090 for remote keys and `Player.GetProperties`.
+  Linking from the menu, 1080p and 720p playback, lapse and sign-out all passed.
+  Nothing broke, so the fakes in `kodi/tests` were right, but only this showed it.
+- Testing the refused path in a throwaway headless Chrome profile, since the
+  everyday browser is signed in as a supporter and can never reach it.
+
 ## Rules
 
 - A check the private worker relies on lives in one module with no flag around it.
