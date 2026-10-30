@@ -12,6 +12,7 @@ import {
   trackHeroAutoplayToggled,
   trackHeroWatchClicked,
 } from '@/lib/analytics'
+import { heroArtReady } from '@/lib/hero-art'
 import { onIdleAfterLoad } from '@/lib/idle'
 import { COVER_BACKDROP_SIZES, COVER_POSTER_SIZES } from '@/lib/image-sizes'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
@@ -43,6 +44,8 @@ interface HeroSlideProps {
   movie: Movie
   genreTable?: MovieGenre[]
   priority?: boolean
+  /** Blurred stand-in painted until the backdrop arrives. First slide only. */
+  blurDataURL?: string
   /** True when this slide is the one on screen — injected by the Carousel.
       Drives the touch-device autoplay preview (no hover to key off). */
   active?: boolean
@@ -107,6 +110,7 @@ export function HeroSlide({
   movie,
   genreTable,
   priority = false,
+  blurDataURL,
   active = false,
 }: HeroSlideProps) {
   const media = movie as HeroSlideMedia
@@ -301,16 +305,15 @@ export function HeroSlide({
 
   const href = mediaDetailHref(mediaType, movie.id)
 
-  // Warm the wordmark of the slides parked either side once the page has
-  // finished loading, so swiping to one paints its title immediately instead
-  // of starting the download as it slides in. Lazy until then on purpose: at
-  // load those were 2-3 extra downloads racing the hero backdrop (see the
-  // note on the <img>). After `load`, nothing is left to race.
-  const [warmLogo, setWarmLogo] = React.useState(false)
+  // Warm the artwork of the slides parked either side once the page has
+  // finished loading, so swiping to one paints immediately. Nothing before
+  // that: see lib/hero-art.ts. After `load`, nothing is left to race.
+  const [warmArt, setWarmArt] = React.useState(false)
   React.useEffect(() => {
-    if (priority || !logoPath) return
-    return onIdleAfterLoad(() => setWarmLogo(true), 3000)
-  }, [priority, logoPath])
+    if (priority) return
+    return onIdleAfterLoad(() => setWarmArt(true), 3000)
+  }, [priority])
+  const artReady = heroArtReady({ priority, active, warm: warmArt })
 
   // "Cinematic takeover": while the trailer actually plays, the editorial copy
   // recedes and the text-scrim softens so the video owns the frame. Purely a
@@ -322,43 +325,47 @@ export function HeroSlide({
   return (
     <div className="relative min-h-[inherit] w-full overflow-hidden">
       {/* Backdrop — full-bleed landscape, falling back to the poster. */}
-      {media.backdrop_path ? (
-        <BlurredImage
-          src={getImageURL(media.backdrop_path)}
-          alt={title}
-          className={`block size-full object-cover object-center ${kenBurns(active, lowPower)}`}
-          fill
-          // Full-bleed AND `object-cover`, which is why this is not `100vw`:
-          // on any viewport taller than 16:9 the cover math paints the backdrop
-          // far wider than the box, and `100vw` under-described it by 4x on a
-          // phone (measured: 1200px of image stretched across 4498 device px).
-          // See lib/image-sizes.ts — including why the phone case keeps a
-          // deliberate brake instead of asking for the full cover width.
-          sizes={COVER_BACKDROP_SIZES}
-          intro
-          // Not `priority`: same as the details hero, the page preloads it (see
-          // components/header/hero-image.tsx).
-          loading={priority ? 'eager' : 'lazy'}
-          fetchPriority={priority ? 'high' : 'auto'}
-        />
-      ) : (
-        media.poster_path && (
+      {artReady &&
+        (media.backdrop_path ? (
           <BlurredImage
-            // `original`, not w500: with no backdrop this poster IS the hero,
-            // cover-cropped across the whole viewport, so a 500px source was
-            // the ceiling on a full-bleed image. The loader only ever requests
-            // the width the layout asks for, so a bigger source costs nothing.
-            src={getImageURL(media.poster_path)}
+            src={getImageURL(media.backdrop_path)}
             alt={title}
-            className="block size-full object-cover object-center"
+            className={`block size-full object-cover object-center ${kenBurns(active, lowPower)}`}
             fill
-            sizes={COVER_POSTER_SIZES}
+            // Full-bleed AND `object-cover`, which is why this is not `100vw`:
+            // on any viewport taller than 16:9 the cover math paints the backdrop
+            // far wider than the box, and `100vw` under-described it by 4x on a
+            // phone (measured: 1200px of image stretched across 4498 device px).
+            // See lib/image-sizes.ts — including why the phone case keeps a
+            // deliberate brake instead of asking for the full cover width.
+            sizes={COVER_BACKDROP_SIZES}
             intro
+            // Not `priority`: same as the details hero, the page preloads it (see
+            // components/header/hero-image.tsx).
             loading={priority ? 'eager' : 'lazy'}
             fetchPriority={priority ? 'high' : 'auto'}
+            {...(blurDataURL
+              ? { placeholder: 'blur' as const, blurDataURL }
+              : {})}
           />
-        )
-      )}
+        ) : (
+          media.poster_path && (
+            <BlurredImage
+              // `original`, not w500: with no backdrop this poster IS the hero,
+              // cover-cropped across the whole viewport, so a 500px source was
+              // the ceiling on a full-bleed image. The loader only ever requests
+              // the width the layout asks for, so a bigger source costs nothing.
+              src={getImageURL(media.poster_path)}
+              alt={title}
+              className="block size-full object-cover object-center"
+              fill
+              sizes={COVER_POSTER_SIZES}
+              intro
+              loading={priority ? 'eager' : 'lazy'}
+              fetchPriority={priority ? 'high' : 'auto'}
+            />
+          )
+        ))}
 
       {/* Muted trailer that fades in on hover. */}
       {trailerKey && (
@@ -477,7 +484,7 @@ export function HeroSlide({
                   <HeroWordmark
                     as="h2"
                     title={title}
-                    logoPath={logoPath}
+                    logoPath={artReady ? logoPath : null}
                     extrasReady={extrasReady}
                     graceElapsed={titleGraceElapsed}
                     onSettle={settleFirstPaint}
@@ -485,17 +492,9 @@ export function HeroSlide({
                     // races a fallback timer; tell the browser so it isn't
                     // queued behind the rails' posters.
                     fetchPriority={priority ? 'high' : 'auto'}
-                    // The carousel keeps a slide mounted either side, and
-                    // their wordmarks are parked a stage-width away where
-                    // nobody can see them. Eager, they were 3 logo downloads
-                    // on load — measured at 24/59/67 KB once the 2x file
-                    // exists, i.e. more than the hero backdrop itself. Lazy,
-                    // an off-stage slide fetches its logo when it slides in,
-                    // behind the title-text fallback the crossfade already
-                    // has for exactly this case. Until the page has loaded,
-                    // that is (warmLogo above); and the slide on stage always
-                    // loads its own.
-                    loading={priority || active || warmLogo ? 'eager' : 'lazy'}
+                    // Gated by artReady above, so a logo that renders at all
+                    // is one the slide wants now.
+                    loading="eager"
                   />
                 </div>
               </div>

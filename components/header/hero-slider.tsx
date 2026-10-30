@@ -1,6 +1,7 @@
 import React from 'react'
 import { getGenreList } from '@/services/genres'
 import { buildHeroExtrasSeed } from '@/services/hero-extras'
+import { getHeroPlaceholder } from '@/services/hero-placeholder'
 
 import { Movie } from '@/types/movie-result'
 import { resolveMediaType } from '@/lib/media'
@@ -34,6 +35,7 @@ export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
   }
 
   const eligible = (movies ?? []).filter((m) => !isAnimation(m))
+  const placeholder = await getHeroPlaceholder(eligible[0]?.backdrop_path)
 
   return (
     <>
@@ -56,6 +58,7 @@ export const HeroSlider = async ({ movies }: { movies: Movie[] }) => {
                 movie={movie}
                 genreTable={isTv ? tvGenres : movieGenres}
                 priority={index === 0}
+                blurDataURL={index === 0 ? placeholder : undefined}
               />
             )
           })}

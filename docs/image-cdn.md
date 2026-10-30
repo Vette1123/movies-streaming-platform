@@ -37,6 +37,10 @@ Measured 2026-10-30 at w1200 on a dense and a typical backdrop:
 | `output=jxl`  | 190 KB | 13.2 KB | larger on typical art, few browsers, rejected  |
 | `output=avif` | 400    | 400     | wsrv has no AVIF saver                         |
 
+`&default=1` is always sent: a failed fetch redirects to the TMDB origin with no
+JavaScript, so it also works on the prerendered first screen. The homepage hero
+carries a ~300-byte blurred placeholder (`&w=24&encoding=base64`) fetched at build.
+
 `&we` ("without enlargement") is always sent: TMDB's `original` is not a width,
 and without it a w780 source asked for w=2560 came back 45.8 KB of blur against
 10.1 KB. The loader rewrites `w` and `q` per candidate, so every image has a real

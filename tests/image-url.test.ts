@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import imageLoader, { wsrvSrcSet } from '@/lib/image-loader'
+import { buildWsrvPlaceholderURL } from '@/lib/tmdbConfig'
 import {
   getImageURL,
   getLogoImageSrcSet,
@@ -98,6 +99,13 @@ describe('the primary image host', () => {
     })
   }
 
+  it('recovers from a failed wsrv fetch without JavaScript', () => {
+    expect(URLS.poster).toContain('&default=1')
+    expect(imageLoader({ src: URLS.poster, width: 384 })).toContain(
+      '&default=1'
+    )
+  })
+
   it('leaves bare page and unfurl URLs in the source format', () => {
     // Unfurlers and image sitemaps read these directly, and not every one of
     // them decodes WebP. Everything on a page is rewritten by the loader.
@@ -106,6 +114,12 @@ describe('the primary image host', () => {
     expect(
       imageLoader({ src: URLS.poster, width: 384, quality: 70 })
     ).toContain('output=webp')
+  })
+
+  it('asks for the hero placeholder as an inlineable data URI', () => {
+    const url = buildWsrvPlaceholderURL('/abc.jpg')
+    expect(url).toContain('&w=24')
+    expect(url).toContain('&encoding=base64')
   })
 
   it('preloads exactly the candidates the hero <img> asks for', () => {
