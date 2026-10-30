@@ -29,13 +29,13 @@ const BASE_ENV = {
 describe('slot defaults and labels', () => {
   afterEach(() => vi.resetModules())
 
-  it('defaults to slot 2 (the more resilient embed)', async () => {
+  it('defaults to slot 1 (the embed that stalls least)', async () => {
     const mod = await importWithEnv(BASE_ENV)
-    expect(mod.DEFAULT_SOURCE_ID).toBe('b.example')
+    expect(mod.DEFAULT_SOURCE_ID).toBe('a.example')
     expect(mod.visibleSourcesFor(false, false).map((s) => s.id)).toEqual([
-      'b.example',
+      'a.example',
     ])
-    expect(mod.sourceById('nope').id).toBe('b.example')
+    expect(mod.sourceById('nope').id).toBe('a.example')
   })
 
   // The default used to be sorted to the front, so a signed-in switcher read
@@ -60,9 +60,9 @@ describe('slot defaults and labels', () => {
   it('honours NEXT_PUBLIC_STREAM_DEFAULT_SLOT', async () => {
     const mod = await importWithEnv({
       ...BASE_ENV,
-      NEXT_PUBLIC_STREAM_DEFAULT_SLOT: '1',
+      NEXT_PUBLIC_STREAM_DEFAULT_SLOT: '2',
     })
-    expect(mod.DEFAULT_SOURCE_ID).toBe('a.example')
+    expect(mod.DEFAULT_SOURCE_ID).toBe('b.example')
   })
 
   it('falls back to the first configured slot when the default is absent', async () => {
@@ -73,13 +73,13 @@ describe('slot defaults and labels', () => {
   })
 
   // CI resolves an absent GitHub secret to '' — and Number('') is 0, which
-  // would silently move the public default off Server 2.
+  // would silently move the public default off Server 1.
   it('treats an empty NEXT_PUBLIC_STREAM_DEFAULT_SLOT as unset', async () => {
     const mod = await importWithEnv({
       ...BASE_ENV,
       NEXT_PUBLIC_STREAM_DEFAULT_SLOT: '',
     })
-    expect(mod.DEFAULT_SOURCE_ID).toBe('b.example')
+    expect(mod.DEFAULT_SOURCE_ID).toBe('a.example')
   })
 
   it('labels come from env overrides', async () => {
@@ -131,7 +131,7 @@ describe('visibleSourcesFor tiers', () => {
     const mod = await importWithEnv(TRIAL_ENV)
     const list = mod.visibleSourcesFor(false, false)
     expect(list).toHaveLength(1)
-    expect(list[0].id).toBe('b.example')
+    expect(list[0].id).toBe('a.example')
   })
 
   it('signed-in free: every embed in slot order, no self-host', async () => {
