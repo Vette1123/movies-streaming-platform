@@ -82,6 +82,14 @@ import { getImageURL } from '@/lib/utils'
 /** 6h, matching the deploy cadence that refreshes the static half of the site. */
 const CACHE_CONTROL = 'public, max-age=3600, s-maxage=21600'
 
+/**
+ * The fallback documents get the same header `public/_headers` gives a
+ * prerendered page. A browser must not keep them: a deploy deletes the chunks
+ * they name, so a kept copy crashes on the stale-deploy boundary until it expires.
+ */
+const HTML_CACHE_CONTROL =
+  'public, max-age=0, s-maxage=21600, stale-while-revalidate=3600'
+
 /** A tail detail path: /movies/123 or /tv-shows/123, nothing deeper. */
 const DETAIL_PATH = /^\/(movies|tv-shows)\/(\d+)\/?$/
 
@@ -1122,7 +1130,7 @@ function serveShellFromTemplate(shellPath, meta, ogType, jsonLd) {
       status: 200,
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': CACHE_CONTROL,
+        'Cache-Control': HTML_CACHE_CONTROL,
       },
     }
   )
@@ -1203,7 +1211,7 @@ async function serveShell(shellPath, meta, ogType, jsonLd, env, url) {
     status: 200,
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': CACHE_CONTROL,
+      'Cache-Control': HTML_CACHE_CONTROL,
     },
   })
 }

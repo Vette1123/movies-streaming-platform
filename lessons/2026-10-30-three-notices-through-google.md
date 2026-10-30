@@ -31,6 +31,10 @@ it. Anyone who opened a tail page in the hour before a deploy can hit this.
 Our deploy was cancelled twice because other sessions pushed to main right after the
 merge (`cancel-in-progress`). Follow the newest run, not the run for your commit.
 
+Fixed the same day: Worker fallback HTML now sends the `max-age=0` header that
+`public/_headers` gives prerendered pages, pinned by
+`tests/fallback-html-cache.test.ts`.
+
 ## What worked
 
 - Checking each reported id against the live page title before blocking.
