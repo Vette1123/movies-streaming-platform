@@ -16,6 +16,21 @@ and Lumen numbers. Gmail held exactly these three, no others.
 `git status` and reverted before the commit. Two Search Console URLs were guessed
 and both 404'd; Gmail search was the reliable way to count the notices.
 
+The first production check read `notice_hits=0` on all three pages and looked like
+a failed block. They are tail pages: the hero renders in the browser, so curl can
+never see the notice. Verify a tail page in a browser, and use the 451 from
+`/api/pro/ticket` for the server half.
+
+`/tv-shows/102088` then showed "Updating to the latest version" in Chrome, and I
+blamed the service worker's saved copy. Deleting that entry changed nothing. The
+real source was the browser HTTP cache: `max-age=3600` on the Worker's fallback HTML
+kept the copy fetched before the deploy, with chunks that no longer exist, and the
+service worker re-saved it on each visit. `fetch(path, { cache: 'reload' })` cleared
+it. Anyone who opened a tail page in the hour before a deploy can hit this.
+
+Our deploy was cancelled twice because other sessions pushed to main right after the
+merge (`cancel-in-progress`). Follow the newest run, not the run for your commit.
+
 ## What worked
 
 - Checking each reported id against the live page title before blocking.
