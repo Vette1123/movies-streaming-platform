@@ -33,6 +33,11 @@ not expose the threshold.
 - Assumed the 110KB chunk was app code. It is `noModule` polyfills that no modern
   browser downloads.
 - Fixed two blur branches and missed the third. The source-level test found it.
+- Removing the skeleton exposed a new shift: a chunk ending inside the
+  bottom-anchored hero painted it half-parsed. `rel="expect" blocking="render"` on
+  the home page holds first paint until the hero is parsed.
+- Compared one Lighthouse run against one baseline, and it looked like a regression.
+  Four runs spanned TBT 1,150-2,500ms and LCP 3.2-7.3s. Never judge a single run.
 
 ## What worked
 
@@ -47,5 +52,7 @@ not expose the threshold.
 - A static route's above-the-fold content never sits inside Suspense or a
   loading.tsx. `tests/first-paint-shell.test.ts` and `pnpm seo:verify` pin it.
 - Read the filmstrip before reading the LCP subparts.
+- Run Lighthouse at least three times. DevTools throttling shares bandwidth evenly and
+  ignores HTTP/2 priority, so an 88KB hero finishes when the whole page does.
 - Nothing in server HTML may depend on hydration to look right: no filter, no
   opacity 0, no veil on the pass after hydration.
