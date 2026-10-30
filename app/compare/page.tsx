@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   // Without its own, a sent compare link unfurled as the homepage — and
   // sending the link is the whole point of this page.
   openGraph: {
+    images: '/opengraph-image.png',
     title: 'Taste match',
     description:
       'Two Reely profiles, side by side: what you both rated highest.',

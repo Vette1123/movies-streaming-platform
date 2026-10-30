@@ -85,6 +85,7 @@ export const yearMetadata = (
     description,
     alternates: { canonical },
     openGraph: {
+      images: '/opengraph-image.png',
       title: `${title} on ${siteConfig.name}`,
       description,
       url: `${siteConfig.websiteURL}${canonical}`,

@@ -8,6 +8,7 @@ export const metadata: Metadata = {
     'Two people, one deck, one code. Swipe what you would watch tonight — when you both like the same title, it is a match and the movie-night decision is made.',
   alternates: { canonical: '/match-night' },
   openGraph: {
+    images: '/opengraph-image.png',
     title: 'Match Night',
     description: 'Swipe together, match on a title, stop arguing.',
     url: `${siteConfig.websiteURL}/match-night`,
