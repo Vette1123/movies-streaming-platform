@@ -105,6 +105,8 @@ The strip is **server-rendered into the prerendered pages**: zero Worker CPU, ze
 - **Meta descriptions come from one builder, `lib/seo-description.ts`**, shared by the prerendered detail pages and the Worker's tail-id fallback. Don't reintroduce a local `overview.slice(...)` — a thin TMDB overview is what made Bing flag 53 pages.
 - **The Worker's crawler-only `<h1>` block must never be `hidden`.** `display: none` reads as absent to a crawler (that is the "h1 missing" report); it is clipped + `aria-hidden` instead. `pnpm seo:verify` asserts all of the above against production.
 
+**No Suspense or `loading.tsx` around above-the-fold content on a static route.** React writes any boundary over 12.8KB out of line even when it has finished rendering: the markup lands in a hidden div near the end of the document, the fallback paints first, and the `<h1>` needs JavaScript to show. Next does not expose the threshold. Client navigation feedback is `LinkPendingBar`. Below-the-fold rails keep their boundaries, which give React separate hydration tasks. `tests/first-paint-shell.test.ts` and `pnpm seo:verify` pin this.
+
 **Intercepting routes are unsupported by `output: 'export'`** — the `@modal` slot is gone and the disclaimer is an ordinary full-page navigation. Don't reintroduce one.
 
 ### Analytics

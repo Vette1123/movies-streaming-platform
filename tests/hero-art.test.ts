@@ -1,6 +1,22 @@
 import { describe, expect, it } from 'vitest'
 
-import { heroArtReady } from '@/lib/hero-art'
+import { canWarmHeroArt, heroArtReady } from '@/lib/hero-art'
+
+describe('canWarmHeroArt', () => {
+  it('warms when the browser reports nothing', () => {
+    expect(canWarmHeroArt(undefined)).toBe(true)
+  })
+
+  it('warms on a good link', () => {
+    expect(canWarmHeroArt({ effectiveType: '4g' })).toBe(true)
+  })
+
+  it('holds back on data saver and on 2g', () => {
+    expect(canWarmHeroArt({ saveData: true, effectiveType: '4g' })).toBe(false)
+    expect(canWarmHeroArt({ effectiveType: 'slow-2g' })).toBe(false)
+    expect(canWarmHeroArt({ effectiveType: '2g' })).toBe(false)
+  })
+})
 
 describe('heroArtReady', () => {
   const parked = { priority: false, active: false, warm: false }

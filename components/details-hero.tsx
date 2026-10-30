@@ -145,6 +145,7 @@ export const DetailsHero = ({
   series,
   trailerKey,
   logoPath,
+  blurDataURL,
   playTarget,
   isResume,
   isNext,
@@ -175,6 +176,7 @@ export const DetailsHero = ({
    * title exactly as the homepage hero shows it. Null when TMDB has none.
    */
   logoPath?: string | null
+  blurDataURL?: string
   /**
    * Which server is playing, and how to move off one that will not. Rendered
    * only while something is playing, because that is the only moment the
@@ -380,7 +382,7 @@ export const DetailsHero = ({
         className="relative isolate w-full overflow-hidden"
         style={{ height: '100svh' }}
       >
-        <HeroImage movie={media} priority />
+        <HeroImage movie={media} priority blurDataURL={blurDataURL} />
         <div className="relative z-50 container h-full max-w-(--breakpoint-2xl)">
           <div className="flex h-full items-center justify-center">
             <AnimatePresence>

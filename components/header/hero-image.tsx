@@ -44,6 +44,7 @@ interface HeroImageProps {
   // other hero waits until it is on screen, so a mounted-but-off-stage slide
   // never races the one being looked at.
   priority?: boolean
+  blurDataURL?: string
 }
 
 // The details hero is full-bleed and 100svh tall with `object-cover`, so what
@@ -54,7 +55,11 @@ interface HeroImageProps {
 // was the "details page looks blurry" report — nothing to do with the CDN, the
 // quality setting or the fallback chain. We asked for the wrong width, the same
 // class of bug as the wsrv `&we` fix in docs/image-cdn.md.
-export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
+export const HeroImage = ({
+  movie,
+  priority = false,
+  blurDataURL,
+}: HeroImageProps) => {
   const media = movie
   const alt = (media && getMediaTitle(media)) || 'ALT TEXT'
   if (priority) preloadHeroImage(media)
@@ -77,6 +82,9 @@ export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
           // Not `priority`: preloadHeroImage above already emits the preload.
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? 'high' : 'auto'}
+          {...(blurDataURL
+            ? { placeholder: 'blur' as const, blurDataURL }
+            : {})}
         />
       ) : (
         media?.poster_path && (

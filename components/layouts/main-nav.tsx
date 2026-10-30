@@ -6,6 +6,7 @@ import { siteConfig } from '@/config/site'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { Icons } from '@/components/icons'
+import { LinkPendingBar } from '@/components/media/link-pending-bar'
 
 interface MainNavProps {
   items?: NavItem[]
@@ -38,6 +39,7 @@ export function BrandLogo() {
       <span className="hidden text-xl font-bold whitespace-nowrap text-secondary-foreground sm:inline-block sm:text-2xl 2xl:text-3xl">
         {siteConfig.name}
       </span>
+      <LinkPendingBar />
     </Link>
   )
 }
@@ -90,6 +92,7 @@ export function MainNav({ items }: MainNavProps) {
                       into EVERY route's bundle, and gave each label a layout
                       projection node measured on every render. */}
                   <span>{item.title}</span>
+                  <LinkPendingBar />
                 </Link>
               )
           )}

@@ -1,6 +1,7 @@
 import React from 'react'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { getHeroPlaceholder } from '@/services/hero-placeholder'
 import {
   getAllTimeTopRatedMovies,
   getLatestTrendingMovies,
@@ -96,6 +97,8 @@ const MoviePage = async (props: PageDetailsProps) => {
   } = result!
   if (!movieDetails?.id) notFound()
 
+  const blurDataURL = await getHeroPlaceholder(movieDetails.backdrop_path)
+
   // Which of this film's cast and crew have a page on this site. Resolved on
   // the server so the client only ever receives the handful that do. Cast is
   // billed order; crew is Director, Writer, Producer — the jobs a person page
@@ -158,6 +161,7 @@ const MoviePage = async (props: PageDetailsProps) => {
           movie={{ ...movieDetails, ratings }}
           trailerKey={trailerKey}
           logoPath={logoPath}
+          blurDataURL={blurDataURL}
         />
         <MoviesDetailsContent
           movie={{ ...movieDetails, ratings }}

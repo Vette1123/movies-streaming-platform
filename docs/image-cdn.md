@@ -51,6 +51,10 @@ and sitemaps get the source format.
 and wsrv rasterises it, cached by the card's URL. wsrv draws text (Arabic
 included) and embedded data URIs, but not a remote `<image href>`.
 
+## Before hydration
+
+`&default=1` covers a source wsrv cannot fetch. `lib/image-rescue.ts` covers wsrv itself failing: a capture-phase `error` listener in `<head>` moves the image to the TMDB origin before React is running, and stands aside once React owns the element. A host that hangs instead of failing fires no `error`, so it is not covered.
+
 ## Circuit breaker
 
 wsrv has no SLA. `lib/tmdbConfig.ts` keeps a module-level flag: **three distinct**

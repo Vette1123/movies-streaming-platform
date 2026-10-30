@@ -1,6 +1,7 @@
 import React from 'react'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { getHeroPlaceholder } from '@/services/hero-placeholder'
 import {
   getAllTimeTopRatedSeries,
   getLatestTrendingSeries,
@@ -97,6 +98,8 @@ const TVSeries = async (props: PageDetailsProps) => {
   } = result!
   if (!seriesDetails?.id) notFound()
 
+  const blurDataURL = await getHeroPlaceholder(seriesDetails.backdrop_path)
+
   // Which of this series' cast and crew have a page on this site. Resolved on
   // the server so the client only ever receives the handful that do.
   const linkedPersonIds = await linkablePersonIds([
@@ -163,6 +166,7 @@ const TVSeries = async (props: PageDetailsProps) => {
             series={{ ...seriesDetails, ratings }}
             trailerKey={trailerKey}
             logoPath={logoPath}
+            blurDataURL={blurDataURL}
           />
           <SeriesDetailsContent
             series={{ ...seriesDetails, ratings }}
