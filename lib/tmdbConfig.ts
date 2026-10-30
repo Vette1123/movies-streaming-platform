@@ -144,6 +144,10 @@ const WSRV_DEFAULT_QUALITY = 70
  * `&we` (which returns the native 780 px and lets the browser do the stretching,
  * if any). Blurrier AND four times the bytes.
  *
+ * `&default=1` makes wsrv answer a failed fetch with a redirect to the TMDB
+ * origin. That recovery needs no JavaScript, so unlike BlurredImage's onError
+ * chain it also works on the prerendered first screen.
+ *
  * TMDB image paths are clean (no query string), so the origin URL goes
  * unencoded in wsrv's `?url=` — which keeps the `image.tmdb.org/t/p` marker
  * literal so extractTMDBPath can still find it on the way to the next stage.
@@ -158,7 +162,15 @@ function buildWsrvURL(
   const widthParam = w ? `&w=${w}` : ''
   const q = quality ?? WSRV_DEFAULT_QUALITY
   const outputParam = output ? `&output=${output}` : ''
-  return `${WSRV_BASE}${TMDB_ORIGIN_IMAGE_BASE}${path}${widthParam}&q=${q}${outputParam}&we`
+  return `${WSRV_BASE}${TMDB_ORIGIN_IMAGE_BASE}${path}${widthParam}&q=${q}${outputParam}&we&default=1`
+}
+
+/**
+ * A tiny blurred copy of a backdrop as a data URI, ~300 bytes, for the hero to
+ * paint before its real image arrives. Fetched at build and inlined.
+ */
+function buildWsrvPlaceholderURL(imgPath: string) {
+  return `${buildWsrvURL(`/w300${imgPath}`, 24, 30)}&blur=1&encoding=base64`
 }
 
 // Given the current (failed) image URL, return the next fallback in the chain,
@@ -279,6 +291,7 @@ export {
   tvType,
   getNextImageFallback,
   buildWsrvURL,
+  buildWsrvPlaceholderURL,
   extractTMDBPath,
   isPrimaryImageURL,
   isWsrvURL,

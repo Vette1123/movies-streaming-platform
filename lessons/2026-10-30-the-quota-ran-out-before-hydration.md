@@ -20,6 +20,10 @@ resort, and there is no account, key or env var left. Also fixed:
   the same loader the `<img>` uses.
 - Share cards: the Worker's `/api/og/card` returns an SVG, wsrv rasterises it.
 
+Follow-up on first load: parked hero slides render no art until the page has
+loaded (they sat inside the lazy-load margin and took 281 of 776 KB), every wsrv
+URL carries `&default=1`, and the homepage hero paints a ~300-byte blur at once.
+
 ## Mistakes
 
 - First timing run cut URLs at the commas inside ImageKit's transforms and got a
@@ -31,6 +35,9 @@ resort, and there is no account, key or env var left. Also fixed:
 - Told the user the mosaic had to die because wsrv cannot draw text overlays.
   wsrv rasterises SVG, which draws text. Thirty minutes of probing replaced a
   regression with the same feature and no quota.
+- Read Lighthouse's 8.2s simulated LCP against the old 6.7s as a regression. The
+  measured subparts went from 7.1s to 3.9s; the estimate rose because images now
+  download instead of failing at 0 KB. Compare subparts, not the headline.
 - Blamed wsrv for a 502 that came from a bad echo host and unpadded base64. Check
   the suspect with a known-good input first.
 
@@ -45,6 +52,8 @@ resort, and there is no account, key or env var left. Also fixed:
 
 ## Rules
 
+- `loading="lazy"` does not hold back anything within roughly a viewport of the
+  screen. To keep a mounted neighbour off the network, do not render the <img>.
 - A prerendered page's primary image host must have no monthly cap. `onError`
   runs after hydration, so it is not a safety net for the first screen.
 - A fallback is only tested when its failure mode is. This one was tested with
