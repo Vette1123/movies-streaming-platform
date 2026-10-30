@@ -59,7 +59,26 @@ function audit(formFactor, i) {
     cls: metric('cumulative-layout-shift'),
     observedFcp: observed.observedFirstContentfulPaint,
     observedLoad: observed.observedLoad,
+    observedLcp: observed.observedLargestContentfulPaint,
+    lcpImage: lcpImageTiming(report),
   }
+}
+
+// The simulator charges every script finished before the OBSERVED paint to LCP,
+// so a race the page does not control swings mobile LCP between 2.6s and 5.1s
+// on one build. CI has no GPU: the first frame sits in the GPU process with the
+// main thread idle (0.3-0.9s), which real phones do not pay. Judge the site by
+// real-user $web_vitals, and use this for before/after medians.
+function lcpImageTiming(report) {
+  const requests = report.audits['network-requests'].details.items
+  const image = requests.find((r) => /fit=cover/.test(r.url))
+  if (!image) return 'no crop requested'
+  const lastScript = Math.max(
+    ...requests
+      .filter((r) => r.resourceType === 'Script')
+      .map((r) => r.networkEndTime)
+  )
+  return `hero ${Math.round(image.networkRequestTime)}-${Math.round(image.networkEndTime)}ms ${Math.round(image.transferSize / 1024)}KB, last script ${Math.round(lastScript)}ms`
 }
 
 function report(formFactor, count) {
@@ -68,7 +87,7 @@ function report(formFactor, count) {
     const r = audit(formFactor, i)
     results.push(r)
     console.log(
-      `${formFactor} ${i}/${count}: ${r.score}  FCP ${Math.round(r.fcp)}ms  LCP ${Math.round(r.lcp)}ms  TBT ${Math.round(r.tbt)}ms  SI ${Math.round(r.si)}ms  CLS ${r.cls.toFixed(3)}  observed FCP ${r.observedFcp}ms, load ${r.observedLoad}ms`
+      `${formFactor} ${i}/${count}: ${r.score}  FCP ${Math.round(r.fcp)}ms  LCP ${Math.round(r.lcp)}ms  TBT ${Math.round(r.tbt)}ms  SI ${Math.round(r.si)}ms  CLS ${r.cls.toFixed(3)}  observed FCP ${r.observedFcp}ms, LCP ${r.observedLcp}ms, load ${r.observedLoad}ms; ${r.lcpImage}`
     )
   }
   console.log(
