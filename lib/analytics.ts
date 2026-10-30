@@ -775,6 +775,8 @@ export const FEATURE_AREA = {
   rescue_banner: 'account',
   pwa_nudge: 'pwa',
   store_link: 'growth',
+  promo_shown: 'growth',
+  promo_click: 'growth',
   recent_searches: 'search',
 } as const satisfies Record<string, EventArea>
 
