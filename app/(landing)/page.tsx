@@ -127,9 +127,16 @@ async function IndexPage() {
           made every first visit a skeleton, then the hero, and left the <h1> in
           a hidden div for anything that runs no JavaScript. Next does not
           expose the threshold. tests/first-paint-shell.test.ts pins this. */}
+      {/* Hold the first paint until the hero has been parsed. Its copy is
+          anchored to the bottom, so a network chunk ending inside it painted one
+          badge low on the screen and then jumped it 240px up when the rest
+          arrived (CLS 0.096 on one run in four). Browsers without render
+          blocking ignore this. */}
+      <link rel="expect" href="#first-screen-end" blocking="render" />
       <SectionErrorBoundary section="home_hero" title="The hero didn't load">
         <HeroSlider movies={heroSlides} />
       </SectionErrorBoundary>
+      <span id="first-screen-end" hidden />
       {/* Smooth handoff: the hero fades to near-black at its base, and this
           strip continues that dark and dissolves into the animated aurora over
           ~200px, so the background eases in under the first poster row instead

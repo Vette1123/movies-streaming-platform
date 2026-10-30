@@ -27,6 +27,14 @@ describe('first paint shell', () => {
     expect(page).not.toMatch(/<Suspense\b/)
   })
 
+  it('holds first paint until the whole hero is parsed', () => {
+    const page = readFileSync('app/(landing)/page.tsx', 'utf8')
+    expect(page).toContain('<link rel="expect" href="#first-screen-end"')
+    expect(page.indexOf('</SectionErrorBoundary>')).toBeLessThan(
+      page.indexOf('id="first-screen-end"')
+    )
+  })
+
   it('never ships a poster under a CSS filter', () => {
     const source = readFileSync('components/blurred-image.tsx', 'utf8')
     expect(source).not.toMatch(/['" ]blur-(lg|md|sm|xl|0)\b/)
