@@ -75,7 +75,22 @@ function lcpImageTiming(report) {
       .filter((r) => r.resourceType === 'Script')
       .map((r) => r.networkEndTime)
   )
-  return `hero ${Math.round(image.networkRequestTime)}-${Math.round(image.networkEndTime)}ms ${Math.round(image.transferSize / 1024)}KB, last script ${Math.round(lastScript)}ms`
+  const tasks = report.audits['main-thread-tasks'].details.items
+    .filter((t) => t.startTime < 1800 && t.duration >= 20)
+    .map((t) => `${Math.round(t.startTime)}+${Math.round(t.duration)}`)
+  const long = report.audits['long-tasks'].details.items
+    .slice(0, 6)
+    .map(
+      (t) =>
+        `${Math.round(t.startTime)}+${Math.round(t.duration)}:${t.url.split('/').pop().slice(0, 16)}`
+    )
+  const parts = Object.entries(
+    report.audits['mainthread-work-breakdown'].details.items.reduce(
+      (all, g) => ({ ...all, [g.group]: Math.round(g.duration) }),
+      {}
+    )
+  )
+  return `hero ${Math.round(image.networkRequestTime)}-${Math.round(image.networkEndTime)}ms ${Math.round(image.transferSize / 1024)}KB, last script ${Math.round(lastScript)}ms\n  tasks ${tasks.join(' ')}\n  long ${long.join(' ')}\n  work ${parts.map((p) => p.join('=')).join(' ')}`
 }
 
 function report(formFactor, count) {
