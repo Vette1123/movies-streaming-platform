@@ -32,6 +32,23 @@
 export const COVER_BACKDROP_SIZES =
   '(max-width: 640px) 160vw, (max-aspect-ratio: 16/9) 178vh, 100vw'
 
+// A portrait phone paints a narrow strip of that backdrop, so the width it pays
+// for and never sees is cropped off at wsrv instead (wsrvPortraitSrcSet). Same
+// centre as `object-center`, and a taller file than the landscape one it
+// replaces. Measured over four hero backdrops, WebP:
+//
+//   dpr 1.75  w1200 564 KB -> 480x800  156 KB
+//   dpr 3     w1920 1061 KB -> 750x1250 346 KB
+//
+// 3:5 is the widest crop that still covers these screens, so the media query
+// must not admit anything wider: `object-cover` would upscale it. 60vw keeps the
+// brake above. Every preload needs the matching media or both files download.
+export const PORTRAIT_ART_MEDIA =
+  '(max-width: 640px) and (max-aspect-ratio: 3/5)'
+export const LANDSCAPE_ART_MEDIA =
+  '(min-width: 641px), (min-aspect-ratio: 601/1000)'
+export const PORTRAIT_ART_SIZES = '60vw'
+
 // Same geometry at the poster's 2:3, for the hero fallback that runs when a
 // title has no backdrop at all. No brake needed: 67vh on a dpr-3 phone comes
 // out at 1696 and lands on the 1920 rung by itself.

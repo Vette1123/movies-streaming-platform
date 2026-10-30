@@ -72,3 +72,18 @@ export function wsrvSrcSet(src: string, quality?: number) {
     .map((w) => `${imageLoader({ src, width: w, quality })} ${w}w`)
     .join(', ')
 }
+
+const PORTRAIT_WIDTHS = [360, 480, 648, 750]
+
+/**
+ * A backdrop cropped to 3:5 for a portrait phone: see lib/image-sizes.ts.
+ * Undefined off wsrv, which is what lets the fallback chain take over: a
+ * <source> outranks the <img> src it would be setting.
+ */
+export function wsrvPortraitSrcSet(src: string, quality?: number) {
+  if (!isWsrvURL(src)) return undefined
+  return PORTRAIT_WIDTHS.map((w) => {
+    const url = imageLoader({ src, width: w, quality })
+    return `${url}&h=${Math.round((w * 5) / 3)}&fit=cover ${w}w`
+  }).join(', ')
+}
