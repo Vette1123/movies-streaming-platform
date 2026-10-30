@@ -110,6 +110,16 @@ for (const path of [...new Set(INDEXABLE)]) {
   const h1s = h1sOf(html)
   const description = decode(descOf(html))
   const wantCanonical = `${ORIGIN.replace('https://', 'https://www.')}${path === '/' ? '' : path}`
+  // React moves a boundary over 12.8KB into a hidden div, so an <h1> inside one
+  // is invisible to anything that runs no JavaScript and paints late for
+  // everyone else. Text-only checks above cannot see the difference.
+  const outlinedAt = html.indexOf('<div hidden id="S:')
+  const h1At = html.search(/<h1[\s>]/)
+  check(
+    `h1 in shell ${path}`,
+    outlinedAt === -1 || h1At < outlinedAt,
+    `h1 at ${h1At}, first outlined boundary at ${outlinedAt}`
+  )
   const ok =
     status === 200 &&
     !/noindex/i.test(robots) &&

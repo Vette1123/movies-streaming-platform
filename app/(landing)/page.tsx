@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react'
+import React from 'react'
 import { Metadata } from 'next'
 import { populateHomePageData } from '@/services/movies'
 
@@ -12,7 +12,6 @@ import {
   webApplicationJsonLd,
 } from '@/lib/structured-data'
 import { HeroSlider } from '@/components/header/hero-slider'
-import { FullScreenLoader } from '@/components/loaders/intro-pages-loader'
 import { ContinueWatching } from '@/components/main-page/continue-watching'
 import { MoviesIntroSection } from '@/components/main-page/intro-section'
 import { ScrollReveal } from '@/components/scroll-reveal'
@@ -119,11 +118,17 @@ async function IndexPage() {
       <JsonLd data={webApplicationJsonLd} />
       {/* Hero and rails get their own boundaries: a failure in the carousel
           (or in one of its lazily-loaded chunks) used to blank the entire
-          homepage, even though every poster row below had rendered fine. */}
+          homepage, even though every poster row below had rendered fine.
+
+          No Suspense here, and no loading.tsx on this route. React writes any
+          boundary over 12.8KB out of line even when it finished rendering: the
+          real markup goes into a hidden div near the end of the document and
+          the fallback paints instead, until an inline script swaps them. That
+          made every first visit a skeleton, then the hero, and left the <h1> in
+          a hidden div for anything that runs no JavaScript. Next does not
+          expose the threshold. tests/first-paint-shell.test.ts pins this. */}
       <SectionErrorBoundary section="home_hero" title="The hero didn't load">
-        <Suspense fallback={<FullScreenLoader />}>
-          <HeroSlider movies={heroSlides} />
-        </Suspense>
+        <HeroSlider movies={heroSlides} />
       </SectionErrorBoundary>
       {/* Smooth handoff: the hero fades to near-black at its base, and this
           strip continues that dark and dissolves into the animated aurora over

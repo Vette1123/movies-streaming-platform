@@ -158,18 +158,23 @@ export const BlurredImage = React.memo(function BlurredImage({
     returnFalse,
     returnTrue
   )
+  // Frozen at mount. A picture that came in the HTML is never hidden, not even
+  // on the pass after hydration: it may be half painted, and its blur stand-in
+  // is a background on this same element, so going to 0 there would blank the
+  // hero at the moment it is most needed. Only a picture mounted by the client
+  // has nothing on screen to lose.
+  const [canVeil] = React.useState(!fromServer)
+  const veiled = isLoading && canVeil
 
   if (intro) {
-    // Hero / large single posters. These were a blur-up: drawn at blur-lg
+    // Hero / large single posters. These were a blur-up: drawn blurred
     // until onLoad, then eased sharp over 700ms. A cold detail page measured
     // dark at 1.27s, a smear at 1.57s and the picture at 2.2s — three looks
     // before the page settled, and the blur was the image ALREADY THERE being
     // held back. Now a fade from the dark backing, and only where nothing was
     // drawn yet: in server HTML the picture is never hidden, because hiding it
     // until hydration would keep the LCP image off screen until the scripts
-    // ran. The hydration pass renders it visible to match; the client pass
-    // after it, if the image is still on its way, takes it to 0 and back.
-    const veiled = isLoading && !fromServer
+    // ran.
     const blurClassName = cn(
       className,
       'transition-opacity duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none',
@@ -215,14 +220,15 @@ export const BlurredImage = React.memo(function BlurredImage({
         className="relative w-full overflow-hidden rounded-lg bg-slate-900"
         style={{ aspectRatio: `${width} / ${height}` }}
       >
-        {/* Blur-up "glow" reveal: the poster blooms in from a soft blur + slight
-            zoom as it decodes, then settles. The transition names BOTH `transform`
-            and `filter`, so the blur EASES off instead of snapping — that snap
-            (transition-property was transform-only) is why the blur-up was dropped
-            in 9c94d1d. Same 500ms/ease-out as the hover zoom, so hover feel is
-            unchanged. The wrapper's bg-slate-900 backs the reserved box, so there's
-            no blank before the first pixels paint, and the aspect-ratio box means
-            zero CLS. */}
+        {/* The poster blooms in with a slight zoom as it decodes, then settles.
+            Same 500ms/ease-out as the hover zoom, so hover feel is unchanged.
+            This was a blur-up, and it was the costliest thing on a first load:
+            every poster in the HTML shipped under `filter: blur` until hydration
+            cleared it, so real pixels were held back and each one repainted on
+            the main thread (Lighthouse's non-composited list). Opacity and
+            transform run on the compositor, and only client-mounted posters
+            use them. The wrapper's bg-slate-900 backs the reserved box, and the
+            aspect-ratio box means zero CLS. */}
         <Image
           quality={POSTER_QUALITY}
           {...rest}
@@ -233,8 +239,8 @@ export const BlurredImage = React.memo(function BlurredImage({
           sizes={sizes}
           className={cn(
             className,
-            'object-cover transition-[transform,filter] duration-500 ease-out',
-            isLoading ? 'scale-[1.03] blur-lg' : 'blur-0 scale-100'
+            'object-cover transition-[transform,opacity] duration-500 ease-out',
+            veiled ? 'scale-[1.03] opacity-0' : 'scale-100'
           )}
           onLoad={() => setLoading(false)}
           onError={handleError}
@@ -248,10 +254,11 @@ export const BlurredImage = React.memo(function BlurredImage({
   // rounded-lg bg-slate-900` div that used to sit here painted nothing — its
   // only child was absolutely positioned, so it measured 0x0 — and it is what
   // put a static parent between the box and the image.
-  const blurClassName = cn(className, 'duration-700 ease-in-out', {
-    'blur-lg': isLoading,
-    'blur-0': !isLoading,
-  })
+  const blurClassName = cn(
+    className,
+    'transition-opacity duration-500 ease-out motion-reduce:transition-none',
+    veiled && 'opacity-0'
+  )
   return (
     <>
       {/* The person grids and the collection banner land here. Their boxes have

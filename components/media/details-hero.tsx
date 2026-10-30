@@ -15,10 +15,12 @@ export const MovieDetailsHero = ({
   movie,
   trailerKey,
   logoPath,
+  blurDataURL,
 }: {
   movie: MovieDetails
   trailerKey?: string
   logoPath?: string | null
+  blurDataURL?: string
 }) => {
   // Whether play was pressed, not the URL it produced. The URL is derived, so
   // switching server re-points the frame without a second piece of state that
@@ -74,6 +76,7 @@ export const MovieDetailsHero = ({
         setPlaying(true)
       }}
       trailerKey={trailerKey}
+      blurDataURL={blurDataURL}
       logoPath={logoPath}
       sourceControl={sourceControl}
       onFinished={handleFinished}

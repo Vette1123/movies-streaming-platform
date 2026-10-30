@@ -10,6 +10,7 @@ import { siteConfig } from '@/config/site'
 import { APPEARANCE_BOOT_SCRIPT } from '@/lib/appearance'
 import { BMC_WIDGET_SCRIPT } from '@/lib/bmc-widget'
 import { fontSans } from '@/lib/fonts'
+import { IMAGE_RESCUE_SCRIPT } from '@/lib/image-rescue'
 import {
   JsonLd,
   organizationJsonLd,
@@ -288,6 +289,8 @@ export default function RootLayout({ children }: RootLayoutProps) {
           and it does nothing at all for everyone else. See lib/appearance.ts.
         */}
         <script dangerouslySetInnerHTML={{ __html: APPEARANCE_BOOT_SCRIPT }} />
+        {/* Ahead of every <img>: see lib/image-rescue.ts. */}
+        <script dangerouslySetInnerHTML={{ __html: IMAGE_RESCUE_SCRIPT }} />
         {/*
           Buy Me a Coffee's floating tip jar, kept off the critical path.
 

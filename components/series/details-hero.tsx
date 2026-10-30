@@ -75,10 +75,12 @@ export const SeriesDetailsHero = ({
   series,
   trailerKey,
   logoPath,
+  blurDataURL,
 }: {
   series: SeriesDetails
   trailerKey?: string
   logoPath?: string | null
+  blurDataURL?: string
 }) => {
   // WHAT is playing, not the URL it produced. The URL is derived below, so
   // switching server re-points the frame at the same episode instead of needing
@@ -326,6 +328,7 @@ export const SeriesDetailsHero = ({
           playDefaultSeries()
         }}
         trailerKey={trailerKey}
+        blurDataURL={blurDataURL}
         logoPath={logoPath}
         playTarget={playTarget}
         isResume={isResume}

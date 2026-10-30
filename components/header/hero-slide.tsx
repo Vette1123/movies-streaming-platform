@@ -12,7 +12,7 @@ import {
   trackHeroAutoplayToggled,
   trackHeroWatchClicked,
 } from '@/lib/analytics'
-import { heroArtReady } from '@/lib/hero-art'
+import { canWarmHeroArt, heroArtReady } from '@/lib/hero-art'
 import { onIdleAfterLoad } from '@/lib/idle'
 import { COVER_BACKDROP_SIZES, COVER_POSTER_SIZES } from '@/lib/image-sizes'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
@@ -56,6 +56,13 @@ interface HeroSlideProps {
 // scroll in, and animating those would mean three full-viewport backdrops
 // scaling at once. Off-slides are invisible, so they get no animation and no
 // promotion. On a weak device, nowhere at all.
+const readConnection = () =>
+  (
+    navigator as Navigator & {
+      connection?: Parameters<typeof canWarmHeroArt>[0]
+    }
+  ).connection
+
 const kenBurns = (active: boolean, lowPower: boolean) =>
   active && !lowPower ? 'animate-hero-kenburns motion-reduce:animate-none' : ''
 
@@ -310,7 +317,7 @@ export function HeroSlide({
   // that: see lib/hero-art.ts. After `load`, nothing is left to race.
   const [warmArt, setWarmArt] = React.useState(false)
   React.useEffect(() => {
-    if (priority) return
+    if (priority || !canWarmHeroArt(readConnection())) return
     return onIdleAfterLoad(() => setWarmArt(true), 3000)
   }, [priority])
   const artReady = heroArtReady({ priority, active, warm: warmArt })

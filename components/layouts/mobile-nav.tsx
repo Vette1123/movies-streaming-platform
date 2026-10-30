@@ -31,6 +31,7 @@ import {
   DrawerSection,
   type DrawerActionProps,
 } from '@/components/layouts/drawer-action'
+import { LinkPendingBar } from '@/components/media/link-pending-bar'
 
 interface MobileNavProps {
   items?: NavItem[]
@@ -247,6 +248,7 @@ function MobileLink({
       onClick={() => setIsOpen(false)}
     >
       {children}
+      <LinkPendingBar />
     </Link>
   )
 }
