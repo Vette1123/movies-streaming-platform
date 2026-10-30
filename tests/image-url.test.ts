@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import imageLoader, { wsrvSrcSet } from '@/lib/image-loader'
+import imageLoader, { wsrvPortraitSrcSet, wsrvSrcSet } from '@/lib/image-loader'
 import { buildWsrvPlaceholderURL } from '@/lib/tmdbConfig'
 import {
   getImageURL,
@@ -56,6 +56,27 @@ describe('image URL builders with no path', () => {
     for (const missing of MISSING) {
       expect(getLogoImageSrcSet(missing)).toBeUndefined()
     }
+  })
+})
+
+describe('wsrvPortraitSrcSet', () => {
+  it('crops every candidate to 3:5, labelled with its real width', () => {
+    const srcSet = wsrvPortraitSrcSet(getImageURL('/abc.jpg'), 65) ?? ''
+    const candidates = srcSet.split(/,\s/)
+    expect(candidates.length).toBeGreaterThan(1)
+    for (const candidate of candidates) {
+      const [url, descriptor] = candidate.split(' ')
+      const width = Number(descriptor.slice(0, -1))
+      expect(url).toContain(`&w=${width}&`)
+      expect(url).toContain(`&h=${Math.round((width * 5) / 3)}&fit=cover`)
+      expect(url).toContain('&q=65')
+    }
+  })
+
+  it('offers nothing once the image has left wsrv, so the fallback can paint', () => {
+    expect(
+      wsrvPortraitSrcSet('https://image.tmdb.org/t/p/w1280/abc.jpg', 65)
+    ).toBeUndefined()
   })
 })
 

@@ -24,6 +24,7 @@ import { useHeroExtras } from '@/hooks/use-hero-extras'
 import { heroWatchButton } from '@/components/ui/hero-action-button'
 import { BlurredImage } from '@/components/blurred-image'
 import { CarouselPauseContext } from '@/components/carousel'
+import { preloadHeroImage } from '@/components/header/hero-image'
 import { HeroRatesInfos } from '@/components/header/hero-rates-info'
 import { HeroTrailerPreview } from '@/components/header/hero-trailer-preview'
 import { HeroWordmark } from '@/components/header/hero-wordmark'
@@ -121,6 +122,7 @@ export function HeroSlide({
   active = false,
 }: HeroSlideProps) {
   const media = movie as HeroSlideMedia
+  if (priority) preloadHeroImage(media)
   const title = movie.title || movie.name || 'Untitled'
   const mediaType: ItemType = resolveMediaType(movie)
 
@@ -347,6 +349,7 @@ export function HeroSlide({
             // deliberate brake instead of asking for the full cover width.
             sizes={COVER_BACKDROP_SIZES}
             intro
+            portraitArt
             // Not `priority`: same as the details hero, the page preloads it (see
             // components/header/hero-image.tsx).
             loading={priority ? 'eager' : 'lazy'}

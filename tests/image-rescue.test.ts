@@ -62,6 +62,19 @@ describe('IMAGE_RESCUE_SCRIPT, refused', () => {
     expect(image.removed).toEqual(['srcset', 'sizes'])
   })
 
+  it('drops a <picture> source, which would otherwise outrank the new src', () => {
+    const removedSources: string[] = []
+    const sources = ['portrait'].map((name) => ({
+      remove: () => removedSources.push(name),
+    }))
+    const image = fakeImage(WSRV, {
+      parentNode: { tagName: 'PICTURE', querySelectorAll: () => sources },
+    })
+    installRescue().listener({ target: image })
+    expect(removedSources).toEqual(['portrait'])
+    expect(image.src).toBe('https://image.tmdb.org/t/p/w1280/abc.jpg')
+  })
+
   it('keeps a poster at the size it already asked for', () => {
     const image = fakeImage(
       'https://wsrv.nl/?url=https://image.tmdb.org/t/p/w500/p.jpg&w=300&q=70'

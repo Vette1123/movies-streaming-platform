@@ -4,8 +4,14 @@ import { preload } from 'react-dom'
 import { MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
 import { SeriesDetails } from '@/types/series-details'
-import { wsrvSrcSet } from '@/lib/image-loader'
-import { COVER_BACKDROP_SIZES, COVER_POSTER_SIZES } from '@/lib/image-sizes'
+import { wsrvPortraitSrcSet, wsrvSrcSet } from '@/lib/image-loader'
+import {
+  COVER_BACKDROP_SIZES,
+  COVER_POSTER_SIZES,
+  LANDSCAPE_ART_MEDIA,
+  PORTRAIT_ART_MEDIA,
+  PORTRAIT_ART_SIZES,
+} from '@/lib/image-sizes'
 import { getMediaTitle } from '@/lib/media'
 import { getImageURL } from '@/lib/utils'
 import { BlurredImage, HERO_QUALITY } from '@/components/blurred-image'
@@ -29,13 +35,21 @@ export function preloadHeroImage(
   const src = getImageURL(path)
   const imageSrcSet = wsrvSrcSet(src, HERO_QUALITY)
   if (!imageSrcSet) return
+  const isBackdrop = Boolean(media?.backdrop_path)
   preload(src, {
     as: 'image',
     imageSrcSet,
-    imageSizes: media?.backdrop_path
-      ? COVER_BACKDROP_SIZES
-      : COVER_POSTER_SIZES,
+    imageSizes: isBackdrop ? COVER_BACKDROP_SIZES : COVER_POSTER_SIZES,
     fetchPriority: 'high',
+    ...(isBackdrop ? { media: LANDSCAPE_ART_MEDIA } : {}),
+  })
+  if (!isBackdrop) return
+  preload(src, {
+    as: 'image',
+    imageSrcSet: wsrvPortraitSrcSet(src, HERO_QUALITY),
+    imageSizes: PORTRAIT_ART_SIZES,
+    fetchPriority: 'high',
+    media: PORTRAIT_ART_MEDIA,
   })
 }
 interface HeroImageProps {
@@ -79,6 +93,7 @@ export const HeroImage = ({
           fill
           sizes={COVER_BACKDROP_SIZES}
           intro
+          portraitArt
           // Not `priority`: preloadHeroImage above already emits the preload.
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? 'high' : 'auto'}

@@ -3,6 +3,8 @@
 import React from 'react'
 import Image, { ImageProps } from 'next/image'
 
+import { wsrvPortraitSrcSet } from '@/lib/image-loader'
+import { PORTRAIT_ART_MEDIA, PORTRAIT_ART_SIZES } from '@/lib/image-sizes'
 import {
   demoteFromPrimary,
   getNextImageFallback,
@@ -15,6 +17,8 @@ import { cn } from '@/lib/utils'
 interface BlurImageProps extends ImageProps {
   className: string
   intro?: boolean
+  /** A backdrop: serve portrait phones a crop. Only read with `intro`. */
+  portraitArt?: boolean
 }
 
 // Every image on this site used to come through at q-82, which is a default
@@ -75,6 +79,7 @@ export const BlurredImage = React.memo(function BlurredImage({
   alt,
   className,
   intro = false,
+  portraitArt = false,
   ...restProps
 }: BlurImageProps) {
   // An <img> is draggable by default, so a press-and-drag anywhere on a poster
@@ -180,19 +185,39 @@ export const BlurredImage = React.memo(function BlurredImage({
       'transition-opacity duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none',
       veiled && 'opacity-0'
     )
+    const image = (
+      <Image
+        quality={HERO_QUALITY}
+        {...props}
+        ref={imgRef}
+        alt={alt}
+        src={effectiveSrc}
+        className={blurClassName}
+        onLoad={() => setLoading(false)}
+        onError={handleError}
+      />
+    )
+    // Derived from effectiveSrc, so the <source> goes the moment the image falls
+    // back: it would otherwise outrank the fallback's src.
+    const portraitSrcSet =
+      portraitArt && typeof effectiveSrc === 'string'
+        ? wsrvPortraitSrcSet(effectiveSrc, HERO_QUALITY)
+        : undefined
     return (
       <>
         {props.fill ? <ImageBacking /> : null}
-        <Image
-          quality={HERO_QUALITY}
-          {...props}
-          ref={imgRef}
-          alt={alt}
-          src={effectiveSrc}
-          className={blurClassName}
-          onLoad={() => setLoading(false)}
-          onError={handleError}
-        />
+        {portraitSrcSet ? (
+          <picture>
+            <source
+              media={PORTRAIT_ART_MEDIA}
+              srcSet={portraitSrcSet}
+              sizes={PORTRAIT_ART_SIZES}
+            />
+            {image}
+          </picture>
+        ) : (
+          image
+        )}
       </>
     )
   }
