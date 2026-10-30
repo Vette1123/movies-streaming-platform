@@ -113,12 +113,13 @@ const SLOTS: Slot[] = [
 ]
 
 /**
- * Which SLOT is the public default. Server 2 since it has proven the more
- * resilient embed. Overridable per deployment without touching code; falls
- * back to the first configured slot otherwise.
+ * Which SLOT is the public default. Server 1 since 2026-10-30: PostHog showed
+ * it stalling on 4% of plays against 13% for Server 2, and it takes the
+ * resume/subtitle tokens. Overridable per deployment without touching code;
+ * falls back to the first configured slot otherwise.
  */
 const DEFAULT_SLOT = Number(
-  process.env.NEXT_PUBLIC_STREAM_DEFAULT_SLOT?.trim() || '2'
+  process.env.NEXT_PUBLIC_STREAM_DEFAULT_SLOT?.trim() || '1'
 )
 
 const hostOf = (base: string): string => {
