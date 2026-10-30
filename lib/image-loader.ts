@@ -52,7 +52,9 @@ export default function imageLoader({ src, width, quality }: LoaderArgs) {
 
 // The rungs next/image offers above 256: its `deviceSizes`, plus the two
 // `imageSizes` the app reaches.
-const CANDIDATE_WIDTHS = [256, 384, 640, 750, 828, 1080, 1200, 1920, 2048, 3840]
+const CANDIDATE_WIDTHS = [
+  256, 320, 384, 640, 750, 828, 1080, 1200, 1920, 2048, 3840,
+]
 
 /**
  * The srcset a wsrv image's <img> carries, for a preload. Built by the same

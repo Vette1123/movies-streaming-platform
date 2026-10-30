@@ -4,6 +4,7 @@ import React from 'react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
+import { onIdleAfterLoad } from '@/lib/idle'
 import { List } from '@/components/list'
 import { StaticRail } from '@/components/main-page/static-rail'
 
@@ -38,29 +39,33 @@ export function LazyRail({ title, items, itemType = 'movie' }: LazyRailProps) {
     const el = ref.current
     if (!el) return
 
-    // No IntersectionObserver (very old browser) → hydrate anyway so the rail is
-    // never left non-interactive. Deferred by a frame rather than set straight
-    // from the effect body: a synchronous setState here would cascade an extra
-    // render pass, and it cannot be hoisted into the initial state because the
-    // server has no IntersectionObserver either — seeding from that check would
-    // render <List> on the server and break the SSR/first-paint match this
-    // component exists to preserve.
-    if (typeof IntersectionObserver === 'undefined') {
-      const frame = requestAnimationFrame(() => setActive(true))
-      return () => cancelAnimationFrame(frame)
+    // Never before the page has loaded, even for the rail on screen. Its static
+    // twin looks identical and its links work, and building twenty Cards is the
+    // largest thing React does on this page: all six rails on the first load
+    // was 2.1s of main thread on a throttled phone, which is the whole of TBT.
+    let io: IntersectionObserver | undefined
+    const cancel = onIdleAfterLoad(() => {
+      // No IntersectionObserver (very old browser) → hydrate anyway so the rail
+      // is never left non-interactive.
+      if (typeof IntersectionObserver === 'undefined') {
+        setActive(true)
+        return
+      }
+      io = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) {
+            setActive(true)
+            io?.disconnect()
+          }
+        },
+        { rootMargin: ROOT_MARGIN }
+      )
+      io.observe(el)
+    }, 4000)
+    return () => {
+      cancel()
+      io?.disconnect()
     }
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setActive(true)
-          io.disconnect()
-        }
-      },
-      { rootMargin: ROOT_MARGIN }
-    )
-    io.observe(el)
-    return () => io.disconnect()
   }, [active])
 
   // One stable wrapper element across the swap keeps the observer target and the
@@ -68,7 +73,14 @@ export function LazyRail({ title, items, itemType = 'movie' }: LazyRailProps) {
   return (
     <div ref={ref}>
       {active ? (
-        <List title={title} items={items} itemType={itemType} />
+        // No entrance: this can land on a rail already on screen, which played
+        // it as the static twin, and would blink.
+        <List
+          title={title}
+          items={items}
+          itemType={itemType}
+          entrance={false}
+        />
       ) : (
         <StaticRail title={title} items={items} itemType={itemType} />
       )}

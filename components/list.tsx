@@ -6,7 +6,14 @@ import { ChevronLeft, ChevronRight, Clapperboard } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
-import { canPage, RAIL_TRACK_CLASS, railArrowState } from '@/lib/rail-scroll'
+import { RAIL_POSTER_SIZES } from '@/lib/image-sizes'
+import {
+  canPage,
+  RAIL_ENTRANCE_COUNT,
+  RAIL_TRACK_CLASS,
+  railArrowState,
+  railEntranceDelay,
+} from '@/lib/rail-scroll'
 import { cn, itemRedirect } from '@/lib/utils'
 import { Card } from '@/components/card'
 import { SeeAllLink } from '@/components/see-all-link'
@@ -15,6 +22,8 @@ interface ListProps {
   title: string
   items: MediaType[]
   itemType?: ItemType
+  // Off when this takes over from a StaticRail that already played it.
+  entrance?: boolean
 }
 
 // Fraction of the visible rail width one arrow-press scrolls. ~90% keeps a
@@ -32,19 +41,12 @@ const DRAG_THRESHOLD = 8
  * is plain CSS — nothing in this rail runs framer any more. Desktop keeps
  * click-drag and hover-reveal arrows for parity with the previous UX.
  */
-/**
- * How many cards of a rail stagger in on load: about what the widest screen
- * shows. Every card used to animate — ~120 across the homepage's six rails,
- * nearly all off-screen, all inside the busiest second of the page load.
- */
-const RAIL_ENTRANCE_COUNT = 6
-
-const railEntranceDelay = (index: number): React.CSSProperties | undefined =>
-  index < RAIL_ENTRANCE_COUNT
-    ? { animationDelay: `${index * 0.04}s` }
-    : undefined
-
-export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
+export const List = ({
+  title,
+  items,
+  itemType = 'movie',
+  entrance = true,
+}: ListProps) => {
   const railRef = React.useRef<HTMLDivElement>(null)
   const [canLeft, setCanLeft] = React.useState(false)
   const [canRight, setCanRight] = React.useState(false)
@@ -253,11 +255,15 @@ export const List = ({ title, items, itemType = 'movie' }: ListProps) => {
                 className={cn(
                   'w-40 shrink-0 snap-start',
                   'sm:w-[190px] lg:w-[230px] 2xl:w-[250px]',
-                  index < RAIL_ENTRANCE_COUNT && 'animate-rise-in'
+                  entrance && index < RAIL_ENTRANCE_COUNT && 'animate-rise-in'
                 )}
-                style={railEntranceDelay(index)}
+                style={entrance ? railEntranceDelay(index) : undefined}
               >
-                <Card item={item} itemType={itemType} />
+                <Card
+                  item={item}
+                  itemType={itemType}
+                  posterSizes={RAIL_POSTER_SIZES}
+                />
               </div>
             ))}
           </div>

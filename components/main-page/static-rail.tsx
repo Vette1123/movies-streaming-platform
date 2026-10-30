@@ -4,8 +4,14 @@ import { Clapperboard } from 'lucide-react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
+import { RAIL_POSTER_SIZES } from '@/lib/image-sizes'
 import { getMediaTitle } from '@/lib/media'
-import { RAIL_TRACK_CLASS } from '@/lib/rail-scroll'
+import {
+  RAIL_ENTRANCE_COUNT,
+  RAIL_TRACK_CLASS,
+  railEntranceDelay,
+  railPosterInStaticHtml,
+} from '@/lib/rail-scroll'
 import { cn, getPosterImageURL, itemRedirect } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
 import { MediaLink } from '@/components/media/media-link'
@@ -71,12 +77,16 @@ export function StaticRail({
 
       {items.length > 0 && (
         <div className={cn(RAIL_TRACK_CLASS, 'no-scrollbar -my-4 gap-6 py-4')}>
-          {items.map((item) => {
+          {items.map((item, index) => {
             const posterTitle = getMediaTitle(item) || 'Poster'
             return (
               <div
                 key={item.id}
-                className="w-40 shrink-0 snap-start sm:w-[190px] lg:w-[230px] 2xl:w-[250px]"
+                className={cn(
+                  'w-40 shrink-0 snap-start sm:w-[190px] lg:w-[230px] 2xl:w-[250px]',
+                  index < RAIL_ENTRANCE_COUNT && 'animate-rise-in'
+                )}
+                style={railEntranceDelay(index)}
               >
                 <MediaLink
                   href={`${itemRedirect(itemType)}/${item.id}`}
@@ -88,13 +98,22 @@ export function StaticRail({
                     // identical reserved box + dark-crossfade reveal (and the swap
                     // to the interactive List is a same-URL cache hit, no reflash).
                     <div className="rounded-lg shadow-lg">
-                      <BlurredImage
-                        src={getPosterImageURL(item.poster_path)}
-                        alt={posterTitle}
-                        width={250}
-                        height={375}
-                        className="rounded-lg object-cover"
-                      />
+                      {railPosterInStaticHtml(index) ? (
+                        <BlurredImage
+                          src={getPosterImageURL(item.poster_path)}
+                          alt={posterTitle}
+                          width={250}
+                          height={375}
+                          sizes={RAIL_POSTER_SIZES}
+                          className="rounded-lg object-cover"
+                        />
+                      ) : (
+                        // Same box, and the link keeps its name for a crawler
+                        // and a screen reader.
+                        <div className="aspect-2/3 w-full rounded-lg bg-slate-900">
+                          <span className="sr-only">{posterTitle}</span>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <MediaPosterFallback

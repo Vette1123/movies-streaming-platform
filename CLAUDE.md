@@ -26,6 +26,7 @@ pnpm imdb:ratings       # regenerate public/imdb-ratings/*.json shards
 pnpm og:build           # regenerate the static OG image
 pnpm waf:apply          # push Cloudflare WAF + CDN cache rules
 pnpm bmc:probe          # end-to-end check of the live payment webhook (writes + deletes one throwaway row)
+pnpm share:probe       # a real list and profile unfurled through D1, the Worker and wsrv (writes + deletes one throwaway user)
 pnpm resume:probe       # resume + playback prefs through the real page AND real player (pnpm dev + `pnpm harness` in ../reely-pro-player)
 pnpm cf:cpu [hours]     # production Worker CPU broken down BY ROUTE (Workers Logs); cf:health has the kills
 ```
@@ -105,7 +106,7 @@ The strip is **server-rendered into the prerendered pages**: zero Worker CPU, ze
 - **Meta descriptions come from one builder, `lib/seo-description.ts`**, shared by the prerendered detail pages and the Worker's tail-id fallback. Don't reintroduce a local `overview.slice(...)` — a thin TMDB overview is what made Bing flag 53 pages.
 - **The Worker's crawler-only `<h1>` block must never be `hidden`.** `display: none` reads as absent to a crawler (that is the "h1 missing" report); it is clipped + `aria-hidden` instead. `pnpm seo:verify` asserts all of the above against production.
 
-**No Suspense or `loading.tsx` around above-the-fold content on a static route.** React writes any boundary over 12.8KB out of line even when it has finished rendering: the markup lands in a hidden div near the end of the document, the fallback paints first, and the `<h1>` needs JavaScript to show. Next does not expose the threshold. Client navigation feedback is `LinkPendingBar`. Below-the-fold rails keep their boundaries, which give React separate hydration tasks. `tests/first-paint-shell.test.ts` and `pnpm seo:verify` pin this.
+**No Suspense or `loading.tsx` around above-the-fold content on a static route.** React writes any boundary over 12.8KB out of line even when it has finished rendering: the markup lands in a hidden div near the end of the document, the fallback paints first, and the `<h1>` needs JavaScript to show. Next does not expose the threshold. Client navigation feedback is `LinkPendingBar`. Rails keep their boundaries, which give React separate hydration tasks, and every homepage rail is a `LazyRail`: a `StaticRail` until the page has loaded and it is near the viewport, because hydrating cards was most of TBT. Do not turn on `experimental.inlineCss`: it took the Worker from 472KB to 2.8MB. `tests/first-paint-shell.test.ts` and `pnpm seo:verify` pin this.
 
 **Intercepting routes are unsupported by `output: 'export'`** — the `@modal` slot is gone and the disclaimer is an ordinary full-page navigation. Don't reintroduce one.
 

@@ -46,6 +46,7 @@
     "posthog:setup": "node scripts/posthog-setup.mjs",
     "errors:triage": "node scripts/errors-triage.mjs",
     "bmc:probe": "node scripts/bmc-probe.mjs",
+    "share:probe": "node scripts/share-probe.mjs",
     "search:probe": "node scripts/search-scroll-probe.mjs",
     "vt:probe": "node scripts/view-transition-probe.mjs",
     "resume:probe": "node scripts/resume-probe.mjs",

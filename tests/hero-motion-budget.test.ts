@@ -94,7 +94,7 @@ describe('per-element costs that multiply across a page', () => {
 
   it('only the first few cards of a rail animate in', () => {
     const list = source('components/list.tsx')
-    expect(list).toMatch(/index < RAIL_ENTRANCE_COUNT && 'animate-rise-in'/)
+    expect(list).toMatch(/index < RAIL_ENTRANCE_COUNT &&\s+'animate-rise-in'/)
   })
 
   it('the rating count-up never re-renders React per frame', () => {

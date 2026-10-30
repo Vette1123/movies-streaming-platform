@@ -25,20 +25,24 @@ export const MoviesIntroSection = ({
 }: MoviesIntroSectionProps) => {
   return (
     <section className="w-full">
-      {/* The first two rails sit closest to the fold — render them eager (full
-          interactive List) so the top of the page is never a static frame. The
-          remaining four are below-fold hydration islands: SSR renders their
-          posters (SEO/CLS intact), but List's per-card client machinery only
-          hydrates as each rail nears the viewport (see LazyRail / StaticRail). */}
+      {/* Every rail is a hydration island: SSR renders its posters (SEO/CLS
+          intact), and List's per-card client machinery only hydrates once the
+          page has loaded and the rail is near the viewport (see LazyRail /
+          StaticRail). The two nearest the fold used to hydrate at once, and that
+          was most of the page's blocking time. */}
       <Suspense fallback={<SliderHorizontalListLoader />}>
-        <List
+        <LazyRail
           title="Trending Movies"
           items={latestTrendingMovies}
           itemType="movie"
         />
       </Suspense>
       <Suspense fallback={<SliderHorizontalListLoader />}>
-        <List title="Popular Movies" items={popularMovies} itemType="movie" />
+        <LazyRail
+          title="Popular Movies"
+          items={popularMovies}
+          itemType="movie"
+        />
       </Suspense>
       <Suspense fallback={<SliderHorizontalListLoader />}>
         <LazyRail
