@@ -1,0 +1,31 @@
+# Lighthouse from a data centre, by hand. See scripts/lighthouse.mjs for why a
+# home connection cannot answer this. No secrets, nothing deployed.
+name: Lighthouse
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: Page to audit
+        default: https://www.reely.space/
+      runs:
+        description: Runs per form factor
+        default: '5'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - run: node scripts/lighthouse.mjs "$URL" "$RUNS"
+        env:
+          URL: ${{ inputs.url }}
+          RUNS: ${{ inputs.runs }}

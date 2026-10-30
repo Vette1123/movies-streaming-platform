@@ -28,6 +28,7 @@
     "icons:verify": "node scripts/verify-icons.mjs",
     "apps:icons": "node scripts/build-companion-icons.mjs",
     "seo:verify": "node scripts/verify-seo.mjs",
+    "lighthouse": "node scripts/lighthouse.mjs",
     "og:build": "node scripts/build-og-image.mjs",
     "embed:probe": "node scripts/embed-probe.mjs",
     "d1:migrate": "wrangler d1 migrations apply reely",
