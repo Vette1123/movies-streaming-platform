@@ -32,17 +32,23 @@ function getLogoImageURL(path: string | null | undefined) {
 }
 
 // The wordmark is a plain <img> (next/image's loader never sees it — see
-// apiConfig.logoImage), so the density ladder has to be written by hand. The
-// element lays out at the file's intrinsic ~500 CSS px, which a retina screen
-// paints at 1000 device px; without this the browser had one 500px file for
-// both cases and simply stretched it.
-// Returns undefined rather than a pair when there is no logo. "No image at any
-// density" is an absent attribute, not two candidates pointing at the same
-// transparent pixel — the browser would pick one, decode it, and paint nothing,
-// having been told there was a choice to make.
+// apiConfig.logoImage), so the width ladder has to be written by hand. A 1x/2x
+// pair sent a phone the 1000px file for a wordmark capped at 80vw: 78KB racing
+// the LCP backdrop. LOGO_SIZES is also the element's layout width, because it
+// is `w-auto` and width descriptors set the intrinsic size, so keep it at the
+// ~500 CSS px cap the wordmark has always had.
+// Returns undefined rather than a list when there is no logo. "No image at any
+// width" is an absent attribute, not candidates pointing at the same transparent
+// pixel — the browser would pick one, decode it, and paint nothing, having been
+// told there was a choice to make.
+const LOGO_WIDTHS = [320, 480, 640, 1000]
+const LOGO_SIZES = 'min(80vw, 500px)'
+
 function getLogoImageSrcSet(path: string | null | undefined) {
   if (!path) return undefined
-  return `${apiConfig.logoImage(path, 500)} 1x, ${apiConfig.logoImage(path, 1000)} 2x`
+  return LOGO_WIDTHS.map(
+    (width) => `${apiConfig.logoImage(path, width)} ${width}w`
+  ).join(', ')
 }
 
 // Both search-result thumbs paint in the same 96x54 box, and both are rendered
@@ -196,6 +202,7 @@ export {
   getImageURL,
   getLogoImageURL,
   getLogoImageSrcSet,
+  LOGO_SIZES,
   getPosterImageURL,
   getThumbPosterURL,
   getThumbBackdropURL,

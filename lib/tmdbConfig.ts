@@ -62,8 +62,8 @@ const apiConfig = {
     ),
   // The hero's title wordmark. It renders as a plain <img>, so the loader never
   // sees it and its width and quality are chosen here. Read from `/original` so
-  // getLogoImageSrcSet can hand out a real 1x/2x pair; `&we` keeps a small source
-  // from being enlarged, and the 2x file is only fetched by a screen that can
+  // getLogoImageSrcSet can hand out real widths; `&we` keeps a small source from
+  // being enlarged, and the largest file is only fetched by a screen that can
   // show it.
   logoImage: (imgPath: string | null | undefined, width = 500) =>
     withImagePath(imgPath, (path) =>
