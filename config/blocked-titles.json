@@ -3,12 +3,39 @@
   "titles": [
     {
       "type": "movie",
+      "id": 39108,
+      "title": "Dragon Ball Z: Wrath of the Dragon",
+      "reportedOn": "2026-10-30",
+      "reportId": "3-4915000041795-0845891455",
+      "complainant": "comeso GmbH",
+      "via": "Google Search Console (Lumen 101797160)"
+    },
+    {
+      "type": "movie",
       "id": 969681,
       "title": "Spider-Man: Brand New Day",
       "reportedOn": "2026-09-19",
       "reportId": "7e170169c822f2f4",
       "complainant": "Stichting BREIN on behalf of Sony Pictures",
       "via": "Cloudflare Trust & Safety"
+    },
+    {
+      "type": "movie",
+      "id": 1230213,
+      "title": "Oh! Boarding House",
+      "reportedOn": "2026-10-30",
+      "reportId": "4-1455000042287-0147920999",
+      "complainant": "comeso GmbH",
+      "via": "Google Search Console (Lumen 101809138)"
+    },
+    {
+      "type": "tv",
+      "id": 102088,
+      "title": "How a Realist Hero Rebuilt the Kingdom",
+      "reportedOn": "2026-10-30",
+      "reportId": "7-1387000041683-1896365885",
+      "complainant": "comeso GmbH",
+      "via": "Google Search Console (Lumen 101822159)"
     }
   ]
 }
