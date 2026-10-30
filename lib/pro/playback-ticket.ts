@@ -35,18 +35,6 @@ const hmac = async (secretB64: string, data: string): Promise<Uint8Array> => {
   return new Uint8Array(await crypto.subtle.sign('HMAC', key, enc.encode(data)))
 }
 
-/**
- * Whether a ticket request must prove a supporter account.
- *
- * `PRO_PLAYER_OPEN` keeps the web player open for the free daily trial, which is
- * enforced in the browser. A bearer token is a linked TV, and a TV is a
- * supporter feature whatever that var says, so a lapsed supporter's TV stops.
- */
-export const ticketNeedsEntitlement = (
-  open: unknown,
-  bearer: string | null
-): boolean => !open || Boolean(bearer)
-
 export interface PlaybackTarget {
   type: 'movie' | 'tv'
   id: number

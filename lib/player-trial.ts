@@ -6,14 +6,10 @@
 // just failed them. That is where the player gets to make its own case, so the
 // offer there is to watch on it, not to read about it.
 //
-// Bounded per browser in localStorage. That is deliberate and it is the whole
-// enforcement: /api/pro/ticket mints for anybody while PRO_PLAYER_OPEN is set
-// (wrangler.jsonc), so a server-side counter would be guarding a door that is
-// already open.
-// ponytail: client-side limit only; when PRO_PLAYER_OPEN is removed, the ticket
-// endpoint 402s non-supporters and the trial falls back to the default server
-// (useStreamSource -> trial.end). Upgrade path: a `player_trials` row per user
-// per day checked in handleProTicket before the entitlement 402.
+// This file decides what to OFFER, from localStorage. What is ALLOWED is decided
+// at /api/pro/ticket (lib/pro/ticket-access.ts): a browser that clears its
+// storage is offered the trial again and gets a 402, which falls back to the
+// default server through useStreamSource -> trial.end.
 
 export const TRIAL_KEY = 'reely_player_trial'
 

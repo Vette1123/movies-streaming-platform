@@ -32,10 +32,9 @@ reely.space/link
 - `lib/auth/device.ts` is device sign-in. The token is an ordinary `sessions` row
   sent as a bearer, so 90-day expiry, the five-session cap and "sign out
   everywhere" all apply. After 90 days the TV asks to be linked again.
-- `/api/pro/ticket` always checks entitlement for a bearer, even while
-  `PRO_PLAYER_OPEN` is set, so a lapsed supporter's TV stops. The open path for
-  the web trial still exists, so this gate binds the add-on, not someone calling
-  the endpoint without a token.
+- `/api/pro/ticket` requires a supporter for every bearer, so a lapsed supporter's
+  TV stops. The free web title never applies to a TV (`lib/pro/ticket-access.ts`).
+- `pnpm kodi:probe` walks all of it against production with throwaway accounts.
 - `pnpm kodi:zip` builds the zip from what is COMMITTED; `build:cf` runs it. Bump
   `version` in `addon.xml` and `VERSION` in `reely_api.py` together.
 

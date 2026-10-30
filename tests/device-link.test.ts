@@ -1,6 +1,3 @@
-import fs from 'node:fs'
-import path from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import {
@@ -15,29 +12,8 @@ import {
   normaliseUserCode,
 } from '@/lib/auth/device-code'
 import { bearerOf, createSession, loadSession } from '@/lib/auth/session'
-import { ticketNeedsEntitlement } from '@/lib/pro/playback-ticket'
 
-// The real migrations and the real SQL on an in-memory SQLite, through a thin
-// D1-shaped wrapper: `DELETE ... RETURNING` and the single-use collect are the
-// parts worth proving, and a mock of them would only prove the mock.
-const d1Over = (sqlite: DatabaseSync) =>
-  ({
-    prepare: (sql: string) => ({
-      bind: (...args: never[]) => {
-        const statement = sqlite.prepare(sql)
-        return {
-          first: async () => statement.get(...args) ?? null,
-          all: async () => ({ results: statement.all(...args) }),
-          run: async () => ({
-            meta: { changes: Number(statement.run(...args).changes) },
-          }),
-        }
-      },
-    }),
-  }) as unknown as D1Database
-
-const migration = (name: string) =>
-  fs.readFileSync(path.join('migrations', name), 'utf8')
+import { addUser, sqliteD1 } from './helpers/sqlite-d1'
 
 const post = (body: unknown, cookie?: string) =>
   new Request('https://www.reely.space/api/device/x', {
@@ -83,25 +59,10 @@ describe('bearerOf', () => {
   })
 })
 
-describe('ticketNeedsEntitlement', () => {
-  it('keeps the web trial open and never opens it to a linked TV', () => {
-    expect(ticketNeedsEntitlement('1', null)).toBe(false)
-    expect(ticketNeedsEntitlement('1', 'token')).toBe(true)
-    expect(ticketNeedsEntitlement(undefined, null)).toBe(true)
-  })
-})
-
 describe('linking a TV', () => {
   let db: D1Database
   let supporter: string
   let free: string
-
-  const addUser = (sqlite: DatabaseSync, id: string, grants: string | null) =>
-    sqlite
-      .prepare(
-        'INSERT INTO users (id, google_sub, email, created_at, grants) VALUES (?, ?, ?, ?, ?)'
-      )
-      .run(id, id, `${id}@example.com`, Date.now(), grants)
 
   const start = async () => {
     const response = await handleDeviceStart(post({}), db)
@@ -115,10 +76,9 @@ describe('linking a TV', () => {
     handleDevicePoll(post({ deviceCode }), db)
 
   beforeEach(async () => {
-    const sqlite = new DatabaseSync(':memory:')
-    sqlite.exec(migration('0001_accounts.sql'))
-    sqlite.exec(migration('0013_device_links.sql'))
-    db = d1Over(sqlite)
+    const opened = sqliteD1('0001_accounts.sql', '0013_device_links.sql')
+    const { sqlite } = opened
+    db = opened.db
     addUser(sqlite, 'supporter', 'pro')
     addUser(sqlite, 'free', null)
     supporter = await createSession(db, 'supporter', Date.now())

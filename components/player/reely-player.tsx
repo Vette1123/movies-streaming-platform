@@ -37,9 +37,9 @@ import { type SelfHostTarget } from '@/lib/stream-resolver'
  *          so the next title boots with it
  *
  * `onReady` fires when the shell has loaded (the switcher's stall detector
- * uses it); `onUnavailable` when no ticket can be minted — 402 once the
- * open-for-everyone window closes, or the worker not configured — and the
- * hero falls back to the embed servers.
+ * uses it); `onUnavailable` when no ticket can be minted — 402 once the free
+ * title is spent elsewhere, or the worker not configured — and the hero falls
+ * back to the embed servers.
  */
 export function ReelyPlayer({
   target,
