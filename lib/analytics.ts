@@ -734,12 +734,12 @@ export function trackPlayerFailed(props: {
 // ---- Infrastructure ---------------------------------------------------------
 
 /**
- * The primary image CDN (ImageKit) failed and the session fell to wsrv.nl.
+ * The primary image CDN (wsrv.nl) failed and the session fell to TMDB's origin.
  *
  * Fired once per session, by the circuit breaker in lib/tmdbConfig.ts. The
  * fallback chain is silent by design — it keeps every image on screen — so
- * without this the way we find out the ImageKit quota ran out is a user saying
- * the site looks wrong. Which is exactly how it went last time.
+ * without this the way we find out wsrv is down is a user saying the site
+ * looks wrong. Which is exactly how the ImageKit quota was found.
  */
 export function trackImageHostFallback(): void {
   track(EVENTS.IMAGE_HOST_FALLBACK)

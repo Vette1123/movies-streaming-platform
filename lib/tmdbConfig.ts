@@ -1,5 +1,3 @@
-import { IMAGE_CACHE_HOST_URL } from './constants'
-
 /**
  * What an image builder returns when TMDB has no image to point at.
  *
@@ -10,8 +8,7 @@ import { IMAGE_CACHE_HOST_URL } from './constants'
  * `/original` + `null` is `/originalnull`, and Cloudflare logged 22 requests a
  * day for exactly that path, sitting in the unclassified 4xx column next to the
  * credential scanners. Each one also walked the whole onError fallback chain in
- * BlurredImage, so one missing poster cost three 404s: ImageKit, then wsrv,
- * then TMDB's origin.
+ * BlurredImage, so one missing poster cost a 404 on every stage.
  *
  * Most call sites do guard. The guard belongs here anyway, because "most" is
  * the problem: nine call sites pass one of these paths and the type system
@@ -43,139 +40,61 @@ const apiConfig = {
   get headerKey() {
     return process.env.TMDB_HEADER_KEY
   },
-  // On-the-fly ImageKit optimization. URL transforms are enabled by default on
-  // every ImageKit account and produce the *same image* (resized + WebP) rather
-  // than a different one — so the <img>/<Image> is byte-for-byte identical in
-  // content, just dramatically smaller. A full-width TMDB backdrop is typically
-  // 1–3 MB; this brings it to tens of KB.
+  // Every image starts on wsrv.nl: free, keyless, Cloudflare-cached for a year,
+  // with no monthly bandwidth to run out of. A metered host cannot be primary
+  // here: a prerendered page cannot walk BlurredImage's onError chain until it
+  // has hydrated, so a spent quota leaves the whole first screen on failed images
+  // (ImageKit, 2026-10-30, LCP 6.7s on prod).
   //
-  // The `w-2560` here is only what a BARE copy of this URL carries — the OG/
-  // Twitter tags, the Worker's injected metadata, anything not rendered through
-  // next/image. Everything on a page goes through lib/image-loader.ts, which
-  // substitutes the width the layout actually asks for and caps `/original`
-  // requests at ORIGINAL_MAX_WIDTH (3072). Change the ceiling there, not here:
-  // a bigger number in this string would only inflate the unfurl image.
-  // Quality is q-82 (posters) / q-80 (thumbs):
-  // WebP at q-82 is effectively visually lossless on poster faces/text while
-  // still ~40% smaller than the JPEG origin — q-70/72 was over-soft. If a
-  // transform ever 404s, the onError chain in BlurredImage walks to wsrv.nl
-  // (also optimized) then TMDB origin — so this can never break an image, only
-  // fail back to the (still-working) unoptimized.
-  //
-  // `f-auto` (not a hard f-webp) so ImageKit negotiates the format from the
-  // request's Accept header — it does set `Vary: Accept`, so this is honest
-  // content negotiation and safe to cache.
-  //
-  // It does NOT reach AVIF, though, and the comment here used to claim it did.
-  // Measured against this endpoint: `Accept: image/avif,image/webp` gets WebP
-  // back, and `Accept: image/avif` alone gets JPEG. AVIF is an account-level
-  // setting in the ImageKit dashboard, off by default, and f-auto only offers
-  // what the account allows. Until that is switched on, AVIF is obtained by
-  // asking for it by name — see avifSrcSet in lib/image-loader.ts, which puts it
-  // on a <source> so no browser is ever handed bytes it can't decode. Switching
-  // the account setting on is strictly better and would make that redundant;
-  // it costs nothing to leave in place either way.
-  //
-  // The q-82 baked in below is only the URL's default. Everything rendered
-  // through BlurredImage overrides it (65 backdrops / 70 posters) via the
-  // loader; what is left on 82 is the hero's transparent title logo.
-  // The wsrv.nl fallback stays webp.
-  // `c-at_max` = fit inside the requested box, never enlarge. TMDB's `original`
-  // is not a width — plenty of backdrops are natively 1280 or 780 px — and
-  // without this ImageKit upscales one to whatever w- it is handed, which is
-  // more bytes for strictly no more detail. Measured on a 780 px source asked
-  // for w-2560: 30,060 B upscaled against 6,054 B at its native width, and the
-  // browser was going to stretch it to the same painted size either way. A
-  // source that IS bigger is unaffected (the 3840 px original returned an
-  // identical 55,044 B / 2560x1440 with and without it). Same fix as `&we` on
-  // the wsrv stage — the fallback got it first, this is the path everyone
-  // actually loads.
+  // Two of these are read bare, without the loader: `originalImage` by the OG and
+  // Twitter tags and the Worker's metadata, `w500Image` by the image sitemap and
+  // JSON-LD. Their consumers do not all decode WebP, so they keep the source
+  // format, and the 2560 is an unfurl width, not the page's ceiling. Everything
+  // on a page goes through lib/image-loader.ts, which sets the width, the
+  // quality (65 backdrops / 70 posters) and WebP per candidate.
   originalImage: (imgPath: string | null | undefined) =>
-    withImagePath(
-      imgPath,
-      (path) =>
-        `${IMAGE_CACHE_HOST_URL}/tr:w-2560,q-82,f-auto,pr-true,c-at_max/original${path}`
+    withImagePath(imgPath, (path) =>
+      buildWsrvURL(`/original${path}`, 2560, 82, null)
     ),
   w500Image: (imgPath: string | null | undefined) =>
-    withImagePath(
-      imgPath,
-      (path) => `${IMAGE_CACHE_HOST_URL}/tr:q-82,f-auto/w500${path}`
+    withImagePath(imgPath, (path) =>
+      buildWsrvURL(`/w500${path}`, undefined, undefined, null)
     ),
-  // The hero's title wordmark. It is the ONE image on the site that renders as a
-  // plain <img>, so next/image's loader never sees it and the q-82 above stands
-  // — which made the two visible logos the two heaviest files on the homepage
-  // (31 KB + 29 KB of a 247 KB cold load, 28% of all image bytes). Hence q-70.
-  //
-  // The width argument is the part that used to be missing. The old builder was
-  // pinned to TMDB's `/w500` segment on the reasoning that the element lays out
-  // at the file's intrinsic 500 CSS px, so a narrower file would shrink the
-  // wordmark rather than sharpen it. True — and it left out DPR. A plain <img>
-  // has no srcset, so a dpr-2 laptop painted those 500 CSS px across 1000 device
-  // px from a 500px file: measured at ratio 0.5, the softest image on the
-  // homepage. Reading from `/original` (and `c-at_max`, so a small source is
-  // never enlarged) lets getLogoImageSrcSet hand out a real 1x/2x pair, and the
-  // 2x file is only ever fetched by a screen that can show it.
+  // The hero's title wordmark. It renders as a plain <img>, so the loader never
+  // sees it and its width and quality are chosen here. Read from `/original` so
+  // getLogoImageSrcSet can hand out a real 1x/2x pair; `&we` keeps a small source
+  // from being enlarged, and the 2x file is only fetched by a screen that can
+  // show it.
   logoImage: (imgPath: string | null | undefined, width = 500) =>
-    withImagePath(
-      imgPath,
-      (path) =>
-        `${IMAGE_CACHE_HOST_URL}/tr:w-${width},q-70,f-auto,c-at_max/original${path}`
-    ),
-  // The same logo, asked for as AVIF by name. `f-auto` only offers what the
-  // account allows, and AVIF is off there, so a plain <img> gets WebP - the
-  // heaviest title logo measured 190KB of WebP against 115KB of AVIF at the
-  // same width and quality. Asking by name works regardless of the setting,
-  // and the <picture> that uses it keeps the WebP for every browser that
-  // cannot decode AVIF.
-  logoImageAvif: (imgPath: string | null | undefined, width = 500) =>
-    withImagePath(
-      imgPath,
-      (path) =>
-        `${IMAGE_CACHE_HOST_URL}/tr:w-${width},q-70,f-avif,c-at_max/original${path}`
+    withImagePath(imgPath, (path) =>
+      buildWsrvURL(`/original${path}`, width, 70)
     ),
   w185Image: (imgPath: string | null | undefined) =>
-    withImagePath(
-      imgPath,
-      (path) => `${IMAGE_CACHE_HOST_URL}/tr:q-80,f-auto/w185${path}`
+    withImagePath(imgPath, (path) =>
+      buildWsrvURL(`/w185${path}`, undefined, 80)
     ),
   w300Image: (imgPath: string | null | undefined) =>
-    withImagePath(
-      imgPath,
-      (path) => `${IMAGE_CACHE_HOST_URL}/tr:q-80,f-auto/w300${path}`
+    withImagePath(imgPath, (path) =>
+      buildWsrvURL(`/w300${path}`, undefined, 80)
     ),
 }
 
 // TMDB's own image origin — free, keyless, unmetered, never expires. The last
 // resort in the fallback chain so images can never all break at once.
 const TMDB_ORIGIN_IMAGE_BASE = 'https://image.tmdb.org/t/p'
-// wsrv.nl — free, keyless Cloudflare-backed image proxy/optimizer. Second in the
-// chain: still optimizes (WebP) when ImageKit is down, before we drop to origin.
+// wsrv.nl — free, keyless Cloudflare-backed image proxy/optimizer. Primary.
 const WSRV_BASE = 'https://wsrv.nl/?url='
 
 // Image source fallback chain, tried in order on each onError:
-//   0. ImageKit (IMAGE_CACHE_HOST_URL) — primary, our paid/managed CDN
-//   1. wsrv.nl proxying the TMDB origin — free optimizer if ImageKit is down
-//   2. TMDB origin direct — free/keyless final safety net
-// Every stage's URL embeds the same TMDB path (e.g. "/w500/abc.jpg"), so we can
-// recover it from any stage and rebuild the next one.
+//   0. wsrv.nl proxying the TMDB origin — resized, WebP
+//   1. TMDB origin direct — free/keyless final safety net
+// Both stages' URLs embed the same TMDB path (e.g. "/w500/abc.jpg"), so we can
+// recover it from either and rebuild the next one.
 
-// Pull the TMDB path (including its /original or /w500 size segment) out of any
-// stage's URL — ImageKit (with or without a tr:... transform prefix), wsrv `?url=`,
-// or origin. null when `src` isn't one of ours, so callers leave it untouched.
+// Pull the TMDB path (including its /original or /w500 size segment) out of a
+// wsrv `?url=` or origin URL. null when `src` isn't one of ours, so callers leave
+// it untouched.
 function extractTMDBPath(src: string): string | null {
-  if (IMAGE_CACHE_HOST_URL && src.startsWith(IMAGE_CACHE_HOST_URL)) {
-    // ImageKit URLs look like "<host>/tr:w-1600,q-72,f-webp/original/abc.jpg" or
-    // "<host>/w500/abc.jpg". Strip the host and any leading tr: transform segment
-    // to recover the bare "/<size>/<file>" path the rest of the chain expects.
-    let rest = src.slice(IMAGE_CACHE_HOST_URL.length)
-    const trIdx = rest.indexOf('tr:')
-    if (trIdx !== -1) {
-      // Skip "tr:...." up to the first '/' that begins the size segment.
-      const afterTr = rest.indexOf('/', trIdx)
-      if (afterTr !== -1) rest = rest.slice(afterTr)
-    }
-    return rest
-  }
   const marker = 'image.tmdb.org/t/p'
   const idx = src.indexOf(marker)
   if (idx === -1) return null
@@ -188,17 +107,15 @@ function extractTMDBPath(src: string): string | null {
 
 // Which stage a URL is currently at (-1 = not one of ours).
 function imageStage(src: string): number {
-  if (IMAGE_CACHE_HOST_URL && src.startsWith(IMAGE_CACHE_HOST_URL)) return 0
-  if (src.startsWith(WSRV_BASE)) return 1
-  if (src.startsWith(TMDB_ORIGIN_IMAGE_BASE)) return 2
+  if (src.startsWith(WSRV_BASE)) return 0
+  if (src.startsWith(TMDB_ORIGIN_IMAGE_BASE)) return 1
   return -1
 }
 
 // Pull the pixel width the source image was requested at, from its TMDB size
 // segment ("/original", "/w500", "/w300", "/w185"). `original` has no fixed
-// width, so cap it at 2560 (matches the ImageKit hero width above — the largest
-// the full-bleed 100dvh hero paints at on a 2560px/retina panel). Used so the
-// wsrv.nl fallback can re-apply the SAME optimization instead of either
+// width, so cap it at the loader's ceiling. Used so a bare wsrv URL carries the
+// right optimization instead of either
 // upscaling thumbnails (w=2000 on a /w185 path) or serving the full multi-MB
 // original.
 function widthFromPath(path: string): number | undefined {
@@ -211,14 +128,6 @@ function widthFromPath(path: string): number | undefined {
   return 3072
 }
 
-// wsrv has no AVIF saver ("Saving to avif is disabled. Supported savers: jpg,
-// png, webp, tiff, gif, json, jxl"), so the fallback tops out at WebP. That
-// costs bytes, not pixels: at the SAME width and quality wsrv and ImageKit hand
-// back byte-identical WebP (measured — w1200 q65 of the same backdrop was 10678
-// bytes from both, q82 was 18252 from both). Which is the point worth holding
-// on to: this chain has never had a quality problem it did not give itself by
-// asking for the wrong width.
-//
 // Default quality matches BlurredImage's poster setting. It is only what a bare
 // URL carries — every image rendered through next/image goes back through
 // lib/image-loader.ts, which rewrites `w` and `q` per candidate.
@@ -227,9 +136,8 @@ const WSRV_DEFAULT_QUALITY = 70
 /**
  * Build the wsrv.nl stage for a TMDB path (e.g. "/w500/abc.jpg").
  *
- * `&we` = "without enlargement", and it is the whole reason the fallback used to
- * look bad. `widthFromPath` maps `/original` to 2560 because that is what the
- * ImageKit hero asks for, but TMDB's `original` is not a width — plenty of
+ * `&we` = "without enlargement". `widthFromPath` maps `/original` to the width
+ * ceiling, but TMDB's `original` is not a width — plenty of
  * backdrops are only 1280 or 780 px wide, and wsrv will cheerfully upscale one
  * to whatever it is asked for. Measured on a w780 source asked for w=2560:
  * 45.8 KB of soft, upscaled mush, against 10.1 KB for the same request with
@@ -240,11 +148,17 @@ const WSRV_DEFAULT_QUALITY = 70
  * unencoded in wsrv's `?url=` — which keeps the `image.tmdb.org/t/p` marker
  * literal so extractTMDBPath can still find it on the way to the next stage.
  */
-function buildWsrvURL(path: string, width?: number, quality?: number) {
+function buildWsrvURL(
+  path: string,
+  width?: number,
+  quality?: number,
+  output: 'webp' | 'jpg' | null = 'webp'
+) {
   const w = width ?? widthFromPath(path)
   const widthParam = w ? `&w=${w}` : ''
   const q = quality ?? WSRV_DEFAULT_QUALITY
-  return `${WSRV_BASE}${TMDB_ORIGIN_IMAGE_BASE}${path}${widthParam}&q=${q}&output=webp&we`
+  const outputParam = output ? `&output=${output}` : ''
+  return `${WSRV_BASE}${TMDB_ORIGIN_IMAGE_BASE}${path}${widthParam}&q=${q}${outputParam}&we`
 }
 
 // Given the current (failed) image URL, return the next fallback in the chain,
@@ -256,48 +170,37 @@ function getNextImageFallback(src: unknown): string | null {
   const path = extractTMDBPath(src)
   if (!path) return null
   switch (imageStage(src)) {
-    case 0: // ImageKit -> wsrv.nl (still optimized: width+quality+WebP)
-      return buildWsrvURL(path)
-    case 1: // wsrv.nl -> TMDB origin direct (last resort, unoptimizable)
+    case 0: // wsrv.nl -> TMDB origin direct (last resort, unoptimizable)
       return `${TMDB_ORIGIN_IMAGE_BASE}${path}`
-    default: // origin (2) is the last resort, or unknown host
+    default: // origin (1) is the last resort, or unknown host
       return null
   }
 }
 
-/** Is this URL still on the primary (ImageKit) host? */
+/** Is this URL still on the primary (wsrv) host? */
 function isPrimaryImageURL(src: unknown): boolean {
   return typeof src === 'string' && imageStage(src) === 0
 }
 
-/** Is this URL the wsrv.nl stage? (the loader rewrites those too) */
+/** Is this URL the wsrv.nl stage? (the only one the loader can rewrite) */
 function isWsrvURL(src: string): boolean {
   return src.startsWith(WSRV_BASE)
 }
 
 // --- primary-host circuit breaker --------------------------------------------
 //
-// ImageKit running out of quota is not one broken image, it is every image on
-// every page for the rest of the month. Walking the chain per-<img> handles the
-// pixels but not the cost: each one pays a doomed request before it can start
-// the one that works, the hero's `<link rel=preload imagesrcset>` names a URL
-// that will 4xx, and a list scroll doubles its request count.
+// wsrv going down is not one broken image, it is every image on every page.
+// Walking the chain per-<img> handles the pixels but not the cost: each one pays
+// a doomed request before the one that works. So enough failures on the primary
+// host flip a flag and every image that has not painted yet re-renders straight
+// onto the origin. Deliberately NOT persisted: a fresh tab probes wsrv again.
 //
-// So enough failures on the primary host flip a flag and every image that has
-// not painted yet re-renders straight onto the fallback. Deliberately NOT
-// persisted: a fresh tab probes ImageKit once more, which is also how the site
-// notices the quota has reset without anyone shipping a deploy.
-//
-// THREE distinct URLs, not one. The first cut tripped on a single `error` event
-// and that was measured to be a disaster: dispatching one error on one poster
-// moved 17 of 20 images on the homepage to wsrv — all of them already painted
-// from ImageKit and sitting in the HTTP cache. Every one re-downloaded from a
-// cold host and replayed its blur-up, which reads exactly like "the images went
-// blank on refresh and nothing is cached". And `error` fires for far more than
-// a dead host: one poster TMDB no longer has, a request aborted by navigating
-// away, a content blocker's rule, a flaky connection. A host that is genuinely
-// out of quota fails every image, so it reaches three in the first screenful;
-// nothing else does.
+// THREE distinct URLs, not one. `error` fires for far more than a dead host: a
+// poster TMDB no longer has, a request aborted by navigating away, a content
+// blocker, a flaky connection. Tripping on one was measured to move 17 of 20
+// already-painted homepage images to a cold host, which reads exactly like
+// "the images went blank on refresh". A dead host fails every image, so it
+// reaches three in the first screenful; nothing else does.
 const PRIMARY_FAILURE_THRESHOLD = 3
 let primaryImageHostDown = false
 const failedPrimaryURLs = new Set<string>()
@@ -305,8 +208,7 @@ const primaryImageHostSubs = new Set<() => void>()
 
 function markPrimaryImageHostDown(src: unknown) {
   if (primaryImageHostDown) return
-  // Only a failure ON the primary is evidence about the primary — a wsrv or
-  // origin URL erroring says nothing about ImageKit.
+  // Only a failure ON the primary is evidence about the primary.
   if (typeof src !== 'string' || !isPrimaryImageURL(src)) return
   // Distinct URLs: one image retrying itself is one piece of evidence, not N.
   failedPrimaryURLs.add(src)

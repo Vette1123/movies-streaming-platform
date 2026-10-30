@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import imageLoader, { wsrvSrcSet } from '@/lib/image-loader'
 import {
   getImageURL,
   getLogoImageSrcSet,
@@ -15,7 +16,7 @@ import {
  * template-literal argument. Before the guard, `null` stringified straight into
  * the URL: `/original` + `null` = `/originalnull`, which Cloudflare logged 22
  * times a day, and each one then walked BlurredImage's whole onError chain, so
- * one missing poster cost three 404s across ImageKit, wsrv and TMDB's origin.
+ * one missing poster cost a 404 on every stage of the chain.
  *
  * The builders are typed `string | null | undefined` now, so this is the test
  * that the runtime agrees with the type - a `string`-typed DTO field that is
@@ -70,14 +71,49 @@ describe('image URL builders with a path', () => {
     const srcSet = getLogoImageSrcSet(path)
     expect(srcSet).toContain(' 1x, ')
     expect(srcSet).toContain(' 2x')
-    expect(srcSet).toContain('w-500')
-    expect(srcSet).toContain('w-1000')
-    // Counted the way a browser counts them. srcset candidates are split on
-    // commas that FOLLOW a descriptor, not on every comma - an ImageKit
-    // transform URL carries three of its own (`tr:w-500,q-70,f-auto,c-at_max`)
-    // and they stay part of the URL because no whitespace follows them. A
-    // naive split(',') here reports eight candidates for a valid srcset, which
-    // is how this assertion was wrong the first time.
+    expect(srcSet).toContain('w=500')
+    expect(srcSet).toContain('w=1000')
+    // Counted the way a browser counts them: srcset candidates are split on
+    // commas that FOLLOW a descriptor, not on every comma in a URL.
     expect(srcSet?.split(/,\s/)).toHaveLength(2)
+  })
+})
+
+// 2026-10-30: ImageKit answered every image with `429 Bandwidth Limit
+// Exceeded`. A prerendered page cannot walk the onError chain until it has
+// hydrated, so the whole first screen sat on failed images showing their alt
+// text. The primary must be a host with no monthly cap.
+describe('the primary image host', () => {
+  const URLS = {
+    backdrop: getImageURL('/abc.jpg'),
+    poster: getPosterImageURL('/abc.jpg'),
+    logo: getLogoImageURL('/abc.png'),
+    thumb: getThumbPosterURL('/abc.jpg'),
+  }
+
+  for (const [name, url] of Object.entries(URLS)) {
+    it(`${name} starts on wsrv, not on a metered CDN`, () => {
+      expect(url.startsWith('https://wsrv.nl/?url=')).toBe(true)
+      expect(url).toMatch(/&we(&|$)/)
+    })
+  }
+
+  it('leaves bare page and unfurl URLs in the source format', () => {
+    // Unfurlers and image sitemaps read these directly, and not every one of
+    // them decodes WebP. Everything on a page is rewritten by the loader.
+    expect(URLS.backdrop).not.toContain('output=')
+    expect(URLS.poster).not.toContain('output=')
+    expect(
+      imageLoader({ src: URLS.poster, width: 384, quality: 70 })
+    ).toContain('output=webp')
+  })
+
+  it('preloads exactly the candidates the hero <img> asks for', () => {
+    const srcSet = wsrvSrcSet(URLS.backdrop, 65) ?? ''
+    expect(srcSet).toContain(
+      `${imageLoader({ src: URLS.backdrop, width: 1200, quality: 65 })} 1200w`
+    )
+    expect(srcSet).toContain('output=webp')
+    expect(wsrvSrcSet('https://images.unsplash.com/x.jpg', 65)).toBeUndefined()
   })
 })

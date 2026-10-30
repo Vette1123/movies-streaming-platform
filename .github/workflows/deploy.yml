@@ -255,7 +255,6 @@ jobs:
           # party's daily cap. The job that DOES ask (workflows/ratings.yml)
           # runs once a day and commits what it learns.
           NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE: ${{ secrets.NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE }}
-          NEXT_PUBLIC_IMAGE_CACHE_HOST_URL: ${{ secrets.NEXT_PUBLIC_IMAGE_CACHE_HOST_URL }}
           NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
           NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
           # The IMDb rating shards, for the details page. Server-side only, so

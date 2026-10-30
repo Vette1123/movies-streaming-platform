@@ -18,7 +18,7 @@
 // The `(max-width: 640px)` brake in the backdrop string is a DELIBERATE
 // under-ask, and the one place here that is not the honest number. A dpr-3
 // phone doing the full cover math asks for 4506 px and lands on the top rung;
-// measured on a hero backdrop, WebP from ImageKit:
+// measured on a hero backdrop, WebP:
 //
 //   w1200  31.7 KB   (what plain `100vw` picks today — 0.27 of what it paints)
 //   w1920  76.0 KB   (what 160vw picks — 0.43)

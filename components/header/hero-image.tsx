@@ -4,7 +4,7 @@ import { preload } from 'react-dom'
 import { MovieDetails } from '@/types/movie-details'
 import { Movie } from '@/types/movie-result'
 import { SeriesDetails } from '@/types/series-details'
-import { avifSrcSet } from '@/lib/image-loader'
+import { wsrvSrcSet } from '@/lib/image-loader'
 import { COVER_BACKDROP_SIZES, COVER_POSTER_SIZES } from '@/lib/image-sizes'
 import { getMediaTitle } from '@/lib/media'
 import { getImageURL } from '@/lib/utils'
@@ -15,18 +15,11 @@ export type HeroImageMedia = (Movie | MovieDetails) & SeriesDetails
 /**
  * Fetch the hero's picture before the hero exists.
  *
- * Exactly what the hero's AVIF <source> offers — same srcset, same `sizes` —
- * so the browser picks the same candidate and the <img> finds it in the cache.
- * `type` keeps it honest: a browser that cannot decode AVIF skips the preload
- * along with the <source>, and fetches nothing twice.
- *
- * This is the preload the comment below gave up, without what it gave up for.
- * next/image's `priority` preload names the WebP srcset, so it bought a
- * ~130ms head start at the price of the AVIF bytes; this names the AVIF one.
- * Two callers: the page itself (rendered into <head>, ahead of the stylesheet
- * and scripts the preload scanner would otherwise reach first) and MediaLink at
- * the moment of a click, so the picture downloads alongside the page payload
- * instead of after it.
+ * Exactly what the hero's <img> offers, same srcset and same `sizes`, so the
+ * browser picks the same candidate and the <img> finds it in the cache. Without
+ * it the LCP image queued behind the stylesheet and the scripts. Two callers:
+ * the page itself (rendered into <head>) and MediaLink at the moment of a click,
+ * so the picture downloads alongside the page payload instead of after it.
  */
 export function preloadHeroImage(
   media?: { backdrop_path?: string | null; poster_path?: string | null } | null
@@ -34,11 +27,10 @@ export function preloadHeroImage(
   const path = media?.backdrop_path || media?.poster_path
   if (!path) return
   const src = getImageURL(path)
-  const imageSrcSet = avifSrcSet(src, HERO_QUALITY)
+  const imageSrcSet = wsrvSrcSet(src, HERO_QUALITY)
   if (!imageSrcSet) return
   preload(src, {
     as: 'image',
-    type: 'image/avif',
     imageSrcSet,
     imageSizes: media?.backdrop_path
       ? COVER_BACKDROP_SIZES
@@ -82,24 +74,7 @@ export const HeroImage = ({ movie, priority = false }: HeroImageProps) => {
           fill
           sizes={COVER_BACKDROP_SIZES}
           intro
-          // `loading="eager"` + `fetchPriority="high"` rather than `priority`,
-          // which is the same thing MINUS Next's `<link rel=preload
-          // imagesrcset>`. Losing the preload is what BUYS the AVIF: the
-          // preload names the WebP srcset, so an image that carries one can't
-          // also offer an AVIF <source> without risking the LCP image being
-          // downloaded twice (see components/blurred-image.tsx).
-          //
-          // Measured on this page, 1.6 Mbit / 4x CPU, cold cache, dpr 2, 4 runs
-          // each — the hero is 2560 px wide either way:
-          //
-          //   priority + WebP   110 KB   fetch starts ~320ms, done ~4.8s
-          //   eager    + AVIF    65 KB   fetch starts ~450ms, done ~3.3s
-          //
-          // The preload wins the start by ~130ms and loses the finish by ~1.4s,
-          // because the <img> is in the first screenful of the document anyway
-          // — the preload scanner finds it either way — and 45 KB is worth far
-          // more than a head start on a link this slow. Page image bytes go
-          // 249 KB -> 204 KB with it.
+          // Not `priority`: preloadHeroImage above already emits the preload.
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? 'high' : 'auto'}
         />

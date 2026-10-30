@@ -96,7 +96,7 @@ way to search. All three causes were client-side:
   swipe is reported in the background. Matches are derived on read, so the
   client was never the source of truth and the await bought nothing.
 - **Posters go through `getPosterImageURL` (w500)**, not `getImageURL`
-  (`tr:w-2560`), and three cards are mounted at once — the two behind the top
+  (`w=2560`), and three cards are mounted at once — the two behind the top
   card ARE the preloader for the next two posters.
 - **The keyboard effect has a dependency array.** It had none, so it
   re-attached a window listener on every render, including the poll's.

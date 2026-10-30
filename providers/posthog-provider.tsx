@@ -297,9 +297,8 @@ function PostHogIdentity() {
 
 /**
  * Reports the one infrastructure failure the app is deliberately silent about:
- * the primary image CDN going down (a spent ImageKit quota fails every image
- * for the rest of the month). The fallback chain keeps the pictures on screen,
- * which is the whole point — and also why nobody would notice.
+ * the primary image CDN going down. The fallback chain keeps the pictures on
+ * screen, which is the whole point — and also why nobody would notice.
  *
  * Subscribing here rather than from BlurredImage means ONE listener regardless
  * of how many images are mounted, so the event fires exactly once per session

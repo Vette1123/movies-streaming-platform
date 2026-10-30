@@ -71,4 +71,4 @@ Next.js 16 (App Router, RSC, Turbopack, static export) + React 19 + TypeScript 6
 - TMDB API (themoviedb.org) — primary catalog data
 - IMDb Non-Commercial dataset — IMDb ratings (build-time static shards)
 - OMDb free tier — Rotten Tomatoes and Metacritic scores (committed to repo, refreshed daily)
-- ImageKit / wsrv.nl — image CDN with automatic fallback
+- wsrv.nl — image CDN with automatic fallback to the TMDB origin

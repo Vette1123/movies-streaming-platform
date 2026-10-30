@@ -2,7 +2,7 @@
 //
 // There is no test runner in this repo, and the fallback chain is exactly the
 // kind of code that is only exercised when something is already on fire — the
-// day ImageKit runs out of quota is a bad day to find out the fallback pins
+// day wsrv goes down is a bad day to find out the fallback pins
 // every backdrop to an upscaled 2560px. So this asserts the URL shapes the
 // chain produces, plus the loader's rewrite of them, without a browser.
 //
@@ -19,7 +19,6 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import * as esbuild from 'esbuild'
 
-const IMAGEKIT_HOST = 'https://ik.imagekit.io/test'
 const dir = mkdtempSync(path.join(tmpdir(), 'reely-imgcheck-'))
 const entry = path.join(dir, 'entry.ts')
 const out = path.join(dir, 'bundle.mjs')
@@ -31,7 +30,7 @@ const mod = (p) => path.resolve(p).replace(/\\/g, '/')
 writeFileSync(
   entry,
   `export * from '${mod('lib/tmdbConfig.ts')}'
-   export { default as loader, avifSrcSet } from '${mod('lib/image-loader.ts')}'`
+   export { default as loader } from '${mod('lib/image-loader.ts')}'`
 )
 
 await esbuild.build({
@@ -41,10 +40,6 @@ await esbuild.build({
   platform: 'node',
   outfile: out,
   logLevel: 'warning',
-  define: {
-    'process.env.NEXT_PUBLIC_IMAGE_CACHE_HOST_URL':
-      JSON.stringify(IMAGEKIT_HOST),
-  },
 })
 
 const m = await import(pathToFileURL(out).href)
@@ -62,24 +57,22 @@ function check(name, fn) {
   }
 }
 
-const hero = `${IMAGEKIT_HOST}/tr:w-2560,q-82,f-auto,pr-true/original/abc.jpg`
-const poster = `${IMAGEKIT_HOST}/tr:q-82,f-auto/w500/def.png`
+const hero = m.apiConfig.originalImage('/abc.jpg')
+const poster = m.apiConfig.w500Image('/def.png')
+urls.add(hero)
 
-check('ImageKit -> wsrv keeps the TMDB path', () => {
-  const next = m.getNextImageFallback(hero)
-  urls.add(next)
-  assert.ok(next.includes('https://image.tmdb.org/t/p/original/abc.jpg'), next)
-  assert.ok(next.startsWith('https://wsrv.nl/?url='), next)
+check('the primary is wsrv and keeps the TMDB path', () => {
+  assert.ok(hero.includes('https://image.tmdb.org/t/p/original/abc.jpg'), hero)
+  assert.ok(hero.startsWith('https://wsrv.nl/?url='), hero)
 })
 
 check('wsrv URL never enlarges (&we) — the old blur bug', () => {
-  assert.match(m.getNextImageFallback(hero), /&we(&|$)/)
-  assert.match(m.getNextImageFallback(poster), /&we(&|$)/)
+  assert.match(hero, /&we(&|$)/)
+  assert.match(poster, /&we(&|$)/)
 })
 
 check('wsrv -> TMDB origin is the last stage', () => {
-  const wsrv = m.getNextImageFallback(hero)
-  const origin = m.getNextImageFallback(wsrv)
+  const origin = m.getNextImageFallback(hero)
   urls.add(origin)
   assert.equal(origin, 'https://image.tmdb.org/t/p/original/abc.jpg')
   assert.equal(m.getNextImageFallback(origin), null)
@@ -97,38 +90,26 @@ check('foreign hosts are left alone', () => {
 })
 
 check('loader resizes a wsrv URL instead of passing it through', () => {
-  const wsrv = m.getNextImageFallback(hero)
-  const at640 = m.loader({ src: wsrv, width: 640, quality: 65 })
+  const at640 = m.loader({ src: hero, width: 640, quality: 65 })
   urls.add(at640)
   assert.match(at640, /&w=640(&|$)/)
   assert.match(at640, /&q=65(&|$)/)
+  assert.match(at640, /output=webp/)
   // The whole point: two candidate widths must differ, or the srcset is a lie.
-  assert.notEqual(at640, m.loader({ src: wsrv, width: 1200, quality: 65 }))
+  assert.notEqual(at640, m.loader({ src: hero, width: 1200, quality: 65 }))
 })
 
 check('loader clamps a wsrv URL to the TMDB size segment', () => {
-  const wsrv = m.getNextImageFallback(poster)
-  const asked = m.loader({ src: wsrv, width: 3840, quality: 70 })
+  const asked = m.loader({ src: poster, width: 3840, quality: 70 })
   urls.add(asked)
   assert.match(asked, /&w=500(&|$)/)
 })
 
 check('a rewritten wsrv URL is still walkable to the origin', () => {
-  const at640 = m.loader({ src: m.getNextImageFallback(hero), width: 640 })
   assert.equal(
-    m.getNextImageFallback(at640),
+    m.getNextImageFallback(m.loader({ src: hero, width: 640 })),
     'https://image.tmdb.org/t/p/original/abc.jpg'
   )
-})
-
-check('ImageKit rewrite is unchanged', () => {
-  assert.equal(
-    m.loader({ src: hero, width: 1200, quality: 65 }),
-    `${IMAGEKIT_HOST}/tr:w-1200,q-65,f-auto,pr-true/original/abc.jpg`
-  )
-  assert.ok(m.avifSrcSet(hero, 65).includes('f-avif'))
-  // wsrv has no AVIF saver, so nothing must offer one for it.
-  assert.equal(m.avifSrcSet(m.getNextImageFallback(hero), 65), undefined)
 })
 
 check('circuit breaker needs 3 DISTINCT primary failures, not 1', () => {
@@ -142,12 +123,11 @@ check('circuit breaker needs 3 DISTINCT primary failures, not 1', () => {
   m.markPrimaryImageHostDown(hero)
   assert.equal(m.isPrimaryImageHostDown(), false)
   // A failure on a later stage says nothing about the primary.
-  m.markPrimaryImageHostDown(m.getNextImageFallback(hero))
   m.markPrimaryImageHostDown('https://image.tmdb.org/t/p/w500/x.jpg')
   assert.equal(m.isPrimaryImageHostDown(), false)
   // Three distinct primary URLs — a host that is actually down.
   m.markPrimaryImageHostDown(poster)
-  m.markPrimaryImageHostDown(IMAGEKIT_HOST + '/tr:q-82,f-auto/w500/ghi.png')
+  m.markPrimaryImageHostDown(m.apiConfig.w500Image('/ghi.png'))
   assert.ok(m.isPrimaryImageHostDown())
   assert.equal(m.demoteFromPrimary(hero), m.getNextImageFallback(hero))
   // Already past stage 0 — must not rewind.

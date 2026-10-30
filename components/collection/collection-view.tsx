@@ -80,10 +80,6 @@ export function CollectionView({
             sizes="(max-width: 640px) 160vw, (max-width: 800px) 800px, 100vw"
             className="object-cover object-center"
             intro
-            // Eager + high rather than `priority`: same fetch, no WebP preload
-            // tag, which is what lets this take the AVIF <source> like the two
-            // heroes do (measured there at 110 KB -> 65 KB). See
-            // components/header/hero-image.tsx.
             loading="eager"
             fetchPriority="high"
           />

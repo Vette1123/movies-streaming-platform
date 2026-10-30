@@ -29,8 +29,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadLocalEnv } from './load-env.mjs'
 import { isCrawlerFire } from './lib/crawler-403.mjs'
+import { loadLocalEnv } from './load-env.mjs'
 
 loadLocalEnv()
 
@@ -260,9 +260,7 @@ async function checkCrawlers(zone) {
     if (!SEO_CRAWLERS.test(userAgent ?? '')) continue
     // 404 is the correct answer to a request for something that isn't there.
     if (status !== 403 && status < 500) continue
-    if (
-      !isCrawlerFire({ userAgent, path, status })
-    ) {
+    if (!isCrawlerFire({ userAgent, path, status })) {
       continue
     }
     const name = SEO_CRAWLERS.exec(userAgent)[0]
@@ -331,7 +329,7 @@ const BUCKETS = [
     /^\/\.well-known\/assetlinks\.json$/,
   ],
   // Bare TMDB paths, plus the fragments a naive crawler produces by splitting an
-  // ImageKit srcset URL on the commas inside it: "/tr:w-500,q-82,f-auto/w500/x.jpg"
+  // old CDN srcset URL on the commas inside it: "/tr:w-500,q-82,f-auto/w500/x.jpg"
   // becomes a request for "/f-auto/w500/x.jpg". Every image URL the site actually
   // emits is absolute and correct, so 404 is the right answer to all of these.
   //

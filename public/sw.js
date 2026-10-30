@@ -1,8 +1,8 @@
 /*
  * Reely service worker — makes the site installable (PWA) and instant on repeat
  * visits. Deliberately MINIMAL and safe for this stack:
- *   - The streaming player (VidSrc) and ALL cross-origin media (ImageKit, TMDB,
- *     wsrv, analytics, fonts) are NEVER intercepted — they go straight to the
+ *   - The streaming player (VidSrc) and ALL cross-origin media (TMDB, wsrv,
+ *     analytics, fonts) are NEVER intercepted — they go straight to the
  *     network. A movie always streams live; nothing is (or can be) cached for
  *     offline playback.
  *   - Live app data (`/api/*`, any non-GET) is never cached, so search, filters

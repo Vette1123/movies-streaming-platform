@@ -1,61 +1,60 @@
 /**
  * The picture a shared list or profile shows when somebody pastes the link.
  *
- * A poster mosaic, 1200x630, composed entirely in the image URL: ImageKit's
- * layer syntax draws the blurred wallpaper, the row of posters and the two
- * lines of text, and the Worker only ever builds a string. That matters more
- * than it sounds. The alternatives were a canvas (workerd has none), a WASM
- * rasteriser (a rendering library and a font, per request, against a 10ms CPU
- * budget) or an image endpoint of our own (a Worker invocation per unfurl, plus
- * one fetch per poster). This costs nothing at all, and every colo's ImageKit
- * cache holds the result.
+ * A poster mosaic, 1200x630: a blurred wallpaper, a row of posters and two lines
+ * of text. The Worker answers `/api/og/card` with an SVG and wsrv rasterises it,
+ * so the page only ever builds a URL, and wsrv's cache holds the result. A canvas
+ * does not exist in workerd and a WASM rasteriser would not fit the 10ms CPU
+ * budget; an SVG is only a string.
  *
- * What it produces is the real thing rather than a nod at it: five posters, the
- * list's own name, and who it belongs to — see lessons/ for the two syntax
- * details that took the longest to find (chained `:` transforms, and `tw-`
- * being rejected outright).
+ * The posters are embedded as data URIs because wsrv's renderer will not fetch a
+ * remote `<image href>` (measured: it draws nothing). wsrv draws text, Arabic
+ * included. The card's URL carries everything in it, so a renamed list gets a
+ * new URL and a new card.
  */
 
-import { IMAGE_CACHE_HOST_URL } from '@/lib/constants'
+import { buildWsrvURL } from '@/lib/tmdbConfig'
 
 /** The 1.91:1 both Twitter and Facebook crop least. */
 export const OG_WIDTH = 1200
 export const OG_HEIGHT = 630
 
+/** Where the Worker serves the card. WAF-exempt: wsrv's fetcher is a machine. */
+export const OG_CARD_PATH = '/api/og/card'
+
 const POSTER_WIDTH = 190
+const POSTER_HEIGHT = 285
 const POSTER_GAP = 20
 const POSTER_TOP = 250
 const MAX_POSTERS = 5
 
 /**
- * How much text fits on one line, in characters.
- *
- * A guess, and it has to be: `tw-` (the layer's own wrap width) is rejected by
- * this account, so nothing stops a long name running off the right edge except
- * cutting it here. Measured against the widest common letters at each size,
- * with room to spare — a title that ends in an ellipsis is fine, one that ends
- * halfway off the card is not.
+ * How much text fits on one line, in characters. SVG has no wrapping, so nothing
+ * stops a long name running off the right edge except cutting it here.
  */
 const TITLE_MAX = 32
 const SUBTITLE_MAX = 58
 
 /**
- * A TMDB image path, and nothing else.
- *
- * These arrive from a synced payload, which is to say from whatever somebody
- * PUT into their own account — and they are about to be interpolated into a URL
- * whose commas and colons are an instruction language. A path that does not
- * look exactly like TMDB's is dropped rather than escaped: there is no legitimate
- * poster path with a colon in it.
+ * A TMDB image path, and nothing else. These arrive from a synced payload and
+ * then from a public query string, so a path that does not look exactly like
+ * TMDB's is dropped rather than escaped.
  */
 const SAFE_PATH = /^\/[A-Za-z0-9._-]+\.(?:jpg|jpeg|png|webp)$/i
 
-/** Text as ImageKit's `ie-` expects it: base64url, no padding. */
-export function encodeOverlayText(text: string): string {
-  const bytes = new TextEncoder().encode(text)
-  let binary = ''
-  for (const byte of bytes) binary += String.fromCharCode(byte)
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+const XML_ESCAPES: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&apos;',
+}
+
+/** Text as it may appear inside the SVG, control characters removed. */
+export function escapeXml(text: string): string {
+  return text
+    .replace(/\p{Cc}/gu, '')
+    .replace(/[&<>"']/g, (char) => XML_ESCAPES[char])
 }
 
 /** One line of the card, tidied and cut to something that fits. */
@@ -72,6 +71,19 @@ export interface MosaicInput {
   posters: Array<string | null | undefined>
 }
 
+interface MosaicCard {
+  title: string
+  subtitle: string
+  posters: string[]
+}
+
+const safePosters = (posters: MosaicInput['posters']) =>
+  posters
+    .filter(
+      (path): path is string => typeof path === 'string' && SAFE_PATH.test(path)
+    )
+    .slice(0, MAX_POSTERS)
+
 /**
  * The mosaic URL, or null when there is nothing to draw.
  *
@@ -79,42 +91,74 @@ export interface MosaicInput {
  * (a single poster, an avatar), and an unfurl showing an empty frame is worse
  * than one showing whichever picture we do have.
  */
-export function mosaicUrl({
-  title,
-  subtitle,
-  posters,
-}: MosaicInput): string | null {
-  if (!IMAGE_CACHE_HOST_URL) return null
-
-  const paths = posters
-    .filter(
-      (path): path is string => typeof path === 'string' && SAFE_PATH.test(path)
-    )
-    .slice(0, MAX_POSTERS)
+export function mosaicUrl(
+  { title, subtitle, posters }: MosaicInput,
+  siteUrl: string
+): string | null {
+  const paths = safePosters(posters)
   if (paths.length === 0) return null
 
-  // The wallpaper is the first poster, padded out to the frame and blurred into
-  // a colour wash — so the card is tinted by the list it belongs to instead of
-  // being the same navy rectangle every time.
-  const parts = [
-    `tr:w-${OG_WIDTH},h-${OG_HEIGHT},cm-pad_resize,bg-0B1120,bl-70,q-70`,
-  ]
-
-  const row = paths.length * POSTER_WIDTH + (paths.length - 1) * POSTER_GAP
-  const left = Math.round((OG_WIDTH - row) / 2)
-  paths.forEach((path, index) => {
-    const x = left + index * (POSTER_WIDTH + POSTER_GAP)
-    parts.push(
-      `l-image,i-w500@@${path.slice(1)},w-${POSTER_WIDTH},lx-${x},ly-${POSTER_TOP},l-end`
-    )
+  const card = new URLSearchParams({
+    t: fitLine(title, TITLE_MAX),
+    s: fitLine(subtitle, SUBTITLE_MAX),
+    p: paths.join(','),
   })
+  const source = encodeURIComponent(`${siteUrl}${OG_CARD_PATH}?${card}`)
+  return `https://wsrv.nl/?url=${source}&w=${OG_WIDTH}&h=${OG_HEIGHT}&q=80&output=jpg`
+}
 
-  parts.push(
-    `l-text,ie-${encodeOverlayText(fitLine(title, TITLE_MAX))},fs-58,co-FFFFFF,lx-85,ly-100,l-end`
-  )
-  parts.push(
-    `l-text,ie-${encodeOverlayText(fitLine(subtitle, SUBTITLE_MAX))},fs-30,co-94A3B8,lx-85,ly-180,l-end`
-  )
+/** The card a query string asks for, or null if it does not name one. */
+export function parseMosaicCard(params: URLSearchParams): MosaicCard | null {
+  const posters = safePosters((params.get('p') ?? '').split(','))
+  if (posters.length === 0) return null
+  return {
+    title: fitLine(params.get('t') ?? '', TITLE_MAX),
+    subtitle: fitLine(params.get('s') ?? '', SUBTITLE_MAX),
+    posters,
+  }
+}
 
-  return `${IMAGE_CACHE_HOST_URL}/${parts.join(':')}/w500${paths[0]}`
+/** The poster as drawn in the row. */
+export const mosaicPosterUrl = (path: string) =>
+  buildWsrvURL(`/w500${path}`, POSTER_WIDTH, 75, 'jpg')
+
+/** The wallpaper: wsrv blurs it, so the SVG only has to stretch a small file. */
+export const mosaicWallpaperUrl = (path: string) =>
+  `${buildWsrvURL(`/w500${path}`, 500, 50, 'jpg')}&blur=20`
+
+/**
+ * The card itself. `posterHrefs` lines up with `card.posters`; a poster that
+ * failed to load is null and leaves the row one shorter.
+ */
+export function mosaicSvg(
+  card: MosaicCard,
+  wallpaperHref: string | null,
+  posterHrefs: Array<string | null>
+): string {
+  const hrefs = posterHrefs.filter((href): href is string => Boolean(href))
+  const row = hrefs.length * POSTER_WIDTH + (hrefs.length - 1) * POSTER_GAP
+  const left = Math.round((OG_WIDTH - row) / 2)
+
+  const clips: string[] = []
+  const images = hrefs.map((href, index) => {
+    const x = left + index * (POSTER_WIDTH + POSTER_GAP)
+    const box = `x="${x}" y="${POSTER_TOP}" width="${POSTER_WIDTH}" height="${POSTER_HEIGHT}"`
+    clips.push(`<clipPath id="c${index}"><rect ${box} rx="12"/></clipPath>`)
+    return `<image ${box} clip-path="url(#c${index})" preserveAspectRatio="xMidYMid slice" xlink:href="${href}"/>`
+  })
+  const wallpaper = wallpaperHref
+    ? `<image width="${OG_WIDTH}" height="${OG_HEIGHT}" preserveAspectRatio="xMidYMid slice" xlink:href="${wallpaperHref}"/>`
+    : ''
+
+  return [
+    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${OG_WIDTH}" height="${OG_HEIGHT}">`,
+    `<defs>${clips.join('')}</defs>`,
+    `<rect width="${OG_WIDTH}" height="${OG_HEIGHT}" fill="#0B1120"/>`,
+    wallpaper,
+    `<rect width="${OG_WIDTH}" height="${OG_HEIGHT}" fill="#0B1120" fill-opacity="0.6"/>`,
+    `<text x="85" y="130" font-family="sans-serif" font-size="58" font-weight="700" fill="#FFFFFF">${escapeXml(card.title)}</text>`,
+    `<text x="85" y="190" font-family="sans-serif" font-size="30" fill="#CBD5E1">${escapeXml(card.subtitle)}</text>`,
+    ...images,
+    '</svg>',
+  ].join('')
 }

@@ -11,9 +11,9 @@ import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
 //
 //   - `original`, not the w500 poster path. The box is 400 CSS px wide at lg,
 //     which a dpr-2 laptop paints at 800 device px — the 500px source could
-//     only be stretched to reach it. The loader still asks ImageKit for exactly
-//     the width the layout needs (and `c-at_max` never enlarges), so a bigger
-//     source costs nothing anywhere; it only stops the ceiling being 500.
+//     only be stretched to reach it. The loader still asks wsrv for exactly the
+//     width the layout needs (and `&we` never enlarges), so a bigger source costs
+//     nothing anywhere; it only stops the ceiling being 500.
 //   - `quality={POSTER_QUALITY}`. Going through BlurredImage's `intro` branch
 //     had it inherit the 65 tuned for backdrops — full-bleed photos that live
 //     under a scrim behind text. This is the opposite: a small, dense image

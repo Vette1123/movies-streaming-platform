@@ -287,6 +287,13 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentcolor);
   }
+
+  /* Alt text is for screen readers. On screen, an image still on its way or
+     walking the fallback chain shows its dark backing, never a line of text.
+     next/image only does this until the first error, and a plain <img> not at all. */
+  img {
+    color: transparent;
+  }
 }
 
 /* Poster rails (components/list.tsx) scroll natively. Hide the scrollbar so the

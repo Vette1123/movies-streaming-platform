@@ -47,7 +47,7 @@ const HEADLESS_VIEWPORT = { width: 1280, height: 720 }
  * a null LCP (it never paints one) and an FCP of 5.2s, which is why desktop
  * vitals read as failing while the same page is green for every human on it.
  * 84,480 of 85,026 image_host_fallback events are the same fleet failing to
- * fetch images, i.e. an alarm for an ImageKit outage that is not happening.
+ * fetch images, i.e. an alarm for an image-host outage that is not happening.
  *
  * Dropped at the gate rather than filtered in PostHog: the events are never
  * sent, so they cost no ingestion, create no person profile ($set was 108,357

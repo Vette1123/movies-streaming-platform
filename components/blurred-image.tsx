@@ -3,7 +3,6 @@
 import React from 'react'
 import Image, { ImageProps } from 'next/image'
 
-import { avifSrcSet } from '@/lib/image-loader'
 import {
   demoteFromPrimary,
   getNextImageFallback,
@@ -18,12 +17,12 @@ interface BlurImageProps extends ImageProps {
   intro?: boolean
 }
 
-// Every image on this site came through at ImageKit's q-82, which is a default
+// Every image on this site used to come through at q-82, which is a default
 // nobody chose — and measured against the actual artwork it is most of the
 // payload. On a cold 4x-throttled mobile load the homepage pulled 2.0 MB of
 // images against 332 KB of (brotli'd) JS, so this is THE lever.
 //
-// Measured on the real files, same URL, same f-auto (ImageKit serves WebP):
+// Measured on the real files, same URL, WebP:
 //   backdrop w1200  q82 62.5KB -> q65 33.1KB   (-47%)
 //   poster   w500   q82 112KB  -> q70 86KB     (-24%)
 //
@@ -49,16 +48,6 @@ const returnFalse = () => false
 const returnTrue = () => true
 const subscribeNever = () => () => {}
 
-// The <picture> that wraps every image below is the frame a `fill` image fills,
-// and it has to say so. A bare <picture> is `display:inline; position:static`,
-// and next/image measures the img's PARENT — the picture, not the box the
-// caller made `relative` — so every image on every page logged "has 'fill' and
-// parent element with invalid 'position'". The picture between them was also a
-// stray inline box: the image painted correctly only because it positioned
-// against the relative ancestor further up. This makes the wrapper the box it
-// was pretending to be.
-const PICTURE_FILL = 'absolute inset-0'
-
 // Dark backing for the two `fill` branches, so a box that has reserved its space
 // isn't a transparent hole in the page until the image paints. It fills the same
 // `relative` parent the `fill` image positions against and sits behind it by DOM
@@ -71,59 +60,6 @@ const ImageBacking = () => (
     className="pointer-events-none absolute inset-0 bg-slate-900"
   />
 )
-
-// Offers the browser AVIF before next/image's own <img>, and gets out of the way
-// when it can't.
-//
-// A <source type="image/avif"> is read by the browser BEFORE it fetches
-// anything: one that can't decode AVIF skips straight to the <img>, so this
-// costs nothing and risks nothing — unlike baking f-avif into the URL, which
-// would hand pre-2022 Safari bytes it can't read and drop it down the
-// ImageKit -> wsrv -> TMDB error chain (a second request, on another host, after
-// a visible failure). See lib/image-loader.ts for why f-auto won't do this
-// itself and what it saves.
-//
-// Two deliberate abstentions:
-//   - `priority` images. next/image emits <link rel="preload" imagesrcset> for
-//     those, and that preload names the WEBP srcset. The document would then
-//     preload one format and render another: the LCP image downloaded twice.
-//     Nothing on the site passes `priority` any more for exactly that reason —
-//     the heroes ask for `loading="eager"` + `fetchPriority="high"` instead,
-//     which is the same fetch minus the preload tag, and measured strictly
-//     faster because AVIF is worth more than the head start (see
-//     components/header/hero-image.tsx). This guard stays for anything that
-//     reintroduces `priority` later.
-//   - Anything that has fallen off ImageKit. Once handleError has walked `src`
-//     on to wsrv or the TMDB origin, an ImageKit AVIF URL is not a smaller copy
-//     of that image, it is the URL that just failed.
-//
-// `quality` is the caller's own value when it passed one, and the branch
-// default otherwise — resolved HERE rather than at the three call sites. The
-// <img> has always honoured a caller's `quality` (it is spread after the
-// default), but this <source> used to be handed the branch default directly, so
-// a caller asking for something else got it in WebP and silently lost it in the
-// AVIF copy that every modern browser actually takes.
-function AvifSource({
-  src,
-  sizes,
-  quality,
-  fallbackQuality,
-  priority,
-}: {
-  src: ImageProps['src']
-  sizes?: string
-  quality?: number | string
-  fallbackQuality: number
-  priority?: boolean
-}) {
-  if (priority || typeof src !== 'string') return null
-  const srcSet = avifSrcSet(
-    src,
-    typeof quality === 'number' ? quality : fallbackQuality
-  )
-  if (!srcSet) return null
-  return <source type="image/avif" srcSet={srcSet} sizes={sizes} />
-}
 
 // Memoised. Every prop this takes is a primitive (src, alt, className, sizes,
 // width/height, priority…), so a shallow compare is exact rather than a
@@ -151,7 +87,7 @@ export const BlurredImage = React.memo(function BlurredImage({
   const props = { draggable: false, ...restProps }
   const [isLoading, setLoading] = React.useState(true)
   // Render from this src so we can walk the fallback chain if a URL fails:
-  // ImageKit -> wsrv.nl -> TMDB origin. Each onError advances one stage. Kept in
+  // wsrv.nl -> TMDB origin. Each onError advances one stage. Kept in
   // sync when `src` changes so recycled instances in lists don't show a stale
   // fallback.
   const [imgSrc, setImgSrc] = React.useState(src)
@@ -167,14 +103,12 @@ export const BlurredImage = React.memo(function BlurredImage({
     setImgSrc(src)
   }
 
-  // Once enough images have proved the primary host is down (quota exhausted,
-  // most likely — that fails every image for the rest of the month), skip stage
-  // 0 instead of making each new <img> rediscover it with a request that cannot
+  // Once enough images have proved the primary host is down, skip stage 0
+  // instead of making each new <img> rediscover it with a request that cannot
   // succeed. Derived at render rather than written into `imgSrc`, so the chain
-  // position this component actually walks stays untouched: an image already
-  // down at wsrv or the origin is returned as-is. Server snapshot is always
-  // `false` — the prerendered HTML names ImageKit, and claiming otherwise during
-  // hydration would be a mismatch.
+  // position this component actually walks stays untouched. Server snapshot is
+  // always `false` — the prerendered HTML names wsrv, and claiming otherwise
+  // during hydration would be a mismatch.
   const primaryDown = React.useSyncExternalStore(
     subscribePrimaryImageHost,
     isPrimaryImageHostDown,
@@ -244,25 +178,16 @@ export const BlurredImage = React.memo(function BlurredImage({
     return (
       <>
         {props.fill ? <ImageBacking /> : null}
-        <picture className={props.fill ? PICTURE_FILL : undefined}>
-          <AvifSource
-            src={effectiveSrc}
-            sizes={props.sizes}
-            quality={props.quality}
-            fallbackQuality={HERO_QUALITY}
-            priority={props.priority}
-          />
-          <Image
-            quality={HERO_QUALITY}
-            {...props}
-            ref={imgRef}
-            alt={alt}
-            src={effectiveSrc}
-            className={blurClassName}
-            onLoad={() => setLoading(false)}
-            onError={handleError}
-          />
-        </picture>
+        <Image
+          quality={HERO_QUALITY}
+          {...props}
+          ref={imgRef}
+          alt={alt}
+          src={effectiveSrc}
+          className={blurClassName}
+          onLoad={() => setLoading(false)}
+          onError={handleError}
+        />
       </>
     )
   }
@@ -298,31 +223,22 @@ export const BlurredImage = React.memo(function BlurredImage({
             unchanged. The wrapper's bg-slate-900 backs the reserved box, so there's
             no blank before the first pixels paint, and the aspect-ratio box means
             zero CLS. */}
-        <picture className={PICTURE_FILL}>
-          <AvifSource
-            src={effectiveSrc}
-            sizes={sizes}
-            quality={rest.quality}
-            fallbackQuality={POSTER_QUALITY}
-            priority={rest.priority}
-          />
-          <Image
-            quality={POSTER_QUALITY}
-            {...rest}
-            ref={imgRef}
-            alt={alt}
-            src={effectiveSrc}
-            fill
-            sizes={sizes}
-            className={cn(
-              className,
-              'object-cover transition-[transform,filter] duration-500 ease-out',
-              isLoading ? 'scale-[1.03] blur-lg' : 'blur-0 scale-100'
-            )}
-            onLoad={() => setLoading(false)}
-            onError={handleError}
-          />
-        </picture>
+        <Image
+          quality={POSTER_QUALITY}
+          {...rest}
+          ref={imgRef}
+          alt={alt}
+          src={effectiveSrc}
+          fill
+          sizes={sizes}
+          className={cn(
+            className,
+            'object-cover transition-[transform,filter] duration-500 ease-out',
+            isLoading ? 'scale-[1.03] blur-lg' : 'blur-0 scale-100'
+          )}
+          onLoad={() => setLoading(false)}
+          onError={handleError}
+        />
       </div>
     )
   }
@@ -343,25 +259,16 @@ export const BlurredImage = React.memo(function BlurredImage({
           painted you saw the page's own background through a rounded rectangle
           — a hole, not a placeholder. */}
       <ImageBacking />
-      <picture className={PICTURE_FILL}>
-        <AvifSource
-          src={effectiveSrc}
-          sizes={props.sizes}
-          quality={props.quality}
-          fallbackQuality={HERO_QUALITY}
-          priority={props.priority}
-        />
-        <Image
-          quality={HERO_QUALITY}
-          {...props}
-          ref={imgRef}
-          alt={alt}
-          src={effectiveSrc}
-          className={blurClassName}
-          onLoad={() => setLoading(false)}
-          onError={handleError}
-        />
-      </picture>
+      <Image
+        quality={HERO_QUALITY}
+        {...props}
+        ref={imgRef}
+        alt={alt}
+        src={effectiveSrc}
+        className={blurClassName}
+        onLoad={() => setLoading(false)}
+        onError={handleError}
+      />
     </>
   )
 })
