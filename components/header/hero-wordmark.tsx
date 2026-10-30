@@ -3,7 +3,12 @@
 import React from 'react'
 
 import { heroTitleState } from '@/lib/hero-title'
-import { cn, getLogoImageSrcSet, getLogoImageURL } from '@/lib/utils'
+import {
+  cn,
+  getLogoImageSrcSet,
+  getLogoImageURL,
+  LOGO_SIZES,
+} from '@/lib/utils'
 
 // The display title both heroes share: the official wordmark when TMDB has
 // one, the plain title in the same type otherwise. It lived inline in the
@@ -118,10 +123,10 @@ export function HeroWordmark({
       <img
         ref={logoRef}
         src={getLogoImageURL(logoPath!)}
-        // A plain <img> gets no srcset from next/image, so the density pair is
-        // written by hand: the wordmark lays out at ~500 CSS px, which retina
-        // paints at 1000.
+        // A plain <img> gets no srcset from next/image, so the widths are
+        // written by hand: see getLogoImageSrcSet.
         srcSet={getLogoImageSrcSet(logoPath!)}
+        sizes={LOGO_SIZES}
         alt={title}
         fetchPriority={fetchPriority}
         loading={loading}

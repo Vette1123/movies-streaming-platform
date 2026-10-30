@@ -495,10 +495,9 @@ export function HeroSlide({
                     extrasReady={extrasReady}
                     graceElapsed={titleGraceElapsed}
                     onSettle={settleFirstPaint}
-                    // The first slide's wordmark is part of the LCP frame and
-                    // races a fallback timer; tell the browser so it isn't
-                    // queued behind the rails' posters.
-                    fetchPriority={priority ? 'high' : 'auto'}
+                    // No fetchPriority: the backdrop is the LCP and shares the
+                    // wsrv connection. The rails' posters no longer compete,
+                    // so default priority still lands it first among the rest.
                     // Gated by artReady above, so a logo that renders at all
                     // is one the slide wants now.
                     loading="eager"

@@ -10,6 +10,8 @@ import {
 } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
+import { isSlideMounted } from '@/lib/carousel-window'
+import { onIdleAfterLoad } from '@/lib/idle'
 import {
   CAROUSEL_ARROW_ICON_VARIANTS,
   CAROUSEL_ARROW_VARIANTS,
@@ -19,11 +21,6 @@ import {
   CAROUSEL_SINGLE_SLIDE_VARIANTS,
 } from '@/lib/motion-variants'
 import { useCarousel } from '@/hooks/use-carousel'
-
-// How many neighbours to keep mounted on each side. A mounted neighbour has its
-// image already decoded, so when it becomes active there is no network round-trip
-// and no blur-in — the flash of the previous/blank slide disappears entirely.
-const WINDOW = 1
 
 // Damping is just past critical for this stiffness, so it settles (~300ms) with
 // no overshoot - a carousel that wobbles past its stop looks broken, not springy.
@@ -239,6 +236,19 @@ export function Carousel({
   //
   // Nothing visible is deferred — only the off-stage prefetch is.
   const mountIndex = React.useDeferredValue(currentIndex)
+
+  // The first render is the active slide alone, on the server and in hydration
+  // (see lib/carousel-window.ts). A finger on the stage can't wait for the idle
+  // slot: it needs a neighbour to drag into view.
+  const [neighboursReady, setNeighboursReady] = React.useState(false)
+  React.useEffect(
+    () => onIdleAfterLoad(() => setNeighboursReady(true), 2000),
+    []
+  )
+  const onStagePointerDown = React.useCallback(() => {
+    setNeighboursReady(true)
+    handleHoverStart()
+  }, [handleHoverStart])
 
   // Stage width, kept in a ref rather than measured where it's needed. The drag
   // scale below reads it every frame, and offsetWidth forces a synchronous
@@ -571,7 +581,7 @@ export function Carousel({
         // under the tap. A pointer going down on the stage freezes autoplay
         // exactly the way a mouse entering it does, and the release resumes on
         // the usual 3s delay.
-        onPointerDown={handleHoverStart}
+        onPointerDown={onStagePointerDown}
         onPointerUp={handleHoverEnd}
         onPointerCancel={handleHoverEnd}
         // See onStageTouchEnd — a tap activates the control it landed on, not
@@ -652,11 +662,12 @@ export function Carousel({
             // no slide in it at all. Measured as un-reproducible under a
             // 5-swipe burst at 4x throttle, which makes it exactly the kind of
             // thing that only shows up on someone's phone. One boolean.
-            if (
-              !active &&
-              Math.abs(wrappedOffset(i, mountIndex, childrenCount)) > WINDOW
-            )
-              return null
+            const mounted = isSlideMounted({
+              active,
+              distance: wrappedOffset(i, mountIndex, childrenCount),
+              neighboursReady,
+            })
+            if (!mounted) return null
             return (
               <motion.div
                 key={i}

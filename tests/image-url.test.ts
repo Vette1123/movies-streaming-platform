@@ -68,15 +68,17 @@ describe('image URL builders with a path', () => {
     expect(getThumbPosterURL(path)).toContain('/w300/abc123.jpg')
   })
 
-  it('getLogoImageSrcSet hands out a 1x/2x pair at two real widths', () => {
+  it('getLogoImageSrcSet offers a phone something smaller than the desktop retina file', () => {
     const srcSet = getLogoImageSrcSet(path)
-    expect(srcSet).toContain(' 1x, ')
-    expect(srcSet).toContain(' 2x')
-    expect(srcSet).toContain('w=500')
-    expect(srcSet).toContain('w=1000')
     // Counted the way a browser counts them: srcset candidates are split on
     // commas that FOLLOW a descriptor, not on every comma in a URL.
-    expect(srcSet?.split(/,\s/)).toHaveLength(2)
+    const candidates = srcSet?.split(/,\s/) ?? []
+    const widths = candidates.map((c) => c.split(' ').at(-1))
+    expect(widths).toEqual(['320w', '480w', '640w', '1000w'])
+    for (const candidate of candidates) {
+      const [url, width] = candidate.split(' ')
+      expect(url).toContain(`w=${width.slice(0, -1)}`)
+    }
   })
 })
 
