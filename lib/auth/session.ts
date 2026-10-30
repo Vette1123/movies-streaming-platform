@@ -80,6 +80,13 @@ export function sessionCookieOf(request: Request): string | null {
   return readCookie(request.headers.get('Cookie'), SESSION_COOKIE)
 }
 
+/** The session a device sends instead of a cookie (see lib/auth/device.ts). */
+export function bearerOf(request: Request): string | null {
+  const header = request.headers.get('Authorization')
+  if (!header?.startsWith('Bearer ')) return null
+  return header.slice('Bearer '.length).trim() || null
+}
+
 /**
  * `Secure` is dropped on plain-HTTP origins, and only there.
  *

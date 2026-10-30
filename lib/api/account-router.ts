@@ -12,6 +12,11 @@
 
 import { ROUTES } from '@/lib/api/account-paths'
 import {
+  handleDeviceApprove,
+  handleDevicePoll,
+  handleDeviceStart,
+} from '@/lib/auth/device'
+import {
   handleAccount,
   handleAuthCallback,
   handleAuthStart,
@@ -141,6 +146,12 @@ export async function routeAccountApi(
       return handleRefresh(request, db)
     case '/api/auth/logout':
       return handleLogout(request, db)
+    case '/api/device/start':
+      return handleDeviceStart(request, db)
+    case '/api/device/poll':
+      return handleDevicePoll(request, db)
+    case '/api/device/approve':
+      return handleDeviceApprove(request, db)
     case '/api/account':
       return handleAccount(request, db)
     case '/api/billing/bmc':

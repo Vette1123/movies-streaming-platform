@@ -770,6 +770,7 @@ export const FEATURE_AREA = {
   library_import: 'account',
   data_export: 'account',
   library_sync: 'account',
+  tv_link: 'account',
   push_alerts: 'account',
   rescue_banner: 'account',
   pwa_nudge: 'pwa',

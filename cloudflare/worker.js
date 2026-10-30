@@ -47,7 +47,7 @@ import {
 import { fetchWatchProviders } from '@/services/watch-providers'
 
 import { ownsPath } from '@/lib/api/account-paths'
-import { loadSession, sessionCookieOf } from '@/lib/auth/session'
+import { bearerOf, loadSession, sessionCookieOf } from '@/lib/auth/session'
 import { isEntitled } from '@/lib/billing/entitlement'
 import { blockedTitleEntry } from '@/lib/blocked-titles'
 import { loadDirectory } from '@/lib/community/routes'
@@ -56,7 +56,10 @@ import { isImdbId } from '@/lib/imdb-id'
 import { loadPublicList } from '@/lib/lists/routes'
 import { getMediaHeroImageUrl } from '@/lib/media'
 import { mosaicUrl, OG_HEIGHT, OG_WIDTH } from '@/lib/og/mosaic'
-import { signEntryTicket } from '@/lib/pro/playback-ticket'
+import {
+  signEntryTicket,
+  ticketNeedsEntitlement,
+} from '@/lib/pro/playback-ticket'
 import { loadPublicProfile } from '@/lib/profile/routes'
 import {
   collectionDescription,
@@ -509,7 +512,9 @@ async function handleApi(pathname, url, request, ctx, env) {
     } catch {
       return liveJson({ error: 'invalid json' }, { status: 400 })
     }
-    const email = String(body?.email || '').trim().toLowerCase()
+    const email = String(body?.email || '')
+      .trim()
+      .toLowerCase()
     const source = String(body?.source || 'footer')
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return liveJson({ error: 'invalid email' }, { status: 400 })
@@ -1551,8 +1556,13 @@ async function handleProTicket(request, env, url) {
   // Player is the default source for every visitor. Removing PRO_PLAYER_OPEN
   // flips these checks back on and locks tickets to signed-in supporters,
   // with no client change involved.
-  if (!env.PRO_PLAYER_OPEN) {
-    const user = await loadSession(env.DB, sessionCookieOf(request), now)
+  const bearer = bearerOf(request)
+  if (ticketNeedsEntitlement(env.PRO_PLAYER_OPEN, bearer)) {
+    const user = await loadSession(
+      env.DB,
+      bearer ?? sessionCookieOf(request),
+      now
+    )
     if (!user) {
       return new Response(
         JSON.stringify({ success: false, error: 'Not signed in' }),

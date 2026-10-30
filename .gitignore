@@ -21,6 +21,10 @@
 # cache. Never committed, never shipped.
 /.cache/
 
+# Built from kodi/ by scripts/build-kodi-zip.mjs on every build:cf.
+/public/kodi/
+__pycache__/
+
 # misc
 .DS_Store
 *.pem
