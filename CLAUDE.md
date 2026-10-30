@@ -29,6 +29,7 @@ pnpm bmc:probe          # end-to-end check of the live payment webhook (writes +
 pnpm share:probe       # a real list and profile unfurled through D1, the Worker and wsrv (writes + deletes one throwaway user)
 pnpm resume:probe       # resume + playback prefs through the real page AND real player (pnpm dev + `pnpm harness` in ../reely-pro-player)
 pnpm cf:cpu [hours]     # production Worker CPU broken down BY ROUTE (Workers Logs); cf:health has the kills
+pnpm lighthouse         # medians with timing; run the Lighthouse workflow instead, a home connection measures itself
 ```
 
 - **Package manager is pnpm 12** (`packageManager` pin). Do not use npm/yarn. `minimumReleaseAge: 0` in `pnpm-workspace.yaml` is deliberate: the project takes every release the day it ships, and pnpm's default 1-day quarantine would hold upgrades back and fail CI's frozen install. Every dependency with an install script must be listed under `allowBuilds`, or the install errors.

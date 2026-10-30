@@ -65,7 +65,10 @@ function audit(formFactor, i) {
 }
 
 // The simulator charges every script finished before the OBSERVED paint to LCP,
-// so whether the hero beats the scripts matters more than the hero's size.
+// so a race the page does not control swings mobile LCP between 2.6s and 5.1s
+// on one build. CI has no GPU: the first frame sits in the GPU process with the
+// main thread idle (0.3-0.9s), which real phones do not pay. Judge the site by
+// real-user $web_vitals, and use this for before/after medians.
 function lcpImageTiming(report) {
   const requests = report.audits['network-requests'].details.items
   const image = requests.find((r) => /fit=cover/.test(r.url))
@@ -75,22 +78,7 @@ function lcpImageTiming(report) {
       .filter((r) => r.resourceType === 'Script')
       .map((r) => r.networkEndTime)
   )
-  const tasks = report.audits['main-thread-tasks'].details.items
-    .filter((t) => t.startTime < 1800 && t.duration >= 20)
-    .map((t) => `${Math.round(t.startTime)}+${Math.round(t.duration)}`)
-  const long = report.audits['long-tasks'].details.items
-    .slice(0, 6)
-    .map(
-      (t) =>
-        `${Math.round(t.startTime)}+${Math.round(t.duration)}:${t.url.split('/').pop().slice(0, 16)}`
-    )
-  const parts = Object.entries(
-    report.audits['mainthread-work-breakdown'].details.items.reduce(
-      (all, g) => ({ ...all, [g.group]: Math.round(g.duration) }),
-      {}
-    )
-  )
-  return `hero ${Math.round(image.networkRequestTime)}-${Math.round(image.networkEndTime)}ms ${Math.round(image.transferSize / 1024)}KB, last script ${Math.round(lastScript)}ms\n  tasks ${tasks.join(' ')}\n  long ${long.join(' ')}\n  work ${parts.map((p) => p.join('=')).join(' ')}`
+  return `hero ${Math.round(image.networkRequestTime)}-${Math.round(image.networkEndTime)}ms ${Math.round(image.transferSize / 1024)}KB, last script ${Math.round(lastScript)}ms`
 }
 
 function report(formFactor, count) {
