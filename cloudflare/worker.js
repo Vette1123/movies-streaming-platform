@@ -47,8 +47,7 @@ import {
 import { fetchWatchProviders } from '@/services/watch-providers'
 
 import { ownsPath } from '@/lib/api/account-paths'
-import { bearerOf, loadSession, sessionCookieOf } from '@/lib/auth/session'
-import { isEntitled } from '@/lib/billing/entitlement'
+import { bearerOf, sessionCookieOf } from '@/lib/auth/session'
 import { blockedTitleEntry } from '@/lib/blocked-titles'
 import { loadDirectory } from '@/lib/community/routes'
 import { smartQuery } from '@/lib/filter-query'
@@ -65,10 +64,8 @@ import {
   OG_WIDTH,
   parseMosaicCard,
 } from '@/lib/og/mosaic'
-import {
-  signEntryTicket,
-  ticketNeedsEntitlement,
-} from '@/lib/pro/playback-ticket'
+import { signEntryTicket } from '@/lib/pro/playback-ticket'
+import { sweepPlayerTrials, ticketDenial } from '@/lib/pro/ticket-access'
 import { loadPublicProfile } from '@/lib/profile/routes'
 import {
   collectionDescription,
@@ -1596,53 +1593,10 @@ const PLAYER_QUALITY_RUNGS = [4320, 2160, 1440, 1080, 720, 480, 360, 240, 144]
  *     site's Google OAuth and live in this D1; a fork of the open-source repo
  *     cannot create rows here, so a cloner's deployment can never mint tickets
  *     our player accepts.
- *   - While PRO_PLAYER_OPEN is set, every signed-in visitor gets one: the
- *     player is the site default for everyone while it proves itself.
- *   - Without that var, entitlement is enforced exactly like every other
- *     supporter feature (402), and flipping is removing one wrangler var.
+ *   - Supporters always get one. Everyone else gets one free title a day, and
+ *     nothing else: see lib/pro/ticket-access.ts, which decides all of it.
  */
 async function handleProTicket(request, env, url) {
-  const now = Date.now()
-  // The open-for-everyone window: NO account required at all - the Reely
-  // Player is the default source for every visitor. Removing PRO_PLAYER_OPEN
-  // flips these checks back on and locks tickets to signed-in supporters,
-  // with no client change involved.
-  const bearer = bearerOf(request)
-  if (ticketNeedsEntitlement(env.PRO_PLAYER_OPEN, bearer)) {
-    const user = await loadSession(
-      env.DB,
-      bearer ?? sessionCookieOf(request),
-      now
-    )
-    if (!user) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Not signed in' }),
-        {
-          status: 401,
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store',
-          },
-        }
-      )
-    }
-    if (!isEntitled(user, now)) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'The Reely Player is a supporter feature.',
-        }),
-        {
-          status: 402,
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store',
-          },
-        }
-      )
-    }
-  }
-
   let body
   try {
     body = await request.json()
@@ -1687,6 +1641,29 @@ async function handleProTicket(request, env, url) {
       }),
       {
         status: 451,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+        },
+      }
+    )
+  }
+
+  // After the checks above: the free title is per title, and a request that
+  // was never going to play must not spend it.
+  const denial = await ticketDenial(env.DB, {
+    bearer: bearerOf(request),
+    cookie: sessionCookieOf(request),
+    ip: request.headers.get('CF-Connecting-IP'),
+    secret: env.PLAYBACK_TICKET_SECRET,
+    media: `${type}:${id}`,
+    now: Date.now(),
+  })
+  if (denial) {
+    return new Response(
+      JSON.stringify({ success: false, error: denial.error }),
+      {
+        status: denial.status,
         headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-store',
@@ -1792,6 +1769,7 @@ const worker = {
     copyEnv(env)
     if (!env.DB) return
     const { runSweep } = await import('@/lib/push/sweep')
+    ctx.waitUntil(sweepPlayerTrials(env.DB, Date.now()))
     ctx.waitUntil(
       runSweep(env.DB, Date.now())
         .then((result) => console.log('sweep', JSON.stringify(result)))

@@ -264,8 +264,8 @@ export const DetailsHero = ({
   // quietly depend on that staying true two refactors from now.
   const stackIntent = blocked ? undefined : playIntent
 
-  // If the house player cannot start — ticket refused once PRO_PLAYER_OPEN is
-  // lifted, or the worker not configured — fall back to the first embed and
+  // If the house player cannot start — ticket refused, or the worker not
+  // configured — fall back to the first embed and
   // let the switcher reflect it, exactly like a stalled server would.
   const onReelyUnavailable = React.useCallback(() => {
     if (!sourceControl) return

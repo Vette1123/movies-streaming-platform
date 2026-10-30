@@ -19,6 +19,7 @@
     "build:worker": "node scripts/build-worker.mjs",
     "build:cf": "node scripts/build-cf.mjs",
     "kodi:zip": "node scripts/build-kodi-zip.mjs",
+    "kodi:probe": "node scripts/kodi-probe.mjs",
     "preview": "pnpm build:cf && wrangler dev",
     "deploy": "node scripts/cf-deploy.mjs",
     "deploy:full": "pnpm build:cf && node scripts/cf-deploy.mjs",
