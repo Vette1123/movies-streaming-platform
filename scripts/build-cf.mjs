@@ -19,6 +19,9 @@ function run(command, extraEnv = {}) {
   return result.status ?? 1
 }
 
+const zipCode = run('node scripts/build-kodi-zip.mjs')
+if (zipCode !== 0) process.exit(zipCode)
+
 const buildCode = run('pnpm next build', { DEPLOY_TARGET: 'cloudflare' })
 if (buildCode !== 0) process.exit(buildCode)
 

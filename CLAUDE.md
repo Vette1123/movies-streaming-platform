@@ -73,6 +73,10 @@ Replaced OpenNext on 2026-08-03. Under OpenNext, prod was killing **25–40% of 
 
 The embed provider list lives in `config/sources.ts` and comes **entirely from the environment** — `NEXT_PUBLIC_STREAMING_MOVIES_API_URL` plus `NEXT_PUBLIC_STREAM_SOURCE_2/3/4/5`, mirrored as GitHub secrets **and mapped into the build step of `.github/workflows/deploy.yml`** — a secret added to GitHub without a workflow mapping is silently absent from prod (Turbopack only inlines what exists at build time). No provider host is checked in (this repo is public) and the UI labels them "Server N". Screen any candidate with `pnpm embed:probe` before adding it. Switching, the one automatic hop after a 9s stall, and the per-title memory need a **free account** (`canSwitch` in `hooks/use-stream-source.ts`); anonymous visitors get the default server. Supporters start every title on the Reely Player; everyone else gets it on **one title a day** (`lib/player-trial.ts`, offered on the stall screen; client-side only, see its `ponytail:`). Both detail heroes hold _what_ is playing and derive the URL from the chosen server — never store the URL.
 
+### Kodi add-on
+
+`kodi/plugin.video.reely` is a supporter-only add-on (Kodi 19+; Vega OS Fire TVs cannot run Kodi). A TV signs in by device code at `/link`, and its token is an ordinary `sessions` row sent as a bearer (`lib/auth/device.ts`). `/api/pro/ticket` always checks entitlement for a bearer, even while `PRO_PLAYER_OPEN` keeps the web trial open. Embeds can never play in Kodi, so it only reaches the Reely Player. See `docs/kodi.md`.
+
 ### Ratings on the details page (free, no paid API)
 
 Four scores on every details page — IMDb, Rotten Tomatoes, Metacritic, TMDB — in `components/media/ratings-strip.tsx`, and **not one of them costs a TMDB request**, which is the whole constraint: the detail payload already carries the `imdb_id`.
