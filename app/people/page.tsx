@@ -20,6 +20,7 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   alternates: { canonical: '/people' },
   openGraph: {
+    images: '/opengraph-image.png',
     title: `${TITLE} on ${siteConfig.name}`,
     description: DESCRIPTION,
     url: `${siteConfig.websiteURL}/people`,

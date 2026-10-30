@@ -8,6 +8,7 @@ export const metadata: Metadata = {
     'Pick a mood — cozy, adrenaline, mind-bending, scare me — and get a hand-tuned stack of movies and shows that fit it right now, with trailers and where to watch.',
   alternates: { canonical: '/mood' },
   openGraph: {
+    images: '/opengraph-image.png',
     title: "What's your mood?",
     description: 'Pick a mood, get the stack that fits it.',
     url: `${siteConfig.websiteURL}/mood`,

@@ -26,6 +26,7 @@ export const metadata: Metadata = {
   description: `Reely is free and stays free. Supporting it keeps your library on every device, unlocks lists, alerts and more, and pays for the servers that keep it running.`,
   alternates: { canonical: '/support' },
   openGraph: {
+    images: '/opengraph-image.png',
     title: `Support ${siteConfig.name}`,
     description:
       'Free stays free. Support keeps your library everywhere and pays the bills.',

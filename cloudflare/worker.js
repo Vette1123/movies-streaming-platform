@@ -64,6 +64,7 @@ import {
   OG_WIDTH,
   parseMosaicCard,
 } from '@/lib/og/mosaic'
+import { shareImageOf } from '@/lib/og/share-image'
 import { signEntryTicket } from '@/lib/pro/playback-ticket'
 import { sweepPlayerTrials, ticketDenial } from '@/lib/pro/ticket-access'
 import { loadPublicProfile } from '@/lib/profile/routes'
@@ -884,10 +885,9 @@ function metaTags(
     `<meta name="twitter:title" content="${escapeHtml(heading)}">`,
     `<meta name="twitter:description" content="${escapeHtml(description)}">`,
   ]
-  if (image) {
-    tags.push(`<meta property="og:image" content="${escapeHtml(image)}">`)
-    tags.push(`<meta name="twitter:image" content="${escapeHtml(image)}">`)
-  }
+  const shareImage = shareImageOf(image, canonical)
+  tags.push(`<meta property="og:image" content="${escapeHtml(shareImage)}">`)
+  tags.push(`<meta name="twitter:image" content="${escapeHtml(shareImage)}">`)
   // Only ever set for the composed mosaic, whose size we know exactly. Stating
   // it lets an unfurler lay the card out before the image lands — and stating
   // it wrongly for a poster of unknown dimensions would be worse than silence.

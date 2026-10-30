@@ -8,6 +8,7 @@ export const metadata: Metadata = {
     'Start a title, share a code, and everyone stays on the same second — play, pause and seeks follow the host automatically, so movie night works from anywhere.',
   alternates: { canonical: '/watch-together' },
   openGraph: {
+    images: '/opengraph-image.png',
     title: 'Watch Together (beta)',
     description: 'One code, same second, wherever everyone is.',
     url: `${siteConfig.websiteURL}/watch-together`,
