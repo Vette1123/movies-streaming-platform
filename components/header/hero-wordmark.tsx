@@ -3,12 +3,7 @@
 import React from 'react'
 
 import { heroTitleState } from '@/lib/hero-title'
-import {
-  cn,
-  getLogoImageAvifSrcSet,
-  getLogoImageSrcSet,
-  getLogoImageURL,
-} from '@/lib/utils'
+import { cn, getLogoImageSrcSet, getLogoImageURL } from '@/lib/utils'
 
 // The display title both heroes share: the official wordmark when TMDB has
 // one, the plain title in the same type otherwise. It lived inline in the
@@ -120,45 +115,25 @@ export function HeroWordmark({
       >
         {title}
       </span>
-      {/* The wordmark is the biggest single file on the homepage, and it was
-          the only image on the site still served as WebP: a plain <img> gets
-          no <picture>, and `f-auto` negotiates WebP because the account's
-          AVIF setting is off. Asking for AVIF by name is worth 39% of it -
-          measured on the heaviest title logo: 190KB of WebP against 115KB of
-          AVIF at the same width and quality. A <picture> with a <source>
-          puts the AVIF first and leaves the WebP in the <img> for every
-          browser that cannot decode it. */}
-      {/* `contents` so the <picture> generates no box of its own: the wordmark
-          inside it is absolutely positioned against the hero, and an inline
-          <picture> would sit in the flow as an empty line box inside the h1.
-          The <source> still selects the format - that is not a box thing. */}
-      <picture className="contents">
-        <source
-          type="image/avif"
-          srcSet={getLogoImageAvifSrcSet(logoPath!)}
-          sizes="(max-width: 640px) 80vw, 640px"
-        />
-        {}
-        <img
-          ref={logoRef}
-          src={getLogoImageURL(logoPath!)}
-          // A plain <img> gets no srcset from next/image, so the density pair is
-          // written by hand: the wordmark lays out at ~500 CSS px, which retina
-          // paints at 1000.
-          srcSet={getLogoImageSrcSet(logoPath!)}
-          alt={title}
-          fetchPriority={fetchPriority}
-          loading={loading}
-          // A native image drag would ghost the logo and, in the carousel, eat
-          // the swipe that started on it.
-          draggable={false}
-          onError={markError}
-          onLoad={markLoaded}
-          // No opacity gate, no fade: the browser paints the wordmark the instant
-          // it decodes, before React has even hydrated.
-          className="absolute bottom-0 left-0 max-h-16 w-auto max-w-[80%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] sm:max-h-20 lg:max-h-32"
-        />
-      </picture>
+      <img
+        ref={logoRef}
+        src={getLogoImageURL(logoPath!)}
+        // A plain <img> gets no srcset from next/image, so the density pair is
+        // written by hand: the wordmark lays out at ~500 CSS px, which retina
+        // paints at 1000.
+        srcSet={getLogoImageSrcSet(logoPath!)}
+        alt={title}
+        fetchPriority={fetchPriority}
+        loading={loading}
+        // A native image drag would ghost the logo and, in the carousel, eat
+        // the swipe that started on it.
+        draggable={false}
+        onError={markError}
+        onLoad={markLoaded}
+        // No opacity gate, no fade: the browser paints the wordmark the instant
+        // it decodes, before React has even hydrated.
+        className="absolute bottom-0 left-0 max-h-16 w-auto max-w-[80%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] sm:max-h-20 lg:max-h-32"
+      />
     </Heading>
   )
 }

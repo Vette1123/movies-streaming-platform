@@ -336,12 +336,8 @@ export function HeroSlide({
           // deliberate brake instead of asking for the full cover width.
           sizes={COVER_BACKDROP_SIZES}
           intro
-          // Not `priority`: same trade as the details hero (see
-          // components/header/hero-image.tsx). Dropping Next's WebP preload is
-          // what lets slide 0 take the AVIF <source> like every other slide —
-          // measured on the details page at 110 KB -> 65 KB for the same 2560px
-          // hero, and the fetch still starts from the document, which the
-          // preload scanner reads before any of this hydrates.
+          // Not `priority`: same as the details hero, the page preloads it (see
+          // components/header/hero-image.tsx).
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? 'high' : 'auto'}
         />

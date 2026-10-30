@@ -43,7 +43,7 @@ Reely is a production-grade movie and TV show tracker built on the TMDB API. It 
 - **Privacy-first** — watchlist, history, and recent searches live entirely in your browser; there's no login and nothing is stored on a server.
 - **SEO & structured data** — full JSON-LD (Website, Organization, CollectionPage, Breadcrumb), Open Graph, Twitter Cards, dynamic OG image generation, sitemap, and robots.
 - **Accessible & responsive** — skip-to-content, aria roles, a dedicated mobile nav, and a dark aurora UI that scales cleanly to phones.
-- **Optimized imagery** — ImageKit CDN with an automatic `wsrv.nl` → TMDB origin fallback chain, driven by a custom `next/image` loader so every image still ships a real `srcset` and each device downloads the size it actually renders.
+- **Optimized imagery** — `wsrv.nl` CDN with an automatic TMDB origin fallback, driven by a custom `next/image` loader so every image still ships a real `srcset` and each device downloads the size it actually renders.
 - **Installable PWA** — see the [Progressive Web App](#-progressive-web-app) section below.
 - **Analytics built in** — PostHog product analytics, client-side only, with every event centralized in `lib/analytics.ts` and build-time source-map upload so minified production stack traces symbolicate.
 - **Deployed on the edge** — see [Architecture](#-architecture) below.
@@ -90,7 +90,7 @@ Detail pages use TMDB `append_to_response` so a whole page renders on one TMDB r
 | Search          | `cmdk` command palette + `use-debounce`                                                             |
 | Infinite scroll | `react-intersection-observer`                                                                       |
 | PWA             | Web App Manifest + hand-written service worker (no `next-pwa`/serwist)                              |
-| Data source     | [TMDB API](https://www.themoviedb.org/documentation/api) + optional IMDb ratings + ImageKit imagery |
+| Data source     | [TMDB API](https://www.themoviedb.org/documentation/api) + optional IMDb ratings + wsrv.nl imagery |
 | Streaming       | External, configurable video source                                                                 |
 | Analytics       | PostHog (client-side only)                                                                          |
 | Deployment      | Static export on Cloudflare Workers Static Assets + one hand-written Worker                         |
@@ -142,7 +142,6 @@ Copy `.env.sample` to `.env.local` and fill in the values you need. Only TMDB-re
 | `NEXT_PUBLIC_BASE_URL`                                 | Public base URL of your deployment                       |
 | `NEXT_PUBLIC_STREAMING_MOVIES_API_URL`                 | Streaming source base URL used by the player             |
 | `NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE`                      | Google search URL template for actor lookups             |
-| `NEXT_PUBLIC_IMAGE_CACHE_HOST_URL`                     | Optional image cache/CDN host                            |
 | `NEXT_PUBLIC_IMDB_RATINGS`                             | `true` to enable IMDb ratings (optional, off by default) |
 | `NEXT_PUBLIC_POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_HOST` | PostHog project credentials (optional)                   |
 | `CLOUDFLARE_API_TOKEN`                                 | Required only for `pnpm deploy` to Cloudflare Workers    |

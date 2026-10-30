@@ -418,4 +418,17 @@ export const ALERTS = [
     },
     upper: 15,
   },
+  {
+    // The chain hides a dead image host from everyone but the first screen, so
+    // this is how we hear about it before a user does.
+    name: 'Spike — image host down for more than 15 people a day',
+    tile: {
+      name: 'Alert — people falling off the image host per day',
+      query: trends({
+        series: [{ event: 'image_host_fallback', math: 'dau', name: 'People' }],
+        from: '-14d',
+      }),
+    },
+    upper: 15,
+  },
 ]

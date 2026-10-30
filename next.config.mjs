@@ -27,7 +27,7 @@ const baseConfig = {
     // NOT `unoptimized: true`. That flag also suppresses `srcset`, which meant
     // every device fetched the width baked into the URL — a 2560px hero backdrop
     // on a 393px phone. A custom loader keeps srcset generation while letting
-    // ImageKit do the resizing. See lib/image-loader.ts.
+    // wsrv.nl do the resizing. See lib/image-loader.ts.
     loader: 'custom',
     loaderFile: './lib/image-loader.ts',
     // Next 15.4+ only lets `quality` take values declared here, and rejects the

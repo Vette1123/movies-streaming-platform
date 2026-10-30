@@ -55,7 +55,16 @@ import { smartQuery } from '@/lib/filter-query'
 import { isImdbId } from '@/lib/imdb-id'
 import { loadPublicList } from '@/lib/lists/routes'
 import { getMediaHeroImageUrl } from '@/lib/media'
-import { mosaicUrl, OG_HEIGHT, OG_WIDTH } from '@/lib/og/mosaic'
+import {
+  mosaicPosterUrl,
+  mosaicSvg,
+  mosaicUrl,
+  mosaicWallpaperUrl,
+  OG_CARD_PATH,
+  OG_HEIGHT,
+  OG_WIDTH,
+  parseMosaicCard,
+} from '@/lib/og/mosaic'
 import {
   signEntryTicket,
   ticketNeedsEntitlement,
@@ -139,7 +148,6 @@ function copyEnv(env) {
     'TMDB_HEADER_KEY',
     'NEXT_PUBLIC_TMDB_BASEURL',
     'NEXT_PUBLIC_BASE_URL',
-    'NEXT_PUBLIC_IMAGE_CACHE_HOST_URL',
     // The IMDb rating shards are deliberately NOT here, and neither is their
     // flag. The shards are a build input now (services/imdb.ts reads them off
     // disk while the pages render) and the score they carry is baked into the
@@ -895,6 +903,40 @@ function metaTags(
 
 const siteUrlOf = (url) => process.env.NEXT_PUBLIC_BASE_URL || url.origin
 
+/** One image as a data URI for the share card, or null if it would not load. */
+async function imageDataUri(src) {
+  const response = await fetch(src)
+  if (!response.ok) return null
+  const bytes = new Uint8Array(await response.arrayBuffer())
+  let binary = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  }
+  return `data:image/jpeg;base64,${btoa(binary)}`
+}
+
+/**
+ * The share card, for wsrv to rasterise (lib/og/mosaic.ts). Runs once per card:
+ * wsrv caches what it renders, so a repeat unfurl never reaches this Worker.
+ * Six subrequests at most, all to wsrv's cache.
+ */
+async function handleOgCard(url) {
+  const card = parseMosaicCard(url.searchParams)
+  if (!card) return new Response('Bad card', { status: 400 })
+  const [wallpaper, ...posters] = await Promise.all([
+    imageDataUri(mosaicWallpaperUrl(card.posters[0])),
+    ...card.posters.map((path) => imageDataUri(mosaicPosterUrl(path))),
+  ])
+  return new Response(mosaicSvg(card, wallpaper, posters), {
+    headers: {
+      'Content-Type': 'image/svg+xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=86400',
+      'Content-Security-Policy': "default-src 'none'; img-src data:",
+      'X-Content-Type-Options': 'nosniff',
+    },
+  })
+}
+
 /** The build's own 404 page, so a made-up id gets a cheap, honest answer. */
 async function notFoundAsset(env, url) {
   const notFound = await env.ASSETS.fetch(new URL('/404.html', url.origin))
@@ -1352,11 +1394,14 @@ async function handleListPage(match, env, url) {
   // see lib/og/mosaic.ts. A single portrait poster as og:image was the previous
   // behaviour and unfurled as a centre-cropped band of one poster; it stays as
   // the fallback for a list whose first titles have no artwork at all.
-  const mosaic = mosaicUrl({
-    title: list.name,
-    subtitle: shelf,
-    posters: items.map((item) => item.poster_path),
-  })
+  const mosaic = mosaicUrl(
+    {
+      title: list.name,
+      subtitle: shelf,
+      posters: items.map((item) => item.poster_path),
+    },
+    siteUrl
+  )
   const meta = {
     heading: list.name,
     title: list.name,
@@ -1410,11 +1455,14 @@ async function handleProfilePage(match, env, url) {
   // The titles somebody rated highest, as the same composed card the lists use.
   // A profile whose owner has rated nothing keeps the avatar: a face is a
   // better unfurl than an empty shelf, and it is the only picture there is.
-  const mosaic = mosaicUrl({
-    title: who,
-    subtitle: `${profile.counts.finished} films, ${profile.counts.episodes} episodes, ${profile.counts.lists} lists on Reely`,
-    posters: profile.topRated.map((title) => title.poster_path),
-  })
+  const mosaic = mosaicUrl(
+    {
+      title: who,
+      subtitle: `${profile.counts.finished} films, ${profile.counts.episodes} episodes, ${profile.counts.lists} lists on Reely`,
+      posters: profile.topRated.map((title) => title.poster_path),
+    },
+    siteUrl
+  )
   const meta = {
     // The heading is what becomes <title>, og:title and the crawlable <h1>
     // (see metaTags/seoBlock) — so it carries the site name here rather than
@@ -1492,11 +1540,14 @@ async function handleListsDirectory(request, env, ctx, url) {
         // The newest list's posters, as the same composed card a single list
         // unfurls with — so the directory looks like what it indexes.
         image:
-          mosaicUrl({
-            title: 'Lists on Reely',
-            subtitle: 'Shelves people published, free to steal from',
-            posters: lists.flatMap((list) => list.posters).slice(0, 5),
-          }) || '',
+          mosaicUrl(
+            {
+              title: 'Lists on Reely',
+              subtitle: 'Shelves people published, free to steal from',
+              posters: lists.flatMap((list) => list.posters).slice(0, 5),
+            },
+            siteUrl
+          ) || '',
         canonical: `${siteUrl}/lists`,
         links,
       }
@@ -1806,6 +1857,10 @@ const worker = {
     }
 
     try {
+      if (pathname === OG_CARD_PATH) {
+        return await handleOgCard(url)
+      }
+
       if (pathname.startsWith('/api/')) {
         return await handleApi(pathname, url, request, ctx, env)
       }

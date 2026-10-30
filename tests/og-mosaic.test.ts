@@ -1,102 +1,126 @@
-import { beforeAll, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-type Mosaic = typeof import('@/lib/og/mosaic')
+import {
+  escapeXml,
+  fitLine,
+  mosaicSvg,
+  mosaicUrl,
+  parseMosaicCard,
+} from '@/lib/og/mosaic'
 
-const HOST = 'https://ik.example.test'
+const SITE = 'https://www.reely.space'
 
-let mosaic: Mosaic
+const build = (over: Partial<Parameters<typeof mosaicUrl>[0]> = {}) =>
+  mosaicUrl(
+    {
+      title: 'Films I keep rewatching',
+      subtitle: '12 titles, a list by Sara',
+      posters: ['/a.jpg', '/b.jpg'],
+      ...over,
+    },
+    SITE
+  )
 
-// The host is read at module init (lib/constants), so it has to be in the
-// environment before the module is imported — hence the dynamic import.
-beforeAll(async () => {
-  process.env.NEXT_PUBLIC_IMAGE_CACHE_HOST_URL = HOST
-  mosaic = await import('@/lib/og/mosaic')
-})
-
-const POSTERS = [
-  '/aaa.jpg',
-  '/bbb.jpg',
-  '/ccc.jpg',
-  '/ddd.jpg',
-  '/eee.jpg',
-  '/fff.jpg',
-]
-
-const build = (over: Partial<Parameters<Mosaic['mosaicUrl']>[0]> = {}) =>
-  mosaic.mosaicUrl({
-    title: 'Films I keep rewatching',
-    subtitle: '12 titles by Mohamed on Reely',
-    posters: POSTERS,
-    ...over,
-  })
+/** The card URL wsrv is told to fetch, back out of the mosaic URL. */
+const cardParams = (url: string | null) => {
+  const source = new URL(url ?? '').searchParams.get('url')
+  return new URL(source ?? '').searchParams
+}
 
 describe('mosaicUrl', () => {
-  it('draws every poster it is given, up to the row it can fit', () => {
+  it('asks wsrv to rasterise the Worker card at the unfurl size', () => {
     const url = build() ?? ''
-    expect(url.match(/l-image/g)).toHaveLength(5)
-    expect(url).toContain('i-w500@@aaa.jpg')
-    // The sixth would run off the card.
-    expect(url).not.toContain('fff.jpg')
+    expect(url.startsWith('https://wsrv.nl/?url=')).toBe(true)
+    expect(url).toContain('&w=1200&h=630')
+    expect(url).toContain('output=jpg')
+    expect(new URL(url).searchParams.get('url')).toContain(
+      `${SITE}/api/og/card?`
+    )
   })
 
-  it('centres however many posters there are', () => {
-    // Two posters have to sit in the middle, not clinging to the left edge
-    // where five of them would have started.
-    const two = build({ posters: ['/aaa.jpg', '/bbb.jpg'] }) ?? ''
-    expect(two).toContain('lx-400')
-    expect(build() ?? '').toContain('lx-85')
+  it('is null with nothing to draw, so the caller keeps its fallback', () => {
+    expect(build({ posters: [] })).toBeNull()
+    expect(build({ posters: [null, undefined, 'junk'] })).toBeNull()
   })
 
-  it('refuses a path that is not a TMDB image path', () => {
-    // Poster paths come out of a synced payload — that is, out of whatever
-    // somebody PUT into their own account — and land inside a URL whose commas
-    // and colons are an instruction language.
-    const url =
-      build({
-        posters: ['/aaa.jpg,l-text,ie-aGk,l-end', '/bbb.jpg'],
-      }) ?? ''
-    expect(url).not.toContain('l-text,ie-aGk')
-    expect(url.match(/l-image/g)).toHaveLength(1)
+  it('caps the row at five posters and drops unsafe paths', () => {
+    const paths = ['/a.jpg', '/b.jpg', '/c.jpg', '/d.jpg', '/e.jpg', '/f.jpg']
+    expect(cardParams(build({ posters: paths })).get('p')).toBe(
+      paths.slice(0, 5).join(',')
+    )
+    expect(
+      cardParams(build({ posters: ['/a.jpg', '/x:y,z.jpg', '../e.jpg'] })).get(
+        'p'
+      )
+    ).toBe('/a.jpg')
   })
 
-  it('has nothing to draw without a usable poster', () => {
-    expect(build({ posters: [null, undefined, 'nonsense'] })).toBe(null)
-    expect(build({ posters: [] })).toBe(null)
+  it('changes when the list is renamed, so wsrv cannot serve the old card', () => {
+    expect(build({ title: 'New name' })).not.toEqual(build())
+  })
+})
+
+describe('parseMosaicCard', () => {
+  it('round-trips what mosaicUrl sent, Arabic included', () => {
+    const url = build({ title: 'قائمة أفلام' })
+    expect(parseMosaicCard(cardParams(url))).toEqual({
+      title: 'قائمة أفلام',
+      subtitle: '12 titles, a list by Sara',
+      posters: ['/a.jpg', '/b.jpg'],
+    })
   })
 
-  it('is one chained transformation on the image host', () => {
-    const url = build() ?? ''
-    expect(url.startsWith(`${HOST}/tr:w-1200,h-630`)).toBe(true)
-    expect(url.endsWith('/w500/aaa.jpg')).toBe(true)
+  it('refuses a request naming no real poster', () => {
+    expect(parseMosaicCard(new URLSearchParams('t=hi'))).toBeNull()
+    expect(
+      parseMosaicCard(new URLSearchParams('t=hi&p=/etc/passwd'))
+    ).toBeNull()
+  })
+
+  it('cuts text a direct caller made too long', () => {
+    const card = parseMosaicCard(
+      new URLSearchParams({ t: 'x'.repeat(500), p: '/a.jpg' })
+    )
+    expect(card?.title.length).toBeLessThanOrEqual(32)
+  })
+})
+
+describe('mosaicSvg', () => {
+  const card = { title: 'T', subtitle: 'S', posters: ['/a.jpg', '/b.jpg'] }
+
+  it('cannot be broken out of by a list name', () => {
+    const svg = mosaicSvg(
+      { ...card, title: '</text><script>alert(1)</script>' },
+      null,
+      []
+    )
+    expect(svg).not.toContain('<script>')
+    expect(svg).toContain('&lt;script&gt;')
+  })
+
+  it('leaves out a poster that failed and recentres the row', () => {
+    const svg = mosaicSvg(card, 'data:wall', ['data:one', null])
+    expect(svg).toContain('data:one')
+    expect(svg).toContain('x="505"')
   })
 })
 
 describe('fitLine', () => {
-  it('collapses whitespace and leaves a short line alone', () => {
-    expect(mosaic.fitLine('  Films   I keep\nrewatching ', 40)).toBe(
+  it('collapses whitespace', () => {
+    expect(fitLine('  Films   I keep\nrewatching ', 40)).toBe(
       'Films I keep rewatching'
     )
   })
 
-  it('cuts a long line rather than letting it run off the card', () => {
-    // `tw-` (the layer's own wrap width) is rejected by this account, so
-    // nothing else stops the text overflowing.
-    const cut = mosaic.fitLine('x'.repeat(80), 32)
+  it('cuts with an ellipsis inside the limit', () => {
+    const cut = fitLine('x'.repeat(80), 32)
     expect(cut).toHaveLength(32)
     expect(cut.endsWith('…')).toBe(true)
   })
 })
 
-describe('encodeOverlayText', () => {
-  it('is base64url without padding, which is what ie- accepts', () => {
-    expect(mosaic.encodeOverlayText('hi')).toBe('aGk')
-    expect(mosaic.encodeOverlayText('??>?')).not.toMatch(/[+/=]/)
-  })
-
-  it('survives a name that is not ASCII', () => {
-    const encoded = mosaic.encodeOverlayText('Amélie — 2001')
-    expect(Buffer.from(encoded, 'base64url').toString('utf8')).toBe(
-      'Amélie — 2001'
-    )
+describe('escapeXml', () => {
+  it('escapes markup and strips control characters', () => {
+    expect(escapeXml(`a&b"c\u0007`)).toBe('a&amp;b&quot;c')
   })
 })

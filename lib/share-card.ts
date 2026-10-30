@@ -108,8 +108,8 @@ const IMAGE_TIMEOUT_MS = 8000
  *
  * `crossOrigin = 'anonymous'` is not optional: without it the draw taints the
  * canvas and `toBlob` throws a SecurityError, so the share would fail on the
- * one path that actually worked. All three hosts in the image chain (ImageKit,
- * wsrv.nl, TMDB origin) answer with `Access-Control-Allow-Origin: *`, so a host
+ * one path that actually worked. Both hosts in the image chain (wsrv.nl, TMDB
+ * origin) answer with `Access-Control-Allow-Origin: *`, so a host
  * that does not means the load FAILS here — which is the correct outcome: a
  * card without art beats a card that cannot be exported.
  *
@@ -117,8 +117,8 @@ const IMAGE_TIMEOUT_MS = 8000
  * load fine and paint a transparent pixel over the whole frame.
  *
  * A failed host walks the same chain every <img> on the page walks
- * (getNextImageFallback: ImageKit → wsrv.nl → TMDB origin), and starts past
- * ImageKit when the session already knows it is down — all inside the one
+ * (getNextImageFallback: wsrv.nl → TMDB origin), and starts past
+ * wsrv when the session already knows it is down — all inside the one
  * timeout, so a dead chain costs the same wait as a dead host.
  */
 function loadArt(

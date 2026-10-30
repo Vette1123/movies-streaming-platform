@@ -210,7 +210,7 @@ const orExpr = (frags) =>
  * the Worker so a non-prerendered detail id can be answered — which also means
  * every junk request is a Worker invocation against the 100k/day cap. Measured
  * over 23h: ~1,700 requests for bare TMDB image paths (Googlebot-Image retrying
- * URLs this site has never emitted; every real image URL points at ImageKit) and
+ * URLs this site has never emitted; every real image URL points at wsrv) and
  * ~330 PHP/WordPress probes. That was ~10% of all invocations spent producing
  * 404s.
  *
@@ -237,7 +237,7 @@ const PROBE_EXTENSIONS = [
   '.bak',
 ]
 
-// Stale and mis-split image URLs (a crawler splitting an ImageKit srcset on the
+// Stale and mis-split image URLs (a crawler splitting an old CDN srcset on the
 // commas inside it, or replaying a hash from a long-dead deploy). Blocked too —
 // but NOT for verified crawlers. A 403 tells Googlebot "forbidden", which shows
 // up in Search Console as "Blocked due to access forbidden" and is a worse
@@ -373,6 +373,17 @@ const EXEMPT_PATHS = [WEBHOOK_PATH, ...REVIEW_PATHS]
 const CALENDAR_PREFIX = '/api/calendar/'
 
 /**
+ * The share-card SVG (lib/og/mosaic.ts). Same exemptions, same reason: what
+ * fetches it is wsrv's rasteriser, not a browser. It reads public poster art and
+ * nothing else.
+ */
+const OG_CARD_PREFIX = '/api/og/'
+
+const NOT_MACHINE_PATH =
+  `not starts_with(http.request.uri.path, "${CALENDAR_PREFIX}")` +
+  ` and not starts_with(http.request.uri.path, "${OG_CARD_PREFIX}")`
+
+/**
  * Everything a page needs in order to BE a page.
  *
  * Exempting the documents alone was half a fix and looked like a whole one: the
@@ -418,7 +429,7 @@ const BLOCK_RULE = {
   expression:
     `((${orExpr(BLOCK_UAS)}) or (http.user_agent eq ""))` +
     ` and ${notAnyPath(EXEMPT_PATHS)}` +
-    ` and not starts_with(http.request.uri.path, "${CALENDAR_PREFIX}")` +
+    ` and ${NOT_MACHINE_PATH}` +
     ` and not (${assetExpr()})`,
   action: 'managed_challenge',
 }
@@ -501,7 +512,7 @@ const BLOCK_FROZEN_UAS_RULE = {
   expression:
     `(${uaEqAny(STALE_BROWSER_UAS)})` +
     ` and ${notAnyPath(EXEMPT_PATHS)}` +
-    ` and not starts_with(http.request.uri.path, "${CALENDAR_PREFIX}")` +
+    ` and ${NOT_MACHINE_PATH}` +
     ` and not (${assetExpr()})`,
   action: 'block',
 }
@@ -597,7 +608,7 @@ const RATELIMIT_RULE = {
 // mark the calendar broken — and the supporter would have no way to tell which.
 const MACHINE_HOST_EXEMPT =
   `not (http.request.uri.path eq "${WEBHOOK_PATH}")` +
-  ` and not starts_with(http.request.uri.path, "${CALENDAR_PREFIX}")`
+  ` and ${NOT_MACHINE_PATH}`
 
 const REDIRECT_APEX_RULE = {
   description: `${TAG} 301 apex → www`,

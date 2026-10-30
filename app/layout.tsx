@@ -9,7 +9,6 @@ import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { siteConfig } from '@/config/site'
 import { APPEARANCE_BOOT_SCRIPT } from '@/lib/appearance'
 import { BMC_WIDGET_SCRIPT } from '@/lib/bmc-widget'
-import { IMAGE_CACHE_HOST_URL } from '@/lib/constants'
 import { fontSans } from '@/lib/fonts'
 import {
   JsonLd,
@@ -235,17 +234,12 @@ export default function RootLayout({ children }: RootLayoutProps) {
     >
       <head>
         {/*
-          Preconnect to the host that actually serves the LCP hero image. With
-          on-the-fly optimization that's the image cache (ImageKit), not TMDB
-          origin — warming the TLS+DNS handshake to it is what lets the backdrop
-          download on the very first network tick. TMDB origin stays as a cheap
-          dns-prefetch since it's only the last-resort fallback in the chain.
+          Preconnect to the host that serves the LCP hero image, so the backdrop
+          can download on the first network tick. No crossOrigin: an <img> is a
+          no-cors fetch, and a CORS preconnect opens a socket it will never use.
+          TMDB origin stays a cheap dns-prefetch, it is only the last resort.
         */}
-        {IMAGE_CACHE_HOST_URL ? (
-          <link rel="preconnect" href={IMAGE_CACHE_HOST_URL} crossOrigin="" />
-        ) : (
-          <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="" />
-        )}
+        <link rel="preconnect" href="https://wsrv.nl" />
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
         {/*
           The hero arms its muted trailer 0.5–1.2s after a slide takes the frame,

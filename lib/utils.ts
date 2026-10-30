@@ -26,7 +26,7 @@ function getPosterImageURL(path: string | null | undefined) {
 //
 // Its own builder rather than w500Image: this is a plain <img>, so it never
 // passes through next/image's loader and would otherwise keep the URL's default
-// q-82 forever — see apiConfig.logoImage for why quality and not width.
+// the default quality forever — see apiConfig.logoImage.
 function getLogoImageURL(path: string | null | undefined) {
   return `${apiConfig.logoImage(path)}`
 }
@@ -40,25 +40,9 @@ function getLogoImageURL(path: string | null | undefined) {
 // density" is an absent attribute, not two candidates pointing at the same
 // transparent pixel — the browser would pick one, decode it, and paint nothing,
 // having been told there was a choice to make.
-//
-// (A comma inside the URL is NOT the reason. An ImageKit transform URL already
-// carries three of them, `tr:w-500,q-70,f-auto,c-at_max`, and srcset is parsed
-// by collecting non-whitespace runs, so a comma with no space after it stays
-// part of the URL. A test asserting two comma-separated candidates here fails
-// against the perfectly valid srcset this has always emitted.)
 function getLogoImageSrcSet(path: string | null | undefined) {
   if (!path) return undefined
   return `${apiConfig.logoImage(path, 500)} 1x, ${apiConfig.logoImage(path, 1000)} 2x`
-}
-
-// The same density ladder, asked for as AVIF. The wordmark is the heaviest
-// image on the homepage and a plain <img> cannot ask for AVIF by itself - the
-// transform's f-auto negotiates WebP, because the account's AVIF setting is
-// off. Measured on the heaviest title logo: 190KB of WebP against 115KB of
-// AVIF at the same width and quality.
-function getLogoImageAvifSrcSet(path: string | null | undefined) {
-  if (!path) return undefined
-  return `${apiConfig.logoImageAvif(path, 500)} 1x, ${apiConfig.logoImageAvif(path, 1000)} 2x`
 }
 
 // Both search-result thumbs paint in the same 96x54 box, and both are rendered
@@ -212,7 +196,6 @@ export {
   getImageURL,
   getLogoImageURL,
   getLogoImageSrcSet,
-  getLogoImageAvifSrcSet,
   getPosterImageURL,
   getThumbPosterURL,
   getThumbBackdropURL,
