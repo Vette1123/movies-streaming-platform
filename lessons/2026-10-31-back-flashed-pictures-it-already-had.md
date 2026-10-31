@@ -36,6 +36,13 @@ not rise in, and a wordmark already shown is not covered by the plain title.
   `useScrollToTop`. A marker on `window` settled it: the click itself was a full
   page load, because a title outside the prerendered set has no RSC payload.
 
+- A place saved in sessionStorage survived a fresh full load, so the next Back
+  restored a rail offset from the visit before. The harness caught it only because
+  two runs shared a tab: the rail left at 0 came back at 690.
+- My production watcher required two strings in one chunk, timed out, and reported
+  "not live" for code that was live. It also exited 0 on timeout. A failing network
+  made it look plausible. Ask the deploy run, not the scripts.
+
 ## What worked
 
 - Sampling on a MessageChannel loop every 16ms. rAF does not run in the hidden

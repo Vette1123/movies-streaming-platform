@@ -70,6 +70,7 @@ export function BackRestore() {
   React.useEffect(() => {
     history.scrollRestoration = 'manual'
     if (arrivedByHistory()) restoreScroll(restoredScroll())
+    else forgetPage()
 
     // The page and the numbers are taken when the scroll happens, because by
     // the time the timer fires the URL may already be the next page's.
