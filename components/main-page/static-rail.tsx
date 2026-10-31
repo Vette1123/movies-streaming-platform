@@ -76,7 +76,10 @@ export function StaticRail({
       )}
 
       {items.length > 0 && (
-        <div className={cn(RAIL_TRACK_CLASS, 'no-scrollbar -my-4 gap-6 py-4')}>
+        <div
+          data-rail={title}
+          className={cn(RAIL_TRACK_CLASS, 'no-scrollbar -my-4 gap-6 py-4')}
+        >
           {items.map((item, index) => {
             const posterTitle = getMediaTitle(item) || 'Poster'
             return (

@@ -21,6 +21,7 @@ import {
   CAROUSEL_SINGLE_SLIDE_VARIANTS,
 } from '@/lib/motion-variants'
 import { useCarousel } from '@/hooks/use-carousel'
+import { useIsoLayoutEffect } from '@/hooks/use-iso-layout-effect'
 
 // Damping is just past critical for this stiffness, so it settles (~300ms) with
 // no overshoot - a carousel that wobbles past its stop looks broken, not springy.
@@ -71,11 +72,6 @@ const SLIDE_GAP = 0
 // Comfortably under framer's own 3px drag threshold doubled — a deliberate
 // swipe covers tens of pixels, a thumb pressing a button covers a handful.
 const TAP_SLOP = 12
-
-// useLayoutEffect on the server is a no-op that React warns about, and the
-// compensation below only has meaning once there's a DOM to measure.
-const useIsoLayoutEffect =
-  typeof window === 'undefined' ? React.useEffect : React.useLayoutEffect
 
 // Which way a step went on the ring, clamped to a single slide. A dot jump of
 // seven still animates as one slide-width glide: the slides in between are
