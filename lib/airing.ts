@@ -7,6 +7,18 @@ export interface AiringLabel {
   urgent: boolean
 }
 
+// Calendar days to the air date on the visitor's own wall, null with no date.
+const daysUntil = (
+  airDate: string | null | undefined,
+  now: number,
+  offsetMinutes: number
+) => {
+  if (!airDate) return null
+  const stamp = Date.parse(`${airDate.slice(0, 10)}T00:00:00Z`)
+  if (!Number.isFinite(stamp)) return null
+  return stamp / DAY_MS - localDayNumber(now, offsetMinutes)
+}
+
 /**
  * Label for an upcoming air date, or null when there is nothing worth a chip.
  *
@@ -26,16 +38,44 @@ export function airingLabel(
   now: number = Date.now(),
   offsetMinutes: number = new Date(now).getTimezoneOffset()
 ): AiringLabel | null {
-  if (!airDate) return null
-  const stamp = Date.parse(`${airDate.slice(0, 10)}T00:00:00Z`)
-  if (!Number.isFinite(stamp)) return null
-
-  const days = stamp / DAY_MS - localDayNumber(now, offsetMinutes)
-  if (days < 0) return null
+  const days = daysUntil(airDate, now, offsetMinutes)
+  if (days === null || days < 0) return null
   if (days === 0) return { label: 'Airs today', urgent: true }
   if (days === 1) return { label: 'Airs tomorrow', urgent: true }
   if (days <= 7) return { label: `Airs in ${days} days`, urgent: false }
-  return { label: `Airs ${dateFormatter(airDate, true)}`, urgent: false }
+  return {
+    label: `Airs ${dateFormatter(airDate as string, true)}`,
+    urgent: false,
+  }
+}
+
+/**
+ * The chip for an episode that cannot be played yet, or null when it can.
+ *
+ * Today counts as playable: TMDB's date is the US premiere with no hour, so it
+ * may already be out. No date counts too, because old specials have none. The
+ * date is short because this sits on a 144px thumb.
+ */
+export function unairedEpisode(
+  airDate: string | null | undefined,
+  now: number = Date.now(),
+  offsetMinutes: number = new Date(now).getTimezoneOffset()
+): AiringLabel | null {
+  const days = daysUntil(airDate, now, offsetMinutes)
+  if (days === null || days < 1) return null
+  if (days <= 7) return airingLabel(airDate, now, offsetMinutes)
+
+  const day = new Date(`${(airDate as string).slice(0, 10)}T00:00:00Z`)
+  const date = day.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year:
+      day.getUTCFullYear() === new Date(now).getUTCFullYear()
+        ? undefined
+        : 'numeric',
+    timeZone: 'UTC',
+  })
+  return { label: `Airs ${date}`, urgent: false }
 }
 
 /** The numbers the chip needs off TMDB's `next_episode_to_air`. */
