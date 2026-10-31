@@ -222,6 +222,20 @@ export const DASHBOARDS = [
         ),
       },
       {
+        name: 'Player incidents — what failed and how it ended',
+        query: hogql(
+          `SELECT toString(properties.step) AS step,
+                  toString(properties.hls_details) AS details,
+                  toString(properties.http_status) AS status,
+                  countIf(properties.played = true) AS mid_play,
+                  count() AS incidents,
+                  uniq(person_id) AS people
+           FROM events WHERE ${HUMANS} AND timestamp > now() - INTERVAL 7 DAY
+             AND event = 'player_incident'
+           GROUP BY step, details, status ORDER BY incidents DESC LIMIT 30`
+        ),
+      },
+      {
         name: 'Player failures per day',
         query: trends({
           series: ['player_failed'],
@@ -406,6 +420,65 @@ export const ALERTS = [
       query: trends({ series: ['player_failed'], from: '-14d' }),
     },
     upper: 40,
+  },
+  {
+    // Zero is the only healthy number. A hop past the guard shows here as
+    // moved = true, and it means the lock in lib/player-hop.ts was removed.
+    name: 'Tripwire — a viewer moved off a stream that was playing',
+    tile: {
+      name: 'Alert — hops off a playing stream per day',
+      query: trends({
+        series: [
+          {
+            event: 'player_failed',
+            name: 'Hops off a playing stream',
+            properties: [
+              {
+                key: 'played',
+                value: [true],
+                operator: 'exact',
+                type: 'event',
+              },
+              { key: 'moved', value: [true], operator: 'exact', type: 'event' },
+              {
+                key: 'viewer_chose',
+                value: [false],
+                operator: 'exact',
+                type: 'event',
+              },
+            ],
+          },
+        ],
+        from: '-14d',
+      }),
+    },
+    upper: 0,
+  },
+  {
+    // A viewer staring at "stream lost" after every reconnect failed.
+    name: 'Spike — more than 3 viewers stuck on a lost stream a day',
+    tile: {
+      name: 'Alert — viewers stuck on a lost stream per day',
+      query: trends({
+        series: [
+          {
+            event: 'player_incident',
+            math: 'dau',
+            name: 'Stuck viewers',
+            properties: [
+              {
+                key: 'step',
+                value: ['stuck'],
+                operator: 'exact',
+                type: 'event',
+              },
+            ],
+          },
+        ],
+        from: '-14d',
+      }),
+    },
+    upper: 3,
   },
   {
     name: 'Spike — exceptions for more than 15 people a day',
