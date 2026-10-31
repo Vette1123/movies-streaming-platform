@@ -29,6 +29,22 @@ beforeEach(() => {
 describe('the wiring a browser test proved', () => {
   const read = (path: string) => readFileSync(path, 'utf8')
 
+  // A place outlives a fresh load in sessionStorage, so the next Back restored a
+  // rail offset left over from the visit before.
+  it('forgets the old place when the page is opened fresh', () => {
+    expect(read('components/back-restore.tsx')).toMatch(
+      /if \(arrivedByHistory\(\)\) restoreScroll\(restoredScroll\(\)\)\s+else forgetPage\(\)/
+    )
+  })
+
+  // Strict Mode runs the effect twice on mount; a first-run flag let the second
+  // run forget the place a full-page Back was restoring.
+  it('tells a new page by its path, not by a first-run flag', () => {
+    expect(read('components/back-restore.tsx')).toContain(
+      'if (pathname === lastPath.current) return'
+    )
+  })
+
   // Stopping at the first scroll that landed left the page 228px off: a block
   // mounted above, and scroll anchoring moved the page to keep up with it.
   it('keeps answering height changes after the first jump lands', () => {
