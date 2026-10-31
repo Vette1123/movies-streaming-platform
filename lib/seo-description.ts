@@ -167,9 +167,20 @@ const bestOf = (heads: string[], offers: string[]) => {
   )
 }
 
+/**
+ * A long synopsis cut to the slot. A long word at the cut can leave it under
+ * the floor ("...approached by wealthy…" is 148), so a closing sentence refills it.
+ */
+const fromSynopsis = (synopsis: string, offers: string[]) => {
+  const text = clamp(synopsis)
+  return text.length >= MIN_LENGTH ? text : assemble(text, offers)
+}
+
 export function mediaDescription(input: MediaDescriptionInput): string {
   const synopsis = squash(input.overview)
-  if (synopsis.length >= SELF_SUFFICIENT) return clamp(synopsis)
+  if (synopsis.length >= SELF_SUFFICIENT) {
+    return fromSynopsis(synopsis, TITLE_OFFERS)
+  }
 
   const fact = factLine(input)
   if (!synopsis) return assemble(fact, TITLE_OFFERS)
@@ -186,7 +197,9 @@ export function collectionDescription(
   overview?: string | null
 ): string {
   const synopsis = squash(overview)
-  if (synopsis.length >= SELF_SUFFICIENT) return clamp(synopsis)
+  if (synopsis.length >= SELF_SUFFICIENT) {
+    return fromSynopsis(synopsis, COLLECTION_OFFERS)
+  }
 
   const complete = `The ${name}, complete.`
   if (!synopsis) return assemble(complete, COLLECTION_OFFERS)

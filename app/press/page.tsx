@@ -17,7 +17,7 @@ import { JsonLd } from '@/lib/structured-data'
 export const metadata: Metadata = {
   title: 'Press',
   description:
-    'Reely is a free movie and TV tracker with Rotten Tomatoes, IMDb and Metacritic scores on every title, a page for every actor and director, and no account to start. Press kit, copy blocks and contact.',
+    'Press kit for Reely, a free movie and TV tracker with Rotten Tomatoes, IMDb and Metacritic scores on every title. Ready copy blocks and a direct press contact.',
   alternates: { canonical: '/press' },
   openGraph: {
     title: 'Reely — press kit',

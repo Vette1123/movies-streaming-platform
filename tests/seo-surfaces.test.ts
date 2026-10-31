@@ -193,6 +193,15 @@ describe('mediaDescription', () => {
     expect(description).toContain('drama, romance movie')
   })
 
+  it('refills the slot when a long word pushes the cut under the floor', () => {
+    const words = 'word '.repeat(29).trim()
+    const overview = `${words} ${'x'.repeat(40)} tail end of the synopsis`
+    const description = mediaDescription({ ...base, overview })
+    expect(description.length, description).toBeGreaterThanOrEqual(MIN_LENGTH)
+    expect(description.length, description).toBeLessThanOrEqual(MAX_LENGTH)
+    expect(description.startsWith(words)).toBe(true)
+  })
+
   it('fills the slot when the overview is one short line', () => {
     const description = mediaDescription({
       ...base,

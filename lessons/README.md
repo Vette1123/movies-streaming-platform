@@ -138,3 +138,4 @@ with the work, not after.
 | 2026-10-31 | [Back should return you](2026-10-31-back-should-return-you.md) | Back rebuilt the page at slide 1 with rails at the start. It now restores slide, rails and scroll, and the logo resets. Check a restored position by what is on screen: y looked right while scroll anchoring left the page 228px off. |
 | 2026-10-30 | [The score measured my connection](2026-10-30-the-score-measured-my-connection.md) | Local Lighthouse measured the PC's link: 61-76 desktop against 99 from a data centre. Judge by workflow medians and real-user vitals, and never hold scripts back to win the simulator's race. |
 | 2026-10-30 | [Masareef promo in the footer](2026-10-30-masareef-footer-promo.md) | Reuse StoreLink, keep the text beside the icon at 320px, and revert the lockfile that `pnpm exec` rewrites. |
+| 2026-10-31 | [The word at the cut](2026-10-31-the-word-at-the-cut.md) | Measure the live page before trusting a crawl report. |
