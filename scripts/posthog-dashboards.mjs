@@ -401,8 +401,7 @@ export const DASHBOARDS = [
  * silence is the only symptom (rafiq's tripwire).
  *
  * The plan allows 5 alerts and a sixth is refused with a 400, so a new one must
- * replace one. Viewers stuck on a lost stream are on the Weekly board instead,
- * in the `stuck` row of the incidents tile.
+ * replace one.
  */
 export const ALERTS = [
   {
@@ -426,16 +425,18 @@ export const ALERTS = [
     upper: 40,
   },
   {
-    // Zero is the only healthy number. A hop past the guard shows here as
-    // moved = true, and it means the lock in lib/player-hop.ts was removed.
-    name: 'Tripwire — a viewer moved off a stream that was playing',
+    // Zero is the only healthy number: a viewer stuck after every reconnect
+    // failed, a refused hop (the player broke its rule), or a hop past the
+    // guard (the lock in lib/player-hop.ts was removed). `reason` and `moved`
+    // on the event say which.
+    name: 'Tripwire — a viewer lost a playing stream',
     tile: {
-      name: 'Alert — hops off a playing stream per day',
+      name: 'Alert — viewers who lost a playing stream per day',
       query: trends({
         series: [
           {
             event: 'player_failed',
-            name: 'Hops off a playing stream',
+            name: 'Lost a playing stream',
             properties: [
               {
                 key: 'played',
@@ -443,7 +444,6 @@ export const ALERTS = [
                 operator: 'exact',
                 type: 'event',
               },
-              { key: 'moved', value: [true], operator: 'exact', type: 'event' },
               {
                 key: 'viewer_chose',
                 value: [false],

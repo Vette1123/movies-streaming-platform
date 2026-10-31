@@ -729,7 +729,7 @@ export function trackPlayerStreamPath(props: { native: boolean }): void {
  */
 export function trackPlayerFailed(props: {
   source: string
-  reason: 'stall' | 'unavailable'
+  reason: 'stall' | 'unavailable' | 'stuck'
   /** The stream had been playing. `played` with `moved: false` is a refused hop. */
   played?: boolean
   viewer_chose?: boolean
