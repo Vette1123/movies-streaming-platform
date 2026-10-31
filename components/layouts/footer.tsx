@@ -5,7 +5,7 @@ import { siteConfig } from '@/config/site'
 import { SUPPORT_EMAIL, supportMailto } from '@/config/support'
 import { COMPANION_APPS } from '@/lib/apps'
 import { cn } from '@/lib/utils'
-import { MasareefPromo } from '@/components/masareef-promo'
+import { AppPromo } from '@/components/app-promo'
 import { NewsletterSignup } from '@/components/newsletter-signup'
 import { FooterSupportCard } from '@/components/support/footer-support-card'
 
@@ -87,7 +87,7 @@ export function Footer() {
     <footer className="site-footer mt-8 border-t border-border/60 text-sm text-muted-foreground">
       <div className="border-b border-border/60">
         <div className="container py-6">
-          <MasareefPromo placement="footer" />
+          <AppPromo placement="footer" />
         </div>
       </div>
       <div className="container grid gap-10 py-12 lg:grid-cols-[1.6fr_1fr_1.1fr] lg:gap-12">
