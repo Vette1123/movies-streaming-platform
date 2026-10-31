@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation'
 import { Check, Eye, Play, Tv } from 'lucide-react'
 
 import { EpisodeDetails } from '@/types/episode'
+import { unairedEpisode, type AiringLabel } from '@/lib/airing'
 import {
   trackEpisodeToggled,
   trackWatchHistoryAdded,
@@ -323,10 +324,14 @@ export const Episodes = ({
         </div>
       )}
       {shown.length ? (
-        <ol className="grid gap-x-4 gap-y-5 sm:grid-cols-2 sm:gap-y-8 lg:grid-cols-3 xl:grid-cols-4">
+        <ol className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2 sm:gap-y-8 lg:grid-cols-3 xl:grid-cols-4">
           {shown.map((episode) => {
             const number = episode.episode_number
             const isActive = playingEpisode === number
+            // The one playing stays a normal card, however TMDB dates it. On
+            // mount, because "tomorrow" depends on the visitor's calendar.
+            const unaired =
+              isMounted && !isActive ? unairedEpisode(episode.air_date) : null
             const isUpNext = isMounted && !isActive && upNextEpisode === number
             const completed =
               isMounted &&
@@ -363,7 +368,9 @@ export const Episodes = ({
               <li key={episode.id}>
                 <EpisodeCard
                   episode={episode}
+                  fallbackArt={backdrop_path}
                   isActive={isActive}
+                  unaired={unaired}
                   upNextLabel={
                     isUpNext ? upNextText(resume?.isNext) : undefined
                   }
@@ -418,7 +425,11 @@ const playLabel = (
 
 interface EpisodeCardProps {
   episode: EpisodeDetails
+  /** The series backdrop, for an episode TMDB has no still for yet. */
+  fallbackArt: string
   isActive: boolean
+  /** Set while the episode cannot be played yet. */
+  unaired: AiringLabel | null
   /** Set on the episode continue-watching points at. */
   upNextLabel?: string
   completed: boolean
@@ -443,10 +454,16 @@ interface EpisodeCardProps {
  * episode, and the two smaller controls (watched, reveal) are SIBLING buttons
  * stacked above it. Nesting them inside the play button, as the rows did, is
  * invalid HTML that left the watched tick as a span pretending to be a button.
+ *
+ * An unaired episode has neither: there is nothing to start, and starting it
+ * would tick every earlier episode as watched. It keeps its tick only if it was
+ * ticked, so that can be undone.
  */
 const EpisodeCard = React.memo(function EpisodeCard({
   episode,
+  fallbackArt,
   isActive,
+  unaired,
   upNextLabel,
   completed,
   masked,
@@ -456,8 +473,9 @@ const EpisodeCard = React.memo(function EpisodeCard({
   onReveal,
 }: EpisodeCardProps) {
   const number = episode.episode_number
+  const art = episode.still_path ?? fallbackArt
   const meta = [
-    episode.air_date ? dateFormatter(episode.air_date, true) : null,
+    episode.air_date && !unaired ? dateFormatter(episode.air_date, true) : null,
     episode.runtime ? `${episode.runtime} min` : null,
   ].filter(Boolean)
 
@@ -467,30 +485,38 @@ const EpisodeCard = React.memo(function EpisodeCard({
           artwork and text paint over it but take no pointer events, so a
           click anywhere lands here; only the two controls on the still
           (watched, reveal) take their own. */}
-      <button
-        type="button"
-        onClick={onPlay}
-        aria-current={isActive ? 'true' : undefined}
-        aria-label={playLabel(episode, isActive, masked)}
-        className="absolute -inset-1.5 cursor-pointer rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
-      />
+      {unaired ? null : (
+        <button
+          type="button"
+          onClick={onPlay}
+          aria-current={isActive ? 'true' : undefined}
+          aria-label={playLabel(episode, isActive, masked)}
+          className="absolute -inset-1.5 cursor-pointer rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
+        />
+      )}
       <div
         className={cn(
-          'pointer-events-none relative aspect-video w-36 shrink-0 overflow-hidden rounded-lg bg-muted shadow-[0_6px_20px_-12px_rgba(0,0,0,0.8)] ring-1 ring-white/10 transition-shadow duration-200 sm:w-full',
+          'pointer-events-none relative aspect-video w-36 max-w-[45%] shrink-0 overflow-hidden rounded-lg bg-muted shadow-[0_6px_20px_-12px_rgba(0,0,0,0.8)] ring-1 ring-white/10 transition-shadow duration-200 sm:w-full',
           isActive && 'ring-2 ring-primary',
           upNextLabel && 'ring-primary/50'
         )}
       >
-        {episode.still_path ? (
+        {art ? (
           <BlurredImage
-            src={getImageURL(episode.still_path)}
+            src={getImageURL(art)}
             alt=""
             fill
             sizes={STILL_SIZES}
             className={cn(
-              'size-full object-cover transition-[transform,filter] duration-300 ease-out group-hover/ep:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover/ep:scale-100',
-              masked && 'scale-110 blur-xl group-hover/ep:scale-110',
-              completed && 'opacity-80'
+              'size-full object-cover transition-[transform,filter] duration-300 ease-out motion-reduce:transition-none',
+              !unaired &&
+                'group-hover/ep:scale-[1.04] motion-reduce:group-hover/ep:scale-100',
+              masked &&
+                episode.still_path &&
+                'scale-110 blur-xl group-hover/ep:scale-110',
+              completed && 'opacity-80',
+              // The show's picture, not this episode's, so it stays in the back.
+              !episode.still_path && 'opacity-45 saturate-50'
             )}
           />
         ) : (
@@ -509,6 +535,7 @@ const EpisodeCard = React.memo(function EpisodeCard({
           className={cn(
             'absolute top-1/2 left-1/2 grid size-10 -translate-1/2 place-items-center rounded-full bg-black/55 text-white ring-1 ring-white/25 transition-opacity duration-200 motion-reduce:transition-none sm:size-12',
             'opacity-0 group-focus-within/ep:opacity-100 group-hover/ep:opacity-100',
+            unaired && 'hidden',
             isActive && 'bg-primary-fill opacity-100 ring-0'
           )}
         >
@@ -539,6 +566,18 @@ const EpisodeCard = React.memo(function EpisodeCard({
               {upNextLabel}
             </span>
           ) : null}
+          {unaired ? (
+            <span
+              className={cn(
+                'rounded-full px-2 py-0.5 text-[10px] font-semibold sm:text-xs',
+                unaired.urgent
+                  ? stateChipClass
+                  : 'bg-black/65 text-white ring-1 ring-white/20'
+              )}
+            >
+              {unaired.label}
+            </span>
+          ) : null}
           <NewBadgeWhenRecent
             date={episode.air_date}
             withinDays={NEW_EPISODE_DAYS}
@@ -548,28 +587,30 @@ const EpisodeCard = React.memo(function EpisodeCard({
         {/* Tick off / un-tick. Always shown once ticked, on hover or focus
             otherwise — and always on a touch screen, which has no hover. A
             sibling of the card's play button, not nested in it. */}
-        <button
-          type="button"
-          onClick={onToggleWatched}
-          aria-pressed={completed}
-          aria-label={
-            completed
-              ? `Mark episode ${number} as not watched`
-              : `Mark episode ${number} as watched`
-          }
-          className={cn(
-            'pointer-events-auto absolute top-1 right-1 grid size-7 cursor-pointer place-items-center rounded-full transition-opacity duration-150 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden sm:top-1.5 sm:right-1.5 sm:size-8',
-            completed
-              ? 'bg-emerald-500 text-white'
-              : 'bg-black/60 text-white opacity-0 ring-1 ring-white/25 group-hover/ep:opacity-100 hover:bg-black/80 [@media(hover:none)]:opacity-100'
-          )}
-        >
-          <Check
-            className="size-4"
-            strokeWidth={completed ? 3 : 2.25}
-            aria-hidden
-          />
-        </button>
+        {unaired && !completed ? null : (
+          <button
+            type="button"
+            onClick={onToggleWatched}
+            aria-pressed={completed}
+            aria-label={
+              completed
+                ? `Mark episode ${number} as not watched`
+                : `Mark episode ${number} as watched`
+            }
+            className={cn(
+              'pointer-events-auto absolute top-1 right-1 grid size-7 cursor-pointer place-items-center rounded-full transition-opacity duration-150 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden sm:top-1.5 sm:right-1.5 sm:size-8',
+              completed
+                ? 'bg-emerald-500 text-white'
+                : 'bg-black/30 text-white/75 opacity-0 ring-1 ring-white/30 group-hover/ep:opacity-100 hover:bg-black/70 hover:text-white [@media(hover:none)]:opacity-100'
+            )}
+          >
+            <Check
+              className="size-4"
+              strokeWidth={completed ? 3 : 2.25}
+              aria-hidden
+            />
+          </button>
+        )}
         {masked ? (
           <button
             type="button"
@@ -608,6 +649,7 @@ const EpisodeCard = React.memo(function EpisodeCard({
           className={cn(
             'line-clamp-2 text-sm leading-snug font-semibold sm:line-clamp-1 sm:text-base',
             isActive && 'text-primary',
+            unaired && 'font-medium text-muted-foreground',
             masked && 'font-medium text-muted-foreground italic'
           )}
         >
@@ -627,7 +669,7 @@ const EpisodeCard = React.memo(function EpisodeCard({
 export const EpisodeSkeletons = () => (
   <ol
     aria-hidden
-    className="grid gap-x-4 gap-y-5 sm:grid-cols-2 sm:gap-y-8 lg:grid-cols-3 xl:grid-cols-4"
+    className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2 sm:gap-y-8 lg:grid-cols-3 xl:grid-cols-4"
   >
     {Array.from({ length: 8 }, (_, index) => (
       <li key={index} className="flex gap-3 sm:flex-col">

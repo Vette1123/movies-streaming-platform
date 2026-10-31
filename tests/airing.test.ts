@@ -1,6 +1,12 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-import { airingLabel, episodeCode, withEpisode } from '@/lib/airing'
+import {
+  airingLabel,
+  episodeCode,
+  unairedEpisode,
+  withEpisode,
+} from '@/lib/airing'
 
 // A fixed "now": 2026-09-22T12:00:00Z — noon UTC, mid-day, so floor-to-UTC
 // midnight is unambiguous in either direction of a timezone.
@@ -100,5 +106,38 @@ describe('episodeCode + withEpisode', () => {
       'S1 E10 airs in 3 days'
     )
     expect(withEpisode('Airs today', null)).toBe('Airs today')
+  })
+})
+
+describe('unairedEpisode', () => {
+  it('holds back an episode dated after today, in a chip that fits a thumb', () => {
+    expect(unairedEpisode('2026-09-23', NOW, 0)).toEqual({
+      label: 'Airs tomorrow',
+      urgent: true,
+    })
+    expect(unairedEpisode('2026-09-29', NOW, 0)?.label).toBe('Airs in 7 days')
+    expect(unairedEpisode('2026-09-30', NOW, 0)?.label).toBe('Airs Sep 30')
+  })
+
+  it('names the year only when it is not this one', () => {
+    expect(unairedEpisode('2027-01-05', NOW, 0)?.label).toBe('Airs Jan 5, 2027')
+  })
+
+  // It may be out already: the date is the US premiere and the hour is unknown.
+  it('leaves an episode airing today playable', () => {
+    expect(unairedEpisode('2026-09-22', NOW, 0)).toBeNull()
+  })
+
+  it('leaves aired, undated and broken dates alone', () => {
+    expect(unairedEpisode('2026-09-21', NOW, 0)).toBeNull()
+    expect(unairedEpisode(null, NOW, 0)).toBeNull()
+    expect(unairedEpisode('not-a-date', NOW, 0)).toBeNull()
+  })
+
+  // Starting an episode ticks every earlier one, so a tap on E8 of an unfinished
+  // season recorded E5, E6 and E7 as watched before they existed.
+  it('gives an unaired card nothing to start', () => {
+    const card = readFileSync('components/series/episodes.tsx', 'utf8')
+    expect(card).toContain('{unaired ? null : (')
   })
 })
