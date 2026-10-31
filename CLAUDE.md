@@ -27,6 +27,7 @@ pnpm og:build           # regenerate the static OG image
 pnpm waf:apply          # push Cloudflare WAF + CDN cache rules
 pnpm bmc:probe          # end-to-end check of the live payment webhook (writes + deletes one throwaway row)
 pnpm share:probe       # a real list and profile unfurled through D1, the Worker and wsrv (writes + deletes one throwaway user)
+pnpm hop:probe          # a played stream is never taken from the viewer: outages cut at the browser network layer, real page AND real player (pnpm dev + `pnpm harness` in ../reely-pro-player)
 pnpm resume:probe       # resume + playback prefs through the real page AND real player (pnpm dev + `pnpm harness` in ../reely-pro-player)
 pnpm cf:cpu [hours]     # production Worker CPU broken down BY ROUTE (Workers Logs); cf:health has the kills
 pnpm lighthouse         # medians with timing; run the Lighthouse workflow instead, a home connection measures itself
@@ -75,7 +76,7 @@ Replaced OpenNext on 2026-08-03. Under OpenNext, prod was killing **25–40% of 
 
 The embed provider list lives in `config/sources.ts` and comes **entirely from the environment** — `NEXT_PUBLIC_STREAMING_MOVIES_API_URL` plus `NEXT_PUBLIC_STREAM_SOURCE_2/3/4/5`, mirrored as GitHub secrets **and mapped into the build step of `.github/workflows/deploy.yml`** — a secret added to GitHub without a workflow mapping is silently absent from prod (Turbopack only inlines what exists at build time). No provider host is checked in (this repo is public) and the UI labels them "Server N". Screen any candidate with `pnpm embed:probe` before adding it. Switching, the one automatic hop after a 9s stall, and the per-title memory need a **free account** (`canSwitch` in `hooks/use-stream-source.ts`); anonymous visitors get the default server. Supporters start every title on the Reely Player; everyone else gets it on **one title a day** (offered on the stall screen by `lib/player-trial.ts`, enforced by `lib/pro/ticket-access.ts`). Both detail heroes hold _what_ is playing and derive the URL from the chosen server — never store the URL.
 
-**A stream that has played is the viewer's: nothing automatic may leave it.** The player plays out its buffer, reconnects with a fresh URL at the same second, then asks (`deadEndStep` in the player's `src/recovery.mjs`, enforced in its `fatal()`). Reely holds the second lock from its own progress evidence (`mayLeavePlayer` in `lib/player-hop.ts`). Only a boot failure hops, and an automatic hop lasts for the visit and saves nothing (`isViewerChoice`): only a click writes a server. Each failure step is a `player_incident` event, and `Tripwire — a viewer moved off a stream that was playing` must stay at zero.
+**A stream that has played is the viewer's: nothing automatic may leave it.** The player plays out its buffer, reconnects with a fresh URL at the same second, then asks (`deadEndStep` in the player's `src/recovery.mjs`, enforced in its `fatal()`). Reely holds the second lock from its own progress evidence (`mayLeavePlayer` in `lib/player-hop.ts`). Only a boot failure hops, and an automatic hop lasts for the visit and saves nothing (`isViewerChoice`): only a click writes a server. Each failure step is a `player_incident` event, and `Tripwire — a viewer lost a playing stream` must stay at zero. `pnpm hop:probe` proves all of it end to end.
 
 ### Kodi add-on
 

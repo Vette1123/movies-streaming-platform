@@ -43,6 +43,12 @@ describe('leaving the house player', () => {
     expect(hop).toBeGreaterThan(guard)
   })
 
+  it('counts a stuck viewer as a failure, for the tripwire', () => {
+    const player = source('components/player/reely-player.tsx')
+    expect(player).toMatch(/incident\?\.step === 'stuck'/)
+    expect(player).toMatch(/reason: 'stuck'/)
+  })
+
   it('saves a viewer choice as a choice, not as a stall', () => {
     const player = source('components/player/reely-player.tsx')
     expect(player).toMatch(/viewerChose \? 'switcher' : 'stall_auto'/)

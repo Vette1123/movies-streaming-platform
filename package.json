@@ -40,6 +40,7 @@
     "dns:harden": "node scripts/cf-dns-hardening.mjs",
     "cf:health": "node scripts/cf-health.mjs",
     "cf:cpu": "node scripts/cf-cpu.mjs",
+    "hop:probe": "node scripts/hop-probe.mjs",
     "dev:stop": "node scripts/dev-stop.mjs",
     "posthog:query": "node scripts/posthog-query.mjs",
     "posthog:issues": "node scripts/posthog-issues.mjs",

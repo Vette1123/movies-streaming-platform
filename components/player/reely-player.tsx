@@ -198,6 +198,17 @@ export function ReelyPlayer({
       } else if (data.kind === 'incident') {
         const incident = incidentFrom(data)
         if (incident) trackPlayerIncident(incident)
+        // Every reconnect failed and the viewer is looking at the choice. It
+        // counts as a failure so the one tripwire alert covers it too.
+        if (incident?.step === 'stuck') {
+          trackPlayerFailed({
+            source: REELY_SOURCE_ID,
+            reason: 'stuck',
+            played: true,
+            viewer_chose: false,
+            moved: false,
+          })
+        }
       } else if (data.kind === 'unavailable') {
         // The player booted, and then whatever it framed could not play. Until
         // it could say so, this was the one failure the switcher's stall
