@@ -7,10 +7,9 @@ import { ItemType } from '@/types/movie-result'
 import { RAIL_POSTER_SIZES } from '@/lib/image-sizes'
 import { getMediaTitle } from '@/lib/media'
 import {
-  RAIL_ENTRANCE_COUNT,
   RAIL_TRACK_CLASS,
   railEntranceDelay,
-  railPosterInStaticHtml,
+  staticRailCard,
 } from '@/lib/rail-scroll'
 import { cn, getPosterImageURL, itemRedirect } from '@/lib/utils'
 import { BlurredImage } from '@/components/blurred-image'
@@ -22,6 +21,8 @@ interface StaticRailProps {
   title: string
   items: MediaType[]
   itemType?: ItemType
+  /** Mounted by Back: already seen, so nothing enters and nothing is missing. */
+  rebuilt?: boolean
 }
 
 /**
@@ -41,6 +42,7 @@ export function StaticRail({
   title,
   items,
   itemType = 'movie',
+  rebuilt = false,
 }: StaticRailProps) {
   return (
     <nav className="cv-auto px-5 py-6 sm:p-8 lg:px-12 lg:py-10 xl:px-16 2xl:px-20">
@@ -82,14 +84,15 @@ export function StaticRail({
         >
           {items.map((item, index) => {
             const posterTitle = getMediaTitle(item) || 'Poster'
+            const card = staticRailCard(index, rebuilt)
             return (
               <div
                 key={item.id}
                 className={cn(
                   'w-40 shrink-0 snap-start sm:w-[190px] lg:w-[230px] 2xl:w-[250px]',
-                  index < RAIL_ENTRANCE_COUNT && 'animate-rise-in'
+                  card.entrance && 'animate-rise-in'
                 )}
-                style={railEntranceDelay(index)}
+                style={card.entrance ? railEntranceDelay(index) : undefined}
               >
                 <MediaLink
                   href={`${itemRedirect(itemType)}/${item.id}`}
@@ -101,7 +104,7 @@ export function StaticRail({
                     // identical reserved box + dark-crossfade reveal (and the swap
                     // to the interactive List is a same-URL cache hit, no reflash).
                     <div className="rounded-lg shadow-lg">
-                      {railPosterInStaticHtml(index) ? (
+                      {card.poster ? (
                         <BlurredImage
                           src={getPosterImageURL(item.poster_path)}
                           alt={posterTitle}

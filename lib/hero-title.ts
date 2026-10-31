@@ -29,6 +29,15 @@ export interface HeroTitleState {
   text: boolean
 }
 
+/** The copy rises in on a swipe, never on first paint or a Back rebuild. */
+export const heroCopyEnters = ({
+  settled,
+  rebuilt,
+}: {
+  settled: boolean
+  rebuilt: boolean
+}) => settled && !rebuilt
+
 export function heroTitleState({
   hasLogo,
   logoLoaded,

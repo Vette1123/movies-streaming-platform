@@ -103,3 +103,13 @@ export const railEntranceDelay = (index: number) =>
  */
 export const railPosterInStaticHtml = (index: number) =>
   index < RAIL_ENTRANCE_COUNT
+
+/**
+ * What a static rail's card does. A rail rebuilt by Back has nothing to race
+ * (the page loaded long ago) and was already seen, so every poster is there and
+ * nothing enters.
+ */
+export const staticRailCard = (index: number, rebuilt: boolean) => ({
+  poster: rebuilt || railPosterInStaticHtml(index),
+  entrance: !rebuilt && index < RAIL_ENTRANCE_COUNT,
+})
