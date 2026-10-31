@@ -9,9 +9,14 @@ import {
   SUPPORT_URL,
   supportMailto,
 } from '@/config/support'
-import { ALL_SUPPORT_FEATURES } from '@/config/support-features'
+import {
+  ALL_SUPPORT_FEATURE_GROUPS,
+  SUPPORT_FEATURE_COUNT,
+  TV_FEATURE,
+} from '@/config/support-features'
 import { useAccountIdentity } from '@/hooks/use-account'
 import { buttonVariants } from '@/components/ui/button'
+import { FeaturePromise } from '@/components/support/feature-promise'
 
 /** Every level, priced from config so this list cannot outlive a price change. */
 const LEVELS = [
@@ -69,8 +74,8 @@ function SupporterPanel({ name }: { name: string | null }) {
         </h1>
         <p className="mt-3 max-w-[62ch] leading-relaxed text-muted-foreground">
           This is what keeps Reely online, ad-free, and free for everyone who
-          never pays a penny. Every one of the features below is live on your
-          account, on every device you sign in on.
+          never pays a penny. All {SUPPORT_FEATURE_COUNT} features below are
+          live on your account, on every device you sign in on.
         </p>
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -83,6 +88,14 @@ function SupporterPanel({ name }: { name: string | null }) {
             Manage or change plan
             <ArrowUpRight className="ml-2 size-4" />
           </a>
+          {TV_FEATURE.link && (
+            <Link
+              href={TV_FEATURE.link.href}
+              className={buttonVariants({ size: 'lg', variant: 'outline' })}
+            >
+              {TV_FEATURE.link.label}
+            </Link>
+          )}
           <Link
             href="/account"
             className={buttonVariants({ size: 'lg', variant: 'outline' })}
@@ -99,21 +112,43 @@ function SupporterPanel({ name }: { name: string | null }) {
         <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
           What you have
         </h2>
-        <ul className="mt-8 grid gap-x-12 gap-y-5 sm:grid-cols-2">
-          {ALL_SUPPORT_FEATURES.map(({ Icon, title, short }) => (
-            <li key={title} className="flex items-start gap-3">
-              <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <Icon className="size-3.5" />
-              </span>
-              <div className="min-w-0">
-                <p className="font-medium">{title}</p>
-                <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
-                  {short}
-                </p>
-              </div>
-            </li>
+        <div className="mt-8 space-y-10">
+          {ALL_SUPPORT_FEATURE_GROUPS.map((group) => (
+            <div key={group.title}>
+              <h3 className="text-lg font-semibold">{group.title}</h3>
+              <ul className="mt-4 grid gap-x-12 gap-y-5 sm:grid-cols-2">
+                {group.features.map(({ Icon, title, short, link }) => (
+                  <li key={title} className="flex items-start gap-3">
+                    <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <Icon className="size-3.5" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-medium">{title}</p>
+                      <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
+                        {short}
+                        {link && (
+                          <>
+                            {' '}
+                            <Link
+                              href={link.href}
+                              className="text-foreground underline underline-offset-4"
+                            >
+                              {link.label}
+                            </Link>
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
+      </section>
+
+      <section className="mt-16">
+        <FeaturePromise />
       </section>
 
       <section className="mt-16 grid gap-10 lg:grid-cols-2 lg:gap-16">

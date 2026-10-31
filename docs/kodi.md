@@ -27,6 +27,9 @@ reely.space/link
 
 ## How it fits together
 
+- `/kodi` is the install guide, linked from the footer, `/support`, the supporter
+  panel, the account page and `/link`. It stays noindex. `tests/support-features.test.ts`
+  fails if a link to it goes missing.
 - `kodi/plugin.video.reely/` is the add-on: `plugin.py` is the Kodi half,
   `reely_api.py` the HTTP half with no Kodi imports. Standard library only.
 - `lib/auth/device.ts` is device sign-in. The token is an ordinary `sessions` row

@@ -701,9 +701,9 @@ function PlanSection({ account }: { account: AccountState }) {
         <p className="mt-2 max-w-[60ch] leading-relaxed text-muted-foreground">
           Nothing you use today depends on paying, and nothing ever will.
           Supporting Reely adds the things an account makes possible: your
-          library everywhere, the Reely Player on every title, your watchlist as
-          a live feed in your own calendar, lists worth sharing, alerts when a
-          new episode lands, and a say in what gets built.
+          library everywhere, the Reely Player on every title and on your TV,
+          your watchlist as a live feed in your own calendar, lists worth
+          sharing, alerts when a new episode lands, and any feature you ask for.
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Link href="/support" className={buttonVariants()}>
@@ -730,15 +730,20 @@ function PlanSection({ account }: { account: AccountState }) {
               : 'Your support is what pays for the TMDB traffic, the domain, and the hours. Every supporter feature here is on.'}
           </p>
         </div>
-        <a
-          href={SUPPORT_URL}
-          target="_blank"
-          rel="noreferrer"
-          className={buttonVariants({ variant: 'outline' })}
-        >
-          Manage on Buy Me a Coffee
-          <ExternalLink className="ml-2 size-4" />
-        </a>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/kodi" className={buttonVariants({ variant: 'outline' })}>
+            Set up your TV
+          </Link>
+          <a
+            href={SUPPORT_URL}
+            target="_blank"
+            rel="noreferrer"
+            className={buttonVariants({ variant: 'outline' })}
+          >
+            Manage on Buy Me a Coffee
+            <ExternalLink className="ml-2 size-4" />
+          </a>
+        </div>
       </div>
       {/* Printed for supporters specifically. Everyone else can open an issue or
           close the tab; somebody who has paid and hit a problem needs an address,

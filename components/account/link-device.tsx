@@ -44,9 +44,17 @@ function SupportersOnly() {
         title="Linking a TV is for supporters"
         body="The Reely Player on Kodi comes with supporting Reely. Once you do, this page will take your code."
       />
-      <Link href="/support" className={buttonVariants({ size: 'lg' })}>
-        Support Reely
-      </Link>
+      <div className="flex flex-wrap gap-3">
+        <Link href="/support" className={buttonVariants({ size: 'lg' })}>
+          Support Reely
+        </Link>
+        <Link
+          href="/kodi"
+          className={buttonVariants({ size: 'lg', variant: 'outline' })}
+        >
+          How it works on Kodi
+        </Link>
+      </div>
     </div>
   )
 }
@@ -152,13 +160,12 @@ function CodeForm({ onLinked }: { onLinked: () => void }) {
       </Button>
       <p className="text-sm text-muted-foreground">
         No add-on yet?{' '}
-        <a
-          href="/kodi/plugin.video.reely.zip"
-          download
+        <Link
+          href="/kodi"
           className="underline underline-offset-4 hover:text-foreground"
         >
-          Download it for Kodi
-        </a>
+          See how to install it
+        </Link>
         . It needs Kodi 19 or newer.
       </p>
     </form>
