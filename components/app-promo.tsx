@@ -1,20 +1,30 @@
 'use client'
 
 import { useEffect } from 'react'
-import { usePathname } from 'next/navigation'
 import { useInView } from 'react-intersection-observer'
 
 import { trackFeatureUsed } from '@/lib/analytics'
 import { COMPANION_APPS } from '@/lib/apps'
-import { pickPromo } from '@/lib/promo'
+import { PROMOS, type Promo } from '@/lib/promo'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { StoreLink } from '@/components/store-link'
 
-// Cross-promo for our own apps, one per route (see pickPromo). Everything is first party and the box is sized
-// by its markup, so it costs no third-party script and no layout shift.
+// Cross-promo for our own apps, every one on every page in PROMOS order: side
+// by side on a wide screen, stacked below that. Everything is first party and
+// the box is sized by its markup, so it costs no third-party script and no
+// layout shift.
 export function AppPromo({ placement }: { placement: string }) {
-  const promo = pickPromo(usePathname() ?? '/')
+  return (
+    <div className="grid gap-x-10 gap-y-6 lg:grid-cols-2">
+      {PROMOS.map((promo) => (
+        <PromoItem key={promo.slug} promo={promo} placement={placement} />
+      ))}
+    </div>
+  )
+}
+
+function PromoItem({ promo, placement }: { promo: Promo; placement: string }) {
   const app = COMPANION_APPS.find(({ slug }) => slug === promo.slug)
   const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.5 })
 
