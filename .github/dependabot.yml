@@ -1,0 +1,44 @@
+# Dependabot: alerts plus weekly grouped bumps.
+#
+# Next and React majors are ignored: they are migrations, tied to the Cloudflare
+# adapter, not bumps.
+version: 2
+updates:
+  - package-ecosystem: npm # pnpm uses the npm ecosystem value
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Africa/Cairo
+    # A week's quarantine on new publishes; does not delay security updates.
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
+    ignore:
+      - dependency-name: next
+        update-types: [version-update:semver-major]
+      - dependency-name: react
+        update-types: [version-update:semver-major]
+      - dependency-name: react-dom
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Africa/Cairo
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
