@@ -10,7 +10,14 @@ Worked through Bing Webmaster's report for this site.
 - Resubmitted the `www` sitemap to Bing. The `http://` and bare-domain entries redirect to
   `www` and inflate its count to 45.8K for about 15K pages. They are harmless and still listed.
 
+- The sitemap had been invalid XML since the 2026-10-30 wsrv.nl move, because Next does not
+  escape `images`. Bing read 242 of 15,200 URLs. `lib/sitemap-image.ts` escapes them, and
+  `pnpm seo:verify` now fails on a bare `&`.
+
 ## Mistakes
+
+- **`seo:verify` counted `<loc>` with a regex, which is why 64 of 64 passed on a broken file.**
+  A regex keeps matching past the point where a real parser stops. Only Bing's count showed it.
 
 - **Treated "too short" as closed after 2026-10-09.** The floor was enforced for short
   synopses, and nothing covered a long one that a word boundary shrank.

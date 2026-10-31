@@ -20,7 +20,7 @@ import {
   buildLinkedMediaIds,
   buildMediaSitemapEntries,
 } from '@/lib/media-page'
-import { getPosterImageURL } from '@/lib/utils'
+import { sitemapImage } from '@/lib/sitemap-image'
 import { yearRange } from '@/components/media/year-page'
 
 export const revalidate = 86400
@@ -63,7 +63,7 @@ const mediaSitemapUrls = async (
       url: `${baseUrl}${pathPrefix}/${id}`,
       changeFrequency: 'monthly' as const,
       priority: 0.7,
-      ...(posterPath ? { images: [getPosterImageURL(posterPath)] } : {}),
+      ...(posterPath ? { images: [sitemapImage(posterPath)] } : {}),
     }))
   } catch (error) {
     console.error(`Error generating ${pathPrefix} URLs for sitemap:`, error)
@@ -129,7 +129,7 @@ const generatePersonUrls = async (): Promise<MetadataRoute.Sitemap> => {
       changeFrequency: 'monthly' as const,
       priority: 0.6,
       ...(person.profile_path
-        ? { images: [getPosterImageURL(person.profile_path)] }
+        ? { images: [sitemapImage(person.profile_path)] }
         : {}),
     }))
   } catch (error) {

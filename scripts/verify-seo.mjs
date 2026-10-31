@@ -65,6 +65,13 @@ const count = (prefix) =>
 console.log(
   `sitemap: ${locs.length} urls — movies ${count('/movies/')}, tv ${count('/tv-shows/')}, collections ${count('/collection/')}\n`
 )
+// One bare `&` ends the file for a parser: Bing kept 242 of 15,200 URLs.
+const bareAmps = xml.match(/&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[\da-f]+;)/gi)
+check(
+  'sitemap is well-formed XML',
+  !bareAmps,
+  `${bareAmps?.length ?? 0} bare ampersands`
+)
 check(
   'sitemap lists movie detail pages',
   count('/movies/') > 300,
