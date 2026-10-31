@@ -139,4 +139,5 @@ with the work, not after.
 | 2026-10-30 | [The score measured my connection](2026-10-30-the-score-measured-my-connection.md) | Local Lighthouse measured the PC's link: 61-76 desktop against 99 from a data centre. Judge by workflow medians and real-user vitals, and never hold scripts back to win the simulator's race. |
 | 2026-10-30 | [Masareef promo in the footer](2026-10-30-masareef-footer-promo.md) | Reuse StoreLink, keep the text beside the icon at 320px, and revert the lockfile that `pnpm exec` rewrites. |
 | 2026-10-31 | [The word at the cut](2026-10-31-the-word-at-the-cut.md) | Measure the live page before trusting a crawl report. |
+| 2026-10-31 | [Kodi guide made reachable](2026-10-31-kodi-reachable-benefits.md) | A page that returns 200 with nothing linking to it is not shipped. Check inbound links, and read the dev server's port line before trusting a screenshot. |
 | 2026-10-31 | [A rescue is not a choice](2026-10-31-a-rescue-is-not-a-choice.md) | Reely hopped a viewer off a stream that had played for nine minutes and saved the hop as their choice; a played stream now leaves only when asked, and an automatic hop saves nothing. |

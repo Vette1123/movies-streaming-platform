@@ -11,15 +11,22 @@ import {
   supportMailto,
   yearlyAnchor,
 } from '@/config/support'
-import { FLAGSHIP_FEATURES, SUPPORT_FEATURES } from '@/config/support-features'
+import {
+  FLAGSHIP_FEATURES,
+  SUPPORT_FEATURE_COUNT,
+  SUPPORT_FEATURE_GROUPS,
+  TV_FEATURE,
+} from '@/config/support-features'
 import { pageTitle } from '@/lib/seo-title'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { CheckoutHint } from '@/components/support/checkout-link'
 import { CheckoutWatcher } from '@/components/support/checkout-watcher'
+import { FeaturePromise } from '@/components/support/feature-promise'
 import { PlanView } from '@/components/support/plan-view'
 import { SupportCta } from '@/components/support/support-cta'
 import { SupporterCount } from '@/components/support/supporter-count'
+import { TvLinkPreview } from '@/components/support/tv-link-preview'
 
 export const metadata: Metadata = {
   title: pageTitle(`Support ${siteConfig.name}`),
@@ -47,10 +54,10 @@ export const metadata: Metadata = {
  * used to be thirteen identical bordered tiles followed by three more identical
  * bordered tiles, which reads as a template rather than as a product: the eye
  * finds no hierarchy, so nothing is emphasised and the flagship feature lands
- * with exactly the weight of the accent colours. Now the three features
- * somebody can understand from the title alone get room and a real screenshot,
- * the other ten are a dense two-column list with no boxes at all, and no two
- * sections below them repeat a layout.
+ * with exactly the weight of the accent colours. Now the features somebody can
+ * understand from the title alone get room and a real screenshot, the TV gets a
+ * band of its own, the rest are grouped two-column lists with no boxes at all,
+ * and no two sections below them repeat a layout.
  *
  * Every feature on it comes from config/support-features.ts, which is also what
  * the supporter's own view of this page reads — the two used to be written out
@@ -136,6 +143,14 @@ const FAQ = [
     a: 'Often, yes — and that is the honest answer rather than a promise. The Reely Player, Reely’s own player, is now where streams start; behind it sit third-party servers Reely does not run. Any free account gets one-tap switching between every backup and an automatic hop when one stops responding; supporters start every title on the Reely Player. If nothing carries a title, no plan can conjure it.',
   },
   {
+    q: 'Can I watch on my TV?',
+    a: 'Yes, on anything that runs Kodi 19 or newer, including Fire TV devices on Fire OS. Install the add-on from reely.space/kodi and link the TV with a short code from your phone. Newer Vega OS sticks cannot install Kodi.',
+  },
+  {
+    q: 'Will you really build what I ask for?',
+    a: `Yes, that is the deal for supporters. Write to ${SUPPORT_EMAIL} with the feature you want and I will build it.`,
+  },
+  {
     q: 'Can I cancel?',
     a: 'One click on Buy Me a Coffee, any time. It runs to the end of the period you already paid for. Nothing you saved is deleted when support ends — your library stays in your browser exactly as it does for everyone else.',
   },
@@ -195,6 +210,7 @@ export default function SupportPage() {
       <PlanView>
         <Hero />
         <Flagships />
+        <OnYourTv />
         <TheRest />
         <FreeForever />
         <WhereTheMoneyGoes />
@@ -227,7 +243,8 @@ function Hero() {
         </h1>
         <p className="max-w-[46ch] text-lg leading-relaxed text-muted-foreground">
           Everything here stays free for everyone. Supporting it moves your
-          library off this one browser and unlocks the rest.
+          library off this one browser, puts Reely on your TV, and gets you any
+          feature you ask for.
         </p>
         <div className="space-y-2.5">
           <div className="flex flex-wrap items-center gap-3">
@@ -303,13 +320,13 @@ function Flagships() {
   const [lead, ...rest] = FLAGSHIP_FEATURES
   return (
     <section className={cn(SECTION, 'py-16')}>
-      <h2 className="max-w-[20ch] text-3xl font-bold tracking-tight md:text-4xl">
-        What support unlocks
+      <h2 className="max-w-[24ch] text-3xl font-bold tracking-tight md:text-4xl">
+        {SUPPORT_FEATURE_COUNT} things support unlocks
       </h2>
 
-      <div className="mt-10 grid gap-4 lg:grid-cols-5">
-        <article className="relative overflow-hidden rounded-2xl border border-primary/20 bg-linear-to-br from-primary/10 to-transparent lg:col-span-3">
-          <div className="max-w-[52ch] p-6 sm:p-8">
+      <div className="mt-10 grid gap-4 md:grid-cols-3">
+        <article className="relative overflow-hidden rounded-2xl border border-primary/20 bg-linear-to-br from-primary/10 to-transparent md:col-span-3">
+          <div className="max-w-[60ch] p-6 sm:p-8 lg:py-10">
             <lead.Icon className="size-7 text-primary" />
             <h3 className="mt-4 text-2xl font-semibold tracking-tight md:text-3xl">
               {lead.title}
@@ -318,69 +335,101 @@ function Flagships() {
               {lead.body}
             </p>
           </div>
+          {/* A local file in public/, shipped at exactly the one size it is ever
+              drawn at and only above lg. next/image would route a same-origin
+              asset through the TMDB image loader. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/screenshot-narrow.webp"
+            alt="The Reely homepage on a phone, showing a featured title and a trending row"
+            width={780}
+            height={1688}
+            loading="lazy"
+            decoding="async"
+            className="pointer-events-none absolute top-8 right-16 hidden h-auto w-44 rotate-6 rounded-t-xl border shadow-xl lg:block"
+          />
         </article>
 
-        {/* The screenshot belongs to the library feature (first of the rest):
-            it is the claim that has a picture. */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:col-span-2">
-          {rest.map(({ Icon, title, body }, index) => (
-            <article
-              key={title}
-              className="relative flex flex-col justify-center rounded-2xl border border-border/70 bg-card/40 p-6 sm:p-8"
-            >
-              {index === 0 && (
-                // A local file in public/, shipped at exactly the one size it
-                // is ever drawn at and only above lg. next/image would route a
-                // same-origin asset through the TMDB image loader.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src="/screenshot-narrow.webp"
-                  alt="The Reely homepage on a phone, showing a featured title and a trending row"
-                  width={780}
-                  height={1688}
-                  loading="lazy"
-                  decoding="async"
-                  className="pointer-events-none absolute -top-16 -right-10 hidden h-auto w-32 rotate-6 rounded-t-xl border shadow-xl lg:block"
-                />
-              )}
-              <Icon className="size-5 text-primary" />
-              <h3 className="mt-4 text-lg font-semibold">{title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                {body}
-              </p>
-            </article>
-          ))}
-        </div>
+        {rest.map(({ Icon, title, body }) => (
+          <article
+            key={title}
+            className="rounded-2xl border border-border/70 bg-card/40 p-6 sm:p-8"
+          >
+            <Icon className="size-5 text-primary" />
+            <h3 className="mt-4 text-lg font-semibold">{title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {body}
+            </p>
+          </article>
+        ))}
       </div>
     </section>
   )
 }
 
 /**
- * The other ten, with no boxes at all.
- *
- * Ten more bordered cards after the three above is what made the old page read
- * as a template. A two-column list separates them with space and one accent
- * rule, which also lets the eye scan titles vertically instead of bouncing
- * around a grid.
+ * The TV, on a band of its own: it is the one benefit with a screen to show, and
+ * the way a visitor finds the setup guide at /kodi.
+ */
+function OnYourTv() {
+  const { Icon, title, body, link } = TV_FEATURE
+  return (
+    <section
+      className={cn(
+        SECTION,
+        'grid gap-10 py-16 lg:grid-cols-2 lg:items-center lg:gap-16'
+      )}
+    >
+      <div className="min-w-0 space-y-4">
+        <Icon className="size-7 text-primary" />
+        <h2 className="text-3xl font-bold tracking-tight text-balance md:text-4xl">
+          {title}
+        </h2>
+        <p className="max-w-[52ch] leading-relaxed text-muted-foreground">
+          {body}
+        </p>
+        {link && (
+          <Link
+            href={link.href}
+            className={buttonVariants({ size: 'lg', variant: 'outline' })}
+          >
+            {link.label}
+          </Link>
+        )}
+      </div>
+      <TvLinkPreview />
+    </section>
+  )
+}
+
+/**
+ * The rest, with no boxes at all, in groups that give a long list somewhere for
+ * the eye to land. Ten more bordered cards after the flagships is what made the
+ * old page read as a template; the one accent rule lets titles scan vertically.
  */
 function TheRest() {
   return (
-    <section className={cn(SECTION, 'py-16')}>
-      <div className="grid gap-x-12 gap-y-10 sm:grid-cols-2">
-        {SUPPORT_FEATURES.map(({ Icon, title, body }) => (
-          <article key={title} className="border-l border-primary/30 pl-5">
-            <div className="flex items-center gap-2.5">
-              <Icon className="size-4 shrink-0 text-primary" />
-              <h3 className="font-semibold">{title}</h3>
-            </div>
-            <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-muted-foreground">
-              {body}
-            </p>
-          </article>
-        ))}
-      </div>
-      <SupportCta className="mt-14" surface="support_features" />
+    <section className={cn(SECTION, 'space-y-14 py-16')}>
+      {SUPPORT_FEATURE_GROUPS.map((group) => (
+        <div key={group.title}>
+          <h2 className="text-2xl font-bold tracking-tight">{group.title}</h2>
+          <div className="mt-6 grid gap-x-12 gap-y-10 sm:grid-cols-2">
+            {group.features.map(({ Icon, title, body }) => (
+              <article key={title} className="border-l border-primary/30 pl-5">
+                <div className="flex items-center gap-2.5">
+                  <Icon className="size-4 shrink-0 text-primary" />
+                  <h3 className="font-semibold">{title}</h3>
+                </div>
+                <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-muted-foreground">
+                  {body}
+                </p>
+              </article>
+            ))}
+          </div>
+        </div>
+      ))}
+      <FeaturePromise />
+      <SupportCta surface="support_features" />
     </section>
   )
 }

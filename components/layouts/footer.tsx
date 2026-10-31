@@ -19,6 +19,7 @@ const SITE_LINKS = [
   { href: '/lists', label: 'Lists and people' },
   { href: '/people', label: 'Actors and directors' },
   { href: '/support', label: 'Support Reely' },
+  { href: '/kodi', label: 'Reely on your TV' },
   { href: '/account', label: 'Account' },
   { href: '/stats', label: 'Your year in Reely' },
   // The press kit: what a journalist, a newsletter or a podcaster needs

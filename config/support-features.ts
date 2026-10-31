@@ -40,6 +40,14 @@ export interface SupportFeature {
   body: string
   /** One line, for the supporter checklist where the body is too much. */
   short: string
+  /** Where to act on it, for a feature that needs setting up. */
+  link?: { href: string; label: string }
+}
+
+/** A run of features under one heading, so a long list can be scanned. */
+export interface SupportFeatureGroup {
+  title: string
+  features: SupportFeature[]
 }
 
 /**
@@ -54,7 +62,8 @@ export const FLAGSHIP_FEATURES: SupportFeature[] = [
   {
     Icon: Sparkles,
     title: 'The Reely Player',
-    short: 'Our own player — faster starts, resume, subtitles in your language',
+    short:
+      'Our own player on every title — faster starts, resume, subtitles in your language',
     body: 'A player Reely builds and runs itself, instead of borrowing someone else’s. It starts faster than the embed servers, picks up where you stopped — even mid-episode, on another device — and pulls real subtitles onto titles that ship with none: Arabic, English, French, Turkish and more, sized the way you like. Set your language once and every title you open already has it on.',
   },
   {
@@ -77,14 +86,24 @@ export const FLAGSHIP_FEATURES: SupportFeature[] = [
   },
 ]
 
-/** Everything else, in the order it is worth reading. */
-export const SUPPORT_FEATURES: SupportFeature[] = [
-  {
-    Icon: Tv,
-    title: 'Reely on your TV, through Kodi',
-    short: 'A Kodi add-on that plays the Reely Player on your TV',
-    body: 'Browse Reely with the remote and play on the Reely Player in full screen, through an add-on for Kodi 19 or newer. Link the TV once by typing a short code on your phone at reely.space/link, which is also where the add-on lives. Works on Fire TV devices that run Fire OS; newer Vega OS sticks cannot install Kodi.',
-  },
+/** Sold on its own band, because it is the one with a screen worth showing. */
+export const TV_FEATURE: SupportFeature = {
+  Icon: Tv,
+  title: 'Reely on your TV, through Kodi',
+  short: 'A Kodi add-on that plays the Reely Player on your TV',
+  body: 'Browse Reely with the remote and press play. The add-on runs the Reely Player full screen in Kodi 19 or newer, and you link the TV once by typing a short code on your phone. Works on Fire TV devices that run Fire OS; newer Vega OS sticks cannot install Kodi.',
+  link: { href: '/kodi', label: 'Set up your TV' },
+}
+
+/** The promise under the list, on the pitch and in the supporter panel alike. */
+export const FEATURE_PROMISE = {
+  title: 'Ask for any feature and I will build it.',
+  body: 'That is the deal for supporters. Tell me what Reely is missing and I will build it. There is no voting board and no roadmap to wait on: your mail comes straight to me.',
+  action: 'Ask for a feature',
+  mailSubject: 'Feature request',
+} as const
+
+const WHAT_NEXT: SupportFeature[] = [
   {
     Icon: Wand2,
     title: 'Suggestions that read your history',
@@ -121,6 +140,9 @@ export const SUPPORT_FEATURES: SupportFeature[] = [
     short: 'Save a browse filter under a name and reopen it anywhere',
     body: 'Horror from the nineties, rated over 7, on the services you actually have — build it once, give it a name, and it is a single tap from the filter panel on every device you sign in on.',
   },
+]
+
+const YOUR_RECORD: SupportFeature[] = [
   {
     Icon: Hourglass,
     title: 'Hours watched, measured rather than guessed',
@@ -139,6 +161,9 @@ export const SUPPORT_FEATURES: SupportFeature[] = [
     short: 'Letterboxd and IMDb CSV import, read on your own device',
     body: 'Years of ratings and a watchlist you have been adding to forever, read straight in from their CSV export and matched to real titles, with your scores carried onto the ten-point scale. The file is read on your own device and never uploaded.',
   },
+]
+
+const SHOW_IT_OFF: SupportFeature[] = [
   {
     Icon: UserRound,
     title: 'A page of your own',
@@ -157,6 +182,9 @@ export const SUPPORT_FEATURES: SupportFeature[] = [
     short: 'A shareable year card drawn on your own device',
     body: 'Hours watched, films finished, episodes ticked off, longest streak, busiest month — drawn into an image on your own device, ready for a story or a group chat. Counted across every device you use rather than whichever browser you happen to be in.',
   },
+]
+
+const THE_SMALL_PRINT: SupportFeature[] = [
   {
     Icon: Palette,
     title: 'Six accents and a denser layout',
@@ -177,8 +205,22 @@ export const SUPPORT_FEATURES: SupportFeature[] = [
   },
 ]
 
-/** Everything, in reading order, for surfaces that show the whole set. */
-export const ALL_SUPPORT_FEATURES: SupportFeature[] = [
-  ...FLAGSHIP_FEATURES,
-  ...SUPPORT_FEATURES,
+/** Everything else, in the order it is worth reading. */
+export const SUPPORT_FEATURE_GROUPS: SupportFeatureGroup[] = [
+  { title: 'Always know what is next', features: WHAT_NEXT },
+  { title: 'Everything you have watched, kept', features: YOUR_RECORD },
+  { title: 'Worth showing people', features: SHOW_IT_OFF },
+  { title: 'The small things that add up', features: THE_SMALL_PRINT },
 ]
+
+/** The whole set, for the supporter's checklist of what they have. */
+export const ALL_SUPPORT_FEATURE_GROUPS: SupportFeatureGroup[] = [
+  { title: 'The big ones', features: [...FLAGSHIP_FEATURES, TV_FEATURE] },
+  ...SUPPORT_FEATURE_GROUPS,
+]
+
+/** Derived, so "every feature" on the page cannot go stale against the list. */
+export const SUPPORT_FEATURE_COUNT = ALL_SUPPORT_FEATURE_GROUPS.reduce(
+  (total, group) => total + group.features.length,
+  0
+)
