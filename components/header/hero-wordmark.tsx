@@ -3,6 +3,7 @@
 import React from 'react'
 
 import { heroTitleState } from '@/lib/hero-title'
+import { imageShown, rememberImage } from '@/lib/image-memory'
 import {
   cn,
   getLogoImageSrcSet,
@@ -48,10 +49,16 @@ export function HeroWordmark({
   const [logoError, setLogoError] = React.useState(false)
   const [logoLoaded, setLogoLoaded] = React.useState(false)
 
-  const markLoaded = React.useCallback(() => {
-    onSettle?.()
-    setLogoLoaded(true)
-  }, [onSettle])
+  const logoUrl = logoPath ? getLogoImageURL(logoPath) : null
+
+  const markLoaded = React.useCallback(
+    (node: HTMLImageElement) => {
+      rememberImage(logoUrl, node)
+      onSettle?.()
+      setLogoLoaded(true)
+    },
+    [logoUrl, onSettle]
+  )
   const markError = React.useCallback(() => {
     onSettle?.()
     setLogoError(true)
@@ -65,7 +72,7 @@ export function HeroWordmark({
   const logoRef = React.useCallback(
     (node: HTMLImageElement | null) => {
       if (!node?.complete) return
-      if (node.naturalWidth > 0) markLoaded()
+      if (node.naturalWidth > 0) markLoaded(node)
       else markError()
     },
     [markLoaded, markError]
@@ -75,7 +82,8 @@ export function HeroWordmark({
   // server HTML on; JS only ever decides whether the text covers for it.
   const { logo: showLogo, text: showText } = heroTitleState({
     hasLogo: !!logoPath,
-    logoLoaded,
+    // Already shown in this tab: Back must not cover it with the plain title.
+    logoLoaded: logoLoaded || imageShown(logoUrl),
     logoError,
     extrasReady,
     graceElapsed: graceElapsed ?? true,
@@ -122,7 +130,7 @@ export function HeroWordmark({
       </span>
       <img
         ref={logoRef}
-        src={getLogoImageURL(logoPath!)}
+        src={logoUrl!}
         // A plain <img> gets no srcset from next/image, so the widths are
         // written by hand: see getLogoImageSrcSet.
         srcSet={getLogoImageSrcSet(logoPath!)}
@@ -134,7 +142,7 @@ export function HeroWordmark({
         // the swipe that started on it.
         draggable={false}
         onError={markError}
-        onLoad={markLoaded}
+        onLoad={(event) => markLoaded(event.currentTarget)}
         // No opacity gate, no fade: the browser paints the wordmark the instant
         // it decodes, before React has even hydrated.
         className="absolute bottom-0 left-0 max-h-16 w-auto max-w-[80%] object-contain object-left drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] sm:max-h-20 lg:max-h-32"

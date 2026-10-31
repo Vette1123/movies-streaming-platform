@@ -12,7 +12,9 @@ import {
   trackHeroAutoplayToggled,
   trackHeroWatchClicked,
 } from '@/lib/analytics'
+import { isBackPending } from '@/lib/back-restore'
 import { canWarmHeroArt, heroArtReady } from '@/lib/hero-art'
+import { heroCopyEnters } from '@/lib/hero-title'
 import { onIdleAfterLoad } from '@/lib/idle'
 import { COVER_BACKDROP_SIZES, COVER_POSTER_SIZES } from '@/lib/image-sizes'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
@@ -135,7 +137,9 @@ export function HeroSlide({
   const reduce = useReducedMotion()
   // Captured at mount: false for the first paint (server HTML + hydration),
   // true for every slide that mounts after the hero has settled once.
-  const [animateIn] = React.useState(() => firstPaintSettled)
+  const [animateIn] = React.useState(() =>
+    heroCopyEnters({ settled: firstPaintSettled, rebuilt: isBackPending() })
+  )
   const entrance = animateIn && !reduce ? 'hidden' : false
   // The wordmark settling (decoded or failed) ends the first-paint hold for
   // every slide after it — see the grace note below.

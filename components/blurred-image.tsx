@@ -4,6 +4,11 @@ import React from 'react'
 import Image, { ImageProps } from 'next/image'
 
 import { wsrvPortraitSrcSet } from '@/lib/image-loader'
+import {
+  imageShown,
+  instantImageProps,
+  rememberImage,
+} from '@/lib/image-memory'
 import { PORTRAIT_ART_MEDIA, PORTRAIT_ART_SIZES } from '@/lib/image-sizes'
 import {
   demoteFromPrimary,
@@ -88,8 +93,23 @@ export const BlurredImage = React.memo(function BlurredImage({
   // corners — and that drag loop swallows the pointer, so the hero carousel's
   // own drag-to-advance dies mid-gesture. Nothing in this app ever wants an
   // image dropped somewhere, so opt every one of them out at the source.
-  // Spread first: a caller can still pass draggable explicitly and win.
-  const props = { draggable: false, ...restProps }
+  // True for the server render and the hydration pass over it, false for
+  // anything mounted on the client afterwards (a navigation, a remount).
+  const fromServer = React.useSyncExternalStore(
+    subscribeNever,
+    returnFalse,
+    returnTrue
+  )
+  // Frozen at mount, and false over server HTML, which says decoding="async".
+  // Shown once already this session: the picture arrives with its page, so
+  // there is nothing to reveal. See lib/image-memory.ts.
+  const [seen] = React.useState(() => !fromServer && imageShown(src))
+  // draggable spreads first: a caller can still pass it explicitly and win.
+  const props = {
+    draggable: false,
+    ...restProps,
+    ...instantImageProps(seen),
+  }
   const [isLoading, setLoading] = React.useState(true)
   // Render from this src so we can walk the fallback chain if a URL fails:
   // wsrv.nl -> TMDB origin. Each onError advances one stage. Kept in
@@ -141,9 +161,21 @@ export const BlurredImage = React.memo(function BlurredImage({
   // animation is ever painted. This is what keeps a cached list-scroll from
   // flashing. The reveal below only plays for genuine network loads, where it
   // sits behind real fetch time and reads as a smooth fade.
-  const imgRef = React.useCallback((el: HTMLImageElement | null) => {
-    if (el && el.complete && el.naturalWidth > 0) setLoading(false)
-  }, [])
+  const markLoaded = React.useCallback(
+    (el: HTMLImageElement) => {
+      rememberImage(effectiveSrc, el)
+      setLoading(false)
+    },
+    [effectiveSrc]
+  )
+  const imgRef = React.useCallback(
+    (el: HTMLImageElement | null) => {
+      if (el && el.complete && el.naturalWidth > 0) markLoaded(el)
+    },
+    [markLoaded]
+  )
+  const handleLoad = (event: React.SyntheticEvent<HTMLImageElement>) =>
+    markLoaded(event.currentTarget)
 
   // Intrinsic (width+height) usage — poster cards in grids and rails. Reserve
   // the exact box with `aspect-ratio` BEFORE the image loads (no CLS / no
@@ -156,19 +188,12 @@ export const BlurredImage = React.memo(function BlurredImage({
   const hasIntrinsic =
     typeof props.width === 'number' && typeof props.height === 'number'
 
-  // True for the server render and the hydration pass over it, false for
-  // anything mounted on the client afterwards (a navigation, a remount).
-  const fromServer = React.useSyncExternalStore(
-    subscribeNever,
-    returnFalse,
-    returnTrue
-  )
   // Frozen at mount. A picture that came in the HTML is never hidden, not even
   // on the pass after hydration: it may be half painted, and its blur stand-in
   // is a background on this same element, so going to 0 there would blank the
   // hero at the moment it is most needed. Only a picture mounted by the client
   // has nothing on screen to lose.
-  const [canVeil] = React.useState(!fromServer)
+  const [canVeil] = React.useState(!fromServer && !seen)
   const veiled = isLoading && canVeil
 
   if (intro) {
@@ -193,7 +218,7 @@ export const BlurredImage = React.memo(function BlurredImage({
         alt={alt}
         src={effectiveSrc}
         className={blurClassName}
-        onLoad={() => setLoading(false)}
+        onLoad={handleLoad}
         onError={handleError}
       />
     )
@@ -267,7 +292,7 @@ export const BlurredImage = React.memo(function BlurredImage({
             'object-cover transition-[transform,opacity] duration-500 ease-out',
             veiled ? 'scale-[1.03] opacity-0' : 'scale-100'
           )}
-          onLoad={() => setLoading(false)}
+          onLoad={handleLoad}
           onError={handleError}
         />
       </div>
@@ -298,7 +323,7 @@ export const BlurredImage = React.memo(function BlurredImage({
         alt={alt}
         src={effectiveSrc}
         className={blurClassName}
-        onLoad={() => setLoading(false)}
+        onLoad={handleLoad}
         onError={handleError}
       />
     </>

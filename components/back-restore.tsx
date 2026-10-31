@@ -53,13 +53,11 @@ function arrivedByHistory() {
 export function BackRestore() {
   const pathname = usePathname()
   const lastPath = React.useRef(pathname)
-  const isFirstRun = React.useRef(true)
 
   useIsoLayoutEffect(() => {
-    if (isFirstRun.current) {
-      isFirstRun.current = false
-      return
-    }
+    // Compared, not a first-run flag: Strict Mode runs this twice on mount, and
+    // the second run would forget the place a full-page Back is restoring.
+    if (pathname === lastPath.current) return
     lastPath.current = pathname
     if (isBackPending()) {
       restoreScroll(restoredScroll())
