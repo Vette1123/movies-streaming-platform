@@ -43,6 +43,14 @@ not rise in, and a wordmark already shown is not covered by the plain title.
   "not live" for code that was live. It also exited 0 on timeout. A failing network
   made it look plausible. Ask the deploy run, not the scripts.
 
+- I blamed "not prerendered" for every full-page click before checking. Asking
+  for the `.txt` payload separates them: 10048 is a real tail title (404), 1560520
+  is baked (200), and the one full load of 1560520 came right after a deploy.
+- A full-page Back with no bfcache kept scroll but lost rails and replayed the
+  entrance. It now marks `<html data-returning>` before paint and restores rails
+  after hydration. The slide stays at 1 on purpose: the server renders slide 1, and
+  jumping to the saved one after paint is a worse flash than the reset.
+
 ## What worked
 
 - Sampling on a MessageChannel loop every 16ms. rAF does not run in the hidden

@@ -18,6 +18,12 @@ interface PagePlace {
 const PREFIX = 'reely:place:'
 
 let backPending = false
+let leftLanding = false
+
+// Back with no bfcache is a document load, so React cannot rebuild into the place
+// the way it does on a client Back. This names the document before anything can
+// animate: the CSS turns the rail entrance off in the frame it would have played.
+export const RETURNING_SCRIPT = `try{if(performance.getEntriesByType('navigation')[0].type==='back_forward')document.documentElement.dataset.returning=''}catch(e){}`
 
 const currentPage = () => `${location.pathname}${location.search}`
 
@@ -75,19 +81,31 @@ export function isBackPending() {
   return backPending
 }
 
+export function arrivedByHistory() {
+  const [entry] = performance.getEntriesByType('navigation')
+  const type = (entry as PerformanceNavigationTiming | undefined)?.type
+  return type === 'back_forward' || type === 'reload'
+}
+
+export function leaveLanding(left = true) {
+  leftLanding = left
+}
+
 export function restoredScroll() {
   return readPlace(currentPage())?.y ?? 0
 }
 
 // Only true for a client rebuild, never a hydration: the server always renders
-// slide 0, which is also why a full-page Back keeps its scroll but not its slide.
+// slide 0, and jumping to the saved slide after paint is a worse flash than
+// keeping slide 1, so a full-page Back keeps its scroll and rails but not this.
 export function restoredSlide(slideCount: number) {
   if (!backPending) return 0
   const slide = readPlace(currentPage())?.slide ?? 0
   return slide < slideCount ? slide : 0
 }
 
+// Read after hydration only: a rail's offset is not in the server HTML.
 export function restoredRail(rail: string) {
-  if (!backPending) return 0
+  if (!backPending && (leftLanding || !arrivedByHistory())) return 0
   return readPlace(currentPage())?.rails[rail] ?? 0
 }

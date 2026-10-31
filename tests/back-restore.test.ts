@@ -4,12 +4,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   forgetPage,
   isBackPending,
+  leaveLanding,
   markBack,
   rememberPage,
   rememberSlide,
   restoredRail,
   restoredScroll,
   restoredSlide,
+  RETURNING_SCRIPT,
   settleBack,
 } from '@/lib/back-restore'
 
@@ -23,7 +25,11 @@ beforeEach(() => {
     setItem: (key: string, value: string) => store.set(key, value),
     removeItem: (key: string) => store.delete(key),
   })
+  vi.stubGlobal('performance', {
+    getEntriesByType: () => [{ type: 'navigate' }],
+  })
   settleBack()
+  leaveLanding(false)
 })
 
 describe('the wiring a browser test proved', () => {
@@ -55,7 +61,7 @@ describe('the wiring a browser test proved', () => {
 
   it('brings a scrolled rail back as the real List, posters included', () => {
     expect(read('components/main-page/lazy-rail.tsx')).toContain(
-      'React.useState(() => restoredRail(title) > 0)'
+      '() => isBackPending() && restoredRail(title) > 0'
     )
   })
 
@@ -66,6 +72,47 @@ describe('the wiring a browser test proved', () => {
     ]) {
       expect(read(path)).toContain('data-rail={title}')
     }
+  })
+})
+
+describe('a full-page Back with no bfcache', () => {
+  const landAs = (type: string) =>
+    vi.stubGlobal('performance', { getEntriesByType: () => [{ type }] })
+
+  beforeEach(() => {
+    rememberPage('/', { y: 900, rails: { Trending: 460 } })
+  })
+
+  it('gets its rails back once the page has hydrated', () => {
+    landAs('back_forward')
+    expect(restoredRail('Trending')).toBe(460)
+  })
+
+  it('does not on a fresh load', () => {
+    landAs('navigate')
+    expect(restoredRail('Trending')).toBe(0)
+  })
+
+  it('stops at the first client navigation', () => {
+    landAs('back_forward')
+    leaveLanding()
+    expect(restoredRail('Trending')).toBe(0)
+  })
+
+  it('never moves the hero, which the server rendered at slide 1', () => {
+    landAs('back_forward')
+    rememberSlide(3)
+    expect(restoredSlide(10)).toBe(0)
+  })
+
+  it('marks the document before anything can animate', () => {
+    expect(RETURNING_SCRIPT).toContain('back_forward')
+    expect(readFileSync('styles/globals.css', 'utf8')).toMatch(
+      /\[data-returning\] \.animate-rise-in \{\s+animation: none;/
+    )
+    expect(readFileSync('app/layout.tsx', 'utf8')).toContain(
+      '__html: RETURNING_SCRIPT'
+    )
   })
 })
 

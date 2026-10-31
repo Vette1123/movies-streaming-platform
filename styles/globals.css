@@ -161,6 +161,11 @@
    class, so before hydration (or with JS failing) every section below the
    hero was blank. Now a browser without scroll-driven animations simply shows
    the content, and so does reduced motion. */
+/* A full-page Back has seen this page. See lib/back-restore.ts. */
+[data-returning] .animate-rise-in {
+  animation: none;
+}
+
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .reveal-base {

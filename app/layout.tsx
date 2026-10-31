@@ -8,6 +8,7 @@ import { NuqsAdapter } from 'nuqs/adapters/next/app'
 
 import { siteConfig } from '@/config/site'
 import { APPEARANCE_BOOT_SCRIPT } from '@/lib/appearance'
+import { RETURNING_SCRIPT } from '@/lib/back-restore'
 import { BMC_WIDGET_SCRIPT } from '@/lib/bmc-widget'
 import { fontSans } from '@/lib/fonts'
 import { IMAGE_RESCUE_SCRIPT } from '@/lib/image-rescue'
@@ -290,6 +291,8 @@ export default function RootLayout({ children }: RootLayoutProps) {
           and it does nothing at all for everyone else. See lib/appearance.ts.
         */}
         <script dangerouslySetInnerHTML={{ __html: APPEARANCE_BOOT_SCRIPT }} />
+        {/* Ahead of first paint: see lib/back-restore.ts. */}
+        <script dangerouslySetInnerHTML={{ __html: RETURNING_SCRIPT }} />
         {/* Ahead of every <img>: see lib/image-rescue.ts. */}
         <script dangerouslySetInnerHTML={{ __html: IMAGE_RESCUE_SCRIPT }} />
         {/*

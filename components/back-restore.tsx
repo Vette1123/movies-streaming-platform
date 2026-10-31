@@ -4,8 +4,10 @@ import React from 'react'
 import { usePathname } from 'next/navigation'
 
 import {
+  arrivedByHistory,
   forgetPage,
   isBackPending,
+  leaveLanding,
   markBack,
   pageKey,
   rememberPage,
@@ -39,12 +41,6 @@ function restoreScroll(y: number) {
   )
 }
 
-function arrivedByHistory() {
-  const [entry] = performance.getEntriesByType('navigation')
-  const type = (entry as PerformanceNavigationTiming | undefined)?.type
-  return type === 'back_forward' || type === 'reload'
-}
-
 /**
  * Takes scroll restoration over from the browser, which restores on popstate
  * while the page you are leaving is still on screen. Renders nothing, mounted
@@ -59,6 +55,7 @@ export function BackRestore() {
     // the second run would forget the place a full-page Back is restoring.
     if (pathname === lastPath.current) return
     lastPath.current = pathname
+    leaveLanding()
     if (isBackPending()) {
       restoreScroll(restoredScroll())
       settleBack()
