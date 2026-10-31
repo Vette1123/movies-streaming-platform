@@ -7,8 +7,8 @@ Worked through Bing Webmaster's report for this site.
 - Long synopses cut on a word boundary could land at 148-149, under the 150 floor. A closing
   sentence now refills them, for titles and collections.
 - `/press` was 199 characters. It is now inside the 150-160 window.
-- Removed the `http://` and bare-domain sitemaps from Bing. Both redirect to `www`, and they
-  had inflated its count to 45.8K for about 15K pages.
+- Resubmitted the `www` sitemap to Bing. The `http://` and bare-domain entries redirect to
+  `www` and inflate its count to 45.8K for about 15K pages. They are harmless and still listed.
 
 ## Mistakes
 
