@@ -399,6 +399,10 @@ export const DASHBOARDS = [
  * Daily alerts. Each sits on its own small Trends insight on the Weekly board.
  * Plays use a LOWER bound: a build that fails to boot sends no events, so
  * silence is the only symptom (rafiq's tripwire).
+ *
+ * The plan allows 5 alerts and a sixth is refused with a 400, so a new one must
+ * replace one. Viewers stuck on a lost stream are on the Weekly board instead,
+ * in the `stuck` row of the incidents tile.
  */
 export const ALERTS = [
   {
@@ -453,32 +457,6 @@ export const ALERTS = [
       }),
     },
     upper: 0,
-  },
-  {
-    // A viewer staring at "stream lost" after every reconnect failed.
-    name: 'Spike — more than 3 viewers stuck on a lost stream a day',
-    tile: {
-      name: 'Alert — viewers stuck on a lost stream per day',
-      query: trends({
-        series: [
-          {
-            event: 'player_incident',
-            math: 'dau',
-            name: 'Stuck viewers',
-            properties: [
-              {
-                key: 'step',
-                value: ['stuck'],
-                operator: 'exact',
-                type: 'event',
-              },
-            ],
-          },
-        ],
-        from: '-14d',
-      }),
-    },
-    upper: 3,
   },
   {
     name: 'Spike — exceptions for more than 15 people a day',
