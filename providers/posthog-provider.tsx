@@ -64,18 +64,19 @@ function errorContext(): Record<string, unknown> {
 const POSTHOG_CONFIG = {
   api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST as string,
   ui_host: 'https://eu.posthog.com',
-  // Opt into PostHog's current recommended defaults; explicit options below
-  // still win over anything the preset would set.
-  defaults: '2025-05-24' as ConfigDefaults,
+  // Follow PostHog's newest recommended defaults, so a package bump carries
+  // them too. Explicit options below still win over anything the preset would
+  // set, and every event reports the date applied as $config_defaults.
+  defaults: 'latest' as ConfigDefaults,
   // We fire $pageview manually via <PostHogPageView> so App Router
   // client-side navigations are captured reliably.
   capture_pageview: false,
   capture_pageleave: true,
   // Autocapture every click / input / submit on the page.
   autocapture: true,
-  // Extra engagement signals.
+  // Extra engagement signals. Rage clicks stay on through `defaults`, whose
+  // version ignores steppers and text selection; `rageclick: true` overrode it.
   capture_dead_clicks: true,
-  rageclick: true,
   // Web vitals (LCP, FCP, CLS, INP) as $web_vitals events.
   capture_performance: { web_vitals: true },
   // Heatmaps data.
