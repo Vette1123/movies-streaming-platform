@@ -269,18 +269,23 @@ export const DetailsHero = ({
   // If the house player cannot start — ticket refused, or the worker not
   // configured — fall back to the first embed and
   // let the switcher reflect it, exactly like a stalled server would.
-  const onReelyUnavailable = React.useCallback(() => {
-    if (!sourceControl) return
-    // A free trial cannot "select" its way off - an anonymous visitor has no
-    // switching at all - so leaving the trial is its own exit, back to the
-    // server they had before.
-    if (sourceControl.trial.status === 'active') {
-      sourceControl.trial.end()
-      return
-    }
-    const fallback = sourceControl.sources.find((s) => s.id !== REELY_SOURCE_ID)
-    if (fallback) sourceControl.select(fallback.id, 'stall_auto')
-  }, [sourceControl])
+  const onReelyUnavailable = React.useCallback(
+    (via: 'switcher' | 'stall_auto' = 'stall_auto') => {
+      if (!sourceControl) return
+      // A free trial cannot "select" its way off - an anonymous visitor has no
+      // switching at all - so leaving the trial is its own exit, back to the
+      // server they had before.
+      if (sourceControl.trial.status === 'active') {
+        sourceControl.trial.end()
+        return
+      }
+      const fallback = sourceControl.sources.find(
+        (s) => s.id !== REELY_SOURCE_ID
+      )
+      if (fallback) sourceControl.select(fallback.id, via)
+    },
+    [sourceControl]
+  )
 
   // Bridge the blank gap between "Watch" click and the streaming iframe painting
   // its first frame: show a spinner while the iframe is shown but hasn't loaded.

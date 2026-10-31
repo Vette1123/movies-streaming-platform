@@ -6,6 +6,7 @@ import { REELY_SOURCE_ID } from '@/config/sources'
 import {
   trackPlaybackFinished,
   trackPlayerFailed,
+  trackPlayerIncident,
   trackPlayerStreamPath,
 } from '@/lib/analytics'
 import { STREAM_EMBED_ALLOW } from '@/lib/embed-policy'
@@ -16,6 +17,11 @@ import {
   writePosition,
 } from '@/lib/playback-positions'
 import { prefsFromPlayer, writePlaybackPrefs } from '@/lib/playback-prefs'
+import {
+  incidentFrom,
+  mayLeavePlayer,
+  playbackAdvanced,
+} from '@/lib/player-hop'
 import { takeTicket } from '@/lib/pro/ticket-cache'
 import { type SelfHostTarget } from '@/lib/stream-resolver'
 
@@ -51,7 +57,7 @@ export function ReelyPlayer({
 }: {
   target: SelfHostTarget
   onReady: () => void
-  onUnavailable: () => void
+  onUnavailable: (via?: 'switcher' | 'stall_auto') => void
   /**
    * The title played to the end. Series pages use it to start the next episode
    * when the account asks for that (`prefs.autoNext`); everything else ignores
@@ -138,6 +144,11 @@ export function ReelyPlayer({
       return
     }
 
+    // Reely's own evidence that this stream played, per mounted URL. It does not
+    // take the player's word for it: see lib/player-hop.ts.
+    let lastProgress: number | undefined
+    let sawPlayback = false
+
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== playerOrigin) return
       if (event.source !== frameRef.current?.contentWindow) return
@@ -148,6 +159,9 @@ export function ReelyPlayer({
             t?: number
             dur?: number
             native?: boolean
+            played?: boolean
+            chosen?: boolean
+            step?: unknown
             sub?: unknown
             quality?: unknown
           }
@@ -160,6 +174,8 @@ export function ReelyPlayer({
         target.episode
       )
       if (data.kind === 'progress' && Number.isFinite(data.t)) {
+        if (playbackAdvanced(lastProgress, data.t as number)) sawPlayback = true
+        lastProgress = data.t as number
         const duration = Number.isFinite(data.dur)
           ? (data.dur as number)
           : undefined
@@ -179,6 +195,9 @@ export function ReelyPlayer({
         // trackPlayerStreamPath — this is how a platform change that frees a
         // whole browser family announces itself.
         trackPlayerStreamPath({ native: data.native === true })
+      } else if (data.kind === 'incident') {
+        const incident = incidentFrom(data)
+        if (incident) trackPlayerIncident(incident)
       } else if (data.kind === 'unavailable') {
         // The player booted, and then whatever it framed could not play. Until
         // it could say so, this was the one failure the switcher's stall
@@ -187,10 +206,20 @@ export function ReelyPlayer({
         // moves a visitor off a dead provider never starts. The result was a
         // black rectangle with no warning and no automatic hop — on the one
         // source that supporters are given by default.
-        if (!failed.current) {
+        const viewerChose = data.chosen === true
+        const played = sawPlayback || data.played === true
+        const moved = mayLeavePlayer({ sawPlayback: played, viewerChose })
+        if (failed.current) return
+        trackPlayerFailed({
+          source: REELY_SOURCE_ID,
+          reason: 'unavailable',
+          played,
+          viewer_chose: viewerChose,
+          moved,
+        })
+        if (moved) {
           failed.current = true
-          trackPlayerFailed({ source: REELY_SOURCE_ID, reason: 'unavailable' })
-          unavailableRef.current()
+          unavailableRef.current(viewerChose ? 'switcher' : 'stall_auto')
         }
       }
     }

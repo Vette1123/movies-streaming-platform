@@ -15,6 +15,7 @@ import {
   trackPlayerTrialStarted,
   trackStreamSourceSelected,
 } from '@/lib/analytics'
+import { isViewerChoice } from '@/lib/player-hop'
 import {
   readTrial,
   trialStatus,
@@ -45,7 +46,9 @@ import { useAccount, useAccountIdentity } from '@/hooks/use-account'
  * The supporter difference is the DEFAULT, not a locked door: free accounts
  * switch freely between the embed servers; supporters start on ours.
  */
-const BY_TITLE_KEY = 'reely_stream_source_by_title'
+// v2: automatic hops used to be saved here as if chosen, and an old entry cannot
+// be told from a real pick, so the old map is left behind rather than trusted.
+const BY_TITLE_KEY = 'reely_stream_source_by_title_v2'
 const DEVICE_KEY = 'reely_stream_source'
 
 type ByTitle = Record<string, string>
@@ -154,6 +157,9 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
   // When the trial record was read: the 24h window is judged against the page
   // visit, not re-read from the clock on every render.
   const [trialClock, setTrialClock] = useState(0)
+  // Where an automatic hop put this visit. Never written anywhere: a rescue is
+  // not a choice, see lib/player-hop.ts.
+  const [rescue, setRescue] = useState<{ key: string; id: string } | null>(null)
 
   useEffect(() => {
     // localStorage has no server answer, so the first client pass is the
@@ -205,9 +211,10 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
   // Resolve within the visitor's own list; an id that is not in it (a source
   // remembered before opting out) falls to the site default. A title on its
   // free trial plays on the Reely Player whatever else was remembered.
+  const rescuedId = rescue?.key === mediaKey ? rescue.id : null
   const source =
     (onTrial ? RICH_SOURCE : null) ??
-    sources.find((entry) => entry.id === currentId) ??
+    sources.find((entry) => entry.id === (rescuedId ?? currentId)) ??
     sources[0]
 
   const startTrial = useCallback(() => {
@@ -236,6 +243,11 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
       if (!sources.some((entry) => entry.id === id)) return
       setSwitched(true)
       trackStreamSourceSelected({ source: id, via })
+      if (!isViewerChoice(via)) {
+        setRescue({ key: mediaKey, id })
+        return
+      }
+      setRescue(null)
       // Computed from the state this render already holds rather than inside the
       // updater: an updater has to be pure, and React may run it twice.
       const merged = trim({ ...byTitle, [mediaKey]: id })

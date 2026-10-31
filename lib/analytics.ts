@@ -21,6 +21,7 @@ import {
   getMediaTitle,
   getReleaseYear,
 } from '@/lib/media'
+import type { PlayerIncident } from '@/lib/player-hop'
 import { ph } from '@/lib/posthog-client'
 
 export const EVENTS = {
@@ -71,6 +72,7 @@ export const EVENTS = {
   PWA_PROMPTED: 'pwa_prompted',
   PLAYER_STREAM_PATH: 'player_stream_path',
   PLAYER_FAILED: 'player_failed',
+  PLAYER_INCIDENT: 'player_incident',
   // Support / monetisation. One event with a `surface` property rather than an
   // event per placement: the only question worth asking of it is which surface
   // sends people to the plans, and that is a breakdown, not six funnels.
@@ -170,6 +172,7 @@ export const EVENT_AREA = {
   pwa_prompted: 'pwa',
   player_stream_path: 'playback',
   player_failed: 'playback',
+  player_incident: 'playback',
   support_cta_clicked: 'support',
   support_nudge_shown: 'support',
   newsletter_subscribed: 'support',
@@ -727,8 +730,21 @@ export function trackPlayerStreamPath(props: { native: boolean }): void {
 export function trackPlayerFailed(props: {
   source: string
   reason: 'stall' | 'unavailable'
+  /** The stream had been playing. `played` with `moved: false` is a refused hop. */
+  played?: boolean
+  viewer_chose?: boolean
+  moved?: boolean
 }): void {
   track(EVENTS.PLAYER_FAILED, props)
+}
+
+/**
+ * Every step of a stream going wrong: a stall, each retry, a reload, recovery,
+ * or being stuck. `player_failed` said a stream died and nothing about why, so
+ * the hop of 2026-10-31 could be timed to the millisecond and never explained.
+ */
+export function trackPlayerIncident(incident: PlayerIncident): void {
+  track(EVENTS.PLAYER_INCIDENT, { ...incident })
 }
 
 // ---- Infrastructure ---------------------------------------------------------
