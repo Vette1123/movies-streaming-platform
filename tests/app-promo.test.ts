@@ -3,9 +3,8 @@ import { describe, expect, it } from 'vitest'
 
 import { FEATURE_AREA } from '@/lib/analytics'
 import { COMPANION_APPS, storeHref } from '@/lib/apps'
-import { pickPromo, PROMOS } from '@/lib/promo'
-
-const ROUTES = ['/', '/movies', '/tv-shows', '/movies/123', '/search', '/about']
+import * as promo from '@/lib/promo'
+import { PROMOS } from '@/lib/promo'
 
 describe('App promo', () => {
   it.each(PROMOS)(
@@ -38,12 +37,11 @@ describe('App promo', () => {
     )
   })
 
-  it('picks deterministically per route and shows both apps across the site', () => {
-    for (const route of ROUTES) {
-      expect(pickPromo(route)).toBe(pickPromo(route))
-    }
-    const shown = new Set(ROUTES.map((route) => pickPromo(route).slug))
-    expect(shown).toEqual(new Set(['masareef', 'rafiq']))
+  it('shows both apps on every page, Masareef first', () => {
+    expect(PROMOS.map(({ slug }) => slug)).toEqual(['masareef', 'rafiq'])
+    expect(promo).not.toHaveProperty('pickPromo')
+    const strip = readFileSync('components/app-promo.tsx', 'utf8')
+    expect(strip).toContain('PROMOS.map(')
   })
 
   it('measures both events and is mounted in the footer', () => {

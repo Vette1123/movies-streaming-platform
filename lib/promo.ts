@@ -1,6 +1,5 @@
-// Data for the footer cross-promo strip. The footer has one slot, so the app
-// shown is a pure function of the route: the server and the client agree, and
-// each page keeps the same app on every visit.
+// Data for the footer cross-promo strip. Every app shows on every page, and
+// the order here is the order on screen.
 export interface Promo {
   slug: string
   name: string
@@ -31,12 +30,3 @@ export const PROMOS: Promo[] = [
     size: 96,
   },
 ]
-
-/** Stable pick per route (djb2 hash), so both apps rotate across the site. */
-export function pickPromo(pathname: string): Promo {
-  let hash = 5381
-  for (let i = 0; i < pathname.length; i++) {
-    hash = (hash * 33 + pathname.charCodeAt(i)) >>> 0
-  }
-  return PROMOS[hash % PROMOS.length]
-}
