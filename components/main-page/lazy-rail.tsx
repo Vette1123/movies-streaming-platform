@@ -35,13 +35,22 @@ export function LazyRail({ title, items, itemType = 'movie' }: LazyRailProps) {
   const ref = React.useRef<HTMLDivElement>(null)
   // A rail you scrolled returns as the real List at once: the static twin only
   // has its first posters, so Back would land on empty boxes.
-  const [active, setActive] = React.useState(() => restoredRail(title) > 0)
+  const [active, setActive] = React.useState(
+    () => isBackPending() && restoredRail(title) > 0
+  )
   const [rebuilt] = React.useState(isBackPending)
 
   React.useEffect(() => {
     if (active) return
     const el = ref.current
     if (!el) return
+
+    // A full-page Back hydrates the static twin, which must match the server, so
+    // this is the first moment the real List can take the saved offset.
+    if (restoredRail(title) > 0) {
+      queueMicrotask(() => setActive(true))
+      return
+    }
 
     // Never before the page has loaded, even for the rail on screen. Its static
     // twin looks identical and its links work, and building twenty Cards is the
@@ -70,7 +79,7 @@ export function LazyRail({ title, items, itemType = 'movie' }: LazyRailProps) {
       cancel()
       io?.disconnect()
     }
-  }, [active])
+  }, [active, title])
 
   // One stable wrapper element across the swap keeps the observer target and the
   // layout box constant (the ref never detaches, no CLS at the swap point).
