@@ -18,6 +18,7 @@ import {
 } from '@/lib/structured-data'
 import { cn } from '@/lib/utils'
 import { AccountBoot } from '@/components/account/account-boot'
+import { BackRestore } from '@/components/back-restore'
 import { IconSprite } from '@/components/icon-sprite'
 import { Footer } from '@/components/layouts/footer'
 import { SiteHeader } from '@/components/layouts/site-header'
@@ -383,6 +384,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           {/* Renders nothing: the view-transition abort guard, so a skipped
               transition cannot become an unhandled rejection (lib/view-transition.ts). */}
           <ViewTransitionGuard />
+          <BackRestore />
           {/* Renders nothing: library sync + appearance, mounted once. */}
           <AccountBoot />
         </div>

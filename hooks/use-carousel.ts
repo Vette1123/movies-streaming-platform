@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PanInfo } from 'framer-motion'
 
+import { rememberSlide, restoredSlide } from '@/lib/back-restore'
 import { useMounted } from '@/hooks/use-mounted'
 
 interface UseCarouselProps {
@@ -21,10 +22,13 @@ export const useCarousel = ({
   autoPlayInterval = 5000,
   externalPaused = false,
 }: UseCarouselProps) => {
-  // Always start at slide 0 on load. The server renders slide 0 (the priority /
-  // LCP image), so the first frame is correct and decoded fast — no restore
-  // jump, no flash. Slide 0 is also the freshest trending title.
-  const [currentIndex, setCurrentIndex] = useState(0)
+  // Start at slide 0 on load. The server renders slide 0 (the priority / LCP
+  // image), so the first frame is correct and decoded fast — no restore jump, no
+  // flash. Slide 0 is also the freshest trending title. Back is a client rebuild
+  // with nothing to hydrate, so it can start where you left.
+  const [currentIndex, setCurrentIndex] = useState(() =>
+    restoredSlide(childrenCount)
+  )
   const [isUserInteracting, setIsUserInteracting] = useState(false)
   const [isTabHidden, setIsTabHidden] = useState(false)
   // Is the stage itself on screen? See the observer below.
@@ -96,6 +100,10 @@ export const useCarousel = ({
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
+
+  useEffect(() => {
+    rememberSlide(currentIndex)
+  }, [currentIndex])
 
   // Memoized values for performance
   const hasMultipleSlides = useMemo(() => childrenCount > 1, [childrenCount])

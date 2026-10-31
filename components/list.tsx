@@ -15,6 +15,7 @@ import {
   railEntranceDelay,
 } from '@/lib/rail-scroll'
 import { cn, itemRedirect } from '@/lib/utils'
+import { useRailRestore } from '@/hooks/use-rail-restore'
 import { Card } from '@/components/card'
 import { SeeAllLink } from '@/components/see-all-link'
 
@@ -48,6 +49,7 @@ export const List = ({
   entrance = true,
 }: ListProps) => {
   const railRef = React.useRef<HTMLDivElement>(null)
+  useRailRestore(railRef, title)
   const [canLeft, setCanLeft] = React.useState(false)
   const [canRight, setCanRight] = React.useState(false)
 
@@ -231,6 +233,7 @@ export const List = ({
               bled-out padding edge. Scrollbar hidden via .no-scrollbar. */}
           <div
             ref={railRef}
+            data-rail={title}
             onScroll={syncArrows}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}

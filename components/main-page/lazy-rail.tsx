@@ -4,6 +4,7 @@ import React from 'react'
 
 import { MediaType } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
+import { restoredRail } from '@/lib/back-restore'
 import { onIdleAfterLoad } from '@/lib/idle'
 import { List } from '@/components/list'
 import { StaticRail } from '@/components/main-page/static-rail'
@@ -32,7 +33,9 @@ const ROOT_MARGIN = '800px 0px'
  */
 export function LazyRail({ title, items, itemType = 'movie' }: LazyRailProps) {
   const ref = React.useRef<HTMLDivElement>(null)
-  const [active, setActive] = React.useState(false)
+  // A rail you scrolled returns as the real List at once: the static twin only
+  // has its first posters, so Back would land on empty boxes.
+  const [active, setActive] = React.useState(() => restoredRail(title) > 0)
 
   React.useEffect(() => {
     if (active) return
