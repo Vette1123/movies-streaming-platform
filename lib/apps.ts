@@ -129,6 +129,9 @@ export const EXTERNAL_LINKS: ExternalLink[] = [
   },
 ]
 
+const isAndroid = (ua: string) => /android/i.test(ua)
+const isApplePhone = (ua: string) => /iPad|iPhone|iPod/.test(ua)
+
 /**
  * Open an app's listing on the store the reader can actually install from.
  *
@@ -141,13 +144,14 @@ export const EXTERNAL_LINKS: ExternalLink[] = [
  *   says "Android" beats a silent no-op.
  * - Desktop: the chooser page, which puts the reader's own store one tap away
  *   on whichever phone they open it on. A Play URL here dead-ended every
- *   iPhone.
+ *   iPhone. A button has no href to fall back on, so if a popup blocker
+ *   returns null this tab goes there rather than doing nothing.
  */
 export function openStoreListing(app: CompanionApp): void {
   if (typeof window === 'undefined') return
 
   const ua = window.navigator.userAgent
-  if (/android/i.test(ua)) {
+  if (isAndroid(ua)) {
     const fallback = window.setTimeout(() => {
       window.location.href = app.playStoreUrl
     }, 1200)
@@ -162,9 +166,27 @@ export function openStoreListing(app: CompanionApp): void {
     return
   }
 
-  const isApplePhone = /iPad|iPhone|iPod/.test(ua)
-  const target = isApplePhone
+  const target = isApplePhone(ua)
     ? (app.appStoreUrl ?? app.playStoreUrl)
     : storeHref(app)
-  window.open(target, '_blank', 'noopener,noreferrer')
+  // No 'noopener' feature: it makes open() return null even on success, which
+  // would hide a blocked popup. Clearing opener gives the same protection.
+  const opened = window.open(target, '_blank')
+  if (opened) opened.opener = null
+  else window.location.href = target
+}
+
+/**
+ * The click handler for a real anchor. Only a phone needs JavaScript, to reach
+ * its store app. Everywhere else the browser follows the href itself: cancelling
+ * that for window.open put a working link at the mercy of every popup blocker.
+ */
+export function onStoreLinkClick(
+  event: { preventDefault: () => void },
+  app: CompanionApp
+): void {
+  const ua = window.navigator.userAgent
+  if (!isAndroid(ua) && !isApplePhone(ua)) return
+  event.preventDefault()
+  openStoreListing(app)
 }
