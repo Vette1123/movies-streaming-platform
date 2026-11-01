@@ -78,6 +78,8 @@ The embed provider list lives in `config/sources.ts` and comes **entirely from t
 
 **A stream that has played is the viewer's: nothing automatic may leave it.** The player plays out its buffer, reconnects with a fresh URL at the same second, then asks (`deadEndStep` in the player's `src/recovery.mjs`, enforced in its `fatal()`). Reely holds the second lock from its own progress evidence (`mayLeavePlayer` in `lib/player-hop.ts`). Only a boot failure hops, and an automatic hop lasts for the visit and saves nothing (`isViewerChoice`): only a click writes a server. Each failure step is a `player_incident` event, and `Tripwire — a viewer lost a playing stream` must stay at zero. `pnpm hop:probe` proves all of it end to end.
 
+**Skip intro has no timing data of its own.** The player's Worker asks two free crowd-sourced databases per episode (`/api/stream/skips`, IntroDB by IMDb id, TheIntroDB by TMDB id), cleans the junk in `src/skips.mjs` and caches a day per colo. It is series only, tap-to-skip by default, and `autoSkip` is off until chosen, because a provider's cut can sit seconds from the timings. A lookup failure means no button, never anything else. `feature_used {feature: 'skip_intro'}` counts offers and uses.
+
 ### Kodi add-on
 
 `kodi/plugin.video.reely` is a supporter-only add-on (Kodi 19+; Vega OS Fire TVs cannot run Kodi). A TV signs in by device code at `/link`, and its token is an ordinary `sessions` row sent as a bearer (`lib/auth/device.ts`). Embeds can never play in Kodi, so it only reaches the Reely Player. `pnpm kodi:probe` proves every path against production. See `docs/kodi.md`.

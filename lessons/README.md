@@ -143,3 +143,4 @@ with the work, not after.
 | 2026-10-31 | [A rescue is not a choice](2026-10-31-a-rescue-is-not-a-choice.md) | Reely hopped a viewer off a stream that had played for nine minutes and saved the hop as their choice; a played stream now leaves only when asked, and an automatic hop saves nothing. |
 | 2026-10-31 | [Pull request CI for bot PRs](2026-10-31-pull-request-ci.md) | Dependabot PRs read Dependabot secrets, and a first CI run is a test of the job: dispatch it on main and read it |
 | 2026-11-01 | [Player options reach the account](2026-11-01-player-options-reach-the-account.md) | The account route silently dropped every playback field but two; one closed-set module now feeds the panel, prefs, route and ticket, pinned by a test seen red. |
+| 2026-11-01 | [Skip intro](2026-11-01-skip-intro.md) | Saying there was no data was never checked; `autoSkip` joined the closed list and reports count offers and uses. |

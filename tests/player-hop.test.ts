@@ -7,6 +7,7 @@ import {
   isViewerChoice,
   mayLeavePlayer,
   playbackAdvanced,
+  skipReportFrom,
 } from '@/lib/player-hop'
 
 const source = (file: string) =>
@@ -72,6 +73,20 @@ describe('saving a server', () => {
     ]) {
       expect(hook.indexOf(write)).toBeGreaterThan(guard)
     }
+  })
+})
+
+describe('skip reports', () => {
+  it('keeps the two closed sets and nothing else', () => {
+    expect(
+      skipReportFrom({ segment: 'recap', how: 'auto', title: 'leak' })
+    ).toEqual({ segment: 'recap', action: 'auto' })
+  })
+
+  it('drops anything outside them', () => {
+    expect(skipReportFrom({ segment: 'credits', how: 'tap' })).toBeNull()
+    expect(skipReportFrom({ segment: 'intro', how: 'https://x' })).toBeNull()
+    expect(skipReportFrom({})).toBeNull()
   })
 })
 

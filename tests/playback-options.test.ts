@@ -88,6 +88,24 @@ describe('playerParams', () => {
   })
 })
 
+describe('auto skip', () => {
+  it('travels both ways on the ticket, and only as a boolean', () => {
+    expect(Object.fromEntries(playerParams({ autoSkip: true }))).toEqual({
+      as: '1',
+    })
+    expect(Object.fromEntries(playerParams({ autoSkip: false }))).toEqual({
+      as: '0',
+    })
+    expect(playerParams({ autoSkip: 'yes' })).toEqual([])
+  })
+
+  it('survives the account route', () => {
+    expect(normalisePrefs({ playback: { autoSkip: true } })?.playback).toEqual({
+      autoSkip: true,
+    })
+  })
+})
+
 describe('the account route', () => {
   it('saves every option, not just the subtitle pair', () => {
     expect(normalisePrefs({ playback: everything })?.playback).toEqual(

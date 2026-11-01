@@ -67,6 +67,16 @@ const count = (value: unknown): number | undefined =>
     ? Math.round(value)
     : undefined
 
+const SKIP_SEGMENTS = ['intro', 'recap'] as const
+const SKIP_ACTIONS = ['offered', 'tap', 'key', 'auto'] as const
+
+/** A skip report from the player, or null for anything outside the two sets. */
+export function skipReportFrom(data: Record<string, unknown>) {
+  const segment = SKIP_SEGMENTS.find((known) => known === data.segment)
+  const action = SKIP_ACTIONS.find((known) => known === data.how)
+  return segment && action ? { segment, action } : null
+}
+
 /**
  * Enums and counts only, whatever arrives. The message comes from our own
  * origin, but this is what stands between a future field and PostHog: a stream
