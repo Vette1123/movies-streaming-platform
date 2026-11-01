@@ -4,6 +4,7 @@ import * as React from 'react'
 
 import { REELY_SOURCE_ID } from '@/config/sources'
 import {
+  trackFeatureUsed,
   trackPlaybackFinished,
   trackPlayerFailed,
   trackPlayerIncident,
@@ -21,6 +22,7 @@ import {
   incidentFrom,
   mayLeavePlayer,
   playbackAdvanced,
+  skipReportFrom,
 } from '@/lib/player-hop'
 import { takeTicket } from '@/lib/pro/ticket-cache'
 import { type SelfHostTarget } from '@/lib/stream-resolver'
@@ -190,6 +192,9 @@ export function ReelyPlayer({
         // NEXT boot - next episode, next title, another device - starts there.
         const patch = prefsFromPlayer(data)
         if (patch) void writePlaybackPrefs(patch)
+      } else if (data.kind === 'skip') {
+        const skip = skipReportFrom(data)
+        if (skip) trackFeatureUsed({ feature: 'skip_intro', ...skip })
       } else if (data.kind === 'capability') {
         // Counts the one thing that decides what a viewer costs us. See
         // trackPlayerStreamPath — this is how a platform change that frees a

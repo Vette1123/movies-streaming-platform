@@ -308,6 +308,13 @@ function ReelySection() {
           onChange={(night) => setPref({ night })}
         />
 
+        <SettingSwitch
+          label="Skip intros automatically"
+          description="Jumps a series' intro and recap without waiting for you to press Skip. Timings come from viewers, so now and then one can land a few seconds off."
+          checked={current.autoSkip === true}
+          onChange={(autoSkip) => setPref({ autoSkip })}
+        />
+
         <SettingRow
           label="Progress bar in full screen"
           description="The thin line that stays lit at the bottom of the picture once the controls fade."

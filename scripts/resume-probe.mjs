@@ -108,6 +108,8 @@ const answer = (path, body) => {
     if (body.playback?.boost) params.set('boost', String(body.playback.boost))
     if (typeof body.playback?.night === 'boolean')
       params.set('nm', body.playback.night ? '1' : '0')
+    if (typeof body.playback?.autoSkip === 'boolean')
+      params.set('as', body.playback.autoSkip ? '1' : '0')
     if (typeof body.playback?.miniBar === 'boolean')
       params.set('mini', body.playback.miniBar ? '1' : '0')
     return { success: true, url: `${PLAYER}/play?${params}` }

@@ -44,6 +44,11 @@ export interface PlaybackPrefs {
   boost?: number
   /** Loud scenes down, quiet dialogue up. */
   night?: boolean
+  /**
+   * Jump intros and recaps without the button. Off by default: the timings are
+   * crowd-sourced and a provider's cut can sit seconds away from them.
+   */
+  autoSkip?: boolean
 }
 
 export const SUB_SIZES = [
@@ -159,6 +164,7 @@ export function validPlaybackPrefs(input: unknown): PlaybackPrefs {
   }
   if (hasLevel(BOOST_LEVELS, raw.boost)) out.boost = raw.boost as number
   if (typeof raw.night === 'boolean') out.night = raw.night
+  if (typeof raw.autoSkip === 'boolean') out.autoSkip = raw.autoSkip
   return out
 }
 
@@ -184,6 +190,9 @@ export function playerParams(input: unknown): [string, string][] {
     params.push(['mini', prefs.miniBar ? '1' : '0'])
   }
   if (prefs.night !== undefined) params.push(['nm', prefs.night ? '1' : '0'])
+  if (prefs.autoSkip !== undefined) {
+    params.push(['as', prefs.autoSkip ? '1' : '0'])
+  }
   return params.filter((entry): entry is [string, string] => Boolean(entry[1]))
 }
 
