@@ -11,6 +11,18 @@ import {
 } from '@/config/sources'
 import { savePrefs } from '@/lib/account'
 import {
+  BOOST_LEVELS,
+  BRIGHTNESS_LEVELS,
+  DEFAULT_BOOST,
+  FITS,
+  MINI_BAR,
+  QUALITY_CHOICES,
+  SUB_BACKS,
+  SUB_COLORS,
+  SUB_SIZES,
+  subtitlePreviewStyle,
+} from '@/lib/playback-options'
+import {
   readPlaybackPrefs,
   writePlaybackPrefs,
   type PlaybackPrefs,
@@ -38,17 +50,6 @@ import { SupporterGate } from './supporter-gate'
  * on those — but which server a stream comes from is ours to choose, and
  * everything about the Reely Player is ours to choose.
  */
-
-const SUB_SIZES = [
-  { id: 's', label: 'Small' },
-  { id: 'm', label: 'Medium' },
-  { id: 'l', label: 'Large' },
-] as const
-
-const MINI_BAR = [
-  { id: 'hidden', label: 'Hidden' },
-  { id: 'shown', label: 'Shown' },
-] as const
 
 export function PlaybackPanel() {
   const { pro, prefs } = useAccount()
@@ -201,7 +202,9 @@ function ReelySection() {
       <SectionHead title="Reely Player" Icon={Sparkles} badge={<ProBadge />}>
         Our own player: faster to start, resumes where you stopped, and puts
         subtitles in your language on titles that ship with none. These settings
-        follow your account onto every device.
+        follow your account onto every device. Subtitle timing and the sleep
+        timer belong to one viewing, so they live in the player&rsquo;s own
+        settings.
       </SectionHead>
 
       <SettingGroup>
@@ -226,6 +229,85 @@ function ReelySection() {
           />
         </SettingRow>
 
+        <SettingRow label="Subtitle colour">
+          <ChoiceChips
+            ariaLabel="Subtitle colour"
+            options={SUB_COLORS}
+            value={current.subColor ?? 'white'}
+            onSelect={(subColor) => setPref({ subColor })}
+          />
+        </SettingRow>
+
+        <SettingRow label="Subtitle background">
+          <ChoiceChips
+            ariaLabel="Subtitle background"
+            options={SUB_BACKS}
+            value={current.subBack ?? 'box'}
+            onSelect={(subBack) => setPref({ subBack })}
+          />
+        </SettingRow>
+
+        <SubtitlePreview prefs={current} />
+      </SettingGroup>
+
+      <SettingGroup>
+        <SettingRow
+          label="Starting quality"
+          description="Auto follows your connection. A fixed quality uses the closest one a title has at or under it."
+        >
+          <ChoiceChips
+            ariaLabel="Starting quality"
+            options={QUALITY_CHOICES}
+            value={current.quality ? String(current.quality) : 'auto'}
+            onSelect={(id) =>
+              setPref({ quality: id === 'auto' ? undefined : Number(id) })
+            }
+          />
+        </SettingRow>
+
+        <SettingRow
+          label="Picture size"
+          description="Fill screen crops the edges to lose the black bars. The two ratios reshape the picture for a title that came out stretched."
+        >
+          <ChoiceChips
+            ariaLabel="Picture size"
+            options={FITS}
+            value={current.fit ?? 'fit'}
+            onSelect={(fit) => setPref({ fit })}
+          />
+        </SettingRow>
+
+        <SettingRow
+          label="Brightness"
+          description="A lift for titles graded too dark to follow on a phone or in a bright room."
+        >
+          <ChoiceChips
+            ariaLabel="Brightness"
+            options={BRIGHTNESS_LEVELS}
+            value={String(current.brightness ?? 1)}
+            onSelect={(id) => setPref({ brightness: Number(id) })}
+          />
+        </SettingRow>
+
+        <SettingRow
+          label="Volume boost"
+          description="Goes past the device's maximum for quiet streams. Some phones, iPhones included, stay at their own maximum."
+        >
+          <ChoiceChips
+            ariaLabel="Volume boost"
+            options={BOOST_LEVELS}
+            value={String(current.boost ?? DEFAULT_BOOST)}
+            onSelect={(id) => setPref({ boost: Number(id) })}
+          />
+        </SettingRow>
+
+        <SettingSwitch
+          label="Night mode"
+          description="Brings explosions down and dialogue up, so nothing wakes the house. Needs the same sound control as the volume boost."
+          checked={current.night === true}
+          onChange={(night) => setPref({ night })}
+        />
+
         <SettingRow
           label="Progress bar in full screen"
           description="The thin line that stays lit at the bottom of the picture once the controls fade."
@@ -238,6 +320,21 @@ function ReelySection() {
           />
         </SettingRow>
       </SettingGroup>
+    </div>
+  )
+}
+
+/** Colour and background are a judgement call, so show the result. */
+function SubtitlePreview({ prefs }: { prefs: PlaybackPrefs }) {
+  return (
+    <div className="flex min-h-24 items-end justify-center bg-linear-to-br from-slate-500 via-stone-700 to-zinc-900 p-4">
+      <p
+        dir="auto"
+        className="rounded-[0.28em] px-[0.5em] py-[0.16em] text-center leading-snug font-semibold"
+        style={subtitlePreviewStyle(prefs)}
+      >
+        This is how subtitles will look
+      </p>
     </div>
   )
 }

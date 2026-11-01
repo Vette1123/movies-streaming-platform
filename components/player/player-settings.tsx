@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ExternalLink, Settings2 } from 'lucide-react'
 
 import { savePrefs } from '@/lib/account'
+import { MINI_BAR, SUB_SIZES } from '@/lib/playback-options'
 import {
   readPlaybackPrefs,
   writePlaybackPrefs,
@@ -39,17 +40,6 @@ import { SubtitleSelect } from '@/components/account/subtitle-select'
  * the Reely Player is theirs. Non-supporters get the server buttons next door
  * and nothing that pretends to be a control over an embed we do not own.
  */
-const SUB_SIZES = [
-  { id: 's', label: 'Small' },
-  { id: 'm', label: 'Medium' },
-  { id: 'l', label: 'Large' },
-] as const
-
-const MINI_BAR = [
-  { id: 'hidden', label: 'Hidden' },
-  { id: 'shown', label: 'Shown' },
-] as const
-
 export function PlayerSettings({
   isSeries,
   onNeedsReload,
