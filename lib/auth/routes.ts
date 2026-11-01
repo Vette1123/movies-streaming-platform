@@ -13,6 +13,7 @@ import { isEntitled, isProAt } from '@/lib/billing/entitlement'
 import { referralEarnsMonth, referrerLookup } from '@/lib/billing/gifts'
 import { grantMonths } from '@/lib/billing/months'
 import { normalisePresets } from '@/lib/filter-presets'
+import { validPlaybackPrefs } from '@/lib/playback-options'
 import { normaliseQuietHours } from '@/lib/push/quiet'
 import { ACCESS_TOKEN_TTL_MS, signToken } from '@/lib/token'
 
@@ -569,24 +570,10 @@ export function normalisePrefs(value: unknown): Record<string, unknown> | null {
   // grow the column or carry anything but its own meaning; whether it grants
   // anything is decided by entitlement at read time, never by this flag.
   if (typeof input.richPlayer === 'boolean') out.richPlayer = input.richPlayer
-  // Reely Player preferences. Both values are from closed sets, so neither
-  // can grow the column or smuggle markup into the player URL.
-  if (input.playback !== undefined && input.playback !== null) {
-    if (typeof input.playback === 'object' && !Array.isArray(input.playback)) {
-      const pb = input.playback as Record<string, unknown>
-      const playback: Record<string, unknown> = {}
-      if (
-        pb.sub === 'off' ||
-        (typeof pb.sub === 'string' && /^[a-z]{2}$/.test(pb.sub))
-      ) {
-        playback.sub = pb.sub
-      }
-      if (pb.subSize === 's' || pb.subSize === 'm' || pb.subSize === 'l') {
-        playback.subSize = pb.subSize
-      }
-      if (Object.keys(playback).length > 0) out.playback = playback
-    }
-  }
+  // Reely Player preferences. Closed sets, so nothing can grow the column or
+  // smuggle markup into the player URL.
+  const playback = validPlaybackPrefs(input.playback)
+  if (Object.keys(playback).length > 0) out.playback = playback
   return out
 }
 

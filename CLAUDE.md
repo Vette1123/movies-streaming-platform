@@ -96,6 +96,7 @@ The strip is **server-rendered into the prerendered pages**: zero Worker CPU, ze
 
 ### Client state & URL
 
+- **Reely Player options are one closed-set list, `lib/playback-options.ts`**, read by the account panel, `lib/playback-prefs.ts`, `normalisePrefs` in `lib/auth/routes.ts` and the ticket mint. A new option goes there and in the player's `src/player-options.mjs`; a field missing from the server's list looks saved and never syncs.
 - **Filters/search state live in the URL via `nuqs`** (shareable, back-button friendly). Transient UI chrome (open accordions) is deliberately kept out of the URL. The browse filter sidebar is **CSR-hydrated** (nuqs `useSearchParams` bailout) — curl / prod-SSR cannot render its state, so **verify filters in a real browser only**.
 - Personal data (watchlist, watch history, recent searches) is **localStorage-only, no account/server** — see `hooks/use-watchlist.ts`, `use-watched-media.ts`, `use-recent-searches.ts` and `use-local-storage.ts`.
 - TanStack Query drives infinite scroll (`use-infinite-scroll.ts` + `react-intersection-observer`).

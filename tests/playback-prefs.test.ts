@@ -91,6 +91,30 @@ describe('prefsFromPlayer', () => {
   })
 })
 
+describe('prefsFromPlayer settings panel', () => {
+  it('takes every option the player panel reports', () => {
+    expect(
+      prefsFromPlayer({
+        source: 'reely-player',
+        kind: 'prefs',
+        subColor: 'cyan',
+        subBack: 'soft',
+        fit: 'fill',
+        brightness: 1.4,
+        boost: 1,
+        night: false,
+      })
+    ).toEqual({
+      subColor: 'cyan',
+      subBack: 'soft',
+      fit: 'fill',
+      brightness: 1.4,
+      boost: 1,
+      night: false,
+    })
+  })
+})
+
 describe('cleanPrefs', () => {
   it('keeps an explicit "bar off", so the account can say it', () => {
     expect(cleanPrefs({ miniBar: false })).toHaveProperty('miniBar', false)

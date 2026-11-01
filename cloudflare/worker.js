@@ -65,6 +65,7 @@ import {
   parseMosaicCard,
 } from '@/lib/og/mosaic'
 import { shareImageOf } from '@/lib/og/share-image'
+import { playerParams } from '@/lib/playback-options'
 import { signEntryTicket } from '@/lib/pro/playback-ticket'
 import { sweepPlayerTrials, ticketDenial } from '@/lib/pro/ticket-access'
 import { loadPublicProfile } from '@/lib/profile/routes'
@@ -1586,9 +1587,6 @@ async function handleListsDirectory(request, env, ctx, url) {
   )
 }
 
-/** The rungs the player can pin (reely-pro-player src/quality.mjs). */
-const PLAYER_QUALITY_RUNGS = [4320, 2160, 1440, 1080, 720, 480, 360, 240, 144]
-
 /**
  * POST /api/pro/ticket — mint one 90-second playback ticket for the private
  * player worker.
@@ -1727,32 +1725,8 @@ async function handleProTicket(request, env, url) {
   }
   // Playback prefs ride along so the player applies them on boot without a
   // round trip of its own. See lib/playback-prefs.ts for where they come from.
-  const prefs = body.playback
-  if (prefs && typeof prefs === 'object') {
-    if (typeof prefs.sub === 'string' && prefs.sub.length <= 5) {
-      params.set('sub', prefs.sub)
-    }
-    if (
-      prefs.subSize === 's' ||
-      prefs.subSize === 'm' ||
-      prefs.subSize === 'l'
-    ) {
-      params.set('subs', prefs.subSize)
-    }
-    // Both values travel. Every toggle, the player's own included, now lands
-    // in the account, so it is the newest choice and the player obeys it over
-    // its device copy; absent means nobody has chosen.
-    if (typeof prefs.miniBar === 'boolean') {
-      params.set('mini', prefs.miniBar ? '1' : '0')
-    }
-    // A quality rung picked in the player (1080 = 1080p). Absent is Auto.
-    if (PLAYER_QUALITY_RUNGS.includes(prefs.quality)) {
-      params.set('q', String(prefs.quality))
-    }
-    // The audio language picked in the player's audio menu (ISO code).
-    if (typeof prefs.audio === 'string' && /^[a-z]{2,3}$/.test(prefs.audio)) {
-      params.set('al', prefs.audio)
-    }
+  for (const [name, value] of playerParams(body.playback)) {
+    params.set(name, value)
   }
 
   return new Response(
