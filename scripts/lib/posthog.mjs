@@ -17,6 +17,13 @@ loadLocalEnv()
  */
 export const HUMAN_TRAFFIC_SINCE = '2026-09-02'
 
+/**
+ * TRUE for an event after the bot block. Also a project test-account filter
+ * (posthog:setup), so a Trends/Lifecycle tile with a 90-day window does not
+ * draw the August fleet as 90,000 "users" and its departure as churn.
+ */
+export const AFTER_BOT_BLOCK = `timestamp > toDateTime('${HUMAN_TRAFFIC_SINCE}')`
+
 /** Our own and test browsers — the project's "Internal / Test users" cohort. */
 export const TEST_COHORT_ID = 173293
 
@@ -33,7 +40,7 @@ export const NOT_FLEET = `NOT (properties.$os IN ('Windows', 'Mac OS X', 'Linux'
  * Drop-in WHERE clause for "people, not us and not a bot fleet".
  * Expand `{humans}` in any query with it.
  */
-export const HUMANS = `timestamp > toDateTime('${HUMAN_TRAFFIC_SINCE}') AND (person_id IS NULL OR person_id NOT IN COHORT ${TEST_COHORT_ID}) AND ${NOT_FLEET}`
+export const HUMANS = `${AFTER_BOT_BLOCK} AND (person_id IS NULL OR person_id NOT IN COHORT ${TEST_COHORT_ID}) AND ${NOT_FLEET}`
 
 const POLL_MS = 2000
 const POLL_LIMIT = 90
@@ -116,9 +123,20 @@ export async function phList(cfg, path) {
  */
 export async function runQuery(cfg, sql) {
   const query = sql.replaceAll('{humans}', HUMANS)
+  const { rows, columns } = await runNode(cfg, { kind: 'HogQLQuery', query })
+  return rows.map((row) =>
+    Object.fromEntries(columns.map((column, i) => [column, row[i]]))
+  )
+}
+
+/**
+ * Run any query node (HogQL, Trends, Funnels, Retention...) with the async
+ * handshake. Returns the raw `results`, plus `columns` for HogQL.
+ */
+export async function runNode(cfg, node) {
   let body = await phApi(cfg, '/query/', {
     method: 'POST',
-    body: { query: { kind: 'HogQLQuery', query }, refresh: 'async' },
+    body: { query: node, refresh: 'async' },
   })
   const id = body.query_status?.id || body.id
   for (let i = 0; i < POLL_LIMIT; i += 1) {
@@ -146,10 +164,7 @@ export async function runQuery(cfg, sql) {
       `Query result was truncated at ${rows.length} rows — add or raise the LIMIT.`
     )
   }
-  const columns = payload.columns || body.columns || []
-  return rows.map((row) =>
-    Object.fromEntries(columns.map((column, i) => [column, row[i]]))
-  )
+  return { rows, columns: payload.columns || body.columns || [] }
 }
 
 /** Pipe-separated table, long cells cut, nulls as "-". */
