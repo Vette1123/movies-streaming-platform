@@ -15,6 +15,22 @@ import {
   PROJECT_SETTINGS,
 } from '../scripts/posthog-dashboards.mjs'
 
+// The spec is plain JS; this is the slice of a tile the checks read.
+type Tile = {
+  name?: string
+  section?: string
+  query?: {
+    kind: string
+    display?: string
+    chartSettings?: {
+      xAxis: { column: string }
+      yAxis: { column: string }[]
+    }
+    source: { kind: string; query?: string; filterTestAccounts?: boolean }
+  }
+}
+const tilesOf = (board: { tiles: unknown[] }) => board.tiles as Tile[]
+
 type Box = { x: number; y: number; w: number; h: number }
 const overlaps = (a: Box, b: Box) =>
   a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h
@@ -72,34 +88,36 @@ describe('the dashboard spec', () => {
     })
 
     it(`${board.name}: tile names are unique (setup matches by name)`, () => {
-      const names = board.tiles.filter((t) => t.query).map((t) => t.name)
+      const names = tilesOf(board)
+        .filter((t) => t.query)
+        .map((t) => t.name)
       expect(new Set(names).size).toBe(names.length)
     })
 
     it(`${board.name}: every HogQL chart names its axes, from its own columns`, () => {
       // Without chartSettings PostHog folded a 62-row line into one dot.
-      const charts = board.tiles.filter(
+      const charts = tilesOf(board).filter(
         (t) =>
           t.query?.kind === 'DataVisualizationNode' &&
-          !['ActionsTable', 'BoldNumber'].includes(t.query.display)
+          !['ActionsTable', 'BoldNumber'].includes(t.query.display ?? '')
       )
       for (const tile of charts) {
-        const settings = tile.query.chartSettings
-        expect(settings, tile.name).toBeDefined()
+        const settings = tile.query?.chartSettings
+        if (!settings) throw new Error(`${tile.name}: no chartSettings`)
         const columns = [
           settings.xAxis.column,
-          ...settings.yAxis.map((y: { column: string }) => y.column),
+          ...settings.yAxis.map((y) => y.column),
         ]
         for (const column of columns)
-          expect(tile.query.source.query, `${tile.name}: ${column}`).toMatch(
+          expect(tile.query?.source.query, `${tile.name}: ${column}`).toMatch(
             new RegExp(`\\b${column}\\b`)
           )
       }
     })
 
     it(`${board.name}: every tile counts real people only`, () => {
-      for (const tile of board.tiles.filter((t) => t.query)) {
-        const { source } = tile.query
+      for (const tile of tilesOf(board).filter((t) => t.query)) {
+        const { source } = tile.query!
         if (source.kind === 'HogQLQuery') {
           expect(source.query, tile.name).toContain(HUMANS)
         } else expect(source.filterTestAccounts, tile.name).toBe(true)
@@ -114,7 +132,9 @@ describe('the dashboard spec', () => {
   })
 
   it('puts every alert tile on a board', () => {
-    const names = new Set(DASHBOARDS.flatMap((b) => b.tiles.map((t) => t.name)))
+    const names = new Set(
+      DASHBOARDS.flatMap((b) => tilesOf(b).map((t) => t.name))
+    )
     for (const alert of ALERTS) expect(names.has(alert.tile.name)).toBe(true)
   })
 })
