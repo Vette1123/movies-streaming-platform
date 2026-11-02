@@ -8,15 +8,38 @@
 // hand-made insight with the same name is never overwritten.
 import { phApi, phList } from './posthog.mjs'
 
+// Older runs wrote this into every description, where PostHog printed it under
+// each tile title. An insight now counts as ours when it carries it (legacy)
+// or already sits on a board the spec owns: the spec decides everything on
+// those boards anyway, and a hand-made twin elsewhere is still never touched.
 export const MANAGED = '[managed by pnpm posthog:setup]'
+
+/** Pure: may setup rewrite this insight for a tile headed to `dashboardIds`? */
+export const isManaged = (insight, dashboardIds) =>
+  (insight.description ?? '').includes(MANAGED) ||
+  (insight.dashboards ?? []).some((id) => dashboardIds.includes(id))
 
 // ---- Query builders ---------------------------------------------------------
 
-/** A HogQL tile. display: BoldNumber | ActionsTable | ActionsLineGraph | ActionsBar | ActionsPie */
-export const hogql = (query, display = 'ActionsTable') => ({
+/**
+ * A HogQL tile. display: BoldNumber | ActionsTable | ActionsLineGraph |
+ * ActionsBar | ActionsStackedBar | ActionsPie.
+ * A chart needs `axes: { x: 'day', y: ['people', 'plays'] }`: without them
+ * PostHog folds every row into one point (a 30-day line drew a single dot).
+ */
+export const hogql = (query, display = 'ActionsTable', axes) => ({
   kind: 'DataVisualizationNode',
   source: { kind: 'HogQLQuery', query },
   display,
+  ...(axes
+    ? {
+        chartSettings: {
+          xAxis: { column: axes.x },
+          yAxis: axes.y.map((column) => ({ column })),
+          showLegend: axes.y.length > 1,
+        },
+      }
+    : {}),
 })
 
 const events = (list) =>
@@ -32,6 +55,14 @@ const events = (list) =>
     }
   })
 
+// Displays that draw a value on every bar/slice rather than a line.
+const LABELLED = new Set(['ActionsBar', 'ActionsBarValue', 'ActionsPie'])
+
+/**
+ * A Trends tile. display: ActionsLineGraph | ActionsAreaGraph | ActionsBar |
+ * ActionsBarValue | ActionsPie | BoldNumber | WorldMap | ActionsTable.
+ * `compare` draws the previous period beside it (a BoldNumber shows the % change).
+ */
 export const trends = ({
   series,
   interval = 'day',
@@ -40,6 +71,9 @@ export const trends = ({
   breakdown,
   breakdownType = 'event',
   formula,
+  compare = false,
+  postfix,
+  decimals,
 }) => ({
   kind: 'InsightVizNode',
   source: {
@@ -48,10 +82,13 @@ export const trends = ({
     interval,
     dateRange: { date_from: from },
     filterTestAccounts: true,
+    ...(compare ? { compareFilter: { compare: true } } : {}),
     trendsFilter: {
       display,
       ...(formula ? { formula } : {}),
-      showValuesOnSeries: display !== 'ActionsLineGraph',
+      ...(postfix ? { aggregationAxisPostfix: postfix } : {}),
+      ...(decimals !== undefined ? { decimalPlaces: decimals } : {}),
+      showValuesOnSeries: LABELLED.has(display),
     },
     ...(breakdown
       ? {
@@ -126,6 +163,107 @@ export const lifecycle = ({
   },
 })
 
+// ---- Layout -----------------------------------------------------------------
+
+/**
+ * Tile sizes on PostHog's 12-column grid (h is in ~80px rows). A tile picks one
+ * with `size`; the default suits a chart.
+ */
+export const SIZES = {
+  kpi: { w: 3, h: 3 },
+  third: { w: 4, h: 5 },
+  half: { w: 6, h: 5 },
+  wide: { w: 8, h: 5 },
+  full: { w: 12, h: 5 },
+  tall: { w: 6, h: 7 },
+  table: { w: 12, h: 7 },
+}
+const DEFAULT_SIZE = 'half'
+
+/** A full-width markdown header that starts a new block of tiles. */
+export const section = (title, note) => ({ section: title, note })
+
+// One row, one line: a heading over a note needs two rows and leaves dead
+// space, and a heading and note squeezed into one row scroll. So the note
+// rides on the heading line.
+const sectionSize = () => ({ w: 12, h: 1 })
+
+export const sectionBody = ({ section: title, note }) =>
+  note ? `### ${title} — ${note}` : `### ${title}`
+
+/**
+ * Pack a board's items left to right into the 12-column grid. A row wraps
+ * when the next tile does not fit, and a section always opens a new row, so
+ * the dashboard reads top to bottom in spec order. Pure: returns
+ * `{ item, layout: { x, y, w, h } }` for every item.
+ */
+export function layoutTiles(items) {
+  const placed = []
+  let x = 0
+  let y = 0
+  let rowH = 0
+  const newRow = () => {
+    y += rowH
+    x = 0
+    rowH = 0
+  }
+  for (const item of items) {
+    const size = item.section
+      ? sectionSize(item)
+      : SIZES[item.size ?? DEFAULT_SIZE]
+    if (!size)
+      throw new Error(`unknown tile size "${item.size}" on ${item.name}`)
+    if (item.section || x + size.w > 12) newRow()
+    placed.push({ item, layout: { x, y, ...size } })
+    x += size.w
+    rowH = Math.max(rowH, size.h)
+    if (item.section) newRow()
+  }
+  return placed
+}
+
+/**
+ * Make a dashboard hold exactly `placed` — section cards and insight tiles at
+ * their layouts — and nothing else. Tiles the spec does not name are taken OFF
+ * the dashboard (the insight itself stays in the project library), which is
+ * how hand-made tiles stop piling up between the managed ones.
+ * `insightIds` maps tile name to insight id. Returns how many tiles it removed.
+ */
+export async function syncDashboardTiles(cfg, dashboardId, placed, insightIds) {
+  const board = await phApi(cfg, `/dashboards/${dashboardId}/`)
+  const live = board.tiles.filter((t) => !t.deleted)
+  const byInsight = new Map(
+    live.filter((t) => t.insight).map((t) => [t.insight.id, t])
+  )
+  const texts = live.filter((t) => t.text)
+  const keep = new Set()
+  const tiles = []
+  for (const { item, layout } of placed) {
+    const layouts = { sm: layout }
+    if (item.section) {
+      const body = sectionBody(item)
+      const reuse = texts.find((t) => !keep.has(t.id) && t.text.body === body)
+      if (reuse) {
+        keep.add(reuse.id)
+        tiles.push({ id: reuse.id, layouts })
+      } else tiles.push({ text: { body }, layouts })
+      continue
+    }
+    const tile = byInsight.get(insightIds.get(item.name))
+    if (!tile)
+      throw new Error(`"${item.name}" is not on dashboard ${dashboardId}`)
+    keep.add(tile.id)
+    tiles.push({ id: tile.id, layouts })
+  }
+  const stale = live.filter((t) => !keep.has(t.id))
+  for (const t of stale) tiles.push({ id: t.id, deleted: true })
+  await phApi(cfg, `/dashboards/${dashboardId}/`, {
+    method: 'PATCH',
+    body: { tiles },
+  })
+  return stale.length
+}
+
 // ---- Upserts ----------------------------------------------------------------
 
 export async function loadState(cfg) {
@@ -160,27 +298,26 @@ export async function upsertDashboard(
 }
 
 /**
- * Create or update one insight on one dashboard. Refuses to touch an insight
- * of the same name that this script did not create.
+ * Create or update one insight and put it on exactly `dashboardIds` — the
+ * boards the spec names it on. A managed insight the spec moved is taken off
+ * its old board here; merging with the old list put it straight back.
+ * Refuses to touch an insight of the same name that this script did not create.
  */
-export async function upsertInsight(cfg, state, dashboardId, tile) {
-  const description = `${tile.description ?? ''} ${MANAGED}`.trim()
+export async function upsertInsight(cfg, state, dashboardIds, tile) {
   const existing = state.insights.find(
-    (i) => i.name === tile.name && (i.description ?? '').includes(MANAGED)
+    (i) => i.name === tile.name && isManaged(i, dashboardIds)
   )
-  const body = { name: tile.name, description, query: tile.query }
+  const body = {
+    name: tile.name,
+    description: tile.description ?? '',
+    query: tile.query,
+    dashboards: dashboardIds,
+  }
   if (existing) {
-    const dashboards = new Set([...(existing.dashboards ?? []), dashboardId])
-    await phApi(cfg, `/insights/${existing.id}/`, {
-      method: 'PATCH',
-      body: { ...body, dashboards: [...dashboards] },
-    })
+    await phApi(cfg, `/insights/${existing.id}/`, { method: 'PATCH', body })
     return { id: existing.id, created: false }
   }
-  const created = await phApi(cfg, '/insights/', {
-    method: 'POST',
-    body: { ...body, dashboards: [dashboardId] },
-  })
+  const created = await phApi(cfg, '/insights/', { method: 'POST', body })
   state.insights.push(created)
   return { id: created.id, created: true }
 }
