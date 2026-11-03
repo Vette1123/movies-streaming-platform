@@ -146,3 +146,4 @@ with the work, not after.
 | 2026-11-01 | [Player options reach the account](2026-11-01-player-options-reach-the-account.md) | The account route silently dropped every playback field but two; one closed-set module now feeds the panel, prefs, route and ticket, pinned by a test seen red. |
 | 2026-11-01 | [Skip intro](2026-11-01-skip-intro.md) | Saying there was no data was never checked; `autoSkip` joined the closed list and reports count offers and uses. |
 | 2026-11-02 | [PostHog dashboards own their boards](2026-11-02-posthog-dashboards-own-their-boards.md) | The "100,000 users" were 37 old tiles setup never removed, over windows reaching into the bot fleet; the spec now lays out and owns each board, and the bot-block date is a project filter. |
+| 2026-11-03 | [IndexNow: changed URLs only](2026-11-03-indexnow-changed-urls-only.md) | Every deploy pinged all ~14,800 URLs; the diff must be taken before the deploy, with a browser UA, over normalised tags. |

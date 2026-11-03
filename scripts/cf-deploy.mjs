@@ -4,7 +4,8 @@
 // The build (`pnpm build:cf`) has already written the site to `out/` and the
 // bundled Worker to `.cloudflare/worker.mjs`. This just pushes both with
 // `wrangler deploy` and then:
-//   1. Pings IndexNow with the sitemap URLs so Bing/Yandex/DDG pick up changes.
+//   1. Pings IndexNow with the URLs this build CHANGED (new to the sitemap, or
+//      a prerendered page whose indexed content differs), not every sitemap URL.
 //   2. Purges the CF edge cache, unless CF_PURGE=false (see below).
 //
 // It used to drive `opennextjs-cloudflare deploy`, whose populate-cache step
@@ -25,6 +26,7 @@
 // nobody sees. Set CF_PURGE=false to skip it (e.g. a config-only redeploy).
 import { spawnSync } from 'node:child_process'
 import { setDefaultResultOrder } from 'node:dns'
+import { planIndexNow, submitIndexNow } from './lib/indexnow.mjs'
 
 // See scripts/load-env.mjs: AAAA-first resolution turns the purge into a
 // `fetch failed` on any machine without a working IPv6 route, and a failed
@@ -33,7 +35,6 @@ setDefaultResultOrder('ipv4first')
 
 const SITE_HOST = 'www.reely.space'
 const ZONE_NAME = 'reely.space'
-const INDEXNOW_KEY = 'fd71a860ed122d006df9ba7c2c529b88'
 
 function run(args) {
   // Pass a single command string (not command + args array) so `shell: true`
@@ -46,6 +47,13 @@ function run(args) {
   })
   return result.status ?? 1
 }
+
+// The diff against the live site has to be taken BEFORE the deploy: afterwards
+// "live" is this build. Never fails the deploy; null means "submit everything".
+const indexNowPlan = await planIndexNow().catch((err) => {
+  console.warn(`[cf-deploy] IndexNow diff failed: ${err.message}`)
+  return { urls: [], changed: null, why: err.message }
+})
 
 const deployCode = run(['deploy'])
 
@@ -119,77 +127,32 @@ async function postDeploy() {
     purgeFailed('CLOUDFLARE_API_TOKEN not set')
   }
 
-  // IndexNow: notify Bing, Yandex, Seznam (and DDG via Bing) of changed URLs.
+  // IndexNow: notify Bing, Yandex, Seznam (and DDG via Bing) of CHANGED URLs.
   //
-  // Submitting only the top-level routes was not enough — Bing's SEO report
-  // flagged important pages as never submitted, because "the sitemap surfaces
-  // the rest" only holds once Bing chooses to re-read the sitemap. Every deploy
-  // re-renders every page, so every sitemap URL is a changed URL: pull the live
-  // sitemap and submit the lot. Falls back to the top-level routes if the
-  // sitemap can't be read, and never fails the deploy.
+  // The set was computed before the deploy (scripts/lib/indexnow.mjs): URLs new
+  // to the live sitemap, plus prerendered pages whose title, meta, JSON-LD or
+  // visible text differ from what was live. Pinging all ~14,800 on every deploy
+  // told Bing nothing and trained it to ignore the pings. If the diff could not
+  // be taken, fall back to every sitemap URL (or the top-level routes) and say so.
   const TOP_LEVEL_URLS = [
     `https://${SITE_HOST}/`,
     `https://${SITE_HOST}/movies`,
     `https://${SITE_HOST}/tv-shows`,
     `https://${SITE_HOST}/sitemap.xml`,
   ]
-
-  async function sitemapUrls() {
-    try {
-      const res = await fetch(`https://${SITE_HOST}/sitemap.xml`, {
-        headers: { 'User-Agent': 'reely-deploy/1.0' },
-      })
-      if (!res.ok) {
-        console.warn(
-          `[cf-deploy] sitemap fetch HTTP ${res.status} — submitting top-level URLs only`
-        )
-        return TOP_LEVEL_URLS
-      }
-      const xml = await res.text()
-      const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) =>
-        m[1].trim()
-      )
-      // Same-host only: IndexNow rejects a payload containing any URL outside
-      // the declared host, so one stray entry would drop the whole submission.
-      const onHost = locs.filter((url) =>
-        url.startsWith(`https://${SITE_HOST}/`)
-      )
-      if (!onHost.length) return TOP_LEVEL_URLS
-      return [...new Set([...TOP_LEVEL_URLS, ...onHost])]
-    } catch (err) {
-      console.warn(
-        `[cf-deploy] sitemap fetch failed (${err.message}) — submitting top-level URLs only`
-      )
-      return TOP_LEVEL_URLS
-    }
+  let urlList
+  if (indexNowPlan.changed === null) {
+    urlList = indexNowPlan.urls.length ? indexNowPlan.urls : TOP_LEVEL_URLS
+    console.warn(
+      `[cf-deploy] IndexNow diff unavailable (${indexNowPlan.why}), sending ${urlList.length} URLs`
+    )
+  } else {
+    urlList = indexNowPlan.urls.filter((u) => indexNowPlan.changed.has(u))
+    console.log(
+      `• IndexNow: ${urlList.length} of ${indexNowPlan.urls.length} URLs changed`
+    )
   }
-
-  const urlList = await sitemapUrls()
-  // IndexNow caps a submission at 10,000 URLs.
-  const BATCH_SIZE = 10000
-  let submitted = 0
-  for (let i = 0; i < urlList.length; i += BATCH_SIZE) {
-    const batch = urlList.slice(i, i + BATCH_SIZE)
-    try {
-      const res = await fetch('https://api.indexnow.org/indexnow', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          host: SITE_HOST,
-          key: INDEXNOW_KEY,
-          keyLocation: `https://${SITE_HOST}/${INDEXNOW_KEY}.txt`,
-          urlList: batch,
-        }),
-      })
-      if (res.ok || res.status === 202) submitted += batch.length
-      else
-        console.warn(
-          `[cf-deploy] IndexNow HTTP ${res.status} for ${batch.length} URLs`
-        )
-    } catch (err) {
-      console.warn(`[cf-deploy] IndexNow batch skipped: ${err.message}`)
-    }
-  }
+  const submitted = urlList.length ? await submitIndexNow(urlList) : 0
   if (submitted)
     console.log(`✓ IndexNow pinged (${submitted}/${urlList.length} URLs)`)
 

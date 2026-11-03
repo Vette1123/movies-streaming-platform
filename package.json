@@ -22,6 +22,7 @@
     "kodi:probe": "node scripts/kodi-probe.mjs",
     "preview": "pnpm build:cf && wrangler dev",
     "deploy": "node scripts/cf-deploy.mjs",
+    "indexnow": "node scripts/indexnow.mjs",
     "deploy:full": "pnpm build:cf && node scripts/cf-deploy.mjs",
     "fonts:og": "node scripts/build-og-fonts.mjs",
     "icons:build": "node scripts/build-app-icons.mjs",
