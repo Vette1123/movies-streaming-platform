@@ -150,6 +150,14 @@ const sleep = (ms: number): Promise<void> =>
 const MAX_TRANSPORT_RETRIES = 2
 const TRANSPORT_RETRY_MS = 250
 
+// TMDB's own 5xx (500/502/503/504) says nothing about the id, and it is
+// usually gone a second later. Callers treat any non-404 failure as a fault (a
+// page must never turn it into a baked 404), so ride the blip out first.
+const MAX_SERVER_RETRIES = 3
+const SERVER_RETRY_MS = 500
+export const isRetriableServerStatus = (status: number): boolean =>
+  status === 500 || status === 502 || status === 503 || status === 504
+
 // A timeout is excluded: the request already burned FETCH_TIMEOUT_MS of the
 // invocation's wall clock, and retrying would spend it again. Same for an
 // explicit abort — the caller is gone.
@@ -204,6 +212,7 @@ export const fetchClient = {
     // blocked by another.
     if (GOVERN) await acquire()
     let transportRetries = 0
+    let serverRetries = 0
     try {
       for (let attempt = 0; ; attempt++) {
         let res: Response
@@ -248,6 +257,16 @@ export const fetchClient = {
           // the deadlock ("a stalled HTTP response was canceled"). See docs above.
           await res.body?.cancel()
           await sleep(wait)
+          continue
+        }
+
+        if (
+          isRetriableServerStatus(res.status) &&
+          serverRetries < MAX_SERVER_RETRIES
+        ) {
+          await res.body?.cancel()
+          serverRetries++
+          await sleep(SERVER_RETRY_MS * serverRetries)
           continue
         }
 

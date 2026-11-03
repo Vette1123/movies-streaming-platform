@@ -78,6 +78,7 @@ import {
 } from '@/lib/seo-description'
 import { mediaFacts } from '@/lib/seo-facts'
 import { docTitle, mediaDocHeading, mediaHeading } from '@/lib/seo-title'
+import { isUpstreamUnavailable, nullIfNotFound } from '@/lib/upstream'
 import { getImageURL } from '@/lib/utils'
 
 /** 6h, matching the deploy cadence that refreshes the static half of the site. */
@@ -383,14 +384,18 @@ const isPosition = (value) =>
  * TMDB answers an unknown id with a 404, which fetch-client raises. That is a
  * bad id, not a broken Worker — both callers turn it into a 404 of their own,
  * so it must not reach the top-level catch and become a 500.
+ *
+ * ONLY that 404 is null. A 429, a timeout or a bug is not "no such id": it
+ * throws UpstreamUnavailable and the top-level catch answers 503 + Retry-After,
+ * because Google retries a 503 and drops a 404.
  */
 async function loadDetails(type, id) {
   try {
     return type === 'tv'
       ? await populateSeriesDetailsPageData(id)
       : await populateMovieDetailsPage(id)
-  } catch {
-    return null
+  } catch (error) {
+    return nullIfNotFound(error)
   }
 }
 
@@ -401,8 +406,8 @@ async function loadDetails(type, id) {
 async function loadSummary(type, id) {
   try {
     return await getMediaSummary(type, id)
-  } catch {
-    return null
+  } catch (error) {
+    return nullIfNotFound(error)
   }
 }
 
@@ -410,8 +415,8 @@ async function loadSummary(type, id) {
 async function loadCollection(id) {
   try {
     return await getCollectionById(id)
-  } catch {
-    return null
+  } catch (error) {
+    return nullIfNotFound(error)
   }
 }
 
@@ -1868,6 +1873,16 @@ const worker = {
       return await notFoundAsset(env, url)
     } catch (error) {
       console.error(error)
+      if (isUpstreamUnavailable(error)) {
+        return new Response(JSON.stringify({ error: 'unavailable' }), {
+          status: 503,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': '120',
+            'Cache-Control': 'no-store',
+          },
+        })
+      }
       return json({ error: 'internal error' }, { status: 500 })
     }
   },

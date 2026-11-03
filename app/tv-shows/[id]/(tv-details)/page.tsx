@@ -14,6 +14,7 @@ import { PageDetailsProps } from '@/types/page-details'
 import { castNames } from '@/lib/credits'
 import { getMediaHeroImageUrl } from '@/lib/media'
 import { buildDetailsMetadata, buildMediaStaticParams } from '@/lib/media-page'
+import { notFoundOrThrow } from '@/lib/not-found'
 import { linkablePersonIds } from '@/lib/person-links'
 import { getMediaRatings } from '@/lib/ratings'
 import { breadcrumbJsonLd, JsonLd, tvSeriesJsonLd } from '@/lib/structured-data'
@@ -57,8 +58,8 @@ export async function generateMetadata(
   let seriesDetails
   try {
     seriesDetails = await getSeriesDetailsById(id)
-  } catch {
-    notFound()
+  } catch (error) {
+    notFoundOrThrow(error)
   }
   if (!seriesDetails?.id) notFound()
 
@@ -82,8 +83,8 @@ const TVSeries = async (props: PageDetailsProps) => {
   let result
   try {
     result = await populateSeriesDetailsPageData(params?.id)
-  } catch {
-    notFound()
+  } catch (error) {
+    notFoundOrThrow(error)
   }
   const {
     seriesDetails,

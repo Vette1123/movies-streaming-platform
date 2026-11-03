@@ -15,6 +15,7 @@ import {
   buildCollectionStaticParams,
   buildMediaStaticParams,
 } from '@/lib/media-page'
+import { notFoundOrThrow } from '@/lib/not-found'
 import { collectionDescription } from '@/lib/seo-description'
 import { getImageURL } from '@/lib/utils'
 import { CollectionView } from '@/components/collection/collection-view'
@@ -53,8 +54,8 @@ export async function generateMetadata(
   let collection
   try {
     collection = await getCollectionById(params.id)
-  } catch {
-    notFound()
+  } catch (error) {
+    notFoundOrThrow(error)
   }
   if (!collection?.id) notFound()
 
@@ -89,8 +90,8 @@ const CollectionPage = async (props: PageDetailsProps) => {
   let collection
   try {
     collection = await getCollectionById(params.id)
-  } catch {
-    notFound()
+  } catch (error) {
+    notFoundOrThrow(error)
   }
   if (!collection?.id) notFound()
 

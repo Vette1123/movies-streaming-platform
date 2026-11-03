@@ -1,10 +1,10 @@
 import React from 'react'
 import { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import { getPeopleWithPages, populatePersonPage } from '@/services/people'
 
 import { siteConfig } from '@/config/site'
 import { toListEntries } from '@/lib/media'
+import { notFoundOrThrow } from '@/lib/not-found'
 import { personDescription, trimBiography } from '@/lib/seo-description'
 import {
   breadcrumbJsonLd,
@@ -47,8 +47,8 @@ export async function generateMetadata(props: {
   let data
   try {
     data = await populatePersonPage(id)
-  } catch {
-    notFound()
+  } catch (error) {
+    notFoundOrThrow(error)
   }
   const { person, credits } = data
   const canonical = `/person/${person.id}`
@@ -86,8 +86,8 @@ const PersonPage = async (props: { params: Promise<{ id: string }> }) => {
   let data
   try {
     data = await populatePersonPage(id)
-  } catch {
-    notFound()
+  } catch (error) {
+    notFoundOrThrow(error)
   }
   const { person, credits } = data
   const dates = lifeDates(person.birthday, person.deathday)
