@@ -78,6 +78,11 @@
       "database_id": "3ef0e030-df5b-4852-8fda-bda034b004b7",
     },
   ],
+  // The Reely Player worker, for the one server-to-server call this Worker
+  // makes to it: /api/stream/availability, before a free trial is handed back
+  // (handleTrialRelease). A plain fetch to its workers.dev URL is refused,
+  // because both Workers live on the same account (Cloudflare error 1042).
+  "services": [{ "binding": "PLAYER", "service": "reely-pro-player" }],
   // The new-episode sweep. Hourly, bounded to 25 TMDB lookups and 20 pushes per
   // tick (lib/push/sweep.ts) so one invocation can never approach the
   // 50-subrequest cap. Cron invocations are free of the request budget that page

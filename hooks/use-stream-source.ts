@@ -12,17 +12,23 @@ import {
 import { savePrefs } from '@/lib/account'
 import {
   registerAnalyticsContext,
+  trackApiError,
+  trackFeatureUsed,
   trackPlayerTrialStarted,
   trackStreamSourceSelected,
 } from '@/lib/analytics'
 import { isViewerChoice } from '@/lib/player-hop'
 import {
+  clearTrial,
+  exposedTrialStatus,
   readTrial,
   trialStatus,
   writeTrial,
   type TrialRecord,
   type TrialStatus,
 } from '@/lib/player-trial'
+import { releaseReelyTrial } from '@/lib/pro/ticket-cache'
+import { type SelfHostTarget } from '@/lib/stream-resolver'
 import { useAccount, useAccountIdentity } from '@/hooks/use-account'
 
 /**
@@ -135,6 +141,11 @@ export interface StreamSourceControl {
     start: () => void
     /** Leave the player for this title (it failed, or they chose a server). */
     end: () => void
+    /**
+     * The player found no stream for this title: ask for today's trial back.
+     * The server decides; this title stops offering the trial for the visit.
+     */
+    refund: (target: SelfHostTarget) => void
   }
 }
 
@@ -230,6 +241,38 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
 
   const endTrial = useCallback(() => setTrialLeft(true), [])
 
+  // A title the player found empty this visit. Offering its trial again would
+  // only replay the same dead boot, so it shows no offer until the next visit.
+  const [noStreamKey, setNoStreamKey] = useState<string | null>(null)
+
+  const refundTrial = useCallback(
+    (target: SelfHostTarget) => {
+      if (status !== 'active') return
+      setNoStreamKey(mediaKey)
+      void releaseReelyTrial(target)
+        .then((released) => {
+          trackFeatureUsed({
+            feature: 'player_trial',
+            action: 'refund',
+            outcome: released ? 'ok' : 'denied',
+          })
+          if (!released) return
+          clearTrial()
+          setTrialRecord(null)
+        })
+        .catch((error: unknown) => {
+          trackApiError({
+            source: 'player_trial_refund',
+            message: error instanceof Error ? error.message : String(error),
+            media_id: target.id,
+            media_type: target.type,
+            expected: error instanceof TypeError,
+          })
+        })
+    },
+    [mediaKey, status]
+  )
+
   const select = useCallback(
     (id: string, via: 'switcher' | 'stall_auto' = 'switcher') => {
       // The Reely Player row in a free account's list is the trial; any
@@ -305,10 +348,10 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
     switched,
     canSwitch,
     trial: {
-      // Left after starting: spent for today, even though it is this title.
-      status: status === 'active' && trialLeft ? 'used' : status,
+      status: exposedTrialStatus(status, trialLeft, noStreamKey === mediaKey),
       start: startTrial,
       end: endTrial,
+      refund: refundTrial,
     },
   }
 }

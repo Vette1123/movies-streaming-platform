@@ -67,7 +67,12 @@ import {
 import { shareImageOf } from '@/lib/og/share-image'
 import { playerParams } from '@/lib/playback-options'
 import { signEntryTicket } from '@/lib/pro/playback-ticket'
-import { sweepPlayerTrials, ticketDenial } from '@/lib/pro/ticket-access'
+import { providerHasNoStream } from '@/lib/pro/stream-availability'
+import {
+  releaseTrial,
+  sweepPlayerTrials,
+  ticketDenial,
+} from '@/lib/pro/ticket-access'
 import { loadPublicProfile } from '@/lib/profile/routes'
 import {
   collectionDescription,
@@ -1745,6 +1750,71 @@ async function handleProTicket(request, env, url) {
   )
 }
 
+/**
+ * POST /api/pro/trial/release — give a free visitor their daily Reely Player
+ * title back when the provider turned out not to carry it.
+ *
+ * The browser asks after the player reported `no_stream`; the decision is
+ * releaseTrial's (lib/pro/ticket-access.ts): the caller must hold this title's
+ * live trial, and the player worker must confirm the provider has no stream.
+ */
+async function handleTrialRelease(request, env) {
+  let body
+  try {
+    body = await request.json()
+  } catch {
+    body = null
+  }
+  const type = body && isTv(body.type) ? 'tv' : 'movie'
+  const id = Number(body?.id)
+  const noStore = {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store',
+  }
+  if (!Number.isFinite(id) || id <= 0) {
+    return new Response(JSON.stringify({ released: false }), {
+      status: 400,
+      headers: noStore,
+    })
+  }
+  const season = Number(body.season)
+  const episode = Number(body.episode)
+  const target = {
+    type,
+    id,
+    ...(type === 'tv'
+      ? {
+          season: Number.isFinite(season) ? season : 1,
+          episode: Number.isFinite(episode) ? episode : 1,
+        }
+      : {}),
+  }
+  const released = await releaseTrial(
+    env.DB,
+    {
+      bearer: bearerOf(request),
+      cookie: sessionCookieOf(request),
+      ip: request.headers.get('CF-Connecting-IP'),
+      secret: env.PLAYBACK_TICKET_SECRET,
+      media: `${type}:${id}`,
+      now: Date.now(),
+    },
+    () =>
+      providerHasNoStream(
+        env.PLAYBACK_WORKER_URL,
+        env.PLAYBACK_TICKET_SECRET,
+        target,
+        // Through the service binding: the player is a workers.dev Worker on
+        // this same account, which a plain fetch cannot reach (error 1042).
+        env.PLAYER ? (input, init) => env.PLAYER.fetch(input, init) : undefined
+      )
+  )
+  return new Response(JSON.stringify({ released }), {
+    status: 200,
+    headers: noStore,
+  })
+}
+
 const worker = {
   /**
    * The hourly sweep for new-episode alerts. Imported lazily so its TMDB and
@@ -1773,6 +1843,9 @@ const worker = {
     // and this dispatcher does its own per-path method table.
     if (pathname === '/api/pro/ticket' && request.method === 'POST') {
       return await handleProTicket(request, env, url)
+    }
+    if (pathname === '/api/pro/trial/release' && request.method === 'POST') {
+      return await handleTrialRelease(request, env)
     }
 
     // Same story for the party features: their writes are POSTs inside
