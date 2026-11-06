@@ -93,6 +93,13 @@ describe('the live catalogue', () => {
     expect(new Set(OFFERS.map((o) => o.id)).size).toBe(OFFERS.length)
   })
 
+  it('gives Masareef the slot until a paid booking outranks it', () => {
+    const today = new Date().toISOString().slice(0, 10)
+    expect(selectOffer(OFFERS, 'post-play', today)?.id).toBe('masareef')
+    const paid = offer({ id: 'paid', weight: 10 })
+    expect(selectOffer([...OFFERS, paid], 'post-play', today)?.id).toBe('paid')
+  })
+
   it('always has something for the slot today', () => {
     const today = new Date().toISOString().slice(0, 10)
     expect(selectOffer(OFFERS, 'post-play', today)).not.toBe(null)
