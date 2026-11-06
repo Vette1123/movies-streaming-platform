@@ -50,6 +50,23 @@ export function trialStatus(
   return record.key === mediaKey ? 'active' : 'used'
 }
 
+/**
+ * What the switcher and stall screen are told.
+ *
+ * Left after starting: spent for today, even though it is this title. A title
+ * the player found no stream for offers nothing this visit: the trial would
+ * only replay the same dead boot (the server has handed the trial back).
+ */
+export function exposedTrialStatus(
+  status: TrialStatus | 'none',
+  left: boolean,
+  noStream: boolean
+): TrialStatus | 'none' {
+  if (status === 'none' || noStream) return 'none'
+  if (status === 'active' && left) return 'used'
+  return status
+}
+
 export function readTrial(): TrialRecord | null {
   if (typeof window === 'undefined') return null
   try {
@@ -61,6 +78,15 @@ export function readTrial(): TrialRecord | null {
     return { key: parsed.key, at: parsed.at }
   } catch {
     return null
+  }
+}
+
+/** The server handed the trial back (no stream for that title): offer it again. */
+export function clearTrial(): void {
+  try {
+    window.localStorage.removeItem(TRIAL_KEY)
+  } catch {
+    // Storage denied: nothing was remembered to forget.
   }
 }
 

@@ -62,6 +62,29 @@ const mintTicket = async (target: SelfHostTarget): Promise<string | null> => {
 }
 
 /**
+ * Ask for today's free title back after the player found no stream for it.
+ * The server decides (releaseTrial): true only when it actually released.
+ */
+export const releaseReelyTrial = async (
+  target: SelfHostTarget
+): Promise<boolean> => {
+  const res = await fetch('/api/pro/trial/release', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: target.type,
+      id: target.id,
+      ...(target.type === 'tv'
+        ? { season: target.season ?? 1, episode: target.episode ?? 1 }
+        : {}),
+    }),
+  })
+  if (!res.ok) throw new Error(`trial release ${res.status}`)
+  const data = (await res.json()) as { released?: unknown }
+  return data.released === true
+}
+
+/**
  * Open the connection to the player origin the moment a ticket names it.
  *
  * The player lives on its own worker, so the iframe's first byte costs a DNS

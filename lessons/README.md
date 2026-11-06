@@ -149,3 +149,4 @@ with the work, not after.
 | 2026-11-03 | [IndexNow: changed URLs only](2026-11-03-indexnow-changed-urls-only.md) | Every deploy pinged all ~14,800 URLs; the diff must be taken before the deploy, with a browser UA, over normalised tags. |
 | 2026-11-03 | [A transient failure is not a 404](2026-11-03-transient-failure-is-not-a-404.md) | `catch { notFound() }` baked 404 shells and made the Worker 404 on a 429; only a TMDB 404 is not-found, the rest rethrows or answers 503 + Retry-After. |
 | 2026-11-06 | [Pro by email](2026-11-06-pro-by-email.md) | The payment provider was suspended; every buy button is now a pre-filled mail to one constant, Pro is granted by hand, and a test fails if the old provider is named anywhere live. |
+| 2026-11-06 | [A trial spent on nothing](2026-11-06-a-trial-spent-on-nothing.md) | A free trial was taken at mint, before the stream was known; a `no_stream` boot now gets it back, decided server-to-server by the relay's own resolve. |

@@ -270,12 +270,17 @@ export const DetailsHero = ({
   // configured — fall back to the first embed and
   // let the switcher reflect it, exactly like a stalled server would.
   const onReelyUnavailable = React.useCallback(
-    (via: 'switcher' | 'stall_auto' = 'stall_auto') => {
+    (
+      via: 'switcher' | 'stall_auto' = 'stall_auto',
+      detail?: { noStream: boolean }
+    ) => {
       if (!sourceControl) return
       // A free trial cannot "select" its way off - an anonymous visitor has no
       // switching at all - so leaving the trial is its own exit, back to the
-      // server they had before.
+      // server they had before. A title the provider does not carry gives the
+      // day's trial back: it was spent on nothing.
       if (sourceControl.trial.status === 'active') {
+        if (detail?.noStream && selfHost) sourceControl.trial.refund(selfHost)
         sourceControl.trial.end()
         return
       }
@@ -284,7 +289,7 @@ export const DetailsHero = ({
       )
       if (fallback) sourceControl.select(fallback.id, via)
     },
-    [sourceControl]
+    [selfHost, sourceControl]
   )
 
   // Bridge the blank gap between "Watch" click and the streaming iframe painting

@@ -95,6 +95,49 @@ export async function ticketDenial(
   return (await holdsTrial(db, subject, media, now)) ? null : SUPPORTER_FEATURE
 }
 
+/**
+ * Hand today's free title back when the provider turned out not to carry it.
+ *
+ * The trial is taken at mint, before anybody knows whether a stream exists, so
+ * a title the provider lacks used to spend the visitor's one title on a black
+ * frame. The browser asks for the refund, but it decides nothing:
+ *
+ *   - only the subject holding THIS title's live trial can release it, the same
+ *     subject the mint computed (account, else keyed address);
+ *   - `providerHasNoStream` must say so, and it asks the player worker, which
+ *     asks the relay's own resolve. Anything but a definite "no" keeps it spent.
+ *
+ * The probe runs last, after the cheap D1 checks, so a refund request from
+ * somebody without a trial never reaches the provider.
+ */
+export async function releaseTrial(
+  db: D1Database | undefined,
+  request: TicketRequest,
+  providerHasNoStream: () => Promise<boolean>
+): Promise<boolean> {
+  if (!db) return false
+  const { bearer, cookie, media, now } = request
+  // A TV never holds a trial, and a supporter never spent one.
+  if (bearer) return false
+  const user = await loadSession(db, cookie, now)
+  if (user && isEntitled(user, now)) return false
+
+  const subject = await trialSubject(user?.id, request)
+  if (!subject) return false
+  const held = await db
+    .prepare('SELECT media, expires_at FROM player_trials WHERE subject = ?')
+    .bind(subject)
+    .first<{ media: string; expires_at: number }>()
+  if (!held || held.media !== media || held.expires_at <= now) return false
+
+  if (!(await providerHasNoStream())) return false
+  const result = await db
+    .prepare('DELETE FROM player_trials WHERE subject = ? AND media = ?')
+    .bind(subject, media)
+    .run()
+  return Number(result.meta?.changes ?? 0) > 0
+}
+
 /** Spent trials, from the hourly cron. */
 export async function sweepPlayerTrials(
   db: D1Database,

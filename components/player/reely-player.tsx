@@ -59,7 +59,15 @@ export function ReelyPlayer({
 }: {
   target: SelfHostTarget
   onReady: () => void
-  onUnavailable: (via?: 'switcher' | 'stall_auto') => void
+  /**
+   * `noStream`: the boot died because the provider has no stream for this
+   * title (the player's `dead_on_boot` reason), so a free trial spent on it
+   * can be asked back.
+   */
+  onUnavailable: (
+    via?: 'switcher' | 'stall_auto',
+    detail?: { noStream: boolean }
+  ) => void
   /**
    * The title played to the end. Series pages use it to start the next episode
    * when the account asks for that (`prefs.autoNext`); everything else ignores
@@ -150,6 +158,8 @@ export function ReelyPlayer({
     // take the player's word for it: see lib/player-hop.ts.
     let lastProgress: number | undefined
     let sawPlayback = false
+    // The player reports why a boot died just before it says `unavailable`.
+    let noStream = false
 
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== playerOrigin) return
@@ -203,6 +213,12 @@ export function ReelyPlayer({
       } else if (data.kind === 'incident') {
         const incident = incidentFrom(data)
         if (incident) trackPlayerIncident(incident)
+        if (
+          incident?.step === 'dead_on_boot' &&
+          incident.hls_details === 'no_stream'
+        ) {
+          noStream = true
+        }
         // Every reconnect failed and the viewer is looking at the choice. It
         // counts as a failure so the one tripwire alert covers it too.
         if (incident?.step === 'stuck') {
@@ -235,7 +251,9 @@ export function ReelyPlayer({
         })
         if (moved) {
           failed.current = true
-          unavailableRef.current(viewerChose ? 'switcher' : 'stall_auto')
+          unavailableRef.current(viewerChose ? 'switcher' : 'stall_auto', {
+            noStream: noStream && !played,
+          })
         }
       }
     }
