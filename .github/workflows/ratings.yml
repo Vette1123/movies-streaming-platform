@@ -60,14 +60,19 @@ jobs:
           NEXT_PUBLIC_TMDB_BASEURL: ${{ secrets.NEXT_PUBLIC_TMDB_BASEURL }}
           OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
 
+      # The sitemap ledger rides the same daily commit: every title URL the
+      # live sitemap has listed, kept forever (scripts/lib/sitemap-ledger.mjs).
+      - name: Fold the live sitemap into the ledger
+        run: pnpm sitemap:ledger
+
       - name: Commit what we learned
         run: |
-          if git diff --quiet -- data/media-ratings.json; then
+          if git diff --quiet -- data/media-ratings.json data/sitemap-ledger.json; then
             echo "nothing new — the file is already current"
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/media-ratings.json
-          git commit -m "chore(ratings): the ratings snapshot grows"
+          git add data/media-ratings.json data/sitemap-ledger.json
+          git commit -m "chore(ratings): the ratings snapshot and sitemap ledger grow"
           git push

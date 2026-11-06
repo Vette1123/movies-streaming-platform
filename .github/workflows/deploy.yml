@@ -197,6 +197,13 @@ jobs:
           CI: 'true'
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
+      # Carries every title URL the live sitemap lists into this build's
+      # sitemap (data/sitemap-ledger.json), so a URL advertised for one
+      # six-hour window is never dropped. Warn-only: the committed ledger,
+      # refreshed daily by the Ratings job, is the floor.
+      - name: Fold the live sitemap into the ledger
+        run: pnpm sitemap:ledger || echo "::warning::sitemap ledger not refreshed; building from the committed one"
+
       - run: pnpm run deploy:full
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
