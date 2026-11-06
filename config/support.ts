@@ -34,6 +34,25 @@ export function proMailto(plan: ProPlan, accountEmail: string | null): string {
 }
 
 /**
+ * A pre-filled mail about the sponsor slot (/advertise). Same inbox as Pro:
+ * both are money, and both are answered by hand. The body lists what the
+ * first reply needs, so the thread starts at the offer, not at questions.
+ */
+export function sponsorMailto(): string {
+  const subject = `${SUPPORT_TAG} sponsor slot`
+  const body = [
+    'Hi, I would like to sponsor Reely.',
+    '',
+    'Company and website:',
+    'Affiliate (referral link + coupon) or a fixed month:',
+    'Month(s) wanted:',
+    'Coupon code and what it gives:',
+    '',
+  ].join('\n')
+  return `mailto:${PRO_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+}
+
+/**
  * What each plan costs, in whole dollars. A lifetime is a MULTIPLE of the
  * yearly, never a discount on it: priced under the annual it kills the annual
  * and pays for itself inside a year.

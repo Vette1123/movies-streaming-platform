@@ -74,9 +74,9 @@ function SupporterPanel({ name }: { name: string | null }) {
           on.
         </h1>
         <p className="mt-3 max-w-[62ch] leading-relaxed text-muted-foreground">
-          This is what keeps Reely online, ad-free, and free for everyone who
-          never pays a penny. All {SUPPORT_FEATURE_COUNT} features below are
-          live on your account, on every device you sign in on.
+          This is what keeps Reely online, free of ad networks, and free for
+          everyone who never pays a penny. All {SUPPORT_FEATURE_COUNT} features
+          below are live on your account, on every device you sign in on.
         </p>
 
         <div className="mt-8 flex flex-wrap items-center gap-3">

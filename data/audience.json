@@ -1,0 +1,16 @@
+{
+  "asOf": "2026-11-06",
+  "windowDays": 30,
+  "people": 1293,
+  "sessions": 2765,
+  "pageviews": 8126,
+  "plays": 1938,
+  "viewers": 485,
+  "topCountries": [
+    "US",
+    "CN",
+    "ID",
+    "GB",
+    "IN"
+  ]
+}

@@ -55,6 +55,7 @@
     "vt:probe": "node scripts/view-transition-probe.mjs",
     "resume:probe": "node scripts/resume-probe.mjs",
     "pro": "node scripts/grant-pro.mjs",
+    "sponsor:stats": "node scripts/sponsor-stats.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p .",
     "test:watch": "vitest"

@@ -793,6 +793,7 @@ export const FEATURE_AREA = {
   store_link: 'growth',
   promo_shown: 'growth',
   promo_click: 'growth',
+  sponsor: 'growth',
   recent_searches: 'search',
   skip_intro: 'playback',
   player_trial: 'playback',

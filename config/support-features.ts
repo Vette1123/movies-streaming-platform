@@ -192,6 +192,12 @@ const THE_SMALL_PRINT: SupportFeature[] = [
     body: 'Small, and the thing you will see every single session. It rides on your account, so every device you sign in on already looks the way you like it.',
   },
   {
+    Icon: EyeOff,
+    title: 'No sponsor card',
+    short: 'The sponsor card under the player, gone',
+    body: 'Everyone else sees one sponsor card under the player once a title starts. Yours is just the film.',
+  },
+  {
     Icon: BadgeCheck,
     title: 'Never asked again',
     short: 'Every support prompt switched off, permanently',

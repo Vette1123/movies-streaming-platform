@@ -151,3 +151,4 @@ with the work, not after.
 | 2026-11-06 | [Pro by email](2026-11-06-pro-by-email.md) | The payment provider was suspended; every buy button is now a pre-filled mail to one constant, Pro is granted by hand, and a test fails if the old provider is named anywhere live. |
 | 2026-11-06 | [A trial spent on nothing](2026-11-06-a-trial-spent-on-nothing.md) | A free trial was taken at mint, before the stream was known; a `no_stream` boot now gets it back, decided server-to-server by the relay's own resolve. |
 | 2026-11-06 | [Sitemap ledger](2026-11-06-sitemap-ledger.md) | A sitemap built from moving lists drops URLs; keep a union ledger |
+| 2026-11-06 | [Sponsor slot and the 404 canonical](2026-11-06-sponsor-slot-and-404-canonical.md) | The 404 page inherited the homepage canonical under every unknown URL; and a sponsor card made four "no ads" claims false until they were rewritten. |
