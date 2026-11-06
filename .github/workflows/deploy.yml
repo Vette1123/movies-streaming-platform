@@ -169,7 +169,6 @@ jobs:
           printf '%s' "$SESSION_TOKEN_SECRET" | pnpm wrangler secret put SESSION_TOKEN_SECRET
           printf '%s' "$GOOGLE_CLIENT_ID" | pnpm wrangler secret put GOOGLE_CLIENT_ID
           printf '%s' "$GOOGLE_CLIENT_SECRET" | pnpm wrangler secret put GOOGLE_CLIENT_SECRET
-          printf '%s' "$BMC_WEBHOOK_SECRET" | pnpm wrangler secret put BMC_WEBHOOK_SECRET
           printf '%s' "$VAPID_PUBLIC_KEY" | pnpm wrangler secret put VAPID_PUBLIC_KEY
           printf '%s' "$VAPID_PRIVATE_KEY" | pnpm wrangler secret put VAPID_PRIVATE_KEY
           printf '%s' "$VAPID_SUBJECT" | pnpm wrangler secret put VAPID_SUBJECT
@@ -183,7 +182,6 @@ jobs:
           SESSION_TOKEN_SECRET: ${{ secrets.SESSION_TOKEN_SECRET }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          BMC_WEBHOOK_SECRET: ${{ secrets.BMC_WEBHOOK_SECRET }}
           VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}

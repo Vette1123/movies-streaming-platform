@@ -257,7 +257,7 @@ function DeleteAccount({ email, pro }: { email: string | null; pro: boolean }) {
         this browser, so Reely keeps working exactly as it does for anyone
         signed out.
         {pro
-          ? ' Supporting is separate: cancel that on Buy Me a Coffee if you want it stopped.'
+          ? ' Supporting is separate: email to cancel it if you want it stopped.'
           : ''}
       </p>
 
@@ -283,7 +283,7 @@ function DeleteAccount({ email, pro }: { email: string | null; pro: boolean }) {
           What is in this browser stays: Reely keeps working exactly as it does
           for anyone signed out.
           {pro
-            ? ' Supporting is billed separately — cancel that on Buy Me a Coffee if you want it stopped.'
+            ? ' Supporting is billed separately — email to cancel it if you want it stopped.'
             : ''}
         </p>
       </ConfirmDialog>

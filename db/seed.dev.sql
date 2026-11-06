@@ -1,7 +1,7 @@
 -- Local development fixture. NEVER run this with --remote.
 --
--- Everything the account UI can show, without needing a Google client, a Buy Me
--- a Coffee webhook or a real browser session: a supporter account with a synced
+-- Everything the account UI can show, without needing a Google client,
+-- a payment or a real browser session: a supporter account with a synced
 -- library, two lists (one published), an alert and a tracked series. Enough to
 -- open /account against `wrangler dev` and see every panel populated.
 --
@@ -37,7 +37,7 @@ VALUES
 
 -- The durable support record the account claims its grant from on sign-in.
 INSERT OR REPLACE INTO supporters (email, grants, level, lifetime, source, event_id, updated_at)
-VALUES ('dev@reely.local', 'pro', 'Reely — Supporter', 0, 'bmc', 1, 1735689600000);
+VALUES ('dev@reely.local', 'pro', 'Reely — Supporter', 0, 'owner', 1, 1735689600000);
 
 -- A synced library: two saved titles, one watched, one part-way through a series.
 -- Payloads are the same shape the client mirrors up (lib/library-sync.ts).

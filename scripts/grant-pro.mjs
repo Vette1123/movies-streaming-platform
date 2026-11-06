@@ -4,8 +4,8 @@
 //   pnpm pro someone@example.com            # grant
 //   pnpm pro someone@example.com --revoke   # take it back
 //
-// Writes the same two places the Buy Me a Coffee webhook writes, in the same
-// order and for the same reasons (lib/billing/bmc.ts):
+// Writes the two places a supporter grant lives, in this order and for these
+// reasons (read back on sign-in by lib/billing/supporters.ts):
 //
 //   supporters  the durable record, keyed by the address that paid. This is
 //               what closes the paid-before-signup gap — an account created

@@ -1,3 +1,5 @@
+import { proMailto } from '@/config/support'
+
 // Our companion apps. Shared metadata + a store-open helper reused by the
 // header, mobile drawer, footer and command menu — one list so a new app only
 // lands here.
@@ -98,7 +100,7 @@ export function storeHref(app: CompanionApp): string {
 export interface ExternalLink {
   label: string
   href: string
-  icon: 'gitHub' | 'twitter' | 'portfolio' | 'buyMeACoffee'
+  icon: 'gitHub' | 'twitter' | 'portfolio' | 'mail'
   /** Right-aligned qualifier in the drawer. */
   hint?: string
   iconClassName?: string
@@ -123,9 +125,9 @@ export const EXTERNAL_LINKS: ExternalLink[] = [
     icon: 'portfolio',
   },
   {
-    label: 'Buy me a coffee',
-    href: 'https://buymeacoffee.com/vetteotp',
-    icon: 'buyMeACoffee',
+    label: 'Get Pro by email',
+    href: proMailto('Any plan', null),
+    icon: 'mail',
   },
 ]
 

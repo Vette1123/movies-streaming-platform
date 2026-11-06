@@ -1,12 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowUpRight, Check, Heart } from 'lucide-react'
+import { Check, Heart, Mail } from 'lucide-react'
 
 import {
+  PRO_EMAIL,
+  proMailto,
   SUPPORT_EMAIL,
   SUPPORT_PRICES,
-  SUPPORT_URL,
   supportMailto,
 } from '@/config/support'
 import {
@@ -52,11 +53,11 @@ const LEVELS = [
  * run-on sentence here that named nine of the thirteen features, so the person
  * who had paid was reading a worse description than the stranger who had not.
  *
- * Plan CHANGES all happen on Buy Me a Coffee: it owns the payment method, the
- * cycle and the cancellation, and there is no API here that could move someone
- * from monthly to yearly. So the panel's other job is to hand them that link.
+ * Plan CHANGES are arranged by email for now (config/support.ts), so the
+ * panel's other job is to hand them a mail that already names their account.
  */
 function SupporterPanel({ name }: { name: string | null }) {
+  const { email } = useAccountIdentity()
   return (
     // The same top padding the pitch below uses. The header is sticky and sits
     // over the top of the page, so a plain py-16 puts this card's border under
@@ -80,13 +81,11 @@ function SupporterPanel({ name }: { name: string | null }) {
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <a
-            href={SUPPORT_URL}
-            target="_blank"
-            rel="noreferrer"
+            href={proMailto('Any plan', email)}
             className={buttonVariants({ size: 'lg' })}
           >
-            Manage or change plan
-            <ArrowUpRight className="ml-2 size-4" />
+            <Mail className="mr-2 size-4" />
+            Change plan by email
           </a>
           {TV_FEATURE.link && (
             <Link
@@ -156,8 +155,8 @@ function SupporterPanel({ name }: { name: string | null }) {
           <h2 className="text-xl font-bold tracking-tight">Change your plan</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
             Switching from monthly to yearly saves two months, and the Lifetime
-            is ${SUPPORT_PRICES.lifetime} once and never renews. Both are one
-            change on Buy Me a Coffee, which handles the billing.
+            is ${SUPPORT_PRICES.lifetime} once and never renews. Either is one
+            email to {PRO_EMAIL}.
           </p>
           <ul className="space-y-2 text-sm text-muted-foreground">
             {LEVELS.map(({ name: level, price, note }) => (
@@ -175,9 +174,9 @@ function SupporterPanel({ name }: { name: string | null }) {
         <div className="space-y-3">
           <h2 className="text-xl font-bold tracking-tight">Anything else</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Cancelling is one click there too, and it takes effect at the end of
-            the period you have already paid for. Nothing you saved is deleted
-            when support ends.
+            Cancelling is one email too, and it takes effect at the end of the
+            period you have already paid for. Nothing you saved is deleted when
+            support ends.
           </p>
           <p className="text-sm leading-relaxed text-muted-foreground">
             Paid under a different address than the one you sign in with, or

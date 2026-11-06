@@ -94,7 +94,7 @@ export function PlayerStage({
         // `player-stage` is a styling hook, not a look. A phone in landscape
         // has less viewport than the two bands below come to, and the rules
         // that take them away live in styles/globals.css because the same tier
-        // has to reach the fixed header and the tip-jar button as well.
+        // has to reach the fixed header as well.
         'player-stage relative size-full flex-col pb-20',
         // One display utility, picked here rather than layered as `flex` plus a
         // conditional `hidden`: which of those two wins is decided by

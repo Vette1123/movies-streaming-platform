@@ -328,15 +328,6 @@ const ALLOW_RULE = {
   },
 }
 
-// The billing webhook is the one endpoint on this site whose callers are all
-// machines, and a managed challenge for a machine is a dropped payment: Buy Me a
-// Coffee sees an HTML 403, retries a few times, and eventually stops — the money
-// lands and the supporter never gets their grant, with nothing in our logs to say
-// so. The path carries its own authentication (HMAC-SHA256 over the raw body,
-// verified before the body is even parsed), so bot heuristics add nothing here
-// that the signature does not already do better.
-const WEBHOOK_PATH = '/api/billing/bmc'
-
 /**
  * The pages an automated reviewer has to be able to read, exempt from the
  * user-agent challenge below.
@@ -354,10 +345,10 @@ const WEBHOOK_PATH = '/api/billing/bmc'
  */
 const REVIEW_PATHS = ['/', '/privacy', '/terms', '/disclaimer', '/support']
 
-const EXEMPT_PATHS = [WEBHOOK_PATH, ...REVIEW_PATHS]
+const EXEMPT_PATHS = REVIEW_PATHS
 
 /**
- * The supporter calendar feed, exempt for the same reason the webhook is.
+ * The supporter calendar feed, exempt because what calls it is a machine.
  *
  * What polls it is Google Calendar's fetcher, Apple's, or Outlook's — machines
  * with their own user-agents, none of which is a browser and one of which sends
@@ -592,23 +583,12 @@ const RATELIMIT_RULE = {
   },
 }
 
-// The billing webhook is exempt, and it is the one path that should be.
-//
-// A 301 is not a 2xx, and a webhook sender that does not follow redirects — or
-// that follows one by re-issuing a POST without its body, which is legal and
-// common — sees a permanent failure, retries, and gives up. The dashboard field
-// holding this URL is typed by hand once; a missing `www.` in it would cost real
-// payments and show up nowhere. Serving the apex directly costs nothing: the
-// route is signature-authenticated and reads no cookie, so the host it arrives
-// on does not matter.
-//
-// The calendar feed rides along for the same reason: the clients that poll it
-// are calendar fetchers, not browsers, and a subscription that was pasted
-// without the `www.` would 301 forever. Some fetchers follow it, some quietly
-// mark the calendar broken — and the supporter would have no way to tell which.
-const MACHINE_HOST_EXEMPT =
-  `not (http.request.uri.path eq "${WEBHOOK_PATH}")` +
-  ` and ${NOT_MACHINE_PATH}`
+// Machine paths skip the apex redirect, because a 301 is not a 2xx. The clients
+// that poll the calendar feed are calendar fetchers, not browsers, and a
+// subscription that was pasted without the `www.` would 301 forever. Some
+// fetchers follow it, some quietly mark the calendar broken — and the supporter
+// would have no way to tell which.
+const MACHINE_HOST_EXEMPT = NOT_MACHINE_PATH
 
 const REDIRECT_APEX_RULE = {
   description: `${TAG} 301 apex → www`,

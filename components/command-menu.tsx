@@ -18,7 +18,7 @@ import { useDebouncedCallback } from 'use-debounce'
 
 import { MediaType } from '@/types/media'
 import { siteConfig } from '@/config/site'
-import { SUPPORT_PRICES } from '@/config/support'
+import { proMailto, SUPPORT_PRICES } from '@/config/support'
 import {
   trackCommandShortcutUsed,
   trackFeatureUsed,
@@ -847,15 +847,15 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
             <CommandItem
               className="cursor-pointer"
               onSelect={() => {
-                trackCommandShortcutUsed({ shortcut: 'buy_me_a_coffee' })
-                runCommand(() =>
-                  window.open(`https://buymeacoffee.com/vetteotp`, '_blank')
-                )
+                trackCommandShortcutUsed({ shortcut: 'pro_email' })
+                runCommand(() => {
+                  window.location.href = proMailto('Any plan', null)
+                })
               }}
             >
               <div className="flex items-center gap-4">
-                <Icons.buyMeACoffee className="size-5" />
-                Buy me a coffee
+                <Icons.mail className="size-5" />
+                Get Pro by email
               </div>
             </CommandItem>
           </CommandGroup>

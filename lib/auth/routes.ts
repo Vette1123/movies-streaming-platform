@@ -8,10 +8,10 @@
  */
 
 import { ALERT_REGION_IDS } from '@/config/regions'
-import { claimSupporterGrants } from '@/lib/billing/bmc'
 import { isEntitled, isProAt } from '@/lib/billing/entitlement'
 import { referralEarnsMonth, referrerLookup } from '@/lib/billing/gifts'
 import { grantMonths } from '@/lib/billing/months'
+import { claimSupporterGrants } from '@/lib/billing/supporters'
 import { normalisePresets } from '@/lib/filter-presets'
 import { validPlaybackPrefs } from '@/lib/playback-options'
 import { normaliseQuietHours } from '@/lib/push/quiet'
@@ -349,7 +349,7 @@ export async function handleAuthCallback(
   }
 
   // Support usually arrives before the account does — nothing asks anyone to
-  // sign in before paying — so the webhook can only record the grant against an
+  // sign in before paying — so `pnpm pro` can only record the grant against an
   // email address. This is where it becomes an entitlement. Run on every
   // sign-in, not only on creation: someone who supports months later gets it on
   // their next visit with no hand-run UPDATE. A failure here must not cost
@@ -491,7 +491,7 @@ export async function handleRefresh(
       endsAt: user.sub_ends_at,
       pastDueSince: user.sub_past_due_since,
       // What actually entitles them today. The plan card needs to tell a
-      // supporter apart from a lapsed subscription, and with Buy Me a Coffee the
+      // supporter apart from a lapsed subscription, and with hand-written grants the
       // grant is the only live source.
       granted: (user.grants ?? '').includes('pro'),
     },
@@ -597,7 +597,7 @@ export async function handleAccount(
   if (body.delete === true) {
     // Refuse while a SUBSCRIPTION is still entitling: deleting the row cancels
     // nothing at the provider, so it would keep billing with no way to restore
-    // access. A Buy Me a Coffee grant has no such problem — it is not a
+    // access. A supporter grant has no such problem — it is not a
     // recurring charge this site can strand — so `isProAt`, not `isEntitled`.
     if (isProAt(user, now)) {
       return json(

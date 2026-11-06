@@ -113,7 +113,7 @@ export function isProAt(row: BillingRow | null, now: number): boolean {
     // Both spellings of "cancelled" keep the features to the end of the period
     // already paid for. Cutting someone off the moment they click cancel is
     // charging for service and not delivering it. This is also the status a
-    // one-off coffee is converted into by hand — `canceled` plus a future
+    // one-off payment is converted into by hand — `canceled` plus a future
     // `sub_ends_at` is exactly "paid through this date, then stops".
     case 'scheduled_cancel':
     case 'canceled':
@@ -143,7 +143,7 @@ export function isProAt(row: BillingRow | null, now: number): boolean {
  * deciding whether an event may supersede stored state. A hand grant is not a
  * subscription and must not be able to answer it.
  *
- * In practice today this is the grant alone — Buy Me a Coffee writes grants, not
+ * In practice today this is the grant alone — `pnpm pro` writes grants, not
  * subscriptions — and the subscription arm costs one call.
  */
 export function isEntitled(row: BillingRow | null, now: number): boolean {

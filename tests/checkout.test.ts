@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  accountTransitions,
-  isPendingLive,
-  PENDING_WINDOW_MS,
-} from '@/lib/checkout'
+import { accountTransitions } from '@/lib/checkout'
 
 const out = { signedIn: false, pro: false }
 const free = { signedIn: true, pro: false }
@@ -45,13 +41,5 @@ describe('accountTransitions', () => {
       signedIn: false,
       activated: false,
     })
-  })
-})
-
-describe('isPendingLive', () => {
-  it('watches for two hours after checkout, then stops', () => {
-    expect(isPendingLive(1000, 1000 + 60_000)).toBe(true)
-    expect(isPendingLive(1000, 1000 + PENDING_WINDOW_MS)).toBe(false)
-    expect(isPendingLive(1000, 500)).toBe(false)
   })
 })

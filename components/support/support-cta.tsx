@@ -1,4 +1,4 @@
-import { Heart } from 'lucide-react'
+import { Mail } from 'lucide-react'
 
 import { supportPriceLine } from '@/config/support'
 import { cn } from '@/lib/utils'
@@ -35,13 +35,13 @@ export function SupportCta({
         hint={hint}
         className={buttonVariants({ size: 'lg' })}
       >
-        <Heart className="mr-2 size-4" />
-        Support Reely
+        <Mail className="mr-2 size-4" />
+        Get Pro by email
       </CheckoutLink>
       {note !== 'none' && (
         <span className="pt-2.5 text-sm text-muted-foreground">
           {supportPriceLine()}
-          {note === 'cancel' && ' Cancel in one click.'}
+          {note === 'cancel' && ' Cancel any time with one email.'}
         </span>
       )}
     </div>

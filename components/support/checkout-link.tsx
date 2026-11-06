@@ -2,47 +2,51 @@
 
 import * as React from 'react'
 
-import { SUPPORT_URL } from '@/config/support'
+import { proMailto, type ProPlan } from '@/config/support'
 import { signInHref } from '@/lib/account'
 import { trackCheckoutStarted } from '@/lib/analytics'
-import { markCheckoutPending } from '@/lib/checkout'
 import { useAccountIdentity } from '@/hooks/use-account'
 
+const PLAN_KEY = {
+  Monthly: 'monthly',
+  Yearly: 'yearly',
+  Lifetime: 'lifetime',
+  'Any plan': 'any',
+} as const satisfies Record<ProPlan, string>
+
 /**
- * The link that leaves for the payment page, and the one sentence that decides
- * whether the payment ever reaches an account.
+ * The button that asks for Pro, and the one sentence that decides whether Pro
+ * ever reaches an account.
  *
- * Support switches on for the email the payment was made with. The most common
- * support mail was somebody who paid under one address and signed in with
- * another, and the reason was that the only place saying so was step two of a
- * section most people never scroll to. So it is said here, under the button,
- * at the moment of paying - with the actual address when we know it.
+ * Pro is arranged by email for now (config/support.ts): the button opens a mail
+ * that already names the plan and, when we know it, the sign-in address, because
+ * Pro is switched on for an EMAIL and a request that does not name one costs a
+ * round trip. The hint under the button says so at the moment of asking.
  */
 export function CheckoutLink({
   className,
   children,
   surface,
+  plan = 'Any plan',
   hint = true,
 }: {
   className?: string
   children: React.ReactNode
   surface: string
+  plan?: ProPlan
   /** Off where the layout places `CheckoutHint` itself. */
   hint?: boolean
 }) {
-  const { signedIn } = useAccountIdentity()
+  const { signedIn, email } = useAccountIdentity()
 
   return (
     <span className="inline-flex flex-col items-start gap-1.5">
       <a
-        href={SUPPORT_URL}
-        target="_blank"
-        rel="noreferrer"
+        href={proMailto(plan, signedIn ? email : null)}
         className={className}
         onClick={() => {
-          markCheckoutPending()
           trackCheckoutStarted({
-            plan: 'any',
+            plan: PLAN_KEY[plan],
             signedIn: signedIn === true,
             surface,
           })
@@ -72,8 +76,9 @@ function EmailHint({
   if (signedIn && email) {
     return (
       <span className="text-xs text-muted-foreground">
-        Pay with <span className="font-medium text-foreground">{email}</span>{' '}
-        and it switches on here by itself.
+        Pro is switched on for{' '}
+        <span className="font-medium break-all text-foreground">{email}</span>{' '}
+        once you have paid. The reply says how.
       </span>
     )
   }
@@ -85,7 +90,7 @@ function EmailHint({
       >
         Sign in first
       </a>{' '}
-      (free), then pay with the same email so it lands on your account.
+      (free), so the email names the account Pro goes on.
     </span>
   )
 }

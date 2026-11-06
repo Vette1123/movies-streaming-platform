@@ -1,8 +1,8 @@
 import {
-  Coffee,
   Filter,
   Globe,
   LucideProps,
+  Mail,
   Menu,
   Moon,
   MoreHorizontal,
@@ -43,7 +43,7 @@ export const Icons = {
   star: StarIcon,
   playIcon: PlayCircle,
   search: Search,
-  buyMeACoffee: Coffee,
+  mail: Mail,
   portfolio: Globe,
   filter: Filter,
   settings: Settings,
