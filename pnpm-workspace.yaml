@@ -10,6 +10,14 @@ overrides:
   # to one version @vercel/og is happy with removes the ambiguity. Bump this
   # together with the sharp devDependency.
   sharp: 0.35.5
+  # Dependabot, 2026-11-06. Both transitive and dev/build-only, both stuck on
+  # a vulnerable line by a parent that has not moved. Scoped to the vulnerable
+  # range, so a parent that upgrades on its own is left alone; delete each line
+  # once `pnpm why` shows nothing inside it.
+  # GHSA-g3hv-75wg-m249 (>=7 <11.0.1), via eslint's @eslint/config-array.
+  "minimatch@>=7.0.0 <11.0.1": ^11.0.5
+  # GHSA-rj75-hqrm-r3gf (<6.1.5), via @tailwindcss/typography.
+  "postcss-selector-parser@<6.1.5": ^6.1.5
 
 # Off: this project tracks the newest release of everything, the day it ships.
 # pnpm 11+ defaults to a 1-day quarantine (1440 minutes) that refuses any
