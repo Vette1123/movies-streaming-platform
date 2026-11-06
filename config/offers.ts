@@ -16,6 +16,8 @@
  *
  * Selling it: /advertise, and `pnpm sponsor:stats` for the numbers.
  */
+import { installLink } from '@/lib/apps'
+
 export type OfferPlacement = 'post-play'
 
 export interface Offer {
@@ -49,7 +51,7 @@ export const OFFERS: readonly Offer[] = [
     headline: 'Know where your money went',
     body: 'An offline-first, multi-currency spending tracker, from the person who builds Reely.',
     cta: 'Get Masareef',
-    href: 'https://masareef.mohamedgado.com/?s=reely-sponsor',
+    href: installLink('masareef', 'reely-sponsor'),
     weight: 1,
     placements: ['post-play'],
     image: '/promo/masareef.png',
@@ -61,7 +63,7 @@ export const OFFERS: readonly Offer[] = [
     headline: 'Keep your day close to prayer',
     body: "A private Islamic companion with prayer times, Qur'an, adhkar and qibla, from the person who builds Reely.",
     cta: 'Get Rafiq',
-    href: 'https://rafiq.mohamedgado.com/?s=reely&m=sponsor',
+    href: installLink('rafiq', 'reely', 'sponsor'),
     weight: 1,
     placements: ['post-play'],
     image: '/promo/rafiq.png',
