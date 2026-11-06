@@ -1803,7 +1803,10 @@ async function handleTrialRelease(request, env) {
       providerHasNoStream(
         env.PLAYBACK_WORKER_URL,
         env.PLAYBACK_TICKET_SECRET,
-        target
+        target,
+        // Through the service binding: the player is a workers.dev Worker on
+        // this same account, which a plain fetch cannot reach (error 1042).
+        env.PLAYER ? (input, init) => env.PLAYER.fetch(input, init) : undefined
       )
   )
   return new Response(JSON.stringify({ released }), {

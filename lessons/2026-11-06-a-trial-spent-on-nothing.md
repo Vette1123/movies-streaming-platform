@@ -32,6 +32,15 @@ a black frame. Now:
 - The refund's first test used `'s'` as the ticket secret. `signEntryTicket`
   base64-decodes it, threw, and showed that a malformed secret would 500 the
   route. Signing moved inside the `try`, so it fails closed.
+- The first live probe answered `stream: null`. A Cloudflare Worker never sees a
+  5xx body from the relay, only Cloudflare's own `error code: 502` page, so the
+  relay's `no stream_urls` 502 was unreadable. The relay now answers it as 404.
+  On the way there, `error code: 502` on every no-stream probe looked like the
+  Worker could not reach the relay at all. Resolving a title that streams
+  through the same route (200 in 1.8s) disproved that in one request.
+- Reely and the player are Workers on one account, and a plain fetch from one to
+  the other's workers.dev URL is refused (error 1042). The call goes through the
+  `PLAYER` service binding in `wrangler.jsonc`.
 - The browser cannot be trusted to say "no stream": a refund anyone can trigger
   is unlimited free titles. The verdict is server-to-server, and only the
   relay's own `no stream_urls` counts.
