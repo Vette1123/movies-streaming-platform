@@ -44,6 +44,14 @@ a black frame. Now:
 - The browser cannot be trusted to say "no stream": a refund anyone can trigger
   is unlimited free titles. The verdict is server-to-server, and only the
   relay's own `no stream_urls` counts.
+- The PR was opened with `gh pr create --fill`, which took the branch name as
+  the title, so the squash commit on main reads `worktree trial refund (#153)`
+  with no Conventional Commit type. Main is never force-pushed, so it stays.
+  Pass `--title "<type>(<scope>): …"` every time.
+- Its deploy failed twice on Cloudflare's side (`malformed response`, then
+  `GET …/workers/services/… -> 503 no healthy upstream`). A curl of that same
+  endpoint with the deploy token separated "our config" from "their API" before
+  anybody touched `wrangler.jsonc`.
 
 ## What worked
 
@@ -55,3 +63,4 @@ relay, instead of reasoning from aggregate counts.
 - Anything a free tier spends must be refundable when the product failed to
   deliver, and the refund is decided server-side.
 - An uncertain answer keeps the paywall closed: `null` is not `false`.
+- Never `gh pr create --fill`; always an explicit typed `--title`.
