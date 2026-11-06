@@ -30,6 +30,17 @@ export interface CompanionApp {
   installUrl?: string
 }
 
+/**
+ * The app's own short domain, tagged with where the reader came from. It lands
+ * on the same store chooser the long github.io link did, and it is the only
+ * install link a reader should ever see (owner's rule, 2026-11-05). Rafiq's
+ * tracking also reads a medium.
+ */
+export function installLink(slug: string, source: string, medium = 'site') {
+  const m = slug === 'rafiq' ? `&m=${medium}` : ''
+  return `https://${slug}.mohamedgado.com/?s=${source}${m}`
+}
+
 function companionApp(
   slug: string,
   name: string,
@@ -49,7 +60,7 @@ function companionApp(
   return {
     ...app,
     appStoreUrl: `https://apps.apple.com/app/id${appleId}`,
-    installUrl: `https://vette1123.github.io/${slug}-privacy/go`,
+    installUrl: installLink(slug, 'reely'),
   }
 }
 

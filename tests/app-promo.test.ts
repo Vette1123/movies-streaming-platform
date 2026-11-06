@@ -11,11 +11,20 @@ describe('App promo', () => {
     '$slug links to the store chooser via the apps module',
     ({ slug }) => {
       const app = COMPANION_APPS.find((a) => a.slug === slug)
-      expect(app && storeHref(app)).toBe(
-        `https://vette1123.github.io/${slug}-privacy/go`
+      // The app's own short domain with a source tag, never the long
+      // github.io chooser (owner's rule, 2026-11-05: the easy link only).
+      expect(app && storeHref(app)).toMatch(
+        new RegExp(`^https://${slug}\\.mohamedgado\\.com/\\?s=reely`)
       )
     }
   )
+
+  it('never links the long chooser anywhere live', () => {
+    for (const file of ['lib/apps.ts', 'config/offers.ts', 'lib/promo.ts'])
+      expect(readFileSync(file, 'utf8'), file).not.toMatch(
+        /github\.io\/[a-z]+-privacy\/go|\/projects\/[a-z]+\/go/
+      )
+  })
 
   it.each(PROMOS)(
     '$slug serves a small square local icon',
