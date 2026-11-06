@@ -13,6 +13,7 @@
     "imdb:ratings": "node scripts/build-imdb-ratings.mjs",
     "people:refresh": "node scripts/refresh-people.mjs",
     "ratings:refresh": "node scripts/refresh-media-ratings.mjs",
+    "sitemap:ledger": "node scripts/sitemap-ledger.mjs",
     "takedown": "node scripts/takedown.mjs",
     "images:check": "node scripts/check-image-fallback.mjs",
     "images:check:live": "node scripts/check-image-fallback.mjs --live",

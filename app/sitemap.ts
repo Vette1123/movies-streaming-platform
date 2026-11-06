@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next'
+import SITEMAP_LEDGER from '@/data/sitemap-ledger.json'
 import {
   getAllTimeTopRatedMovies,
   getLatestTrendingMovies,
@@ -21,6 +22,7 @@ import {
   buildMediaSitemapEntries,
 } from '@/lib/media-page'
 import { sitemapImage } from '@/lib/sitemap-image'
+import { ledgerSitemapEntries } from '@/lib/sitemap-ledger'
 import { yearRange } from '@/components/media/year-page'
 
 export const revalidate = 86400
@@ -329,7 +331,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       generateLinkedTVShowUrls(),
     ])
 
-    return [
+    const current = [
       ...staticRoutes,
       ...movieUrls,
       ...tvShowUrls,
@@ -337,6 +339,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...personUrls,
       ...linkedMovieUrls,
       ...linkedTVShowUrls,
+    ]
+    // Titles an earlier sitemap advertised and today's lists no longer reach.
+    // Dropping them is what Bing reported as "important pages missing".
+    const listed = new Set(current.map(({ url }) => url))
+    return [
+      ...current,
+      ...ledgerSitemapEntries(SITEMAP_LEDGER, listed, baseUrl),
     ].sort((a, b) => {
       const diff = (b.priority || 0) - (a.priority || 0)
       return diff !== 0 ? diff : a.url.localeCompare(b.url)

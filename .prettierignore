@@ -13,4 +13,4 @@ dist
 node_modules
 .next
 build
-.contentlayer
+.contentlayerdata/sitemap-ledger.json
