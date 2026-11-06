@@ -8,8 +8,9 @@
  *
  * - A paid sponsor gets `weight: 10` and a `from`/`until` window. It outranks
  *   everything, so while it is live it is the only card anybody sees.
- * - Our own apps fill the slot the rest of the time (`weight: 1`, `ownApp`),
- *   one per day in turn.
+ * - Our own apps fill the slot the rest of the time (`ownApp`). For now that
+ *   is Masareef every day (`weight: 2`); Rafiq (`weight: 1`) is the fallback.
+ *   Equal weights would take turns, one per day.
  * - `weight: 0` benches an entry. An href starting `TEMPLATE_` can never be
  *   live (tests/offers.test.ts).
  * - Supporters never see the slot at all.
@@ -52,7 +53,7 @@ export const OFFERS: readonly Offer[] = [
     body: 'An offline-first, multi-currency spending tracker, from the person who builds Reely.',
     cta: 'Get Masareef',
     href: installLink('masareef', 'reely-sponsor'),
-    weight: 1,
+    weight: 2,
     placements: ['post-play'],
     image: '/promo/masareef.png',
     ownApp: true,

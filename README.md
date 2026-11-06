@@ -150,7 +150,7 @@ Copy `.env.sample` to `.env.local` and fill in the values you need. Only TMDB-re
 
 Reely is free and stays free. Besides its supporters, it is paid for by **one sponsor card** shown under the player once a film or episode starts. There are no popups, no redirects, nothing over the video, no ad network and no third-party script. Supporters never see the card.
 
-**Current sponsor:** the slot is open. [Your brand here →](https://www.reely.space/advertise)
+**In the slot now:** [Masareef](https://masareef.mohamedgado.com/?s=reely-readme), our own spending tracker, until a sponsor books it. [Your brand here →](https://www.reely.space/advertise)
 
 |          |                                                                                             |
 | -------- | ------------------------------------------------------------------------------------------- |
@@ -165,7 +165,7 @@ Sponsor links are marked `rel="sponsored"`. Some links on the site are affiliate
 <details>
 <summary>Running the slot (maintainers)</summary>
 
-- The catalogue is `config/offers.ts`. A booking is one entry: the sponsor's referral link as `href`, `coupon`, `from`/`until` dates and `weight: 10`. When no booking is live, Reely's own apps fill the slot, one per day.
+- The catalogue is `config/offers.ts`. A booking is one entry: the sponsor's referral link as `href`, `coupon`, `from`/`until` dates and `weight: 10`. When no booking is live, Masareef fills the slot (`weight: 2`), with Rafiq as the fallback.
 - `pnpm sponsor:stats` prints the last 30 days (people, visits, plays, countries, card shows and clicks) for a reply to a sponsor; `--write` refreshes the numbers on `/advertise`.
 - `pnpm test` (`tests/offers.test.ts`) fails if a placeholder link goes live or a date is malformed.
 
