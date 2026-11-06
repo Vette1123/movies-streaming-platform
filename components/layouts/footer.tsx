@@ -26,6 +26,7 @@ const SITE_LINKS = [
   // without asking for them. It is a distribution asset, not a page about
   // the site's own features.
   { href: '/press', label: 'Press' },
+  { href: '/advertise', label: 'Advertise' },
   { href: '/privacy', label: 'Privacy' },
   { href: '/terms', label: 'Terms' },
   { href: '/disclaimer', label: 'Disclaimer' },

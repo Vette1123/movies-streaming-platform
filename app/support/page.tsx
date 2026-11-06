@@ -107,7 +107,7 @@ const PLANS: {
 const COSTS = [
   {
     title: 'The bills this has to cover',
-    body: 'The domain, the image and data traffic, the error and analytics tooling, and the paid tiers this site will hit if it keeps growing. Reely runs on free plans today and is engineered hard to stay inside them — that engineering is the reason there are no ads.',
+    body: 'The domain, the image and data traffic, the error and analytics tooling, and the paid tiers this site will hit if it keeps growing. Reely runs on free plans today and is engineered hard to stay inside them — that engineering is why the only advertising is one sponsor card under the player, and supporters never see it.',
   },
   {
     title: 'The part that is not money',
@@ -115,7 +115,7 @@ const COSTS = [
   },
   {
     title: 'What it will never pay for',
-    body: 'Ads, trackers sold to anyone, a paywall around anything that is free today, or a feature removed from the free plan to make the paid one look better.',
+    body: 'Ad networks, popups, trackers sold to anyone, a paywall around anything that is free today, or a feature removed from the free plan to make the paid one look better.',
   },
 ] as const
 

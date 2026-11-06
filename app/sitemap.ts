@@ -244,6 +244,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.6,
     },
+    // Where a sponsor is sent, and what a search for "advertise on reely"
+    // should find.
+    {
+      url: `${baseUrl}/advertise`,
+      lastModified: CONTENT_REFRESHED_AT,
+      changeFrequency: 'monthly',
+      priority: 0.3,
+    },
     // The trailer feed: same content for every visitor, and a discovery
     // surface worth crawling.
     {

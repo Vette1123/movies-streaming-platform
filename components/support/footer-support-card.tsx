@@ -34,8 +34,8 @@ export function FooterSupportCard() {
         </p>
         <p className="leading-relaxed">
           Every supporter feature is on, on every device you sign in on. This is
-          what keeps the site online, free of ads, and free for everyone who
-          never pays a penny. Thank you.
+          what keeps the site online, free of ad networks, and free for everyone
+          who never pays a penny. Thank you.
         </p>
         <Link
           href="/account"

@@ -79,22 +79,22 @@ Detail pages use TMDB `append_to_response` so a whole page renders on one TMDB r
 
 ## 🛠️ Tech Stack
 
-| Layer           | Technology                                                                                          |
-| --------------- | --------------------------------------------------------------------------------------------------- |
-| Framework       | Next.js 16 (App Router, Turbopack, RSC, static export) + React 19                                   |
-| Language        | TypeScript 6                                                                                        |
-| Styling         | Tailwind CSS 4 + `tailwindcss-animate` + `@tailwindcss/typography`                                  |
-| UI              | shadcn/ui + Radix UI, `lucide-react` icons, Framer Motion, `sonner` toasts                          |
-| Data fetching   | TanStack Query 5 + React Server Components                                                          |
-| URL state       | `nuqs`                                                                                              |
-| Search          | `cmdk` command palette + `use-debounce`                                                             |
-| Infinite scroll | `react-intersection-observer`                                                                       |
-| PWA             | Web App Manifest + hand-written service worker (no `next-pwa`/serwist)                              |
+| Layer           | Technology                                                                                         |
+| --------------- | -------------------------------------------------------------------------------------------------- |
+| Framework       | Next.js 16 (App Router, Turbopack, RSC, static export) + React 19                                  |
+| Language        | TypeScript 6                                                                                       |
+| Styling         | Tailwind CSS 4 + `tailwindcss-animate` + `@tailwindcss/typography`                                 |
+| UI              | shadcn/ui + Radix UI, `lucide-react` icons, Framer Motion, `sonner` toasts                         |
+| Data fetching   | TanStack Query 5 + React Server Components                                                         |
+| URL state       | `nuqs`                                                                                             |
+| Search          | `cmdk` command palette + `use-debounce`                                                            |
+| Infinite scroll | `react-intersection-observer`                                                                      |
+| PWA             | Web App Manifest + hand-written service worker (no `next-pwa`/serwist)                             |
 | Data source     | [TMDB API](https://www.themoviedb.org/documentation/api) + optional IMDb ratings + wsrv.nl imagery |
-| Streaming       | External, configurable video source                                                                 |
-| Analytics       | PostHog (client-side only)                                                                          |
-| Deployment      | Static export on Cloudflare Workers Static Assets + one hand-written Worker                         |
-| Tooling         | ESLint, Prettier, Husky, Commitlint, Renovate                                                       |
+| Streaming       | External, configurable video source                                                                |
+| Analytics       | PostHog (client-side only)                                                                         |
+| Deployment      | Static export on Cloudflare Workers Static Assets + one hand-written Worker                        |
+| Tooling         | ESLint, Prettier, Husky, Commitlint, Renovate                                                      |
 
 ## 📖 Getting Started
 
@@ -146,7 +146,31 @@ Copy `.env.sample` to `.env.local` and fill in the values you need. Only TMDB-re
 | `NEXT_PUBLIC_POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_HOST` | PostHog project credentials (optional)                   |
 | `CLOUDFLARE_API_TOKEN`                                 | Required only for `pnpm deploy` to Cloudflare Workers    |
 
+## 🤝 Sponsors
+
+Reely is free and stays free. Besides its supporters, it is paid for by **one sponsor card** shown under the player once a film or episode starts. There are no popups, no redirects, nothing over the video, no ad network and no third-party script. Supporters never see the card.
+
+**Current sponsor:** the slot is open. [Your brand here →](https://www.reely.space/advertise)
+
+|          |                                                                                             |
+| -------- | ------------------------------------------------------------------------------------------- |
+| Where    | Under the player on every film and episode page, after play                                 |
+| Rotation | None: one sponsor holds the slot for the whole booking                                      |
+| Period   | Calendar months, with start and end dates enforced in code                                  |
+| Pay      | Per order through your affiliate link, or a fixed month                                     |
+| Extras   | Your coupon code on the card, a monthly report of shows, clicks and copies, and a line here |
+
+Sponsor links are marked `rel="sponsored"`. Some links on the site are affiliate links, and Reely may earn a commission on orders made through them. To book the slot, see [reely.space/advertise](https://www.reely.space/advertise) or email booogado@gmail.com.
+
+<details>
+<summary>Running the slot (maintainers)</summary>
+
+- The catalogue is `config/offers.ts`. A booking is one entry: the sponsor's referral link as `href`, `coupon`, `from`/`until` dates and `weight: 10`. When no booking is live, Reely's own apps fill the slot, one per day.
+- `pnpm sponsor:stats` prints the last 30 days (people, visits, plays, countries, card shows and clicks) for a reply to a sponsor; `--write` refreshes the numbers on `/advertise`.
+- `pnpm test` (`tests/offers.test.ts`) fails if a placeholder link goes live or a date is malformed.
+
+</details>
+
 ## 🙌 Credits
 
 Built by [Mohamed Gado](https://www.mohamedgado.com/). Data and imagery courtesy of [TMDB](https://www.themoviedb.org/) — Reely is not endorsed or certified by TMDB.
-

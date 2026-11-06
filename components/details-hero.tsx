@@ -38,6 +38,7 @@ import { RateButton } from '@/components/rate-button'
 import { SaveButton } from '@/components/save-button'
 import { ShareButton } from '@/components/share-button'
 import { ShareCardButton } from '@/components/share-card-button'
+import { SponsorSlot } from '@/components/sponsor-card'
 import { TogetherRemote } from '@/components/together-remote'
 import { TrailerDialog } from '@/components/trailer-dialog'
 import { WatchTogetherBar } from '@/components/watch-together-bar'
@@ -734,6 +735,13 @@ export const DetailsHero = ({
       </section>
       {/* Blends the hero into the page below (styles/globals.css). */}
       <div aria-hidden className="hero-seam" />
+      {/* The sponsor slot: only once something plays, under the player, never
+        for a supporter (components/sponsor-card.tsx). */}
+      {isIframeShown ? (
+        <div className="container max-w-(--breakpoint-2xl) pt-6">
+          <SponsorSlot placement="post-play" />
+        </div>
+      ) : null}
     </>
   )
 }
