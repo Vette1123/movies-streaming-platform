@@ -171,7 +171,6 @@ function copyEnv(env) {
     'GOOGLE_CLIENT_ID',
     'GOOGLE_CLIENT_SECRET',
     'SESSION_TOKEN_SECRET',
-    'BMC_WEBHOOK_SECRET',
     'VAPID_PUBLIC_KEY',
     'VAPID_PRIVATE_KEY',
     'VAPID_SUBJECT',
@@ -520,7 +519,7 @@ async function handleApi(pathname, url, request, ctx, env) {
 
   // ---- Newsletter -----------------------------------------------------------
   // Single opt-in capture for the weekly digest. The sender (the support page,
-  // Buy Me a Coffee, or a mailer) handles confirmation; this just stores the
+  // or a mailer) handles confirmation; this just stores the
   // email so it can be exported. No D1 = no-op 202 so the form never breaks a
   // deploy that hasn't run migrations yet.
   if (pathname === '/api/newsletter/subscribe' && request.method === 'POST') {

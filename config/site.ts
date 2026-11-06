@@ -142,7 +142,6 @@ export const siteConfig = {
     twitter: 'https://twitter.com/Sadge1996',
     github: 'https://github.com/Vette1123',
     website: 'https://www.mohamedgado.com/',
-    buyMeACoffee: 'https://buymeacoffee.com/vetteotp',
     socialDownloader: 'https://www.socialdownloader.space/',
   },
   email: 'boogado@yahoo.com',

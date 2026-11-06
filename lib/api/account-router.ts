@@ -23,7 +23,6 @@ import {
   handleLogout,
   handleRefresh,
 } from '@/lib/auth/routes'
-import { handleBmcWebhook } from '@/lib/billing/bmc'
 import { handleGifts } from '@/lib/billing/gifts'
 import { handleCommunity } from '@/lib/community/routes'
 import { handleForYou } from '@/lib/foryou/routes'
@@ -154,8 +153,6 @@ export async function routeAccountApi(
       return handleDeviceApprove(request, db)
     case '/api/account':
       return handleAccount(request, db)
-    case '/api/billing/bmc':
-      return handleBmcWebhook(request, db)
     case '/api/sync':
       return handleSync(request, db)
     case '/api/lists':

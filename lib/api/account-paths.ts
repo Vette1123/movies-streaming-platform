@@ -19,7 +19,6 @@ export const ROUTES: Record<string, 'GET' | 'POST' | 'GET|POST'> = {
   '/api/device/poll': 'POST',
   '/api/device/approve': 'POST',
   '/api/account': 'POST',
-  '/api/billing/bmc': 'POST',
   '/api/sync': 'POST',
   '/api/lists': 'GET|POST',
   '/api/push/subscribe': 'POST',

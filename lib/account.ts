@@ -33,7 +33,7 @@ export interface PlanState {
   renewsAt: number | null
   endsAt: number | null
   pastDueSince: number | null
-  /** True when entitlement comes from a Buy Me a Coffee grant. */
+  /** True when entitlement comes from a supporter grant. */
   granted: boolean
 }
 

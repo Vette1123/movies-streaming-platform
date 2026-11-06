@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 
 import { siteConfig } from '@/config/site'
-import { SUPPORT_EMAIL, supportMailto } from '@/config/support'
+import { PRO_EMAIL, SUPPORT_EMAIL, supportMailto } from '@/config/support'
 import { LegalPage } from '@/components/legal/legal-page'
 
 export const metadata: Metadata = {
@@ -77,10 +77,9 @@ export default function PrivacyPage() {
         leave it published.
       </p>
       <p>
-        Payment is handled entirely by Buy Me a Coffee. {siteConfig.name} never
-        receives a card number. What we receive from them is the email address a
-        payment was made with and the name of the offer bought, which is what
-        switches supporter status on.
+        Supporter payments are arranged by email for now. {siteConfig.name}{' '}
+        never receives a card number. What it stores is the email address
+        supporter status is switched on for, and that it is on.
       </p>
 
       <h2>What is never stored, for anyone</h2>
@@ -114,8 +113,8 @@ export default function PrivacyPage() {
         browser&apos;s settings.
       </p>
       <p>
-        If support is active, deleting the account does not cancel it. Cancel on
-        Buy Me a Coffee first, or it keeps charging with nothing attached to it.
+        If support is active, deleting the account does not cancel it. Email{' '}
+        {PRO_EMAIL} to stop it.
       </p>
 
       <h2>Getting in touch</h2>

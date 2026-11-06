@@ -114,7 +114,7 @@ export function SiteHeader() {
                 ))}
               </PopoverContent>
             </Popover>
-            {/* GitHub, X, portfolio and the tip jar used to be four separate
+            {/* GitHub, X, portfolio and the Pro email link used to be four separate
                 icon buttons out here. Five buttons plus a 16rem search plus six
                 nav labels does not fit the 1400px container, so they live
                 behind one trigger — same links, a fifth of the width, and the

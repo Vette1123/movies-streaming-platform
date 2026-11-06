@@ -9,13 +9,13 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  ExternalLink,
   EyeOff,
   Gift,
   Heart,
   LayoutGrid,
   ListMusic,
   ListVideo,
+  Mail,
   Monitor,
   Palette,
   PlayCircle,
@@ -26,8 +26,8 @@ import {
 } from 'lucide-react'
 
 import {
+  proMailto,
   SUPPORT_EMAIL,
-  SUPPORT_URL,
   supportMailto,
   supportPriceRow,
 } from '@/config/support'
@@ -680,7 +680,7 @@ function Identity({ account }: { account: AccountState }) {
  *
  * Three real states, not a status enum printed on screen: supported by a live
  * grant, supported through a date that was paid for, and not supporting. The
- * middle one is the hand-converted one-off coffee, and it names its end date
+ * middle one is a hand-converted one-off payment, and it names its end date
  * because that is the only fact its holder needs.
  */
 function PlanSection({ account }: { account: AccountState }) {
@@ -735,13 +735,11 @@ function PlanSection({ account }: { account: AccountState }) {
             Set up your TV
           </Link>
           <a
-            href={SUPPORT_URL}
-            target="_blank"
-            rel="noreferrer"
+            href={proMailto('Any plan', account.email)}
             className={buttonVariants({ variant: 'outline' })}
           >
-            Manage on Buy Me a Coffee
-            <ExternalLink className="ml-2 size-4" />
+            <Mail className="mr-2 size-4" />
+            Change plan by email
           </a>
         </div>
       </div>

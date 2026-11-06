@@ -2,7 +2,7 @@ import React from 'react'
 import Link from 'next/link'
 
 import { siteConfig } from '@/config/site'
-import { SUPPORT_EMAIL, supportMailto } from '@/config/support'
+import { proMailto, SUPPORT_EMAIL, supportMailto } from '@/config/support'
 import { COMPANION_APPS } from '@/lib/apps'
 import { cn } from '@/lib/utils'
 import { AppPromo } from '@/components/app-promo'
@@ -165,18 +165,16 @@ export function Footer() {
             ))}
             .
           </p>
-          <Link
-            target="_blank"
-            rel="noreferrer"
-            href={siteConfig.links.buyMeACoffee}
+          <a
+            href={proMailto('Any plan', null)}
             className={cn(
               'text-white',
               buttonVariants({ variant: 'outline', size: 'sm' })
             )}
           >
-            <Icons.buyMeACoffee className="mr-2 size-4" />
-            Buy me a coffee
-          </Link>
+            <Icons.mail className="mr-2 size-4" />
+            Get Pro by email
+          </a>
         </div>
       </div>
     </footer>

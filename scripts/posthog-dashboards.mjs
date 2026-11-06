@@ -59,7 +59,7 @@ const PERSON_DAYS = `SELECT person_id, toStartOfDay(min(timestamp)) AS first_day
 export const PROJECT_SETTINGS = {
   name: 'Reely',
   product_description:
-    'Reely (reely.space) — a free web app to discover, track and stream movies and TV shows, built on TMDB. Visitors browse and search titles, open a detail page, press play on an embedded or house player, keep a watchlist and watch history in the browser, and can sign in and become supporters (paid via Buy Me a Coffee). Global audience, mostly mobile. Core conversion: media_played. Activation: first_play. Every custom event carries `area`; pageviews carry a `route` template.',
+    'Reely (reely.space) — a free web app to discover, track and stream movies and TV shows, built on TMDB. Visitors browse and search titles, open a detail page, press play on an embedded or house player, keep a watchlist and watch history in the browser, and can sign in and become supporters (arranged by email, granted by hand). Global audience, mostly mobile. Core conversion: media_played. Activation: first_play. Every custom event carries `area`; pageviews carry a `route` template.',
   // What "filter out internal and test users" means on every Trends/Funnel
   // tile: our own browsers, the near-square desktop bot fleet, and anything
   // before the bot block (a 90-day window otherwise draws the August fleet).

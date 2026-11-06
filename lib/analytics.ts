@@ -535,7 +535,7 @@ export function trackSignedIn(): void {
 
 /**
  * This browser saw its account become a supporter. The conversion itself:
- * payment happens on Buy Me a Coffee and lands through the webhook, so this is
+ * Pro is switched on by hand after an email (`pnpm pro`), so this is
  * the first point the site can see the money arrive.
  */
 export function trackSupporterActivated(props: { surface: string }): void {

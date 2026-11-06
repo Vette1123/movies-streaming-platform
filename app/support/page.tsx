@@ -4,9 +4,8 @@ import { Check, Mail } from 'lucide-react'
 
 import { siteConfig } from '@/config/site'
 import {
+  PRO_EMAIL,
   SUPPORT_EMAIL,
-  SUPPORT_LIFETIME,
-  SUPPORT_MEMBERSHIP,
   SUPPORT_PRICES,
   supportMailto,
   yearlyAnchor,
@@ -21,7 +20,6 @@ import { pageTitle } from '@/lib/seo-title'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { CheckoutHint } from '@/components/support/checkout-link'
-import { CheckoutWatcher } from '@/components/support/checkout-watcher'
 import { FeaturePromise } from '@/components/support/feature-promise'
 import { PlanView } from '@/components/support/plan-view'
 import { SupportCta } from '@/components/support/support-cta'
@@ -127,16 +125,16 @@ const FAQ = [
     a: 'No, and you never will. The catalogue, search, filters, the player, the watchlist, watch history and episode tracking are free for everyone with no account. Support adds to that; it does not unlock it.',
   },
   {
-    q: 'What happens the moment I pay?',
-    a: 'Buy Me a Coffee tells Reely which email address paid, usually within a minute. Sign in with that address and everything is already on. If you paid before signing in, it is waiting for the first time you do.',
+    q: 'How do I pay?',
+    a: `By email, for now. Write to ${PRO_EMAIL} with the plan you want and the address you sign in to Reely with, and the reply says how to pay. Once it has arrived I switch Pro on for that address by hand, usually the same day.`,
   },
   {
-    q: 'I paid with a different email than I sign in with.',
-    a: `Email me at ${SUPPORT_EMAIL} with the address you sign in with and I will move it the same day. Nothing links a Google account to a payment address on its own, so this one needs a human.`,
+    q: 'Why email and not a checkout?',
+    a: 'The payment service Reely used closed the account, and a new one is not in place yet. Rather than send you to a dead page, every “Get Pro” button opens a mail that already names the plan and your account.',
   },
   {
     q: 'I paid and nothing switched on. Now what?',
-    a: `Email ${SUPPORT_EMAIL} and say which address you paid with. It is almost always the two-addresses problem above, it takes me a minute to fix, and you are not the one who should be debugging it. There is no ticket system — the mail comes to me.`,
+    a: `Reply to the same thread, or write to ${SUPPORT_EMAIL}, and say which address you sign in with. It is almost always two different addresses, it takes me a minute to fix, and you are not the one who should be debugging it. There is no ticket system — the mail comes to me.`,
   },
   {
     q: 'A stream would not play. Does support fix that?',
@@ -152,7 +150,7 @@ const FAQ = [
   },
   {
     q: 'Can I cancel?',
-    a: 'One click on Buy Me a Coffee, any time. It runs to the end of the period you already paid for. Nothing you saved is deleted when support ends — your library stays in your browser exactly as it does for everyone else.',
+    a: `Any time: just email ${PRO_EMAIL}. It runs to the end of the period you already paid for. Nothing you saved is deleted when support ends — your library stays in your browser exactly as it does for everyone else.`,
   },
   {
     q: 'Is the Lifetime really once?',
@@ -160,7 +158,7 @@ const FAQ = [
   },
   {
     q: 'Where do my card details go?',
-    a: 'To Buy Me a Coffee, who handle the payment. Reely never sees a card number — the only thing that reaches this site is an email address and which level was bought.',
+    a: 'Nowhere near this site. The email reply names how to pay, and Reely itself never sees a card number — all it stores is the address Pro is switched on for.',
   },
 ] as const
 
@@ -176,22 +174,21 @@ const FREE_FOREVER = [
 /**
  * The mechanics, as the three things that happen in order.
  *
- * Numbered because the order is the content: the most common support mail is
- * from somebody who paid under one address and signed in with another, and it
- * happens precisely because nobody told them the two had to match.
+ * Numbered because the order is the content: Pro is switched on for an email
+ * address, so the address has to be the one somebody signs in with.
  */
 const STEPS = [
   {
-    title: 'Pick a level',
-    body: `${SUPPORT_MEMBERSHIP} or ${SUPPORT_LIFETIME}, on Buy Me a Coffee. They own the payment, the cycle and the cancellation.`,
+    title: 'Email for the plan you want',
+    body: `Monthly, yearly or lifetime, to ${PRO_EMAIL}. The button fills in the plan and your account for you, and the reply says how to pay.`,
   },
   {
-    title: 'Sign in with the same address',
-    body: 'Support switches on automatically for the email you paid with, usually within a minute or two. Paid under a different one? Email me and I will move it across the same day.',
+    title: 'Pro is switched on by hand',
+    body: 'Once the payment has arrived, Pro goes on for the address you sign in with, usually the same day. Not signed up yet? It is waiting for the first time you sign in.',
   },
   {
     title: 'Nothing else to do',
-    body: 'Every feature above is on, on every device you sign in on, and Reely never asks you for money again. Cancelling is one click, and it runs to the end of the period you have already paid for.',
+    body: 'Every feature above is on, on every device you sign in on, and Reely never asks you for money again. To cancel, send one email; it runs to the end of the period you have already paid for.',
   },
 ] as const
 
@@ -201,8 +198,6 @@ const SECTION = 'container max-w-(--breakpoint-xl)'
 export default function SupportPage() {
   return (
     <div className="pb-24">
-      {/* Renders nothing unless a checkout was started from here. */}
-      <CheckoutWatcher />
       {/* Everything below is the pitch, and a supporter is shown their own plan
           instead — they came here to change it, not to be sold it again. The
           prerendered HTML is still the full pitch, so crawlers and automated
@@ -304,7 +299,7 @@ function PlanLadder() {
         </div>
       ))}
       <p className="p-6 text-xs leading-relaxed text-muted-foreground">
-        Handled by Buy Me a Coffee. Reely never sees a card number.
+        Arranged by email for now. Reely never sees a card number.
       </p>
     </div>
   )

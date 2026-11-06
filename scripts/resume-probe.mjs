@@ -29,7 +29,7 @@
 //      the level and the mute left on this device
 //
 // Limits: the account and ticket are mocked here, so the Worker's own param
-// building is not exercised (bmc/seo probes cover production); Chromium only.
+// building is not exercised (the seo probes cover production); Chromium only.
 //
 // Run: pnpm dev, and `pnpm harness` in ../reely-pro-player, then
 //      pnpm resume:probe [app-url]

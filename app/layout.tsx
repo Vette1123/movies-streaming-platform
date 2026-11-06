@@ -9,7 +9,6 @@ import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { siteConfig } from '@/config/site'
 import { APPEARANCE_BOOT_SCRIPT } from '@/lib/appearance'
 import { RETURNING_SCRIPT } from '@/lib/back-restore'
-import { BMC_WIDGET_SCRIPT } from '@/lib/bmc-widget'
 import { fontSans } from '@/lib/fonts'
 import { IMAGE_RESCUE_SCRIPT } from '@/lib/image-rescue'
 import {
@@ -295,25 +294,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <script dangerouslySetInnerHTML={{ __html: RETURNING_SCRIPT }} />
         {/* Ahead of every <img>: see lib/image-rescue.ts. */}
         <script dangerouslySetInnerHTML={{ __html: IMAGE_RESCUE_SCRIPT }} />
-        {/*
-          Buy Me a Coffee's floating tip jar, kept off the critical path.
-
-          The provider's own <script defer src> tag works and used to sit here.
-          What replaced it is the same tag, built after `load` in idle time, so
-          the vendor bundle, its webfont and its iframe stop competing with the
-          first paint. Why it cannot simply be `async`, why faking
-          DOMContentLoaded is safe at that point, and why the corner is the left
-          one are all in lib/bmc-widget.ts.
-
-          It sells COFFEES, not the membership levels in config/support.ts, so
-          nothing bought here grants supporter status — including the panel's
-          "make this monthly", which does fire a recurring event but carries no
-          level name we configured, and lib/billing/bmc.ts matches on that name
-          with `fallback: null`. The path that actually turns somebody into a
-          supporter is /support. This is a tip jar, and if a payer ever reports
-          buying here and getting nothing switched on, this comment is the why.
-        */}
-        <script dangerouslySetInnerHTML={{ __html: BMC_WIDGET_SCRIPT }} />
         <JsonLd data={websiteJsonLd} />
         <JsonLd data={organizationJsonLd} />
         {/* Cross-document view transition: poster → hero image crossfades when

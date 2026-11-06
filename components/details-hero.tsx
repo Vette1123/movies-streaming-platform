@@ -416,12 +416,12 @@ export const DetailsHero = ({
                   // Bottom-anchored, left-aligned: the homepage hero's editorial
                   // column, so a title reads the same on both pages. pt-20 keeps
                   // the top of the column under the fixed header on a short phone.
-                  // The bottom padding is NOT spacing: the install prompt and the
-                  // tip-jar button are fixed to the bottom of the viewport, and
+                  // The bottom padding is NOT spacing: the install prompt is
+                  // fixed to the bottom of the viewport, and
                   // measured in the first screenshot round they sat on this row's
                   // buttons (a prompt over a button swallows the tap — see the
                   // player-open rule beside it). 112px clears the prompt on a
-                  // phone; from lg it is 96px, clear of the tip jar at the left.
+                  // phone; from lg it is 96px.
                   className="absolute inset-0 flex flex-col justify-end px-5 pt-20 pb-28 sm:px-8 lg:pb-24"
                   // On the stack, not the button: a touch anywhere in it bubbles
                   // up here, and every control in it leads to the same player.

@@ -3,6 +3,7 @@ import Link from 'next/link'
 
 import { siteConfig } from '@/config/site'
 import {
+  PRO_EMAIL,
   SUPPORT_EMAIL,
   supportMailto,
   supportPriceLine,
@@ -59,13 +60,13 @@ export default function TermsPage() {
       <h2>Supporter memberships</h2>
       <p>
         Supporting {siteConfig.name} is voluntary and never required. It costs{' '}
-        {supportPriceLine()} It is bought and billed through Buy Me a Coffee,
-        who are the merchant of record and whose terms apply to the payment
-        itself.
+        {supportPriceLine()} It is arranged by email with {PRO_EMAIL}: the reply
+        names how to pay, and supporter status is switched on by hand once the
+        payment has arrived.
       </p>
       <ul>
         <li>
-          A monthly or yearly membership renews automatically until you cancel
+          A monthly or yearly membership runs until you ask, by email, to stop
           it.
         </li>
         <li>
@@ -77,15 +78,15 @@ export default function TermsPage() {
           cancel. It is not revoked.
         </li>
         <li>
-          Supporter status attaches to the email address the payment was made
-          with. If that is not the address you sign in with, email{' '}
-          {SUPPORT_EMAIL} and it will be moved across.
+          Supporter status attaches to the email address you ask for it on. If
+          that is not the address you sign in with, email {SUPPORT_EMAIL} and it
+          will be moved across.
         </li>
       </ul>
       <p>
         Refunds: if support was bought by mistake, or the supporter features did
-        not work for you, ask within 14 days and it will be refunded. Ask
-        through Buy Me a Coffee or by email.
+        not work for you, ask within 14 days and it will be refunded. Ask by
+        email.
       </p>
 
       <h2>What support does not buy</h2>

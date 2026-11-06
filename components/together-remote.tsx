@@ -127,7 +127,7 @@ export function TogetherRemote({ code, remoteKey }: TogetherRemoteProps) {
     }
   }, [ended])
 
-  // The fixed bottom widgets (install nudge, tip jar) would sit under the pad's
+  // The fixed install nudge would sit under the pad's
   // thumb zone; styles/globals.css hides them and pads the page while it is up.
   React.useEffect(() => {
     document.body.dataset.remoteOpen = '1'

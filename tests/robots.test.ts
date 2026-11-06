@@ -54,7 +54,6 @@ describe('robots.txt', () => {
   })
 
   it.each([
-    '/api/billing/bmc',
     '/api/search?q=x',
     '/api/upcoming',
     '/media-fallback',

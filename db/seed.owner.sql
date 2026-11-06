@@ -13,7 +13,7 @@
 -- lifetime = 1 means no cancellation event can ever revoke it — correct here,
 -- since there is no subscription behind it to cancel.
 --
--- source = 'owner' rather than 'bmc' so these rows are obvious in a query and
+-- source = 'owner' so these rows are obvious in a query and
 -- can be removed with:
 --
 --   DELETE FROM supporters WHERE source = 'owner';
