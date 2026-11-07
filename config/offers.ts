@@ -1,5 +1,8 @@
 /**
- * The sponsor slot's catalogue: one card under the player once a title starts.
+ * The sponsor slot's catalogue: one card per page, for everyone but supporters.
+ * It sits under the hero on the homepage and on every film and episode page,
+ * and above the footer on almost every other page (`pagePlacement` in
+ * lib/offers.ts names the few it stays off).
  *
  * Same mechanism as the social downloader's PromoSlot (an OFFERS list, a
  * weight, a subid on affiliate links, `rel="sponsored"`), plus two things a
@@ -19,7 +22,9 @@
  */
 import { installLink } from '@/lib/apps'
 
-export type OfferPlacement = 'post-play'
+/** Where the card sits; also the `subid` suffix a sponsor's dashboard sees. */
+export const PLACEMENTS = ['home', 'details', 'page'] as const
+export type OfferPlacement = (typeof PLACEMENTS)[number]
 
 export interface Offer {
   /** React key, analytics id, and the `subid` the sponsor's network sees. */
@@ -54,7 +59,7 @@ export const OFFERS: readonly Offer[] = [
     cta: 'Get Masareef',
     href: installLink('masareef', 'reely-sponsor'),
     weight: 2,
-    placements: ['post-play'],
+    placements: PLACEMENTS,
     image: '/promo/masareef.png',
     ownApp: true,
   },
@@ -66,7 +71,7 @@ export const OFFERS: readonly Offer[] = [
     cta: 'Get Rafiq',
     href: installLink('rafiq', 'reely', 'sponsor'),
     weight: 1,
-    placements: ['post-play'],
+    placements: PLACEMENTS,
     image: '/promo/rafiq.png',
     ownApp: true,
   },
@@ -80,7 +85,7 @@ export const OFFERS: readonly Offer[] = [
     cta: 'See the offer',
     href: 'TEMPLATE_https://example.com/?ref=reely',
     weight: 0,
-    placements: ['post-play'],
+    placements: PLACEMENTS,
     coupon: { code: 'REELY', saving: '10% off' },
     from: '2026-12-01',
     until: '2026-12-31',

@@ -42,4 +42,4 @@ export function applyAppearance(accent?: string, density?: string): void {
  * string is inlined into the HTML of every page, so it is written to be as small
  * as it can be, and anything it referenced would have to be inlined too.
  */
-export const APPEARANCE_BOOT_SCRIPT = `try{var p=JSON.parse(localStorage.getItem('reely_profile')||'null');if(p&&p.pro){var d=document.documentElement.dataset;if(p.accent&&p.accent!=='default')d.accent=p.accent;if(p.density==='compact')d.density='compact'}}catch(e){}`
+export const APPEARANCE_BOOT_SCRIPT = `try{var p=JSON.parse(localStorage.getItem('reely_profile')||'null');if(p&&p.pro){var d=document.documentElement.dataset;d.pro='1';if(p.accent&&p.accent!=='default')d.accent=p.accent;if(p.density==='compact')d.density='compact'}}catch(e){}`

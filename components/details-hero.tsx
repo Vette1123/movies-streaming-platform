@@ -735,13 +735,12 @@ export const DetailsHero = ({
       </section>
       {/* Blends the hero into the page below (styles/globals.css). */}
       <div aria-hidden className="hero-seam" />
-      {/* The sponsor slot: only once something plays, under the player, never
-        for a supporter (components/sponsor-card.tsx). */}
-      {isIframeShown ? (
-        <div className="container max-w-(--breakpoint-2xl) pt-6">
-          <SponsorSlot placement="post-play" />
-        </div>
-      ) : null}
+      {/* The sponsor slot, under the hero (and the player once it plays),
+        never for a supporter (components/sponsor-card.tsx). */}
+      <SponsorSlot
+        placement="details"
+        className="container max-w-(--breakpoint-2xl) pt-6"
+      />
     </>
   )
 }

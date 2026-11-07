@@ -46,11 +46,20 @@ describe('App promo', () => {
     )
   })
 
-  it('shows both apps on every page, Masareef first', () => {
+  it('shows both apps, Masareef first, when no own-app card sits above', () => {
     expect(PROMOS.map(({ slug }) => slug)).toEqual(['masareef', 'rafiq'])
     expect(promo).not.toHaveProperty('pickPromo')
+    expect(promo.promosBeside(null)).toEqual(PROMOS)
+    expect(promo.promosBeside({ id: 'paid-sponsor' })).toEqual(PROMOS)
     const strip = readFileSync('components/app-promo.tsx', 'utf8')
-    expect(strip).toContain('PROMOS.map(')
+    expect(strip).toContain('promosBeside(')
+  })
+
+  it('leaves out the app the sponsor card above is already showing', () => {
+    const slugs = promo
+      .promosBeside({ id: 'masareef', ownApp: true })
+      .map(({ slug }) => slug)
+    expect(slugs).toEqual(['rafiq'])
   })
 
   it('measures both events and is mounted in the footer', () => {

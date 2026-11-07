@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
 import { OFFERS, type Offer } from '@/config/offers'
-import { isLive, offerHref, offerRel, selectOffer } from '@/lib/offers'
+import {
+  isLive,
+  offerHref,
+  offerRel,
+  pagePlacement,
+  selectOffer,
+} from '@/lib/offers'
 
 const offer = (over: Partial<Offer>): Offer => ({
   id: 'x',
@@ -11,7 +17,7 @@ const offer = (over: Partial<Offer>): Offer => ({
   cta: 'c',
   href: 'https://x.test/',
   weight: 1,
-  placements: ['post-play'],
+  placements: ['home', 'details', 'page'],
   ...over,
 })
 
@@ -35,12 +41,12 @@ describe('selectOffer', () => {
   it('gives a live paid booking the whole slot', () => {
     const paid = offer({ id: 'paid', weight: 10, until: '2026-12-31' })
     for (const day of ['2026-12-01', '2026-12-02', '2026-12-03'])
-      expect(selectOffer([...own, paid], 'post-play', day)?.id).toBe('paid')
+      expect(selectOffer([...own, paid], 'details', day)?.id).toBe('paid')
   })
 
   it('falls back to the own apps once the booking has ended', () => {
     const paid = offer({ id: 'paid', weight: 10, until: '2026-12-31' })
-    expect(selectOffer([...own, paid], 'post-play', '2027-01-01')?.id).not.toBe(
+    expect(selectOffer([...own, paid], 'details', '2027-01-01')?.id).not.toBe(
       'paid'
     )
   })
@@ -48,29 +54,85 @@ describe('selectOffer', () => {
   it('rotates tied offers one per day', () => {
     const seen = new Set(
       ['2026-12-01', '2026-12-02'].map(
-        (day) => selectOffer(own, 'post-play', day)?.id
+        (day) => selectOffer(own, 'details', day)?.id
       )
     )
     expect(seen).toEqual(new Set(['a', 'b']))
   })
 
   it('benches weight 0 and returns nothing when nothing is live', () => {
-    expect(selectOffer([offer({ weight: 0 })], 'post-play', '2026-12-01')).toBe(
+    expect(selectOffer([offer({ weight: 0 })], 'details', '2026-12-01')).toBe(
       null
     )
+  })
+})
+
+describe('selectOffer before the date is known', () => {
+  // The static HTML is built on one day and hydrated on another: the first
+  // client render must pick what the build picked, or React throws #418.
+  it('picks the evergreen card, ignoring every dated booking', () => {
+    const paid = offer({ id: 'paid', weight: 10, from: '2026-12-01' })
+    const own = offer({ id: 'own', weight: 2 })
+    expect(selectOffer([paid, own], 'home', null)?.id).toBe('own')
+  })
+
+  it('takes the first of a tie, not a day-indexed one', () => {
+    const own = [offer({ id: 'a' }), offer({ id: 'b' })]
+    expect(selectOffer(own, 'home', null)?.id).toBe('a')
+  })
+
+  it('gives the live catalogue a card before the date is known', () => {
+    expect(selectOffer(OFFERS, 'home', null)?.id).toBe('masareef')
+  })
+})
+
+describe('pagePlacement', () => {
+  it('fills ordinary pages', () => {
+    for (const path of [
+      '/movies',
+      '/tv-shows/genre/18',
+      '/watchlist',
+      '/person/31',
+      '/collection/10',
+    ])
+      expect(pagePlacement(path), path).toBe('page')
+  })
+
+  it('stays off pages that carry their own slot', () => {
+    for (const path of [
+      '/',
+      '/movies/550',
+      '/tv-shows/1399-game-of-thrones',
+      '/media-fallback',
+    ])
+      expect(pagePlacement(path), path).toBe(null)
+  })
+
+  it('stays off legal, account and sales pages', () => {
+    for (const path of [
+      '/advertise',
+      '/support',
+      '/account',
+      '/dmca',
+      '/privacy',
+      '/terms',
+      '/disclaimer',
+      '/link',
+    ])
+      expect(pagePlacement(path), path).toBe(null)
   })
 })
 
 describe('offerHref', () => {
   it('tags an affiliate link with the placement, before any fragment', () => {
     expect(
-      offerHref(offer({ href: 'https://x.test/p?ref=1#a' }), 'post-play')
-    ).toBe('https://x.test/p?ref=1&subid=reely_post-play#a')
+      offerHref(offer({ href: 'https://x.test/p?ref=1#a' }), 'details')
+    ).toBe('https://x.test/p?ref=1&subid=reely_details#a')
   })
 
   it('leaves our own apps clean', () => {
     const o = offer({ ownApp: true, href: 'https://m.test/?s=reely' })
-    expect(offerHref(o, 'post-play')).toBe('https://m.test/?s=reely')
+    expect(offerHref(o, 'details')).toBe('https://m.test/?s=reely')
   })
 })
 
@@ -95,14 +157,14 @@ describe('the live catalogue', () => {
 
   it('gives Masareef the slot until a paid booking outranks it', () => {
     const today = new Date().toISOString().slice(0, 10)
-    expect(selectOffer(OFFERS, 'post-play', today)?.id).toBe('masareef')
+    expect(selectOffer(OFFERS, 'details', today)?.id).toBe('masareef')
     const paid = offer({ id: 'paid', weight: 10 })
-    expect(selectOffer([...OFFERS, paid], 'post-play', today)?.id).toBe('paid')
+    expect(selectOffer([...OFFERS, paid], 'details', today)?.id).toBe('paid')
   })
 
   it('always has something for the slot today', () => {
     const today = new Date().toISOString().slice(0, 10)
-    expect(selectOffer(OFFERS, 'post-play', today)).not.toBe(null)
+    expect(selectOffer(OFFERS, 'details', today)).not.toBe(null)
   })
 
   // The card's layout holds up to these (checked with worst-case copy at 320px
