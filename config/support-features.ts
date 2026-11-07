@@ -67,6 +67,12 @@ export const FLAGSHIP_FEATURES: SupportFeature[] = [
     body: 'A player Reely builds and runs itself, instead of borrowing someone else’s. It starts faster than the embed servers, picks up where you stopped — even mid-episode, on another device — and pulls real subtitles onto titles that ship with none: Arabic, English, French, Turkish and more, sized the way you like. Set your language once and every title you open already has it on.',
   },
   {
+    Icon: EyeOff,
+    title: 'No sponsors, anywhere',
+    short: 'Every sponsor card on every page, gone',
+    body: 'Everyone else sees a sponsor card on the homepage, under every film and episode, and on nearly every page between. You see none of them, on any device you sign in on. Just the films.',
+  },
+  {
     Icon: RefreshCw,
     title: 'One library, every screen, forever',
     short: 'Library, history and episodes synced across every device',
@@ -190,12 +196,6 @@ const THE_SMALL_PRINT: SupportFeature[] = [
     title: 'Six accents and a denser layout',
     short: 'Six accent colours and a compact layout, saved to your account',
     body: 'Small, and the thing you will see every single session. It rides on your account, so every device you sign in on already looks the way you like it.',
-  },
-  {
-    Icon: EyeOff,
-    title: 'No sponsor card',
-    short: 'The sponsor card under the player, gone',
-    body: 'Everyone else sees one sponsor card under the player once a title starts. Yours is just the film.',
   },
   {
     Icon: BadgeCheck,

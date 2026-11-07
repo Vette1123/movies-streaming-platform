@@ -1,5 +1,5 @@
-// Data for the footer cross-promo strip. Every app shows on every page, and
-// the order here is the order on screen.
+// Data for the footer cross-promo strip, in on-screen order. Every app shows
+// on every page, except one the sponsor card right above is already showing.
 export interface Promo {
   slug: string
   name: string
@@ -30,3 +30,15 @@ export const PROMOS: Promo[] = [
     size: 96,
   },
 ]
+
+/**
+ * The strip beside a sponsor card. When the card right above it is one of our
+ * own apps, that app is left out here rather than shown twice in a row; a paid
+ * sponsor, or no card, leaves the strip whole.
+ */
+export function promosBeside(
+  card: { id: string; ownApp?: boolean } | null
+): Promo[] {
+  if (!card?.ownApp) return PROMOS
+  return PROMOS.filter((promo) => promo.slug !== card.id)
+}

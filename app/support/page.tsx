@@ -107,7 +107,7 @@ const PLANS: {
 const COSTS = [
   {
     title: 'The bills this has to cover',
-    body: 'The domain, the image and data traffic, the error and analytics tooling, and the paid tiers this site will hit if it keeps growing. Reely runs on free plans today and is engineered hard to stay inside them — that engineering is why the only advertising is one sponsor card under the player, and supporters never see it.',
+    body: 'The domain, the image and data traffic, the error and analytics tooling, and the paid tiers this site will hit if it keeps growing. Reely runs on free plans today and is engineered hard to stay inside them — that engineering is why the only advertising is one sponsor card per page, served by Reely itself, and supporters never see it.',
   },
   {
     title: 'The part that is not money',
@@ -319,8 +319,10 @@ function Flagships() {
         {SUPPORT_FEATURE_COUNT} things support unlocks
       </h2>
 
-      <div className="mt-10 grid gap-4 md:grid-cols-3">
-        <article className="relative overflow-hidden rounded-2xl border border-primary/20 bg-linear-to-br from-primary/10 to-transparent md:col-span-3">
+      {/* Two columns: the lead spans both and the other four sit 2x2 under
+          it. Three left the fourth alone on its own row. */}
+      <div className="mt-10 grid gap-4 md:grid-cols-2">
+        <article className="relative overflow-hidden rounded-2xl border border-primary/20 bg-linear-to-br from-primary/10 to-transparent md:col-span-2">
           <div className="max-w-[60ch] p-6 sm:p-8 lg:py-10">
             <lead.Icon className="size-7 text-primary" />
             <h3 className="mt-4 text-2xl font-semibold tracking-tight md:text-3xl">

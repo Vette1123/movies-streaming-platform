@@ -25,6 +25,7 @@ import { SiteHeader } from '@/components/layouts/site-header'
 import { InviteCapture } from '@/components/profile/referral-cookie'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register'
+import { SiteSponsorSlot } from '@/components/sponsor-card'
 import { SupportNudgeHost } from '@/components/support/support-nudge-host'
 import { ViewTransitionGuard } from '@/components/view-transition-guard'
 import { APPLE_SPLASH } from '@/app/_icons/apple-splash'
@@ -353,7 +354,12 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 {/* Single page-level <main> landmark. Inner error/not-found/filter
                     subtrees render inside this, so they use <div>, not <main>. */}
                 <CSPostHogProvider>
-                  <main id="main-content">{children}</main>
+                  <main id="main-content">
+                    {children}
+                    {/* The sponsor card above the footer, on every page with no
+                        slot of its own (lib/offers.ts pagePlacement). */}
+                    <SiteSponsorSlot />
+                  </main>
                 </CSPostHogProvider>
               </QueryProvider>
             </NuqsAdapter>

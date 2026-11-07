@@ -1,4 +1,5 @@
 import type { Offer, OfferPlacement } from '@/config/offers'
+import { routeTemplate } from '@/lib/analytics-context'
 
 const DAY_MS = 86_400_000
 
@@ -12,6 +13,9 @@ export function isLive(offer: Offer, today: string): boolean {
   return true
 }
 
+/** No date yet: only an offer with no booking window can be live. */
+const isEvergreen = (offer: Offer): boolean => !offer.from && !offer.until
+
 /**
  * The one card for a placement on a given day.
  *
@@ -19,20 +23,65 @@ export function isLive(offer: Offer, today: string): boolean {
  * exclusive for its window. Ties take turns one per day, in catalogue order,
  * so every visitor sees the same card on the same day and each own app gets
  * an even share.
+ *
+ * `today: null` is the static HTML and the hydration pass: built on one day,
+ * hydrated on another, so it may only pick what no date can change (the
+ * evergreen offers, first of a tie). The client re-picks with the real date
+ * straight after.
  */
 export function selectOffer(
   offers: readonly Offer[],
   placement: OfferPlacement,
-  today: string
+  today: string | null
 ): Offer | null {
   const live = offers.filter(
-    (o) => o.weight > 0 && o.placements.includes(placement) && isLive(o, today)
+    (o) =>
+      o.weight > 0 &&
+      o.placements.includes(placement) &&
+      (today === null ? isEvergreen(o) : isLive(o, today))
   )
   if (live.length === 0) return null
   const top = Math.max(...live.map((o) => o.weight))
   const tied = live.filter((o) => o.weight === top)
+  if (today === null) return tied[0]
   const day = Math.floor(Date.parse(`${today}T00:00:00Z`) / DAY_MS)
   return tied[day % tied.length]
+}
+
+/**
+ * Route templates that render their own slot higher up the page. A tail id is
+ * served the media-fallback shell, and `usePathname()` reports the shell's own
+ * route there (hooks/use-location-pathname.ts), so it is listed too.
+ */
+const OWN_SLOT = new Set([
+  '/',
+  '/movies/:id',
+  '/tv-shows/:id',
+  '/media-fallback',
+])
+
+/**
+ * Pages the site-wide card stays off: legal text, account and sign-in, the
+ * Pro page (it is selling the card's removal), and /advertise (it shows its
+ * own preview). Matched on the first path segment.
+ */
+const NO_SLOT = new Set([
+  'advertise',
+  'support',
+  'account',
+  'link',
+  'privacy',
+  'terms',
+  'disclaimer',
+  'dmca',
+])
+
+/** Which placement the card above the footer takes on this path, if any. */
+export function pagePlacement(pathname: string): OfferPlacement | null {
+  const template = routeTemplate(pathname)
+  if (OWN_SLOT.has(template)) return null
+  if (NO_SLOT.has(template.split('/')[1])) return null
+  return 'page'
 }
 
 /**

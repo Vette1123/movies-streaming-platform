@@ -16,6 +16,7 @@ import { ContinueWatching } from '@/components/main-page/continue-watching'
 import { MoviesIntroSection } from '@/components/main-page/intro-section'
 import { ScrollReveal } from '@/components/scroll-reveal'
 import { SectionErrorBoundary } from '@/components/section-error-boundary'
+import { SponsorSlot } from '@/components/sponsor-card'
 
 // Fully static: rendered ONLY at build, served from static assets, never on the
 // Worker. Freshness comes from the 4x/day CI redeploy — not on-demand ISR. This
@@ -155,6 +156,13 @@ async function IndexPage() {
             <ContinueWatching />
           </SectionErrorBoundary>
         </ScrollReveal>
+        {/* The sponsor card, between what you were watching and the
+            catalogue. In the static HTML, so it does not push the rails down
+            after hydration (components/sponsor-card.tsx). */}
+        <SponsorSlot
+          placement="home"
+          className="px-5 pt-8 sm:px-8 lg:px-12 xl:px-16 2xl:px-20"
+        />
         <ScrollReveal>
           <SectionErrorBoundary
             section="home_rails"

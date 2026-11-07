@@ -1,23 +1,33 @@
 'use client'
 
 import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { useInView } from 'react-intersection-observer'
 
 import { trackFeatureUsed } from '@/lib/analytics'
 import { COMPANION_APPS } from '@/lib/apps'
-import { PROMOS, type Promo } from '@/lib/promo'
+import { pagePlacement } from '@/lib/offers'
+import { promosBeside, type Promo } from '@/lib/promo'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
+import { useSlotOffer } from '@/components/sponsor-card'
 import { StoreLink } from '@/components/store-link'
 
-// Cross-promo for our own apps, every one on every page in PROMOS order: side
-// by side on a wide screen, stacked below that. Everything is first party and
-// the box is sized by its markup, so it costs no third-party script and no
-// layout shift.
+// Cross-promo for our own apps in PROMOS order: side by side on a wide screen,
+// stacked below that. Everything is first party and the box is sized by its
+// markup, so it costs no third-party script and no layout shift.
 export function AppPromo({ placement }: { placement: string }) {
+  // The sponsor card sits right above this strip on most pages; promosBeside
+  // leaves out the app it is already showing.
+  const promos = promosBeside(useSlotOffer(pagePlacement(usePathname())))
   return (
-    <div className="grid gap-x-10 gap-y-6 lg:grid-cols-2">
-      {PROMOS.map((promo) => (
+    <div
+      className={cn(
+        'grid gap-x-10 gap-y-6',
+        promos.length > 1 && 'lg:grid-cols-2'
+      )}
+    >
+      {promos.map((promo) => (
         <PromoItem key={promo.slug} promo={promo} placement={placement} />
       ))}
     </div>

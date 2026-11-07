@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import audience from '@/data/audience.json'
 import { Mail } from 'lucide-react'
 
-import type { Offer } from '@/config/offers'
+import { PLACEMENTS, type Offer } from '@/config/offers'
 import { siteConfig } from '@/config/site'
 import { PRO_EMAIL, sponsorMailto } from '@/config/support'
 import { pageTitle } from '@/lib/seo-title'
@@ -13,13 +13,13 @@ import { SponsorCard } from '@/components/sponsor-card'
 export const metadata: Metadata = {
   title: pageTitle(`Advertise on ${siteConfig.name}`),
   description:
-    'One sponsor card under the Reely player, shown once a film or episode starts. One sponsor at a time, booked by the month or paid per order through your affiliate link, with your coupon on the card.',
+    'One sponsor card on nearly every page of Reely: the homepage, every film and episode page, and the pages between. One sponsor at a time, booked by the month or paid per order through your affiliate link, with your coupon on the card.',
   alternates: { canonical: '/advertise' },
   openGraph: {
     images: '/opengraph-image.png',
     title: `Advertise on ${siteConfig.name}`,
     description:
-      'One sponsor card under the player. One sponsor at a time, your coupon on it.',
+      'One sponsor card on nearly every page. One sponsor at a time, your coupon on it.',
     url: '/advertise',
   },
 }
@@ -39,11 +39,11 @@ const PREVIEW: Offer = {
   id: 'preview',
   sponsor: 'Your brand',
   headline: 'Your headline, in one line',
-  body: 'A sentence on what you do for somebody who has just pressed play. Your link carries your referral id, so every order it brings is credited to Reely.',
+  body: 'A sentence on what you do for somebody choosing what to watch tonight. Your link carries your referral id, so every order it brings is credited to Reely.',
   cta: 'Your button',
   href: '#contact',
   weight: 0,
-  placements: ['post-play'],
+  placements: PLACEMENTS,
   coupon: { code: 'REELY', saving: '10% off' },
 }
 
@@ -62,16 +62,16 @@ const HOW_IT_WORKS: { label: string; value: string }[] = [
   {
     label: 'Where',
     value:
-      'Under the player on every film and episode page, the moment somebody presses play. Never on top of the video.',
+      'Under the hero on the homepage and on every film and episode page, right below the player, and above the footer on the browse, genre, people, list and watchlist pages. Never on top of the video.',
   },
   {
     label: 'Who',
     value:
-      'Everyone watching without a supporter account. Supporters pay to see no card, and they do not.',
+      'Everyone without a supporter account. Supporters pay to see no card, and they do not.',
   },
   {
     label: 'How often',
-    value: `Once per play: about ${fmt(audience.plays)} a month at today’s traffic.`,
+    value: `Once per page view: up to ${fmt(audience.pageviews)} a month at today’s traffic. An impression counts only when the card is actually on screen.`,
   },
   {
     label: 'Rotation',
@@ -86,13 +86,13 @@ const HOW_IT_WORKS: { label: string; value: string }[] = [
   {
     label: 'Links',
     value:
-      'Your own referral link, marked rel="sponsored", with subid=reely_post-play added so your dashboard can tell Reely apart.',
+      'Your own referral link, marked rel="sponsored", with subid=reely_home, reely_details or reely_page added, so your dashboard tells Reely apart and shows which spot sold.',
   },
 ]
 
 const BENEFITS = [
-  'The whole slot to yourself. There is one card on the page and while you are booked it is yours.',
-  'Seen at the moment of attention: somebody has chosen a title and is sitting in front of the screen.',
+  'The whole slot to yourself. There is one card per page, on nearly every page, and while you are booked every one of them is yours.',
+  'Seen at the moment of attention: right under the title somebody has just opened, and under the player while they watch.',
   'Your coupon code printed on the card, with a one-tap copy button.',
   'Served by Reely itself: no ad network, no third-party script, nothing for a blocker list to match.',
   'A short report at the end of the month: how often the card was shown and clicked, and how often the code was copied.',
@@ -110,13 +110,13 @@ export default function AdvertisePage() {
   return (
     <main className="container max-w-3xl py-20 lg:py-32">
       <h1 className="text-3xl font-bold tracking-tight text-balance lg:text-4xl">
-        Put your brand under the player
+        Put your brand on every page of Reely
       </h1>
       <p className="mt-3 max-w-[60ch] leading-relaxed text-pretty text-muted-foreground">
-        Reely is a free movie and TV site. It carries exactly one sponsor card,
-        shown under the player once a film or episode starts. You can book it by
-        the month, or pay per order through your affiliate link with your coupon
-        on the card.
+        Reely is a free movie and TV site. It carries one sponsor card per page:
+        on the homepage, on every film and episode page, and on the pages
+        between. You can book it by the month, or pay per order through your
+        affiliate link with your coupon on the card.
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
         <a href={sponsorMailto()} className={buttonVariants()}>
@@ -139,7 +139,7 @@ export default function AdvertisePage() {
           The real card, with your words in it.
         </p>
         <div className="mt-4">
-          <SponsorCard offer={PREVIEW} placement="post-play" preview />
+          <SponsorCard offer={PREVIEW} placement="details" preview />
         </div>
       </section>
 

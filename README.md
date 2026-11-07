@@ -148,13 +148,13 @@ Copy `.env.sample` to `.env.local` and fill in the values you need. Only TMDB-re
 
 ## 🤝 Sponsors
 
-Reely is free and stays free. Besides its supporters, it is paid for by **one sponsor card** shown under the player once a film or episode starts. There are no popups, no redirects, nothing over the video, no ad network and no third-party script. Supporters never see the card.
+Reely is free and stays free. Besides its supporters, it is paid for by **one sponsor card per page**: on the homepage, under every film and episode, and on nearly every page between. There are no popups, no redirects, nothing over the video, no ad network and no third-party script. Supporters never see the card.
 
 **In the slot now:** [Masareef](https://masareef.mohamedgado.com/?s=reely-readme), our own spending tracker, until a sponsor books it. [Your brand here →](https://www.reely.space/advertise)
 
 |          |                                                                                             |
 | -------- | ------------------------------------------------------------------------------------------- |
-| Where    | Under the player on every film and episode page, after play                                 |
+| Where    | Homepage, every film and episode page, and above the footer on nearly every other page      |
 | Rotation | None: one sponsor holds the slot for the whole booking                                      |
 | Period   | Calendar months, with start and end dates enforced in code                                  |
 | Pay      | Per order through your affiliate link, or a fixed month                                     |

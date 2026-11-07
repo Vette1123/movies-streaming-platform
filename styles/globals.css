@@ -664,24 +664,12 @@
   z-index: -1;
 }
 
-/* The sponsor card arrives with the play, once: a short rise into place.
-   Reduced motion keeps the fade and drops the movement. */
-.sponsor-card {
-  transition:
-    opacity 300ms cubic-bezier(0.23, 1, 0.32, 1),
-    translate 300ms cubic-bezier(0.23, 1, 0.32, 1);
-  @starting-style {
-    opacity: 0;
-    translate: 0 8px;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .sponsor-card {
-    transition: opacity 200ms ease;
-    @starting-style {
-      translate: none;
-    }
-  }
+/* The sponsor card is in the static HTML, with no entrance: it is on nearly
+   every page, and anything seen that often should just be there. A supporter's
+   cached profile sets data-pro before the first paint (lib/appearance.ts), so
+   their card never paints at all, rather than painting and then vanishing. */
+html[data-pro] .sponsor-slot {
+  display: none;
 }
 
 @layer base {
