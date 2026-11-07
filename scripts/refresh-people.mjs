@@ -26,7 +26,7 @@
 //   pnpm people:refresh 4866792 …    # …plus these ids by hand
 //
 // The cap is the asset budget: a static export writes ~6 files per route and
-// the ceiling is 20,000 files for the whole site (see CLAUDE.md). The script
+// the ceiling is 20,000 files for the whole site (see .claude/rules/cloudflare.md). The script
 // measures what the last build wrote and spends what is left, so the cap
 // follows the site instead of being a number somebody has to remember.
 import { readFile, readdir, stat, writeFile } from 'node:fs/promises'

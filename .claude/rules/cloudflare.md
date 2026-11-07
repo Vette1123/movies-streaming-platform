@@ -1,0 +1,116 @@
+---
+paths:
+  - "cloudflare/worker.js"
+  - "wrangler.jsonc"
+  - "next.config.mjs"
+  - "db/seed.dev.sql"
+  - "db/seed.owner.sql"
+  - "migrations/0001_accounts.sql"
+  - "migrations/0002_calendar_feed.sql"
+  - "migrations/0003_media_runtime.sql"
+  - "migrations/0004_watch_providers.sql"
+  - "migrations/0005_profiles_and_gifts.sql"
+  - "migrations/0006_alert_pacing.sql"
+  - "migrations/0007_community.sql"
+  - "migrations/0008_match_together.sql"
+  - "migrations/0009_together_remote.sql"
+  - "migrations/0010_together_remote_key.sql"
+  - "migrations/0011_invite_codes.sql"
+  - "migrations/0012_newsletter.sql"
+  - "migrations/0013_device_links.sql"
+  - "migrations/0014_player_trials.sql"
+  - "scripts/build-app-icons.mjs"
+  - "scripts/build-cf.mjs"
+  - "scripts/build-companion-icons.mjs"
+  - "scripts/build-imdb-ratings.mjs"
+  - "scripts/build-kodi-zip.mjs"
+  - "scripts/build-og-fonts.mjs"
+  - "scripts/build-og-image.mjs"
+  - "scripts/build-worker.mjs"
+  - "scripts/cf-cpu.mjs"
+  - "scripts/cf-deploy.mjs"
+  - "scripts/cf-dns-hardening.mjs"
+  - "scripts/cf-health.mjs"
+  - "scripts/cf-waf-setup.mjs"
+  - "scripts/check-image-fallback.mjs"
+  - "scripts/dev-stop.mjs"
+  - "scripts/embed-probe.mjs"
+  - "scripts/errors-triage.mjs"
+  - "scripts/grant-pro.mjs"
+  - "scripts/hop-probe.mjs"
+  - "scripts/indexnow.mjs"
+  - "scripts/kodi-probe.mjs"
+  - "scripts/lib"
+  - "scripts/lighthouse.mjs"
+  - "scripts/load-env.mjs"
+  - "scripts/optimize-png.mjs"
+  - "scripts/posthog-comparisons.mjs"
+  - "scripts/posthog-dashboards.mjs"
+  - "scripts/posthog-fixed.json"
+  - "scripts/posthog-issues.mjs"
+  - "scripts/posthog-query.mjs"
+  - "scripts/posthog-setup.mjs"
+  - "scripts/posthog-usage.mjs"
+  - "scripts/refresh-media-ratings.mjs"
+  - "scripts/refresh-people.mjs"
+  - "scripts/release-notes.mjs"
+  - "scripts/resume-probe.mjs"
+  - "scripts/search-scroll-probe.mjs"
+  - "scripts/share-probe.mjs"
+  - "scripts/sitemap-ledger.mjs"
+  - "scripts/sponsor-stats.mjs"
+  - "scripts/strip-map-comments.mjs"
+  - "scripts/takedown.mjs"
+  - "scripts/trial-probe.mjs"
+  - "scripts/verify-icons.mjs"
+  - "scripts/verify-seo.mjs"
+  - "scripts/view-transition-probe.mjs"
+  - "public/_headers"
+  - "public/_redirects"
+  - "public/ads.txt"
+  - "public/android-chrome-192x192-maskable.png"
+  - "public/android-chrome-192x192.png"
+  - "public/android-chrome-512x512-maskable.png"
+  - "public/android-chrome-512x512.png"
+  - "public/apple-touch-icon-precomposed.png"
+  - "public/apple-touch-icon.png"
+  - "public/apps"
+  - "public/browserconfig.xml"
+  - "public/favicon.ico"
+  - "public/fd71a860ed122d006df9ba7c2c529b88.txt"
+  - "public/kodi"
+  - "public/llms-full.txt"
+  - "public/llms.txt"
+  - "public/mstile-150x150.png"
+  - "public/offline.html"
+  - "public/opengraph-image.png"
+  - "public/personal-logo.png"
+  - "public/promo"
+  - "public/screenshot-narrow.webp"
+  - "public/screenshot-wide.webp"
+  - "public/site.webmanifest"
+  - "public/splash"
+  - "public/sw.js"
+  - ".github/dependabot.yml"
+  - ".github/workflows"
+---
+
+### Cloudflare free-plan architecture (the core constraint)
+
+Replaced OpenNext on 2026-08-03. Under OpenNext, prod was killing **25–40% of all Worker invocations** on the 10ms CPU budget: a detail id outside the prerendered set re-rendered React on every request (0.4–1.0s wall) and could never become a cache hit, because the incremental cache was read-only and Cloudflare will not edge-cache Worker-generated HTML. See `docs/superpowers/specs/2026-08-03-static-export-migration-design.md`.
+
+- **Static assets match before the Worker runs.** Every prerendered page is a plain asset in `out/`: zero CPU, and it does not count against the 100k invocations/day cap. Next.js does not run in production at all.
+- **The Worker (`cloudflare/worker.js`) only handles what cannot be static**: `/api/*` (`run_worker_first`), and detail/collection ids outside the prerendered set. A tail id costs one TMDB fetch plus an `HTMLRewriter` pass over an exported client shell (`app/media-fallback`, `app/collection-fallback`) into which it injects the real title, OG/Twitter tags, JSON-LD and a crawlable `<h1>` — so unfurlers and crawlers cannot tell a tail page from a prerendered one. Unknown ids get the 404 asset.
+- **`caches.default` is keyed by URL + the Next build id.** The build id is not optional: cached fallback HTML references content-hashed chunks that the next deploy deletes, so without it a colo serves a page with dead scripts for the rest of its TTL and the client bounces off the stale-deploy boundary. `scripts/build-worker.mjs` stamps it in. It's the only cache the Worker's own output ever lands in — on a Workers Custom Domain the Worker runs ahead of the zone cache, so CF never stores Worker-generated HTML.
+- **The zone DOES edge-cache the static document routes** (`CF-Cache-Status: HIT` on `/`, measured 2026-08-06) — they're assets, matched before the Worker. Nothing invalidates that cache on its own, so **freshness needs both**: the edge TTL held at the deploy interval (`scripts/cf-waf-setup.mjs` `edge_ttl`, `override_origin` — it wins over `s-maxage` in `public/_headers`), and the **purge after every deploy** in `scripts/cf-deploy.mjs` (opt out with `CF_PURGE=false`; a failed purge prints `::error::` because it silently pins the site to the old build). Older comments calling the cache rule a no-op describe the pre-2026-08-03 OpenNext layout — don't trust them.
+- **`scripts/build-worker.mjs` inlines every `NEXT_PUBLIC_*` at bundle time.** Next inlines those textually for the app, but esbuild builds the Worker, so they would stay live lookups against a `process.env` holding only the two TMDB secrets — and an undefined `NEXT_PUBLIC_TMDB_BASEURL` 500s every API call in prod.
+- **The 20,000-file asset cap is the real ceiling on site size.** A static export writes **~10 files per route** (Next 16's client segment cache; no flag disables it), so `LIST_DEPTH` in `lib/media-page.ts` is 15/8/3 → 1,037 routes / ~10,300 files. Re-measure `find out -type f | wc -l` before widening it. Prerender size no longer governs CPU, so widening buys freshness, not stability.
+- **Static-first**: homepage and browse/list pages are fully static (`revalidate: false` on their TMDB fetches) and refresh only on the deploy — every 6h on cron (`.github/workflows/deploy.yml`), plus every push. **Deploy cadence is the site's only freshness control**, so a page's data is only as fresh as the TMDB endpoint behind it: the hero reads `trending/all/day`, not `/week` (a 7-day window sits still for weeks and made redeploys look pointless). `fetchClient.get(..., revalidate)` — pass `false` for build-only/static, a number for time-based ISR (default 8h).
+- **`headers()` / `redirects()` do not exist under `output: 'export'`** — they live in `public/_headers` and `public/_redirects`, native to Workers Static Assets. **Cached paths must stay in sync with the CDN rule in `scripts/cf-waf-setup.mjs`.** `next.config.mjs` still defines them for the non-export build; `DEPLOY_TARGET=cloudflare` is what flips between the two configs.
+- **WAF** (`scripts/cf-waf-setup.mjs`): scraper-challenge + rate-limit rules. The rate-limit rule **excludes `/*/genre`** (genre infinite-scroll would otherwise trip it). Run `pnpm waf:apply` after changing rules.
+- **Pro is sold by email, by hand, until a new payment provider exists** (the old one suspended the account on 2026-11-06). Every buy button is `proMailto()` from `config/support.ts`, addressed to `PRO_EMAIL`; the owner replies with how to pay and runs `pnpm pro <address>`, which writes the `supporters` row that `claimSupporterGrants` (`lib/billing/supporters.ts`) hands to the account on sign-in. There is no payment webhook. `tests/pro-by-email.test.ts` fails if the old provider is named anywhere live.
+- **One sponsor card per page, never for supporters** (`components/sponsor-card.tsx`): under the hero on home and detail pages, above the footer elsewhere (`pagePlacement` in `lib/offers.ts` names the pages it stays off). It is in the static HTML, picked with `today: null` until hydration so build day and visit day cannot mismatch; supporters are hidden before paint by `data-pro` (`APPEARANCE_BOOT_SCRIPT`). "shown" fires only when the card is on screen. The catalogue is `config/offers.ts`: a booking is one entry with the sponsor's referral `href`, `coupon`, `from`/`until` and `weight: 10`; otherwise Masareef holds it (`weight: 2`, Rafiq is the fallback). `/advertise` sells it with the numbers from `pnpm sponsor:stats --write`. `tests/offers.test.ts` pins selection, link tagging and copy limits.
+
+- **The supporter calendar feed (`/api/calendar/<token>.ics`) is exempt from the UA challenge AND from the apex→www redirect**: what polls it is Google/Apple/Outlook's fetcher, not a browser. A challenge turns a subscription permanently red, and a 301 loses the poll on any client that does not follow it. Both are prefix matches in `scripts/cf-waf-setup.mjs` (`CALENDAR_PREFIX`) — run `pnpm waf:apply` after touching them.
+- **`/api/upcoming` and the feed are one D1 JOIN with zero TMDB traffic.** The hourly sweep already writes `watched_media.next_air_date` for every watchlisted title (it must, to send alerts), so the schedule is a read over rows that exist for another reason. Keep it that way: a per-title TMDB call here would reintroduce the 50-subrequest problem. Migration `0002_calendar_feed.sql` adds `users.calendar_token`, `0003_media_runtime.sql` adds `watched_media.runtime` (written by the sweep, read by nothing yet — it is there so hours-watched can be answered from D1 alone later) — **CI applies migrations before every deploy** (`.github/workflows/deploy.yml`, "Apply D1 migrations", ahead of `deploy:full`); a failure there stops the deploy with the old Worker still serving. Run `pnpm d1:migrate:remote` by hand only to land a schema change ahead of its push.
+
