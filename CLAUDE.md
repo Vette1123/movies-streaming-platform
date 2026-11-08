@@ -28,6 +28,7 @@ pnpm waf:apply          # push Cloudflare WAF + CDN cache rules
 pnpm share:probe       # a real list and profile unfurled through D1, the Worker and wsrv (writes + deletes one throwaway user)
 pnpm hop:probe          # a played stream is never taken from the viewer: outages cut at the browser network layer, real page AND real player (pnpm dev + `pnpm harness` in ../reely-pro-player)
 pnpm resume:probe       # resume + playback prefs through the real page AND real player (pnpm dev + `pnpm harness` in ../reely-pro-player)
+pnpm relay:canary      # can the Reely Player play? site ticket, player shell, relay walk to a segment (hourly in CI; opens a `relay-down` issue)
 pnpm cf:cpu [hours]     # production Worker CPU broken down BY ROUTE (Workers Logs); cf:health has the kills
 pnpm lighthouse         # medians with timing; run the Lighthouse workflow instead, a home connection measures itself
 ```
