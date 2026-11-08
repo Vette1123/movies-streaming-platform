@@ -14,6 +14,11 @@ on:
     # Off the hour, so it does not land with every other scheduled job.
     - cron: '23 * * * *'
   workflow_dispatch:
+    inputs:
+      relay_url:
+        description: 'Drill: point at a dead relay URL to prove the issue opens (empty = the real relay)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -41,6 +46,8 @@ jobs:
       - id: canary
         continue-on-error: true
         run: node scripts/relay-canary.mjs
+        env:
+          RELAY_URL: ${{ inputs.relay_url || 'https://reely-resolver-relay.reely.deno.net' }}
 
       - name: Open the outage issue
         if: steps.canary.outcome == 'failure'
