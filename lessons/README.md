@@ -154,3 +154,4 @@ with the work, not after.
 | 2026-11-06 | [Sponsor slot and the 404 canonical](2026-11-06-sponsor-slot-and-404-canonical.md) | The 404 page inherited the homepage canonical under every unknown URL; and a sponsor card made four "no ads" claims false until they were rewritten. |
 | 2026-11-06 | [Short store links](2026-11-06-short-store-links.md) | Install links were spelled two ways after the sponsor card; one `installLink()` now builds every one, and a test bans the long github.io chooser. |
 | 2026-11-07 | [Sponsor card on every page](2026-11-07-sponsor-on-every-page.md) | A card above static content goes in the static HTML and hides for supporters before paint; impressions count in view, not on mount. |
+| 2026-11-08 | [Relay canary](2026-11-08-relay-canary.md) | The provider changed its mint and the Reely Player was down ~a day before a user said so; `/selftest` existed but nothing ran it. Hourly canary now opens an issue. |
