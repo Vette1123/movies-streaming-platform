@@ -151,11 +151,11 @@ export async function loadDirectory(
     db
       .prepare(
         `SELECT COUNT(*) AS n FROM users
-         WHERE grants IS NOT NULL
+         WHERE (grants IS NOT NULL AND (pro_until IS NULL OR pro_until > ?))
             OR (sub_status IN ('active', 'canceled')
                 AND (sub_ends_at IS NULL OR sub_ends_at > ?))`
       )
-      .bind(now)
+      .bind(now, now)
       .first<{ n: number }>(),
   ])
 
