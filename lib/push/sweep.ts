@@ -259,6 +259,8 @@ async function interestedUsers(
          AND sync_items.item_key = ?
          AND sync_items.payload IS NOT NULL
          AND users.grants LIKE '%pro%'
+         AND (users.pro_until IS NULL
+              OR users.pro_until > CAST(strftime('%s', 'now') AS INTEGER) * 1000)
          AND COALESCE(users.prefs, '') LIKE '%"alerts":true%'`
     )
     .bind(mediaKey)

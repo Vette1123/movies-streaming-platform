@@ -372,7 +372,7 @@ export async function loadPublicList(
   const row = await db
     .prepare(
       `SELECT lists.name, lists.description, lists.items, lists.smart_query,
-              lists.updated_at, users.name AS owner, users.grants,
+              lists.updated_at, users.name AS owner, users.grants, users.pro_until,
               users.sub_status, users.sub_ends_at, users.sub_past_due_since
        FROM lists JOIN users ON users.id = lists.user_id
        WHERE lists.slug = ? AND lists.published = 1`
@@ -386,6 +386,7 @@ export async function loadPublicList(
       updated_at: number
       owner: string | null
       grants: string | null
+      pro_until: number | null
       sub_status: string | null
       sub_ends_at: number | null
       sub_past_due_since: number | null

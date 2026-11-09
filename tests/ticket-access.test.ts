@@ -31,7 +31,11 @@ describe('who gets a playback ticket', () => {
     })
 
   beforeEach(async () => {
-    const opened = sqliteD1('0001_accounts.sql', '0014_player_trials.sql')
+    const opened = sqliteD1(
+      '0001_accounts.sql',
+      '0014_player_trials.sql',
+      '0015_pro_until.sql'
+    )
     db = opened.db
     count = () =>
       Number(

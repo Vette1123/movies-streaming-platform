@@ -128,7 +128,7 @@ export function clearCookieHeaders(origin: string): string[] {
  */
 export const USER_COLUMNS =
   'users.id, users.google_sub, users.email, users.name, users.picture, ' +
-  'users.created_at, users.prefs, users.grants, ' +
+  'users.created_at, users.prefs, users.grants, users.pro_until, ' +
   'users.sub_status, users.sub_variant, users.sub_renews_at, ' +
   'users.sub_ends_at, users.sub_past_due_since, users.sub_updated_at'
 
