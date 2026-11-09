@@ -16,15 +16,15 @@ export async function claimSupporterGrants(
   email: string
 ): Promise<void> {
   const supporter = await db
-    .prepare('SELECT grants FROM supporters WHERE email = ?')
+    .prepare('SELECT grants, ends_at FROM supporters WHERE email = ?')
     .bind(email.trim().toLowerCase())
-    .first<{ grants: string }>()
+    .first<{ grants: string; ends_at: number | null }>()
   if (!supporter?.grants) return
 
   const user = await db
-    .prepare('SELECT grants FROM users WHERE id = ?')
+    .prepare('SELECT grants, pro_until FROM users WHERE id = ?')
     .bind(userId)
-    .first<{ grants: string | null }>()
+    .first<{ grants: string | null; pro_until: number | null }>()
   if (!user) return
 
   let next = user.grants ?? null
@@ -32,10 +32,13 @@ export async function claimSupporterGrants(
     const name = grant.trim()
     if (name) next = withGrant(next, name)
   }
-  if (next === user.grants) return
+  // The supporters row is the truth, end date included: a lifetime grant made
+  // after a dated one clears it.
+  const until = supporter.ends_at ?? null
+  if (next === user.grants && until === (user.pro_until ?? null)) return
 
   await db
-    .prepare('UPDATE users SET grants = ? WHERE id = ?')
-    .bind(next, userId)
+    .prepare('UPDATE users SET grants = ?, pro_until = ? WHERE id = ?')
+    .bind(next, until, userId)
     .run()
 }

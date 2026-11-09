@@ -124,4 +124,35 @@ describe('isEntitled', () => {
     ).toBe(false)
     expect(isEntitled(null, NOW)).toBe(false)
   })
+
+  /** `pnpm pro <email> --until <date>`: a prepaid year switches itself off. */
+  describe('a grant with an end date', () => {
+    const granted = (until: number | null, over: Partial<BillingRow> = {}) =>
+      row({ grants: 'pro', pro_until: until, ...over })
+
+    it('holds until the date', () => {
+      expect(isEntitled(granted(NOW + DAY), NOW)).toBe(true)
+    })
+
+    it('ends on the date, exactly', () => {
+      expect(isEntitled(granted(NOW), NOW)).toBe(false)
+      expect(isEntitled(granted(NOW - DAY), NOW)).toBe(false)
+    })
+
+    it('is forever when there is no date', () => {
+      expect(isEntitled(granted(null), NOW)).toBe(true)
+    })
+
+    it('does not cut short a subscription that is still paid for', () => {
+      expect(
+        isEntitled(granted(NOW - DAY, { sub_status: 'active' }), NOW)
+      ).toBe(true)
+    })
+
+    it('grants nothing without the grant itself', () => {
+      expect(isEntitled(row({ grants: null, pro_until: NOW + DAY }), NOW)).toBe(
+        false
+      )
+    })
+  })
 })

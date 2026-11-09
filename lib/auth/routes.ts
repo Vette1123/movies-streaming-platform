@@ -8,7 +8,7 @@
  */
 
 import { ALERT_REGION_IDS } from '@/config/regions'
-import { isEntitled, isProAt } from '@/lib/billing/entitlement'
+import { grantedProAt, isEntitled, isProAt } from '@/lib/billing/entitlement'
 import { referralEarnsMonth, referrerLookup } from '@/lib/billing/gifts'
 import { grantMonths } from '@/lib/billing/months'
 import { claimSupporterGrants } from '@/lib/billing/supporters'
@@ -493,7 +493,7 @@ export async function handleRefresh(
       // What actually entitles them today. The plan card needs to tell a
       // supporter apart from a lapsed subscription, and with hand-written grants the
       // grant is the only live source.
-      granted: (user.grants ?? '').includes('pro'),
+      granted: grantedProAt(user, now),
     },
     prefs: user.prefs,
   })

@@ -31,7 +31,11 @@ describe('handing back a trial the provider could not serve', () => {
   const hasStream = () => Promise.resolve(false)
 
   beforeEach(async () => {
-    const opened = sqliteD1('0001_accounts.sql', '0014_player_trials.sql')
+    const opened = sqliteD1(
+      '0001_accounts.sql',
+      '0014_player_trials.sql',
+      '0015_pro_until.sql'
+    )
     db = opened.db
     addUser(opened.sqlite, 'supporter', 'pro')
     addUser(opened.sqlite, 'free', null)

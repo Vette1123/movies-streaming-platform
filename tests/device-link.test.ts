@@ -76,7 +76,11 @@ describe('linking a TV', () => {
     handleDevicePoll(post({ deviceCode }), db)
 
   beforeEach(async () => {
-    const opened = sqliteD1('0001_accounts.sql', '0013_device_links.sql')
+    const opened = sqliteD1(
+      '0001_accounts.sql',
+      '0013_device_links.sql',
+      '0015_pro_until.sql'
+    )
     const { sqlite } = opened
     db = opened.db
     addUser(sqlite, 'supporter', 'pro')

@@ -220,6 +220,7 @@ interface ProfileRow {
   profile_bio: string | null
   created_at: number
   grants: string | null
+  pro_until: number | null
   sub_status: string | null
   sub_ends_at: number | null
   sub_past_due_since: number | null
@@ -267,7 +268,7 @@ export async function loadPublicProfile(
 
   const row = await db
     .prepare(
-      `SELECT id, handle, name, picture, profile_bio, created_at, grants,
+      `SELECT id, handle, name, picture, profile_bio, created_at, grants, pro_until,
               sub_status, sub_ends_at, sub_past_due_since
        FROM users WHERE handle = ? AND profile_public = 1`
     )

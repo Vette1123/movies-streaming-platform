@@ -138,7 +138,7 @@ export async function loadDirectory(
     db
       .prepare(
         `SELECT users.handle, users.name, users.picture, users.profile_bio,
-                users.grants, users.sub_status, users.sub_ends_at,
+                users.grants, users.pro_until, users.sub_status, users.sub_ends_at,
                 users.sub_past_due_since,
                 (SELECT COUNT(*) FROM lists
                   WHERE lists.user_id = users.id AND lists.published = 1) AS lists
