@@ -1,3 +1,5 @@
+import { realpathSync } from 'node:fs'
+import path from 'node:path'
 import { withPostHogConfig } from '@posthog/nextjs-config'
 
 // Production is a pure static export on Cloudflare Workers: `next build` writes
@@ -21,8 +23,15 @@ const staticExportConfig = {
   output: 'export',
 }
 
+// A worktree links node_modules to the main checkout's (~/.claude/worktree.mjs),
+// and Turbopack refuses to resolve `next` outside its root: "Could not find the
+// Next.js package". Rooting it where node_modules really lives makes a worktree
+// buildable, and is the project directory itself everywhere else.
+const turbopackRoot = path.dirname(realpathSync('node_modules'))
+
 /** @type {import('next').NextConfig} */
 const baseConfig = {
+  turbopack: { root: turbopackRoot },
   images: {
     // NOT `unoptimized: true`. That flag also suppresses `srcset`, which meant
     // every device fetched the width baked into the URL — a 2560px hero backdrop

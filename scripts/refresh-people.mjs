@@ -24,15 +24,18 @@
 //   pnpm people:refresh              # the catalogue's people, capped to the
 //                                     # asset budget
 //   pnpm people:refresh 4866792 …    # …plus these ids by hand
+//   pnpm people:refresh --only 524 … # just these ids, no catalogue walk
+//                                     # (the Search Console 404 report)
 //
 // The cap is the asset budget: a static export writes ~6 files per route and
 // the ceiling is 20,000 files for the whole site (see .claude/rules/cloudflare.md). The script
 // measures what the last build wrote and spends what is left, so the cap
 // follows the site instead of being a number somebody has to remember.
-import { readFile, readdir, stat, writeFile } from 'node:fs/promises'
+import { readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { mergePeople, peopleCap } from './lib/people-set.mjs'
 import { loadLocalEnv } from './load-env.mjs'
 
 loadLocalEnv()
@@ -153,7 +156,10 @@ const creditsFor = async (title) => {
   ).catch(() => null)
   if (!res) return []
   const people = [
-    ...(res.cast ?? []).map((credit) => ({ person: credit, order: credit.order })),
+    ...(res.cast ?? []).map((credit) => ({
+      person: credit,
+      order: credit.order,
+    })),
     ...(res.crew ?? []).map((credit) => ({ person: credit, order: 999 })),
   ]
   return people
@@ -162,84 +168,106 @@ const creditsFor = async (title) => {
 async function main() {
   if (!BASE || !TOKEN) throw new Error('TMDB_HEADER_KEY / base URL missing')
 
+  const args = process.argv.slice(2)
+  const only = args.includes('--only')
+  // `--only 1,2 3` and `--only '1 2'` both mean ids 1-3. Anything else that is
+  // not a flag fails loudly: a comma list once matched nothing and the run
+  // reported "0 by hand" as if it had worked.
+  const tokens = args
+    .filter((arg) => !arg.startsWith('--'))
+    .flatMap((arg) => arg.split(/[\s,]+/))
+    .filter(Boolean)
+  const bad = tokens.filter((token) => !/^\d+$/.test(token))
+  if (bad.length) throw new Error(`[people] not a person id: ${bad.join(' ')}`)
+  const ids = tokens
+
   const existing = JSON.parse(await readFile(FILE, 'utf8').catch(() => '[]'))
-  const byId = new Map(existing.map((person) => [person.id, person]))
-  const before = byId.size
+  const before = existing.length
 
   // How many files the last build wrote, and how many the person pages are
-  // already costing. What is left is what this feature may spend.
-  const total = await countFiles(OUT_DIR)
-  let cap = Infinity
-  if (total !== null) {
-    const personFiles = await countFiles(path.join(OUT_DIR, 'person'))
-    const others = total - (personFiles ?? 0)
-    cap = Math.max(before, Math.floor((FILE_TARGET - others) / FILES_PER_PERSON))
-    console.log(
-      `[people] the last build wrote ${total} files (${others} without the people); ` +
-        `the cap leaves room for ${cap} people`
-    )
-  } else {
-    console.log(
-      `[people] no out/ to measure — run a build first, or the cap is the file limit`
-    )
-    cap = Math.floor(FILE_TARGET / FILES_PER_PERSON)
-  }
-
-  // The catalogue's own people, ranked by how much of the site's attention
-  // they carry.
-  const titles = await catalogueTitles()
-  console.log(`[people] ${titles.length} titles in the catalogue…`)
-
-  const score = new Map()
-  const details = new Map()
-  const people = [...titles]
-  for (let i = 0; i < people.length; i += 8) {
-    const batch = await Promise.all(
-      people.slice(i, i + 8).map((title) => creditsFor(title))
-    )
-    for (const credits of batch) {
-      for (const { person } of credits) {
-        if (!usable(person)) continue
-        const current = score.get(person.id) ?? 0
-        score.set(person.id, current + 1)
-        if (!details.has(person.id)) details.set(person.id, person)
-      }
-    }
-    if (i % 80 === 0) console.log(`[people] ${i + 8}/${people.length} titles…`)
-  }
-
-  const ranked = [...details.values()].sort(
-    (a, b) => (score.get(b.id) ?? 0) - (score.get(a.id) ?? 0)
-  )
+  // already costing. What is left is what the catalogue may spend.
+  const totalFiles = await countFiles(OUT_DIR)
+  const personFiles =
+    totalFiles === null ? null : await countFiles(path.join(OUT_DIR, 'person'))
+  const cap = peopleCap({
+    before,
+    totalFiles,
+    personFiles,
+    target: FILE_TARGET,
+    perPerson: FILES_PER_PERSON,
+  })
   console.log(
-    `[people] ${ranked.length} people in the catalogue's cast and crew`
+    totalFiles === null
+      ? `[people] no out/ to measure, so the catalogue adds nobody (hand-named ids still go in)`
+      : `[people] the last build wrote ${totalFiles} files; the budget leaves room for ${cap} people`
   )
-
-  // Union, never replace: a page we have advertised stays advertised.
-  for (const person of ranked) {
-    if (byId.has(person.id)) continue
-    if (byId.size >= cap) break
-    byId.set(person.id, summary(person))
-  }
 
   // Ids named on the command line: a person page somebody has already indexed
-  // or linked, which the catalogue no longer carries.
-  for (const id of process.argv.slice(2)) {
-    if (byId.has(Number(id))) continue
+  // or linked, which the catalogue no longer carries. Promises, so the soft
+  // budget does not refuse them; the hard cap is checked below.
+  const have = new Set(existing.map((person) => person.id))
+  const manual = []
+  for (const id of ids) {
+    if (have.has(Number(id))) continue
     const person = await get(`person/${id}?language=en-US`).catch(() => null)
     if (!usable(person)) {
       console.warn(`[people] ${id} has no usable page — skipped`)
       continue
     }
-    byId.set(person.id, summary(person))
+    manual.push(summary(person))
   }
 
-  // The entries already shipped keep their pages, and it is the NEW ones that
-  // fall off the end of the cap rather than the indexed ones.
-  const peopleOut = [...byId.values()].slice(0, cap)
-  await writeFile(FILE, `${JSON.stringify(peopleOut, null, 2)}\n`)
+  let ranked = []
+  if (!only) {
+    // The catalogue's own people, ranked by how much of the site's attention
+    // they carry.
+    const titles = await catalogueTitles()
+    console.log(`[people] ${titles.length} titles in the catalogue…`)
+
+    const score = new Map()
+    const details = new Map()
+    for (let i = 0; i < titles.length; i += 8) {
+      const batch = await Promise.all(
+        titles.slice(i, i + 8).map((title) => creditsFor(title))
+      )
+      for (const credits of batch) {
+        for (const { person } of credits) {
+          if (!usable(person)) continue
+          score.set(person.id, (score.get(person.id) ?? 0) + 1)
+          if (!details.has(person.id)) details.set(person.id, person)
+        }
+      }
+      if (i % 80 === 0)
+        console.log(`[people] ${i + 8}/${titles.length} titles…`)
+    }
+    ranked = [...details.values()]
+      .sort((a, b) => (score.get(b.id) ?? 0) - (score.get(a.id) ?? 0))
+      .map(summary)
+    console.log(
+      `[people] ${ranked.length} people in the catalogue's cast and crew`
+    )
+  }
+
+  const peopleOut = mergePeople({ existing, manual, ranked, cap })
+
+  // The hard limit: a build one file over it does not deploy.
+  if (totalFiles !== null) {
+    const projected =
+      totalFiles + (peopleOut.length - before) * FILES_PER_PERSON
+    if (projected > FILE_CAP) {
+      throw new Error(
+        `${peopleOut.length} people would make ~${projected} files, over the ${FILE_CAP} asset cap — nothing written`
+      )
+    }
+  }
+
+  await writeFile(
+    FILE,
+    `${JSON.stringify(peopleOut, null, 2)}
+`
+  )
   console.log(
-    `[people] ${before} → ${peopleOut.length} (${byId.size - before} new, cap ${cap})`
+    `[people] ${before} → ${peopleOut.length} (${manual.length} by hand, ${peopleOut.length - before - manual.length} from the catalogue, cap ${cap})`
   )
 }
 
