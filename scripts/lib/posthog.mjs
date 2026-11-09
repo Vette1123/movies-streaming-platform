@@ -30,11 +30,13 @@ export const TEST_COHORT_ID = 173293
 /**
  * The near-square desktop fleet (lib/posthog-client isSquareScreenFleet), for
  * events captured before the client started dropping it: desktop screens with
- * height/width 0.85-0.95 were 976 "people" and zero plays over 14 days.
+ * height/width 0.85-0.95 were 976 "people" and zero plays over 14 days; widened
+ * to 1.2 on 2026-11-09 when the farm moved just past square. Bounds must match
+ * SQUARE_FLEET_RATIO (tests/bot-fleet.test.ts checks).
  * TRUE for an event to KEEP. Also applied as a project test-account filter by
  * posthog:setup, so Trends and Funnels drop it too.
  */
-export const NOT_FLEET = `NOT (properties.$os IN ('Windows', 'Mac OS X', 'Linux') AND ifNull(toFloat(properties.$screen_height) / nullIf(toFloat(properties.$screen_width), 0), 0) BETWEEN 0.85 AND 0.95)`
+export const NOT_FLEET = `NOT (properties.$os IN ('Windows', 'Mac OS X', 'Linux') AND ifNull(toFloat(properties.$screen_height) / nullIf(toFloat(properties.$screen_width), 0), 0) BETWEEN 0.85 AND 1.2)`
 
 /**
  * Drop-in WHERE clause for "people, not us and not a bot fleet".

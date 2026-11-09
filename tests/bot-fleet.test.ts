@@ -1,8 +1,10 @@
+import { NOT_FLEET } from '@/scripts/lib/posthog.mjs'
 import { describe, expect, it } from 'vitest'
 
 import {
   isShanghaiDesktopFleet,
   isSquareScreenFleet,
+  SQUARE_FLEET_RATIO,
 } from '@/lib/posthog-client'
 
 const WIN_CHROME =
@@ -65,6 +67,11 @@ describe('isSquareScreenFleet', () => {
       [1302, 1200],
       [1340, 1245],
       [1268, 1106],
+      // 2026-11: the same farm moved just past square
+      [1166, 1247],
+      [1204, 1359],
+      [1074, 1244],
+      [1280, 1280],
     ]) {
       expect(
         isSquareScreenFleet({ ua: WIN_CHROME, screenWidth: w, screenHeight: h })
@@ -79,6 +86,8 @@ describe('isSquareScreenFleet', () => {
       [1024, 768], // 4:3
       [1280, 1024], // 5:4, exactly 0.80
       [1080, 1920], // portrait monitor
+      [1024, 1280], // 5:4 portrait, exactly 1.25
+      [834, 1194], // tablet-sized desktop window, 1.43
     ]) {
       expect(
         isSquareScreenFleet({ ua: WIN_CHROME, screenWidth: w, screenHeight: h })
@@ -94,5 +103,12 @@ describe('isSquareScreenFleet', () => {
     expect(
       isSquareScreenFleet({ ua: MAC_SAFARI, screenWidth: 0, screenHeight: 0 })
     ).toBe(false)
+  })
+})
+
+describe('NOT_FLEET', () => {
+  it('drops history with the same band the client gate drops live', () => {
+    const { min, max } = SQUARE_FLEET_RATIO
+    expect(NOT_FLEET).toContain(`BETWEEN ${min} AND ${max})`)
   })
 })
