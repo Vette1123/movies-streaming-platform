@@ -149,7 +149,19 @@ export function isShanghaiDesktopFleet({
  * everyone the image-CDN breaker tripped for. Real desktops sit at 0.55-0.75
  * (16:9, 16:10, 4:3) and played; a 5:4 monitor is exactly 0.80 and a portrait
  * one is above 1, so both stay outside the band.
+ *
+ * Widened 2026-11-09: the farm moved its screens just past square (1166x1247,
+ * 1204x1359, 1074x1244). Over 30 days desktop ratios 1.05-1.16 were 75 people,
+ * 1 of whom interacted, and 60 of them tripped the image-CDN breaker - they
+ * fired the image-host spike alert on 2026-11-08 by themselves. Real portrait
+ * and tablet-sized desktop screens start at 1.25 (5:4 turned) and 1.33 (4:3),
+ * and played, so the band stops short of them.
+ *
+ * scripts/lib/posthog.mjs NOT_FLEET repeats these bounds in HogQL for history;
+ * tests/bot-fleet.test.ts fails if the two drift.
  */
+export const SQUARE_FLEET_RATIO = { min: 0.85, max: 1.2 } as const
+
 export function isSquareScreenFleet({
   ua,
   screenWidth,
@@ -163,7 +175,7 @@ export function isSquareScreenFleet({
   if (/Mobile|Android|iPhone|iPad/.test(ua)) return false
   if (!screenWidth || !screenHeight) return false
   const ratio = screenHeight / screenWidth
-  return ratio >= 0.85 && ratio <= 0.95
+  return ratio >= SQUARE_FLEET_RATIO.min && ratio <= SQUARE_FLEET_RATIO.max
 }
 
 const isAutomated = (): boolean => {

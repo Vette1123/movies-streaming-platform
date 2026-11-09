@@ -155,3 +155,4 @@ with the work, not after.
 | 2026-11-06 | [Short store links](2026-11-06-short-store-links.md) | Install links were spelled two ways after the sponsor card; one `installLink()` now builds every one, and a test bans the long github.io chooser. |
 | 2026-11-07 | [Sponsor card on every page](2026-11-07-sponsor-on-every-page.md) | A card above static content goes in the static HTML and hides for supporters before paint; impressions count in view, not on mount. |
 | 2026-11-08 | [Relay canary](2026-11-08-relay-canary.md) | The provider changed its mint and the Reely Player was down ~a day before a user said so; `/selftest` existed but nothing ran it. Hourly canary now opens an issue. |
+| 2026-11-09 | [Image-host alert was the fleet again](2026-11-09-image-host-alert-was-the-fleet-again.md) | The square-screen farm moved to height/width 1.05-1.16; band widened to 0.85-1.2 in the gate AND the HogQL filter, now pinned together by a test. |
