@@ -23,14 +23,9 @@ export const websiteJsonLd = {
       height: 512,
     },
   },
-  potentialAction: {
-    '@type': 'SearchAction',
-    target: {
-      '@type': 'EntryPoint',
-      urlTemplate: `${SITE_URL}/movies?search={search_term_string}`,
-    },
-    'query-input': 'required name=search_term_string',
-  },
+  // No SearchAction: Google retired the sitelinks search box in 2024 and
+  // crawls a urlTemplate as a literal URL (the sister site's Search Console
+  // listed "/?url={search_term_string}" as a page, 2026-11).
 }
 
 /**
