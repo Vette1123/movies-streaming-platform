@@ -12,3 +12,14 @@
 /sitemap-trending.xml    /sitemap.xml  301
 /sitemap-static.xml      /sitemap.xml  301
 /server-sitemap-index.xml /sitemap.xml 301
+
+# A trailing slash would otherwise get Cloudflare's default 307 to the slashless
+# page: a TEMPORARY redirect, so a link posted with a slash never hands its
+# signal to the canonical URL. One rule per path depth (a placeholder matches
+# exactly one segment; `/` matches none). The deepest route is
+# /movies/genre/<slug> — tests/trailing-slash-redirects.test.ts fails if a
+# deeper one appears without a rule.
+/:a/ /:a 301
+/:a/:b/ /:a/:b 301
+/:a/:b/:c/ /:a/:b/:c 301
+/:a/:b/:c/:d/ /:a/:b/:c/:d 301

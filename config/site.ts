@@ -80,20 +80,6 @@ export const siteConfig = {
     formatDetection: 'telephone=no',
   },
 
-  // Structured data for JSON-LD
-  structuredData: {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    searchAction: {
-      '@type': 'SearchAction',
-      target: {
-        '@type': 'EntryPoint',
-        urlTemplate: '/search?q={search_term_string}',
-      },
-      'query-input': 'required name=search_term_string',
-    },
-  },
-
   mainNav: [
     {
       title: 'Home',
