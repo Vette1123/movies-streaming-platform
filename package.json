@@ -73,7 +73,7 @@
     "@radix-ui/react-slider": "^1.6.1",
     "@radix-ui/react-slot": "^1.5.0",
     "@radix-ui/react-visually-hidden": "^1.2.13",
-    "@tanstack/react-query": "^5.105.0",
+    "@tanstack/react-query": "^5.105.1",
     "artplayer": "^5.4.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -117,6 +117,6 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5",
-    "wrangler": "^4.156.0"
+    "wrangler": "^4.156.1"
   }
 }
