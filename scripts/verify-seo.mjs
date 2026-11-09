@@ -193,7 +193,7 @@ for (const path of [...new Set(SNIPPET_PAGES)]) {
   // inside `<div hidden>` — display:none, which a crawler reads as absent —
   // and Bing duly reported tail pages under "The <h1> tag is missing". Clipped
   // is fine; hidden is not.
-  const block = /<div[^>]*data-fallback-seo[^>]*>/i.exec(html)?.[0] ?? ''
+  const block = /<article[^>]*data-fallback-seo[^>]*>/i.exec(html)?.[0] ?? ''
   check(
     'fallback SEO block is clipped, not display:none',
     block !== '' && !/\shidden(\s|=|>)/i.test(block),
@@ -205,7 +205,9 @@ for (const path of [...new Set(SNIPPET_PAGES)]) {
   // as Soft 404 and "Duplicate without user-selected canonical". The body is
   // built by lib/seo-facts.ts; this is the check that it is still there.
   const body =
-    /<div[^>]*data-fallback-seo[^>]*>([\s\S]*?)<\/div>/i.exec(html)?.[1] ?? ''
+    /<article[^>]*data-fallback-seo[^>]*>([\s\S]*?)<\/article>/i.exec(
+      html
+    )?.[1] ?? ''
   const visible = body
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')

@@ -1004,10 +1004,18 @@ const breadcrumbJsonLd = (items) => ({
 // Clipped instead of hidden, so it counts. `aria-hidden` because the block
 // survives hydration outside React's root and a screen reader would otherwise
 // hear the title and synopsis twice, once from here and once from the real page.
+//
+// An <article>, NEVER a <div>. It is the first child of <body>, and the shell's
+// own first child is Next's `<div hidden>`. React 19 hydrating a body singleton
+// skips a node whose TAG differs from the one it expects, but claims one whose
+// tag matches: a div here was taken for Next's div, its contents mismatched,
+// and every tail page threw React #418 and re-rendered from scratch — deleting
+// this block, so Google's render saw nothing but the loading skeleton and
+// filed ~600 tail pages as duplicates of each other. tests/fallback-seo-block.test.ts
 const SEO_BLOCK_STYLE =
   'position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0'
 const seoBlock = (meta) =>
-  `<div aria-hidden="true" style="${SEO_BLOCK_STYLE}" data-fallback-seo><h1>${escapeHtml(meta.heading)}</h1>${leadParagraph(meta)}${detailBlock(meta.detail)}${linkBlock(meta.links)}</div>`
+  `<article aria-hidden="true" style="${SEO_BLOCK_STYLE}" data-fallback-seo><h1>${escapeHtml(meta.heading)}</h1>${leadParagraph(meta)}${detailBlock(meta.detail)}${linkBlock(meta.links)}</article>`
 
 /**
  * The description, unless the block below is about to print the whole synopsis
