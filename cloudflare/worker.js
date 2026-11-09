@@ -969,7 +969,24 @@ async function notFoundAsset(env, url) {
 // top-level array in one script, which is what schema.org and Google's parser
 // both take — and one script is one HTMLRewriter append instead of N.
 const headBlock = (meta, ogType, jsonLd) =>
-  `${metaTags(meta, ogType)}<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`
+  `${preloadLink(meta.preload)}${metaTags(meta, ogType)}<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`
+
+/**
+ * Start the shell's data request from the HTML, not from hydration.
+ *
+ * A tail page paints nothing real until the shell fetches its payload, and it
+ * only asks once the JS has downloaded and hydrated: three round trips in
+ * series. Mobile LCP on Worker-served /movies/<id> was 3.6s at p75 against
+ * 1.06s on a prerendered one (PostHog $web_vitals, 2026-11-09), which is what
+ * held Search Console's whole mobile group at "LCP longer than 2.5s". A preload
+ * runs the request alongside the JS download. `crossorigin="anonymous"` is what
+ * a plain `fetch(path)` sends (mode cors, same-origin credentials); without it
+ * the browser downloads the payload twice. tests/fallback-preload.test.ts
+ */
+const preloadLink = (path) =>
+  path
+    ? `<link rel="preload" as="fetch" href="${escapeHtml(path)}" crossorigin="anonymous">`
+    : ''
 
 /**
  * The trail a prerendered detail page publishes, for the tail pages too.
@@ -1271,7 +1288,11 @@ async function handleDetailFallback(match, request, env, ctx, url) {
 
   if (!details) return notFoundAsset(env, url)
 
-  const meta = buildMeta(type, id, details, siteUrlOf(url))
+  const meta = {
+    ...buildMeta(type, id, details, siteUrlOf(url)),
+    // The path app/media-fallback fetches, byte for byte.
+    preload: `/api/media/${type}/${id}`,
+  }
   const { detail } = meta
   // The same entity the prerendered pages describe, from the same fields. A
   // Movie with a genre, a date, a runtime and a rating is a thing Google can
@@ -1350,6 +1371,8 @@ async function handleCollectionFallback(match, request, env, ctx, url) {
       ? getImageURL(collection.backdrop_path)
       : '',
     canonical: `${siteUrl}/collection/${id}`,
+    // The path app/collection-fallback fetches, byte for byte.
+    preload: `/api/collection/${id}`,
   }
   const jsonLd = {
     '@context': 'https://schema.org',
