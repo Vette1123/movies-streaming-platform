@@ -15,6 +15,7 @@ import {
   TV_GENRES_WITH_SLUG,
 } from '@/lib/genres'
 import { toListEntries } from '@/lib/media'
+import { withSiteSocial } from '@/lib/page-metadata'
 import { genreDescription } from '@/lib/seo-description'
 import {
   breadcrumbJsonLd,
@@ -82,24 +83,16 @@ export async function genreMetadata(
   const description = config.metaDescription(genre.name)
   const canonical = `${config.basePath}/genre/${slug}`
 
-  return {
+  return withSiteSocial({
     title,
     description,
     alternates: { canonical },
     openGraph: {
-      title: `${title} — Reely`,
+      title: `${title} — ${siteConfig.name}`,
       description,
       url: `${siteConfig.websiteURL}${canonical}`,
-      type: 'website',
-      images: '/opengraph-image.png',
     },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: '/opengraph-image.png',
-    },
-  }
+  })
 }
 
 export async function GenrePage({

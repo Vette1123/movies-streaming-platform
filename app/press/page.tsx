@@ -3,6 +3,7 @@ import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
 import { SUPPORT_EMAIL, supportMailto } from '@/config/support'
+import { withSiteSocial } from '@/lib/page-metadata'
 import { JsonLd } from '@/lib/structured-data'
 
 // The press page: the asset a journalist, a newsletter writer or a podcaster
@@ -14,7 +15,7 @@ import { JsonLd } from '@/lib/structured-data'
 // free, the ratings come from free sources, and the catalogue is the number
 // the sitemap actually carries.
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withSiteSocial({
   title: 'Press',
   description:
     'Press kit for Reely, a free movie and TV tracker with Rotten Tomatoes, IMDb and Metacritic scores on every title. Ready copy blocks and a direct press contact.',
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
       'A free movie and TV tracker: four rating sources on every title, a page for every actor and director, no account to start.',
     images: ['/opengraph-image.png'],
   },
-}
+})
 
 const COPY = [
   {

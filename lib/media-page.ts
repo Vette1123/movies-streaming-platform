@@ -5,6 +5,7 @@ import catalogue from '@/config/catalogue.json'
 import { siteConfig } from '@/config/site'
 import { RAIL_LIMIT } from '@/lib/constants'
 import { genreNames, getMediaShareImage } from '@/lib/media'
+import { withSiteSocial } from '@/lib/page-metadata'
 import { mediaDescription } from '@/lib/seo-description'
 import { mediaDocHeading, mediaHeading } from '@/lib/seo-title'
 
@@ -57,25 +58,13 @@ export const TV_LIST_CONFIG: MediaListPageConfig = {
 
 export function mediaListMetadata(config: MediaListPageConfig): Metadata {
   const url = `${siteConfig.websiteURL}${config.path}`
-  return {
+  return withSiteSocial({
     title: config.title,
     description: config.description,
     keywords: [...config.keywords, ...siteConfig.keywords],
     alternates: { canonical: config.path },
-    openGraph: {
-      title: config.ogTitle,
-      description: config.description,
-      url,
-      type: 'website',
-      images: '/opengraph-image.png',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: config.ogTitle,
-      description: config.description,
-      images: '/opengraph-image.png',
-    },
-  }
+    openGraph: { title: config.ogTitle, description: config.description, url },
+  })
 }
 
 type PagedFetcher = (args: {
@@ -360,7 +349,7 @@ export function buildDetailsMetadata(input: DetailsMetadataInput): Metadata {
     input.title
   )
 
-  return {
+  return withSiteSocial({
     title,
     description,
     keywords: [
@@ -382,13 +371,7 @@ export function buildDetailsMetadata(input: DetailsMetadataInput): Metadata {
       images,
       ...(input.ogReleaseDate ? { releaseDate: input.ogReleaseDate } : {}),
     },
-    twitter: {
-      card: 'summary_large_image',
-      title: heading,
-      description,
-      images: images.map((i) => i.url),
-    },
-  }
+  })
 }
 
 // The backdrop (16:9) + poster (2:3) OpenGraph image pair used by both detail

@@ -17,6 +17,7 @@ import {
   buildMediaStaticParams,
 } from '@/lib/media-page'
 import { notFoundOrThrow } from '@/lib/not-found'
+import { withSiteSocial } from '@/lib/page-metadata'
 import { collectionDescription } from '@/lib/seo-description'
 import { CollectionView } from '@/components/collection/collection-view'
 
@@ -67,7 +68,7 @@ export async function generateMetadata(
   const canonicalPath = `/collection/${params.id}`
   const image = getMediaShareImage(collection.backdrop_path, null)
 
-  return {
+  return withSiteSocial({
     title: collection.name,
     description,
     alternates: { canonical: canonicalPath },
@@ -78,7 +79,7 @@ export async function generateMetadata(
       url: `${siteConfig.websiteURL}${canonicalPath}`,
       images: image ? [{ ...image, alt: collection.name }] : undefined,
     },
-  }
+  })
 }
 
 const CollectionPage = async (props: PageDetailsProps) => {

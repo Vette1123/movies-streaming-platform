@@ -1,14 +1,20 @@
 import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { withSiteSocial } from '@/lib/page-metadata'
 import { pageTitle } from '@/lib/seo-title'
 import { CommunityDirectory } from '@/components/community/community-directory'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withSiteSocial({
   title: pageTitle(`Lists and people on ${siteConfig.name}`),
   description: `Film and TV lists published by people who keep their library on ${siteConfig.name}, and the public pages behind them.`,
   alternates: { canonical: '/lists' },
-}
+  openGraph: {
+    title: `Lists and people on ${siteConfig.name}`,
+    description: `Film and TV lists published by people who keep their library on ${siteConfig.name}, and the public pages behind them.`,
+    url: `${siteConfig.websiteURL}/lists`,
+  },
+})
 
 /**
  * The public directory.

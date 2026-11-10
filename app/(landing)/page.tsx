@@ -4,6 +4,7 @@ import { populateHomePageData } from '@/services/movies'
 
 import { siteConfig } from '@/config/site'
 import { resolveMediaType } from '@/lib/media'
+import { withSiteSocial } from '@/lib/page-metadata'
 import { getRatingsForItems } from '@/lib/ratings'
 import {
   breadcrumbJsonLd,
@@ -36,7 +37,7 @@ export const revalidate = false
 const HOME_DESCRIPTION =
   'Discover trending movies and TV shows, track what you watch and never miss a release. The latest, top-rated and most popular titles, all in one place on Reely.'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withSiteSocial({
   // Absolute, so the root template does not append "| Reely" to a title that
   // already opens with it. The old value rendered as
   // "Reely — Discover & Track Movies and TV Shows | Reely": harmless to a
@@ -66,7 +67,7 @@ export const metadata: Metadata = {
     description: HOME_DESCRIPTION,
     images: '/opengraph-image.png',
   },
-}
+})
 
 async function IndexPage() {
   const {

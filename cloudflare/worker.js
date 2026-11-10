@@ -46,6 +46,7 @@ import {
 } from '@/services/series'
 import { fetchWatchProviders } from '@/services/watch-providers'
 
+import { siteConfig } from '@/config/site'
 import { ownsPath } from '@/lib/api/account-paths'
 import { bearerOf, sessionCookieOf } from '@/lib/auth/session'
 import { blockedTitleEntry } from '@/lib/blocked-titles'
@@ -902,13 +903,18 @@ function metaTags(
     `<meta property="og:title" content="${escapeHtml(heading)}">`,
     `<meta property="og:description" content="${escapeHtml(description)}">`,
     `<meta property="og:url" content="${escapeHtml(canonical)}">`,
+    // The same site-wide fields lib/page-metadata.ts gives prerendered pages.
+    `<meta property="og:site_name" content="${escapeHtml(siteConfig.openGraph.siteName)}">`,
+    `<meta property="og:locale" content="${escapeHtml(siteConfig.openGraph.locale)}">`,
     `<meta name="twitter:card" content="summary_large_image">`,
+    `<meta name="twitter:site" content="${escapeHtml(siteConfig.twitter.site)}">`,
     `<meta name="twitter:title" content="${escapeHtml(heading)}">`,
     `<meta name="twitter:description" content="${escapeHtml(description)}">`,
   ]
   const shareImage = shareImageOf(image, canonical)
   tags.push(`<meta property="og:image" content="${escapeHtml(shareImage)}">`)
   tags.push(`<meta name="twitter:image" content="${escapeHtml(shareImage)}">`)
+  tags.push(`<meta property="og:image:alt" content="${escapeHtml(heading)}">`)
   // Set only where the size is known exactly: the composed mosaic, and a
   // title's share image (lib/media.ts getMediaShareImage). Stating it lets an
   // unfurler lay the card out before the image lands — stating it wrongly

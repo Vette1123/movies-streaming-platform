@@ -2,11 +2,12 @@ import React from 'react'
 import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { withSiteSocial } from '@/lib/page-metadata'
 import { DmcaContent } from '@/components/disclaimer/dmca-content'
 
 const DESCRIPTION = `How to report copyrighted material on ${siteConfig.name}, what a takedown notice needs to include, what happens after a report arrives, and how long a response takes.`
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withSiteSocial({
   title: 'Copyright & takedown requests',
   description: DESCRIPTION,
   alternates: {
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
     images: '/opengraph-image.png',
   },
-}
+})
 
 function Dmca() {
   return (

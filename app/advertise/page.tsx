@@ -5,12 +5,13 @@ import { Mail } from 'lucide-react'
 import { PLACEMENTS, type Offer } from '@/config/offers'
 import { siteConfig } from '@/config/site'
 import { PRO_EMAIL, sponsorMailto } from '@/config/support'
+import { withSiteSocial } from '@/lib/page-metadata'
 import { pageTitle } from '@/lib/seo-title'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { SponsorCard } from '@/components/sponsor-card'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withSiteSocial({
   title: pageTitle(`Advertise on ${siteConfig.name}`),
   description:
     'One sponsor card on nearly every page of Reely: the homepage, every film and episode page, and the pages between. One sponsor at a time, booked by the month or paid per order through your affiliate link, with your coupon on the card.',
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
       'One sponsor card on nearly every page. One sponsor at a time, your coupon on it.',
     url: '/advertise',
   },
-}
+})
 
 /**
  * The page a sponsor is sent to, and the answer to the first three questions
