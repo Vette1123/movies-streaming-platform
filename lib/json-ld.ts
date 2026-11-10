@@ -1,3 +1,5 @@
+import { isImdbId } from '@/lib/imdb-id'
+
 /**
  * schema.org AggregateRating from a TMDB vote average and count, or undefined
  * with no votes. One shape for the prerendered pages and the Worker's tail ids:
@@ -28,3 +30,23 @@ export const jsonLdText = (data: unknown): string =>
     .replace(/</g, '\\u003c')
     .replace(/\u2028/g, '\\u2028')
     .replace(/\u2029/g, '\\u2029')
+
+/**
+ * The same title on the databases search engines already trust.
+ *
+ * Unlike a person's id (see personList), a title's TMDB id is the id this page
+ * is built from, so the claim is true by construction; IMDb only when the
+ * payload already carries it, never a guessed or looked-up one. Shared with
+ * the Worker's tail-id fallback, like aggregateRating, so both say the same.
+ */
+export const titleSameAs = (
+  kind: 'movie' | 'tv',
+  id: number | string,
+  imdbId?: string | null
+): string[] => {
+  const links = [`https://www.themoviedb.org/${kind}/${id}`]
+  if (isImdbId(imdbId)) {
+    links.push(`https://www.imdb.com/title/${imdbId}/`)
+  }
+  return links
+}

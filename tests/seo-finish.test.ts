@@ -70,3 +70,12 @@ describe('manifest aliases', () => {
     }
   )
 })
+
+describe('tail-id fallback schema', () => {
+  // ~13,900 detail URLs are served by the Worker, not prerendered; a sameAs
+  // only on the baked ~1,000 left most of the catalogue without it.
+  const worker = readFileSync('cloudflare/worker.js', 'utf8')
+  it('names the same sameAs as the prerendered pages', () => {
+    expect(worker).toContain('sameAs: titleSameAs(type, id, details.imdb_id)')
+  })
+})

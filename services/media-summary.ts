@@ -44,6 +44,9 @@ export interface MediaSummary {
   production_countries?: { iso_3166_1: string; name: string }[]
   vote_average?: number
   vote_count?: number
+  // Movies carry it on the plain detail response; series need external_ids,
+  // which this request does not ask for, so a series is TMDB-only here.
+  imdb_id?: string | null
   belongs_to_collection?: { id: number; name?: string } | null
   // Movies only.
   runtime?: number | null
