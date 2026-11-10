@@ -6,6 +6,7 @@
 // deploy for the comparison to mean anything. scripts/cf-deploy.mjs does that
 // automatically; this CLI is for inspecting the set (--dry-run) or a manual ping.
 import './load-env.mjs'
+
 import { planIndexNow, submitIndexNow } from './lib/indexnow.mjs'
 
 const args = process.argv.slice(2)
@@ -27,7 +28,8 @@ if (args.includes('--all')) {
     `IndexNow: ${urlList.length} of ${plan.urls.length} URLs changed vs the live site`,
     JSON.stringify(byReason)
   )
-  for (const u of urlList.slice(0, 50)) console.log(`  ${plan.changed.get(u)}  ${u}`)
+  for (const u of urlList.slice(0, 50))
+    console.log(`  ${plan.changed.get(u)}  ${u}`)
   if (urlList.length > 50) console.log(`  ... and ${urlList.length - 50} more`)
 }
 if (dryRun) {

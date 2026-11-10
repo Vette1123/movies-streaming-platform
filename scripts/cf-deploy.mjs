@@ -26,6 +26,7 @@
 // nobody sees. Set CF_PURGE=false to skip it (e.g. a config-only redeploy).
 import { spawnSync } from 'node:child_process'
 import { setDefaultResultOrder } from 'node:dns'
+
 import { planIndexNow, submitIndexNow } from './lib/indexnow.mjs'
 
 // See scripts/load-env.mjs: AAAA-first resolution turns the purge into a

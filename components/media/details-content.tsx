@@ -6,6 +6,7 @@ import { Movie } from '@/types/movie-result'
 import { RatingTile } from '@/lib/ratings'
 import { recommendedHeading, similarHeading } from '@/lib/seo-title'
 import { cn } from '@/lib/utils'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { List } from '@/components/list'
 import { SliderHorizontalListLoader } from '@/components/loaders/slider-horizontal-list-loader'
 import { CollectionBanner } from '@/components/media/collection-banner'
@@ -13,7 +14,6 @@ import { DetailsCredits } from '@/components/media/details-credits'
 import { DetailsExtraInfo } from '@/components/media/details-extra-info'
 import { DETAILS_ROW, DetailsPoster } from '@/components/media/details-poster'
 import { RatingsStrip } from '@/components/media/ratings-strip'
-import { Breadcrumb } from '@/components/ui/breadcrumb'
 
 // NOT async, and that is load-bearing.
 //

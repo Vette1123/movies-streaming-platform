@@ -110,7 +110,9 @@ export function useWatchlist(): WatchlistHookResult {
         if (!item.id || !item.title || existingIds.has(item.id)) continue
         const normalized: WatchedItem = {
           id: item.id,
-          type: (item.type === 'series' ? 'series' : 'movie') as WatchedItem['type'],
+          type: (item.type === 'series'
+            ? 'series'
+            : 'movie') as WatchedItem['type'],
           title: item.title,
           overview: item.overview ?? '',
           backdrop_path: item.backdrop_path ?? '',
@@ -129,5 +131,12 @@ export function useWatchlist(): WatchlistHookResult {
     [watchlist, setWatchlist]
   )
 
-  return { watchlist, isSaved, toggle, remove, exportWatchlist, importWatchlist }
+  return {
+    watchlist,
+    isSaved,
+    toggle,
+    remove,
+    exportWatchlist,
+    importWatchlist,
+  }
 }

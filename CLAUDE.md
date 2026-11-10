@@ -44,6 +44,7 @@ pnpm lighthouse         # medians with timing; run the Lighthouse workflow inste
 ## Architecture
 
 Loaded on demand (path-scoped rules in `.claude/rules/`, read the one matching the work):
+
 - `.claude/rules/data-access.md` — layered TMDB data access, streaming servers, IMDb ratings, client state and URL. Read before touching `lib/`, `services/`, `hooks/`, `providers/`.
 - `.claude/rules/cloudflare.md` — the free-plan architecture (the core constraint). Read before touching the Worker, `wrangler.jsonc`, `db/`, `migrations/`, `scripts/` or any caching/routing.
 - `.claude/rules/kodi.md` — the Kodi add-on. Read before touching `kodi/` or `app/kodi/`.

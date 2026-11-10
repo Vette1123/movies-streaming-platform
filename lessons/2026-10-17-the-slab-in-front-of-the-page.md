@@ -10,7 +10,7 @@ causes:
   grey 80dvh rounded slab that looks like nothing on the page that replaces
   it. Then the page arrived with a dark hero, then a blurred one.
 - **Hard load:** text over an empty dark hero at 1.27s, a smear at 1.57s, the
-  picture at 2.2s. The smear was the image *already downloaded*, held at
+  picture at 2.2s. The smear was the image _already downloaded_, held at
   `blur-lg` and eased sharp over 700ms by BlurredImage's `intro` branch.
 - **Tail ids** (the Worker's fallback shell): a pulsing full-height slab until
   `/api/media` answered.

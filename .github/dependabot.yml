@@ -9,7 +9,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: "06:00"
+      time: '06:00'
       timezone: Africa/Cairo
     # A week's quarantine on new publishes; does not delay security updates.
     cooldown:
@@ -17,11 +17,11 @@ updates:
     open-pull-requests-limit: 5
     groups:
       minor-and-patch:
-        patterns: ["*"]
+        patterns: ['*']
         update-types: [minor, patch]
       security:
         applies-to: security-updates
-        patterns: ["*"]
+        patterns: ['*']
     ignore:
       - dependency-name: next
         update-types: [version-update:semver-major]
@@ -35,10 +35,10 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: "06:00"
+      time: '06:00'
       timezone: Africa/Cairo
     cooldown:
       default-days: 7
     groups:
       actions:
-        patterns: ["*"]
+        patterns: ['*']

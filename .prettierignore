@@ -13,4 +13,8 @@ dist
 node_modules
 .next
 build
-.contentlayerdata/sitemap-ledger.json
+.contentlayer
+# Written by scripts (sitemap-ledger.mjs in the Ratings workflow, sponsor-stats.mjs)
+# as JSON.stringify output; formatting them would be undone on the next run.
+data/sitemap-ledger.json
+data/audience.json

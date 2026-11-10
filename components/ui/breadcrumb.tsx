@@ -16,14 +16,14 @@ interface BreadcrumbProps {
   className?: string
 }
 
-export function Breadcrumb({
-  items,
-  className,
-}: BreadcrumbProps) {
+export function Breadcrumb({ items, className }: BreadcrumbProps) {
   return (
     <nav
       aria-label="Breadcrumb"
-      className={cn('flex flex-wrap items-center gap-1 text-xs text-muted-foreground', className)}
+      className={cn(
+        'flex flex-wrap items-center gap-1 text-xs text-muted-foreground',
+        className
+      )}
     >
       <ol className="flex flex-wrap items-center gap-1" role="list">
         {items.map((item, index) => {

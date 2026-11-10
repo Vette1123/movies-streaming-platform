@@ -8,9 +8,9 @@ series stack order, a false certification chip, and three SEO corrections
 
 ## Mistakes
 
-- The series row used `flex-col-reverse` so the poster would sit *after* the
+- The series row used `flex-col-reverse` so the poster would sit _after_ the
   synopsis. Reversing the whole column also put the season navigator (last DOM
-  child) *above* the h1 — the page's only heading rendered under a `<Select>`
+  child) _above_ the h1 — the page's only heading rendered under a `<Select>`
   on every phone. The fix is `order-*` on each child with `md:order-0`, not a
   direction flip. The error-boundary wrapper for that aside needs the same
   `order` class: it renders `children` bare on the happy path, so the class on
@@ -24,7 +24,7 @@ series stack order, a false certification chip, and three SEO corrections
 ## What worked
 
 - Shared layout component (`DetailsExtraInfoLayout`) meant one type-scale edit
-  covered movie *and* series, including the fallback shell.
+  covered movie _and_ series, including the fallback shell.
 - `order-3` on `NAVIGATOR_BOX` kept the Suspense fallback and the real
   navigator claiming the same mobile slot — same constant, same box.
 - Impeccable detector on the ten changed files returned `[]`; lint, prettier,
