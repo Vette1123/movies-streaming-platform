@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-import { jsonLdText } from '@/lib/json-ld'
+import { aggregateRating, jsonLdText } from '@/lib/json-ld'
 
 // List names, profile names and bios are user-written and land inside
 // <script type="application/ld+json"> on the Worker-rendered /l/ and /u/
@@ -22,6 +22,18 @@ describe('jsonLdText', () => {
 
   it('still parses back to the same data', () => {
     expect(JSON.parse(jsonLdText(hostile))).toEqual(hostile)
+  })
+
+  it('rates on the same 1-10 numeric scale on every page', () => {
+    expect(aggregateRating(8.4321, 120)).toEqual({
+      '@type': 'AggregateRating',
+      ratingValue: 8.4,
+      bestRating: 10,
+      worstRating: 1,
+      ratingCount: 120,
+    })
+    expect(aggregateRating(7, 0)).toBeUndefined()
+    expect(aggregateRating(null, 5)).toBeUndefined()
   })
 
   it('is the only way JSON-LD reaches HTML', () => {

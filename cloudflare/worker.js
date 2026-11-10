@@ -53,7 +53,7 @@ import { blockedTitleEntry } from '@/lib/blocked-titles'
 import { loadDirectory } from '@/lib/community/routes'
 import { smartQuery } from '@/lib/filter-query'
 import { isImdbId } from '@/lib/imdb-id'
-import { jsonLdText } from '@/lib/json-ld'
+import { aggregateRating, jsonLdText } from '@/lib/json-ld'
 import { loadPublicList } from '@/lib/lists/routes'
 import { getMediaShareImage } from '@/lib/media'
 import {
@@ -1321,13 +1321,10 @@ async function handleDetailFallback(match, request, env, ctx, url) {
     ...(detail.duration ? { duration: detail.duration } : {}),
     ...(detail.rating
       ? {
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: Number(detail.rating.value.toFixed(1)),
-            ratingCount: detail.rating.count,
-            bestRating: 10,
-            worstRating: 1,
-          },
+          aggregateRating: aggregateRating(
+            detail.rating.value,
+            detail.rating.count
+          ),
         }
       : {}),
   }

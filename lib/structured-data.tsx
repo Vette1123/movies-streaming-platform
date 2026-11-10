@@ -1,5 +1,5 @@
 import { siteConfig } from '@/config/site'
-import { jsonLdText } from '@/lib/json-ld'
+import { aggregateRating, jsonLdText } from '@/lib/json-ld'
 
 const SITE_URL = siteConfig.websiteURL
 
@@ -67,11 +67,14 @@ export const organizationJsonLd = {
   name: siteConfig.seo.publisher,
   url: SITE_URL,
   logo: `${SITE_URL}/android-chrome-512x512.png`,
-  sameAs: [
-    siteConfig.links.twitter,
-    siteConfig.links.github,
-    siteConfig.links.website,
-  ],
+  // These profiles are the builder's, not the brand's: as the Organization's
+  // sameAs they told Google that Reely IS that person. They identify the founder.
+  founder: {
+    '@type': 'Person',
+    name: siteConfig.author.name,
+    url: siteConfig.author.website,
+    sameAs: [siteConfig.links.twitter, siteConfig.links.github],
+  },
 }
 
 interface BreadcrumbItem {
@@ -155,23 +158,6 @@ interface MovieSchemaInput {
   trailerPublishedAt?: string | null
   /** ISO 639-1 code from TMDB — drives `inLanguage` instead of a hard-coded `en`. */
   originalLanguage?: string | null
-}
-
-// schema.org AggregateRating from a TMDB vote average/count, or undefined when
-// there aren't enough votes to publish one. Identical between Movie and TVSeries
-// so it lives in one place.
-function aggregateRating(
-  voteAverage?: number | null,
-  voteCount?: number | null
-) {
-  if (typeof voteAverage !== 'number' || !voteCount) return undefined
-  return {
-    '@type': 'AggregateRating',
-    ratingValue: voteAverage.toFixed(1),
-    bestRating: '10',
-    worstRating: '0',
-    ratingCount: voteCount,
-  }
 }
 
 export const movieJsonLd = (movie: MovieSchemaInput) => {
