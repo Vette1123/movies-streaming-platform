@@ -59,7 +59,8 @@ export const TV_LIST_CONFIG: MediaListPageConfig = {
 export function mediaListMetadata(config: MediaListPageConfig): Metadata {
   const url = `${siteConfig.websiteURL}${config.path}`
   return withSiteSocial({
-    title: config.title,
+    // The ogTitle names what the page offers; "Movies | Reely" matched nothing.
+    title: config.ogTitle,
     description: config.description,
     keywords: [...config.keywords, ...siteConfig.keywords],
     alternates: { canonical: config.path },

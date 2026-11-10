@@ -17,6 +17,7 @@ import {
 import { toListEntries } from '@/lib/media'
 import { withSiteSocial } from '@/lib/page-metadata'
 import { genreDescription } from '@/lib/seo-description'
+import { hubDocHeading } from '@/lib/seo-title'
 import {
   breadcrumbJsonLd,
   collectionPageJsonLd,
@@ -79,7 +80,8 @@ export async function genreMetadata(
   const genre = config.findBySlug(slug)
   if (!genre) return {}
 
-  const title = `${genre.name} ${config.sectionLabel}`
+  const heading = `${genre.name} ${config.sectionLabel}`
+  const title = hubDocHeading(heading, 'Where to Watch')
   const description = config.metaDescription(genre.name)
   const canonical = `${config.basePath}/genre/${slug}`
 
@@ -88,7 +90,7 @@ export async function genreMetadata(
     description,
     alternates: { canonical },
     openGraph: {
-      title: `${title} — ${siteConfig.name}`,
+      title: `${heading} — ${siteConfig.name}`,
       description,
       url: `${siteConfig.websiteURL}${canonical}`,
     },

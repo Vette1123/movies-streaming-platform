@@ -164,3 +164,4 @@ with the work, not after.
 | 2026-11-10 | [Player failures that were not the server](2026-11-10-player-failures-that-were-not.md) | A failure rate is only a server's when the cause is: no_stream is a title not out yet, not a dead provider |
 | 2026-11-10 | [SEO and marketing audit](2026-11-10-seo-marketing-audit.md) | JSON in a script tag must escape `<` (list names reached the page raw), and Next replaces openGraph/twitter whole, so every page's social tags go through `withSiteSocial` |
 | 2026-11-10 | [Rafiq icon broke the deploy](2026-11-10-rafiq-icon-broke-deploy.md) | Asset swaps are test-relevant: the promo icon budget is 10 KB, and a palette PNG fits it with no visible change |
+| 2026-11-10 | [Hub titles with intent, an honest llms.txt, and the Pro auto-reply](2026-11-10-hub-titles-and-pro-auto-reply.md) | A page the Worker can also serve takes its `<title>` from one shared builder; audits must read the settled calls in the comments first |

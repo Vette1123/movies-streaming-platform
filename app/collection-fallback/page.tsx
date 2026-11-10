@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { CollectionDetails } from '@/types/collection'
 import { getJson } from '@/lib/api-client'
 import { collectionDescription } from '@/lib/seo-description'
+import { collectionDocHeading } from '@/lib/seo-title'
 import { getImageURL } from '@/lib/utils'
 import { useLocationPathname } from '@/hooks/use-location-pathname'
 import { useServedMetadata } from '@/hooks/use-served-metadata'
@@ -38,6 +39,7 @@ export default function CollectionFallbackPage() {
     data?.name
       ? {
           title: data.name,
+          docHeading: collectionDocHeading(data.name),
           description: collectionDescription(data.name, data.overview),
           image: data.backdrop_path
             ? getImageURL(data.backdrop_path)

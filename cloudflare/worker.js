@@ -84,7 +84,12 @@ import {
   profileDescription,
 } from '@/lib/seo-description'
 import { mediaFacts } from '@/lib/seo-facts'
-import { docTitle, mediaDocHeading, mediaHeading } from '@/lib/seo-title'
+import {
+  collectionDocHeading,
+  docTitle,
+  mediaDocHeading,
+  mediaHeading,
+} from '@/lib/seo-title'
 import { isUpstreamUnavailable, nullIfNotFound } from '@/lib/upstream'
 import { getPosterImageURL } from '@/lib/utils'
 
@@ -888,7 +893,7 @@ function buildMeta(type, id, details, siteUrl) {
 }
 
 function metaTags(
-  { heading, description, image, imageWidth, imageHeight, canonical },
+  { heading, description, image, imageWidth, imageHeight, canonical, robots },
   ogType
 ) {
   const tags = [
@@ -898,7 +903,7 @@ function metaTags(
     // out of room to bake them. The shell they are assembled from carries
     // `noindex, nofollow` for its own bare URL, which build-worker.mjs strips
     // out of the template precisely so this line can state the truth.
-    `<meta name="robots" content="index, follow">`,
+    `<meta name="robots" content="${robots ?? 'index, follow'}">`,
     `<meta property="og:type" content="${ogType}">`,
     `<meta property="og:title" content="${escapeHtml(heading)}">`,
     `<meta property="og:description" content="${escapeHtml(description)}">`,
@@ -1041,8 +1046,11 @@ const breadcrumbJsonLd = (items) => ({
 // filed ~600 tail pages as duplicates of each other. tests/fallback-seo-block.test.ts
 const SEO_BLOCK_STYLE =
   'position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0'
+// A shell that renders its own <h1> in the static HTML (the /lists directory)
+// gets an <h2> here: two <h1>s with the same text is a duplicate-heading report.
+const seoHeadingTag = (meta) => (meta.shellHasH1 ? 'h2' : 'h1')
 const seoBlock = (meta) =>
-  `<article aria-hidden="true" style="${SEO_BLOCK_STYLE}" data-fallback-seo><h1>${escapeHtml(meta.heading)}</h1>${leadParagraph(meta)}${detailBlock(meta.detail)}${linkBlock(meta.links)}</article>`
+  `<article aria-hidden="true" style="${SEO_BLOCK_STYLE}" data-fallback-seo><${seoHeadingTag(meta)}>${escapeHtml(meta.heading)}</${seoHeadingTag(meta)}>${leadParagraph(meta)}${detailBlock(meta.detail)}${linkBlock(meta.links)}</article>`
 
 /**
  * The description, unless the block below is about to print the whole synopsis
@@ -1373,6 +1381,7 @@ async function handleCollectionFallback(match, request, env, ctx, url) {
   const share = getMediaShareImage(collection.backdrop_path, null)
   const meta = {
     heading: collection.name,
+    docHeading: collectionDocHeading(collection.name),
     title: collection.name,
     description,
     image: share?.url ?? '',
@@ -1586,6 +1595,10 @@ async function handleListsDirectory(request, env, ctx, url) {
 
       const meta = {
         heading: 'Lists and people on Reely',
+        shellHasH1: true,
+        // An empty directory is a thin page; it stays crawlable (follow) but
+        // out of the index until somebody publishes a list.
+        robots: lists.length ? undefined : 'noindex, follow',
         // Both branches land near the ~155 characters a SERP renders. The
         // empty one used to be 69, which is the length Bing calls too short.
         description: lists.length

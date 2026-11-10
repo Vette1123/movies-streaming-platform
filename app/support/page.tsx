@@ -127,7 +127,7 @@ const FAQ = [
   },
   {
     q: 'How do I pay?',
-    a: `By email, for now. Write to ${PRO_EMAIL} with the plan you want and the address you sign in to Reely with, and the reply says how to pay. Once it has arrived I switch Pro on for that address by hand, usually the same day.`,
+    a: `By email, for now. Write to ${PRO_EMAIL} with the plan you want and the address you sign in to Reely with, and an instant reply links the GitHub Sponsors tier for that plan. Pro is granted to that address once the payment is done.`,
   },
   {
     q: 'Why email and not a checkout?',
@@ -159,7 +159,7 @@ const FAQ = [
   },
   {
     q: 'Where do my card details go?',
-    a: 'Nowhere near this site. The email reply names how to pay, and Reely itself never sees a card number — all it stores is the address Pro is switched on for.',
+    a: 'Nowhere near this site. Payment goes through GitHub Sponsors, and Reely itself never sees a card number — all it stores is the address Pro is switched on for.',
   },
 ] as const
 
@@ -181,11 +181,11 @@ const FREE_FOREVER = [
 const STEPS = [
   {
     title: 'Email for the plan you want',
-    body: `Monthly, yearly or lifetime, to ${PRO_EMAIL}. The button fills in the plan and your account for you, and the reply says how to pay.`,
+    body: `Monthly, yearly or lifetime, to ${PRO_EMAIL}. The button fills in the plan and your account for you, and an instant reply links the GitHub Sponsors tier to pay with.`,
   },
   {
-    title: 'Pro is switched on by hand',
-    body: 'Once the payment has arrived, Pro goes on for the address you sign in with, usually the same day. Not signed up yet? It is waiting for the first time you sign in.',
+    title: 'Pro is granted once you pay',
+    body: 'Once the payment is done, Pro goes on for the address you sign in with. Not signed up yet? It is waiting for the first time you sign in.',
   },
   {
     title: 'Nothing else to do',

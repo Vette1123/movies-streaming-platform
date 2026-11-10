@@ -12,7 +12,13 @@ import {
   personDescription,
   trimBiography,
 } from '@/lib/seo-description'
-import { docTitle, mediaDocHeading, TITLE_MAX } from '@/lib/seo-title'
+import {
+  collectionDocHeading,
+  docTitle,
+  hubDocHeading,
+  mediaDocHeading,
+  TITLE_MAX,
+} from '@/lib/seo-title'
 import { itemListJsonLd, movieJsonLd } from '@/lib/structured-data'
 import { listSentence } from '@/lib/utils'
 import { FIRST_YEAR, isValidYear } from '@/components/media/year-page'
@@ -312,6 +318,27 @@ describe('personDescription', () => {
     ])
     expect(description).toContain('Buffy the Vampire Slayer')
     expect(description.endsWith('…')).toBe(false)
+  })
+})
+
+describe('hubDocHeading / collectionDocHeading', () => {
+  it('adds the intent to a hub heading that has room for it', () => {
+    expect(hubDocHeading('Horror Movies', 'Where to Watch')).toBe(
+      'Horror Movies — Where to Watch'
+    )
+    expect(collectionDocHeading('Star Wars Collection')).toBe(
+      'Star Wars Collection — Every Film in Order'
+    )
+  })
+
+  it('keeps the bare heading when the intent would pass 70', () => {
+    const name =
+      'The Extremely Long Franchise Name That Fills A Title Collection'
+    expect(collectionDocHeading(name)).toBe(name)
+    expect(
+      docTitle(hubDocHeading('Action & Adventure TV Shows', 'Where to Watch'))
+        .length
+    ).toBeLessThanOrEqual(TITLE_MAX)
   })
 })
 

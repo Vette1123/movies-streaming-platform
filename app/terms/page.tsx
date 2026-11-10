@@ -61,9 +61,9 @@ export default function TermsPage() {
       <h2>Supporter memberships</h2>
       <p>
         Supporting {siteConfig.name} is voluntary and never required. It costs{' '}
-        {supportPriceLine()} It is arranged by email with {PRO_EMAIL}: the reply
-        names how to pay, and supporter status is switched on by hand once the
-        payment has arrived.
+        {supportPriceLine()} It is arranged by email with {PRO_EMAIL}: an
+        automatic reply links the GitHub Sponsors tier to pay with, and
+        supporter status is granted once the payment is done.
       </p>
       <ul>
         <li>

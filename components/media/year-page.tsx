@@ -9,6 +9,7 @@ import { ItemType } from '@/types/movie-result'
 import { siteConfig } from '@/config/site'
 import { toListEntries } from '@/lib/media'
 import { withSiteSocial } from '@/lib/page-metadata'
+import { hubDocHeading } from '@/lib/seo-title'
 import {
   breadcrumbJsonLd,
   collectionPageJsonLd,
@@ -79,14 +80,15 @@ export const yearMetadata = (
 ): Metadata => {
   if (!isValidYear(year)) return {}
   const canonical = `${config.basePath}/year/${year}`
-  const title = headingFor(config, year)
+  const heading = headingFor(config, year)
+  const title = hubDocHeading(heading, 'Where to Watch')
   const description = descriptionFor(config, year)
   return withSiteSocial({
     title,
     description,
     alternates: { canonical },
     openGraph: {
-      title: `${title} on ${siteConfig.name}`,
+      title: `${heading} on ${siteConfig.name}`,
       description,
       url: `${siteConfig.websiteURL}${canonical}`,
     },
