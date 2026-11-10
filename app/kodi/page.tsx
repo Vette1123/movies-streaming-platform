@@ -4,6 +4,7 @@ import { Check, Minus } from 'lucide-react'
 
 import { siteConfig } from '@/config/site'
 import { DEFAULT_SHARE_IMAGE } from '@/lib/og/share-image'
+import { withSiteSocial } from '@/lib/page-metadata'
 import { buttonVariants } from '@/components/ui/button'
 import { KodiDownload } from '@/components/support/kodi-download'
 import { TvLinkPreview } from '@/components/support/tv-link-preview'
@@ -15,7 +16,7 @@ const DESCRIPTION =
 const ZIP_PATH = '/kodi/plugin.video.reely.zip'
 const ZIP_URL = `https://www.reely.space${ZIP_PATH}`
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withSiteSocial({
   title: TITLE,
   description: DESCRIPTION,
   alternates: { canonical: '/kodi' },
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: DEFAULT_SHARE_IMAGE,
   },
-}
+})
 
 const STEPS = [
   {

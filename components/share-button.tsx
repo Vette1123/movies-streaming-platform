@@ -5,6 +5,7 @@ import { Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { MediaKind, trackMediaShared } from '@/lib/analytics'
+import { shareUrl } from '@/lib/share-url'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -26,7 +27,10 @@ export function ShareButton({
   className,
 }: ShareButtonProps) {
   const handleShare = async () => {
-    const url = typeof window !== 'undefined' ? window.location.href : ''
+    const url = shareUrl(
+      window.location.pathname + window.location.search,
+      'title_page'
+    )
     const shareData = {
       title: title || 'Reely',
       text: title ? `Watch “${title}” on Reely` : 'Check this out on Reely',

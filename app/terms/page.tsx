@@ -8,11 +8,12 @@ import {
   supportMailto,
   supportPriceLine,
 } from '@/config/support'
+import { withSiteSocial } from '@/lib/page-metadata'
 import { LegalPage } from '@/components/legal/legal-page'
 
 const DESCRIPTION = `The terms for using ${siteConfig.name} — what an account is for, how supporter memberships and payments work, what you can expect from the service and what it asks of you.`
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withSiteSocial({
   title: 'Terms',
   description: DESCRIPTION,
   alternates: { canonical: '/terms' },
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
     type: 'article',
     images: '/opengraph-image.png',
   },
-}
+})
 
 export default function TermsPage() {
   return (

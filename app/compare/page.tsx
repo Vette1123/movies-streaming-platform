@@ -1,9 +1,10 @@
 import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { withSiteSocial } from '@/lib/page-metadata'
 import { CompareView } from '@/components/profile/compare-view'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withSiteSocial({
   title: 'Taste match',
   description: `Put two ${siteConfig.name} profiles side by side and see where your rated-highest titles overlap. No sign-up, just two public handles.`,
   alternates: { canonical: '/compare' },
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
     url: `${siteConfig.websiteURL}/compare`,
     type: 'website',
   },
-}
+})
 
 /**
  * The compare is a tool, not a document: both handles ride the query string so

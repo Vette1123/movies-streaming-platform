@@ -14,6 +14,11 @@ function getImageURL(path: string | null | undefined) {
   return `${apiConfig.originalImage(path)}`
 }
 
+// og:image for a backdrop — see apiConfig.shareImage.
+function getShareImageURL(path: string | null | undefined) {
+  return `${apiConfig.shareImage(path)}`
+}
+
 function getPosterImageURL(path: string | null | undefined) {
   return `${apiConfig.w500Image(path)}`
 }
@@ -204,6 +209,7 @@ export {
   getLogoImageSrcSet,
   LOGO_SIZES,
   getPosterImageURL,
+  getShareImageURL,
   getThumbPosterURL,
   getThumbBackdropURL,
   dateFormatter,

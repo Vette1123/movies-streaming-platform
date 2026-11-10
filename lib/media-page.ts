@@ -4,10 +4,10 @@ import { MediaResponse } from '@/types/media'
 import catalogue from '@/config/catalogue.json'
 import { siteConfig } from '@/config/site'
 import { RAIL_LIMIT } from '@/lib/constants'
-import { genreNames } from '@/lib/media'
+import { genreNames, getMediaShareImage } from '@/lib/media'
+import { withSiteSocial } from '@/lib/page-metadata'
 import { mediaDescription } from '@/lib/seo-description'
 import { mediaDocHeading, mediaHeading } from '@/lib/seo-title'
-import { getImageURL, getPosterImageURL } from '@/lib/utils'
 
 // Shared plumbing for the near-identical movies vs tv-shows routes. The two
 // browse-list pages were ~95% the same and the two detail pages shared an
@@ -58,25 +58,13 @@ export const TV_LIST_CONFIG: MediaListPageConfig = {
 
 export function mediaListMetadata(config: MediaListPageConfig): Metadata {
   const url = `${siteConfig.websiteURL}${config.path}`
-  return {
+  return withSiteSocial({
     title: config.title,
     description: config.description,
     keywords: [...config.keywords, ...siteConfig.keywords],
     alternates: { canonical: config.path },
-    openGraph: {
-      title: config.ogTitle,
-      description: config.description,
-      url,
-      type: 'website',
-      images: '/opengraph-image.png',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: config.ogTitle,
-      description: config.description,
-      images: '/opengraph-image.png',
-    },
-  }
+    openGraph: { title: config.ogTitle, description: config.description, url },
+  })
 }
 
 type PagedFetcher = (args: {
@@ -361,7 +349,7 @@ export function buildDetailsMetadata(input: DetailsMetadataInput): Metadata {
     input.title
   )
 
-  return {
+  return withSiteSocial({
     title,
     description,
     keywords: [
@@ -383,13 +371,7 @@ export function buildDetailsMetadata(input: DetailsMetadataInput): Metadata {
       images,
       ...(input.ogReleaseDate ? { releaseDate: input.ogReleaseDate } : {}),
     },
-    twitter: {
-      card: 'summary_large_image',
-      title: heading,
-      description,
-      images: images.map((i) => i.url),
-    },
-  }
+  })
 }
 
 // The backdrop (16:9) + poster (2:3) OpenGraph image pair used by both detail
@@ -399,10 +381,10 @@ export function buildDetailsOgImages(
   posterPath: string | null | undefined,
   alt: string
 ): OgImage[] {
-  const backdrop = backdropPath ? getImageURL(backdropPath) : undefined
-  const poster = posterPath ? getPosterImageURL(posterPath) : undefined
+  const backdrop = getMediaShareImage(backdropPath, null)
+  const poster = getMediaShareImage(null, posterPath)
   return [
-    backdrop && { url: backdrop, width: 1280, height: 720, alt },
-    poster && { url: poster, width: 500, height: 750, alt },
+    backdrop && { ...backdrop, alt },
+    poster && { ...poster, alt },
   ].filter(Boolean) as OgImage[]
 }

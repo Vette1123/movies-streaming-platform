@@ -3,8 +3,9 @@ import { Metadata } from 'next'
 import { getPeopleWithPages, populatePersonPage } from '@/services/people'
 
 import { siteConfig } from '@/config/site'
-import { toListEntries } from '@/lib/media'
+import { getMediaShareImage, toListEntries } from '@/lib/media'
 import { notFoundOrThrow } from '@/lib/not-found'
+import { withSiteSocial } from '@/lib/page-metadata'
 import { personDescription, trimBiography } from '@/lib/seo-description'
 import {
   breadcrumbJsonLd,
@@ -60,7 +61,8 @@ export async function generateMetadata(props: {
   // somebody actually typed: what this person has been in.
   const description = personDescription(person.name, known)
 
-  return {
+  const portrait = getMediaShareImage(null, person.profile_path)
+  return withSiteSocial({
     title: `${person.name} — movies and TV shows`,
     description,
     alternates: { canonical },
@@ -69,16 +71,10 @@ export async function generateMetadata(props: {
       description,
       url: `${siteConfig.websiteURL}${canonical}`,
       type: 'profile',
-      images: person.profile_path
-        ? [{ url: getPosterImageURL(person.profile_path) }]
-        : undefined,
+      images: portrait ? [{ ...portrait, alt: person.name }] : undefined,
     },
-    twitter: {
-      card: 'summary',
-      title: `${person.name} on ${siteConfig.name}`,
-      description,
-    },
-  }
+    twitter: { card: 'summary' },
+  })
 }
 
 const PersonPage = async (props: { params: Promise<{ id: string }> }) => {

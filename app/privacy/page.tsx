@@ -3,9 +3,10 @@ import Link from 'next/link'
 
 import { siteConfig } from '@/config/site'
 import { PRO_EMAIL, SUPPORT_EMAIL, supportMailto } from '@/config/support'
+import { withSiteSocial } from '@/lib/page-metadata'
 import { LegalPage } from '@/components/legal/legal-page'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withSiteSocial({
   title: 'Privacy',
   description: `What ${siteConfig.name} stores, what it does not, which analytics it uses and how to delete all of it. Free users are anonymous, and signing in is entirely optional.`,
   alternates: { canonical: '/privacy' },
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
     type: 'article',
     images: '/opengraph-image.png',
   },
-}
+})
 
 export default function PrivacyPage() {
   return (

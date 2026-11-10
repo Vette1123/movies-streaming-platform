@@ -4,7 +4,7 @@ import { getLatestTrendingSeries } from '@/services/series'
 import { Movie } from '@/types/movie-result'
 import { siteConfig } from '@/config/site'
 import { getMediaTitle, mediaDetailHref } from '@/lib/media'
-import { getImageURL } from '@/lib/utils'
+import { getPosterImageURL } from '@/lib/utils'
 
 /**
  * A feed of what is new, for people who never open a search engine.
@@ -45,7 +45,7 @@ const itemXml = (media: Movie, type: 'movie' | 'tv'): string => {
     // date this feed honestly has; there is no "published to the site" moment.
     date ? `      <pubDate>${new Date(date).toUTCString()}</pubDate>` : '',
     media.poster_path
-      ? `      <enclosure url="${getImageURL(media.poster_path)}" type="image/jpeg" />`
+      ? `      <enclosure url="${escapeXml(getPosterImageURL(media.poster_path))}" length="0" type="image/jpeg" />`
       : '',
     '    </item>',
   ]
@@ -88,6 +88,7 @@ export async function GET() {
     `    <link>${siteConfig.websiteURL}</link>`,
     `    <description>${escapeXml(siteConfig.description)}</description>`,
     '    <language>en-us</language>',
+    `    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>`,
     `    <atom:link href="${siteConfig.websiteURL}/rss.xml" rel="self" type="application/rss+xml" />`,
     ...items,
     '  </channel>',

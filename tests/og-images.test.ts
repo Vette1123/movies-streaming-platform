@@ -18,7 +18,12 @@ describe('share previews', () => {
     const bare = [...sourceFiles('app'), ...sourceFiles('components/media')]
       .filter((file) => {
         const source = fs.readFileSync(file, 'utf8')
-        return /openGraph: \{/.test(source) && !/\bimages\b/.test(source)
+        // withSiteSocial (lib/page-metadata.ts) supplies the site card.
+        return (
+          /openGraph: \{/.test(source) &&
+          !/\bimages\b/.test(source) &&
+          !source.includes('withSiteSocial(')
+        )
       })
       .map((file) => file.replaceAll('\\', '/'))
     expect(bare).toEqual([])

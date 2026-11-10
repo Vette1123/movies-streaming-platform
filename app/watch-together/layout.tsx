@@ -1,8 +1,9 @@
 import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { withSiteSocial } from '@/lib/page-metadata'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withSiteSocial({
   title: 'Watch Together (beta)',
   description:
     'Start a title, share a code, and everyone stays on the same second — play, pause and seeks follow the host automatically, so movie night works from anywhere.',
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
     url: `${siteConfig.websiteURL}/watch-together`,
     type: 'website',
   },
-}
+})
 
 export default function WatchTogetherLayout({
   children,

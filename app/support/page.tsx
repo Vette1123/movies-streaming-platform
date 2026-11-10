@@ -16,6 +16,7 @@ import {
   SUPPORT_FEATURE_GROUPS,
   TV_FEATURE,
 } from '@/config/support-features'
+import { withSiteSocial } from '@/lib/page-metadata'
 import { pageTitle } from '@/lib/seo-title'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
@@ -26,7 +27,7 @@ import { SupportCta } from '@/components/support/support-cta'
 import { SupporterCount } from '@/components/support/supporter-count'
 import { TvLinkPreview } from '@/components/support/tv-link-preview'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withSiteSocial({
   title: pageTitle(`Support ${siteConfig.name}`),
   description: `Reely is free and stays free. Supporting it keeps your library on every device, unlocks lists, alerts and more, and pays for the servers that keep it running.`,
   alternates: { canonical: '/support' },
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
       'Free stays free. Support keeps your library everywhere and pays the bills.',
     url: '/support',
   },
-}
+})
 
 /**
  * The support page.

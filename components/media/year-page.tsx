@@ -8,6 +8,7 @@ import { MediaResponse } from '@/types/media'
 import { ItemType } from '@/types/movie-result'
 import { siteConfig } from '@/config/site'
 import { toListEntries } from '@/lib/media'
+import { withSiteSocial } from '@/lib/page-metadata'
 import {
   breadcrumbJsonLd,
   collectionPageJsonLd,
@@ -80,17 +81,16 @@ export const yearMetadata = (
   const canonical = `${config.basePath}/year/${year}`
   const title = headingFor(config, year)
   const description = descriptionFor(config, year)
-  return {
+  return withSiteSocial({
     title,
     description,
     alternates: { canonical },
     openGraph: {
-      images: '/opengraph-image.png',
       title: `${title} on ${siteConfig.name}`,
       description,
       url: `${siteConfig.websiteURL}${canonical}`,
     },
-  }
+  })
 }
 
 /** Enough to be a real list; two TMDB pages. */

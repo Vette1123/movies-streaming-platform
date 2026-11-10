@@ -3,14 +3,15 @@ import { getPopularMovies } from '@/services/movies'
 import { getPopularSeries } from '@/services/series'
 
 import { siteConfig } from '@/config/site'
+import { withSiteSocial } from '@/lib/page-metadata'
 import type { TastePick } from '@/lib/taste'
 import { TastePicker } from '@/components/start/taste-picker'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withSiteSocial({
   title: 'What should I watch?',
   description: `Pick a few films and shows you like and ${siteConfig.name} works out what to watch next — no account, no sign-up, no waiting. Personal picks in under a minute, for free.`,
   alternates: { canonical: '/start' },
-}
+})
 
 /**
  * The thirty-second version of the whole site.

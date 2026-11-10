@@ -3,8 +3,8 @@
 import * as React from 'react'
 import { toast } from 'sonner'
 
-import { siteConfig } from '@/config/site'
 import { trackShared } from '@/lib/analytics'
+import { shareUrl } from '@/lib/share-url'
 
 interface ShareInput {
   title: string
@@ -77,7 +77,7 @@ export const useShare = () => {
       text = `Watch ${title} on Reely`,
       copied = 'Link copied. Share it anywhere.',
     }: ShareInput) => {
-      const url = `${siteConfig.websiteURL}${path}`
+      const url = shareUrl(path, surface)
       try {
         if (typeof navigator.share === 'function') {
           await navigator.share({ title, text, url })

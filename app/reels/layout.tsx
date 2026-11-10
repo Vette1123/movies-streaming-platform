@@ -1,8 +1,9 @@
 import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { withSiteSocial } from '@/lib/page-metadata'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withSiteSocial({
   title: 'Reels — trailer feed',
   description:
     'Swipe through trending trailers and start watching in one tap. A full-screen feed of new and popular movies and shows worth your next two hours, on Reely.',
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
     url: `${siteConfig.websiteURL}/reels`,
     type: 'website',
   },
-}
+})
 
 export default function ReelsLayout({
   children,

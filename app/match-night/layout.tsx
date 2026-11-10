@@ -1,8 +1,9 @@
 import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { withSiteSocial } from '@/lib/page-metadata'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withSiteSocial({
   title: 'Match Night',
   description:
     'Two people, one deck, one code. Swipe what you would watch tonight — when you both like the same title, it is a match and the movie-night decision is made.',
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
     url: `${siteConfig.websiteURL}/match-night`,
     type: 'website',
   },
-}
+})
 
 export default function MatchNightLayout({
   children,

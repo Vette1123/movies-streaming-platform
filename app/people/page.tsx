@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { getPeopleWithPages } from '@/services/people'
 
 import { siteConfig } from '@/config/site'
+import { withSiteSocial } from '@/lib/page-metadata'
 import { breadcrumbJsonLd, itemListJsonLd, JsonLd } from '@/lib/structured-data'
 import { getPosterImageURL } from '@/lib/utils'
 import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
@@ -15,7 +16,7 @@ const TITLE = 'Actors and directors'
 const DESCRIPTION =
   'The people behind the films and series on Reely — actors, directors and writers, with every title they have been in, their ratings and where to stream them.'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withSiteSocial({
   title: TITLE,
   description: DESCRIPTION,
   alternates: { canonical: '/people' },
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
     url: `${siteConfig.websiteURL}/people`,
   },
-}
+})
 
 /**
  * The index that keeps the person pages from being orphans.

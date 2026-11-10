@@ -1,8 +1,9 @@
 import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { withSiteSocial } from '@/lib/page-metadata'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withSiteSocial({
   title: "What's your mood?",
   description:
     'Pick a mood — cozy, adrenaline, mind-bending, scare me — and get a hand-tuned stack of movies and shows that fit it right now, with trailers and where to watch.',
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
     url: `${siteConfig.websiteURL}/mood`,
     type: 'website',
   },
-}
+})
 
 export default function MoodLayout({
   children,
