@@ -19,6 +19,7 @@ import {
 import { notFoundOrThrow } from '@/lib/not-found'
 import { withSiteSocial } from '@/lib/page-metadata'
 import { collectionDescription } from '@/lib/seo-description'
+import { collectionDocHeading } from '@/lib/seo-title'
 import { CollectionView } from '@/components/collection/collection-view'
 
 // Collections are static franchise metadata — safe to cache long and let CI
@@ -69,7 +70,7 @@ export async function generateMetadata(
   const image = getMediaShareImage(collection.backdrop_path, null)
 
   return withSiteSocial({
-    title: collection.name,
+    title: collectionDocHeading(collection.name),
     description,
     alternates: { canonical: canonicalPath },
     openGraph: {

@@ -78,7 +78,7 @@ function EmailHint({
       <span className="text-xs text-muted-foreground">
         Pro is switched on for{' '}
         <span className="font-medium break-all text-foreground">{email}</span>{' '}
-        once you have paid. The reply says how.
+        once you have paid. The instant reply has the payment link.
       </span>
     )
   }

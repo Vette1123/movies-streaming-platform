@@ -81,6 +81,23 @@ export const mediaDocHeading = (input: MediaTitleInput) => {
 }
 
 /**
+ * A hub heading plus the intent people search with ("Horror Movies — Where to
+ * Watch"), or the bare heading when the pair would push the whole `<title>`
+ * past TITLE_MAX. The same idea as mediaDocHeading, for genre, year and
+ * franchise pages: Search Console (28 days to 8 Nov 2026) shows the clicks on
+ * those pages come from "<thing> where to watch / cast / trailer" queries, never
+ * the bare noun, which IMDb and Wikipedia own.
+ */
+export const hubDocHeading = (heading: string, intent: string) => {
+  const candidate = `${heading} — ${intent}`
+  return docTitle(candidate).length <= TITLE_MAX ? candidate : heading
+}
+
+/** A franchise page's `<title>` heading, shared with the Worker's tail path. */
+export const collectionDocHeading = (name: string) =>
+  hubDocHeading(name, 'Every Film in Order')
+
+/**
  * The two rail headings on a detail page, which used to be the same eight
  * characters on every one of ~13,000 URLs.
  *

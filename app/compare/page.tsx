@@ -8,6 +8,9 @@ export const metadata: Metadata = withSiteSocial({
   title: 'Taste match',
   description: `Put two ${siteConfig.name} profiles side by side and see where your rated-highest titles overlap. No sign-up, just two public handles.`,
   alternates: { canonical: '/compare' },
+  // A tool whose crawlable state is an empty form: thin, and not in the
+  // sitemap. Links out are still followed.
+  robots: { index: false, follow: true },
   // Without its own, a sent compare link unfurled as the homepage — and
   // sending the link is the whole point of this page.
   openGraph: {
