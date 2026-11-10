@@ -86,7 +86,9 @@ export async function mapLimit(items, limit, fn) {
       out[i] = await fn(items[i], i)
     }
   }
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker)
+  )
   return out
 }
 
@@ -118,7 +120,9 @@ async function diffAgainstLive(urls, liveSitemap, outDir) {
     const route = htmlRouteFor(url)
     let built = null
     if (route) {
-      built = await fs.readFile(path.join(outDir, route), 'utf8').catch(() => null)
+      built = await fs
+        .readFile(path.join(outDir, route), 'utf8')
+        .catch(() => null)
     }
     const live = built !== null ? await fetchText(url) : null
     const reason = changeReason({ url, liveSitemap, built, live })
@@ -133,17 +137,25 @@ async function diffAgainstLive(urls, liveSitemap, outDir) {
  * sitemap the previous deploy serves right now. `changed` is null when either
  * cannot be read: the caller submits everything and says so.
  */
-export async function planIndexNow({ outDir = path.join(process.cwd(), 'out') } = {}) {
+export async function planIndexNow({
+  outDir = path.join(process.cwd(), 'out'),
+} = {}) {
   const [newXml, liveXml] = await Promise.all([
     fs.readFile(path.join(outDir, 'sitemap.xml'), 'utf8').catch(() => null),
     fetchText(`${BASE_URL}/sitemap.xml`),
   ])
-  if (newXml === null) return { urls: [], changed: null, why: 'out/sitemap.xml missing' }
+  if (newXml === null)
+    return { urls: [], changed: null, why: 'out/sitemap.xml missing' }
   const urls = [...new Set(sitemapUrls(newXml))].filter((u) =>
     u.startsWith(`${BASE_URL}`)
   )
-  if (liveXml === null) return { urls, changed: null, why: 'live sitemap unreadable' }
-  const changed = await diffAgainstLive(urls, new Set(sitemapUrls(liveXml)), outDir)
+  if (liveXml === null)
+    return { urls, changed: null, why: 'live sitemap unreadable' }
+  const changed = await diffAgainstLive(
+    urls,
+    new Set(sitemapUrls(liveXml)),
+    outDir
+  )
   return { urls, changed }
 }
 
@@ -164,7 +176,8 @@ export async function submitIndexNow(urlList) {
         }),
       })
       if (res.ok || res.status === 202) submitted += batch.length
-      else console.warn(`[indexnow] HTTP ${res.status} for ${batch.length} URLs`)
+      else
+        console.warn(`[indexnow] HTTP ${res.status} for ${batch.length} URLs`)
     } catch (err) {
       console.warn(`[indexnow] batch skipped: ${err.message}`)
     }

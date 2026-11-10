@@ -60,7 +60,7 @@ function PromoItem({ promo, placement }: { promo: Promo; placement: string }) {
             placement,
           })
         }
-        className="group flex flex-wrap items-start gap-x-4 gap-y-3 font-normal sm:items-center text-muted-foreground hover:text-muted-foreground"
+        className="group flex flex-wrap items-start gap-x-4 gap-y-3 font-normal text-muted-foreground hover:text-muted-foreground sm:items-center"
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- static export, already the shown size */}
         <img

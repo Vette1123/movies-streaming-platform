@@ -13,5 +13,4 @@ export const xmlEscape = (value: string) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;')
 
-export const sitemapImage = (path: string) =>
-  xmlEscape(getPosterImageURL(path))
+export const sitemapImage = (path: string) => xmlEscape(getPosterImageURL(path))

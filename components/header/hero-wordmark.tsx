@@ -128,6 +128,7 @@ export function HeroWordmark({
       >
         {title}
       </span>
+      {/* eslint-disable-next-line @next/next/no-img-element -- static export, srcset written by hand below */}
       <img
         ref={logoRef}
         src={logoUrl!}
