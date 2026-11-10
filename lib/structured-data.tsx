@@ -1,4 +1,5 @@
 import { siteConfig } from '@/config/site'
+import { SUPPORT_EMAIL } from '@/config/support'
 import { aggregateRating, jsonLdText } from '@/lib/json-ld'
 
 const SITE_URL = siteConfig.websiteURL
@@ -67,6 +68,15 @@ export const organizationJsonLd = {
   name: siteConfig.seo.publisher,
   url: SITE_URL,
   logo: `${SITE_URL}/android-chrome-512x512.png`,
+  // The one inbox a person answers (config/support.ts), so a knowledge panel
+  // or an AI answer naming a contact names the real one.
+  contactPoint: {
+    '@type': 'ContactPoint',
+    contactType: 'customer support',
+    email: SUPPORT_EMAIL,
+    url: `${SITE_URL}/support`,
+    availableLanguage: ['en'],
+  },
   // These profiles are the builder's, not the brand's: as the Organization's
   // sameAs they told Google that Reely IS that person. They identify the founder.
   founder: {
@@ -141,6 +151,25 @@ const trailerObject = ({ key, publishedAt, title }: TrailerInput) => {
   }
 }
 
+/**
+ * The same title on the databases search engines already trust.
+ *
+ * Unlike a person's id (see personList), a title's TMDB id is the id this page
+ * is built from, so the claim is true by construction; IMDb only when the
+ * payload already carries it, never a guessed or looked-up one.
+ */
+export const titleSameAs = (
+  kind: 'movie' | 'tv',
+  id: number | string,
+  imdbId?: string | null
+): string[] => {
+  const links = [`https://www.themoviedb.org/${kind}/${id}`]
+  if (imdbId && /^tt\d+$/.test(imdbId)) {
+    links.push(`https://www.imdb.com/title/${imdbId}/`)
+  }
+  return links
+}
+
 interface MovieSchemaInput {
   id: number | string
   title: string
@@ -158,6 +187,7 @@ interface MovieSchemaInput {
   trailerPublishedAt?: string | null
   /** ISO 639-1 code from TMDB — drives `inLanguage` instead of a hard-coded `en`. */
   originalLanguage?: string | null
+  imdbId?: string | null
 }
 
 export const movieJsonLd = (movie: MovieSchemaInput) => {
@@ -171,6 +201,7 @@ export const movieJsonLd = (movie: MovieSchemaInput) => {
     // The film's own language, not the site's. A Japanese or French title
     // filed as `en` is a wrong claim in the graph crawlers read.
     inLanguage: movie.originalLanguage || 'en',
+    sameAs: titleSameAs('movie', movie.id, movie.imdbId),
   }
 
   if (movie.description) schema.description = movie.description
@@ -218,6 +249,7 @@ interface SeriesSchemaInput {
   trailerPublishedAt?: string | null
   /** ISO 639-1 code from TMDB — drives `inLanguage` instead of a hard-coded `en`. */
   originalLanguage?: string | null
+  imdbId?: string | null
 }
 
 export const tvSeriesJsonLd = (series: SeriesSchemaInput) => {
@@ -229,6 +261,7 @@ export const tvSeriesJsonLd = (series: SeriesSchemaInput) => {
     url,
     name: series.name,
     inLanguage: series.originalLanguage || 'en',
+    sameAs: titleSameAs('tv', series.id, series.imdbId),
   }
 
   if (series.description) schema.description = series.description

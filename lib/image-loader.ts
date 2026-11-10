@@ -73,6 +73,18 @@ export function wsrvSrcSet(src: string, quality?: number) {
     .join(', ')
 }
 
+/** Width of a hub-grid tile at 2x (the /people index paints ~150 CSS px). */
+export const HUB_PORTRAIT_WIDTH = 320
+
+/**
+ * One URL for a tile in a very long grid, for `unoptimized` next/image.
+ *
+ * ponytail: a single width overpays on a 1x screen and under-serves a 3x one;
+ * the upgrade is a two-entry srcset built here, if a hub ever needs it.
+ */
+export const hubPortraitSrc = (src: string, quality?: number): string =>
+  imageLoader({ src, width: HUB_PORTRAIT_WIDTH, quality })
+
 const PORTRAIT_WIDTHS = [360, 480, 648, 750]
 
 /**

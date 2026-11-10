@@ -166,3 +166,4 @@ with the work, not after.
 | 2026-11-10 | [Rafiq icon broke the deploy](2026-11-10-rafiq-icon-broke-deploy.md) | Asset swaps are test-relevant: the promo icon budget is 10 KB, and a palette PNG fits it with no visible change |
 | 2026-11-10 | [Hub titles with intent, an honest llms.txt, and the Pro auto-reply](2026-11-10-hub-titles-and-pro-auto-reply.md) | A page the Worker can also serve takes its `<title>` from one shared builder; audits must read the settled calls in the comments first |
 | 2026-11-10 | [Index report triage](2026-11-10-index-report-triage.md) | Compare a bucket's newest "last crawled" with the last fix's merge date before touching code; an unrelated Google-selected canonical means the rendered DOM was empty |
+| 2026-11-10 | [SEO finish](2026-11-10-seo-finish.md) | A long image grid gets one fixed URL per tile, never a 13-width srcset; every hub family needs a prerendered link from its owning page |

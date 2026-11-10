@@ -3,6 +3,7 @@ import Link from 'next/link'
 
 import { MediaResponse } from '@/types/media'
 import { siteConfig } from '@/config/site'
+import { MOVIE_GENRES_WITH_SLUG, TV_GENRES_WITH_SLUG } from '@/lib/genres'
 import { toListEntries } from '@/lib/media'
 import { MediaListPageConfig } from '@/lib/media-page'
 import { QUERY_KEYS } from '@/lib/queryKeys'
@@ -21,6 +22,41 @@ import { SectionErrorBoundary } from '@/components/section-error-boundary'
 
 /** Recent enough to be worth a link from the hub; the rest chain from there. */
 const YEARS_LINKED = 8
+
+interface HubLink {
+  href: string
+  label: string
+}
+
+/** A labelled row of hub links: prerendered anchors a crawler can follow. */
+const HubLinkRow = ({
+  label,
+  ariaLabel,
+  links,
+}: {
+  label: string
+  ariaLabel: string
+  links: HubLink[]
+}) => (
+  <nav
+    aria-label={ariaLabel}
+    className="flex flex-wrap items-center gap-2 text-sm"
+  >
+    <span className="text-muted-foreground">{label}</span>
+    {links.map((link) => (
+      <Link
+        key={link.href}
+        href={link.href}
+        className={cn(
+          chipVariants({ variant: 'neutral', interactive: 'subtle' }),
+          'text-sm'
+        )}
+      >
+        {link.label}
+      </Link>
+    ))}
+  </nav>
+)
 
 interface MediaListPageProps {
   media: MediaResponse
@@ -74,30 +110,35 @@ export const MediaListPage = ({
         <p className="max-w-2xl text-muted-foreground">{config.description}</p>
       </div>
 
-      {/* The year hubs, linked from the page that owns them. The filter
-          sidebar can express the same query, but it renders client-side into a
-          URL robots.txt disallows — these are prerendered documents a crawler
-          can follow. Recent years only; the rest chain off any one of them. */}
-      <nav
-        aria-label={`${config.title} by year`}
-        className="mb-8 flex flex-wrap items-center gap-2 text-sm"
-      >
-        <span className="text-muted-foreground">By year:</span>
-        {yearRange()
-          .slice(0, YEARS_LINKED)
-          .map((year) => (
-            <Link
-              key={year}
-              href={`${config.path}/year/${year}`}
-              className={cn(
-                chipVariants({ variant: 'neutral', interactive: 'subtle' }),
-                'text-sm'
-              )}
-            >
-              {year}
-            </Link>
-          ))}
-      </nav>
+      {/* The genre and year hubs, linked from the page that owns them. The
+          filter sidebar can express the same queries, but it renders
+          client-side into a URL robots.txt disallows; these are prerendered
+          documents a crawler can follow. Before the genre row, the 35 genre
+          hubs had no link from either browse page. Recent years only; the
+          rest chain off any one of them. */}
+      <div className="mb-8 space-y-3">
+        <HubLinkRow
+          label="By genre:"
+          ariaLabel={`${config.title} by genre`}
+          links={(mediaType === 'movie'
+            ? MOVIE_GENRES_WITH_SLUG
+            : TV_GENRES_WITH_SLUG
+          ).map((genre) => ({
+            href: `${config.path}/genre/${genre.slug}`,
+            label: genre.name,
+          }))}
+        />
+        <HubLinkRow
+          label="By year:"
+          ariaLabel={`${config.title} by year`}
+          links={yearRange()
+            .slice(0, YEARS_LINKED)
+            .map((year) => ({
+              href: `${config.path}/year/${year}`,
+              label: String(year),
+            }))}
+        />
+      </div>
       {/* The filter sidebar + infinite grid is the most failure-prone island in
           the app: it hydrates on the client (nuqs), calls Server Actions on
           every filter change, and lazy-loads chunks as you scroll. Keep those

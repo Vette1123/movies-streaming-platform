@@ -158,6 +158,16 @@ const serverOnlyConfig = {
         destination: '/sitemap.xml',
         permanent: true,
       },
+      {
+        source: '/manifest.webmanifest',
+        destination: '/site.webmanifest',
+        permanent: true,
+      },
+      {
+        source: '/manifest.json',
+        destination: '/site.webmanifest',
+        permanent: true,
+      },
     ]
   },
 }

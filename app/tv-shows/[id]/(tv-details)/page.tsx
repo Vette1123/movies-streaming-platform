@@ -136,6 +136,7 @@ const TVSeries = async (props: PageDetailsProps) => {
     trailerKey,
     trailerPublishedAt,
     originalLanguage: seriesDetails.original_language,
+    imdbId: seriesDetails.imdb_id ?? seriesDetails.external_ids?.imdb_id,
   })
 
   // The four ratings, resolved here because this page is a server component:
