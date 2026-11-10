@@ -163,3 +163,4 @@ with the work, not after.
 | 2026-11-09 | [Trailing slashes 301, no JSON-LD template](2026-11-09-slash-301-and-jsonld-templates.md) | Cloudflare 307s a trailing slash; `_redirects` placeholder rules make it a 301. The SearchAction template is crawled as a literal URL, so it is gone. |
 | 2026-11-10 | [Player failures that were not the server](2026-11-10-player-failures-that-were-not.md) | A failure rate is only a server's when the cause is: no_stream is a title not out yet, not a dead provider |
 | 2026-11-10 | [SEO and marketing audit](2026-11-10-seo-marketing-audit.md) | JSON in a script tag must escape `<` (list names reached the page raw), and Next replaces openGraph/twitter whole, so every page's social tags go through `withSiteSocial` |
+| 2026-11-10 | [Rafiq icon broke the deploy](2026-11-10-rafiq-icon-broke-deploy.md) | Asset swaps are test-relevant: the promo icon budget is 10 KB, and a palette PNG fits it with no visible change |
