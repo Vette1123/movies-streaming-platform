@@ -248,6 +248,7 @@ export function ReelyPlayer({
           played,
           viewer_chose: viewerChose,
           moved,
+          no_stream: noStream && !played,
         })
         if (moved) {
           failed.current = true

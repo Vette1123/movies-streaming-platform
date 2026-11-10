@@ -281,27 +281,31 @@ export function SourceSwitcher({
       return (
         <div className={cn('flex justify-center px-4 text-xs', className)}>
           <Bar>
-            <span
-              className={cn(
-                'inline-flex h-8 items-center gap-1.5 rounded-full px-3 font-semibold',
-                HOUSE_GRADIENT
-              )}
-            >
-              <Sparkles className="size-3.5 shrink-0" aria-hidden />
-              Reely Player
-              <ProMark label="FREE TODAY" />
-            </span>
+            {/* One link, badge included: the badge is shaped like a button, and
+                as a bare span it drew dead clicks (PostHog, 2026-11). */}
             <Link
               href="/support"
               onClick={() =>
                 trackSupportCtaClicked({ surface: 'player_trial' })
               }
               className={cn(
-                'tap-target inline-flex h-8 items-center rounded-full px-3 font-medium whitespace-nowrap text-white/90 hover:bg-white/15 hover:text-white',
+                'group tap-target inline-flex h-8 items-center gap-1 rounded-full font-medium whitespace-nowrap text-white/90 hover:text-white',
                 PILL_FOCUS
               )}
             >
-              Every title
+              <span
+                className={cn(
+                  'inline-flex h-8 items-center gap-1.5 rounded-full px-3 font-semibold',
+                  HOUSE_GRADIENT
+                )}
+              >
+                <Sparkles className="size-3.5 shrink-0" aria-hidden />
+                Reely Player
+                <ProMark label="FREE TODAY" />
+              </span>
+              <span className="inline-flex h-8 items-center rounded-full px-3 group-hover:bg-white/15">
+                Every title
+              </span>
             </Link>
           </Bar>
         </div>
