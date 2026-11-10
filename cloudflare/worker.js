@@ -53,7 +53,7 @@ import { blockedTitleEntry } from '@/lib/blocked-titles'
 import { loadDirectory } from '@/lib/community/routes'
 import { smartQuery } from '@/lib/filter-query'
 import { isImdbId } from '@/lib/imdb-id'
-import { aggregateRating, jsonLdText } from '@/lib/json-ld'
+import { aggregateRating, jsonLdText, titleSameAs } from '@/lib/json-ld'
 import { loadPublicList } from '@/lib/lists/routes'
 import { getMediaShareImage } from '@/lib/media'
 import {
@@ -1335,6 +1335,7 @@ async function handleDetailFallback(match, request, env, ctx, url) {
           ),
         }
       : {}),
+    sameAs: titleSameAs(type, id, details.imdb_id),
   }
   const ogType = type === 'tv' ? 'video.tv_show' : 'video.movie'
   const siteUrl = siteUrlOf(url)

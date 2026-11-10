@@ -1,6 +1,8 @@
 import { siteConfig } from '@/config/site'
 import { SUPPORT_EMAIL } from '@/config/support'
-import { aggregateRating, jsonLdText } from '@/lib/json-ld'
+import { aggregateRating, jsonLdText, titleSameAs } from '@/lib/json-ld'
+
+export { titleSameAs }
 
 const SITE_URL = siteConfig.websiteURL
 
@@ -149,25 +151,6 @@ const trailerObject = ({ key, publishedAt, title }: TrailerInput) => {
     embedUrl: `https://www.youtube.com/embed/${key}`,
     url: `https://www.youtube.com/watch?v=${key}`,
   }
-}
-
-/**
- * The same title on the databases search engines already trust.
- *
- * Unlike a person's id (see personList), a title's TMDB id is the id this page
- * is built from, so the claim is true by construction; IMDb only when the
- * payload already carries it, never a guessed or looked-up one.
- */
-export const titleSameAs = (
-  kind: 'movie' | 'tv',
-  id: number | string,
-  imdbId?: string | null
-): string[] => {
-  const links = [`https://www.themoviedb.org/${kind}/${id}`]
-  if (imdbId && /^tt\d+$/.test(imdbId)) {
-    links.push(`https://www.imdb.com/title/${imdbId}/`)
-  }
-  return links
 }
 
 interface MovieSchemaInput {

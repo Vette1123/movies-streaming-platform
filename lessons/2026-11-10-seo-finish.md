@@ -10,6 +10,7 @@
 ## Mistakes
 
 - The earlier audit said production `/movies` had no year links either. A curl showed 8 of them; the miscount came from grepping the wrong path pattern. Re-measure before building: the row only needed genres added.
+- `sameAs` first shipped only in `lib/structured-data.tsx`, which covers the ~1,000 prerendered detail pages. The Worker's tail-id fallback (~13,900 URLs) builds its own Movie object, and the post-deploy curl on a tail id found no `sameAs`. The helper moved to `lib/json-ld.ts`, which both renderers share for `aggregateRating`. Any schema change needs a curl on one baked id AND one tail id.
 - The first test passed `title` to `tvSeriesJsonLd`; the series input field is `name`. Vitest ran green anyway, and only `pnpm typecheck` caught it. Run the typecheck on test files too.
 
 ## What worked
