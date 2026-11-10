@@ -79,10 +79,13 @@ export function whatToDo({ reach, activation, player, support, rage }) {
     )
   }
   for (const source of player) {
-    const rate = source.plays ? source.failures / source.plays : 0
-    if (source.failures >= 10 && rate > 0.3) {
+    // A title the provider does not carry yet (a film still in cinemas) is
+    // not the server failing, and the player already hops off it.
+    const failures = source.failures - (source.no_stream ?? 0)
+    const rate = source.plays ? failures / source.plays : 0
+    if (failures >= 10 && rate > 0.3) {
       out.push(
-        `Server "${source.source}" failed ${source.failures} times against ${source.plays} plays (${pct(rate)}) — check it with pnpm embed:probe or move it down the list.`
+        `Server "${source.source}" failed ${failures} times against ${source.plays} plays (${pct(rate)}) — check it with pnpm embed:probe or move it down the list.`
       )
     }
   }

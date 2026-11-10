@@ -734,6 +734,8 @@ export function trackPlayerFailed(props: {
   played?: boolean
   viewer_chose?: boolean
   moved?: boolean
+  /** The provider has no stream for this title (often: still in cinemas). Not a server fault. */
+  no_stream?: boolean
 }): void {
   track(EVENTS.PLAYER_FAILED, props)
 }

@@ -120,6 +120,19 @@ describe('usage report', () => {
     expect(todo[1]).toContain('"x" failed 15 times')
   })
 
+  it('does not blame a server for titles that have no stream yet', () => {
+    // 2026-11-10: the house player "failed" 13 times against 11 plays, and 10
+    // of those were fresh theatrical releases the provider does not carry.
+    const todo = whatToDo({
+      reach: [],
+      activation: { new_people: 0, rate: 0 },
+      player: [{ source: 'reely', plays: 11, failures: 13, no_stream: 10 }],
+      support: { cta: 0, checkout: 0 },
+      rage: [],
+    })
+    expect(todo).toEqual([])
+  })
+
   it('does not call two people hammering a control a hotspot', () => {
     const todo = whatToDo({
       reach: [],
