@@ -52,6 +52,7 @@ import { blockedTitleEntry } from '@/lib/blocked-titles'
 import { loadDirectory } from '@/lib/community/routes'
 import { smartQuery } from '@/lib/filter-query'
 import { isImdbId } from '@/lib/imdb-id'
+import { jsonLdText } from '@/lib/json-ld'
 import { loadPublicList } from '@/lib/lists/routes'
 import { getMediaHeroImageUrl } from '@/lib/media'
 import {
@@ -969,7 +970,7 @@ async function notFoundAsset(env, url) {
 // top-level array in one script, which is what schema.org and Google's parser
 // both take — and one script is one HTMLRewriter append instead of N.
 const headBlock = (meta, ogType, jsonLd) =>
-  `${preloadLink(meta.preload)}${metaTags(meta, ogType)}<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`
+  `${preloadLink(meta.preload)}${metaTags(meta, ogType)}<script type="application/ld+json">${jsonLdText(jsonLd)}</script>`
 
 /**
  * Start the shell's data request from the HTML, not from hydration.

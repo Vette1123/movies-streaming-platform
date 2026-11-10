@@ -1,4 +1,5 @@
 import { siteConfig } from '@/config/site'
+import { jsonLdText } from '@/lib/json-ld'
 
 const SITE_URL = siteConfig.websiteURL
 
@@ -357,6 +358,6 @@ interface JsonLdProps {
 export const JsonLd = ({ data }: JsonLdProps) => (
   <script
     type="application/ld+json"
-    dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+    dangerouslySetInnerHTML={{ __html: jsonLdText(data) }}
   />
 )
