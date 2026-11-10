@@ -13,6 +13,11 @@
 /sitemap-static.xml      /sitemap.xml  301
 /server-sitemap-index.xml /sitemap.xml 301
 
+# The manifest's real name is /site.webmanifest. Audit tools and some crawlers
+# probe the conventional names first and log a 404 against the site.
+/manifest.webmanifest    /site.webmanifest 301
+/manifest.json           /site.webmanifest 301
+
 # A trailing slash would otherwise get Cloudflare's default 307 to the slashless
 # page: a TEMPORARY redirect, so a link posted with a slash never hands its
 # signal to the canonical URL. One rule per path depth (a placeholder matches

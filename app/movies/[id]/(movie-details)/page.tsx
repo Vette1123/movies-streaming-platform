@@ -135,6 +135,7 @@ const MoviePage = async (props: PageDetailsProps) => {
     trailerKey,
     trailerPublishedAt,
     originalLanguage: movieDetails.original_language,
+    imdbId: movieDetails.imdb_id,
   })
 
   // The four ratings, resolved here because this page is a server component:

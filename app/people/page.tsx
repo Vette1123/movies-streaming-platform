@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { getPeopleWithPages } from '@/services/people'
 
 import { siteConfig } from '@/config/site'
+import { hubPortraitSrc } from '@/lib/image-loader'
 import { withSiteSocial } from '@/lib/page-metadata'
 import { breadcrumbJsonLd, itemListJsonLd, JsonLd } from '@/lib/structured-data'
 import { getPosterImageURL } from '@/lib/utils'
@@ -78,12 +79,17 @@ const PeoplePage = async () => {
               <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg shadow-md">
                 {person.profile_path ? (
                   <BlurredImage
-                    src={getPosterImageURL(person.profile_path)}
+                    src={hubPortraitSrc(
+                      getPosterImageURL(person.profile_path),
+                      POSTER_QUALITY
+                    )}
                     alt={person.name}
                     fill
-                    // A 6-8 column grid of a contained page: the tile paints at
-                    // ~150 CSS px on a desktop and ~110 on a phone.
-                    sizes="(max-width: 640px) 30vw, (max-width: 1024px) 22vw, 12vw"
+                    // One fixed URL, no srcset: a `fill` image gets all 13 of
+                    // Next's widths, and over ~800 tiles that srcset alone was
+                    // 1.5 MB of the 2.9 MB page. The tile paints at ~150 CSS px
+                    // on a desktop and ~110 on a phone, which 320 covers at 2x.
+                    unoptimized
                     quality={POSTER_QUALITY}
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                   />
