@@ -23,6 +23,20 @@ const imageUrls = (images: OgImages) =>
  * twitter block kept the HOME page's twitter title and description. This
  * fills those from the page's own openGraph, leaving anything set explicitly.
  */
+/**
+ * The RSS feed as a <link rel="alternate">. A page's own `alternates` replaces
+ * the root layout's whole object, so the home page has to restate it or the
+ * feed is linked from nowhere.
+ */
+export const feedAlternate = {
+  'application/rss+xml': [
+    {
+      url: `${siteConfig.websiteURL}/rss.xml`,
+      title: `${siteConfig.name} — what is trending`,
+    },
+  ],
+}
+
 export function withSiteSocial(meta: Metadata): Metadata {
   const og = meta.openGraph
   if (!og) return meta

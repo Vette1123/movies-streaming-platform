@@ -11,6 +11,7 @@ import { APPEARANCE_BOOT_SCRIPT } from '@/lib/appearance'
 import { RETURNING_SCRIPT } from '@/lib/back-restore'
 import { fontSans } from '@/lib/fonts'
 import { IMAGE_RESCUE_SCRIPT } from '@/lib/image-rescue'
+import { feedAlternate } from '@/lib/page-metadata'
 import {
   JsonLd,
   organizationJsonLd,
@@ -190,14 +191,7 @@ export const metadata: Metadata = {
     },
     // Discoverable from the document rather than only by guessing the path —
     // this is how a reader finds the feed at all.
-    types: {
-      'application/rss+xml': [
-        {
-          url: `${siteConfig.websiteURL}/rss.xml`,
-          title: `${siteConfig.name} — what is trending`,
-        },
-      ],
-    },
+    types: feedAlternate,
   },
 
   category: siteConfig.seo.category as 'entertainment',

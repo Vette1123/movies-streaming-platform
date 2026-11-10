@@ -4,7 +4,7 @@ import { populateHomePageData } from '@/services/movies'
 
 import { siteConfig } from '@/config/site'
 import { resolveMediaType } from '@/lib/media'
-import { withSiteSocial } from '@/lib/page-metadata'
+import { feedAlternate, withSiteSocial } from '@/lib/page-metadata'
 import { getRatingsForItems } from '@/lib/ratings'
 import {
   breadcrumbJsonLd,
@@ -49,6 +49,7 @@ export const metadata: Metadata = withSiteSocial({
   description: HOME_DESCRIPTION,
   alternates: {
     canonical: '/',
+    types: feedAlternate,
   },
   openGraph: {
     // `siteName` is repeated from the root layout because Next REPLACES the
