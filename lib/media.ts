@@ -1,5 +1,6 @@
 import { ItemType } from '@/types/movie-result'
-import { getImageURL, getPosterImageURL, itemRedirect } from '@/lib/utils'
+import { SHARE_IMAGE_HEIGHT, SHARE_IMAGE_WIDTH } from '@/lib/tmdbConfig'
+import { getPosterImageURL, getShareImageURL, itemRedirect } from '@/lib/utils'
 
 // Movies expose `title` / `release_date`; series expose `name` / `first_air_date`.
 // These resolvers pick whichever field the shape carries so display and tracking
@@ -74,14 +75,38 @@ export function capListOverviews<T extends { overview?: string }>(
   })
 }
 
-// Detail-hero art: prefer the wide backdrop, fall back to the poster, else null.
+export interface ShareImage {
+  url: string
+  width: number
+  height: number
+}
+
+/**
+ * A title's share art with its real size: the backdrop at 1200x675, else the
+ * w500 poster (TMDB posters are 2:3), else null. Feeds og:image, twitter:image
+ * and JSON-LD on both the prerendered pages and the Worker's tail ids.
+ */
+export function getMediaShareImage(
+  backdropPath?: string | null,
+  posterPath?: string | null
+): ShareImage | null {
+  if (backdropPath)
+    return {
+      url: getShareImageURL(backdropPath),
+      width: SHARE_IMAGE_WIDTH,
+      height: SHARE_IMAGE_HEIGHT,
+    }
+  if (posterPath)
+    return { url: getPosterImageURL(posterPath), width: 500, height: 750 }
+  return null
+}
+
+// Detail-hero art for metadata: the share image's URL alone.
 export function getMediaHeroImageUrl(
   backdropPath?: string | null,
   posterPath?: string | null
 ): string | null {
-  if (backdropPath) return getImageURL(backdropPath)
-  if (posterPath) return getPosterImageURL(posterPath)
-  return null
+  return getMediaShareImage(backdropPath, posterPath)?.url ?? null
 }
 
 /**

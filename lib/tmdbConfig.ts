@@ -25,6 +25,10 @@ const withImagePath = (
   build: (path: string) => string
 ) => (imgPath ? build(imgPath) : EMPTY_PIXEL)
 
+/** A shared backdrop's size, stated in og:image:width/height. */
+export const SHARE_IMAGE_WIDTH = 1200
+export const SHARE_IMAGE_HEIGHT = 675
+
 // Read lazily, NOT captured at module init. cloudflare/worker.js copies the
 // Worker's secrets onto `process.env` when a request arrives, which is after
 // this module has already been evaluated — eager fields would have frozen the
@@ -55,6 +59,14 @@ const apiConfig = {
   originalImage: (imgPath: string | null | undefined) =>
     withImagePath(imgPath, (path) =>
       buildWsrvURL(`/original${path}`, 2560, 82, null)
+    ),
+  // og:image / twitter:image for a backdrop. 1200 wide (16:9 -> 1200x675) from
+  // the w1280 source: unfurlers want ~1200, and the 2560 original was 0.2-1 MB,
+  // past what WhatsApp will preview. Source format kept for the same reason as
+  // originalImage.
+  shareImage: (imgPath: string | null | undefined) =>
+    withImagePath(imgPath, (path) =>
+      buildWsrvURL(`/w1280${path}`, SHARE_IMAGE_WIDTH, 80, null)
     ),
   w500Image: (imgPath: string | null | undefined) =>
     withImagePath(imgPath, (path) =>

@@ -54,7 +54,7 @@ import { smartQuery } from '@/lib/filter-query'
 import { isImdbId } from '@/lib/imdb-id'
 import { jsonLdText } from '@/lib/json-ld'
 import { loadPublicList } from '@/lib/lists/routes'
-import { getMediaHeroImageUrl } from '@/lib/media'
+import { getMediaShareImage } from '@/lib/media'
 import {
   mosaicPosterUrl,
   mosaicSvg,
@@ -85,7 +85,7 @@ import {
 import { mediaFacts } from '@/lib/seo-facts'
 import { docTitle, mediaDocHeading, mediaHeading } from '@/lib/seo-title'
 import { isUpstreamUnavailable, nullIfNotFound } from '@/lib/upstream'
-import { getImageURL } from '@/lib/utils'
+import { getPosterImageURL } from '@/lib/utils'
 
 /** 6h, matching the deploy cadence that refreshes the static half of the site. */
 const CACHE_CONTROL = 'public, max-age=3600, s-maxage=21600'
@@ -865,7 +865,7 @@ function buildMeta(type, id, details, siteUrl) {
     genres: details.genres?.map((genre) => genre.name),
     overview: details.overview,
   })
-  const image = getMediaHeroImageUrl(details.backdrop_path, details.poster_path)
+  const share = getMediaShareImage(details.backdrop_path, details.poster_path)
   const canonical = `${siteUrl}/${type === 'tv' ? 'tv-shows' : 'movies'}/${id}`
 
   // The body copy. Everything in it comes out of the payload already fetched
@@ -876,7 +876,9 @@ function buildMeta(type, id, details, siteUrl) {
     heading,
     docHeading,
     description,
-    image,
+    image: share?.url ?? null,
+    imageWidth: share?.width ?? null,
+    imageHeight: share?.height ?? null,
     canonical,
     title,
     detail,
@@ -907,9 +909,10 @@ function metaTags(
   const shareImage = shareImageOf(image, canonical)
   tags.push(`<meta property="og:image" content="${escapeHtml(shareImage)}">`)
   tags.push(`<meta name="twitter:image" content="${escapeHtml(shareImage)}">`)
-  // Only ever set for the composed mosaic, whose size we know exactly. Stating
-  // it lets an unfurler lay the card out before the image lands — and stating
-  // it wrongly for a poster of unknown dimensions would be worse than silence.
+  // Set only where the size is known exactly: the composed mosaic, and a
+  // title's share image (lib/media.ts getMediaShareImage). Stating it lets an
+  // unfurler lay the card out before the image lands — stating it wrongly
+  // would be worse than silence.
   if (image && imageWidth && imageHeight) {
     tags.push(`<meta property="og:image:width" content="${imageWidth}">`)
     tags.push(`<meta property="og:image:height" content="${imageHeight}">`)
@@ -1364,13 +1367,14 @@ async function handleCollectionFallback(match, request, env, ctx, url) {
     collection.name,
     collection.overview
   )
+  const share = getMediaShareImage(collection.backdrop_path, null)
   const meta = {
     heading: collection.name,
     title: collection.name,
     description,
-    image: collection.backdrop_path
-      ? getImageURL(collection.backdrop_path)
-      : '',
+    image: share?.url ?? '',
+    imageWidth: share?.width ?? null,
+    imageHeight: share?.height ?? null,
     canonical: `${siteUrl}/collection/${id}`,
     // The path app/collection-fallback fetches, byte for byte.
     preload: `/api/collection/${id}`,
@@ -1455,7 +1459,7 @@ async function handleListPage(match, env, url) {
     description: listDescription(list.description, count, list.owner),
     image:
       mosaic ||
-      (items[0]?.poster_path ? getImageURL(items[0].poster_path) : ''),
+      (items[0]?.poster_path ? getPosterImageURL(items[0].poster_path) : ''),
     imageWidth: mosaic ? OG_WIDTH : null,
     imageHeight: mosaic ? OG_HEIGHT : null,
     canonical: `${siteUrl}/l/${slug}`,

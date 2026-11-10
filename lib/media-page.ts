@@ -4,10 +4,9 @@ import { MediaResponse } from '@/types/media'
 import catalogue from '@/config/catalogue.json'
 import { siteConfig } from '@/config/site'
 import { RAIL_LIMIT } from '@/lib/constants'
-import { genreNames } from '@/lib/media'
+import { genreNames, getMediaShareImage } from '@/lib/media'
 import { mediaDescription } from '@/lib/seo-description'
 import { mediaDocHeading, mediaHeading } from '@/lib/seo-title'
-import { getImageURL, getPosterImageURL } from '@/lib/utils'
 
 // Shared plumbing for the near-identical movies vs tv-shows routes. The two
 // browse-list pages were ~95% the same and the two detail pages shared an
@@ -399,10 +398,10 @@ export function buildDetailsOgImages(
   posterPath: string | null | undefined,
   alt: string
 ): OgImage[] {
-  const backdrop = backdropPath ? getImageURL(backdropPath) : undefined
-  const poster = posterPath ? getPosterImageURL(posterPath) : undefined
+  const backdrop = getMediaShareImage(backdropPath, null)
+  const poster = getMediaShareImage(null, posterPath)
   return [
-    backdrop && { url: backdrop, width: 1280, height: 720, alt },
-    poster && { url: poster, width: 500, height: 750, alt },
+    backdrop && { ...backdrop, alt },
+    poster && { ...poster, alt },
   ].filter(Boolean) as OgImage[]
 }

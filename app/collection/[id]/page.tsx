@@ -11,13 +11,13 @@ import {
 
 import { PageDetailsProps } from '@/types/page-details'
 import { siteConfig } from '@/config/site'
+import { getMediaShareImage } from '@/lib/media'
 import {
   buildCollectionStaticParams,
   buildMediaStaticParams,
 } from '@/lib/media-page'
 import { notFoundOrThrow } from '@/lib/not-found'
 import { collectionDescription } from '@/lib/seo-description'
-import { getImageURL } from '@/lib/utils'
 import { CollectionView } from '@/components/collection/collection-view'
 
 // Collections are static franchise metadata — safe to cache long and let CI
@@ -65,9 +65,7 @@ export async function generateMetadata(
     collection.overview
   )
   const canonicalPath = `/collection/${params.id}`
-  const image = collection.backdrop_path
-    ? getImageURL(collection.backdrop_path)
-    : undefined
+  const image = getMediaShareImage(collection.backdrop_path, null)
 
   return {
     title: collection.name,
@@ -78,9 +76,7 @@ export async function generateMetadata(
       title: collection.name,
       description,
       url: `${siteConfig.websiteURL}${canonicalPath}`,
-      images: image
-        ? [{ url: image, width: 1280, height: 720, alt: collection.name }]
-        : undefined,
+      images: image ? [{ ...image, alt: collection.name }] : undefined,
     },
   }
 }
