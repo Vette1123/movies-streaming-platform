@@ -8,6 +8,7 @@ import {
   mayLeavePlayer,
   playbackAdvanced,
   skipReportFrom,
+  stallNoticeText,
 } from '@/lib/player-hop'
 
 const source = (file: string) =>
@@ -64,8 +65,10 @@ describe('saving a server', () => {
 
   it('stops an automatic hop before any write', () => {
     const hook = source('hooks/use-stream-source.ts')
-    const guard = hook.indexOf('if (!isViewerChoice(via))')
-    expect(guard).toBeGreaterThan(-1)
+    const choice = hook.indexOf('const choice = isViewerChoice(via)')
+    const guard = hook.indexOf('if (!choice) {')
+    expect(choice).toBeGreaterThan(-1)
+    expect(guard).toBeGreaterThan(choice)
     for (const write of [
       'writeJson(BY_TITLE_KEY',
       'writeJson(DEVICE_KEY',
@@ -127,5 +130,18 @@ describe('incident reports', () => {
       hls_details: 'https://cdn.example/seg.ts?token=abc',
     })
     expect(incident?.hls_details).toBeUndefined()
+  })
+})
+
+describe('stallNoticeText', () => {
+  // Shown only on a server that stays dead; after the one hop there is no
+  // further server to try, so the notice must not promise one.
+  it('never promises another try after the hop', () => {
+    expect(stallNoticeText(true)).not.toMatch(/trying/i)
+    expect(stallNoticeText(true)).toBe('Two servers did not respond')
+  })
+
+  it('names the one server before any hop', () => {
+    expect(stallNoticeText(false)).toBe('This server is not responding')
   })
 })

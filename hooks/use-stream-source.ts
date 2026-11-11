@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
   REELY_SOURCE_ID,
+  rescueSourcesFor,
   resolveSourceId,
   RICH_SOURCE,
   visibleSourcesFor,
@@ -124,10 +125,10 @@ export interface StreamSourceControl {
    * Whether this visitor has more than one server to choose between.
    *
    * Requires a signed-in account — choice is an account feature, so anonymous
-   * visitors always get exactly the default server, on the same URL, with the
-   * same behaviour as always. The gate is enforced HERE rather than in the
-   * component: a control that renders nothing but still answers `next` would
-   * let a caller hop servers with no UI to show for it.
+   * visitors start on the default server and get no chooser. The gate is
+   * enforced HERE (in `select`) rather than in the component. What they DO get
+   * is the one automatic hop after a boot stall (`next`/`advance`, from
+   * rescueSourcesFor): a rescue is not a choice, and it saves nothing.
    */
   canSwitch: boolean
   /**
@@ -197,6 +198,13 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
 
   const canSwitch = signedIn === true && sources.length > 1
 
+  // Where the one automatic hop may land. Wider than `sources` for anonymous
+  // visitors: a stall is not a choice (config/sources.ts).
+  const rescueSources = useMemo(
+    () => rescueSourcesFor(signedIn === true, pro === true),
+    [signedIn, pro]
+  )
+
   const currentId = useMemo(
     () =>
       resolveSourceId({
@@ -225,7 +233,8 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
   const rescuedId = rescue?.key === mediaKey ? rescue.id : null
   const source =
     (onTrial ? RICH_SOURCE : null) ??
-    sources.find((entry) => entry.id === (rescuedId ?? currentId)) ??
+    rescueSources.find((entry) => entry.id === rescuedId) ??
+    sources.find((entry) => entry.id === currentId) ??
     sources[0]
 
   const startTrial = useCallback(() => {
@@ -282,11 +291,14 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
         return
       }
       if (onTrial) setTrialLeft(true)
-      if (!canSwitch) return
-      if (!sources.some((entry) => entry.id === id)) return
+      const choice = isViewerChoice(via)
+      // Choosing is an account feature; the automatic rescue is not.
+      if (choice && !canSwitch) return
+      const allowed = choice ? sources : rescueSources
+      if (!allowed.some((entry) => entry.id === id)) return
       setSwitched(true)
       trackStreamSourceSelected({ source: id, via })
-      if (!isViewerChoice(via)) {
+      if (!choice) {
         setRescue({ key: mediaKey, id })
         return
       }
@@ -318,13 +330,16 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
       mediaKey,
       onTrial,
       pro,
+      rescueSources,
       sources,
       startTrial,
       trialOffered,
     ]
   )
 
-  const next = canSwitch ? sourceAfter(sources, source.id) : null
+  // The hop's target, for everyone: anonymous visitors get the rescue but not
+  // the chooser, which reads `canSwitch`, not this.
+  const next = sourceAfter(rescueSources, source.id)
 
   // Every event from here on — media_played above all — says which server it
   // was on, so a failure rate per server is one breakdown.

@@ -26,6 +26,18 @@ export function mayLeavePlayer({
 }
 
 /**
+ * What the stall notice says. It only shows on a server that is still dead:
+ * the first stall hops in the same tick, so after a hop it is the SECOND
+ * server talking and nothing further will be tried. It used to promise
+ * "Trying another" there, and then try nothing.
+ */
+export function stallNoticeText(autoHopped: boolean): string {
+  return autoHopped
+    ? 'Two servers did not respond'
+    : 'This server is not responding'
+}
+
+/**
  * Only a pick by the viewer is saved. An automatic hop used to go down the same
  * path, so one bad boot replaced the Reely Player with Server 1 for that title
  * and, below supporter, for every title on the device and the account.

@@ -161,6 +161,43 @@ describe('visibleSourcesFor tiers', () => {
   })
 })
 
+// A stall is not a choice: the one automatic hop is a rescue, so it reaches
+// anonymous visitors too. Choosing a server stays an account feature
+// (visibleSourcesFor above); this list is only where the hop may land.
+describe('rescueSourcesFor', () => {
+  afterEach(() => vi.resetModules())
+
+  const TRIAL_ENV = { ...BASE_ENV, NEXT_PUBLIC_PRO_TRIAL_SELFHOST: 'true' }
+
+  it('anonymous: every embed, so a stalled default has somewhere to go', async () => {
+    const mod = await importWithEnv(TRIAL_ENV)
+    expect(mod.rescueSourcesFor(false, false).map((s) => s.id)).toEqual([
+      'a.example',
+      'b.example',
+    ])
+  })
+
+  it('never hops a non-supporter onto the Reely Player', async () => {
+    const mod = await importWithEnv(TRIAL_ENV)
+    for (const signedIn of [false, true])
+      expect(
+        mod
+          .rescueSourcesFor(signedIn, false)
+          .some((s) => s.id === mod.REELY_SOURCE_ID)
+      ).toBe(false)
+  })
+
+  it('signed in: exactly the list they choose from', async () => {
+    const mod = await importWithEnv(TRIAL_ENV)
+    expect(mod.rescueSourcesFor(true, false)).toEqual(
+      mod.visibleSourcesFor(true, false)
+    )
+    expect(mod.rescueSourcesFor(true, true)).toEqual(
+      mod.visibleSourcesFor(true, true)
+    )
+  })
+})
+
 /**
  * The precedence that decides what plays. The bug this pins: a supporter's
  * Settings choice was skipped entirely, so every title opened in the house
