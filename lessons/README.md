@@ -173,3 +173,4 @@ with the work, not after.
 | 2026-11-11 | [Trailer VideoObject as its own node](2026-11-11-trailer-videoobject.md) | The nested VideoObject already existed; the gap was a standalone node and a real description. The tail fallback has no videos, so it gets none. |
 | 2026-11-11 | [Anonymous viewers get the one automatic hop](2026-11-11-anonymous-stall-hop.md) | A rescue is not a choice: gate the chooser, not the recovery. Fake stream servers each need their own hostname (ids are hosts). |
 | 2026-11-11 | [Eyeball 5xx gates on a rate](2026-11-11-health-5xx-rate.md) | A health gate fails on a rate with a count floor, never on "any"; a change that needs data ships with the query that judges it |
+| 2026-11-11 | [CLAUDE.md back under budget](2026-11-11-claude-md-router.md) | The why behind a toolchain rule lives in the path-scoped rule for those files; CLAUDE.md keeps the what and a pointer |
