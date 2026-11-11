@@ -4,6 +4,7 @@ import React from 'react'
 
 import { MovieDetails } from '@/types/movie-details'
 import { SeriesDetails } from '@/types/series-details'
+import { afterNextPaint } from '@/lib/after-paint'
 import { buildMediaEventBase, trackMediaPlayed } from '@/lib/analytics'
 import { getMediaTitle } from '@/lib/media'
 import { playCue } from '@/lib/play-cue'
@@ -41,10 +42,19 @@ export function PlayButton({
 }: PlayButtonProps) {
   const { handleWatchMedia } = useWatchedMedia()
 
+  // The press paints first; the player swap runs after it (lib/after-paint.ts),
+  // which took the tap out of the frame INP measures.
   const handleClick = () => {
     // Read at click time, not via useSearchParams during render — the hook
     // would force this whole route to client-side render (see use-search-params).
-    const { seasonQueryINT, episodeQueryINT } = readSeasonEpisodeParams()
+    const params = readSeasonEpisodeParams()
+    afterNextPaint(() => startPlay(params))
+  }
+
+  const startPlay = ({
+    seasonQueryINT,
+    episodeQueryINT,
+  }: ReturnType<typeof readSeasonEpisodeParams>) => {
     const isMovie = 'title' in media && !!media.title
     const season = target?.season || seasonQueryINT || 1
     const episode = target?.episode || episodeQueryINT || 1

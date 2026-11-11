@@ -169,3 +169,4 @@ with the work, not after.
 | 2026-11-10 | [Index report triage](2026-11-10-index-report-triage.md) | Compare a bucket's newest "last crawled" with the last fix's merge date before touching code; an unrelated Google-selected canonical means the rendered DOM was empty |
 | 2026-11-10 | [SEO finish](2026-11-10-seo-finish.md) | A long image grid gets one fixed URL per tile, never a 13-width srcset; every hub family needs a prerendered link from its owning page |
 | 2026-11-11 | [Index triage, and a brand entity](2026-11-11-index-triage-and-brand-entity.md) | Date a bucket's samples before reading its count; `alternateName` carries the spellings people search, never `name` again |
+| 2026-11-11 | [Watch Now paints before the player swap](2026-11-11-watch-now-inp.md) | A click that mounts something heavy paints its press first (`afterNextPaint`); attribute INP on a real phone before guessing |
