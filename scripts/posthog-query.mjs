@@ -55,6 +55,30 @@ const PRESETS = {
           WHERE {humans} AND event = '$pageview' AND timestamp > now() - INTERVAL 7 DAY
           GROUP BY route ORDER BY people DESC LIMIT 60`,
   },
+  // Did the anonymous stall hop (#184, deployed 2026-11-11) rescue anyone?
+  // Before it, an anonymous viewer on a dead default had no way off it. After
+  // it, `auto_hopped` should track `anon`, and `stalled_again` is the share
+  // the one hop did NOT save: if it stays high, a second hop is worth a look.
+  '--stalls': {
+    label:
+      'boot stalls per session by day, since 2026-11-04 (#184 shipped 11-11)',
+    sql: `SELECT day, count() AS stalled, countIf(anon) AS anon,
+                 countIf(hopped) AS auto_hopped, countIf(stalls > 1) AS stalled_again,
+                 countIf(trial) AS trial, countIf(signin) AS signed_in
+          FROM (
+            SELECT $session_id AS sid, min(toDate(timestamp)) AS day,
+                   countIf(event = 'player_failed' AND properties.reason = 'stall') AS stalls,
+                   countIf(event = 'player_failed' AND properties.reason = 'stall'
+                           AND toString(properties.signed_in) != 'true') > 0 AS anon,
+                   countIf(event = 'stream_source_selected' AND properties.via = 'stall_auto') > 0 AS hopped,
+                   countIf(event = 'player_trial_started') > 0 AS trial,
+                   countIf(event = 'signed_in') > 0 AS signin
+            FROM events
+            WHERE {humans} AND timestamp > toDateTime('2026-11-04 00:00:00')
+            GROUP BY sid HAVING stalls > 0
+          )
+          GROUP BY day ORDER BY day LIMIT 60`,
+  },
 }
 
 function usage(message) {

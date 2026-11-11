@@ -30,6 +30,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { isCrawlerFire } from './lib/crawler-403.mjs'
+import { eyeball5xxGrade } from './lib/eyeball-5xx.mjs'
 import { loadLocalEnv } from './load-env.mjs'
 
 loadLocalEnv()
@@ -199,7 +200,7 @@ async function checkEyeball(zone) {
   const failures = sum(server, (r) => r.count)
 
   grade(
-    failures === 0,
+    eyeball5xxGrade(failures, total),
     `Eyeball 5xx: ${failures} of ${total.toLocaleString()} real requests (${pct(failures, total).toFixed(3)}%)`,
     server.length
       ? server
