@@ -1,12 +1,15 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
+import { siteConfig } from '@/config/site'
 import { hubPortraitSrc } from '@/lib/image-loader'
 import {
+  BRAND_PROFILES,
   movieJsonLd,
   organizationJsonLd,
   titleSameAs,
   tvSeriesJsonLd,
+  websiteJsonLd,
 } from '@/lib/structured-data'
 import { getPosterImageURL } from '@/lib/utils'
 
@@ -42,6 +45,14 @@ describe('organization schema', () => {
       '@type': 'ContactPoint',
       email: expect.stringContaining('@'),
     })
+  })
+
+  // Search Console: "reely space" ranks 1, bare "reely" ranks 43. The entity has
+  // to name the spellings people type and the brand's own profiles.
+  it('names the brand spellings and its own profiles', () => {
+    expect(websiteJsonLd.alternateName).toEqual(['Reely Space', 'reely.space'])
+    expect(organizationJsonLd.sameAs).toEqual(BRAND_PROFILES)
+    expect(BRAND_PROFILES).not.toContain(siteConfig.links.twitter)
   })
 })
 

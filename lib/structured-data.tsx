@@ -6,12 +6,23 @@ export { titleSameAs }
 
 const SITE_URL = siteConfig.websiteURL
 
+/**
+ * Profiles that ARE Reely (the product's repo, its Product Hunt page), as the
+ * Organization's sameAs. The builder's own accounts stay on `founder`.
+ */
+export const BRAND_PROFILES = [
+  'https://github.com/Vette1123/movies-streaming-platform',
+  'https://www.producthunt.com/products/reely',
+]
+
 export const websiteJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   '@id': `${SITE_URL}#website`,
   name: siteConfig.name,
-  alternateName: siteConfig.seo.applicationName,
+  // The spellings people search for (Search Console: "reely space" ranks 1,
+  // bare "reely" 43). Repeating `name` here told Google nothing.
+  alternateName: ['Reely Space', 'reely.space'],
   url: SITE_URL,
   description: siteConfig.description,
   inLanguage: 'en-US',
@@ -70,6 +81,7 @@ export const organizationJsonLd = {
   name: siteConfig.seo.publisher,
   url: SITE_URL,
   logo: `${SITE_URL}/android-chrome-512x512.png`,
+  sameAs: BRAND_PROFILES,
   // The one inbox a person answers (config/support.ts), so a knowledge panel
   // or an AI answer naming a contact names the real one.
   contactPoint: {
