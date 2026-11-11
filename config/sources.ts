@@ -234,6 +234,20 @@ export const visibleSourcesFor = (
   return STREAM_SOURCES
 }
 
+/**
+ * Where the one automatic hop after a boot stall may land.
+ *
+ * A stall is not a choice, so the rescue is not an account feature: anonymous
+ * visitors hop along every embed slot too (65 of 67 stalls in Nov 2026 were
+ * theirs, and they had no way off a dead default). Choosing, remembering and
+ * the per-title memory stay behind the account (visibleSourcesFor). An
+ * automatic hop saves nothing (isViewerChoice), so this list is never stored.
+ */
+export const rescueSourcesFor = (
+  signedIn: boolean,
+  pro: boolean
+): StreamSource[] => (signedIn ? visibleSourcesFor(true, pro) : STREAM_SOURCES)
+
 export const sourceById = (id: string | null | undefined): StreamSource =>
   STREAM_SOURCES.find((source) => source.id === id) ?? DEFAULT_SOURCE
 

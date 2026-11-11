@@ -17,6 +17,7 @@ import {
 } from '@/config/sources'
 import { signInHref } from '@/lib/account'
 import { trackPlayerFailed, trackSupportCtaClicked } from '@/lib/analytics'
+import { stallNoticeText } from '@/lib/player-hop'
 import { cn } from '@/lib/utils'
 import { type StreamSourceControl } from '@/hooks/use-stream-source'
 import {
@@ -319,7 +320,7 @@ export function SourceSwitcher({
           className
         )}
       >
-        <StallNotice>This server is not responding</StallNotice>
+        <StallNotice>{stallNoticeText(autoHopped)}</StallNotice>
         <div className="flex flex-wrap items-center justify-center gap-1.5">
           {trial.status === 'available' || trial.status === 'used' ? (
             <TrialOffer status={trial.status} onStart={trial.start} />
@@ -368,11 +369,7 @@ export function SourceSwitcher({
       )}
     >
       {showWarning ? (
-        <StallNotice>
-          {autoHopped
-            ? 'That server did not respond. Trying another'
-            : 'This server is not responding'}
-        </StallNotice>
+        <StallNotice>{stallNoticeText(autoHopped)}</StallNotice>
       ) : null}
       {showWarning && !onHouse && trial.status === 'available' ? (
         <TrialOffer status="available" onStart={trial.start} />

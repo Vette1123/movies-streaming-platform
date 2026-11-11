@@ -171,3 +171,4 @@ with the work, not after.
 | 2026-11-11 | [Index triage, and a brand entity](2026-11-11-index-triage-and-brand-entity.md) | Date a bucket's samples before reading its count; `alternateName` carries the spellings people search, never `name` again |
 | 2026-11-11 | [Watch Now paints before the player swap](2026-11-11-watch-now-inp.md) | A click that mounts something heavy paints its press first (`afterNextPaint`); attribute INP on a real phone before guessing |
 | 2026-11-11 | [Trailer VideoObject as its own node](2026-11-11-trailer-videoobject.md) | The nested VideoObject already existed; the gap was a standalone node and a real description. The tail fallback has no videos, so it gets none. |
+| 2026-11-11 | [Anonymous viewers get the one automatic hop](2026-11-11-anonymous-stall-hop.md) | A rescue is not a choice: gate the chooser, not the recovery. Fake stream servers each need their own hostname (ids are hosts). |
