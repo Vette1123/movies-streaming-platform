@@ -4,7 +4,7 @@
 
 # 🎬 Reely
 
-> Discover, track, and stream movies and TV shows — a fast, modern, TMDB-powered viewing experience.
+> Discover, track, and stream movies and TV shows. A fast, TMDB-powered viewing experience.
 
 [![Deploy](https://github.com/Vette1123/movies-streaming-platform/actions/workflows/deploy.yml/badge.svg)](https://github.com/Vette1123/movies-streaming-platform/actions/workflows/deploy.yml)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js&logoColor=white)
@@ -16,33 +16,33 @@
 
 ### 🚀 [Watch on Reely Space →](https://www.reely.space)
 
-Browse trending titles, dive into rich detail pages, and pick up exactly where you left off — all from a single keyboard-friendly UI.
+Browse trending titles, open detail pages, and pick up where you left off, all from one keyboard-friendly UI.
 
-Reely is a production-grade movie and TV show tracker built on the TMDB API. It is designed to feel native: prerendered to static assets for speed, animated for delight, and instrumented for serious frontend craftsmanship.
+Reely is a movie and TV show tracker built on the TMDB API. It is prerendered to static assets for speed, animated, and instrumented with PostHog analytics.
 
 ⭐ If Reely is useful to you, please star the repo.
 
 ## ✨ Features
 
 - **TMDB-powered catalog** — trending, popular, top-rated, now-playing, and on-the-air movies and TV shows, pulled live from the TMDB API.
-- **Animated hero slider** — auto-rotating showcase of trending media on the landing page, with a muted trailer that plays inline while a slide holds the frame. Autoplay is opt-out via an on-slide toggle, and starts switched off on low-power devices so a weak phone isn't handed a video player and a full-screen Ken Burns at once. Your explicit choice always overrides that default.
+- **Animated hero slider** — auto-rotating display of trending media on the landing page, with a muted trailer that plays inline while a slide holds the frame. Autoplay is opt-out via an on-slide toggle, and starts switched off on low-power devices so a weak phone isn't handed a video player and a full-screen Ken Burns at once. Your explicit choice always overrides that default.
 - **Browse movies & TV** — dedicated listing pages with a deep, live-applying filter system and infinite scroll (TanStack `useInfiniteQuery` + intersection observer).
 - **Advanced filters** — sort, tri-state genre pills (include / exclude / off), TMDB rating, vote count, runtime, release year (decade chips + range slider), original language, age rating (certification), and _where to watch_ (streaming-provider logo grid + region picker). All filters live-apply on a 300ms debounce — no "Save" button — with an active-filter chips bar (tap to remove, or clear all) above the grid.
-- **Rich detail pages** — synopsis, cast, similar titles, recommendations, trailer, and ratings — fetched in a single TMDB `append_to_response` call.
+- **Detail pages** — synopsis, cast, similar titles, recommendations, trailer, and ratings, fetched in a single TMDB `append_to_response` call.
 - **In-page streaming player** — watch movies and individual TV episodes via a configurable external source (see the in-app disclaimer).
 - **Season & episode navigator** — drill into any TV show by season and episode with a dedicated selector.
 - **Trailers** — YouTube trailer dialog plus a hero trailer preview.
 - **Collections** — franchise / collection pages that group a series of films.
 - **Command-palette search (⌘K)** — instant, debounced search across movies and TV via a `cmdk` dialog, with All / Movies / TV chips and remembered recent searches. No page reload.
 - **Genre pages & chips** — jump straight into any genre for movies or TV.
-- **Real IMDb ratings (opt-in)** — genuine IMDb scores layered over TMDB, served from prebuilt static shards (`pnpm imdb:ratings`) with a TMDB fallback. Behind `NEXT_PUBLIC_IMDB_RATINGS` and **off by default**: enriching list rows costs one TMDB subrequest per item, which overruns the Workers free-plan 50-subrequests-per-invocation cap.
+- **Real IMDb ratings (opt-in)** — genuine IMDb scores layered over TMDB, served from prebuilt static shards (`pnpm imdb:ratings`) with a TMDB fallback. Behind `NEXT_PUBLIC_IMDB_RATINGS` and off by default: enriching list rows costs one TMDB subrequest per item, which overruns the Workers free-plan 50-subrequests-per-invocation cap.
 - **Watchlist** — save titles you want to watch, kept on your device (no account required).
 - **Watch history** — track watched movies and episodes, remove single items, or clear everything, on a dedicated page.
 - **URL-synced filters** — every active filter lives in the URL via `nuqs`, so filtered views are shareable and back-button friendly (transient UI chrome like open accordions stays out of the URL, keeping shared links clean).
 - **Web Share** — share any title through the native share sheet.
 - **Privacy-first** — watchlist, history, and recent searches live entirely in your browser; there's no login and nothing is stored on a server.
 - **SEO & structured data** — full JSON-LD (Website, Organization, CollectionPage, Breadcrumb), Open Graph, Twitter Cards, dynamic OG image generation, sitemap, and robots.
-- **Accessible & responsive** — skip-to-content, aria roles, a dedicated mobile nav, and a dark aurora UI that scales cleanly to phones.
+- **Accessible & responsive** — skip-to-content, aria roles, a dedicated mobile nav, and a dark aurora UI that scales to phones.
 - **Optimized imagery** — `wsrv.nl` CDN with an automatic TMDB origin fallback, driven by a custom `next/image` loader so every image still ships a real `srcset` and each device downloads the size it actually renders.
 - **Installable PWA** — see the [Progressive Web App](#-progressive-web-app) section below.
 - **Analytics built in** — PostHog product analytics, client-side only, with every event centralized in `lib/analytics.ts` and build-time source-map upload so minified production stack traces symbolicate.
@@ -50,7 +50,7 @@ Reely is a production-grade movie and TV show tracker built on the TMDB API. It 
 
 ## 📲 Progressive Web App
 
-Reely is a fully installable PWA — not just a manifest, but a working offline-resilient app shell.
+Reely is an installable PWA with a manifest and a working offline-resilient app shell.
 
 - **Installable** — "Add to Home Screen" on Android/Chromium (native `beforeinstallprompt` nudge) and iOS (Share → Add to Home Screen hint). Runs standalone, portrait, with a black theme.
 - **App shortcuts** — long-press the icon for **Browse Movies** and **Browse TV Shows** jump links.
@@ -69,11 +69,11 @@ Reely ships as a **Next.js static export (`output: 'export'`) on Cloudflare Work
 
 This replaced an OpenNext deployment. Under OpenNext, 20–46% of Worker invocations were being killed on the free plan's 10ms CPU budget: any detail id outside the prerendered set re-rendered React on every request and could never become a cache hit, because Cloudflare will not edge-cache Worker-generated HTML. After the migration that figure is 0.0%, and p99 CPU went from ~700ms to ~8ms.
 
-- **Static assets match before the Worker runs.** Every prerendered page is a plain file: zero CPU, and it doesn't count against the invocations cap.
-- **The Worker handles only what can't be static** — `/api/*` (search, filtering, infinite scroll, season details, watch providers) and detail ids outside the prerendered set. A tail id costs one TMDB fetch plus an `HTMLRewriter` pass that injects the real title, OG/Twitter tags, JSON-LD, and a crawlable `<h1>`, so crawlers and unfurlers can't tell it from a prerendered page.
-- **No Server Actions.** A static export can't contain them; the browser talks to the Worker over HTTP instead, and the Worker calls the very same `services/*` functions the build calls.
-- **`caches.default` is keyed by URL + Next build id**, because cached fallback HTML references content-hashed chunks that the next deploy deletes.
-- **The real ceiling on site size is the 20,000-file asset cap** — a static export writes ~10 files per route, so route depth is tuned in `lib/media-page.ts`.
+- Static assets match before the Worker runs. Every prerendered page is a plain file: zero CPU, and it doesn't count against the invocations cap.
+- The Worker handles only what can't be static: `/api/*` (search, filtering, infinite scroll, season details, watch providers) and detail ids outside the prerendered set. A tail id costs one TMDB fetch plus an `HTMLRewriter` pass that injects the real title, OG/Twitter tags, JSON-LD, and a crawlable `<h1>`, so crawlers and unfurlers can't tell it from a prerendered page.
+- No Server Actions. A static export can't contain them, so the browser talks to the Worker over HTTP, and the Worker calls the same `services/*` functions the build calls.
+- `caches.default` is keyed by URL + Next build id, because cached fallback HTML references content-hashed chunks that the next deploy deletes.
+- The real ceiling on site size is the 20,000-file asset cap. A static export writes ~10 files per route, so route depth is tuned in `lib/media-page.ts`.
 
 Detail pages use TMDB `append_to_response` so a whole page renders on one TMDB request, and every TMDB call goes through a single governed client (`lib/fetch-client.ts`) with a concurrency cap and 429 backoff.
 
@@ -119,7 +119,7 @@ Open [http://localhost:3000](http://localhost:3000).
 pnpm build:cf   # static export to out/ + bundle the Worker
 ```
 
-`pnpm build` still runs a plain `next build` and is useful for diagnosing a prerender issue, but it is not what ships — the deployed artifact is the static export plus the Worker bundle. Note that it prerenders ~1000 routes and is slow; for day-to-day work use the dev server.
+`pnpm build` still runs a plain `next build` and is useful for diagnosing a prerender issue, but it is not what ships. The deployed artifact is the static export plus the Worker bundle. It prerenders ~1000 routes and is slow; for day-to-day work use the dev server.
 
 ### Deploy to Cloudflare Workers
 
@@ -148,9 +148,9 @@ Copy `.env.sample` to `.env.local` and fill in the values you need. Only TMDB-re
 
 ## 🤝 Sponsors
 
-Reely is free and stays free. Besides its supporters, it is paid for by **one sponsor card per page**: on the homepage, under every film and episode, and on nearly every page between. There are no popups, no redirects, nothing over the video, no ad network and no third-party script. Supporters never see the card.
+Reely is free and stays free. Besides its supporters, it is paid for by one sponsor card per page: on the homepage, under every film and episode, and on nearly every page between. There are no popups, no redirects, nothing over the video, no ad network and no third-party script. Supporters never see the card.
 
-**In the slot now:** [Masareef](https://masareef.mohamedgado.com/?s=reely-readme), our own spending tracker, until a sponsor books it. [Your brand here →](https://www.reely.space/advertise)
+In the slot now: [Masareef](https://masareef.mohamedgado.com/?s=reely-readme), our own spending tracker, until a sponsor books it. [Your brand here →](https://www.reely.space/advertise)
 
 |          |                                                                                             |
 | -------- | ------------------------------------------------------------------------------------------- |
@@ -173,4 +173,4 @@ Sponsor links are marked `rel="sponsored"`. Some links on the site are affiliate
 
 ## 🙌 Credits
 
-Built by [Mohamed Gado](https://www.mohamedgado.com/). Data and imagery courtesy of [TMDB](https://www.themoviedb.org/) — Reely is not endorsed or certified by TMDB.
+Built by [Mohamed Gado](https://www.mohamedgado.com/). Data and imagery courtesy of [TMDB](https://www.themoviedb.org/). Reely is not endorsed or certified by TMDB.
