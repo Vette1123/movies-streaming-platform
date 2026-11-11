@@ -17,7 +17,12 @@ import { buildDetailsMetadata, buildMediaStaticParams } from '@/lib/media-page'
 import { notFoundOrThrow } from '@/lib/not-found'
 import { linkablePersonIds } from '@/lib/person-links'
 import { getMediaRatings } from '@/lib/ratings'
-import { breadcrumbJsonLd, JsonLd, movieJsonLd } from '@/lib/structured-data'
+import {
+  breadcrumbJsonLd,
+  JsonLd,
+  movieJsonLd,
+  movieTrailerJsonLd,
+} from '@/lib/structured-data'
 import { MoviesDetailsContent } from '@/components/media/details-content'
 import { MovieDetailsHero } from '@/components/media/details-hero'
 import { DetailsPageTransition } from '@/components/media/details-page-transition'
@@ -116,7 +121,7 @@ const MoviePage = async (props: PageDetailsProps) => {
       .map((person) => person.id),
   ])
 
-  const jsonLd = movieJsonLd({
+  const schemaInput = {
     id: movieDetails.id,
     title: movieDetails.title,
     description: movieDetails.overview,
@@ -136,7 +141,9 @@ const MoviePage = async (props: PageDetailsProps) => {
     trailerPublishedAt,
     originalLanguage: movieDetails.original_language,
     imdbId: movieDetails.imdb_id,
-  })
+  }
+  const jsonLd = movieJsonLd(schemaInput)
+  const trailerLd = movieTrailerJsonLd(schemaInput)
 
   // The four ratings, resolved here because this page is a server component:
   // the content component it renders is in the client graph (the fallback
@@ -152,6 +159,7 @@ const MoviePage = async (props: PageDetailsProps) => {
     <DetailsPageTransition>
       <header className="relative">
         <JsonLd data={jsonLd} />
+        {trailerLd && <JsonLd data={trailerLd} />}
         <JsonLd
           data={breadcrumbJsonLd([
             { name: 'Home', url: '/' },
