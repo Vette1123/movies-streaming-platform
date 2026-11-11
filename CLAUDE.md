@@ -13,7 +13,7 @@ pnpm dev                # dev server (Turbopack) — http://localhost:3000
 pnpm lint               # ESLint 10 (its typescript-eslint runs on TS 6 — see .pnpmfile.cjs)
 pnpm typecheck          # tsc --noEmit on TypeScript 7 (native)
 pnpm prettier:check     # verify formatting; prettier:format to write
-pnpm build              # next build (rarely needed locally — see below)
+pnpm build              # next build (rarely needed)
 
 # Cloudflare (static export + Worker)
 pnpm build:cf           # static export to out/ + bundle .cloudflare/worker.mjs
@@ -25,20 +25,19 @@ pnpm deploy:full        # build:cf + deploy
 pnpm imdb:ratings       # regenerate public/imdb-ratings/*.json shards
 pnpm og:build           # regenerate the static OG image
 pnpm waf:apply          # push Cloudflare WAF + CDN cache rules
-pnpm share:probe       # a real list and profile unfurled through D1, the Worker and wsrv (writes + deletes one throwaway user)
-pnpm hop:probe          # a played stream is never taken from the viewer: outages cut at the browser network layer, real page AND real player (pnpm dev + `pnpm harness` in ../reely-pro-player)
-pnpm resume:probe       # resume + playback prefs through the real page AND real player (pnpm dev + `pnpm harness` in ../reely-pro-player)
-pnpm relay:canary      # can the Reely Player play? site ticket, player shell, relay walk to a segment (hourly in CI; opens a `relay-down` issue)
-pnpm cf:cpu [hours]     # production Worker CPU broken down BY ROUTE (Workers Logs); cf:health has the kills
-pnpm lighthouse         # medians with timing; run the Lighthouse workflow instead, a home connection measures itself
+pnpm share:probe        # a real list and profile unfurled through D1, the Worker and wsrv
+pnpm hop:probe          # a played stream is never taken from the viewer (real page AND real player)
+pnpm resume:probe       # resume + playback prefs through the real page AND real player
+pnpm relay:canary       # can the Reely Player play? ticket, shell, relay walk to a segment
+pnpm cf:health [hours]  # production health: kills, invocations, eyeball 5xx, crawlers
+pnpm cf:cpu [hours]     # production Worker CPU BY ROUTE (Workers Logs)
+pnpm lighthouse         # medians; prefer the Lighthouse workflow, a home connection measures itself
 ```
 
-- **Package manager is pnpm 12** (`packageManager` pin). Do not use npm/yarn. `minimumReleaseAge: 0` in `pnpm-workspace.yaml` is deliberate: the project takes every release the day it ships, and pnpm's default 1-day quarantine would hold upgrades back and fail CI's frozen install. Every dependency with an install script must be listed under `allowBuilds`, or the install errors.
-- **The toolchain tracks labels, not versions**: CI runs on `ubuntu-latest`, and Node is `lts/*` from `.nvmrc`. When either is about to move, run the Deploy workflow by hand with the next runner image / Node line (`runner`, `node` inputs; untick `upload_secrets`) before the label gets there.
-- **`pnpm test` (vitest, node environment) covers the pure logic behind accounts, billing, sync, lists and the support nudge** — `tests/*.test.ts`, see `vitest.config.mts`. That is where a bug is silent and expensive: who is entitled, whether a webhook is genuine, which way a sync conflict resolves, whether somebody gets asked for money twice. Run it after touching any of that.
+- **pnpm 12 only** (never npm/yarn); install, CI and Windows `out/` gotchas, and what the probes need: `.claude/rules/toolchain.md`.
+- **`pnpm test` (vitest, node environment) covers the pure logic behind accounts, billing, sync, lists and the support nudge** (`tests/*.test.ts`), where a bug is silent and expensive: who is entitled, which way a sync conflict resolves, whether somebody is asked for money twice. Run it after touching any of that.
 - **Everything visual is verified in a browser, not by a test.** There are no component or DOM tests and none are wanted: drive the app.
-- **Avoid `pnpm build` for routine verification** — it prerenders ~1000 pages and is slow (~40s). Use the dev server + a browser. Build only when specifically diagnosing a build/prerender issue or before a deploy.
-- **`wrangler dev` holds `out/` open on Windows** — a rebuild while it runs dies with `EBUSY: rmdir 'out'`. Stop the dev task and kill stray `workerd` processes before `pnpm build:cf`.
+- **Avoid `pnpm build` for routine verification** (~1000 prerendered pages, ~40s); use the dev server + a browser. Build only to diagnose a build/prerender issue.
 - Path alias: `@/*` maps to repo root (e.g. `@/lib/fetch-client`).
 
 ## Architecture
