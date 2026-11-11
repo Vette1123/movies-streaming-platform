@@ -17,7 +17,12 @@ import { buildDetailsMetadata, buildMediaStaticParams } from '@/lib/media-page'
 import { notFoundOrThrow } from '@/lib/not-found'
 import { linkablePersonIds } from '@/lib/person-links'
 import { getMediaRatings } from '@/lib/ratings'
-import { breadcrumbJsonLd, JsonLd, tvSeriesJsonLd } from '@/lib/structured-data'
+import {
+  breadcrumbJsonLd,
+  JsonLd,
+  seriesTrailerJsonLd,
+  tvSeriesJsonLd,
+} from '@/lib/structured-data'
 import { DetailsPageTransition } from '@/components/media/details-page-transition'
 import { SeriesDetailsContent } from '@/components/series/details-content'
 import { SeriesDetailsHero } from '@/components/series/details-hero'
@@ -115,7 +120,7 @@ const TVSeries = async (props: PageDetailsProps) => {
       .map((person) => person.id),
   ])
 
-  const jsonLd = tvSeriesJsonLd({
+  const schemaInput = {
     id: seriesDetails.id,
     name: seriesDetails.name,
     description: seriesDetails.overview,
@@ -137,7 +142,9 @@ const TVSeries = async (props: PageDetailsProps) => {
     trailerPublishedAt,
     originalLanguage: seriesDetails.original_language,
     imdbId: seriesDetails.imdb_id ?? seriesDetails.external_ids?.imdb_id,
-  })
+  }
+  const jsonLd = tvSeriesJsonLd(schemaInput)
+  const trailerLd = seriesTrailerJsonLd(schemaInput)
 
   // The four ratings, resolved here because this page is a server component:
   // the content component it renders is in the client graph (the fallback
@@ -153,6 +160,7 @@ const TVSeries = async (props: PageDetailsProps) => {
     <DetailsPageTransition>
       <header className="relative">
         <JsonLd data={jsonLd} />
+        {trailerLd && <JsonLd data={trailerLd} />}
         <JsonLd
           data={breadcrumbJsonLd([
             { name: 'Home', url: '/' },

@@ -1,6 +1,7 @@
 import { siteConfig } from '@/config/site'
 import { SUPPORT_EMAIL } from '@/config/support'
 import { aggregateRating, jsonLdText, titleSameAs } from '@/lib/json-ld'
+import { mediaDescription } from '@/lib/seo-description'
 
 export { titleSameAs }
 
@@ -135,27 +136,43 @@ interface TrailerInput {
   key?: string | null
   publishedAt?: string | null
   title: string
+  /** The page the trailer belongs to; its `#trailer` is the node's @id. */
+  pageUrl: string
+  kind: 'movie' | 'series'
+  year?: string | null
+  genres?: string[]
+  overview?: string | null
 }
 
 /**
- * The trailer, as a nested VideoObject.
+ * The trailer, as a VideoObject.
  *
- * Nested under the title's `trailer` property rather than emitted as a second
- * top-level script: it IS the title's trailer, and one graph beats two
- * unrelated ones. Everything here comes from the `videos` block the detail
- * fetch already carries via `append_to_response`, so a video rich result costs
- * zero extra TMDB requests.
+ * Emitted twice from this one builder: nested under the title's `trailer`
+ * property (it IS the title's trailer) and as its own script, because Google's
+ * video report reads a VideoObject on the watch page, and a nested one is the
+ * easier to miss. Same `@id`, same fields, so the two are one entity. Everything
+ * comes from the `videos` block the detail fetch already carries via
+ * `append_to_response`: zero extra TMDB requests.
  *
  * `uploadDate` is the clip's real `published_at`, not the title's release date.
  * Google requires the field, and answering it with a date that is often years
  * off is how structured data earns a manual action. No date, no VideoObject.
+ * The description is the page's own (lib/seo-description.ts), not a new slice.
  */
-const trailerObject = ({ key, publishedAt, title }: TrailerInput) => {
+const trailerObject = (input: TrailerInput) => {
+  const { key, publishedAt, title } = input
   if (!key || !publishedAt) return undefined
   return {
     '@type': 'VideoObject',
-    name: `${title} — official trailer`,
-    description: `The official trailer for ${title}.`,
+    '@id': `${input.pageUrl}#trailer`,
+    name: `${title} — Official Trailer`,
+    description: mediaDescription({
+      title,
+      year: input.year ?? undefined,
+      kind: input.kind,
+      genres: input.genres,
+      overview: input.overview,
+    }),
     // YouTube's own still, so the thumbnail is a frame of THIS video rather
     // than the title's backdrop. Always present for a live video id.
     thumbnailUrl: `https://i.ytimg.com/vi/${key}/hqdefault.jpg`,
@@ -163,6 +180,41 @@ const trailerObject = ({ key, publishedAt, title }: TrailerInput) => {
     embedUrl: `https://www.youtube.com/embed/${key}`,
     url: `https://www.youtube.com/watch?v=${key}`,
   }
+}
+
+const yearOf = (date?: string | null) => date?.slice(0, 4) || undefined
+
+const movieTrailerInput = (movie: MovieSchemaInput): TrailerInput => ({
+  key: movie.trailerKey,
+  publishedAt: movie.trailerPublishedAt,
+  title: movie.title,
+  pageUrl: `${SITE_URL}/movies/${movie.id}`,
+  kind: 'movie',
+  year: yearOf(movie.releaseDate),
+  genres: movie.genres,
+  overview: movie.description,
+})
+
+const seriesTrailerInput = (series: SeriesSchemaInput): TrailerInput => ({
+  key: series.trailerKey,
+  publishedAt: series.trailerPublishedAt,
+  title: series.name,
+  pageUrl: `${SITE_URL}/tv-shows/${series.id}`,
+  kind: 'series',
+  year: yearOf(series.firstAirDate),
+  genres: series.genres,
+  overview: series.description,
+})
+
+/** The standalone script for a movie page; undefined without a dated YouTube trailer. */
+export const movieTrailerJsonLd = (movie: MovieSchemaInput) => {
+  const video = trailerObject(movieTrailerInput(movie))
+  return video && { '@context': 'https://schema.org', ...video }
+}
+
+export const seriesTrailerJsonLd = (series: SeriesSchemaInput) => {
+  const video = trailerObject(seriesTrailerInput(series))
+  return video && { '@context': 'https://schema.org', ...video }
 }
 
 interface MovieSchemaInput {
@@ -215,11 +267,7 @@ export const movieJsonLd = (movie: MovieSchemaInput) => {
   if (actors) schema.actor = actors
   const directors = personList(movie.directors)
   if (directors) schema.director = directors
-  const trailer = trailerObject({
-    key: movie.trailerKey,
-    publishedAt: movie.trailerPublishedAt,
-    title: movie.title,
-  })
+  const trailer = trailerObject(movieTrailerInput(movie))
   if (trailer) schema.trailer = trailer
 
   return schema
@@ -273,11 +321,7 @@ export const tvSeriesJsonLd = (series: SeriesSchemaInput) => {
   if (actors) schema.actor = actors
   const creators = personList(series.creators)
   if (creators) schema.creator = creators
-  const trailer = trailerObject({
-    key: series.trailerKey,
-    publishedAt: series.trailerPublishedAt,
-    title: series.name,
-  })
+  const trailer = trailerObject(seriesTrailerInput(series))
   if (trailer) schema.trailer = trailer
 
   return schema
