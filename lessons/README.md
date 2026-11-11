@@ -172,3 +172,4 @@ with the work, not after.
 | 2026-11-11 | [Watch Now paints before the player swap](2026-11-11-watch-now-inp.md) | A click that mounts something heavy paints its press first (`afterNextPaint`); attribute INP on a real phone before guessing |
 | 2026-11-11 | [Trailer VideoObject as its own node](2026-11-11-trailer-videoobject.md) | The nested VideoObject already existed; the gap was a standalone node and a real description. The tail fallback has no videos, so it gets none. |
 | 2026-11-11 | [Anonymous viewers get the one automatic hop](2026-11-11-anonymous-stall-hop.md) | A rescue is not a choice: gate the chooser, not the recovery. Fake stream servers each need their own hostname (ids are hosts). |
+| 2026-11-11 | [Eyeball 5xx gates on a rate](2026-11-11-health-5xx-rate.md) | A health gate fails on a rate with a count floor, never on "any"; a change that needs data ships with the query that judges it |
