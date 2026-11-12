@@ -13,15 +13,10 @@
     "PetalBot"
   ],
 
-  "_aiTraining": "AI crawlers that take the page into a training corpus and send nobody back. The AI *search* crawlers are deliberately absent — OAI-SearchBot, ChatGPT-User, PerplexityBot and Claude-SearchBot fetch a page to cite it to a person, which is a referral.",
+  "_aiTraining": "Crawlers that bulk-copy the web into datasets, or ignore robots.txt, and send nobody back. Since 2026-11-12 the crawlers behind the big assistants are NOT here: GPTBot, ClaudeBot and meta-externalagent are how ChatGPT, Claude and Meta AI come to know the site, and Google-Extended and Applebot-Extended are robots.txt switches for Gemini and Apple Intelligence that cost no crawl at all. Those and the AI search crawlers are config/ai-crawlers.json; tests/robots.test.ts fails if one lands back in here.",
   "aiTraining": [
-    "GPTBot",
-    "ClaudeBot",
     "anthropic-ai",
     "CCBot",
-    "Google-Extended",
-    "Applebot-Extended",
-    "meta-externalagent",
     "FacebookBot",
     "Bytespider",
     "Amazonbot",

@@ -59,6 +59,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
+import { AI_CRAWLER_UAS } from './lib/ai-crawlers.mjs'
 import { loadLocalEnv } from './load-env.mjs'
 
 loadLocalEnv()
@@ -172,6 +173,11 @@ const SCRAPER_UAS = [
   'Googlebot',
   'bingbot',
   'DuckDuckBot',
+  // AI search and assistant crawlers (config/ai-crawlers.json). Cloudflare does
+  // not verify all of them, and an unverified one with no browser UA is exactly
+  // what CHALLENGE_DETAIL_SCRAPERS_RULE challenges — on the detail pages they
+  // would cite. A crawler cannot solve a challenge.
+  ...AI_CRAWLER_UAS,
   // No YandexBot. It sat here until 2026-09-01, when it was refused in
   // config/blocked-crawlers.json for taking ~26,000 requests/day against an
   // English catalogue with no Crawl-delay support. BLOCK_RULE_FIRST is ahead of

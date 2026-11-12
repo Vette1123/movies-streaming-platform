@@ -29,6 +29,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { AI_CRAWLER_UAS } from './lib/ai-crawlers.mjs'
 import { isCrawlerFire } from './lib/crawler-403.mjs'
 import { eyeball5xxGrade } from './lib/eyeball-5xx.mjs'
 import { loadLocalEnv } from './load-env.mjs'
@@ -212,9 +213,11 @@ async function checkEyeball(zone) {
 }
 
 /**
- * Search crawlers that actually drive organic traffic. Anything else calling
- * itself a bot (PerplexityBot, SERanking, scrapers) is SUPPOSED to be challenged
- * — being strict with those is the point of the WAF, so they are not graded.
+ * Search crawlers that actually drive organic traffic, plus the AI crawlers
+ * that put the site in front of people asking an assistant (config/
+ * ai-crawlers.json — since 2026-11-12 they are wanted, so a 403 to one is a
+ * fire too). Anything else calling itself a bot (SERanking, scrapers) is
+ * SUPPOSED to be challenged, so it is not graded.
  *
  * YandexBot and PetalBot were here until 2026-09-01 and were removed the day
  * they were added to config/blocked-crawlers.json. A check that fails on a
@@ -222,7 +225,12 @@ async function checkEyeball(zone) {
  * is worse than no check: the whole value of this line is that a 403 to
  * Googlebot is a five-alarm fire. Grade only what the site still wants.
  */
-const SEO_CRAWLERS = /Googlebot|bingbot|DuckDuckBot|Applebot/i
+const SEO_CRAWLERS = new RegExp(
+  ['Googlebot', 'bingbot', 'DuckDuckBot', 'Applebot', ...AI_CRAWLER_UAS].join(
+    '|'
+  ),
+  'i'
+)
 
 /**
  * What the search crawlers got — the one error class whose cost is invisible in
@@ -396,6 +404,11 @@ const STATUS_BUCKETS = [
   ['edge-blocked/challenged by Cloudflare (403, by design)', 403],
   ['non-GET to a GET-only path (bots + stale Server Action tabs)', 405],
   ['client disconnected mid-request (499)', 499],
+  // Only RATELIMIT_RULE in scripts/cf-waf-setup.mjs answers 429: the Worker
+  // never does, and verified + allowlisted crawlers skip the rate-limit phase.
+  // 300 detail pages in 10s from one IP is a scraper, not a person (790 of
+  // these sat in "unclassified" on 2026-11-12 and buried the column).
+  ['rate-limited scraper, 300+ detail pages/10s per IP (429, by design)', 429],
 ]
 
 /**
