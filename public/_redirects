@@ -18,6 +18,11 @@
 /manifest.webmanifest    /site.webmanifest 301
 /manifest.json           /site.webmanifest 301
 
+# Crawlers and link previewers guess these before reading the page's <link>.
+/favicon.png             /favicon.ico 301
+/icon/favicon.ico        /favicon.ico 301
+/img/favicon.ico         /favicon.ico 301
+
 # A trailing slash would otherwise get Cloudflare's default 307 to the slashless
 # page: a TEMPORARY redirect, so a link posted with a slash never hands its
 # signal to the canonical URL. One rule per path depth (a placeholder matches
