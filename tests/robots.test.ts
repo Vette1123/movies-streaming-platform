@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import aiCrawlers from '@/config/ai-crawlers.json'
+import blockedCrawlers from '@/config/blocked-crawlers.json'
 import robots from '@/app/robots'
 
 /**
@@ -66,5 +68,40 @@ describe('robots.txt', () => {
   it('still allows the pages and the cache-busted icons', () => {
     expect(allowedFor('Googlebot', '/movies/16619')).toBe(true)
     expect(allowedFor('Googlebot', '/site.webmanifest?v=2')).toBe(true)
+  })
+})
+
+/**
+ * Being cited by an assistant is search traffic. On 2026-11-12 GPTBot, ClaudeBot
+ * and meta-externalagent were refused in robots.txt AND blocked by the WAF, so
+ * ChatGPT, Claude and Meta AI could not learn the site existed. Every wanted AI
+ * crawler must reach a detail page, and none may be on the WAF's block list
+ * (a substring match, so a blocked token inside a wanted one counts too).
+ */
+describe('AI crawlers', () => {
+  const wanted = [...aiCrawlers.search, ...aiCrawlers.knowledge]
+  const blocked = [
+    ...blockedCrawlers.seoTools,
+    ...blockedCrawlers.aiTraining,
+    ...blockedCrawlers.noReferral,
+  ]
+  const groupFor = (userAgent: string) => {
+    const rule = robots().rules
+    const groups = Array.isArray(rule) ? rule : [rule]
+    const named = groups.find((g) =>
+      ([] as string[]).concat(g.userAgent ?? []).includes(userAgent)
+    )
+    return named ? userAgent : '*'
+  }
+
+  it.each(wanted)('%s may crawl a detail page', (userAgent) => {
+    expect(allowedFor(groupFor(userAgent), '/movies/16619')).toBe(true)
+  })
+
+  it.each(wanted)('%s is not on the WAF block list', (userAgent) => {
+    const hit = blocked.filter((token) =>
+      userAgent.toLowerCase().includes(token.toLowerCase())
+    )
+    expect(hit).toEqual([])
   })
 })

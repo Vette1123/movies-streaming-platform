@@ -1,0 +1,15 @@
+{
+  "_comment": "AI crawlers the site WANTS, one list, three readers: scripts/cf-waf-setup.mjs puts them in the allow rule (skips the detail-page challenge and the rate limit, which they cannot solve), scripts/cf-health.mjs fails if one takes a 403 or 5xx, and tests/robots.test.ts fails if robots.txt refuses one. Decided 2026-11-12: being cited by ChatGPT, Claude, Perplexity, Meta AI and DuckDuckGo's assistant is search traffic now, and an assistant that never read the site cannot name it. They fall in robots.txt's `*` group, so a compliant one is held to Crawl-delay 10. Matching is a substring test on the user-agent, the same as the allowlist's Googlebot entry.",
+  "search": [
+    "OAI-SearchBot",
+    "ChatGPT-User",
+    "PerplexityBot",
+    "Perplexity-User",
+    "Claude-SearchBot",
+    "Claude-User",
+    "DuckAssistBot",
+    "MistralAI-User"
+  ],
+  "_knowledge": "The crawlers behind what an assistant knows without searching. Google-Extended and Applebot-Extended are not here because they are robots.txt switches, not crawlers: Googlebot and Applebot do the fetching, and those are already allowed.",
+  "knowledge": ["GPTBot", "ClaudeBot", "meta-externalagent"]
+}
