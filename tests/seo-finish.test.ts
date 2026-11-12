@@ -82,6 +82,23 @@ describe('manifest aliases', () => {
   )
 })
 
+// cf:health listed these as 404s on 2026-11-12: crawlers and link previewers
+// guess the conventional favicon paths before reading the page's <link>.
+describe('favicon aliases', () => {
+  const redirects = readFileSync('public/_redirects', 'utf8')
+  const config = readFileSync('next.config.mjs', 'utf8')
+  it.each(['/favicon.png', '/icon/favicon.ico', '/img/favicon.ico'])(
+    '%s 301s to /favicon.ico, in prod and dev alike',
+    (alias) => {
+      const escaped = alias.replace(/[./]/g, '\\$&')
+      expect(redirects).toMatch(
+        new RegExp(`^${escaped}\\s+/favicon\\.ico\\s+301$`, 'm')
+      )
+      expect(config).toContain(`source: '${alias}'`)
+    }
+  )
+})
+
 describe('tail-id fallback schema', () => {
   // ~13,900 detail URLs are served by the Worker, not prerendered; a sameAs
   // only on the baked ~1,000 left most of the catalogue without it.

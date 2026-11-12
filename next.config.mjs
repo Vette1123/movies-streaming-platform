@@ -168,6 +168,17 @@ const serverOnlyConfig = {
         destination: '/site.webmanifest',
         permanent: true,
       },
+      { source: '/favicon.png', destination: '/favicon.ico', permanent: true },
+      {
+        source: '/icon/favicon.ico',
+        destination: '/favicon.ico',
+        permanent: true,
+      },
+      {
+        source: '/img/favicon.ico',
+        destination: '/favicon.ico',
+        permanent: true,
+      },
     ]
   },
 }
