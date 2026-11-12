@@ -1050,7 +1050,13 @@ const SEO_BLOCK_STYLE =
 // gets an <h2> here: two <h1>s with the same text is a duplicate-heading report.
 const seoHeadingTag = (meta) => (meta.shellHasH1 ? 'h2' : 'h1')
 const seoBlock = (meta) =>
-  `<article aria-hidden="true" style="${SEO_BLOCK_STYLE}" data-fallback-seo><${seoHeadingTag(meta)}>${escapeHtml(meta.heading)}</${seoHeadingTag(meta)}>${leadParagraph(meta)}${detailBlock(meta.detail)}${linkBlock(meta.links)}</article>`
+  `<article aria-hidden="true" style="${SEO_BLOCK_STYLE}" data-fallback-seo><${seoHeadingTag(meta)}>${escapeHtml(meta.heading)}</${seoHeadingTag(meta)}>${leadParagraph(meta)}${detailBlock(meta.detail)}${linkBlock(meta.links)}${relatedBlock(meta.detail)}</article>`
+
+/** Other titles, so no tail page is an island — see slimSummary. */
+const relatedBlock = (detail) =>
+  detail?.related?.length
+    ? `<h2>More like this</h2>${linkBlock(detail.related)}`
+    : ''
 
 /**
  * The description, unless the block below is about to print the whole synopsis

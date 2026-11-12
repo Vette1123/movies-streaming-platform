@@ -178,3 +178,4 @@ with the work, not after.
 | 2026-11-12 | [Health audit, no code change](2026-11-12-health-audit-no-change.md) | A property absent on every event: check when it shipped before calling it a bug; a GSC 404 on a TMDB-deleted id is correct. |
 | 2026-11-12 | [Image-host alert fired for a bot fleet](2026-11-12-image-alert-fleet.md) | An alert about real people counts people who pressed something; a fleet that never interacts never reports |
 | 2026-11-12 | [AI crawlers are search crawlers now](2026-11-12-allow-ai-crawlers.md) | Allow everything that ranks or cites the site, keep blocking what only spends the cap; grade AI crawlers in cf:health like Googlebot |
+| 2026-11-12 | [Tail pages link to their neighbours](2026-11-12-tail-pages-related-links.md) | A tail page with 2 genre links is an island; 8 recommended titles, slimmed before caching, join it to the graph |

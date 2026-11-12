@@ -1,4 +1,6 @@
+import { readFileSync } from 'node:fs'
 import type { MediaSummary } from '@/services/media-summary'
+import { RELATED_LIMIT, slimSummary } from '@/services/media-summary'
 import { describe, expect, it } from 'vitest'
 
 import { mediaFacts } from '@/lib/seo-facts'
@@ -114,5 +116,62 @@ describe('mediaFacts', () => {
     expect(bare.facts).toEqual([])
     expect(bare.links).toEqual([])
     expect(bare.duration).toBe('')
+  })
+})
+
+// GSC, 2026-11-12: 14,677 tail pages "Crawled - currently not indexed". Each
+// linked out to two genre hubs and nothing else, so no tail page passed a
+// crawler on to the next title and none was linked to by its neighbours.
+describe('related titles on a tail page', () => {
+  const raw = {
+    ...movie,
+    recommendations: {
+      results: [
+        { id: 11, title: 'Neighbour One', release_date: '2019-01-02' },
+        { id: movie.id, title: 'The Quiet Hour' },
+        { id: 12, title: '  ', release_date: '2020-01-01' },
+        { id: 13, title: 'Adult Thing', adult: true },
+        { id: 11, title: 'Neighbour One again' },
+        { id: 14, name: 'A Series Name', first_air_date: '' },
+        ...Array.from({ length: 20 }, (_, i) => ({
+          id: 100 + i,
+          title: `Filler ${i}`,
+        })),
+      ],
+    },
+  }
+
+  it('keeps a short, clean list and drops the raw payload', () => {
+    const slim = slimSummary(raw)
+    expect(slim).not.toHaveProperty('recommendations')
+    expect(slim.related).toHaveLength(RELATED_LIMIT)
+    expect(slim.related?.slice(0, 2)).toEqual([
+      { id: 11, title: 'Neighbour One', year: '2019' },
+      { id: 14, title: 'A Series Name', year: '' },
+    ])
+  })
+
+  it('has an empty list when TMDB recommends nothing', () => {
+    expect(slimSummary({ ...movie }).related).toEqual([])
+  })
+
+  it('links each one under the right section', () => {
+    const facts = mediaFacts('tv', {
+      ...series,
+      related: [
+        { id: 5, title: 'Rome', year: '2005' },
+        { id: 6, title: 'Undated', year: '' },
+      ],
+    })
+    expect(facts.related).toEqual([
+      { href: '/tv-shows/5', text: 'Rome (2005)' },
+      { href: '/tv-shows/6', text: 'Undated' },
+    ])
+    expect(mediaFacts('movie', movie).related).toEqual([])
+  })
+
+  it('is printed in the Worker body', () => {
+    const worker = readFileSync('cloudflare/worker.js', 'utf8')
+    expect(worker).toContain('${relatedBlock(meta.detail)}')
   })
 })
