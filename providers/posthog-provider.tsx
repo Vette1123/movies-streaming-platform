@@ -7,6 +7,7 @@ import type { CaptureResult, ConfigDefaults } from 'posthog-js'
 import { trackImageHostFallback, trackPageview } from '@/lib/analytics'
 import { shouldDropException } from '@/lib/error-noise'
 import { onIdle } from '@/lib/idle'
+import { interactionGate } from '@/lib/interaction-gate'
 import { enrichPersonProfile } from '@/lib/person'
 import {
   analyticsEnabled,
@@ -304,9 +305,22 @@ function PostHogIdentity() {
  * Subscribing here rather than from BlurredImage means ONE listener regardless
  * of how many images are mounted, so the event fires exactly once per session
  * without a second "have I reported this yet" flag to keep in sync.
+ *
+ * Sent only once the visitor has clicked, tapped or typed: a fleet that cannot
+ * fetch wsrv and never interacts tripped the alert on 2026-11-11 with no
+ * outage behind it (see lib/interaction-gate.ts).
  */
 function ImageHostTracker() {
-  useEffect(() => subscribePrimaryImageHost(trackImageHostFallback), [])
+  useEffect(() => {
+    const gate = interactionGate(window)
+    const unsubscribe = subscribePrimaryImageHost(() =>
+      gate.whenInteracted(trackImageHostFallback)
+    )
+    return () => {
+      unsubscribe()
+      gate.stop()
+    }
+  }, [])
   return null
 }
 
