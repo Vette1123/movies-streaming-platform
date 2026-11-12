@@ -175,3 +175,4 @@ with the work, not after.
 | 2026-11-11 | [Eyeball 5xx gates on a rate](2026-11-11-health-5xx-rate.md) | A health gate fails on a rate with a count floor, never on "any"; a change that needs data ships with the query that judges it |
 | 2026-11-11 | [CLAUDE.md back under budget](2026-11-11-claude-md-router.md) | The why behind a toolchain rule lives in the path-scoped rule for those files; CLAUDE.md keeps the what and a pointer |
 | 2026-11-11 | [The stall rescue must land on a different provider](2026-11-11-stream-chain.md) | A fallback that frames the primary is not a fallback; `pnpm stream:chain` fails when the rescue slot wraps an earlier one |
+| 2026-11-12 | [Health audit, no code change](2026-11-12-health-audit-no-change.md) | A property absent on every event: check when it shipped before calling it a bug; a GSC 404 on a TMDB-deleted id is correct. |
