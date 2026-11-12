@@ -9,9 +9,9 @@
 // "Crawled - currently not indexed".
 //
 // Everything below comes out of the SAME plain detail response the fallback
-// already fetches (services/media-summary.ts) — no second TMDB request, no
-// `append_to_response`, nothing added to the 10ms CPU budget beyond building a
-// few strings. It was all sitting in the payload unread.
+// already fetches (services/media-summary.ts) — no second TMDB request, and
+// only `recommendations` appended (slimmed to 8 links before caching), so the
+// 10ms CPU budget pays for little beyond building a few strings.
 
 import type { MediaSummary } from '@/services/media-summary'
 
@@ -41,6 +41,8 @@ export interface MediaFacts {
   facts: SeoFact[]
   /** Genre, year and franchise hubs — real crawl paths off a tail page. */
   links: SeoLink[]
+  /** "More like this": other titles, so a tail page is not a dead end. */
+  related: SeoLink[]
   /** For JSON-LD: only present when TMDB has votes to report. */
   rating: { value: number; count: number } | null
   /** ISO 8601, for JSON-LD `duration`. Empty when TMDB has no runtime. */
@@ -287,6 +289,10 @@ export function mediaFacts(
     tagline: squash(details.tagline),
     facts,
     links,
+    related: (details.related ?? []).map((item) => ({
+      href: `${type === 'tv' ? '/tv-shows' : '/movies'}/${item.id}`,
+      text: item.year ? `${item.title} (${item.year})` : item.title,
+    })),
     rating: votes > 0 ? { value: score, count: votes } : null,
     duration: isoDuration(runtime),
     released: squash(details.release_date || details.first_air_date),

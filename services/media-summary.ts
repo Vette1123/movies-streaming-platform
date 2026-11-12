@@ -58,9 +58,67 @@ export interface MediaSummary {
   episode_run_time?: number[]
   networks?: { id: number; name: string }[]
   created_by?: { id: number; name: string }[]
+
+  /** Slimmed out of `recommendations` by slimSummary — see below. */
+  related?: RelatedTitle[]
+}
+
+export interface RelatedTitle {
+  id: number
+  title: string
+  /** YYYY, or empty when TMDB has no date. */
+  year: string
+}
+
+interface RawRelated {
+  id?: number
+  title?: string
+  name?: string
+  release_date?: string
+  first_air_date?: string
+  adult?: boolean
+}
+
+type RawSummary = MediaSummary & {
+  recommendations?: { results?: RawRelated[] }
+}
+
+/** Enough "More like this" links to join a tail page to its neighbours. */
+export const RELATED_LIMIT = 8
+
+/**
+ * The one exception to "plain detail fetch": `recommendations`.
+ *
+ * Search Console filed 14,677 tail pages "Crawled - currently not indexed" on
+ * 2026-11-12. Each linked out to two genre hubs and no other title, so the
+ * ~13,900 tail ids were islands: reachable from the sitemap, linked from
+ * nothing. Recommendations come back for obscure titles too (20 for a 2008
+ * Bollywood film) and add ~13KB, against the 98KB the full payload costs, so
+ * the parse stays well inside the 10ms budget. The raw list is dropped here,
+ * before the Worker caches the summary, so a cache hit still parses ~2KB.
+ */
+export function slimSummary(raw: RawSummary): MediaSummary {
+  const { recommendations, ...summary } = raw
+  const seen = new Set([raw.id])
+  const related: RelatedTitle[] = []
+  for (const item of recommendations?.results ?? []) {
+    if (related.length === RELATED_LIMIT) break
+    const title = (item.title || item.name || '').trim()
+    if (!item.id || !title || item.adult || seen.has(item.id)) continue
+    seen.add(item.id)
+    const date = item.release_date || item.first_air_date || ''
+    related.push({ id: item.id, title, year: date.slice(0, 4) })
+  }
+  return { ...summary, related }
 }
 
 export const getMediaSummary = cache(
   async (type: 'movie' | 'tv', id: string): Promise<MediaSummary> =>
-    fetchClient.get<MediaSummary>(`${type}/${id}?language=en-US`, {}, true)
+    slimSummary(
+      await fetchClient.get<RawSummary>(
+        `${type}/${id}?language=en-US&append_to_response=recommendations`,
+        {},
+        true
+      )
+    )
 )
