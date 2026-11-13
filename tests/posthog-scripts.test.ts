@@ -144,3 +144,25 @@ describe('usage report', () => {
     expect(todo).toEqual([])
   })
 })
+
+describe('query runner', () => {
+  it('asks PostHog for live numbers, not its cache', async () => {
+    const { runNode } = await import('../scripts/lib/posthog.mjs')
+    const real = globalThis.fetch
+    let body: { refresh?: string } = {}
+    globalThis.fetch = (async (_url: string, init: { body: string }) => {
+      body = JSON.parse(init.body)
+      return new Response(JSON.stringify({ results: [[1]], columns: ['n'] }))
+    }) as unknown as typeof fetch
+    try {
+      await runNode(
+        { host: 'https://x', project: '1', key: 'k' },
+        { kind: 'HogQLQuery', query: 'SELECT 1' }
+      )
+    } finally {
+      globalThis.fetch = real
+    }
+    // 'async' serves a cached result for hours; tiles and --check read stale rows.
+    expect(body.refresh).toBe('force_async')
+  })
+})

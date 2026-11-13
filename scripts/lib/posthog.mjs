@@ -138,7 +138,8 @@ export async function runQuery(cfg, sql) {
 export async function runNode(cfg, node) {
   let body = await phApi(cfg, '/query/', {
     method: 'POST',
-    body: { query: node, refresh: 'async' },
+    // force_async: plain 'async' answers from PostHog's cache, hours stale.
+    body: { query: node, refresh: 'force_async' },
   })
   const id = body.query_status?.id || body.id
   for (let i = 0; i < POLL_LIMIT; i += 1) {
