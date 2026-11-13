@@ -31,6 +31,7 @@ pnpm resume:probe       # resume + playback prefs through the real page AND real
 pnpm relay:canary       # can the Reely Player play? ticket, shell, relay walk to a segment
 pnpm cf:health [hours]  # production health: kills, invocations, eyeball 5xx, crawlers
 pnpm cf:cpu [hours]     # production Worker CPU BY ROUTE (Workers Logs)
+pnpm cf:alerts          # ensure the 7 Cloudflare email alerts exist (abuse, blocks, SSL, DDoS)
 pnpm lighthouse         # medians; prefer the Lighthouse workflow, a home connection measures itself
 ```
 

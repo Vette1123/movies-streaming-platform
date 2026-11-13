@@ -180,3 +180,4 @@ with the work, not after.
 | 2026-11-12 | [AI crawlers are search crawlers now](2026-11-12-allow-ai-crawlers.md) | Allow everything that ranks or cites the site, keep blocking what only spends the cap; grade AI crawlers in cf:health like Googlebot |
 | 2026-11-12 | [Tail pages link to their neighbours](2026-11-12-tail-pages-related-links.md) | A tail page with 2 genre links is an island; 8 recommended titles, slimmed before caching, join it to the graph |
 | 2026-11-13 | [Cloudflare feature audit](2026-11-13-cloudflare-feature-audit.md) | Hotlink Protection 403ed our own og:image for Google Images; it protected free bandwidth. DNSSEC signing on, DS pending at the registrar |
+| 2026-11-13 | [Cloudflare product audit](2026-11-13-cloudflare-product-audit.md) | The account had no alerts and no abuse contact, so a takedown or block would have arrived silently; `pnpm cf:alerts` + support@ fix both, DNSSEC is validating |
