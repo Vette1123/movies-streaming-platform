@@ -128,6 +128,39 @@ async function main() {
   const zoneId = zones[0].id
   console.log(`Zone: ${ZONE_NAME} (${zoneId})${DRY_RUN ? '  [DRY RUN]' : ''}\n`)
 
+  // --- DNSSEC ---
+  //
+  // Signs the zone so a resolver can tell a forged answer for reely.space from
+  // a real one. Turning it on here is harmless by itself: nothing validates the
+  // signatures until the registrar publishes the DS record printed below. While
+  // the domain sits at Namecheap, that DS has to be pasted there by hand
+  // (Domain List → Manage → Advanced DNS → DNSSEC). After a transfer to
+  // Cloudflare Registrar it is published automatically. Never remove the zone
+  // signing while a DS is published: every validating resolver then refuses
+  // the domain outright.
+  let dnssec = await cf(`/zones/${zoneId}/dnssec`)
+  if (dnssec.status === 'disabled' && !DRY_RUN) {
+    dnssec = await cf(`/zones/${zoneId}/dnssec`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'active' }),
+    })
+    console.log('✓ DNSSEC signing turned on')
+  } else if (dnssec.status === 'disabled') {
+    console.log('~ DNSSEC — would turn signing on')
+  } else {
+    console.log(`• DNSSEC ${dnssec.status}`)
+  }
+  if (dnssec.ds) {
+    console.log(
+      `  DS for the registrar (status "${dnssec.status}" until it is published):`
+    )
+    console.log(
+      `  key tag ${dnssec.key_tag}, algorithm ${dnssec.algorithm}, digest type ${dnssec.digest_type}`
+    )
+    console.log(`  digest ${dnssec.digest}`)
+  }
+  console.log('')
+
   // --- CAA ---
   const existingCaa = await cf(
     `/zones/${zoneId}/dns_records?type=CAA&per_page=100`

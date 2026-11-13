@@ -835,6 +835,19 @@ async function main() {
     })
   })
 
+  // Hotlink Protection off. It answers 403 to any image request whose Referer
+  // is another site, and the home/hub `og:image` is our own
+  // /opengraph-image.png: measured 2026-11-13, a Referer of google.com got 403.
+  // So Google Images, Pinterest and any page embedding a share card showed a
+  // broken image. It protects bandwidth, which costs nothing on Cloudflare;
+  // the scrapers worth stopping are handled by the WAF rules above.
+  await step('Hotlink Protection off (needs Zone Settings: Edit)', async () => {
+    await cf(`/zones/${zoneId}/settings/hotlink_protection`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: 'off' }),
+    })
+  })
+
   // TLS hardening. All three are free-plan zone settings and idempotent.
   //
   // min_tls_version 1.2 — the zone shipped on the CF default of 1.0, which
