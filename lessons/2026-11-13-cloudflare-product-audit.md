@@ -21,8 +21,9 @@ Shipped:
   answered. Blocked content: none.
 - **DNSSEC live.** DS added at Namecheap; RDAP shows `delegationSigned`,
   Cloudflare reports `active`, Google and Cloudflare resolvers return
-  `AD:true`. Namecheap auto-renew is on for domain and privacy, and the
-  domain is transfer-locked.
+  `AD:true`. The domain is transfer-locked. Auto-renew (domain + privacy)
+  was turned OFF at the owner's request: reely.space expires 2027-07-31
+  unless renewed by hand at Namecheap.
 
 Looked at and not worth it here, with the reason:
 
@@ -36,7 +37,7 @@ Looked at and not worth it here, with the reason:
 | Zaraz, Web Analytics                                       | PostHog already does it                                                                  |
 | Smart Placement                                            | Hot path is TMDB (global CDN) + per-colo cache; centralising would hurt crawler latency  |
 | Health Checks, Snippets, Polish, Cache Reserve, Argo       | Paid plans                                                                               |
-| Cloudflare Registrar transfer                              | Namecheap auto-renews with a funded balance; transfer would cost a year and reset DNSSEC |
+| Cloudflare Registrar transfer                              | Owner's call: auto-renew is off by choice; a transfer would cost a year and reset DNSSEC |
 | HSTS preload                                               | Months to undo, saves one redirect on a first visit                                      |
 
 ## Mistakes
