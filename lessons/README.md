@@ -179,3 +179,4 @@ with the work, not after.
 | 2026-11-12 | [Image-host alert fired for a bot fleet](2026-11-12-image-alert-fleet.md) | An alert about real people counts people who pressed something; a fleet that never interacts never reports |
 | 2026-11-12 | [AI crawlers are search crawlers now](2026-11-12-allow-ai-crawlers.md) | Allow everything that ranks or cites the site, keep blocking what only spends the cap; grade AI crawlers in cf:health like Googlebot |
 | 2026-11-12 | [Tail pages link to their neighbours](2026-11-12-tail-pages-related-links.md) | A tail page with 2 genre links is an island; 8 recommended titles, slimmed before caching, join it to the graph |
+| 2026-11-13 | [Cloudflare feature audit](2026-11-13-cloudflare-feature-audit.md) | Hotlink Protection 403ed our own og:image for Google Images; it protected free bandwidth. DNSSEC signing on, DS pending at the registrar |
