@@ -45,7 +45,8 @@ const POLICIES = [
     'Trust & Safety rejected a block review',
   ],
   ['block_notification_block_removed', 'Trust & Safety removed a block'],
-  ['universal_ssl_event_type', 'Universal SSL certificate event'],
+  // No universal_ssl_event_type: it mails on every routine issue/renew/deploy
+  // of a certificate, not only on failure (removed 2026-11-13 as noise).
   ['dos_attack_l7', 'HTTP DDoS attack mitigated'],
   ['security_insights_alert', 'New Security Center insight'],
 ]
