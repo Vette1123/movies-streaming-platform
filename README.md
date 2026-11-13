@@ -150,14 +150,16 @@ Copy `.env.sample` to `.env.local` and fill in the values you need. Only TMDB-re
 
 Reely is free and stays free. Besides its supporters, it is paid for by one sponsor card per page: on the homepage, under every film and episode, and on nearly every page between. There are no popups, no redirects, nothing over the video, no ad network and no third-party script. Supporters never see the card.
 
-In the slot now: [Masareef](https://masareef.mohamedgado.com/?s=reely-readme), our own spending tracker, until a sponsor books it. [Your brand here →](https://www.reely.space/advertise)
+When no sponsor is booked, the slot holds [Masareef](https://masareef.mohamedgado.com/?s=reely-readme), our own spending tracker. [Your brand here →](https://www.reely.space/advertise)
+
+Want to back Reely yourself? [Sponsor me on GitHub](https://github.com/sponsors/Vette1123). Supporters get Pro, switched on by hand ([reely.space/support](https://www.reely.space/support)), and never see the card.
 
 |          |                                                                                             |
 | -------- | ------------------------------------------------------------------------------------------- |
 | Where    | Homepage, every film and episode page, and above the footer on nearly every other page      |
 | Rotation | None: one sponsor holds the slot for the whole booking                                      |
 | Period   | Calendar months, with start and end dates enforced in code                                  |
-| Pay      | Per order through your affiliate link, or a fixed month                                     |
+| Pay      | Per order through your affiliate link, or a fixed month paid once through [GitHub Sponsors](https://github.com/sponsors/Vette1123) |
 | Extras   | Your coupon code on the card, a monthly report of shows, clicks and copies, and a line here |
 
 Sponsor links are marked `rel="sponsored"`. Some links on the site are affiliate links, and Reely may earn a commission on orders made through them. To book the slot, see [reely.space/advertise](https://www.reely.space/advertise) or email booogado@gmail.com.
@@ -168,6 +170,7 @@ Sponsor links are marked `rel="sponsored"`. Some links on the site are affiliate
 - The catalogue is `config/offers.ts`. A booking is one entry: the sponsor's referral link as `href`, `coupon`, `from`/`until` dates and `weight: 10`. When no booking is live, Masareef fills the slot (`weight: 2`), with Rafiq as the fallback.
 - `pnpm sponsor:stats` prints the last 30 days (people, visits, plays, countries, card shows and clicks) for a reply to a sponsor; `--write` refreshes the numbers on `/advertise`.
 - `pnpm test` (`tests/offers.test.ts`) fails if a placeholder link goes live or a date is malformed.
+- A booked sponsor's line in this README goes between dated markers, `<!-- sponsor:<id> until=<ISO instant> -->` and `<!-- /sponsor:<id> -->`, right under the Masareef line. `.github/workflows/expire-sponsors.yml` deletes it the day it ends and pushes, so nothing is left to remember; `pnpm sponsors:expire` runs the same thing locally.
 
 </details>
 

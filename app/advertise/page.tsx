@@ -4,7 +4,7 @@ import { Mail } from 'lucide-react'
 
 import { PLACEMENTS, type Offer } from '@/config/offers'
 import { siteConfig } from '@/config/site'
-import { PRO_EMAIL, sponsorMailto } from '@/config/support'
+import { GITHUB_SPONSORS_URL, PRO_EMAIL, sponsorMailto } from '@/config/support'
 import { withSiteSocial } from '@/lib/page-metadata'
 import { pageTitle } from '@/lib/seo-title'
 import { cn } from '@/lib/utils'
@@ -222,8 +222,14 @@ export default function AdvertisePage() {
             <h3 className="font-semibold">Fixed month</h3>
             <p className="mt-2 leading-relaxed text-muted-foreground">
               One flat fee for a calendar month of the slot, quoted by email
-              from the numbers above. Your link and coupon go on the card all
-              the same.
+              from the numbers above and paid once through{' '}
+              <a
+                href={GITHUB_SPONSORS_URL}
+                className="underline underline-offset-4 hover:text-foreground"
+              >
+                GitHub Sponsors
+              </a>
+              . Your link and coupon go on the card all the same.
             </p>
           </div>
         </div>

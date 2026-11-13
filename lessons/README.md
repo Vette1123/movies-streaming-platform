@@ -182,3 +182,4 @@ with the work, not after.
 | 2026-11-13 | [Cloudflare feature audit](2026-11-13-cloudflare-feature-audit.md) | Hotlink Protection 403ed our own og:image for Google Images; it protected free bandwidth. DNSSEC signing on, DS pending at the registrar |
 | 2026-11-13 | [Cloudflare product audit](2026-11-13-cloudflare-product-audit.md) | The account had no alerts and no abuse contact, so a takedown or block would have arrived silently; `pnpm cf:alerts` + support@ fix both, DNSSEC is validating |
 | 2026-11-13 | [PostHog scripts read the cache](2026-11-13-posthog-force-async.md) | `refresh: 'async'` serves PostHog's cache; decision scripts send `force_async` |
+| 2026-11-13 | [Sponsor README line ends itself](2026-11-13-sponsor-readme-expiry.md) | A paid README line gets dated markers; a daily Action deletes it, nobody remembers to. |

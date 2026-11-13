@@ -1,0 +1,44 @@
+name: Expire sponsor mentions
+
+# A paid README mention ends on the date it was paid up to, with nobody
+# watching. scripts/expire-sponsors.mjs deletes every dated block whose end has
+# passed and this job pushes the result. The site's card needs none of this: it
+# stops itself in the browser through `until` in config/offers.ts.
+#
+# A push made with GITHUB_TOKEN starts no other workflow, so this never
+# triggers a deploy, and a README change has nothing to deploy anyway.
+on:
+  schedule:
+    # Daily, 06:41 UTC. Off the hour because everyone else's cron is on it.
+    - cron: '41 6 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: expire-sponsors
+  cancel-in-progress: false
+
+jobs:
+  expire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # No pnpm install: the script uses node: built-ins only.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Remove ended mentions
+        run: node scripts/expire-sponsors.mjs
+
+      - name: Commit and push
+        run: |
+          if git diff --quiet; then echo "nothing ended"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git commit -am "docs(readme): remove ended sponsor mention"
+          git push

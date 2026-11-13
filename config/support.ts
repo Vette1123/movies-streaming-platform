@@ -11,6 +11,9 @@
  */
 export const SUPPORT_TAG = 'Reely'
 
+/** Where every payment lands, Pro and a sponsor's fixed month alike. */
+export const GITHUB_SPONSORS_URL = 'https://github.com/sponsors/Vette1123'
+
 /** Where a request for Pro goes. One constant; every buy button reads it. */
 export const PRO_EMAIL = 'booogado@gmail.com'
 
