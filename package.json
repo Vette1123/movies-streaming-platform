@@ -60,7 +60,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p .",
     "test:watch": "vitest",
-    "stream:chain": "node scripts/stream-chain.mjs"
+    "stream:chain": "node scripts/stream-chain.mjs",
+    "cf:alerts": "node scripts/cf-alerts.mjs"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.2.1",
