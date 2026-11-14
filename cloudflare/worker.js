@@ -69,6 +69,7 @@ import {
 import { shareImageOf } from '@/lib/og/share-image'
 import { playerParams } from '@/lib/playback-options'
 import { signEntryTicket } from '@/lib/pro/playback-ticket'
+import { checkRelayHealth, HEALTH_TTL_S } from '@/lib/pro/relay-health'
 import { providerHasNoStream } from '@/lib/pro/stream-availability'
 import {
   releaseTrial,
@@ -454,8 +455,40 @@ const apiKey = (url, params) => {
   return key.toString()
 }
 
+/**
+ * Can the Reely Player play? One answer per colo per HEALTH_TTL_S, shared by
+ * GET /api/stream/health and the ticket route (lib/pro/relay-health.ts).
+ *
+ * A down answer is cached too: that is the point. The 2026-11-13 outage was
+ * every resolve failing, and re-asking per play would only add a dead walk to
+ * each one. One fixed key, so a query string cannot make it walk again.
+ */
+async function relayHealthCached(ctx, env, origin) {
+  const response = await cached(
+    new Request(`${origin}/api/stream/health`),
+    ctx,
+    async () =>
+      Response.json(await checkRelayHealth(env?.RELAY_URL), {
+        headers: { 'Cache-Control': `public, max-age=${HEALTH_TTL_S}` },
+      })
+  )
+  try {
+    return await response.json()
+  } catch {
+    // An unreadable cache entry is not evidence the relay is down.
+    return { up: true }
+  }
+}
+
 async function handleApi(pathname, url, request, ctx, env) {
   const q = url.searchParams
+
+  if (pathname === '/api/stream/health') {
+    const health = await relayHealthCached(ctx, env, url.origin)
+    return Response.json(health, {
+      headers: { 'Cache-Control': `public, max-age=${HEALTH_TTL_S}` },
+    })
+  }
 
   // Reely Reels — the trailer feed. One batch per trending page; the client
   // scrolls, the cursor is just the TMDB page number.
@@ -1670,7 +1703,7 @@ async function handleListsDirectory(request, env, ctx, url) {
  *   - Supporters always get one. Everyone else gets one free title a day, and
  *     nothing else: see lib/pro/ticket-access.ts, which decides all of it.
  */
-async function handleProTicket(request, env, url) {
+async function handleProTicket(request, env, url, ctx) {
   let body
   try {
     body = await request.json()
@@ -1715,6 +1748,27 @@ async function handleProTicket(request, env, url) {
       }),
       {
         status: 451,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+        },
+      }
+    )
+  }
+
+  // The player cannot play anything while the relay is shut out (2026-11-13).
+  // Refused here, before ticketDenial, so a free visitor's daily title is not
+  // spent on a dead frame; the client hears 503 and plays the next server.
+  const relay = await relayHealthCached(ctx, env, url.origin)
+  if (!relay.up) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Player temporarily unavailable',
+        reason: 'relay-down',
+      }),
+      {
+        status: 503,
         headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-store',
@@ -1901,7 +1955,7 @@ const worker = {
     // Before the method check below: every mutating account route is a POST,
     // and this dispatcher does its own per-path method table.
     if (pathname === '/api/pro/ticket' && request.method === 'POST') {
-      return await handleProTicket(request, env, url)
+      return await handleProTicket(request, env, url, ctx)
     }
     if (pathname === '/api/pro/trial/release' && request.method === 'POST') {
       return await handleTrialRelease(request, env)

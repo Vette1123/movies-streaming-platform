@@ -22,11 +22,16 @@
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 
+import {
+  RELAY_URL,
+  selftestPassed,
+  selftestReason,
+} from './lib/relay-selftest.mjs'
+
 const SITE = process.env.SITE_URL ?? 'https://www.reely.space'
 const PLAYER =
   process.env.PLAYER_URL ?? 'https://reely-pro-player.boogado66.workers.dev'
-const RELAY =
-  process.env.RELAY_URL ?? 'https://reely-resolver-relay.reely.deno.net'
+const RELAY = process.env.RELAY_URL || RELAY_URL
 // A current browser string: the WAF challenges empty and frozen user-agents.
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36'
@@ -38,24 +43,8 @@ export const TITLES = [
   { name: 'Game of Thrones S1E1', query: 'ty=tv&id=1399&s=1&ep=1' },
 ]
 
-/**
- * A /selftest answer is a pass only when the walk reached a real segment.
- * `ok: true` alone means nothing threw; the segment status is the proof.
- */
-export function selftestPassed(stages) {
-  return Boolean(
-    stages?.ok && stages.master?.isM3U && stages.segment?.status === 200
-  )
-}
-
-/** Why a /selftest answer failed, in one line. */
-export function selftestReason(stages) {
-  if (!stages) return 'no answer'
-  if (stages.coolingFor) return `rate-limited, cooling ${stages.coolingFor}s`
-  if (stages.error) return stages.error
-  if (!stages.master?.isM3U) return 'master is not a playlist'
-  return `segment ${stages.segment?.status ?? 'missing'}`
-}
+// The verdict on one walk is shared with the Worker's /api/stream/health.
+export { selftestPassed, selftestReason }
 
 /**
  * The whole verdict. The site and player layers must pass. Titles fail the run

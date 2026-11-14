@@ -12,12 +12,14 @@ import {
 } from '@/config/support'
 import {
   ALL_SUPPORT_FEATURE_GROUPS,
+  FLAGSHIP_FEATURES,
   SUPPORT_FEATURE_COUNT,
   TV_FEATURE,
 } from '@/config/support-features'
 import { useAccountIdentity } from '@/hooks/use-account'
 import { buttonVariants } from '@/components/ui/button'
 import { FeaturePromise } from '@/components/support/feature-promise'
+import { PlayerDownNote } from '@/components/support/player-down-note'
 
 /** Every level, priced from config so this list cannot outlive a price change. */
 const LEVELS = [
@@ -116,30 +118,36 @@ function SupporterPanel({ name }: { name: string | null }) {
             <div key={group.title}>
               <h3 className="text-lg font-semibold">{group.title}</h3>
               <ul className="mt-4 grid gap-x-12 gap-y-5 sm:grid-cols-2">
-                {group.features.map(({ Icon, title, short, link }) => (
-                  <li key={title} className="flex items-start gap-3">
-                    <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <Icon className="size-3.5" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-medium">{title}</p>
-                      <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
-                        {short}
-                        {link && (
-                          <>
-                            {' '}
-                            <Link
-                              href={link.href}
-                              className="text-foreground underline underline-offset-4"
-                            >
-                              {link.label}
-                            </Link>
-                          </>
-                        )}
-                      </p>
-                    </div>
-                  </li>
-                ))}
+                {group.features.map((feature) => {
+                  const { Icon, title, short, link } = feature
+                  return (
+                    <li key={title} className="flex items-start gap-3">
+                      <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <Icon className="size-3.5" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-medium">{title}</p>
+                        <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
+                          {short}
+                          {link && (
+                            <>
+                              {' '}
+                              <Link
+                                href={link.href}
+                                className="text-foreground underline underline-offset-4"
+                              >
+                                {link.label}
+                              </Link>
+                            </>
+                          )}
+                        </p>
+                        {feature === FLAGSHIP_FEATURES[0] ? (
+                          <PlayerDownNote className="mt-2" />
+                        ) : null}
+                      </div>
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           ))}

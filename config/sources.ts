@@ -248,6 +248,24 @@ export const rescueSourcesFor = (
   pro: boolean
 ): StreamSource[] => (signedIn ? visibleSourcesFor(true, pro) : STREAM_SOURCES)
 
+/**
+ * Whether a source can play right now. Only the house player can be "down":
+ * its relay is the one dependency the site can test (/api/stream/health, see
+ * lib/pro/relay-health.ts). An embed's health is the stall detector's job.
+ */
+export const sourceUp = (id: string, reelyUp: boolean): boolean =>
+  reelyUp || id !== REELY_SOURCE_ID
+
+/**
+ * Where an automatic hop may land, minus a house player that cannot play.
+ * A rescue onto a dead source is a second dead frame.
+ */
+export const playableSources = (
+  sources: StreamSource[],
+  reelyUp: boolean
+): StreamSource[] =>
+  reelyUp ? sources : sources.filter((s) => sourceUp(s.id, false))
+
 export const sourceById = (id: string | null | undefined): StreamSource =>
   STREAM_SOURCES.find((source) => source.id === id) ?? DEFAULT_SOURCE
 
@@ -366,6 +384,11 @@ const withSourceQuery = (
  *
  * Anything not in `sources` is ignored: a stored id survives a tier change, and
  * a lapsed supporter must not resolve to the player they no longer have.
+ *
+ * `reelyUp: false` (the relay is shut out, /api/stream/health) skips the house
+ * player at every step: no memory, Settings choice or tier default may land a
+ * play on a frame that cannot play. The memory is kept, not rewritten, so it
+ * comes back by itself when the relay does.
  */
 export const resolveSourceId = (input: {
   sources: StreamSource[]
@@ -373,13 +396,17 @@ export const resolveSourceId = (input: {
   accountSource?: string | null
   devicePreference?: string | null
   pro: boolean
+  reelyUp?: boolean
 }): string => {
+  const reelyUp = input.reelyUp !== false
   const has = (id?: string | null): id is string =>
-    !!id && input.sources.some((entry) => entry.id === id)
+    !!id &&
+    sourceUp(id, reelyUp) &&
+    input.sources.some((entry) => entry.id === id)
 
   if (has(input.remembered)) return input.remembered
   if (has(input.accountSource)) return input.accountSource
   if (!input.pro && has(input.devicePreference)) return input.devicePreference
-  if (input.pro && RICH_SOURCE) return RICH_SOURCE.id
+  if (input.pro && RICH_SOURCE && reelyUp) return RICH_SOURCE.id
   return DEFAULT_SOURCE_ID
 }

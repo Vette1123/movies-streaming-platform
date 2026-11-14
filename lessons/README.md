@@ -184,3 +184,4 @@ with the work, not after.
 | 2026-11-13 | [PostHog scripts read the cache](2026-11-13-posthog-force-async.md) | `refresh: 'async'` serves PostHog's cache; decision scripts send `force_async` |
 | 2026-11-13 | [Sponsor README line ends itself](2026-11-13-sponsor-readme-expiry.md) | A paid README line gets dated markers; a daily Action deletes it, nobody remembers to. |
 | 2026-11-14 | [Link-scanner noise; flags that were not bugs](2026-11-14-posthog-check-link-scanner-noise.md) | Before calling a tracker broken, check 90 days and a second signal for the same action. |
+| 2026-11-14 | [Reely Player down: skip it, say so](2026-11-14-reely-player-down-fallback.md) | A testable dependency gets one cached server answer, read by the UI choice AND the endpoint that spends a trial. |

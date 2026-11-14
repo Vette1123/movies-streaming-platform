@@ -26,6 +26,7 @@ import {
   PopoverHeading,
   PopoverRow,
   PopoverTrigger,
+  type PopoverRowProps,
 } from '@/components/ui/popover'
 
 /**
@@ -199,12 +200,37 @@ function triggerClass(onHouse: boolean, open: boolean): string {
 
 /** What the house row says, by where this visitor stands with it. */
 function houseSubtitleFor(
-  status: 'available' | 'active' | 'used' | 'none'
+  status: 'available' | 'active' | 'used' | 'none',
+  reelyUp = true
 ): string {
+  // Said plainly rather than hidden: a supporter who pays for this player
+  // should see that it is down, not wonder where it went.
+  if (!reelyUp) return 'Temporarily unavailable. Playing from a server below'
   if (status === 'available') return 'Free on one title today'
   if (status === 'active') return 'Free today on this title'
   if (status === 'used') return 'Free again tomorrow. Support for every title'
   return 'Subtitles, quality and resume'
+}
+
+/**
+ * What tapping the house row does: nothing while it is down (listed, marked
+ * unavailable), a link to support once a free title is spent, otherwise the
+ * switch itself.
+ */
+function houseRowAction(input: {
+  reelyUp: boolean
+  upsell: boolean
+  pressed: boolean
+  choose: () => void
+}): Pick<PopoverRowProps, 'disabled' | 'href' | 'onClick' | 'pressed'> {
+  if (!input.reelyUp) return { disabled: true }
+  if (input.upsell) {
+    return {
+      href: '/support',
+      onClick: () => trackSupportCtaClicked({ surface: 'server_menu' }),
+    }
+  }
+  return { pressed: input.pressed, onClick: input.choose }
 }
 
 export function SourceSwitcher({
@@ -322,7 +348,8 @@ export function SourceSwitcher({
       >
         <StallNotice>{stallNoticeText(autoHopped)}</StallNotice>
         <div className="flex flex-wrap items-center justify-center gap-1.5">
-          {trial.status === 'available' || trial.status === 'used' ? (
+          {control.reelyUp &&
+          (trial.status === 'available' || trial.status === 'used') ? (
             <TrialOffer status={trial.status} onStart={trial.start} />
           ) : null}
           {/* Backup servers are free with an account - so that is how they
@@ -359,7 +386,7 @@ export function SourceSwitcher({
   const embeds = sources.filter((entry) => entry.id !== REELY_SOURCE_ID)
   const onHouse = source.id === REELY_SOURCE_ID
   const TriggerIcon = onHouse ? Sparkles : Server
-  const houseSubtitle = houseSubtitleFor(trial.status)
+  const houseSubtitle = houseSubtitleFor(trial.status, control.reelyUp)
 
   return (
     <div
@@ -371,7 +398,10 @@ export function SourceSwitcher({
       {showWarning ? (
         <StallNotice>{stallNoticeText(autoHopped)}</StallNotice>
       ) : null}
-      {showWarning && !onHouse && trial.status === 'available' ? (
+      {showWarning &&
+      !onHouse &&
+      control.reelyUp &&
+      trial.status === 'available' ? (
         <TrialOffer status="available" onStart={trial.start} />
       ) : null}
 
@@ -426,27 +456,18 @@ export function SourceSwitcher({
             <div role="group" aria-label="Streaming server">
               {house ? (
                 <>
-                  {trial.status === 'used' && !onHouse ? (
-                    <PopoverRow
-                      Icon={Sparkles}
-                      iconClassName="text-fuchsia-400"
-                      title={house.label}
-                      subtitle={houseSubtitle}
-                      href="/support"
-                      onClick={() =>
-                        trackSupportCtaClicked({ surface: 'server_menu' })
-                      }
-                    />
-                  ) : (
-                    <PopoverRow
-                      Icon={Sparkles}
-                      iconClassName="text-fuchsia-400"
-                      title={house.label}
-                      subtitle={houseSubtitle}
-                      pressed={house.id === source.id}
-                      onClick={() => select(house.id)}
-                    />
-                  )}
+                  <PopoverRow
+                    Icon={Sparkles}
+                    iconClassName="text-fuchsia-400"
+                    title={house.label}
+                    subtitle={houseSubtitle}
+                    {...houseRowAction({
+                      reelyUp: control.reelyUp,
+                      upsell: trial.status === 'used' && !onHouse,
+                      pressed: house.id === source.id,
+                      choose: () => select(house.id),
+                    })}
+                  />
                   <PopoverHeading>Other servers</PopoverHeading>
                 </>
               ) : null}

@@ -64,6 +64,13 @@ export interface PopoverRowProps {
    * omits it shifts under the reader.
    */
   pressed?: boolean
+  /**
+   * Listed but not choosable right now (the Reely Player while its relay is
+   * down). Stays focusable with `aria-disabled`, unlike `disabled`, so a
+   * screen reader still reaches the row and reads its subtitle - the subtitle
+   * is the whole point of showing it rather than hiding it.
+   */
+  disabled?: boolean
 }
 
 /**
@@ -85,6 +92,7 @@ function PopoverRow({
   external,
   onClick,
   pressed,
+  disabled,
 }: PopoverRowProps) {
   const content = (
     <>
@@ -109,6 +117,23 @@ function PopoverRow({
       )}
     </>
   )
+
+  if (disabled) {
+    // Not wrapped in PopoverClose: a tap on it changes nothing, so the menu
+    // stays open with the servers that do work right under the finger.
+    return (
+      <button
+        type="button"
+        aria-disabled
+        className={cn(
+          POPOVER_ROW,
+          'cursor-not-allowed opacity-60 hover:bg-transparent'
+        )}
+      >
+        {content}
+      </button>
+    )
+  }
 
   if (href) {
     return (
