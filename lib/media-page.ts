@@ -131,6 +131,24 @@ type PagedFetcher = (args: {
 // pages are TMDB's live lists, deduped against each other, and the collection
 // set is whatever those movies happen to belong to. It moves by tens of routes
 // between builds on its own, so treat any exact figure here as "about".
+//
+// 2026-11-14, after the people catalogue landed (787 union-only person pages):
+// 18,153 files / 3,002 routes. The drift decomposes exactly: 12,863 + 787
+// people × 6 = 17,585, plus ~570 of TMDB list movement. The measured model is
+// **6 files per prerendered route** under Next 16.4 — `<id>.html`,
+// `<id>.txt` (the full navigation payload the old router path fetches), and
+// four segment-cache files the client fetches on hover prefetch and
+// navigation in export mode: `__next._tree.txt` + `__next._index.txt` +
+// `__next._full.txt` at the route root, and the page segment's
+// `__next.<segment>/.../__PAGE__.txt` — plus ~150 fixed assets (chunks,
+// icons, splash). Verified in next/dist/client/components/segment-cache/
+// cache.js: export-mode fetches build their URLs with
+// convertSegmentPathToStaticExportFilename, relax the content-type check, and
+// treat every well-formed response as static — the segment cache fully works
+// on static hosting and there is NO config to disable it, so those 4 files
+// are load-bearing and the cap is a ROUTE budget. popular was trimmed
+// 33 -> 24 (config/catalogue.json) for headroom; scripts/cf-deploy.mjs fails
+// the deploy past 19,200 files.
 // How deep into each TMDB list the build prerenders.
 //
 // One source of truth, in a JSON file, because two things need it and they
