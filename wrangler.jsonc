@@ -95,5 +95,8 @@
   "vars": {
     "ENVIRONMENT": "production",
     "NODE_ENV": "production",
+    // Own-library mode: the one origin allowed to read the HLS routes
+    // cross-origin (the player iframe). Same-origin site requests need no CORS.
+    "LIBRARY_PLAYER_ORIGIN": "https://reely-pro-player.boogado66.workers.dev",
   },
 }

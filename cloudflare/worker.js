@@ -54,6 +54,11 @@ import { loadDirectory } from '@/lib/community/routes'
 import { smartQuery } from '@/lib/filter-query'
 import { isImdbId } from '@/lib/imdb-id'
 import { aggregateRating, jsonLdText, titleSameAs } from '@/lib/json-ld'
+import {
+  handleLibraryHls,
+  handleLibraryIngest,
+  handleLibraryPlay,
+} from '@/lib/library/serve'
 import { loadPublicList } from '@/lib/lists/routes'
 import { getMediaShareImage } from '@/lib/media'
 import {
@@ -1959,6 +1964,22 @@ const worker = {
     }
     if (pathname === '/api/pro/trial/release' && request.method === 'POST') {
       return await handleTrialRelease(request, env)
+    }
+
+    // Own-library mode — tier zero of the playback chain: media the site hosts
+    // itself, catalogued in D1, before any provider is asked for anything.
+    // All three shapes live before the GET/HEAD guard below, because the play
+    // route is a POST, ingest is PUT/POST/DELETE, and the HLS route also
+    // answers the Range preflight (OPTIONS) hls.js sends cross-origin.
+    // lib/library/serve.ts holds every line of the logic.
+    if (pathname === '/api/library/play' && request.method === 'POST') {
+      return await handleLibraryPlay(request, env, url)
+    }
+    if (pathname.startsWith('/api/library/ingest')) {
+      return await handleLibraryIngest(request, env, pathname)
+    }
+    if (pathname.startsWith('/api/library/hls/')) {
+      return await handleLibraryHls(request, env, pathname)
     }
 
     // Same story for the party features: their writes are POSTs inside

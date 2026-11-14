@@ -376,9 +376,19 @@ const CALENDAR_PREFIX = '/api/calendar/'
  */
 const OG_CARD_PREFIX = '/api/og/'
 
+/**
+ * Own-library ingest (scripts/library-ingest.mjs). Same exemptions, same
+ * reason: the caller is our own script, machine to machine, uploading a
+ * title's HLS chunks. Nothing is given away — the route demands the
+ * LIBRARY_INGEST_TOKEN secret on every call, and a request without it costs
+ * one constant-time compare.
+ */
+const LIBRARY_INGEST_PREFIX = '/api/library/ingest'
+
 const NOT_MACHINE_PATH =
   `not starts_with(http.request.uri.path, "${CALENDAR_PREFIX}")` +
-  ` and not starts_with(http.request.uri.path, "${OG_CARD_PREFIX}")`
+  ` and not starts_with(http.request.uri.path, "${OG_CARD_PREFIX}")` +
+  ` and not starts_with(http.request.uri.path, "${LIBRARY_INGEST_PREFIX}")`
 
 /**
  * Everything a page needs in order to BE a page.
