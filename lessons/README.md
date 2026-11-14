@@ -186,3 +186,4 @@ with the work, not after.
 | 2026-11-14 | [Link-scanner noise; flags that were not bugs](2026-11-14-posthog-check-link-scanner-noise.md) | Before calling a tracker broken, check 90 days and a second signal for the same action. |
 | 2026-11-14 | [Reely Player down: skip it, say so](2026-11-14-reely-player-down-fallback.md) | A testable dependency gets one cached server answer, read by the UI choice AND the endpoint that spends a trial. |
 | 2026-11-14 | [Prettier was a convention, not a gate](2026-11-14-prettier-gate-in-ci.md) | A rule CLAUDE.md states needs a CI step that fails, or it drifts. |
+| 2026-11-14 | [Two red deploys behind one commit](2026-11-14-two-red-deploys-after-green-commits.md) | A script joining the deploy chain runs once before CI is its first execution. |
