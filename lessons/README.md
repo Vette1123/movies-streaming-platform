@@ -183,3 +183,4 @@ with the work, not after.
 | 2026-11-13 | [Cloudflare product audit](2026-11-13-cloudflare-product-audit.md) | The account had no alerts and no abuse contact, so a takedown or block would have arrived silently; `pnpm cf:alerts` + support@ fix both, DNSSEC is validating |
 | 2026-11-13 | [PostHog scripts read the cache](2026-11-13-posthog-force-async.md) | `refresh: 'async'` serves PostHog's cache; decision scripts send `force_async` |
 | 2026-11-13 | [Sponsor README line ends itself](2026-11-13-sponsor-readme-expiry.md) | A paid README line gets dated markers; a daily Action deletes it, nobody remembers to. |
+| 2026-11-14 | [Link-scanner noise; flags that were not bugs](2026-11-14-posthog-check-link-scanner-noise.md) | Before calling a tracker broken, check 90 days and a second signal for the same action. |

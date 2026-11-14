@@ -113,6 +113,16 @@ describe('shouldDropException', () => {
       )
     ).toBe(true)
   })
+
+  it('drops the link-scanner bridge rejection', () => {
+    expect(
+      shouldDropException(
+        exception(
+          'UnhandledRejection: Non-Error promise rejection captured with value: Object Not Found Matching Id:5, MethodName:update, ParamCount:4'
+        )
+      )
+    ).toBe(true)
+  })
 })
 
 describe('api error status', () => {

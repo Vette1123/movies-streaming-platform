@@ -71,6 +71,10 @@ const NOISE_EXCEPTION_PATTERNS = [
   /\bstandardSelectors\b/,
   /\bdata\.split is not a function/i,
   /Transition was skipped/i,
+  // CefSharp's JS bridge inside a link scanner (Outlook Safe Links and kin)
+  // rejecting with a plain object. 13 Nov: one Windows "visitor", one pageview,
+  // no play. No code of ours calls a bound .NET object.
+  /Object Not Found Matching Id:\d+, MethodName:/i,
 ]
 
 interface ExceptionFrame {
