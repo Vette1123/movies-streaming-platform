@@ -7,6 +7,7 @@ That rejection comes from CefSharp's JavaScript bridge inside a link scanner (Ou
 Links and similar tools). The person behind it had one pageview, no play, Windows, in the
 US. `lib/error-noise.ts` now drops it, and a test pins the rule. The other flags checked
 out as working:
+
 - **Empty `status` in "Handled failures":** this week's 4 api_errors were all expected
   transport failures. A request that got no answer has no status to report.
 - **18 never-fired events:** they did fire within the last 90 days. They are rare at about
