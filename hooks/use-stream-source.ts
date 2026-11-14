@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
+  playableSources,
   REELY_SOURCE_ID,
   rescueSourcesFor,
   resolveSourceId,
   RICH_SOURCE,
+  sourceUp,
   visibleSourcesFor,
   type StreamSource,
 } from '@/config/sources'
@@ -31,6 +33,7 @@ import {
 import { releaseReelyTrial } from '@/lib/pro/ticket-cache'
 import { type SelfHostTarget } from '@/lib/stream-resolver'
 import { useAccount, useAccountIdentity } from '@/hooks/use-account'
+import { useReelyUp } from '@/hooks/use-reely-up'
 
 /**
  * Which provider plays this title, and how to move off one that will not.
@@ -132,6 +135,12 @@ export interface StreamSourceControl {
    */
   canSwitch: boolean
   /**
+   * False while the Reely Player's relay is shut out (/api/stream/health). The
+   * player is then never chosen, remembered into, offered as a trial or hopped
+   * to; the switcher still lists it, marked unavailable.
+   */
+  reelyUp: boolean
+  /**
    * Today's free title on the Reely Player, for non-supporters (see
    * lib/player-trial.ts). `none` for supporters, who have it on every title,
    * and on a deployment without the player.
@@ -159,6 +168,7 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
   // The account's own server choice, from Settings. Read through useAccount
   // (never fetches — the header owns the one refresh) so this costs nothing.
   const { prefs } = useAccount()
+  const reelyUp = useReelyUp()
   const [devicePreference, setDevicePreference] = useState('')
   const [byTitle, setByTitle] = useState<ByTitle>({})
   const [switched, setSwitched] = useState(false)
@@ -201,8 +211,12 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
   // Where the one automatic hop may land. Wider than `sources` for anonymous
   // visitors: a stall is not a choice (config/sources.ts).
   const rescueSources = useMemo(
-    () => rescueSourcesFor(signedIn === true, pro === true),
-    [signedIn, pro]
+    () =>
+      playableSources(
+        rescueSourcesFor(signedIn === true, pro === true),
+        reelyUp
+      ),
+    [signedIn, pro, reelyUp]
   )
 
   const currentId = useMemo(
@@ -215,8 +229,9 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
         accountSource: prefs.source,
         devicePreference,
         pro: pro === true,
+        reelyUp,
       }),
-    [byTitle, devicePreference, mediaKey, prefs.source, pro, sources]
+    [byTitle, devicePreference, mediaKey, prefs.source, pro, reelyUp, sources]
   )
 
   // Supporters have the player on every title; nobody has it where it is not
@@ -225,7 +240,8 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
   const status: TrialStatus | 'none' = trialOffered
     ? trialStatus(trialRecord, mediaKey, trialClock)
     : 'none'
-  const onTrial = status === 'active' && !trialLeft
+  // A down player plays nothing, trial or not: the title goes to the servers.
+  const onTrial = status === 'active' && !trialLeft && reelyUp
 
   // Resolve within the visitor's own list; an id that is not in it (a source
   // remembered before opting out) falls to the site default. A title on its
@@ -235,10 +251,11 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
     (onTrial ? RICH_SOURCE : null) ??
     rescueSources.find((entry) => entry.id === rescuedId) ??
     sources.find((entry) => entry.id === currentId) ??
+    playableSources(sources, reelyUp)[0] ??
     sources[0]
 
   const startTrial = useCallback(() => {
-    if (!trialOffered) return
+    if (!trialOffered || !reelyUp) return
     if (trialStatus(trialRecord, mediaKey, Date.now()) === 'used') return
     const record = { key: mediaKey, at: Date.now() }
     setTrialRecord(record)
@@ -246,7 +263,7 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
     setTrialLeft(false)
     writeTrial(record)
     trackPlayerTrialStarted({ signedIn: signedIn === true })
-  }, [mediaKey, signedIn, trialOffered, trialRecord])
+  }, [mediaKey, reelyUp, signedIn, trialOffered, trialRecord])
 
   const endTrial = useCallback(() => setTrialLeft(true), [])
 
@@ -284,6 +301,8 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
 
   const select = useCallback(
     (id: string, via: 'switcher' | 'stall_auto' = 'switcher') => {
+      // Listed as unavailable, never selectable: nothing to play there.
+      if (!sourceUp(id, reelyUp)) return
       // The Reely Player row in a free account's list is the trial; any
       // other row while on it is a choice to leave it for this title.
       if (id === REELY_SOURCE_ID && trialOffered) {
@@ -330,6 +349,7 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
       mediaKey,
       onTrial,
       pro,
+      reelyUp,
       rescueSources,
       sources,
       startTrial,
@@ -362,6 +382,7 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
     advance,
     switched,
     canSwitch,
+    reelyUp,
     trial: {
       status: exposedTrialStatus(status, trialLeft, noStreamKey === mediaKey),
       start: startTrial,

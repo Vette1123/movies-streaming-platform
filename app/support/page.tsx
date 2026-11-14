@@ -23,6 +23,7 @@ import { buttonVariants } from '@/components/ui/button'
 import { CheckoutHint } from '@/components/support/checkout-link'
 import { FeaturePromise } from '@/components/support/feature-promise'
 import { PlanView } from '@/components/support/plan-view'
+import { PlayerDownNote } from '@/components/support/player-down-note'
 import { SupportCta } from '@/components/support/support-cta'
 import { SupporterCount } from '@/components/support/supporter-count'
 import { TvLinkPreview } from '@/components/support/tv-link-preview'
@@ -329,6 +330,7 @@ function Flagships() {
             <h3 className="mt-4 text-2xl font-semibold tracking-tight md:text-3xl">
               {lead.title}
             </h3>
+            <PlayerDownNote className="mt-3" />
             <p className="mt-3 leading-relaxed text-muted-foreground">
               {lead.body}
             </p>
