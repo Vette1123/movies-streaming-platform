@@ -61,3 +61,6 @@ out
 dev.vars.bak
 # Local agent worktrees are their own checkouts, never this repo's content.
 .claude/worktrees/
+
+# Codex copy of CLAUDE.md, local only (it drifts, and once broke the deploy gate)
+AGENTS.md
