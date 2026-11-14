@@ -7,7 +7,7 @@ export const siteConfig = {
   // Author and creator information
   author: {
     name: 'Mohamed Gado',
-    email: 'boogado@yahoo.com',
+    email: 'booogado@gmail.com',
     website: 'https://www.mohamedgado.com/',
     twitter: '@Sadge1996',
   },
@@ -130,7 +130,7 @@ export const siteConfig = {
     website: 'https://www.mohamedgado.com/',
     socialDownloader: 'https://www.socialdownloader.space/',
   },
-  email: 'boogado@yahoo.com',
+  email: 'booogado@gmail.com',
   websiteURL: 'https://www.reely.space',
   twitterTag: '@Sadge1996',
   image:
