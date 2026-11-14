@@ -29,5 +29,8 @@ jobs:
         run: pnpm typecheck
       - name: Lint
         run: pnpm lint
+      # Without this, hand edits drifted: 6 files failed prettier on main by 2026-11-14.
+      - name: Format
+        run: pnpm prettier:check
       - name: Test
         run: pnpm test

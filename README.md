@@ -154,13 +154,13 @@ When no sponsor is booked, the slot holds [Masareef](https://masareef.mohamedgad
 
 Want to back Reely yourself? [Sponsor me on GitHub](https://github.com/sponsors/Vette1123). Supporters get Pro, switched on by hand ([reely.space/support](https://www.reely.space/support)), and never see the card.
 
-|          |                                                                                             |
-| -------- | ------------------------------------------------------------------------------------------- |
-| Where    | Homepage, every film and episode page, and above the footer on nearly every other page      |
-| Rotation | None: one sponsor holds the slot for the whole booking                                      |
-| Period   | Calendar months, with start and end dates enforced in code                                  |
+|          |                                                                                                                                    |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Where    | Homepage, every film and episode page, and above the footer on nearly every other page                                             |
+| Rotation | None: one sponsor holds the slot for the whole booking                                                                             |
+| Period   | Calendar months, with start and end dates enforced in code                                                                         |
 | Pay      | Per order through your affiliate link, or a fixed month paid once through [GitHub Sponsors](https://github.com/sponsors/Vette1123) |
-| Extras   | Your coupon code on the card, a monthly report of shows, clicks and copies, and a line here |
+| Extras   | Your coupon code on the card, a monthly report of shows, clicks and copies, and a line here                                        |
 
 Sponsor links are marked `rel="sponsored"`. Some links on the site are affiliate links, and Reely may earn a commission on orders made through them. To book the slot, see [reely.space/advertise](https://www.reely.space/advertise) or email booogado@gmail.com.
 

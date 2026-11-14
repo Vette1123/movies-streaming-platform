@@ -19,17 +19,20 @@ export function stripExpired(text, now) {
   let out = text
   for (const [open, id, until] of [...text.matchAll(OPEN)]) {
     const ends = Date.parse(until)
-    if (Number.isNaN(ends)) throw new Error(`sponsor:${id} has an unreadable until=${until}`)
+    if (Number.isNaN(ends))
+      throw new Error(`sponsor:${id} has an unreadable until=${until}`)
     const close = `<!-- /sponsor:${id} -->`
     const start = out.indexOf(open)
     const end = out.indexOf(close, start)
-    if (end === -1) throw new Error(`sponsor:${id} is opened but never closed with ${close}`)
+    if (end === -1)
+      throw new Error(`sponsor:${id} is opened but never closed with ${close}`)
     if (now < ends) {
       kept.push({ id, until })
       continue
     }
     // Take the block's trailing newline and one blank line with it, so no gap is left.
-    const tail = out.slice(end + close.length).match(/^\r?\n(\r?\n)?/)?.[0] ?? ''
+    const tail =
+      out.slice(end + close.length).match(/^\r?\n(\r?\n)?/)?.[0] ?? ''
     out = out.slice(0, start) + out.slice(end + close.length + tail.length)
     removed.push({ id, until })
   }
@@ -41,7 +44,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const before = readFileSync(file, 'utf8')
   const { text, removed, kept } = stripExpired(before, Date.now())
   for (const k of kept) console.log(`kept    sponsor:${k.id} (ends ${k.until})`)
-  for (const r of removed) console.log(`removed sponsor:${r.id} (ended ${r.until})`)
+  for (const r of removed)
+    console.log(`removed sponsor:${r.id} (ended ${r.until})`)
   if (removed.length) writeFileSync(file, text)
   console.log(`${removed.length} removed, ${kept.length} still running`)
 }

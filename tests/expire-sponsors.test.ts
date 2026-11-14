@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { stripExpired } from '../scripts/expire-sponsors.mjs'
 
 const README = [
@@ -26,10 +27,17 @@ describe('stripExpired', () => {
   })
 
   it('fails loudly on a block that is never closed rather than guessing', () => {
-    expect(() => stripExpired('<!-- sponsor:acme until=2026-01-01T00:00:00Z -->\nx', 0)).toThrow(/never closed/)
+    expect(() =>
+      stripExpired('<!-- sponsor:acme until=2026-01-01T00:00:00Z -->\nx', 0)
+    ).toThrow(/never closed/)
   })
 
   it('fails loudly on a date it cannot read', () => {
-    expect(() => stripExpired('<!-- sponsor:acme until=soon -->\n<!-- /sponsor:acme -->', 0)).toThrow(/unreadable/)
+    expect(() =>
+      stripExpired(
+        '<!-- sponsor:acme until=soon -->\n<!-- /sponsor:acme -->',
+        0
+      )
+    ).toThrow(/unreadable/)
   })
 })
