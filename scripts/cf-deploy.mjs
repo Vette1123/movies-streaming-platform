@@ -26,9 +26,8 @@
 // nobody sees. Set CF_PURGE=false to skip it (e.g. a config-only redeploy).
 import { spawnSync } from 'node:child_process'
 import { setDefaultResultOrder } from 'node:dns'
-import { readdirSync } from 'node:fs'
-import { join } from 'node:path'
 
+import { countFiles } from './lib/asset-budget.mjs'
 import { planIndexNow, submitIndexNow } from './lib/indexnow.mjs'
 
 // See scripts/load-env.mjs: AAAA-first resolution turns the purge into a
@@ -60,28 +59,16 @@ function run(args) {
 // attached, instead of a Cloudflare upload error after CI already went green.
 const GUARD_FILES = 19200
 
-function countOutFiles() {
-  const outDir = new URL('../out', import.meta.url)
-  let files = 0
-  const walk = (dir) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const p = join(dir, entry.name)
-      if (entry.isDirectory()) walk(p)
-      else files++
-    }
-  }
-  walk(outDir)
-  return files
-}
-
-const outFiles = countOutFiles()
+const outFiles = countFiles(new URL('../out', import.meta.url))
 if (outFiles > GUARD_FILES) {
   console.error(
     `::error::[cf-deploy] out/ holds ${outFiles} files — past the ${GUARD_FILES} guard (Static Assets caps a project at 20,000; going over fails the upload AFTER a green build). Trim routes: lower listDepth.popular in config/catalogue.json (each page ≈ 20 titles × 6 files, movies and tv), then rebuild.`
   )
   process.exit(1)
 }
-console.log(`[cf-deploy] asset budget: ${outFiles} / 20,000 files in out/ (guard ${GUARD_FILES})`)
+console.log(
+  `[cf-deploy] asset budget: ${outFiles} / 20,000 files in out/ (guard ${GUARD_FILES})`
+)
 
 // The diff against the live site has to be taken BEFORE the deploy: afterwards
 // "live" is this build. Never fails the deploy; null means "submit everything".
