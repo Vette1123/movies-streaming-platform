@@ -53,7 +53,7 @@ import { blockedTitleEntry } from '@/lib/blocked-titles'
 import { loadDirectory } from '@/lib/community/routes'
 import { smartQuery } from '@/lib/filter-query'
 import { isImdbId } from '@/lib/imdb-id'
-import { aggregateRating, jsonLdText, titleSameAs } from '@/lib/json-ld'
+import { jsonLdText, tailTitleJsonLd } from '@/lib/json-ld'
 import {
   handleLibraryHls,
   handleLibraryIngest,
@@ -987,7 +987,16 @@ function buildMeta(type, id, details, siteUrl) {
 }
 
 function metaTags(
-  { heading, description, image, imageWidth, imageHeight, canonical, robots },
+  {
+    heading,
+    description,
+    image,
+    imageWidth,
+    imageHeight,
+    canonical,
+    robots,
+    detail,
+  },
   ogType
 ) {
   const tags = [
@@ -1014,6 +1023,14 @@ function metaTags(
   tags.push(`<meta property="og:image" content="${escapeHtml(shareImage)}">`)
   tags.push(`<meta name="twitter:image" content="${escapeHtml(shareImage)}">`)
   tags.push(`<meta property="og:image:alt" content="${escapeHtml(heading)}">`)
+  // Prerendered pages get this from their image objects' `alt`.
+  tags.push(`<meta name="twitter:image:alt" content="${escapeHtml(heading)}">`)
+  // What Next emits for openGraph.releaseDate on a prerendered title page.
+  if (detail?.released) {
+    tags.push(
+      `<meta property="video:release_date" content="${escapeHtml(detail.released)}">`
+    )
+  }
   // Set only where the size is known exactly: the composed mosaic, and a
   // title's share image (lib/media.ts getMediaShareImage). Stating it lets an
   // unfurler lay the card out before the image lands — stating it wrongly
@@ -1415,28 +1432,20 @@ async function handleDetailFallback(match, request, env, ctx, url) {
   // The same entity the prerendered pages describe, from the same fields. A
   // Movie with a genre, a date, a runtime and a rating is a thing Google can
   // file; a Movie with a name and a URL looks like a template.
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': type === 'tv' ? 'TVSeries' : 'Movie',
+  const jsonLd = tailTitleJsonLd({
+    type,
+    id,
     name: meta.title,
+    canonical: meta.canonical,
     description: detail.overview || meta.description,
-    url: meta.canonical,
-    ...(meta.image ? { image: meta.image } : {}),
-    ...(details.genres?.length
-      ? { genre: details.genres.map((genre) => genre.name) }
-      : {}),
-    ...(detail.released ? { datePublished: detail.released } : {}),
-    ...(detail.duration ? { duration: detail.duration } : {}),
-    ...(detail.rating
-      ? {
-          aggregateRating: aggregateRating(
-            detail.rating.value,
-            detail.rating.count
-          ),
-        }
-      : {}),
-    sameAs: titleSameAs(type, id, details.imdb_id),
-  }
+    image: meta.image,
+    genres: details.genres?.map((genre) => genre.name),
+    released: detail.released,
+    duration: detail.duration,
+    rating: detail.rating,
+    originalLanguage: details.original_language,
+    imdbId: details.imdb_id,
+  })
   const ogType = type === 'tv' ? 'video.tv_show' : 'video.movie'
   const siteUrl = siteUrlOf(url)
   const listPath = type === 'tv' ? '/tv-shows' : '/movies'

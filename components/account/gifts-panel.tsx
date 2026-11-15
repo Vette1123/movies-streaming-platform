@@ -13,6 +13,7 @@ import {
 import { REFERRALS_PER_MONTH } from '@/lib/billing/gifts'
 import { invitePath } from '@/lib/invite'
 import { useAccount } from '@/hooks/use-account'
+import { useCopy } from '@/hooks/use-copy'
 import { useShare } from '@/hooks/use-share'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -252,7 +253,7 @@ function GiveAway({
 }
 
 function CodeRow({ code }: { code: string }) {
-  const [copied, setCopied] = useState(false)
+  const { copied, copy } = useCopy()
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -263,14 +264,13 @@ function CodeRow({ code }: { code: string }) {
         variant="ghost"
         size="icon"
         aria-label={`Copy ${code}`}
-        onClick={() => {
-          void navigator.clipboard?.writeText(code)
-          setCopied(true)
-          setTimeout(() => setCopied(false), 2000)
-        }}
+        onClick={() => void copy(code)}
       >
         {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
       </Button>
+      <span role="status" className="sr-only">
+        {copied ? `${code} copied` : ''}
+      </span>
     </div>
   )
 }

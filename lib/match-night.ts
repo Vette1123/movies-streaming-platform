@@ -2,6 +2,8 @@
 // D1 and fetch so it is unit-testable — the SQL groups likes per media, this
 // module decides what the client does with them.
 
+import { storageGet, storageSet } from '@/lib/safe-storage'
+
 export interface SwipeRecord {
   swiper: string
   mediaId: number
@@ -133,10 +135,10 @@ export const dedupeCards = (cards: MatchCard[]): MatchCard[] => {
 /** A stable per-browser swiper identity — anonymous, no account involved. */
 export const swiperIdentity = (): string => {
   const KEY = 'match-night-swiper'
-  let id = localStorage.getItem(KEY)
+  let id = storageGet(KEY)
   if (!id) {
     id = `s-${Math.random().toString(36).slice(2, 10)}`
-    localStorage.setItem(KEY, id)
+    storageSet(KEY, id)
   }
   return id
 }

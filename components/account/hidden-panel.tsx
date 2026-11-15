@@ -105,7 +105,8 @@ export function HiddenPanel() {
             <button
               type="button"
               onClick={() => unhide(item.id)}
-              className="text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
+              aria-label={`Show ${item.title} again`}
+              className="tap-target inline-flex items-center self-start rounded-sm py-1 text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
             >
               Show again
             </button>

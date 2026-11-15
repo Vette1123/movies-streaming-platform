@@ -16,6 +16,7 @@ import { toast } from 'sonner'
 import { trackApiError, trackFeatureUsed } from '@/lib/analytics'
 import { buildIcs, type UpcomingItem } from '@/lib/upcoming/ics'
 import { useAccount } from '@/hooks/use-account'
+import { useCopy } from '@/hooks/use-copy'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { SkeletonRows } from '@/components/ui/skeleton'
@@ -262,7 +263,7 @@ function FeedSection({
   items: UpcomingItem[]
   onRotate: () => Promise<boolean>
 }) {
-  const [copied, setCopied] = useState<'ics' | 'rss' | null>(null)
+  const { copied, copy } = useCopy<'ics' | 'rss'>()
 
   if (!feedPath) return null
 
@@ -305,11 +306,9 @@ function FeedSection({
       <div className="flex flex-wrap items-center gap-2">
         <Button
           size="sm"
-          onClick={() => {
-            void navigator.clipboard?.writeText(url)
-            trackFeatureUsed({ feature: 'calendar', action: 'copied_ics' })
-            setCopied('ics')
-            setTimeout(() => setCopied(null), 2000)
+          onClick={async () => {
+            if (await copy(url, 'ics'))
+              trackFeatureUsed({ feature: 'calendar', action: 'copied_ics' })
           }}
         >
           {copied === 'ics' ? (
@@ -346,13 +345,9 @@ function FeedSection({
           <Button
             size="sm"
             variant="outline"
-            onClick={() => {
-              void navigator.clipboard?.writeText(
-                `${window.location.origin}${rssPath}`
-              )
-              trackFeatureUsed({ feature: 'calendar', action: 'copied_rss' })
-              setCopied('rss')
-              setTimeout(() => setCopied(null), 2000)
+            onClick={async () => {
+              if (await copy(`${window.location.origin}${rssPath}`, 'rss'))
+                trackFeatureUsed({ feature: 'calendar', action: 'copied_rss' })
             }}
           >
             {copied === 'rss' ? (

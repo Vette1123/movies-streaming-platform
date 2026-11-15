@@ -7,6 +7,7 @@ import { trackApiError, trackFeatureUsed, trackShared } from '@/lib/analytics'
 import { presetMediaType, type FilterPreset } from '@/lib/filter-presets'
 import type { ListItem, StoredList } from '@/lib/lists/routes'
 import { useAccount } from '@/hooks/use-account'
+import { useCopy } from '@/hooks/use-copy'
 import { useLocalStorage, type WatchedItem } from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -388,18 +389,16 @@ function ListEditor({
 }
 
 function ShareLink({ slug }: { slug: string }) {
-  const [copied, setCopied] = useState(false)
+  const { copied, copy } = useCopy()
   const url =
     typeof window === 'undefined' ? '' : `${location.origin}/l/${slug}`
 
   return (
     <Button
       variant="secondary"
-      onClick={() => {
-        void navigator.clipboard?.writeText(url)
-        trackShared({ surface: 'list_link', method: 'clipboard' })
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
+      onClick={async () => {
+        if (await copy(url))
+          trackShared({ surface: 'list_link', method: 'clipboard' })
       }}
     >
       {copied ? (
@@ -492,7 +491,7 @@ function Rating({
           aria-label={`${score} out of 10`}
           aria-pressed={value === score}
           onClick={() => onChange(value === score ? 0 : score)}
-          className="group p-0.5"
+          className="group tap-target grid place-items-center rounded-sm p-1 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
         >
           <Star
             className={

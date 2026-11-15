@@ -18,6 +18,7 @@ import {
 import { cardFileName, renderStatsCard } from '@/lib/stats-card'
 import { localFullDate, localMonthYear } from '@/lib/utils'
 import { useAccount } from '@/hooks/use-account'
+import { useCopy } from '@/hooks/use-copy'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useMounted } from '@/hooks/use-mounted'
 import { useRuntimeBackfill } from '@/hooks/use-runtime-backfill'
@@ -38,7 +39,7 @@ export function StatsPanel() {
   const [history] = useLocalStorage('watchedItems', [])
   const [completed] = useLocalStorage('completedItems', [])
   const [watchlist] = useLocalStorage('watchlist', [])
-  const [copied, setCopied] = useState(false)
+  const { copied, copy } = useCopy()
   // null is all time, and is the default: the whole library is the honest
   // answer to "how much have I watched", and a year is the thing you post.
   const [year, setYear] = useState<number | null>(null)
@@ -144,11 +145,9 @@ export function StatsPanel() {
       <div className="flex flex-wrap items-center gap-3">
         <Button
           variant="outline"
-          onClick={() => {
-            void navigator.clipboard?.writeText(summary)
-            trackShared({ surface: 'stats_summary', method: 'clipboard' })
-            setCopied(true)
-            setTimeout(() => setCopied(false), 2000)
+          onClick={async () => {
+            if (await copy(summary))
+              trackShared({ surface: 'stats_summary', method: 'clipboard' })
           }}
         >
           {copied ? (
