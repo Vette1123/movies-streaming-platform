@@ -23,6 +23,18 @@ describe('relay canary', () => {
     expect(selftestPassed(undefined)).toBe(false)
   })
 
+  it('passes the progressive-file walk the vidlink provider answers', () => {
+    const file = {
+      ok: true,
+      master: { isFile: true, contentType: 'video/mp4', host: 'bcdn.test' },
+      segment: { status: 206, bytes: 1024, ms: 120 },
+    }
+    expect(selftestPassed(file)).toBe(true)
+    expect(selftestPassed({ ...file, segment: { status: 200 } })).toBe(true)
+    expect(selftestPassed({ ...file, segment: { status: 403 } })).toBe(false)
+    expect(selftestPassed({ ...file, master: {} })).toBe(false)
+  })
+
   it("names the provider's refusal, the way the Nov 7 outage read", () => {
     const error =
       'Error: no usable stream url (Error: /generate.php -> 403 "invalid or mismatched api token" len=31 server=cloudflare)'

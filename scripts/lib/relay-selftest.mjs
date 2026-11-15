@@ -13,10 +13,16 @@ export const HEALTH_QUERY = 'ty=movie&id=550'
 /**
  * A /selftest answer is a pass only when the walk reached a real segment.
  * `ok: true` alone means nothing threw; the segment status is the proof.
+ *
+ * Two walks pass: the HLS one (vidsrcme — a rewritten playlist whose segment
+ * fetch answered 200) and the progressive-file one (vidlink — a bare ranged
+ * request at a signed mp4 that answered 200 or 206 video/*).
  */
 export function selftestPassed(stages) {
   return Boolean(
-    stages?.ok && stages.master?.isM3U && stages.segment?.status === 200
+    stages?.ok &&
+    (stages.master?.isM3U || stages.master?.isFile) &&
+    [200, 206].includes(stages.segment?.status)
   )
 }
 
@@ -25,7 +31,8 @@ export function selftestReason(stages) {
   if (!stages) return 'no answer'
   if (stages.coolingFor) return `rate-limited, cooling ${stages.coolingFor}s`
   if (stages.error) return stages.error
-  if (!stages.master?.isM3U) return 'master is not a playlist'
+  if (!stages.master?.isM3U && !stages.master?.isFile)
+    return 'master is neither a playlist nor a file'
   return `segment ${stages.segment?.status ?? 'missing'}`
 }
 
