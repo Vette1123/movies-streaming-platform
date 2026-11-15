@@ -168,7 +168,9 @@ export function useStreamSource(mediaKey: string): StreamSourceControl {
   // The account's own server choice, from Settings. Read through useAccount
   // (never fetches — the header owns the one refresh) so this costs nothing.
   const { prefs } = useAccount()
-  const reelyUp = useReelyUp()
+  // Per title: a library title plays with the relay down (tier 0), while a
+  // provider-bound title needs the relay's walk. The Worker composes them.
+  const reelyUp = useReelyUp(mediaKey)
   const [devicePreference, setDevicePreference] = useState('')
   const [byTitle, setByTitle] = useState<ByTitle>({})
   const [switched, setSwitched] = useState(false)

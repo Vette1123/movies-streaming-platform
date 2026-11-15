@@ -27,6 +27,23 @@ export interface RelayHealth {
 }
 
 /**
+ * The per-title answer: the relay's verdict composed with library membership.
+ * Tier 0 carries no relay hop, so a title in our own library plays with the
+ * relay down - the health answer must say so, or the switcher hides the one
+ * thing that works during a provider outage.
+ */
+export interface ReelyHealth extends RelayHealth {
+  /** The exact title asked about is in the own library. */
+  library: boolean
+}
+
+export const composeReelyHealth = (
+  relay: RelayHealth,
+  inLibrary: boolean
+): ReelyHealth =>
+  inLibrary ? { up: true, library: true } : { ...relay, library: false }
+
+/**
  * How long one answer stands, per Cloudflare colo. Five minutes: short enough
  * that a recovery reaches supporters well inside the canary's hour, long
  * enough that the walk (one real segment through the provider when healthy)

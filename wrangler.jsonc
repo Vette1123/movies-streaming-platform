@@ -98,5 +98,12 @@
     // Own-library mode: the one origin allowed to read the HLS routes
     // cross-origin (the player iframe). Same-origin site requests need no CORS.
     "LIBRARY_PLAYER_ORIGIN": "https://reely-pro-player.boogado66.workers.dev",
+    // Tier-0 media plane host. The health route and the ticket gate read the
+    // library catalog from it to know which titles play without the relay
+    // (lib/pro/library-catalog.ts). The catalog file NAME is the obscurity
+    // boundary and rides the LIBRARY_CATALOG_PATH secret - never a var, never
+    // the client bundle. Unset either one and tier 0 is invisible here,
+    // exactly as it is in the player.
+    "LIBRARY_HOST": "https://reely-library.boogado66.workers.dev",
   },
 }

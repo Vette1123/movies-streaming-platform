@@ -73,8 +73,18 @@ import {
 } from '@/lib/og/mosaic'
 import { shareImageOf } from '@/lib/og/share-image'
 import { playerParams } from '@/lib/playback-options'
+import {
+  catalogHas,
+  fetchLibraryCatalog,
+  healthTargetOf,
+  LIBRARY_CATALOG_TTL_S,
+} from '@/lib/pro/library-catalog'
 import { signEntryTicket } from '@/lib/pro/playback-ticket'
-import { checkRelayHealth, HEALTH_TTL_S } from '@/lib/pro/relay-health'
+import {
+  checkRelayHealth,
+  composeReelyHealth,
+  HEALTH_TTL_S,
+} from '@/lib/pro/relay-health'
 import { providerHasNoStream } from '@/lib/pro/stream-availability'
 import {
   releaseTrial,
@@ -485,12 +495,58 @@ async function relayHealthCached(ctx, env, origin) {
   }
 }
 
+/**
+ * Is this title in the own-library media plane (tier 0)?
+ *
+ * One catalog fetch per colo per LIBRARY_CATALOG_TTL_S, keyed off a synthetic
+ * URL so a per-title question can never re-fetch it - the same fixed-key rule
+ * relayHealthCached lives by. A 5-min-old membership answer is the same lag a
+ * freshly ingested title already accepts on the player side.
+ */
+async function libraryHasCached(ctx, env, origin, target) {
+  const response = await cached(
+    new Request(`${origin}/api/library-catalog`),
+    ctx,
+    async () =>
+      Response.json(
+        await fetchLibraryCatalog(env?.LIBRARY_HOST, env?.LIBRARY_CATALOG_PATH),
+        {
+          headers: {
+            'Cache-Control': `public, max-age=${LIBRARY_CATALOG_TTL_S}`,
+          },
+        }
+      )
+  )
+  let catalog
+  try {
+    catalog = await response.json()
+  } catch {
+    // An unreadable cache entry is not evidence of absence: the player's own
+    // tier-0 lookup is the authority that decides a play, and it reads the
+    // file fresh on every resolve.
+    return false
+  }
+  return catalogHas(catalog, target.type, target.id)
+}
+
 async function handleApi(pathname, url, request, ctx, env) {
   const q = url.searchParams
 
   if (pathname === '/api/stream/health') {
     const health = await relayHealthCached(ctx, env, url.origin)
-    return Response.json(health, {
+    // A per-title question composes the two facts the site can test: the
+    // relay's walk, and whether the title sits in our own library. Tier 0
+    // carries no relay hop, so a library title plays with the relay down -
+    // exactly the one thing the 2026-11-13 outage taught the switcher to
+    // hide. The bare question (support page, /pro) stays the relay's answer.
+    const target = healthTargetOf(q.get('ty'), q.get('id'))
+    if (!target) {
+      return Response.json(health, {
+        headers: { 'Cache-Control': `public, max-age=${HEALTH_TTL_S}` },
+      })
+    }
+    const inLibrary = await libraryHasCached(ctx, env, url.origin, target)
+    return Response.json(composeReelyHealth(health, inLibrary), {
       headers: { 'Cache-Control': `public, max-age=${HEALTH_TTL_S}` },
     })
   }
@@ -1764,8 +1820,16 @@ async function handleProTicket(request, env, url, ctx) {
   // The player cannot play anything while the relay is shut out (2026-11-13).
   // Refused here, before ticketDenial, so a free visitor's daily title is not
   // spent on a dead frame; the client hears 503 and plays the next server.
+  // A title in our own library is the exception: tier 0 carries no relay hop,
+  // so the ticket it costs is spendable. Refusing it while the provider
+  // outage runs would lock visitors out of the one thing that works (and
+  // blocked the test title through 2026-11-15).
   const relay = await relayHealthCached(ctx, env, url.origin)
-  if (!relay.up) {
+  const inLibrary = await libraryHasCached(ctx, env, url.origin, {
+    type,
+    id,
+  })
+  if (!relay.up && !inLibrary) {
     return new Response(
       JSON.stringify({
         success: false,

@@ -59,3 +59,27 @@ The relay stays as it is. The site now copes with it being down:
   player from every supporter; the server's refusal is what protects the trial.
 - A rate-limit cooldown is not an outage. Do not take a feature away for 90 seconds.
 - Mark an unavailable paid feature in place. Do not hide it, and do not rewrite it.
+
+## 2026-11-15: the exception the design needed the next day
+
+Tier 0 (the own-library media plane) broke the "relay down = player down"
+equivalence. A library title carries **no relay hop at all**, so it plays while
+the relay is shut out - and the health answer that skipped the player for every
+title was hiding the one thing that worked. The rule is now per title:
+
+- `GET /api/stream/health?ty=movie&id=550` composes the two facts the site can
+  test (`composeReelyHealth`): the relay's walk AND library membership, read
+  from the same catalog file the player reads (`lib/pro/library-catalog.ts`,
+  one fetch per colo per 5 min). The bare question stays the relay's answer.
+- The ticket gate (`handleProTicket`) spends a trial on a library title with
+  the relay down; the 503 `relay-down` remains for provider-bound titles.
+- The client asks per title (`useReelyUp(mediaKey)`; `movie:550` /
+  `series:1399` mapped to the player's `movie`/`tv` vocabulary by
+  `healthUrlFor`).
+
+Also this day: the player's `TICKET_SECRET` was hand-set once and had drifted
+from the site's `PLAYBACK_TICKET_SECRET` - every `/api/*` route answered
+`{"error":"unauthorized"}` with a 200-shaped auth failure that looked exactly
+like a broken player. Fixed by provisioning the secret through the player's CI
+(`printf '%s' | wrangler secret put`), sourced from the site repo's value.
+Rule: the two workers hold ONE secret, and CI is the only way it moves.
