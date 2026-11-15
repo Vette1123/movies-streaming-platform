@@ -2,6 +2,8 @@
 
 import { useCallback, useSyncExternalStore } from 'react'
 
+import { storageGet, storageSet } from '@/lib/safe-storage'
+
 // Persisted user preference: should the hero autoplay muted trailer previews?
 // Tri-state on purpose — 'on' / 'off' / unset. Unset falls back to `defaultOn`,
 // which the caller derives from the device tier (weak phones default off, see
@@ -14,8 +16,7 @@ const KEY = 'reely:hero-autoplay'
 const listeners = new Set<() => void>()
 
 function isOn(defaultOn: boolean): boolean {
-  if (typeof window === 'undefined') return defaultOn
-  const stored = window.localStorage.getItem(KEY)
+  const stored = storageGet(KEY)
   if (stored === 'on') return true
   if (stored === 'off') return false
   return defaultOn
@@ -36,7 +37,7 @@ function subscribe(cb: () => void): () => void {
 
 export function setHeroAutoplay(on: boolean): void {
   if (typeof window === 'undefined') return
-  window.localStorage.setItem(KEY, on ? 'on' : 'off')
+  storageSet(KEY, on ? 'on' : 'off')
   // Notify same-tab subscribers (the storage event only fires in *other* tabs).
   listeners.forEach((l) => l())
 }

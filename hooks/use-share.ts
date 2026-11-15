@@ -4,6 +4,7 @@ import * as React from 'react'
 import { toast } from 'sonner'
 
 import { trackShared } from '@/lib/analytics'
+import { copyText } from '@/lib/copy-text'
 import { shareUrl } from '@/lib/share-url'
 
 interface ShareInput {
@@ -97,7 +98,10 @@ export const useShare = () => {
         // a page without transient activation, a locked-down webview). Before
         // this, the tap did nothing at all and said nothing.
       }
-      await navigator.clipboard?.writeText(url)
+      if (!(await copyText(url))) {
+        toast.error("Couldn't copy the link.")
+        return false
+      }
       toast(copied)
       trackShared({ surface, method: 'clipboard' })
       return false

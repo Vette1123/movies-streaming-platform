@@ -103,7 +103,10 @@ describe('tail-id fallback schema', () => {
   // ~13,900 detail URLs are served by the Worker, not prerendered; a sameAs
   // only on the baked ~1,000 left most of the catalogue without it.
   const worker = readFileSync('cloudflare/worker.js', 'utf8')
+  // tailTitleJsonLd emits sameAs (tests/tail-json-ld.test.ts pins the node);
+  // this pins that the Worker builds through it and hands it the IMDb id.
   it('names the same sameAs as the prerendered pages', () => {
-    expect(worker).toContain('sameAs: titleSameAs(type, id, details.imdb_id)')
+    expect(worker).toContain('const jsonLd = tailTitleJsonLd({')
+    expect(worker).toContain('imdbId: details.imdb_id')
   })
 })

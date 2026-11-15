@@ -187,3 +187,4 @@ with the work, not after.
 | 2026-11-14 | [Reely Player down: skip it, say so](2026-11-14-reely-player-down-fallback.md) | A testable dependency gets one cached server answer, read by the UI choice AND the endpoint that spends a trial. |
 | 2026-11-14 | [Prettier was a convention, not a gate](2026-11-14-prettier-gate-in-ci.md) | A rule CLAUDE.md states needs a CI step that fails, or it drifts. |
 | 2026-11-14 | [Two red deploys behind one commit](2026-11-14-two-red-deploys-after-green-commits.md) | A script joining the deploy chain runs once before CI is its first execution. |
+| 2026-11-15 | [UX, PostHog and SEO sweep](2026-11-15-ux-seo-sweep.md) | A second hand-written copy of a schema node drifts; build both from one function or pin them with a parity test. |

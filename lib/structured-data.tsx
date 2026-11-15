@@ -253,7 +253,11 @@ export const movieJsonLd = (movie: MovieSchemaInput) => {
 
   if (movie.description) schema.description = movie.description
   if (movie.tagline) schema.alternativeHeadline = movie.tagline
-  if (movie.releaseDate) schema.datePublished = movie.releaseDate
+  if (movie.releaseDate) {
+    schema.datePublished = movie.releaseDate
+    // Google's Movie guide recommends dateCreated; same date, same claim.
+    schema.dateCreated = movie.releaseDate
+  }
   if (movie.imageUrl) schema.image = movie.imageUrl
   if (movie.genres?.length) schema.genre = movie.genres
   if (movie.runtime) {

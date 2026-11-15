@@ -131,7 +131,7 @@ export function SavedFilters({
                 <button
                   type="button"
                   onClick={() => apply(preset.query)}
-                  className="py-1"
+                  className="tap-target py-1.5"
                 >
                   {preset.name}
                 </button>
@@ -156,6 +156,7 @@ export function SavedFilters({
             value={name}
             maxLength={MAX_PRESET_NAME}
             placeholder="Name this filter"
+            aria-label="Filter name"
             onChange={(event) => setName(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') void save()
@@ -178,7 +179,7 @@ export function SavedFilters({
           type="button"
           disabled={!hasActiveFilters || presets.length >= MAX_PRESETS}
           onClick={() => setNaming(true)}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+          className="tap-target flex items-center gap-1.5 py-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
         >
           <BookmarkPlus className="size-3.5" />
           {presets.length >= MAX_PRESETS

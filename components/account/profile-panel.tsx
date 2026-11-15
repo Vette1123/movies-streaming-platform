@@ -6,6 +6,7 @@ import { Check, Copy, ExternalLink } from 'lucide-react'
 import { trackApiError, trackFeatureUsed } from '@/lib/analytics'
 import { normaliseHandle } from '@/lib/profile/routes'
 import { useAccount } from '@/hooks/use-account'
+import { useCopy } from '@/hooks/use-copy'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -37,7 +38,7 @@ export function ProfilePanel() {
   const [bio, setBio] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
+  const { copied, copy } = useCopy()
 
   const apply = useCallback((next: Settings) => {
     setSettings(next)
@@ -142,32 +143,35 @@ export function ProfilePanel() {
             <code className="min-w-0 flex-1 truncate rounded-md bg-muted px-3 py-2 text-sm">
               {url}
             </code>
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label="Copy your profile link"
-              onClick={() => {
-                void navigator.clipboard?.writeText(url ?? '')
-                setCopied(true)
-                setTimeout(() => setCopied(false), 2000)
-              }}
-            >
-              {copied ? (
-                <Check className="size-4" />
-              ) : (
-                <Copy className="size-4" />
-              )}
-            </Button>
-            <Button variant="outline" size="icon" asChild>
-              <a
-                href={url ?? '#'}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Open your profile"
-              >
-                <ExternalLink className="size-4" />
-              </a>
-            </Button>
+            {url ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Copy your profile link"
+                  onClick={() => void copy(url)}
+                >
+                  {copied ? (
+                    <Check className="size-4" />
+                  ) : (
+                    <Copy className="size-4" />
+                  )}
+                </Button>
+                <span role="status" className="sr-only">
+                  {copied ? 'Profile link copied' : ''}
+                </span>
+                <Button variant="outline" size="icon" asChild>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Open your profile"
+                  >
+                    <ExternalLink className="size-4" />
+                  </a>
+                </Button>
+              </>
+            ) : null}
           </div>
           <p className="text-sm leading-relaxed text-muted-foreground">
             Names are kept for good. This one is a link people may already have

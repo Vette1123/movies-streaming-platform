@@ -7,7 +7,6 @@ import { resolveMediaType } from '@/lib/media'
 import { feedAlternate, withSiteSocial } from '@/lib/page-metadata'
 import { getRatingsForItems } from '@/lib/ratings'
 import {
-  breadcrumbJsonLd,
   collectionPageJsonLd,
   JsonLd,
   webApplicationJsonLd,
@@ -117,7 +116,6 @@ async function IndexPage() {
           url: siteConfig.websiteURL,
         })}
       />
-      <JsonLd data={breadcrumbJsonLd([{ name: 'Home', url: '/' }])} />
       <JsonLd data={webApplicationJsonLd} />
       {/* Hero and rails get their own boundaries: a failure in the carousel
           (or in one of its lazily-loaded chunks) used to blank the entire

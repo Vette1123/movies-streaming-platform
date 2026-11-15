@@ -163,7 +163,7 @@ export const FilterActiveChips = ({
           key={chip.key}
           type="button"
           onClick={chip.onRemove}
-          className="group flex items-center gap-1.5 rounded-full border border-white/12 bg-secondary py-1 pr-2 pl-3 text-xs font-medium text-secondary-foreground shadow-sm transition duration-200 hover:border-destructive/60 hover:bg-destructive/15 hover:text-destructive motion-reduce:transition-none"
+          className="group flex items-center gap-1.5 rounded-full border border-white/12 bg-secondary py-1.5 pr-2 pl-3 text-xs font-medium text-secondary-foreground shadow-sm transition duration-200 hover:border-destructive/60 hover:bg-destructive/15 hover:text-destructive motion-reduce:transition-none"
         >
           {chip.label}
           <span className="flex size-4 items-center justify-center rounded-full text-muted-foreground transition-colors group-hover:bg-foreground/10 group-hover:text-foreground">
@@ -174,7 +174,7 @@ export const FilterActiveChips = ({
       <button
         type="button"
         onClick={clearFilters}
-        className="px-2 py-1 text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        className="tap-target px-2 py-1.5 text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
       >
         Clear all
       </button>
