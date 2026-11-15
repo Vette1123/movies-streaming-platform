@@ -600,9 +600,10 @@ function SignedOut({
       )}
 
       <div className="space-y-3">
-        <h2 className="text-2xl font-semibold tracking-tight">
+        {/* The page's h1 when signed out; signed in, Identity carries it. */}
+        <h1 className="text-2xl font-semibold tracking-tight">
           Sign in, or do not. Reely works either way.
-        </h2>
+        </h1>
         <p className="max-w-[60ch] leading-relaxed text-muted-foreground">
           Everything on this site is free and needs no account. Signing in adds
           one thing: somewhere to keep your library that is not this browser,

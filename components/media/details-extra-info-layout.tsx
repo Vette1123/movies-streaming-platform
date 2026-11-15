@@ -2,10 +2,11 @@ import React from 'react'
 import Link from 'next/link'
 
 import { MovieGenre } from '@/types/movie-genre'
-import { SEARCH_ACTOR_GOOGLE } from '@/lib/constants'
+import { personSearchHref } from '@/lib/constants'
 import { aboutHeading } from '@/lib/seo-title'
 import { cn } from '@/lib/utils'
 import { Icons } from '@/components/icons'
+import { filledInfoRows } from '@/components/media/extra-info'
 import { GenreChips } from '@/components/media/genre-chips'
 
 // One row of the key/value info grid. `value` is a string for movies and can be
@@ -48,7 +49,7 @@ export const DetailsExtraInfoLayout = ({
         {aboutHeading(title)}
       </h2>
       <p className="max-w-[68ch] text-sm leading-relaxed text-foreground/90 sm:text-base lg:text-lg">
-        {overview}
+        {overview?.trim() || 'No synopsis yet.'}
       </p>
       <GenreChips genres={genres} mediaType={mediaType} className="mt-5" />
       {/* A definition list: these are labelled facts, and a screen reader
@@ -56,13 +57,13 @@ export const DetailsExtraInfoLayout = ({
           rather than half the panel, so a value sits next to its name instead
           of across a gutter. */}
       <dl className="my-5 grid max-w-xl grid-cols-[auto_1fr] gap-x-8 gap-y-2.5 text-sm sm:text-base">
-        {extraInfo.map((info) => (
+        {filledInfoRows(extraInfo).map((info) => (
           <React.Fragment key={info.name}>
             <dt className="text-muted-foreground">{info.name}</dt>
             <dd className="font-medium">
               {info.isLink ? (
                 <Link
-                  href={`${SEARCH_ACTOR_GOOGLE}${info.value}`}
+                  href={personSearchHref(String(info.value))}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group inline-flex w-fit items-center gap-1 transition-colors hover:text-cyan-200"

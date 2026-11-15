@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { storageGet, storageSet } from '@/lib/safe-storage'
+import { storageGet, storageRemove, storageSet } from '@/lib/safe-storage'
 
 const g = globalThis as unknown as { window?: unknown }
 
@@ -13,6 +13,7 @@ describe('safe storage', () => {
     g.window = { localStorage: null }
     expect(storageGet('k')).toBeNull()
     expect(() => storageSet('k', 'v')).not.toThrow()
+    expect(() => storageRemove('k')).not.toThrow()
   })
 
   it('swallows a throwing store', () => {

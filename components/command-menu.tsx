@@ -184,6 +184,57 @@ const mediaHref = (movie: MediaType) =>
 // "select the first result" step must agree on it exactly.
 const resultValue = (movie: MediaType) => `${movie.id}-${movie.title}`
 
+const THUMB_FRAME =
+  'relative aspect-video h-[54px] shrink-0 overflow-hidden rounded-md bg-muted shadow-sm ring-1 ring-border/60'
+
+/** The still for a result: backdrop, else poster, else null (monogram tile). */
+const resultThumbSource = (movie: MediaType) => {
+  if (movie?.backdrop_path)
+    return {
+      src: getThumbBackdropURL(movie.backdrop_path),
+      fit: 'object-cover',
+    }
+  if (movie?.poster_path)
+    return {
+      src: getThumbPosterURL(movie.poster_path),
+      fit: 'object-cover object-top',
+    }
+  return null
+}
+
+// alt="": the title is printed right beside it in the same option, so a
+// screen reader would otherwise read it twice.
+function ResultThumb({ movie }: { movie: MediaType }) {
+  const source = resultThumbSource(movie)
+  if (!source)
+    return (
+      <div
+        style={tintBackground(movie?.title ?? '')}
+        className="flex aspect-video h-[54px] shrink-0 items-center justify-center rounded-md text-white/80 shadow-sm ring-1 ring-white/10 ring-inset"
+      >
+        {movie?.media_type === 'tv' ? (
+          <Tv className="size-4" aria-hidden />
+        ) : (
+          <Film className="size-4" aria-hidden />
+        )}
+      </div>
+    )
+  return (
+    <div className={THUMB_FRAME}>
+      <Image
+        src={source.src}
+        alt=""
+        fill
+        sizes="96px"
+        className={source.fit}
+        draggable={false}
+        unoptimized
+        onError={(e) => handleImageFallbackError(e.currentTarget)}
+      />
+    </div>
+  )
+}
+
 export function CommandMenu({ ...props }: CommandDialogProps) {
   const { open, setOpen, runCommand, isLoading, setIsLoading } =
     useCMDKListener()
@@ -502,7 +553,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                           removeRecent(term)
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
-                        className="ml-2 shrink-0 cursor-pointer rounded p-0.5 text-muted-foreground/60 opacity-0 transition group-hover/recent:opacity-100 hover:text-foreground focus-visible:opacity-100"
+                        className="tap-target ml-2 shrink-0 cursor-pointer rounded p-1.5 text-muted-foreground/60 opacity-0 transition group-hover/recent:opacity-100 group-data-[selected=true]/recent:opacity-100 hover:text-foreground focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
                       >
                         <X className="size-3.5" />
                       </button>
@@ -639,48 +690,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                     onFocus={() => router.prefetch(href)}
                   >
                     <div className="flex w-full min-w-0 flex-nowrap items-center gap-3 overflow-hidden">
-                      {movie?.backdrop_path ? (
-                        <div className="relative aspect-video h-[54px] shrink-0 overflow-hidden rounded-md bg-muted shadow-sm ring-1 ring-border/60">
-                          <Image
-                            src={getThumbBackdropURL(movie.backdrop_path)}
-                            alt={movie?.title ?? ''}
-                            fill
-                            sizes="96px"
-                            className="object-cover"
-                            draggable={false}
-                            unoptimized
-                            onError={(e) =>
-                              handleImageFallbackError(e.currentTarget)
-                            }
-                          />
-                        </div>
-                      ) : movie?.poster_path ? (
-                        <div className="relative aspect-video h-[54px] shrink-0 overflow-hidden rounded-md bg-muted shadow-sm ring-1 ring-border/60">
-                          <Image
-                            src={getThumbPosterURL(movie.poster_path)}
-                            alt={movie?.title ?? ''}
-                            fill
-                            sizes="96px"
-                            className="object-cover object-top"
-                            draggable={false}
-                            unoptimized
-                            onError={(e) =>
-                              handleImageFallbackError(e.currentTarget)
-                            }
-                          />
-                        </div>
-                      ) : (
-                        <div
-                          style={tintBackground(movie?.title ?? '')}
-                          className="flex aspect-video h-[54px] shrink-0 items-center justify-center rounded-md text-white/80 shadow-sm ring-1 ring-white/10 ring-inset"
-                        >
-                          {movie?.media_type === 'tv' ? (
-                            <Tv className="size-4" aria-hidden />
-                          ) : (
-                            <Film className="size-4" aria-hidden />
-                          )}
-                        </div>
-                      )}
+                      <ResultThumb movie={movie} />
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <p className="truncate text-sm font-medium">
                           <HighlightedText

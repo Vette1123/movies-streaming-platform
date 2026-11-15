@@ -2,7 +2,7 @@ import React from 'react'
 import Link from 'next/link'
 
 import { Credit } from '@/types/credit'
-import { SEARCH_ACTOR_GOOGLE } from '@/lib/constants'
+import { personSearchHref } from '@/lib/constants'
 import { getPosterImageURL } from '@/lib/utils'
 import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
 import { PersonPortraitFallback } from '@/components/media/person-portrait-fallback'
@@ -22,7 +22,7 @@ const CREW_JOBS = new Set(['Director', 'Writer', 'Producer'])
  * an internal link that 404s is worse than the external one it replaced.
  */
 const personHref = (id: number, name: string, linked: Set<number>) =>
-  linked.has(id) ? `/person/${id}` : `${SEARCH_ACTOR_GOOGLE}${name}`
+  linked.has(id) ? `/person/${id}` : personSearchHref(name)
 
 const GRID =
   'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5'
@@ -84,11 +84,17 @@ export const DetailsCredits = ({
   movieCrew,
 }: DetailsCreditsProps) => {
   const linked = new Set(linkedPersonIds)
+  const cast = movieCredits?.cast ?? []
+  // Filtered BEFORE the heading is decided: a title whose crew is all grips
+  // and editors otherwise got a "Crew" heading over an empty grid.
+  const crew = (movieCrew ?? []).filter((person) => CREW_JOBS.has(person.job))
   return (
     <>
-      <h2 className="text-base font-semibold md:text-xl lg:text-2xl">Cast</h2>
+      {cast.length > 0 && (
+        <h2 className="text-base font-semibold md:text-xl lg:text-2xl">Cast</h2>
+      )}
       <div className={GRID}>
-        {movieCredits?.cast?.map((cast) => (
+        {cast.map((cast) => (
           <PersonCard
             key={cast.id}
             id={cast.id}
@@ -99,26 +105,24 @@ export const DetailsCredits = ({
           />
         ))}
       </div>
-      {movieCrew && movieCrew.length > 0 && (
+      {crew.length > 0 && (
         <>
           <h2 className="mt-10 mb-3 text-base font-semibold md:text-xl lg:text-2xl">
             Crew
           </h2>
           <div className={GRID}>
-            {movieCrew
-              .filter((person) => CREW_JOBS.has(person.job))
-              .map((crew) => (
-                // id + job: one person can be both Writer and Producer, and
-                // the id alone gave React a duplicate key.
-                <PersonCard
-                  key={`${crew.id}-${crew.job}`}
-                  id={crew.id}
-                  name={crew.name}
-                  profilePath={crew.profile_path}
-                  role={crew.job}
-                  linked={linked}
-                />
-              ))}
+            {crew.map((crew) => (
+              // id + job: one person can be both Writer and Producer, and
+              // the id alone gave React a duplicate key.
+              <PersonCard
+                key={`${crew.id}-${crew.job}`}
+                id={crew.id}
+                name={crew.name}
+                profilePath={crew.profile_path}
+                role={crew.job}
+                linked={linked}
+              />
+            ))}
           </div>
         </>
       )}

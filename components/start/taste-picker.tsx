@@ -113,6 +113,9 @@ export function TastePicker({ candidates }: { candidates: TastePick[] }) {
               <button
                 type="button"
                 aria-pressed={on}
+                // Named on the button: the poster's alt only exists once the
+                // image has loaded, and the fallback tile carries no alt at all.
+                aria-label={candidate.title}
                 onClick={() => toggle(candidate)}
                 className={`group relative block w-full overflow-hidden rounded-lg border-2 transition-all ${
                   on

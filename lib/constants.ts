@@ -5,6 +5,10 @@ const STREAMING_MOVIES_API_QUERY =
   process.env.NEXT_PUBLIC_STREAMING_MOVIES_API_QUERY
 const SEARCH_ACTOR_GOOGLE = process.env.NEXT_PUBLIC_SEARCH_ACTOR_GOOGLE
 const SEARCH_DEBOUNCE = 400
+// A web search for a person's name. Encoded: a name with `&`, `#` or `+` in it
+// (bands, duos, "Smith & Jones") otherwise cuts the query short.
+const personSearchHref = (name: string) =>
+  `${SEARCH_ACTOR_GOOGLE}${encodeURIComponent(name)}`
 // How many items any poster rail carries: the homepage rows and the
 // similar/recommended rows on a detail page. They're horizontal scrollers, so
 // 12 fills them, and TMDB's full 20-item page just adds markup plus a second
@@ -30,6 +34,7 @@ export {
   STREAMING_MOVIES_API_URL,
   STREAMING_MOVIES_API_QUERY,
   SEARCH_ACTOR_GOOGLE,
+  personSearchHref,
   SEARCH_DEBOUNCE,
   RAIL_LIMIT,
   HERO_LIMIT,

@@ -119,7 +119,7 @@ export function MobileNav({ items }: MobileNavProps) {
           variant="ghost"
           // xl:hidden, matching MainNav's xl:flex — the two must switch on the
           // same breakpoint or a width exists with both or neither.
-          className="mr-2 shrink-0 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 xl:hidden"
+          className="mr-2 shrink-0 px-0 text-base hover:bg-transparent xl:hidden"
         >
           <Icons.menu className="size-6" />
           <span className="sr-only">Toggle Menu</span>
@@ -127,7 +127,7 @@ export function MobileNav({ items }: MobileNavProps) {
       </SheetTrigger>
       <SheetContent
         side="left"
-        className="inset-y-0 flex h-full w-[350px] flex-col p-0"
+        className="inset-y-0 flex h-full w-[350px] max-w-[85vw] flex-col p-0"
       >
         {/* The drawer is a dialog, and this was the only one in the app with no
             accessible name — a screen reader announced it as an unnamed dialog.
