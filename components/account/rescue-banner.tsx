@@ -6,6 +6,7 @@ import { CloudOff, X } from 'lucide-react'
 
 import { trackFeatureUsed } from '@/lib/analytics'
 import { rescueLine, shouldOfferRescue } from '@/lib/rescue'
+import { storageGet, storageSet } from '@/lib/safe-storage'
 import { useAccount } from '@/hooks/use-account'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useMounted } from '@/hooks/use-mounted'
@@ -29,8 +30,7 @@ export function RescueBanner() {
   const [history] = useLocalStorage('watchedItems', [])
   const [completed] = useLocalStorage('completedItems', [])
   const [dismissed, setDismissed] = useState(
-    () =>
-      typeof window !== 'undefined' && localStorage.getItem(DISMISS_KEY) === '1'
+    () => storageGet(DISMISS_KEY) === '1'
   )
 
   const counts = {
@@ -52,7 +52,7 @@ export function RescueBanner() {
         aria-label="Dismiss"
         className="absolute top-2 right-2"
         onClick={() => {
-          localStorage.setItem(DISMISS_KEY, '1')
+          storageSet(DISMISS_KEY, '1')
           setDismissed(true)
           trackFeatureUsed({ feature: 'rescue_banner', action: 'dismissed' })
         }}

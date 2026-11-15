@@ -2,6 +2,8 @@
 
 import * as React from 'react'
 
+import { storageGet, storageRemove, storageSet } from '@/lib/safe-storage'
+
 // Match Night's room code, shared across tabs and reloads through
 // localStorage. useSyncExternalStore because the room is read during render:
 // the server snapshot is null (no room prerendered), the client snapshot is
@@ -23,13 +25,13 @@ const subscribe = (cb: () => void) => {
 export const useMatchRoom = () => {
   const room = React.useSyncExternalStore(
     subscribe,
-    () => localStorage.getItem(ROOM_KEY),
+    () => storageGet(ROOM_KEY),
     () => null
   )
 
   const setRoom = React.useCallback((code: string | null) => {
-    if (code) localStorage.setItem(ROOM_KEY, code)
-    else localStorage.removeItem(ROOM_KEY)
+    if (code) storageSet(ROOM_KEY, code)
+    else storageRemove(ROOM_KEY)
     listeners.forEach((cb) => cb())
   }, [])
 

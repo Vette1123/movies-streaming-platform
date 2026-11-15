@@ -27,12 +27,21 @@ export const movieExtraInfoFormatter = (
     name: 'Revenue',
     value: moneyFormatter(movie?.revenue),
   },
-  {
-    name: 'Director',
-    value: director,
-    isLink: true,
-  },
+  ...(director ? [{ name: 'Director', value: director, isLink: true }] : []),
 ]
+
+/**
+ * The rows worth a line: TMDB leaves `last_air_date` null on a running show,
+ * `origin_country` empty on many titles and `overview` blank on new ones, and
+ * a label over nothing reads as a broken page.
+ */
+export const filledInfoRows = <T extends { value: unknown }>(rows: T[]) =>
+  rows.filter(
+    (row) =>
+      row.value !== null &&
+      row.value !== undefined &&
+      String(row.value).trim() !== ''
+  )
 
 export const seriesExtraInfoFormatter = (
   series: SeriesDetails,

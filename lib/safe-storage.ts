@@ -22,3 +22,12 @@ export function storageSet(key: string, value: string): void {
     // Storage is unavailable or full; the value lives for this visit only.
   }
 }
+
+export function storageRemove(key: string): void {
+  try {
+    if (typeof window === 'undefined') return
+    window.localStorage?.removeItem(key)
+  } catch {
+    // Nothing to remove from a store that cannot be reached.
+  }
+}

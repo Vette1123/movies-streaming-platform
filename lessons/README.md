@@ -189,3 +189,4 @@ with the work, not after.
 | 2026-11-14 | [Two red deploys behind one commit](2026-11-14-two-red-deploys-after-green-commits.md) | A script joining the deploy chain runs once before CI is its first execution. |
 | 2026-11-15 | [UX, PostHog and SEO sweep](2026-11-15-ux-seo-sweep.md) | A second hand-written copy of a schema node drifts; build both from one function or pin them with a parity test. |
 | 2026-11-15 | [Sitemap split](2026-11-15-sitemap-split.md) | Size a limit check by the unit the limit applies to (one sitemap file), not by the whole site. |
+| 2026-11-15 | [App-wide audit](2026-11-15-app-audit.md) | Decide whether a heading shows from the list it actually renders; grep for raw `localStorage.` after any storage fix. |
