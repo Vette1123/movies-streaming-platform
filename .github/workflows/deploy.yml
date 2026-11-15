@@ -167,6 +167,7 @@ jobs:
           printf '%s' "$TMDB_API_KEY" | pnpm wrangler secret put TMDB_API_KEY
           printf '%s' "$TMDB_HEADER_KEY" | pnpm wrangler secret put TMDB_HEADER_KEY
           printf '%s' "$SESSION_TOKEN_SECRET" | pnpm wrangler secret put SESSION_TOKEN_SECRET
+          printf '%s' "$PLAYBACK_TICKET_SECRET" | pnpm wrangler secret put PLAYBACK_TICKET_SECRET
           printf '%s' "$GOOGLE_CLIENT_ID" | pnpm wrangler secret put GOOGLE_CLIENT_ID
           printf '%s' "$GOOGLE_CLIENT_SECRET" | pnpm wrangler secret put GOOGLE_CLIENT_SECRET
           printf '%s' "$VAPID_PUBLIC_KEY" | pnpm wrangler secret put VAPID_PUBLIC_KEY
@@ -181,6 +182,14 @@ jobs:
           # rotating a TMDB key; sign-in breaks for existing sessions when
           # SESSION_TOKEN_SECRET changes, which is the point of rotating it.
           SESSION_TOKEN_SECRET: ${{ secrets.SESSION_TOKEN_SECRET }}
+          # The player-side half of the ticket pair: this worker MINTS under
+          # PLAYBACK_TICKET_SECRET, reely-pro-player VERIFIES as TICKET_SECRET,
+          # and both repos hold the same value. The site's copy was hand-set
+          # and drifted from .env.local - a site-minted ticket then failed the
+          # player's exchange with "invalid or expired ticket" while the
+          # player's own routes worked. Must equal the player repo's
+          # TICKET_SECRET GitHub secret.
+          PLAYBACK_TICKET_SECRET: ${{ secrets.PLAYBACK_TICKET_SECRET }}
           # The tier-0 catalog file's name (the media plane's obscurity
           # boundary). Must equal the player's LIBRARY_CATALOG_PATH var - the
           # two read the same file.
