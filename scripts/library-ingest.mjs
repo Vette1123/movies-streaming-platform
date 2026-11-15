@@ -22,12 +22,17 @@
 //
 // Needs LIBRARY_INGEST_TOKEN (+ LIBRARY_TOKEN_SECRET to self-verify) from the
 // environment or .env.local, and ffmpeg on PATH.
-
 import { spawnSync } from 'node:child_process'
 import { createHash, createHmac } from 'node:crypto'
-import { readFileSync, readdirSync, statSync, rmSync, mkdtempSync } from 'node:fs'
-import { join, basename, resolve } from 'node:path'
+import {
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
+import { basename, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const REPO = fileURLToPath(new URL('..', import.meta.url))
@@ -57,7 +62,9 @@ const die = (msg) => {
   process.exit(1)
 }
 if (!input || !['movie', 'tv'].includes(ty)) {
-  die('usage: library-ingest.mjs <video> --ty movie|tv --id N [--s N --ep N] [--title T]')
+  die(
+    'usage: library-ingest.mjs <video> --ty movie|tv --id N [--s N --ep N] [--title T]'
+  )
 }
 if (!Number.isInteger(id) || id < 1) die('--id must be a positive integer')
 if (ty === 'tv' && (!Number.isInteger(s) || !Number.isInteger(ep)))
@@ -67,7 +74,9 @@ if (ty === 'tv' && (!Number.isInteger(s) || !Number.isInteger(ep)))
 
 const envOf = (name) => process.env[name] ?? envFile(name)
 function envFile(name) {
-  for (const line of readFileSync(join(REPO, '.env.local'), 'utf8').split(/\r?\n/)) {
+  for (const line of readFileSync(join(REPO, '.env.local'), 'utf8').split(
+    /\r?\n/
+  )) {
     const m = /^([A-Z0-9_]+)=(.*)$/.exec(line)
     if (m && m[1] === name) return m[2].trim()
   }
@@ -76,15 +85,16 @@ function envFile(name) {
 const ingestKey = envOf('LIBRARY_INGEST_TOKEN')
 const tokenSecret = envOf('LIBRARY_TOKEN_SECRET')
 if (!ingestKey) die('LIBRARY_INGEST_TOKEN missing (set it in .env.local)')
-if (has('--no-verify')) console.log('ingest: skipping self-verification (--no-verify)')
-else if (!tokenSecret) die('LIBRARY_TOKEN_SECRET missing (needed to self-verify)')
+if (has('--no-verify'))
+  console.log('ingest: skipping self-verification (--no-verify)')
+else if (!tokenSecret)
+  die('LIBRARY_TOKEN_SECRET missing (needed to self-verify)')
 
 // ---- media identity --------------------------------------------------------
 //
 // Must match lib/library-mode.ts exactly: the key the catalog and the play
 // route are built from.
-const mediaKey =
-  ty === 'movie' ? `movie:${id}` : `tv:${id}:${s}:${ep}`
+const mediaKey = ty === 'movie' ? `movie:${id}` : `tv:${id}:${s}:${ep}`
 const prefix = ty === 'movie' ? `movie/${id}` : `tv/${id}/${s}-${ep}`
 
 // ---- transcode -------------------------------------------------------------
@@ -101,34 +111,74 @@ const base = {
   ...(title ? { title } : {}),
 }
 const commonVideo = [
-  '-vf', 'scale=-2:480',
-  '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
-  '-maxrate', '1500k', '-bufsize', '3000k',
-  '-g', '48', '-keyint_min', '48', '-sc_threshold', '0',
-  '-c:a', 'aac', '-b:a', '128k', '-ac', '2',
-  '-f', 'hls',
-  '-hls_time', '6', '-hls_playlist_type', 'vod', '-hls_list_size', '0',
-  '-hls_segment_filename', join(work, 'seg%04d.ts'),
+  '-vf',
+  'scale=-2:480',
+  '-c:v',
+  'libx264',
+  '-preset',
+  'medium',
+  '-crf',
+  '23',
+  '-maxrate',
+  '1500k',
+  '-bufsize',
+  '3000k',
+  '-g',
+  '48',
+  '-keyint_min',
+  '48',
+  '-sc_threshold',
+  '0',
+  '-c:a',
+  'aac',
+  '-b:a',
+  '128k',
+  '-ac',
+  '2',
+  '-f',
+  'hls',
+  '-hls_time',
+  '6',
+  '-hls_playlist_type',
+  'vod',
+  '-hls_list_size',
+  '0',
+  '-hls_segment_filename',
+  join(work, 'seg%04d.ts'),
 ]
-let enc = spawnSync('ffmpeg', ['-y', '-i', resolve(input), ...commonVideo, join(work, 'master.m3u8')], {
-  encoding: 'utf8',
-})
+let enc = spawnSync(
+  'ffmpeg',
+  ['-y', '-i', resolve(input), ...commonVideo, join(work, 'master.m3u8')],
+  {
+    encoding: 'utf8',
+  }
+)
 if (enc.status !== 0) {
   // No audio stream (a silent rip, a dashcam clip): same video, -an.
   console.log('ingest: encode failed, retrying without audio')
-  const noAudio = commonVideo.filter((a, i, arr) =>
-    !(a === '-c:a' || a === '-b:a' || a === '-ac') &&
-    !(a === 'aac' || a === '128k' || a === '2' && arr[i - 1] === '-ac')
+  const noAudio = commonVideo.filter(
+    (a, i, arr) =>
+      !(a === '-c:a' || a === '-b:a' || a === '-ac') &&
+      !(a === 'aac' || a === '128k' || (a === '2' && arr[i - 1] === '-ac'))
   )
-  enc = spawnSync('ffmpeg', ['-y', '-i', resolve(input), ...noAudio, '-an', join(work, 'master.m3u8')], {
-    encoding: 'utf8',
-  })
-  if (enc.status !== 0) die(`ffmpeg encode failed:\n${(enc.stderr ?? '').split('\n').slice(-6).join('\n')}`)
+  enc = spawnSync(
+    'ffmpeg',
+    ['-y', '-i', resolve(input), ...noAudio, '-an', join(work, 'master.m3u8')],
+    {
+      encoding: 'utf8',
+    }
+  )
+  if (enc.status !== 0)
+    die(
+      `ffmpeg encode failed:\n${(enc.stderr ?? '').split('\n').slice(-6).join('\n')}`
+    )
 }
 
 const files = readdirSync(work)
   .filter((f) => f.endsWith('.m3u8') || f.endsWith('.ts'))
-  .sort((a, b) => (a === 'master.m3u8' ? -1 : b === 'master.m3u8' ? 1 : a.localeCompare(b)))
+  .sort((a, b) =>
+    a === 'master.m3u8' ? -1 : b === 'master.m3u8' ? 1 : a.localeCompare(b)
+  )
 if (!files.includes('master.m3u8')) die('transcode produced no master.m3u8')
 
 const manifest = readFileSync(join(work, 'master.m3u8'), 'utf8')
@@ -145,8 +195,9 @@ const plan = files.map((f) => {
     path: f,
     buf,
     sha: createHash('sha256').update(buf).digest('hex'),
-    contentType:
-      f.endsWith('.m3u8') ? 'application/vnd.apple.mpegurl' : 'video/mp2t',
+    contentType: f.endsWith('.m3u8')
+      ? 'application/vnd.apple.mpegurl'
+      : 'video/mp2t',
   }
 })
 const seconds = Number(manifest.match(/#EXT-X-TARGETDURATION:(\d+)/)?.[1] ?? 0)
@@ -174,8 +225,13 @@ async function call(method, path, body) {
   })
   const json = await res.json().catch(() => ({}))
   if (res.status === 429 || res.status >= 500)
-    throw Object.assign(new Error(`HTTP ${res.status} ${json.error ?? ''}`), { retry: true })
-  if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status} ${json.error ?? ''}`), { retry: false })
+    throw Object.assign(new Error(`HTTP ${res.status} ${json.error ?? ''}`), {
+      retry: true,
+    })
+  if (!res.ok)
+    throw Object.assign(new Error(`HTTP ${res.status} ${json.error ?? ''}`), {
+      retry: false,
+    })
   return json
 }
 async function callRetry(method, path, body) {
@@ -193,7 +249,9 @@ async function callRetry(method, path, body) {
 
 // 1. Clear any previous tree for this unit.
 const removed = await callRetry('DELETE', '', { media: mediaKey })
-console.log(`ingest: cleared previous tree (${removed.removed?.join(' + ') ?? 'nothing'}) rows`)
+console.log(
+  `ingest: cleared previous tree (${removed.removed?.join(' + ') ?? 'nothing'}) rows`
+)
 
 // 2. Chunks, paced — a machine route, but a polite one.
 const t0 = Date.now()
@@ -201,7 +259,10 @@ let chunkCount = 0
 for (const f of plan) {
   const chunks = Math.ceil(f.buf.length / CHUNK)
   for (let seq = 0; seq < chunks; seq++) {
-    const slice = f.buf.subarray(seq * CHUNK, Math.min(f.buf.length, (seq + 1) * CHUNK))
+    const slice = f.buf.subarray(
+      seq * CHUNK,
+      Math.min(f.buf.length, (seq + 1) * CHUNK)
+    )
     await callRetry('PUT', '/file', {
       media: base,
       path: f.path,
@@ -234,12 +295,14 @@ console.log(
 
 // ---- verify ----------------------------------------------------------------
 
-const b64url = (bytes) =>
-  Buffer.from(bytes).toString('base64url')
+const b64url = (bytes) => Buffer.from(bytes).toString('base64url')
 const libToken = (claims) => {
   const body = { k: 'l', ...claims, exp: Math.floor(Date.now() / 1000) + 600 }
   const json = b64url(Buffer.from(JSON.stringify(body), 'utf8'))
-  const secret = Buffer.from(tokenSecret.replace(/-/g, '+').replace(/_/g, '/'), 'base64')
+  const secret = Buffer.from(
+    tokenSecret.replace(/-/g, '+').replace(/_/g, '/'),
+    'base64'
+  )
   return `${json}.${createHmac('sha256', secret).update(json).digest('base64url')}`
 }
 
@@ -253,15 +316,23 @@ if (!has('--no-verify') && tokenSecret) {
   const manifestBuf = Buffer.from(await manifestRes.arrayBuffer())
   const manifestSha = createHash('sha256').update(manifestBuf).digest('hex')
   const ok = manifestRes.status === 200 && manifestSha === plan[0].sha
-  console.log(`verify: manifest ${manifestRes.status} sha ${ok ? 'MATCH' : 'MISMATCH'}`)
+  console.log(
+    `verify: manifest ${manifestRes.status} sha ${ok ? 'MATCH' : 'MISMATCH'}`
+  )
   if (!ok) die('manifest does not round-trip')
 
   const seg = plan.find((f) => f.path.endsWith('.ts'))
   if (seg) {
-    const whole = await fetch(`${hlsBase}/${seg.path}`, { headers: { 'user-agent': BROWSER_UA } })
+    const whole = await fetch(`${hlsBase}/${seg.path}`, {
+      headers: { 'user-agent': BROWSER_UA },
+    })
     const wholeBuf = Buffer.from(await whole.arrayBuffer())
-    const wholeOk = whole.status === 200 && createHash('sha256').update(wholeBuf).digest('hex') === seg.sha
-    console.log(`verify: segment ${whole.status} ${seg.path} sha ${wholeOk ? 'MATCH' : 'MISMATCH'}`)
+    const wholeOk =
+      whole.status === 200 &&
+      createHash('sha256').update(wholeBuf).digest('hex') === seg.sha
+    console.log(
+      `verify: segment ${whole.status} ${seg.path} sha ${wholeOk ? 'MATCH' : 'MISMATCH'}`
+    )
 
     const mid = Math.floor(seg.buf.length / 2)
     const ranged = await fetch(`${hlsBase}/${seg.path}`, {
@@ -271,13 +342,17 @@ if (!has('--no-verify') && tokenSecret) {
     const rangeOk =
       ranged.status === 206 &&
       rangedBuf.equals(seg.buf.subarray(mid, mid + 128)) &&
-      ranged.headers.get('content-range') === `bytes ${mid}-${mid + 127}/${seg.buf.length}`
+      ranged.headers.get('content-range') ===
+        `bytes ${mid}-${mid + 127}/${seg.buf.length}`
     console.log(`verify: range 206 slice ${rangeOk ? 'MATCH' : 'MISMATCH'}`)
 
     const tampered = `${token.slice(0, -2)}xx`
-    const bad = await fetch(`${site}/api/library/hls/${tampered}/${prefix}/master.m3u8`, {
-      headers: { 'user-agent': BROWSER_UA },
-    })
+    const bad = await fetch(
+      `${site}/api/library/hls/${tampered}/${prefix}/master.m3u8`,
+      {
+        headers: { 'user-agent': BROWSER_UA },
+      }
+    )
     console.log(`verify: tampered token → ${bad.status} (want 403)`)
     const evil = await fetch(`${hlsBase}/%2e%2e/%2e%2e/%2e%2e/secret`, {
       headers: { 'user-agent': BROWSER_UA },
