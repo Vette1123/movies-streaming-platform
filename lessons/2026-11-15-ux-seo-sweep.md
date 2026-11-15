@@ -33,7 +33,7 @@ A sweep across PostHog, the components and the SEO surfaces. What shipped:
 - **Two "issues" in the usage report were not product bugs.** "Library reach fell 42% →
   29%" is just `watch_history_added` following plays. Plays fell 32-42/day → 15-23/day
   from 2026-11-10, but per-person conversion did not change (mobile stayed about 50% of
-  detail visitors). Mobile *traffic* dropped about 40% that day. Meanwhile a new desktop
+  detail visitors). Mobile _traffic_ dropped about 40% that day. Meanwhile a new desktop
   fleet started inflating the denominators: Chrome 154 on Windows, 1920x1080 screens,
   randomised inner windows, US IPs with Paris/Jakarta/Saigon timezones, about 5 events
   each and zero plays. I nearly fingerprinted it on a geo/timezone mismatch, but over 30
