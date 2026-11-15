@@ -21,17 +21,23 @@ import {
   buildLinkedMediaIds,
   buildMediaSitemapEntries,
 } from '@/lib/media-page'
-import { sitemapImage } from '@/lib/sitemap-image'
 import { ledgerSitemapEntries } from '@/lib/sitemap-ledger'
+import { getPosterImageURL } from '@/lib/utils'
 import { yearRange } from '@/components/media/year-page'
 
-export const revalidate = 86400
-
-// Required by `output: 'export'` — see app/robots.ts. Emits out/sitemap.xml,
-// built from the same TMDB lists the prerendered pages come from.
-export const dynamic = 'force-static'
+// The site's URLs, in three sections, one sitemap file each.
+//
+// This was one app/sitemap.ts until the ledger (data/sitemap-ledger.json) took
+// it to 45,121 URLs on 2026-11-15, past 80% of the 50,000 a single sitemap
+// file may hold; Google rejects the whole file over the limit, not the excess.
+// /sitemap.xml is now a <sitemapindex> (app/sitemap.xml/route.ts) pointing at
+// /sitemaps/<section>.xml, and each section stays well under the cap: movies
+// and TV are the two that grow, and scripts/sitemap-ledger.mjs holds each of
+// them to 80% on its own. Split a section again here when it trips.
 
 const baseUrl = siteConfig.websiteURL
+
+const sitemapImage = (path: string) => getPosterImageURL(path)
 
 // The sitemap is built from the SAME helper that decides what gets prerendered,
 // not from its own hand-picked list of TMDB pages.
@@ -176,8 +182,8 @@ const SITE_LAUNCH_DATE = '2024-01-01T00:00:00.000Z'
 // `dynamic = 'force-static'` means this evaluates once, at build.
 const CONTENT_REFRESHED_AT = new Date().toISOString()
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticRoutes: MetadataRoute.Sitemap = [
+function staticRoutes(): MetadataRoute.Sitemap {
+  return [
     {
       url: baseUrl,
       lastModified: CONTENT_REFRESHED_AT,
@@ -321,45 +327,46 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }))
     }),
   ]
+}
 
-  try {
-    const [
-      movieUrls,
-      tvShowUrls,
-      collectionUrls,
-      personUrls,
-      linkedMovieUrls,
-      linkedTVShowUrls,
-    ] = await Promise.all([
-      generateMovieUrls(),
-      generateTVShowUrls(),
+const byPriority = (a: { priority?: number; url: string }, b: typeof a) => {
+  const diff = (b.priority || 0) - (a.priority || 0)
+  return diff !== 0 ? diff : a.url.localeCompare(b.url)
+}
+
+/**
+ * One title type: the baked ids, the ring they link to, and the ledger's
+ * titles an earlier sitemap advertised that today's lists no longer reach.
+ * Dropping those is what Bing reported as "important pages missing".
+ */
+async function titleSection(
+  type: 'movie' | 'tv',
+  baked: () => Promise<MetadataRoute.Sitemap>,
+  linked: () => Promise<MetadataRoute.Sitemap>
+): Promise<MetadataRoute.Sitemap> {
+  const current = (await Promise.all([baked(), linked()])).flat()
+  const listed = new Set(current.map(({ url }) => url))
+  return [
+    ...current,
+    ...ledgerSitemapEntries({ [type]: SITEMAP_LEDGER[type] }, listed, baseUrl),
+  ].sort(byPriority)
+}
+
+export const SITEMAP_SECTIONS = {
+  // Hubs, legal and product pages, franchises and people.
+  core: async () => {
+    const [collections, people] = await Promise.all([
       generateCollectionUrls(),
       generatePersonUrls(),
-      generateLinkedMovieUrls(),
-      generateLinkedTVShowUrls(),
     ])
+    return [...staticRoutes(), ...collections, ...people].sort(byPriority)
+  },
+  movies: () =>
+    titleSection('movie', generateMovieUrls, generateLinkedMovieUrls),
+  tv: () => titleSection('tv', generateTVShowUrls, generateLinkedTVShowUrls),
+} satisfies Record<string, () => Promise<MetadataRoute.Sitemap>>
 
-    const current = [
-      ...staticRoutes,
-      ...movieUrls,
-      ...tvShowUrls,
-      ...collectionUrls,
-      ...personUrls,
-      ...linkedMovieUrls,
-      ...linkedTVShowUrls,
-    ]
-    // Titles an earlier sitemap advertised and today's lists no longer reach.
-    // Dropping them is what Bing reported as "important pages missing".
-    const listed = new Set(current.map(({ url }) => url))
-    return [
-      ...current,
-      ...ledgerSitemapEntries(SITEMAP_LEDGER, listed, baseUrl),
-    ].sort((a, b) => {
-      const diff = (b.priority || 0) - (a.priority || 0)
-      return diff !== 0 ? diff : a.url.localeCompare(b.url)
-    })
-  } catch (error) {
-    console.error('Error generating sitemap:', error)
-    return staticRoutes
-  }
-}
+export type SitemapSection = keyof typeof SITEMAP_SECTIONS
+
+export const sitemapSectionUrl = (section: SitemapSection) =>
+  `${baseUrl}/sitemaps/${section}.xml`

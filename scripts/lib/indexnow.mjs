@@ -54,6 +54,34 @@ export function sitemapUrls(xml) {
 }
 
 /**
+ * Every page URL under a sitemap. `/sitemap.xml` is a <sitemapindex> since
+ * the site outgrew one 50,000-URL file (app/sitemap.xml/route.ts): its <loc>s
+ * are child sitemaps, not pages, so each is loaded with `load(url)` and read in
+ * turn. A plain <urlset> is read as it is. Null when the root or any child
+ * cannot be read: half a URL set would look like thousands of removed pages.
+ */
+export async function expandSitemap(xml, load) {
+  if (xml === null || xml === undefined) return null
+  if (!/<sitemapindex[\s>]/.test(xml)) return sitemapUrls(xml)
+  const parts = await Promise.all(sitemapUrls(xml).map((url) => load(url)))
+  if (parts.some((part) => part === null || part === undefined)) return null
+  return parts.flatMap((part) => sitemapUrls(part))
+}
+
+/** Every page URL the live site's sitemap lists, or null if unreadable. */
+export async function liveSitemapUrls() {
+  return expandSitemap(await fetchText(`${BASE_URL}/sitemap.xml`), fetchText)
+}
+
+/** The same for a build in `outDir`: a child's URL maps to its file there. */
+export async function builtSitemapUrls(outDir) {
+  const read = (file) => fs.readFile(file, 'utf8').catch(() => null)
+  return expandSitemap(await read(path.join(outDir, 'sitemap.xml')), (url) =>
+    read(path.join(outDir, new URL(url).pathname))
+  )
+}
+
+/**
  * One verdict per URL: 'new' | 'changed' | 'live-unreadable' | null (skip).
  * `built` is null for pages this build does not prerender (the movie/TV detail
  * routes beyond the baked set): their HTML is produced at request time, so from
@@ -140,22 +168,16 @@ async function diffAgainstLive(urls, liveSitemap, outDir) {
 export async function planIndexNow({
   outDir = path.join(process.cwd(), 'out'),
 } = {}) {
-  const [newXml, liveXml] = await Promise.all([
-    fs.readFile(path.join(outDir, 'sitemap.xml'), 'utf8').catch(() => null),
-    fetchText(`${BASE_URL}/sitemap.xml`),
+  const [newUrls, liveUrls] = await Promise.all([
+    builtSitemapUrls(outDir),
+    liveSitemapUrls(),
   ])
-  if (newXml === null)
+  if (newUrls === null)
     return { urls: [], changed: null, why: 'out/sitemap.xml missing' }
-  const urls = [...new Set(sitemapUrls(newXml))].filter((u) =>
-    u.startsWith(`${BASE_URL}`)
-  )
-  if (liveXml === null)
+  const urls = [...new Set(newUrls)].filter((u) => u.startsWith(`${BASE_URL}`))
+  if (liveUrls === null)
     return { urls, changed: null, why: 'live sitemap unreadable' }
-  const changed = await diffAgainstLive(
-    urls,
-    new Set(sitemapUrls(liveXml)),
-    outDir
-  )
+  const changed = await diffAgainstLive(urls, new Set(liveUrls), outDir)
   return { urls, changed }
 }
 

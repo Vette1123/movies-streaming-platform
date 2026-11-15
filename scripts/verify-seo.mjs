@@ -57,8 +57,34 @@ const h1sOf = (html) =>
   )
 
 // ---- sitemap ---------------------------------------------------------------
-const { html: xml } = await get('/sitemap.xml')
-const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1])
+// /sitemap.xml is a <sitemapindex>; the pages are in its children. Every file
+// is checked for well-formedness, the index included.
+const { html: indexXml } = await get('/sitemap.xml')
+const childXml = /<sitemapindex[\s>]/.test(indexXml)
+  ? await Promise.all(
+      [...indexXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(
+        async (m) => (await get(m[1])).html
+      )
+    )
+  : [indexXml]
+check(
+  'sitemap index lists its section files',
+  childXml.length >= 3,
+  `${childXml.length} files`
+)
+const xml = [indexXml, ...childXml].join('\n')
+const locs = childXml.flatMap((part) =>
+  [...part.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1])
+)
+const MAX_PER_FILE = 50_000
+const biggest = Math.max(
+  ...childXml.map((part) => (part.match(/<url>/g) ?? []).length)
+)
+check(
+  'every sitemap file is under 50,000 URLs',
+  biggest < MAX_PER_FILE,
+  `largest has ${biggest}`
+)
 const count = (prefix) =>
   locs.filter((u) => new URL(u).pathname.startsWith(prefix)).length
 
@@ -225,7 +251,7 @@ for (const path of [...new Set(SNIPPET_PAGES)]) {
 // the prerendered set. Those anchors are in the HTML, so a crawler walks
 // straight off the prerendered set — and Bing reported three of the pages it
 // landed on as missing from the sitemap, one of them as never submitted to
-// IndexNow. app/sitemap.ts advertises them now (buildLinkedMediaIds); this is
+// IndexNow. lib/sitemap-sections.ts advertises them now (buildLinkedMediaIds); this is
 // the check that says so.
 {
   const { html } = await get('/movies/550')

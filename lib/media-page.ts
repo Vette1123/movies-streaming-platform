@@ -123,7 +123,7 @@ type PagedFetcher = (args: {
 // per-route file count is a Next implementation detail that has already moved
 // once, and the cap is a hard failure, not a degradation.
 //
-// app/sitemap.ts is built from this same helper, so widening LIST_DEPTH widens
+// The sitemap (lib/sitemap-sections.ts) is built from this same helper, so widening LIST_DEPTH widens
 // the sitemap with it — they used to be derived from different TMDB lists, and
 // the sitemap advertised a quarter of the pages the build actually baked.
 // Nudged popular 30 -> 33: measured 2,127 routes -> 12,863 files (64% of the
@@ -202,7 +202,7 @@ export async function buildMediaSitemapEntries(fetchers: {
  *
  * Next hands whatever this returns straight to the route as params, so it gets
  * the id and nothing else — an extra key here becomes an extra param there.
- * app/sitemap.ts calls the wide version instead and picks up the poster, which
+ * lib/sitemap-sections.ts calls the wide version instead and picks up the poster, which
  * is free: both go through the same TMDB list requests and Next's build fetch
  * cache serves the second reader.
  */
