@@ -2,7 +2,10 @@ export type SiteConfig = typeof siteConfig
 
 export const siteConfig = {
   name: 'Reely',
-  description: 'Reely is a movie and tv show tracker built by Mohamed Gado.',
+  // The fallback meta description, the WebSite JSON-LD and the RSS channel all
+  // read this, so it is search copy, not a credit line. Keep it under 160.
+  description:
+    'Discover trending movies and TV shows, see their ratings and where to stream them, and track what you watch. Free, with no account needed to start.',
 
   // Author and creator information
   author: {

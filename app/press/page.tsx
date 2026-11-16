@@ -45,11 +45,11 @@ const COPY = [
     text: 'Reely is a free movie and TV tracker with IMDb, Rotten Tomatoes and Metacritic scores on every title.',
   },
   {
-    label: 'Short (50 words)',
+    label: 'Short (about 45 words)',
     text: 'Reely is a free movie and TV tracker. Every title carries its IMDb, Rotten Tomatoes, Metacritic and TMDB scores, every actor and director has a page of their own, and nothing needs an account — no sign-up wall in front of a rating.',
   },
   {
-    label: 'Long (120 words)',
+    label: 'Long (about 125 words)',
     text: 'Reely is a free movie and TV tracker built for people who decide what to watch from the scores. Every title page carries four of them — IMDb, Rotten Tomatoes, Metacritic and TMDB — with the vote counts, because a rating without a vote count is half a fact. Every actor and director on a title has a page of their own, so the names in the cast are links and not dead ends. The tracker keeps a watchlist, ticks off what you have finished, and syncs it across your devices if you want it to. There is no account to start, and the site runs on free, public data sources, which is why the ratings are there for everyone rather than for subscribers.',
   },
 ]
@@ -77,7 +77,9 @@ const FACTS = [
   ],
   [
     'The numbers',
-    '16,000+ pages in the sitemap, 4 rating sources, 0 account required to browse.',
+    // Live sitemaps on 2026-11-17: 1,088 core + 30,596 movies + 16,572 TV.
+    // `pnpm sitemap:ledger` prints the current count; round DOWN when updating.
+    '45,000+ pages in the sitemap, 4 rating sources, no account required to browse.',
   ],
 ]
 

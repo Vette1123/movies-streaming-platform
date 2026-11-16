@@ -202,18 +202,17 @@ function staticRoutes(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.5,
     },
+    // No lastmod: a fixed launch date told Google the page never changed, and
+    // the build time would claim it changed every deploy. Omitted is honest.
     {
       url: `${baseUrl}/start`,
-      lastModified: SITE_LAUNCH_DATE,
       changeFrequency: 'weekly',
       priority: 0.8,
     },
-    {
-      url: `${baseUrl}/lists`,
-      lastModified: CONTENT_REFRESHED_AT,
-      changeFrequency: 'daily',
-      priority: 0.7,
-    },
+    // /lists is NOT here. The Worker serves it `noindex, follow` while no list
+    // is published (the /lists directory branch in cloudflare/worker.js), and a sitemap URL
+    // that answers noindex is a Search Console "Submitted URL marked noindex"
+    // error. Published lists are reached through their owners' links.
     {
       url: `${baseUrl}/movies`,
       lastModified: CONTENT_REFRESHED_AT,

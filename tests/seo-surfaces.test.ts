@@ -10,6 +10,7 @@ import {
   mediaDescription,
   MIN_LENGTH,
   personDescription,
+  personJobTitle,
   trimBiography,
 } from '@/lib/seo-description'
 import {
@@ -310,6 +311,26 @@ describe('personDescription', () => {
     }
   })
 
+  it('says "worked on" for somebody known for directing', () => {
+    const director = personDescription(
+      'George Lucas',
+      ['Star Wars'],
+      'Directing'
+    )
+    expect(director).toContain('George Lucas worked on')
+    expect(director).not.toContain('has been in')
+    expect(personDescription('Tom Hanks', ['Big'], 'Acting')).toContain(
+      'Tom Hanks has been in'
+    )
+  })
+
+  it('maps a TMDB department to a schema.org job title, or nothing', () => {
+    expect(personJobTitle('Directing')).toBe('Director')
+    expect(personJobTitle('Acting')).toBe('Actor')
+    expect(personJobTitle('Lighting')).toBeUndefined()
+    expect(personJobTitle(null)).toBeUndefined()
+  })
+
   it('drops a trailing credit rather than cutting one in half', () => {
     const description = personDescription('Sarah Michelle Gellar', [
       'Buffy the Vampire Slayer',
@@ -384,6 +405,15 @@ describe('mediaDocHeading', () => {
 })
 
 describe('collectionDescription', () => {
+  it('adds no full stop after a quote that already ends the sentence', () => {
+    const description = collectionDescription(
+      'Star Wars Collection',
+      'An epic space-opera theatrical film series, which depicts the adventures of various characters "a long time ago in a galaxy far, far away…."'
+    )
+    expect(description).not.toContain('…".')
+    expect(description).toContain('far away…." ')
+  })
+
   it('fills the slot for the franchise pages TMDB leaves blank', () => {
     const description = collectionDescription('Lilo & Stitch Collection', '')
     expect(description.length).toBeGreaterThanOrEqual(MIN_LENGTH)

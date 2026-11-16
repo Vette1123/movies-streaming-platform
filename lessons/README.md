@@ -195,3 +195,4 @@ with the work, not after.
 | 2026-11-16 | [The hero title opens the title](2026-11-16-hero-title-link.md) | A click inside a draggable track must tell a swipe from a tap; re-check the code a "do not" comment depends on before obeying it. |
 | 2026-11-16 | [Social Downloader icon](2026-11-16-social-downloader-icon.md) | Vitest only collects tests/**; no Tests line means it never ran |
 | 2026-11-16 | [Companion icons script](2026-11-16-companion-icons-script.md) | A by-hand asset script that throws on one input goes stale silently; probe layouts and print the path taken. |
+| 2026-11-17 | [SEO and marketing sweep](2026-11-17-seo-marketing-sweep.md) | A sitemap URL must answer indexable; measure meta length on decoded text, not raw HTML. |

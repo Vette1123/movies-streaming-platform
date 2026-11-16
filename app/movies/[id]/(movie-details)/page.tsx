@@ -132,8 +132,6 @@ const MoviePage = async (props: PageDetailsProps) => {
       movieDetails.backdrop_path,
       movieDetails.poster_path
     ),
-    voteAverage: movieDetails.vote_average,
-    voteCount: movieDetails.vote_count,
     tagline: movieDetails.tagline,
     cast: castNames(movieCredits),
     directors: crewNamesByJob(movieCredits, 'Director'),
