@@ -20,6 +20,7 @@ import {
   CAROUSEL_POSITION_TEXT_VARIANTS,
   CAROUSEL_SINGLE_SLIDE_VARIANTS,
 } from '@/lib/motion-variants'
+import { isSwipeClick, TAP_SLOP } from '@/lib/tap-slop'
 import { useCarousel } from '@/hooks/use-carousel'
 import { useIsoLayoutEffect } from '@/hooks/use-iso-layout-effect'
 
@@ -67,11 +68,6 @@ const SLIDE_SPRING = {
 // left-to-right, so it is constant along x and every slide is treated identically
 // edge to edge. There is no step left to hide.
 const SLIDE_GAP = 0
-
-// How far a finger may travel and still count as a tap rather than a swipe.
-// Comfortably under framer's own 3px drag threshold doubled — a deliberate
-// swipe covers tens of pixels, a thumb pressing a button covers a handful.
-const TAP_SLOP = 12
 
 // Which way a step went on the ring, clamped to a single slide. A dot jump of
 // seven still animates as one slide-width glide: the slides in between are
@@ -241,10 +237,25 @@ export function Carousel({
     () => onIdleAfterLoad(() => setNeighboursReady(true), 2000),
     []
   )
-  const onStagePointerDown = React.useCallback(() => {
-    setNeighboursReady(true)
-    handleHoverStart()
-  }, [handleHoverStart])
+  // Where the last pointer went down on the stage: a click that lands far
+  // from it ended a swipe (see isSwipeClick) and is swallowed.
+  const pointerDownRef = React.useRef<{ x: number; y: number } | null>(null)
+
+  const onStagePointerDown = React.useCallback(
+    (e: React.PointerEvent) => {
+      pointerDownRef.current = { x: e.clientX, y: e.clientY }
+      setNeighboursReady(true)
+      handleHoverStart()
+    },
+    [handleHoverStart]
+  )
+
+  const onStageClickCapture = React.useCallback((e: React.MouseEvent) => {
+    const click = { x: e.clientX, y: e.clientY, detail: e.detail }
+    if (!isSwipeClick(pointerDownRef.current, click)) return
+    e.preventDefault()
+    e.stopPropagation()
+  }, [])
 
   // Stage width, kept in a ref rather than measured where it's needed. The drag
   // scale below reads it every frame, and offsetWidth forces a synchronous
@@ -578,6 +589,8 @@ export function Carousel({
         // exactly the way a mouse entering it does, and the release resumes on
         // the usual 3s delay.
         onPointerDown={onStagePointerDown}
+        // A mouse swipe ends on the link it started on; that click must not act.
+        onClickCapture={onStageClickCapture}
         onPointerUp={handleHoverEnd}
         onPointerCancel={handleHoverEnd}
         // See onStageTouchEnd — a tap activates the control it landed on, not

@@ -402,6 +402,8 @@ export function trackCommandShortcutUsed(props: { shortcut: string }): void {
 export function trackHeroWatchClicked(props: {
   media_id: number
   media_type: MediaKind
+  /** The Watch Now button, or the wordmark (also a link to the title). */
+  target: 'button' | 'title'
 }): void {
   track(EVENTS.HERO_WATCH_CLICKED, props)
 }
