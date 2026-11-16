@@ -214,7 +214,7 @@ async function main() {
     `${failedTitles} of ${titles.length} titles failed; the run fails when most do.`,
     ok
       ? ''
-      : `Re-walk one by hand: \`curl -s "${RELAY}/selftest?ty=movie&id=550&force=1"\`. The provider walk lives in reely-resolver-relay/relay.ts.`,
+      : `Re-walk one by hand: \`curl -s "${RELAYS[0]}/selftest?ty=movie&id=550&force=1"\`. The provider walk lives in reely-resolver-relay/relay.ts.`,
   ].join('\n')
 
   console.log(report)
