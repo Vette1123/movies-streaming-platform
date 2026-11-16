@@ -304,6 +304,21 @@ export const DetailsHero = ({
   const iframeLoaded = !!src && loadedSrc === src
   // The embed frame, for the progress bridge's source-window identity check.
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
+
+  // Which src has actually PLAYED something, per the embed's own progress
+  // messages. A painted-but-silent frame is how a gated or dead provider
+  // looks from out here — `onLoad` fires, nothing plays — and the anonymous
+  // visitor has no control bar to escape with, so the switcher needs this
+  // signal to know when to show the trial offer. Keyed to the src so an
+  // episode or server switch re-arms the silence detector by construction.
+  const [progressedSrc, setProgressedSrc] = React.useState<string | null>(null)
+  const onEmbedProgress = React.useCallback((playedSrc: string) => {
+    setProgressedSrc(playedSrc)
+  }, [])
+  // House-player case is forced true: it reports readiness (and failure)
+  // itself, so the silence detector is an embed-only signal — and this keeps
+  // the switcher's silence clock from running against it at all.
+  const progressing = useReely ? true : !!src && progressedSrc === src
   // The house player's frame. Watch Together has to steer whichever of the two
   // is actually on screen.
   const reelyFrameRef = React.useRef<HTMLIFrameElement>(null)
@@ -366,6 +381,7 @@ export const DetailsHero = ({
     <SourceSwitcher
       control={sourceControl}
       loaded={shownLoaded}
+      progressing={progressing}
       // Only while the house player is the one on screen. Every lever in there
       // — subtitles, their size, the mini bar, the jump to the next episode —
       // is read by the Reely Player and by nothing else, so over an embed it
@@ -678,6 +694,7 @@ export const DetailsHero = ({
                     episode={selfHost?.episode}
                     frameRef={iframeRef}
                     onFinished={onFinished}
+                    onProgress={onEmbedProgress}
                   />
                 )}
               </PlayerStage>

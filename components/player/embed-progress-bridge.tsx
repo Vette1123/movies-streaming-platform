@@ -37,6 +37,7 @@ export const EmbedProgressBridge = ({
   episode,
   frameRef,
   onFinished,
+  onProgress,
 }: {
   /** The embed URL currently loaded. Empty = nothing playing, no listener. */
   src?: string
@@ -47,6 +48,14 @@ export const EmbedProgressBridge = ({
   frameRef: React.RefObject<HTMLIFrameElement | null>
   /** Ended, or past the credits threshold. Once per title; see ReelyPlayer. */
   onFinished?: () => void
+  /**
+   * Any trusted playback signal at all, for the silence detector. Fired on
+   * every recognised envelope, not throttled: the parent stores WHICH src
+   * played, so the same value re-renders nothing. Passing the src back
+   * rather than a bare flag keeps the signal self-resetting — a new src
+   * invalidates it with no extra effect to clear a boolean.
+   */
+  onProgress?: (src: string) => void
 }) => {
   const finishedRef = React.useRef(onFinished)
   React.useEffect(() => {
@@ -81,6 +90,7 @@ export const EmbedProgressBridge = ({
 
       const progress = parseEmbedProgress(event.data)
       if (!progress) return
+      onProgress?.(src)
 
       const key = playbackKey(type, id, season, episode)
       if (progress.kind === 'ended') {
@@ -105,7 +115,7 @@ export const EmbedProgressBridge = ({
 
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
-  }, [src, type, id, season, episode, frameRef])
+  }, [src, type, id, season, episode, frameRef, onProgress])
 
   return null
 }

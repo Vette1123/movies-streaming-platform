@@ -38,6 +38,17 @@ export function stallNoticeText(autoHopped: boolean): string {
 }
 
 /**
+ * What the silence notice says. A different failure than the stall above: the
+ * frame DID paint, it just plays nothing — which is what a gated or dead
+ * provider looks like from outside its iframe. No hop is attempted on this
+ * signal (an embed waiting for its own play button looks identical), so the
+ * copy must not promise one.
+ */
+export function silentNoticeText(): string {
+  return 'This server is not playing'
+}
+
+/**
  * Only a pick by the viewer is saved. An automatic hop used to go down the same
  * path, so one bad boot replaced the Reely Player with Server 1 for that title
  * and, below supporter, for every title on the device and the account.

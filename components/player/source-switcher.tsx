@@ -17,7 +17,7 @@ import {
 } from '@/config/sources'
 import { signInHref } from '@/lib/account'
 import { trackPlayerFailed, trackSupportCtaClicked } from '@/lib/analytics'
-import { stallNoticeText } from '@/lib/player-hop'
+import { silentNoticeText, stallNoticeText } from '@/lib/player-hop'
 import { cn } from '@/lib/utils'
 import { type StreamSourceControl } from '@/hooks/use-stream-source'
 import {
@@ -175,6 +175,28 @@ function TrialOffer({
 }
 
 /**
+ * Backup servers are free with an account - so that is how they are offered,
+ * not sold. Shared by both anonymous remedies (a never-painted stall, and a
+ * painted stream that plays nothing).
+ */
+function SignInServers() {
+  return (
+    <a
+      href={signInHref(
+        typeof window === 'undefined' ? undefined : window.location.pathname
+      )}
+      className={cn(
+        'tap-target pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-black/75 px-3 py-1.5 font-medium text-white ring-1 ring-white/15 backdrop-blur-md transition-colors hover:bg-black/90',
+        PILL_FOCUS
+      )}
+    >
+      <LogIn className="size-3.5 shrink-0" aria-hidden />
+      Sign in for more servers
+    </a>
+  )
+}
+
+/**
  * The trigger wears what is playing.
  *
  * On the house player it takes the signature gradient, so a supporter can tell
@@ -236,12 +258,21 @@ function houseRowAction(input: {
 export function SourceSwitcher({
   control,
   loaded,
+  progressing = false,
   trailing,
   className,
 }: {
   control: StreamSourceControl
   /** Whether the frame has painted for the CURRENT src. */
   loaded: boolean
+  /**
+   * Whether the CURRENT src has produced any trusted playback signal (an
+   * embed's own progress message). Only meaningful for the embed surface:
+   * the house player reports readiness directly. `progressed` here is what
+   * separates a dead or gated embed — which painted, and will never play —
+   * from one that is merely waiting for its own play button.
+   */
+  progressing?: boolean
   /**
    * Pinned to the end of the bar — the player's own settings. It lives inside
    * this bar rather than beside it because a second floating pill next to the
@@ -281,6 +312,27 @@ export function SourceSwitcher({
 
   const stalled = !loaded && stalledId !== null && stalledId === currentId
   const showWarning = stalled && !loaded
+
+  // The OTHER failure: the frame painted and plays nothing. An embed that
+  // publishes progress proves itself within this window; one that never does
+  // is offered a way out — visibly, and for the anonymous visitor only, who
+  // otherwise sits on a black or gated rectangle with no control at all. There
+  // is deliberately NO hop on this signal: a working embed waiting for its own
+  // play button (autoplay blocked, sound policy) is indistinguishable from a
+  // dead one out here, so moving somebody off it would break streams that
+  // were about to work. The offer clears itself the moment playback starts.
+  const [silentId, setSilentId] = React.useState<string | null>(null)
+  React.useEffect(() => {
+    if (!loaded || progressing) return
+    const timer = setTimeout(() => {
+      setSilentId(currentId)
+      if (currentId) trackPlayerFailed({ source: currentId, reason: 'silent' })
+    }, STALL_MS)
+    return () => clearTimeout(timer)
+  }, [currentId, loaded, progressing])
+
+  const silent =
+    loaded && !progressing && silentId !== null && silentId === currentId
 
   // Nothing to offer at all — a deployment with one server configured. The
   // settings control, if there is one, still has to reach the screen.
@@ -338,7 +390,30 @@ export function SourceSwitcher({
         </div>
       )
     }
-    if (!showWarning) return null
+    if (!showWarning && !silent) return null
+    // Painted but playing nothing, with no account to switch servers from:
+    // today's trial is the only way out, so this is where it shows. No hop
+    // behind the notice (see the silence clock); the pills clear themselves
+    // the moment the embed starts playing.
+    if (silent) {
+      return (
+        <div
+          className={cn(
+            'flex flex-col items-center gap-1.5 px-4 text-xs',
+            className
+          )}
+        >
+          <StallNotice>{silentNoticeText()}</StallNotice>
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
+            {control.reelyUp && trial.status === 'available' ? (
+              <TrialOffer status="available" onStart={trial.start} />
+            ) : (
+              <SignInServers />
+            )}
+          </div>
+        </div>
+      )
+    }
     return (
       <div
         className={cn(
@@ -352,22 +427,7 @@ export function SourceSwitcher({
           (trial.status === 'available' || trial.status === 'used') ? (
             <TrialOffer status={trial.status} onStart={trial.start} />
           ) : null}
-          {/* Backup servers are free with an account - so that is how they
-              are offered, not sold. */}
-          <a
-            href={signInHref(
-              typeof window === 'undefined'
-                ? undefined
-                : window.location.pathname
-            )}
-            className={cn(
-              'tap-target pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-black/75 px-3 py-1.5 font-medium text-white ring-1 ring-white/15 backdrop-blur-md transition-colors hover:bg-black/90',
-              PILL_FOCUS
-            )}
-          >
-            <LogIn className="size-3.5 shrink-0" aria-hidden />
-            Sign in for more servers
-          </a>
+          <SignInServers />
         </div>
       </div>
     )
