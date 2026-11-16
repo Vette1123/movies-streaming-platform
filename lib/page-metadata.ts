@@ -57,7 +57,9 @@ export function withSiteSocial(meta: Metadata): Metadata {
       creator: siteConfig.twitter.creator,
       title: og.title ?? undefined,
       description: og.description ?? undefined,
-      images: imageUrls(images),
+      // One card, one image: a summary_large_image card reads a single
+      // twitter:image, and a detail page's backdrop + poster rendered two.
+      images: imageUrls(images).slice(0, 1),
       ...twitter,
     } as Metadata['twitter'],
   }

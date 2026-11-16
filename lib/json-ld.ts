@@ -1,24 +1,11 @@
 import { isImdbId } from '@/lib/imdb-id'
 
-/**
- * schema.org AggregateRating from a TMDB vote average and count, or undefined
- * with no votes. One shape for the prerendered pages and the Worker's tail ids:
- * they used to disagree (worstRating 0 vs 1, strings vs numbers). TMDB votes
- * run 1-10.
- */
-export function aggregateRating(
-  voteAverage?: number | null,
-  voteCount?: number | null
-) {
-  if (typeof voteAverage !== 'number' || !voteCount) return undefined
-  return {
-    '@type': 'AggregateRating',
-    ratingValue: Number(voteAverage.toFixed(1)),
-    bestRating: 10,
-    worstRating: 1,
-    ratingCount: voteCount,
-  }
-}
+// No aggregateRating on titles, on purpose (removed 2026-11-17). The only
+// votes this site has are TMDB's, and Google's review-snippet policy forbids
+// marking up ratings aggregated from another site: on ~48,000 title pages that
+// is a structured-data manual action waiting to happen. The scores stay
+// visible on the page; they just are not claimed as this site's own.
+// tests/json-ld-escape.test.ts fails if the property comes back.
 
 /**
  * JSON for inside a <script type="application/ld+json">. Escapes `<` so a
@@ -37,7 +24,7 @@ export const jsonLdText = (data: unknown): string =>
  * Unlike a person's id (see personList), a title's TMDB id is the id this page
  * is built from, so the claim is true by construction; IMDb only when the
  * payload already carries it, never a guessed or looked-up one. Shared with
- * the Worker's tail-id fallback, like aggregateRating, so both say the same.
+ * the Worker's tail-id fallback, so both say the same.
  */
 /**
  * The Worker's tail-id Movie / TVSeries node. It has to name the same entity,
@@ -58,7 +45,6 @@ export function tailTitleJsonLd(input: {
   /** YYYY-MM-DD: release date for a movie, first air date for a series. */
   released?: string
   duration?: string
-  rating?: { value: number; count: number } | null
   originalLanguage?: string | null
   imdbId?: string | null
 }): Record<string, unknown> {
@@ -83,8 +69,6 @@ export function tailTitleJsonLd(input: {
     }
   }
   if (input.duration) schema.duration = input.duration
-  const rating = aggregateRating(input.rating?.value, input.rating?.count)
-  if (rating) schema.aggregateRating = rating
   return schema
 }
 

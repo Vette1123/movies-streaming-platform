@@ -59,7 +59,11 @@ export async function generateMetadata(props: {
     .filter((title): title is string => Boolean(title))
   // The description is what a search result shows, so it answers the query
   // somebody actually typed: what this person has been in.
-  const description = personDescription(person.name, known)
+  const description = personDescription(
+    person.name,
+    known,
+    person.known_for_department
+  )
 
   const portrait = getMediaShareImage(null, person.profile_path)
   return withSiteSocial({

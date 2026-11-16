@@ -80,8 +80,6 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: [
           'Googlebot',
-          'Bingbot',
-          'DuckDuckBot',
           'facebookexternalhit',
           'LinkedInBot',
           'WhatsApp',
@@ -94,13 +92,21 @@ export default function robots(): MetadataRoute.Robots {
         disallow: CRAWL_DISALLOW,
         // Google has never supported Crawl-delay and ignores this line, which
         // is the intent — Google is the one crawler that should not be
-        // throttled. bingbot, DuckDuckBot and Applebot all honour it, and
-        // Applebot is why the number is here: 218 requests per 40 minutes on
-        // 2026-09-01, ~7,800/day, against a 100,000/day invocation cap it
-        // shares with everyone else. 20 seconds caps a compliant crawler at
-        // 4,320/day, which is more than enough to keep a ~14,900-URL catalogue
-        // current and roughly half what Applebot was taking.
+        // throttled. Applebot honours it and is why the number is here: 218
+        // requests per 40 minutes on 2026-09-01, ~7,800/day, against a
+        // 100,000/day invocation cap it shares with everyone else. 20 seconds
+        // caps it at 4,320/day, roughly half what it was taking.
         crawlDelay: 20,
+      },
+      // Bing feeds DuckDuckGo and Yahoo too, so it is the second search engine
+      // that matters, and it reported sitemap pages as missing. At 20 seconds a
+      // full pass over the ~48,000-URL sitemap took 11 days; at 10 it is under
+      // 6, and 8,640/day is still under 9% of the invocation cap.
+      {
+        userAgent: ['Bingbot', 'DuckDuckBot'],
+        allow: CRAWL_ALLOW,
+        disallow: CRAWL_DISALLOW,
+        crawlDelay: 10,
       },
       // Everything else, at a rate this site can afford.
       //
@@ -112,8 +118,8 @@ export default function robots(): MetadataRoute.Robots {
       // caps a compliant crawler at 8,640 requests/day.
       //
       // The number exists because of what a tail URL costs here: the site
-      // advertises ~14,900 URLs and prerenders ~1,000 of them, so every crawl
-      // of the other ~13,900 is a Worker invocation against a 100,000/day
+      // advertises ~48,000 URLs and prerenders ~1,000 of them, so every crawl
+      // of the other ~47,000 is a Worker invocation against a 100,000/day
       // free-plan cap. Crawl rate is a budget line, not a politeness setting.
       {
         userAgent: '*',
@@ -140,6 +146,5 @@ export default function robots(): MetadataRoute.Robots {
       },
     ],
     sitemap: [`${baseUrl}/sitemap.xml`],
-    host: baseUrl,
   }
 }

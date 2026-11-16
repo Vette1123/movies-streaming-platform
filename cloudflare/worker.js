@@ -1442,7 +1442,6 @@ async function handleDetailFallback(match, request, env, ctx, url) {
     genres: details.genres?.map((genre) => genre.name),
     released: detail.released,
     duration: detail.duration,
-    rating: detail.rating,
     originalLanguage: details.original_language,
     imdbId: details.imdb_id,
   })

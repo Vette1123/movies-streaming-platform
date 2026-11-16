@@ -1,7 +1,7 @@
 import { siteConfig } from '@/config/site'
 import { SUPPORT_EMAIL } from '@/config/support'
-import { aggregateRating, jsonLdText, titleSameAs } from '@/lib/json-ld'
-import { mediaDescription } from '@/lib/seo-description'
+import { jsonLdText, titleSameAs } from '@/lib/json-ld'
+import { mediaDescription, personJobTitle } from '@/lib/seo-description'
 
 export { titleSameAs }
 
@@ -225,8 +225,6 @@ interface MovieSchemaInput {
   runtime?: number | null
   genres?: string[]
   imageUrl?: string | null
-  voteAverage?: number | null
-  voteCount?: number | null
   tagline?: string | null
   cast?: (string | null | undefined)[]
   directors?: (string | null | undefined)[]
@@ -265,8 +263,6 @@ export const movieJsonLd = (movie: MovieSchemaInput) => {
     const minutes = movie.runtime % 60
     schema.duration = `PT${hours}H${minutes}M`
   }
-  const rating = aggregateRating(movie.voteAverage, movie.voteCount)
-  if (rating) schema.aggregateRating = rating
   const actors = personList(movie.cast)
   if (actors) schema.actor = actors
   const directors = personList(movie.directors)
@@ -287,8 +283,6 @@ interface SeriesSchemaInput {
   numberOfEpisodes?: number | null
   genres?: string[]
   imageUrl?: string | null
-  voteAverage?: number | null
-  voteCount?: number | null
   tagline?: string | null
   cast?: (string | null | undefined)[]
   creators?: (string | null | undefined)[]
@@ -319,8 +313,6 @@ export const tvSeriesJsonLd = (series: SeriesSchemaInput) => {
   if (series.genres?.length) schema.genre = series.genres
   if (series.numberOfSeasons) schema.numberOfSeasons = series.numberOfSeasons
   if (series.numberOfEpisodes) schema.numberOfEpisodes = series.numberOfEpisodes
-  const rating = aggregateRating(series.voteAverage, series.voteCount)
-  if (rating) schema.aggregateRating = rating
   const actors = personList(series.cast)
   if (actors) schema.actor = actors
   const creators = personList(series.creators)
@@ -409,7 +401,8 @@ export const personJsonLd = (person: PersonSchemaInput) => {
   if (person.birthday) schema.birthDate = person.birthday
   if (person.deathday) schema.deathDate = person.deathday
   if (person.birthPlace) schema.birthPlace = person.birthPlace
-  if (person.knownFor) schema.jobTitle = person.knownFor
+  const jobTitle = personJobTitle(person.knownFor)
+  if (jobTitle) schema.jobTitle = jobTitle
   return schema
 }
 

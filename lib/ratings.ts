@@ -77,8 +77,8 @@ const votesDetail = (votes?: number | null): string | undefined => {
  * The tiles, in the order a reader expects them.
  *
  * TMDB FIRST, and that is the whole point: TMDB's average is the score the
- * site shows EVERYWHERE else - on every card, on the homepage hero, on the
- * details hero, and in the JSON-LD's aggregateRating. A reader who saw "8"
+ * site shows EVERYWHERE else - on every card, on the homepage hero, and on the
+ * details hero. A reader who saw "8"
  * on a card and then "IMDb 9.3" on the details page had no way to know those
  * were two sources rather than one number that changed. So the canonical
  * score leads, and the three other sources follow it, each labelled.

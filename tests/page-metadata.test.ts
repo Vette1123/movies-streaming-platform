@@ -49,6 +49,21 @@ describe('withSiteSocial', () => {
     })
   })
 
+  it('gives the twitter card one image when openGraph has two', () => {
+    const meta = withSiteSocial({
+      openGraph: {
+        title: 'Fight Club',
+        images: [
+          { url: 'https://x/backdrop.jpg' },
+          { url: 'https://x/poster.jpg' },
+        ],
+      },
+    })
+    expect((meta.twitter as { images: string[] }).images).toEqual([
+      'https://x/backdrop.jpg',
+    ])
+  })
+
   it('wraps every page that sets openGraph', () => {
     const files: string[] = []
     const walk = (dir: string) => {

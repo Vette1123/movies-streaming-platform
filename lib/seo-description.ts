@@ -124,8 +124,13 @@ const factLine = ({ title, year, kind, genres }: MediaDescriptionInput) => {
   return `${named} — ${label}.`
 }
 
-/** A sentence ends in punctuation, so the next one does not run into it. */
-const endSentence = (text: string) => (/[.!?…]$/.test(text) ? text : `${text}.`)
+/**
+ * A sentence ends in punctuation, so the next one does not run into it. A
+ * closing quote or bracket after the stop still ends it: Star Wars' overview
+ * ends `far, far away…."`, and appending a full stop read as `…".`.
+ */
+const endSentence = (text: string) =>
+  /[.!?…]["'”’)\]]*$/.test(text) ? text : `${text}.`
 
 export interface MediaDescriptionInput {
   title: string
@@ -242,16 +247,43 @@ const PERSON_OFFERS = [
 ]
 
 /**
+ * TMDB's `known_for_department` is a department ("Directing"), not a job.
+ * Schema.org's jobTitle wants the job, and the description's verb depends on
+ * it: George Lucas has not "been in" Star Wars, he made it.
+ */
+const DEPARTMENT_JOB: Record<string, string> = {
+  Acting: 'Actor',
+  Directing: 'Director',
+  Writing: 'Writer',
+  Production: 'Producer',
+  Sound: 'Composer',
+  Camera: 'Cinematographer',
+  Editing: 'Editor',
+  Creator: 'Creator',
+}
+
+export const personJobTitle = (department?: string | null) =>
+  department ? DEPARTMENT_JOB[department] : undefined
+
+const isBehindCamera = (department?: string | null) =>
+  Boolean(department) && department !== 'Acting'
+
+/**
  * A person page: what they have been in, which is the query somebody typed.
  *
  * Up to three known titles, dropping from the end until the head leaves room
  * for an offer — three long titles alone ran a description to 225 characters.
  */
-export const personDescription = (name: string, known: string[]): string => {
+export const personDescription = (
+  name: string,
+  known: string[],
+  department?: string | null
+): string => {
+  const verb = isBehindCamera(department) ? 'worked on' : 'has been in'
   const heads = known.length
     ? known.map(
         (_, index) =>
-          `Every film and series ${name} has been in, including ${known.slice(0, known.length - index).join(', ')}.`
+          `Every film and series ${name} ${verb}, including ${known.slice(0, known.length - index).join(', ')}.`
       )
     : [`Films and series featuring ${name}.`]
   return bestOf(heads, PERSON_OFFERS)

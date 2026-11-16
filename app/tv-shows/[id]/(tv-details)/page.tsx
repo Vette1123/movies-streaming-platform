@@ -133,8 +133,6 @@ const TVSeries = async (props: PageDetailsProps) => {
       seriesDetails.backdrop_path,
       seriesDetails.poster_path
     ),
-    voteAverage: seriesDetails.vote_average,
-    voteCount: seriesDetails.vote_count,
     tagline: seriesDetails.tagline,
     cast: castNames(seriesCredits),
     creators: seriesDetails.created_by?.map((person) => person.name),
