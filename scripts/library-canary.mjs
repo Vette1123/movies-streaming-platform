@@ -105,7 +105,10 @@ async function checkTitle(key, path) {
       signal: signal(),
     })
     if (variant.status !== 200) {
-      return { ok: false, detail: `${key}: variant ${ref} -> ${variant.status}` }
+      return {
+        ok: false,
+        detail: `${key}: variant ${ref} -> ${variant.status}`,
+      }
     }
     ref = firstRef(await variant.text())
   }
@@ -118,7 +121,10 @@ async function checkTitle(key, path) {
   })
   const bytes = seg.ok ? (await seg.arrayBuffer()).byteLength : 0
   if (seg.status !== 200 || !bytes) {
-    return { ok: false, detail: `${key}: segment ${seg.status}, ${bytes} bytes` }
+    return {
+      ok: false,
+      detail: `${key}: segment ${seg.status}, ${bytes} bytes`,
+    }
   }
   return { ok: true, detail: `${key}: manifest + ${bytes} bytes of segment` }
 }
