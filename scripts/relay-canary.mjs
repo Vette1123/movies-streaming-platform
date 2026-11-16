@@ -148,11 +148,21 @@ const relayHost = (relay) => new URL(relay).host
  * rather than holding it, so the canary mirrors that; when no relay carries
  * the title at all, wait out any cooldown once and re-walk the cooling ones
  * before declaring failure — a burst of real viewers must not page anybody.
+ *
+ * A relay that answers non-JSON (Deno's 503 suspension page, a proxy error)
+ * is a miss on that relay, never an abort: the walk moves to the next one,
+ * exactly as the player's askRelays does.
  */
 async function checkTitle({ query }) {
   const misses = []
   for (const relay of RELAYS) {
-    const stages = await selftest(relay, query)
+    let stages
+    try {
+      stages = await selftest(relay, query)
+    } catch (error) {
+      misses.push({ relay, stages: { error: String(error.message ?? error) } })
+      continue
+    }
     if (selftestPassed(stages)) {
       return {
         ok: true,
@@ -169,7 +179,12 @@ async function checkTitle({ query }) {
     )
     await new Promise((r) => setTimeout(r, wait * 1000))
     for (const { relay } of cooling) {
-      const stages = await selftest(relay, query)
+      let stages
+      try {
+        stages = await selftest(relay, query)
+      } catch (error) {
+        stages = { error: String(error.message ?? error) }
+      }
       if (selftestPassed(stages)) {
         return {
           ok: true,
