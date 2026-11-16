@@ -7,6 +7,17 @@
 /** The relay the player resolves through. Public: the canary names it too. */
 export const RELAY_URL = 'https://reely-resolver-relay.reely.deno.net'
 
+/**
+ * The failover relay, deployed 2026-11-16. Same code, its own RELAY_SECRET
+ * (the worker pairs it as RELAY_SECRET_2); it serves only what relay 1
+ * cannot. The canary walks both so a report says what a play would hit.
+ * The site's health gate (lib/pro/relay-health.ts) deliberately stays on
+ * relay 1 only: with failover the player survives relay 1's death without
+ * any gate change, and a second selftest walk per colo per TTL is not worth
+ * the Worker subrequests on the route that is 63% of invocations.
+ */
+export const RELAY_2_URL = 'https://reely-resolver-relay-2.reely.deno.net'
+
 /** The title the health check walks: long-running and widely carried. */
 export const HEALTH_QUERY = 'ty=movie&id=550'
 

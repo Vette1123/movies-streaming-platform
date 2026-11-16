@@ -391,6 +391,22 @@ const NOT_MACHINE_PATH =
   ` and not starts_with(http.request.uri.path, "${LIBRARY_INGEST_PREFIX}")`
 
 /**
+ * The playback worker's custom domain, exempt from the site's WAF.
+ *
+ * play.reely.space lives in THIS zone, so every rule below applies to it too
+ * once the hostname is attached — and the player is machine-called in ways
+ * the site never is: the site's worker and probe scripts POST its routes with
+ * no user-agent at all (to them a challenge page is an error object), and a
+ * supporter's playback must not hinge on solving a puzzle the site's tail
+ * pages needed. Nothing is given away: every player route demands a signed
+ * ticket, and its page shell is one static asset.
+ *
+ * SHIP THIS BEFORE the hostname is attached — after attachment every rule
+ * below would already apply to play.reely.space.
+ */
+const PLAY_HOST_EXEMPT = 'not (http.host eq "play.reely.space")'
+
+/**
  * Everything a page needs in order to BE a page.
  *
  * Exempting the documents alone was half a fix and looked like a whole one: the
@@ -437,6 +453,7 @@ const BLOCK_RULE = {
     `((${orExpr(BLOCK_UAS)}) or (http.user_agent eq ""))` +
     ` and ${notAnyPath(EXEMPT_PATHS)}` +
     ` and ${NOT_MACHINE_PATH}` +
+    ` and ${PLAY_HOST_EXEMPT}` +
     ` and not (${assetExpr()})`,
   action: 'managed_challenge',
 }
@@ -520,6 +537,7 @@ const BLOCK_FROZEN_UAS_RULE = {
     `(${uaEqAny(STALE_BROWSER_UAS)})` +
     ` and ${notAnyPath(EXEMPT_PATHS)}` +
     ` and ${NOT_MACHINE_PATH}` +
+    ` and ${PLAY_HOST_EXEMPT}` +
     ` and not (${assetExpr()})`,
   action: 'block',
 }
@@ -559,6 +577,10 @@ const CHALLENGE_DETAIL_SCRAPERS_RULE = {
     // the page exists for.
     'not (starts_with(http.request.uri.path, "/movies/year") or starts_with(http.request.uri.path, "/tv-shows/year"))',
     'not cf.client.bot',
+    // The playback worker's own hostname: its /play shell and /api/* routes are
+    // nothing like these paths, and the rule's whole purpose is the site's
+    // expensive detail renders. See PLAY_HOST_EXEMPT.
+    PLAY_HOST_EXEMPT,
     // Does not look like a browser at all. The frozen-fingerprint case — a
     // scraper that copies a real browser string — is BLOCK_FROZEN_UAS_RULE
     // above, which covers every path rather than only these.
@@ -579,7 +601,8 @@ const RATELIMIT_RULE = {
   // limit and silently kill "load more" on scroll. Exclude genre paths (still
   // just starts_with, so free-plan compatible).
   expression:
-    '(starts_with(http.request.uri.path, "/movies/") or starts_with(http.request.uri.path, "/tv-shows/")) and not (starts_with(http.request.uri.path, "/movies/genre") or starts_with(http.request.uri.path, "/tv-shows/genre")) and not (starts_with(http.request.uri.path, "/movies/year") or starts_with(http.request.uri.path, "/tv-shows/year"))',
+    '(starts_with(http.request.uri.path, "/movies/") or starts_with(http.request.uri.path, "/tv-shows/")) and not (starts_with(http.request.uri.path, "/movies/genre") or starts_with(http.request.uri.path, "/tv-shows/genre")) and not (starts_with(http.request.uri.path, "/movies/year") or starts_with(http.request.uri.path, "/tv-shows/year"))' +
+    ` and ${PLAY_HOST_EXEMPT}`,
   // Free plan only allows `block` for rate limits (no managed_challenge).
   action: 'block',
   // Free plan caps period to 10s and only lets the expression match on Path /

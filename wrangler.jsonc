@@ -97,7 +97,10 @@
     "NODE_ENV": "production",
     // Own-library mode: the one origin allowed to read the HLS routes
     // cross-origin (the player iframe). Same-origin site requests need no CORS.
-    "LIBRARY_PLAYER_ORIGIN": "https://reely-pro-player.boogado66.workers.dev",
+    // The custom domain, not the workers.dev form — that one stays live as a
+    // fallback, but the ticket URLs and this CORS grant must name the SAME
+    // origin or the player's fetches to /api/library/* all 403.
+    "LIBRARY_PLAYER_ORIGIN": "https://play.reely.space",
     // Tier-0 media plane host. The health route and the ticket gate read the
     // library catalog from it to know which titles play without the relay
     // (lib/pro/library-catalog.ts). The catalog file NAME is the obscurity

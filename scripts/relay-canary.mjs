@@ -25,15 +25,21 @@ import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 
 import {
+  RELAY_2_URL,
   RELAY_URL,
   selftestPassed,
   selftestReason,
 } from './lib/relay-selftest.mjs'
 
 const SITE = process.env.SITE_URL ?? 'https://www.reely.space'
-const PLAYER =
-  process.env.PLAYER_URL ?? 'https://reely-pro-player.boogado66.workers.dev'
-const RELAY = process.env.RELAY_URL || RELAY_URL
+// The custom domain, not the workers.dev form — this is what production
+// mints into every ticket URL since 2026-11-16. Workers.dev stays live as
+// the fallback origin; probing the domain is what a visitor does.
+const PLAYER = process.env.PLAYER_URL ?? 'https://play.reely.space'
+const RELAYS = [
+  process.env.RELAY_URL || RELAY_URL,
+  process.env.RELAY_2_URL || RELAY_2_URL,
+]
 // A current browser string: the WAF challenges empty and frozen user-agents.
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36'
@@ -120,8 +126,8 @@ async function checkSession() {
   }
 }
 
-async function selftest(query) {
-  const res = await fetch(`${RELAY}/selftest?${query}`, {
+async function selftest(relay, query) {
+  const res = await fetch(`${relay}/selftest?${query}`, {
     headers: { 'user-agent': UA },
     signal: signal(),
   })
@@ -134,21 +140,51 @@ async function selftest(query) {
   }
 }
 
+const relayHost = (relay) => new URL(relay).host
+
+/**
+ * One title, walked the way a play now walks: every relay in order, first
+ * usable answer wins. A cooling 429 moves the player to the next relay
+ * rather than holding it, so the canary mirrors that; when no relay carries
+ * the title at all, wait out any cooldown once and re-walk the cooling ones
+ * before declaring failure — a burst of real viewers must not page anybody.
+ */
 async function checkTitle({ query }) {
-  let stages = await selftest(query)
-  // A 429 cooldown clears itself in about 90s. Wait it out once, so a burst
-  // of real viewers does not page anybody; still cooling after that is real.
-  if (stages.coolingFor) {
-    await new Promise((r) =>
-      setTimeout(r, Math.min(stages.coolingFor + 5, 150) * 1000)
+  const misses = []
+  for (const relay of RELAYS) {
+    const stages = await selftest(relay, query)
+    if (selftestPassed(stages)) {
+      return {
+        ok: true,
+        detail: `${relayHost(relay)}: segment ${stages.segment.bytes} bytes, resolved in ${stages.resolvedIn}`,
+      }
+    }
+    misses.push({ relay, stages })
+  }
+  const cooling = misses.filter((m) => m.stages.coolingFor)
+  if (cooling.length) {
+    const wait = Math.min(
+      Math.max(...cooling.map((m) => m.stages.coolingFor)) + 5,
+      150
     )
-    stages = await selftest(query)
+    await new Promise((r) => setTimeout(r, wait * 1000))
+    for (const { relay } of cooling) {
+      const stages = await selftest(relay, query)
+      if (selftestPassed(stages)) {
+        return {
+          ok: true,
+          detail: `${relayHost(relay)}: segment ${stages.segment.bytes} bytes, resolved in ${stages.resolvedIn}`,
+        }
+      }
+      const miss = misses.find((m) => m.relay === relay)
+      miss.stages = stages
+    }
   }
   return {
-    ok: selftestPassed(stages),
-    detail: selftestPassed(stages)
-      ? `segment ${stages.segment.bytes} bytes, resolved in ${stages.resolvedIn}`
-      : selftestReason(stages),
+    ok: false,
+    detail: misses
+      .map((m) => `${relayHost(m.relay)}: ${selftestReason(m.stages)}`)
+      .join(' | '),
   }
 }
 
