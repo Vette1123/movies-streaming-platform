@@ -190,3 +190,4 @@ with the work, not after.
 | 2026-11-15 | [UX, PostHog and SEO sweep](2026-11-15-ux-seo-sweep.md) | A second hand-written copy of a schema node drifts; build both from one function or pin them with a parity test. |
 | 2026-11-15 | [Sitemap split](2026-11-15-sitemap-split.md) | Size a limit check by the unit the limit applies to (one sitemap file), not by the whole site. |
 | 2026-11-15 | [App-wide audit](2026-11-15-app-audit.md) | Decide whether a heading shows from the list it actually renders; grep for raw `localStorage.` after any storage fix. |
+| 2026-11-16 | [Search and the mobile menu paint first](2026-11-16-search-and-menu-paint-first.md) | Measure a fix against its own target, not the overall p75; a dialog opens its shell in the tap and fills the body after the paint, focus stays in the tap. |

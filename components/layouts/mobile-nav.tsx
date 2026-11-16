@@ -15,6 +15,7 @@ import {
 } from '@/lib/apps'
 import { cn } from '@/lib/utils'
 import { useAccountIdentity } from '@/hooks/use-account'
+import { usePaintedOpen } from '@/hooks/use-painted-open'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
 import { Button } from '@/components/ui/button'
 import {
@@ -111,6 +112,8 @@ export function MobileNav({ items }: MobileNavProps) {
   const pathname = usePathname()
   const { canPrompt, needsIosHint, promptInstall } = usePwaInstall()
   const close = React.useCallback(() => setIsOpen(false), [])
+  // The drawer body mounts one frame after the tap, under the slide-in.
+  const bodyReady = usePaintedOpen(isOpen)
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -146,66 +149,70 @@ export function MobileNav({ items }: MobileNavProps) {
           </Link>
         </div>
         <div className="flex-1 overflow-y-auto overscroll-contain">
-          <nav className="flex flex-col divide-y divide-border/60 px-6 pb-4">
-            {items?.map((item) => (
-              <MobileLink
-                key={item.title}
-                href={item.href!}
-                pathname={pathname}
-                setIsOpen={setIsOpen}
-                disabled={item.disabled}
-                scroll={item.scroll}
-              >
-                {item.title}
-              </MobileLink>
-            ))}
-          </nav>
-          {/* The fixed PWA install nudge floats over the drawer's last row, so
+          {bodyReady && (
+            <>
+              <nav className="flex flex-col divide-y divide-border/60 px-6 pb-4">
+                {items?.map((item) => (
+                  <MobileLink
+                    key={item.title}
+                    href={item.href!}
+                    pathname={pathname}
+                    setIsOpen={setIsOpen}
+                    disabled={item.disabled}
+                    scroll={item.scroll}
+                  >
+                    {item.title}
+                  </MobileLink>
+                ))}
+              </nav>
+              {/* The fixed PWA install nudge floats over the drawer's last row, so
               leave room for it while it can still appear. */}
-          <div
-            className={cn(
-              'space-y-6 px-6 pt-2',
-              canPrompt || needsIosHint ? 'pb-28' : 'pb-10'
-            )}
-          >
-            <SupportDrawerSection onNavigate={close} />
-            <AccountDrawerSection onNavigate={close} />
-            <DrawerSection title="Apps & tools">
-              {canPrompt && (
-                <DrawerAction
-                  Icon={Smartphone}
-                  label="Install app"
-                  tone="accent"
-                  onClick={async () => {
-                    close()
-                    await promptInstall()
-                  }}
-                />
-              )}
-              {COMPANION_APPS.map((app) => (
-                <DrawerAction
-                  key={app.slug}
-                  Icon={APP_ICONS[app.slug]}
-                  iconClassName="size-7"
-                  label={app.name}
-                  hint={storesLabel(app)}
-                  tone="brand"
-                  onClick={() => {
-                    close()
-                    openStoreListing(app)
-                  }}
-                />
-              ))}
-              {TOOL_LINKS.map((link) => (
-                <DrawerAction key={link.label} {...link} onClick={close} />
-              ))}
-            </DrawerSection>
-            <DrawerSection title="Connect">
-              {SOCIAL_LINKS.map((link) => (
-                <DrawerAction key={link.label} {...link} onClick={close} />
-              ))}
-            </DrawerSection>
-          </div>
+              <div
+                className={cn(
+                  'space-y-6 px-6 pt-2',
+                  canPrompt || needsIosHint ? 'pb-28' : 'pb-10'
+                )}
+              >
+                <SupportDrawerSection onNavigate={close} />
+                <AccountDrawerSection onNavigate={close} />
+                <DrawerSection title="Apps & tools">
+                  {canPrompt && (
+                    <DrawerAction
+                      Icon={Smartphone}
+                      label="Install app"
+                      tone="accent"
+                      onClick={async () => {
+                        close()
+                        await promptInstall()
+                      }}
+                    />
+                  )}
+                  {COMPANION_APPS.map((app) => (
+                    <DrawerAction
+                      key={app.slug}
+                      Icon={APP_ICONS[app.slug]}
+                      iconClassName="size-7"
+                      label={app.name}
+                      hint={storesLabel(app)}
+                      tone="brand"
+                      onClick={() => {
+                        close()
+                        openStoreListing(app)
+                      }}
+                    />
+                  ))}
+                  {TOOL_LINKS.map((link) => (
+                    <DrawerAction key={link.label} {...link} onClick={close} />
+                  ))}
+                </DrawerSection>
+                <DrawerSection title="Connect">
+                  {SOCIAL_LINKS.map((link) => (
+                    <DrawerAction key={link.label} {...link} onClick={close} />
+                  ))}
+                </DrawerSection>
+              </div>
+            </>
+          )}
         </div>
       </SheetContent>
     </Sheet>
