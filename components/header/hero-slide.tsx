@@ -488,13 +488,26 @@ export function HeroSlide({
                   date={movie.release_date || movie.first_air_date}
                   className="relative top-0 left-0 mb-2 px-2.5 py-1 text-[11px] lg:text-xs"
                 />
-                {/* The title is NOT a link, and neither is the synopsis. The
-                    stage's gesture is a horizontal drag, and a link is natively
-                    draggable: pressing the wordmark picked up a ghost of the
-                    link instead of moving the slide, so the biggest thing on
-                    the hero was the one place you could not swipe from. Only
-                    the buttons act on a click; everything else swipes. */}
-                <div className="w-full">
+                {/* The title opens the title, like Watch Now: viewers click
+                    the wordmark (16 dead clicks from one person in a week).
+                    It used to be plain text because a link is natively
+                    draggable and pressing it picked up a ghost instead of
+                    swiping; the carousel now cancels dragstart on the whole
+                    stage and routes touch taps on links itself, so a press
+                    on the title still swipes and a tap still opens. The
+                    synopsis stays plain text. */}
+                <MediaLink
+                  href={href}
+                  art={movie}
+                  onClick={() =>
+                    trackHeroWatchClicked({
+                      media_id: movie.id,
+                      media_type: mediaType,
+                      target: 'title',
+                    })
+                  }
+                  className="block w-full rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
+                >
                   <HeroWordmark
                     as="h2"
                     title={title}
@@ -509,7 +522,7 @@ export function HeroSlide({
                     // is one the slide wants now.
                     loading="eager"
                   />
-                </div>
+                </MediaLink>
               </div>
               <HeroRatesInfos movie={movie} genreTable={genreTable} />
               {/* The same four scores the details page shows, in one line: the
@@ -561,6 +574,7 @@ export function HeroSlide({
                   trackHeroWatchClicked({
                     media_id: movie.id,
                     media_type: mediaType,
+                    target: 'button',
                   })
                 }
                 // Shared with the detail hero's play button; see the note on
