@@ -3,14 +3,17 @@
 //
 // The menus used to show the same generic phone glyph beside every app, so
 // the three rows were told apart only by reading. The icons live in the apps'
-// own Expo projects (assets/images/icon.png), which sit beside this repo.
+// own Expo projects (assets/images/icon.png), which sit beside this repo;
+// scripts/lib/companion-icon-source.mjs knows both folder layouts in use.
 //
 // Run: pnpm apps:icons [path-to-the-React-Native-folder]
 //      default: ../../React Native (relative to the repo root)
 
-import { existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { mkdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import sharp from 'sharp'
+
+import { findIconSource } from './lib/companion-icon-source.mjs'
 
 const SIZE = 120
 const sourceRoot = resolve(process.argv[2] ?? '../../React Native')
@@ -26,8 +29,8 @@ if (!slugs.length) throw new Error('found 0 apps in lib/apps.ts')
 
 mkdirSync(outDir, { recursive: true })
 for (const slug of slugs) {
-  const src = join(sourceRoot, slug, 'assets', 'images', 'icon.png')
-  if (!existsSync(src)) throw new Error(`${slug}: no icon at ${src}`)
+  const { src, tried } = findIconSource(sourceRoot, slug)
+  if (!src) throw new Error(`${slug}: no icon; tried ${tried.join(', ')}`)
   const out = join(outDir, `${slug}.webp`)
   const info = await sharp(src)
     .resize(SIZE, SIZE)
