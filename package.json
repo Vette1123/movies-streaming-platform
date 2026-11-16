@@ -44,6 +44,7 @@
     "cf:cpu": "node scripts/cf-cpu.mjs",
     "hop:probe": "node scripts/hop-probe.mjs",
     "relay:canary": "node scripts/relay-canary.mjs",
+    "library:canary": "node scripts/library-canary.mjs",
     "dev:stop": "node scripts/dev-stop.mjs",
     "posthog:query": "node scripts/posthog-query.mjs",
     "posthog:issues": "node scripts/posthog-issues.mjs",

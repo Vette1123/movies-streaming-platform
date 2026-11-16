@@ -1,0 +1,76 @@
+# Is the own-library media plane able to serve? Hourly, read-only.
+#
+# The library tier sits ahead of every provider walk — a catalogued title
+# plays from our own CDN with no provider involved — and nothing pings it
+# between ingests, so its first alarm is a person pressing play. This walks
+# catalog -> manifest -> segment (scripts/library-canary.mjs) and:
+#   - on failure: opens ONE issue labelled `library-down` (GitHub notifies the
+#     repo owner) and fails the run;
+#   - on recovery: closes it with the passing report.
+# It spends nothing, needs no token, and no secrets: the catalog path is
+# committed in the player's wrangler.jsonc and mirrored in the canary script.
+name: Library canary
+
+on:
+  schedule:
+    # Off the hour and apart from the relay canary (23), so two alarms never
+    # land together.
+    - cron: '41 * * * *'
+  workflow_dispatch:
+    inputs:
+      library_url:
+        description: 'Drill: point at a dead library URL to prove the issue opens (empty = the real plane)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: library-canary
+  cancel-in-progress: false
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPORT_FILE: report.md
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - id: canary
+        continue-on-error: true
+        run: node scripts/library-canary.mjs
+        env:
+          LIBRARY_URL: ${{ inputs.library_url || 'https://reely-library.boogado66.workers.dev' }}
+
+      - name: Open the outage issue
+        if: steps.canary.outcome == 'failure'
+        run: |
+          gh label create library-down --color B60205 --description 'Library media plane cannot serve' --force
+          open=$(gh issue list --state open --label library-down --json number --jq '.[0].number')
+          if [ -z "$open" ]; then
+            [ -s report.md ] || echo 'The canary crashed before writing a report; see the run log.' > report.md
+            printf '\n\nRun: %s/%s/actions/runs/%s\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" >> report.md
+            gh issue create --title 'Library media plane cannot serve (library canary)' --label library-down --body-file report.md
+          else
+            echo "Issue #$open already open; not adding noise."
+          fi
+          exit 1
+
+      - name: Close the outage issue
+        if: steps.canary.outcome == 'success'
+        run: |
+          for n in $(gh issue list --state open --label library-down --json number --jq '.[].number'); do
+            gh issue close "$n" --comment "Recovered.
+
+          $(cat report.md)"
+          done
