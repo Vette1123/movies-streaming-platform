@@ -16,7 +16,7 @@
       "title": "The Boy and the Heron",
       "reportedOn": "2026-11-10",
       "reportId": "9-3835000042193-1367232682",
-      "complainant": "not named in the Google notice (Lumen pending)",
+      "complainant": "comeso GmbH",
       "via": "Google Search Console (Lumen 102898604), notice 2026-11-08"
     },
     {
@@ -43,7 +43,7 @@
       "title": "Furuhata Ninzaburo",
       "reportedOn": "2026-11-10",
       "reportId": "3-0155000042356-0567812981",
-      "complainant": "not named in the Google notice (Lumen pending)",
+      "complainant": "comeso GmbH",
       "via": "Google Search Console (Lumen 102894666), notice 2026-11-08"
     },
     {
@@ -57,11 +57,20 @@
     },
     {
       "type": "tv",
+      "id": 241002,
+      "title": "Adam's Sweet Agony",
+      "reportedOn": "2026-11-16",
+      "reportId": "5-3562000041642-1240424411",
+      "complainant": "comeso GmbH",
+      "via": "Google Search Console (Lumen 103304933), notice 2026-11-14"
+    },
+    {
+      "type": "tv",
       "id": 298610,
       "title": "Spooky in Love",
       "reportedOn": "2026-11-10",
       "reportId": "5-3900000042088-1966324828",
-      "complainant": "not named in the Google notice (Lumen pending)",
+      "complainant": "comeso GmbH",
       "via": "Google Search Console (Lumen 102921129), notice 2026-11-09"
     },
     {
@@ -70,7 +79,7 @@
       "title": "The Apartment Job",
       "reportedOn": "2026-11-10",
       "reportId": "1-7398000042030-0632829316",
-      "complainant": "not named in the Google notice (Lumen pending)",
+      "complainant": "comeso GmbH",
       "via": "Google Search Console (Lumen 102900671), notice 2026-11-08"
     },
     {
@@ -79,7 +88,7 @@
       "title": "Magical Girl Raising Project: Restart",
       "reportedOn": "2026-11-10",
       "reportId": "5-2065000040652-1363698075",
-      "complainant": "not named in the Google notice (Lumen pending)",
+      "complainant": "comeso GmbH",
       "via": "Google Search Console (Lumen 102966629), notice 2026-11-09"
     }
   ]

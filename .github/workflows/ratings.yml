@@ -62,8 +62,13 @@ jobs:
 
       # The sitemap ledger rides the same daily commit: every title URL the
       # live sitemap has listed, kept forever (scripts/lib/sitemap-ledger.mjs).
+      # --probe: 1,500 ids of each type a day against TMDB (~44k ids, a full
+      # pass every ~15 days); titles TMDB deleted leave the sitemap.
       - name: Fold the live sitemap into the ledger
-        run: pnpm sitemap:ledger
+        run: pnpm sitemap:ledger --probe 1500
+        env:
+          TMDB_HEADER_KEY: ${{ secrets.TMDB_HEADER_KEY }}
+          NEXT_PUBLIC_TMDB_BASEURL: ${{ secrets.NEXT_PUBLIC_TMDB_BASEURL }}
 
       - name: Commit what we learned
         run: |
