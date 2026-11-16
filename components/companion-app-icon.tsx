@@ -43,7 +43,10 @@ function makeIcon(slug: string, name: string): ComponentType<IconProps> {
  * public/apps/socialdownloader.webp is rendered from that site's own
  * src/lib/brandMark.ts (120px, square, this component rounds it).
  */
-export const SOCIAL_DOWNLOADER_ICON = makeIcon('socialdownloader', 'Social Downloader')
+export const SOCIAL_DOWNLOADER_ICON = makeIcon(
+  'socialdownloader',
+  'Social Downloader'
+)
 
 export const APP_ICONS: Record<
   string,

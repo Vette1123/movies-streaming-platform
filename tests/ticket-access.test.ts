@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSession } from '@/lib/auth/session'
 import { TRIAL_WINDOW_MS } from '@/lib/player-trial'
@@ -133,5 +133,118 @@ describe('who gets a playback ticket', () => {
     expect(count()).toBe(1)
     await sweepPlayerTrials(db, now + TRIAL_WINDOW_MS)
     expect(count()).toBe(0)
+  })
+
+  // The edge cache: an entitlement decision the edge saw minutes ago outlives
+  // a D1 blip, and nothing else does.
+  describe('with an edge cache', () => {
+    interface Entry {
+      body: string
+    }
+    const store = new Map<string, Entry>()
+
+    const cacheOf = (cookie: string) =>
+      `https://entitlement.reely.internal/${
+        // Same key the implementation derives: sha256 of the credential.
+        require('crypto').createHash('sha256').update(cookie).digest('hex')
+      }`
+
+    beforeEach(() => {
+      store.clear()
+      vi.stubGlobal('caches', {
+        default: {
+          match: async (key: Request) => {
+            const hit = store.get(key.url)
+            return hit ? new Response(hit.body) : undefined
+          },
+          put: async (key: Request, res: Response) => {
+            store.set(key.url, { body: await res.clone().text() })
+          },
+        },
+      })
+    })
+
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    /** A db whose D1 has gone away, the way a blip presents. */
+    const blippedDb = () =>
+      ({
+        prepare: () => {
+          throw new Error('D1 unavailable')
+        },
+      }) as unknown as D1Database
+
+    it('seeds the cache when a supporter mints, and rides a D1 blip on it', async () => {
+      expect(await ask({ cookie: supporter })).toBeNull()
+      expect(store.has(cacheOf(supporter))).toBe(true)
+
+      const denial = await ticketDenial(blippedDb(), {
+        bearer: null,
+        cookie: supporter,
+        ip: '203.0.113.7',
+        secret: 'secret',
+        media: 'movie:550',
+        now: now + 60_000,
+      })
+      expect(denial).toBeNull()
+      expect(count()).toBe(0)
+    })
+
+    it('serves the fast path with no D1 read at all', async () => {
+      await ask({ cookie: supporter })
+      let prepares = 0
+      const countingDb = {
+        prepare: (...args: Parameters<D1Database['prepare']>) => {
+          prepares += 1
+          return db.prepare(...args)
+        },
+      } as unknown as D1Database
+      expect(
+        await ticketDenial(countingDb, {
+          bearer: null,
+          cookie: supporter,
+          ip: null,
+          secret: 'secret',
+          media: 'movie:550',
+          now: now + 60_000,
+        })
+      ).toBeNull()
+      expect(prepares).toBe(0)
+    })
+
+    it('expires after five minutes and falls back to the database', async () => {
+      await ask({ cookie: supporter })
+      await expect(
+        ticketDenial(blippedDb(), {
+          bearer: null,
+          cookie: supporter,
+          ip: '203.0.113.7',
+          secret: 'secret',
+          media: 'movie:550',
+          now: now + 6 * 60_000,
+        })
+      ).rejects.toThrow('D1 unavailable')
+    })
+
+    it('never shelters a credential the cache has no yes for', async () => {
+      await expect(
+        ticketDenial(blippedDb(), {
+          bearer: null,
+          cookie: supporter,
+          ip: '203.0.113.7',
+          secret: 'secret',
+          media: 'movie:550',
+          now: now,
+        })
+      ).rejects.toThrow('D1 unavailable')
+      expect(store.size).toBe(0)
+    })
+
+    it('never caches a refusal, so a free account stays a fresh decision', async () => {
+      expect((await ask({ bearer: free }))?.status).toBe(402)
+      expect(store.has(cacheOf(free))).toBe(false)
+    })
   })
 })

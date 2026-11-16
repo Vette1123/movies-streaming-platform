@@ -4,20 +4,22 @@
 //
 // The player depends on a provider we do not control. Its gate changed on
 // 2026-09-05, 10-08, 10-16, 10-30 and 11-07, and every time the first signal
-// was a person pressing play and getting the fallback. This walks the three
+// was a person pressing play and getting the fallback. This walks the four
 // layers in the order a play does and names the first one that broke:
 //
 //   1. the site's ticket endpoint answers (a bad request, so no trial is spent)
 //   2. the private player's shell loads
-//   3. the relay's /selftest walks the provider to a real segment, per title
+//   3. the player's session route is alive (a garbage ticket, refused in shape)
+//   4. the relay's /selftest walks the provider to a real segment, per title
 //
 // `.github/workflows/relay-canary.yml` runs it hourly and opens an issue when
 // it fails. Exit 1 on failure, with the report on stdout either way.
 //
-// ponytail: layer 3 proves the relay, not the player's /api/stream/resolve
-// (that needs a signed-in ticket). The player has been a thin pass-through to
-// the relay for every outage so far; if that changes, give the canary a
-// supporter session.
+// ponytail: layer 3 proves the session route is alive and refusing garbage in
+// its own shape — it cannot prove a GOOD ticket works (that needs a signed-in
+// session), and layer 4 proves the relay, not the player's /api/stream/resolve
+// pass-through. The player has been a thin pass-through to the relay for every
+// outage so far; if that changes, give the canary a supporter session.
 
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
@@ -98,6 +100,26 @@ async function checkPlayer() {
   }
 }
 
+async function checkSession() {
+  // A garbage ticket: the route must be alive enough to refuse it, with its
+  // own JSON and its own status. The static shell above can load while the
+  // worker's API half is down — a 5xx, an HTML error page or a hang here is
+  // exactly that, and no play can boot through it.
+  const res = await fetch(
+    `${PLAYER}/api/session/start?type=movie&id=550&t=canary-probe`,
+    {
+      method: 'POST',
+      headers: { 'user-agent': UA },
+      signal: signal(),
+    }
+  )
+  const body = await res.text()
+  return {
+    ok: res.status === 403 && body.includes('invalid or expired ticket'),
+    detail: `${res.status} ${body.slice(0, 120)}`,
+  }
+}
+
 async function selftest(query) {
   const res = await fetch(`${RELAY}/selftest?${query}`, {
     headers: { 'user-agent': UA },
@@ -134,6 +156,7 @@ async function main() {
   const layers = [
     { name: 'Site ticket endpoint', ...(await timed(checkTicket)) },
     { name: 'Player shell', ...(await timed(checkPlayer)) },
+    { name: 'Player session route', ...(await timed(checkSession)) },
   ]
   // One at a time: three walks at once is how a canary earns a 429.
   const titles = []

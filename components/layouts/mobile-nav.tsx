@@ -25,7 +25,10 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { AccountDrawerSection } from '@/components/account/account-drawer-section'
-import { APP_ICONS, SOCIAL_DOWNLOADER_ICON } from '@/components/companion-app-icon'
+import {
+  APP_ICONS,
+  SOCIAL_DOWNLOADER_ICON,
+} from '@/components/companion-app-icon'
 import { Icons } from '@/components/icons'
 import {
   DrawerAction,
