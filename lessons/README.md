@@ -193,3 +193,4 @@ with the work, not after.
 | 2026-11-16 | [Search and the mobile menu paint first](2026-11-16-search-and-menu-paint-first.md) | Measure a fix against its own target, not the overall p75; a dialog opens its shell in the tap and fills the body after the paint, focus stays in the tap. |
 | 2026-11-16 | [A notice, and titles TMDB deleted](2026-11-16-notice-and-deleted-titles.md) | An append-only sitemap ledger needs an exit for titles TMDB deleted; read the claimant from the notice email itself. |
 | 2026-11-16 | [The hero title opens the title](2026-11-16-hero-title-link.md) | A click inside a draggable track must tell a swipe from a tap; re-check the code a "do not" comment depends on before obeying it. |
+| 2026-11-16 | [Social Downloader icon](2026-11-16-social-downloader-icon.md) | Vitest only collects tests/**; no Tests line means it never ran |

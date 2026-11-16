@@ -1,7 +1,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Download, Heart, Smartphone } from 'lucide-react'
+import { Heart, Smartphone } from 'lucide-react'
 
 import { NavItem } from '@/types/navbar'
 import { siteConfig } from '@/config/site'
@@ -25,7 +25,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { AccountDrawerSection } from '@/components/account/account-drawer-section'
-import { APP_ICONS } from '@/components/companion-app-icon'
+import { APP_ICONS, SOCIAL_DOWNLOADER_ICON } from '@/components/companion-app-icon'
 import { Icons } from '@/components/icons'
 import {
   DrawerAction,
@@ -55,7 +55,7 @@ const TOOL_LINKS: DrawerLink[] = [
   {
     href: siteConfig.links.socialDownloader,
     label: 'Social Downloader',
-    Icon: Download,
+    Icon: SOCIAL_DOWNLOADER_ICON,
     hint: 'Web',
     tone: 'brand',
     external: true,

@@ -37,6 +37,14 @@ function makeIcon(slug: string, name: string): ComponentType<IconProps> {
   return AppIcon
 }
 
+/**
+ * Social Downloader is a website, not a store app, so it is not in
+ * COMPANION_APPS and `pnpm apps:icons` does not make its file:
+ * public/apps/socialdownloader.webp is rendered from that site's own
+ * src/lib/brandMark.ts (120px, square, this component rounds it).
+ */
+export const SOCIAL_DOWNLOADER_ICON = makeIcon('socialdownloader', 'Social Downloader')
+
 export const APP_ICONS: Record<
   string,
   ComponentType<IconProps>
