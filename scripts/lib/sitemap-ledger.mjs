@@ -24,13 +24,57 @@ export function detailIds(urls) {
   return ids
 }
 
-/** The ledger with every detail id in `urls` added. Sorted, so diffs stay small. */
+// The one exception to "never drop": a title TMDB itself has deleted. Its page
+// answers 404, so advertising it only feeds GSC's "Not found (404)" bucket
+// (/movies/1821659, 2026-11-16). Such ids move to `gone` and are never re-added,
+// even while a sitemap built before the probe still lists them.
+
+/**
+ * @typedef {{ movie: number[], tv: number[] }} Ids
+ * @typedef {Ids & { gone: Ids, probe: { movie: number, tv: number } }} Ledger
+ */
+
+const KEYS = /** @type {const} */ (['movie', 'tv'])
+
+const goneSet = (ledger, key) => new Set(ledger?.gone?.[key] ?? [])
+
+/**
+ * The ledger with every detail id in `urls` added, minus gone ids. Sorted, so diffs stay small.
+ * @returns {Ledger}
+ */
 export function mergeLedger(ledger, urls) {
   const found = detailIds(urls)
-  const merged = {}
-  for (const key of ['movie', 'tv']) {
+  const merged = { movie: [], tv: [] }
+  const gone = { movie: [], tv: [] }
+  for (const key of KEYS) {
+    const dead = goneSet(ledger, key)
     const all = new Set([...(ledger?.[key] ?? []), ...found[key]])
-    merged[key] = [...all].sort((a, b) => a - b)
+    merged[key] = [...all].filter((id) => !dead.has(id)).sort((a, b) => a - b)
+    gone[key] = [...dead].sort((a, b) => a - b)
   }
-  return merged
+  return { ...merged, gone, probe: ledger?.probe ?? { movie: 0, tv: 0 } }
+}
+
+/**
+ * `ids` of `key` moved from the live list into `gone`.
+ * @returns {Ledger}
+ */
+export function markGone(ledger, key, ids) {
+  const dead = new Set([...goneSet(ledger, key), ...ids])
+  const gone = { movie: [], tv: [] }
+  for (const k of KEYS)
+    gone[k] =
+      k === key ? [...dead].sort((a, b) => a - b) : (ledger?.gone?.[k] ?? [])
+  return {
+    ...ledger,
+    [key]: (ledger[key] ?? []).filter((id) => !dead.has(id)),
+    gone,
+  }
+}
+
+/** Up to `n` ids starting at index `cursor`, wrapping, never repeating one. */
+export function nextProbe(ids, cursor, n) {
+  if (!ids.length) return []
+  const count = Math.min(n, ids.length)
+  return Array.from({ length: count }, (_, i) => ids[(cursor + i) % ids.length])
 }

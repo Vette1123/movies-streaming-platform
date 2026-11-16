@@ -21,7 +21,7 @@ import {
   buildLinkedMediaIds,
   buildMediaSitemapEntries,
 } from '@/lib/media-page'
-import { ledgerSitemapEntries } from '@/lib/sitemap-ledger'
+import { ledgerSitemapEntries, type SitemapLedger } from '@/lib/sitemap-ledger'
 import { getPosterImageURL } from '@/lib/utils'
 import { yearRange } from '@/components/media/year-page'
 
@@ -348,7 +348,14 @@ async function titleSection(
   const listed = new Set(current.map(({ url }) => url))
   return [
     ...current,
-    ...ledgerSitemapEntries({ [type]: SITEMAP_LEDGER[type] }, listed, baseUrl),
+    ...ledgerSitemapEntries(
+      {
+        [type]: SITEMAP_LEDGER[type],
+        gone: (SITEMAP_LEDGER as SitemapLedger).gone,
+      },
+      listed,
+      baseUrl
+    ),
   ].sort(byPriority)
 }
 
