@@ -39,6 +39,17 @@ describe('afterNextPaint', () => {
     expect(work).toHaveBeenCalledTimes(1)
   })
 
+  // Search and the mobile menu open their shell in the tap and fill the body
+  // after the paint. Closing before that paint must leave the body unfilled.
+  it('never runs the work once cancelled', () => {
+    const work = vi.fn()
+    const cancel = afterNextPaint(work)
+    cancel()
+    for (const f of frames.splice(0)) f(0)
+    vi.advanceTimersByTime(200)
+    expect(work).not.toHaveBeenCalled()
+  })
+
   it('still runs, once, when no frame comes (a hidden tab)', () => {
     const work = vi.fn()
     afterNextPaint(work)

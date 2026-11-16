@@ -42,6 +42,7 @@ import {
 } from '@/lib/utils'
 import { useAccountIdentity } from '@/hooks/use-account'
 import { useCMDKListener } from '@/hooks/use-cmdk-listener'
+import { usePaintedOpen } from '@/hooks/use-painted-open'
 import { useRecentSearches } from '@/hooks/use-recent-searches'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -238,6 +239,9 @@ function ResultThumb({ movie }: { movie: MediaType }) {
 export function CommandMenu({ ...props }: CommandDialogProps) {
   const { open, setOpen, runCommand, isLoading, setIsLoading } =
     useCMDKListener()
+  // The list (recent searches, shortcuts, companion apps) mounts one frame
+  // after the dialog; the input stays in the tap for the iOS keyboard.
+  const bodyReady = usePaintedOpen(open)
   const [data, setData] = React.useState<MediaType[]>([])
   const [query, setQuery] = React.useState('')
   const [hasSearched, setHasSearched] = React.useState(false)
@@ -516,360 +520,364 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
           ref={listRef}
           className="max-h-[75dvh] min-h-0 flex-1 sm:max-h-[74dvh] sm:basis-115"
         >
-          <CommandGroup heading={resultsHeading}>
-            {/* When the typed query found nothing and a looser one did, say
+          {bodyReady && (
+            <>
+              <CommandGroup heading={resultsHeading}>
+                {/* When the typed query found nothing and a looser one did, say
                 which one. Quietly answering a different question is how a
                 search that is trying to help ends up feeling broken. */}
-            {status === 'results' && matchedQuery ? (
-              <p className="px-2 pb-1.5 text-xs text-muted-foreground">
-                No matches for “{trimmedQuery}”. Showing results for{' '}
-                <span className="font-medium text-foreground">
-                  “{matchedQuery}”
-                </span>
-                .
-              </p>
-            ) : null}
+                {status === 'results' && matchedQuery ? (
+                  <p className="px-2 pb-1.5 text-xs text-muted-foreground">
+                    No matches for “{trimmedQuery}”. Showing results for{' '}
+                    <span className="font-medium text-foreground">
+                      “{matchedQuery}”
+                    </span>
+                    .
+                  </p>
+                ) : null}
 
-            {status === 'idle' &&
-              (recent.length > 0 ? (
-                <>
-                  {recent.map((term) => (
-                    <CommandItem
-                      key={term}
-                      value={`recent:${term}`}
-                      onSelect={() => submitSearch(term)}
-                      className="group/recent cursor-pointer hover:bg-accent"
-                    >
-                      <Clock
-                        className="mr-2 size-4 shrink-0 text-muted-foreground"
-                        aria-hidden
-                      />
-                      <span className="flex-1 truncate">{term}</span>
-                      <button
-                        type="button"
-                        aria-label={`Remove “${term}” from recent searches`}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          removeRecent(term)
-                        }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        className="tap-target ml-2 shrink-0 cursor-pointer rounded p-1.5 text-muted-foreground/60 opacity-0 transition group-hover/recent:opacity-100 group-data-[selected=true]/recent:opacity-100 hover:text-foreground focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
-                      >
-                        <X className="size-3.5" />
-                      </button>
-                    </CommandItem>
-                  ))}
-                  {/* Removing several one X at a time shifts the list under the
+                {status === 'idle' &&
+                  (recent.length > 0 ? (
+                    <>
+                      {recent.map((term) => (
+                        <CommandItem
+                          key={term}
+                          value={`recent:${term}`}
+                          onSelect={() => submitSearch(term)}
+                          className="group/recent cursor-pointer hover:bg-accent"
+                        >
+                          <Clock
+                            className="mr-2 size-4 shrink-0 text-muted-foreground"
+                            aria-hidden
+                          />
+                          <span className="flex-1 truncate">{term}</span>
+                          <button
+                            type="button"
+                            aria-label={`Remove “${term}” from recent searches`}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              removeRecent(term)
+                            }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="tap-target ml-2 shrink-0 cursor-pointer rounded p-1.5 text-muted-foreground/60 opacity-0 transition group-hover/recent:opacity-100 group-data-[selected=true]/recent:opacity-100 hover:text-foreground focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+                          >
+                            <X className="size-3.5" />
+                          </button>
+                        </CommandItem>
+                      ))}
+                      {/* Removing several one X at a time shifts the list under the
                       pointer, which PostHog logged as rage clicks. One row
                       clears them all. */}
-                  {recent.length > 1 && (
-                    <CommandItem
-                      key="clear-recent"
-                      value="clear-recent"
-                      onSelect={() => {
-                        clearRecent()
-                        trackFeatureUsed({
-                          feature: 'recent_searches',
-                          action: 'cleared',
-                          count: recent.length,
-                        })
-                      }}
-                      className="cursor-pointer text-xs text-muted-foreground"
+                      {recent.length > 1 && (
+                        <CommandItem
+                          key="clear-recent"
+                          value="clear-recent"
+                          onSelect={() => {
+                            clearRecent()
+                            trackFeatureUsed({
+                              feature: 'recent_searches',
+                              action: 'cleared',
+                              count: recent.length,
+                            })
+                          }}
+                          className="cursor-pointer text-xs text-muted-foreground"
+                        >
+                          <X className="mr-2 size-4 shrink-0" aria-hidden />
+                          Clear recent searches
+                        </CommandItem>
+                      )}
+                    </>
+                  ) : (
+                    <div
+                      role="status"
+                      className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground"
                     >
-                      <X className="mr-2 size-4 shrink-0" aria-hidden />
-                      Clear recent searches
-                    </CommandItem>
-                  )}
-                </>
-              ) : (
-                <div
-                  role="status"
-                  className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground"
-                >
-                  <Search className="size-4" aria-hidden />
-                  <p>Start typing to search movies & series…</p>
-                </div>
-              ))}
-
-            {status === 'loading' && (
-              <div
-                role="status"
-                aria-live="polite"
-                aria-busy="true"
-                className="flex flex-col gap-1 py-1"
-              >
-                <span className="sr-only">Searching…</span>
-                {Array.from({ length: skeletonCount }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3 p-2">
-                    <Skeleton className="aspect-video h-[54px] shrink-0 rounded-md" />
-                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                      <Skeleton className="h-3.5 w-1/2" />
-                      <Skeleton className="h-3 w-1/3" />
-                      <Skeleton className="h-3 w-3/4" />
+                      <Search className="size-4" aria-hidden />
+                      <p>Start typing to search movies & series…</p>
                     </div>
-                    <Skeleton className="h-5 w-12 shrink-0 rounded-full" />
+                  ))}
+
+                {status === 'loading' && (
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    aria-busy="true"
+                    className="flex flex-col gap-1 py-1"
+                  >
+                    <span className="sr-only">Searching…</span>
+                    {Array.from({ length: skeletonCount }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-3 p-2">
+                        <Skeleton className="aspect-video h-[54px] shrink-0 rounded-md" />
+                        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                          <Skeleton className="h-3.5 w-1/2" />
+                          <Skeleton className="h-3 w-1/3" />
+                          <Skeleton className="h-3 w-3/4" />
+                        </div>
+                        <Skeleton className="h-5 w-12 shrink-0 rounded-full" />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                )}
 
-            {status === 'empty' && (
-              <SearchNotice icon={Icons.search} title="No results found">
-                Nothing matched “{trimmedQuery}”, and neither did the near
-                misses. Try a different title.
-              </SearchNotice>
-            )}
+                {status === 'empty' && (
+                  <SearchNotice icon={Icons.search} title="No results found">
+                    Nothing matched “{trimmedQuery}”, and neither did the near
+                    misses. Try a different title.
+                  </SearchNotice>
+                )}
 
-            {/* A pasted link is a whole category of miss, not a spelling
+                {/* A pasted link is a whole category of miss, not a spelling
                 mistake — a quarter of the searches that found nothing were
                 YouTube and Instagram addresses. Nothing here can match one, so
                 say that plainly instead of blaming the catalogue. */}
-            {status === 'link' && (
-              <SearchNotice icon={Link2} title="That’s a link, not a title">
-                Search looks for films and shows by name. Type what it is called
-                — “Fight Club” rather than the address of a clip.
-              </SearchNotice>
-            )}
+                {status === 'link' && (
+                  <SearchNotice icon={Link2} title="That’s a link, not a title">
+                    Search looks for films and shows by name. Type what it is
+                    called — “Fight Club” rather than the address of a clip.
+                  </SearchNotice>
+                )}
 
-            {/* The one state this panel used to be unable to express. A request
+                {/* The one state this panel used to be unable to express. A request
                 that never answered drew "No results found", which reads as "we
                 do not have it" and stops the visitor looking. */}
-            {status === 'failed' && (
-              <SearchNotice
-                icon={WifiOff}
-                title="Search didn’t answer"
-                action={
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => submitSearch(trimmedQuery)}
+                {status === 'failed' && (
+                  <SearchNotice
+                    icon={WifiOff}
+                    title="Search didn’t answer"
+                    action={
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => submitSearch(trimmedQuery)}
+                      >
+                        Try again
+                      </Button>
+                    }
                   >
-                    Try again
-                  </Button>
-                }
-              >
-                That one is on us, not your spelling — the request did not come
-                back.
-              </SearchNotice>
-            )}
+                    That one is on us, not your spelling — the request did not
+                    come back.
+                  </SearchNotice>
+                )}
 
-            {status === 'results' &&
-              filteredResults.map((movie, index) => {
-                const href = mediaHref(movie)
-                const year = movie?.release_date
-                  ? movie.release_date.split('-')[0]
-                  : null
-                const rating = movie?.vote_average
-                  ? movie.vote_average.toFixed(1)
-                  : null
-                const imdbRating = movie?.imdbRating
-                const votes = movie?.vote_count
-                  ? compactNumber.format(movie.vote_count)
-                  : null
-                const showOriginal =
-                  !!movie?.original_title &&
-                  movie.original_title.toLowerCase() !==
-                    (movie?.title ?? '').toLowerCase()
+                {status === 'results' &&
+                  filteredResults.map((movie, index) => {
+                    const href = mediaHref(movie)
+                    const year = movie?.release_date
+                      ? movie.release_date.split('-')[0]
+                      : null
+                    const rating = movie?.vote_average
+                      ? movie.vote_average.toFixed(1)
+                      : null
+                    const imdbRating = movie?.imdbRating
+                    const votes = movie?.vote_count
+                      ? compactNumber.format(movie.vote_count)
+                      : null
+                    const showOriginal =
+                      !!movie?.original_title &&
+                      movie.original_title.toLowerCase() !==
+                        (movie?.title ?? '').toLowerCase()
 
-                return (
-                  <CommandItem
-                    key={`${movie.media_type ?? 'movie'}-${movie.id}`}
-                    value={resultValue(movie)}
-                    className="group/command-item cursor-pointer transition-colors duration-200 hover:bg-accent"
-                    onSelect={() => {
-                      trackSearchResultClicked({
-                        query: trimmedQuery,
-                        media_id: movie.id,
-                        media_type: resolveMediaType(movie),
-                        title: movie.title,
-                        position: index,
-                      })
-                      runCommand(() => router.push(href))
-                    }}
-                    onMouseEnter={() => router.prefetch(href)}
-                    onFocus={() => router.prefetch(href)}
-                  >
-                    <div className="flex w-full min-w-0 flex-nowrap items-center gap-3 overflow-hidden">
-                      <ResultThumb movie={movie} />
-                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <p className="truncate text-sm font-medium">
-                          <HighlightedText
-                            text={movie?.title ?? ''}
-                            query={trimmedQuery}
-                          />
-                        </p>
-                        {(year || imdbRating || rating || showOriginal) && (
-                          <p className="truncate text-xs text-muted-foreground">
-                            {showOriginal && (
-                              <span className="italic">
-                                {movie.original_title}
-                              </span>
+                    return (
+                      <CommandItem
+                        key={`${movie.media_type ?? 'movie'}-${movie.id}`}
+                        value={resultValue(movie)}
+                        className="group/command-item cursor-pointer transition-colors duration-200 hover:bg-accent"
+                        onSelect={() => {
+                          trackSearchResultClicked({
+                            query: trimmedQuery,
+                            media_id: movie.id,
+                            media_type: resolveMediaType(movie),
+                            title: movie.title,
+                            position: index,
+                          })
+                          runCommand(() => router.push(href))
+                        }}
+                        onMouseEnter={() => router.prefetch(href)}
+                        onFocus={() => router.prefetch(href)}
+                      >
+                        <div className="flex w-full min-w-0 flex-nowrap items-center gap-3 overflow-hidden">
+                          <ResultThumb movie={movie} />
+                          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                            <p className="truncate text-sm font-medium">
+                              <HighlightedText
+                                text={movie?.title ?? ''}
+                                query={trimmedQuery}
+                              />
+                            </p>
+                            {(year || imdbRating || rating || showOriginal) && (
+                              <p className="truncate text-xs text-muted-foreground">
+                                {showOriginal && (
+                                  <span className="italic">
+                                    {movie.original_title}
+                                  </span>
+                                )}
+                                {showOriginal &&
+                                  (year || imdbRating || rating) &&
+                                  ' • '}
+                                {year}
+                                {year && (imdbRating || rating) && ' • '}
+                                {imdbRating ? (
+                                  <>
+                                    <span className="rounded-[2px] bg-[#f5c518] px-1 align-middle text-[9px] font-bold text-black">
+                                      IMDb
+                                    </span>{' '}
+                                    {imdbRating}
+                                  </>
+                                ) : (
+                                  rating && (
+                                    <>
+                                      {rating}★
+                                      {votes && (
+                                        <span className="text-muted-foreground/80">
+                                          {' '}
+                                          · {votes}
+                                        </span>
+                                      )}
+                                    </>
+                                  )
+                                )}
+                              </p>
                             )}
-                            {showOriginal &&
-                              (year || imdbRating || rating) &&
-                              ' • '}
-                            {year}
-                            {year && (imdbRating || rating) && ' • '}
-                            {imdbRating ? (
-                              <>
-                                <span className="rounded-[2px] bg-[#f5c518] px-1 align-middle text-[9px] font-bold text-black">
-                                  IMDb
-                                </span>{' '}
-                                {imdbRating}
-                              </>
-                            ) : (
-                              rating && (
-                                <>
-                                  {rating}★
-                                  {votes && (
-                                    <span className="text-muted-foreground/80">
-                                      {' '}
-                                      · {votes}
-                                    </span>
-                                  )}
-                                </>
-                              )
+                            {movie?.overview && (
+                              <p className="line-clamp-2 text-xs leading-snug text-muted-foreground/90">
+                                {movie.overview}
+                              </p>
                             )}
-                          </p>
-                        )}
-                        {movie?.overview && (
-                          <p className="line-clamp-2 text-xs leading-snug text-muted-foreground/90">
-                            {movie.overview}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1">
-                        {movie?.media_type && (
-                          <Chip
-                            variant="neutral"
-                            size="sm"
-                            className="capitalize"
-                          >
-                            {movie.media_type}
-                          </Chip>
-                        )}
-                        {movie?.adult && (
-                          <Chip variant="danger" size="sm">
-                            18+
-                          </Chip>
-                        )}
-                      </div>
-                    </div>
-                  </CommandItem>
-                )
-              })}
-          </CommandGroup>
-          <CommandSeparator />
-          <CommandGroup heading="Shortcuts...">
-            <CommandItem
-              className="cursor-pointer"
-              onSelect={() => {
-                trackCommandShortcutUsed({ shortcut: 'movies' })
-                runCommand(() => router.push(`/movies`))
-              }}
-            >
-              <Icons.playIcon className="mr-2 size-4" />
-              Movies
-            </CommandItem>
-            <CommandItem
-              className="cursor-pointer"
-              onSelect={() => {
-                trackCommandShortcutUsed({ shortcut: 'series' })
-                runCommand(() => router.push(`/tv-shows`))
-              }}
-            >
-              <Tv className="mr-2 size-4" />
-              Series
-            </CommandItem>
-            <CommandItem
-              className="cursor-pointer"
-              onSelect={() => {
-                trackCommandShortcutUsed({ shortcut: 'home' })
-                runCommand(() => router.push(`/`))
-              }}
-            >
-              <Home className="mr-2 size-4" />
-              Home
-            </CommandItem>
-            {/* The palette is the fastest route to anywhere on this site for
+                          </div>
+                          <div className="flex shrink-0 flex-col items-end gap-1">
+                            {movie?.media_type && (
+                              <Chip
+                                variant="neutral"
+                                size="sm"
+                                className="capitalize"
+                              >
+                                {movie.media_type}
+                              </Chip>
+                            )}
+                            {movie?.adult && (
+                              <Chip variant="danger" size="sm">
+                                18+
+                              </Chip>
+                            )}
+                          </div>
+                        </div>
+                      </CommandItem>
+                    )
+                  })}
+              </CommandGroup>
+              <CommandSeparator />
+              <CommandGroup heading="Shortcuts...">
+                <CommandItem
+                  className="cursor-pointer"
+                  onSelect={() => {
+                    trackCommandShortcutUsed({ shortcut: 'movies' })
+                    runCommand(() => router.push(`/movies`))
+                  }}
+                >
+                  <Icons.playIcon className="mr-2 size-4" />
+                  Movies
+                </CommandItem>
+                <CommandItem
+                  className="cursor-pointer"
+                  onSelect={() => {
+                    trackCommandShortcutUsed({ shortcut: 'series' })
+                    runCommand(() => router.push(`/tv-shows`))
+                  }}
+                >
+                  <Tv className="mr-2 size-4" />
+                  Series
+                </CommandItem>
+                <CommandItem
+                  className="cursor-pointer"
+                  onSelect={() => {
+                    trackCommandShortcutUsed({ shortcut: 'home' })
+                    runCommand(() => router.push(`/`))
+                  }}
+                >
+                  <Home className="mr-2 size-4" />
+                  Home
+                </CommandItem>
+                {/* The palette is the fastest route to anywhere on this site for
                 the people who use it most, which makes it the one place the
                 plans should not be missing from. Supporters get the same row
                 pointing at the same page, worded as their plan rather than a
                 pitch — see FooterSupportCard for the rest of that promise. */}
-            <CommandItem
-              className="cursor-pointer"
-              onSelect={() => {
-                if (!supporter)
-                  trackSupportCtaClicked({ surface: 'command_menu' })
-                runCommand(() => router.push(`/support`))
-              }}
-            >
-              <Heart className="mr-2 size-4" />
-              <div className="flex flex-col">
-                <span>{supporter ? 'Your plan' : 'Support Reely'}</span>
-                <span className="text-xs text-muted-foreground">
-                  {supporter
-                    ? 'Manage or change your supporter membership'
-                    : `From $${SUPPORT_PRICES.monthly} a month · keeps the site free`}
-                </span>
-              </div>
-            </CommandItem>
-            <CommandItem
-              className="cursor-pointer"
-              onSelect={() => {
-                trackCommandShortcutUsed({ shortcut: 'portfolio' })
-                runCommand(() =>
-                  window.open(siteConfig.author.website, '_blank')
-                )
-              }}
-            >
-              <div className="flex items-center gap-4">
-                <Avatar>
-                  <AvatarImage alt="" src="/personal-logo.png" />
-                  <AvatarFallback>G</AvatarFallback>
-                </Avatar>
-                Portfolio
-              </div>
-            </CommandItem>
-            {COMPANION_APPS.map((app) => {
-              const AppIcon = APP_ICONS[app.slug]
-              return (
                 <CommandItem
-                  key={app.slug}
                   className="cursor-pointer"
                   onSelect={() => {
-                    trackCommandShortcutUsed({ shortcut: app.slug })
-                    runCommand(() => openStoreListing(app))
+                    if (!supporter)
+                      trackSupportCtaClicked({ surface: 'command_menu' })
+                    runCommand(() => router.push(`/support`))
                   }}
                 >
-                  <div className="flex items-center gap-3">
-                    <AppIcon className="size-9" />
-                    <div className="flex flex-col">
-                      <span>{app.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {app.tagline} · {storesLabel(app)}
-                      </span>
-                    </div>
+                  <Heart className="mr-2 size-4" />
+                  <div className="flex flex-col">
+                    <span>{supporter ? 'Your plan' : 'Support Reely'}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {supporter
+                        ? 'Manage or change your supporter membership'
+                        : `From $${SUPPORT_PRICES.monthly} a month · keeps the site free`}
+                    </span>
                   </div>
                 </CommandItem>
-              )
-            })}
-            <CommandItem
-              className="cursor-pointer"
-              onSelect={() => {
-                trackCommandShortcutUsed({ shortcut: 'pro_email' })
-                runCommand(() => {
-                  window.location.href = proMailto('Any plan', null)
-                })
-              }}
-            >
-              <div className="flex items-center gap-4">
-                <Icons.mail className="size-5" />
-                Get Pro by email
-              </div>
-            </CommandItem>
-          </CommandGroup>
-          <CommandSeparator />
+                <CommandItem
+                  className="cursor-pointer"
+                  onSelect={() => {
+                    trackCommandShortcutUsed({ shortcut: 'portfolio' })
+                    runCommand(() =>
+                      window.open(siteConfig.author.website, '_blank')
+                    )
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <Avatar>
+                      <AvatarImage alt="" src="/personal-logo.png" />
+                      <AvatarFallback>G</AvatarFallback>
+                    </Avatar>
+                    Portfolio
+                  </div>
+                </CommandItem>
+                {COMPANION_APPS.map((app) => {
+                  const AppIcon = APP_ICONS[app.slug]
+                  return (
+                    <CommandItem
+                      key={app.slug}
+                      className="cursor-pointer"
+                      onSelect={() => {
+                        trackCommandShortcutUsed({ shortcut: app.slug })
+                        runCommand(() => openStoreListing(app))
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <AppIcon className="size-9" />
+                        <div className="flex flex-col">
+                          <span>{app.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {app.tagline} · {storesLabel(app)}
+                          </span>
+                        </div>
+                      </div>
+                    </CommandItem>
+                  )
+                })}
+                <CommandItem
+                  className="cursor-pointer"
+                  onSelect={() => {
+                    trackCommandShortcutUsed({ shortcut: 'pro_email' })
+                    runCommand(() => {
+                      window.location.href = proMailto('Any plan', null)
+                    })
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <Icons.mail className="size-5" />
+                    Get Pro by email
+                  </div>
+                </CommandItem>
+              </CommandGroup>
+              <CommandSeparator />
+            </>
+          )}
         </CommandList>
         <div
           className="hidden shrink-0 items-center justify-between gap-2 border-t bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground sm:flex"

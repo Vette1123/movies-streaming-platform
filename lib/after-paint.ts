@@ -14,7 +14,9 @@
 
 const HIDDEN_TAB_FALLBACK_MS = 100
 
-export function afterNextPaint(work: () => void): void {
+// Returns a cancel: a dialog closed before its first paint must not fill its
+// body afterwards (usePaintedOpen hands this to its effect cleanup).
+export function afterNextPaint(work: () => void): () => void {
   let done = false
   const run = () => {
     if (done) return
@@ -23,4 +25,7 @@ export function afterNextPaint(work: () => void): void {
   }
   requestAnimationFrame(() => setTimeout(run, 0))
   setTimeout(run, HIDDEN_TAB_FALLBACK_MS)
+  return () => {
+    done = true
+  }
 }
