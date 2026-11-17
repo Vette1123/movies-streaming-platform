@@ -410,7 +410,8 @@ const NOT_MACHINE_PATH =
  * SHIP THIS BEFORE a hostname is attached — after attachment every rule
  * below would already apply to it.
  */
-const PLAY_HOST_EXEMPT = 'not (http.host in {"play.reely.space" "relay.reely.space" "relay-b.reely.space"})'
+const PLAY_HOST_EXEMPT =
+  'not (http.host in {"play.reely.space" "relay.reely.space" "relay-b.reely.space"})'
 
 /**
  * Everything a page needs in order to BE a page.

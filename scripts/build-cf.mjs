@@ -28,4 +28,7 @@ if (buildCode !== 0) process.exit(buildCode)
 const stripCode = run('node scripts/strip-map-comments.mjs')
 if (stripCode !== 0) process.exit(stripCode)
 
+const linkedCode = run('node scripts/sitemap-linked.mjs')
+if (linkedCode !== 0) process.exit(linkedCode)
+
 process.exit(run('node scripts/build-worker.mjs'))

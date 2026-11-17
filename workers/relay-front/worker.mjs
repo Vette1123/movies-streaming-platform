@@ -19,8 +19,14 @@
  */
 
 const PAIRS = [
-  { origin: 'https://reely-relay.netlify.app', public: 'https://relay.reely.space' },
-  { origin: 'https://reely-relay-b.netlify.app', public: 'https://relay-b.reely.space' },
+  {
+    origin: 'https://reely-relay.netlify.app',
+    public: 'https://relay.reely.space',
+  },
+  {
+    origin: 'https://reely-relay-b.netlify.app',
+    public: 'https://relay-b.reely.space',
+  },
 ]
 
 export default {
@@ -35,7 +41,8 @@ export default {
       res = await fetch(pair.origin + u.pathname + u.search, {
         method: req.method,
         headers,
-        body: req.method === 'GET' || req.method === 'HEAD' ? undefined : req.body,
+        body:
+          req.method === 'GET' || req.method === 'HEAD' ? undefined : req.body,
         redirect: 'manual',
       })
     } catch (e) {
