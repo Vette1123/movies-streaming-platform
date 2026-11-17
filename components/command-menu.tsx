@@ -34,6 +34,7 @@ import { SEARCH_DEBOUNCE } from '@/lib/constants'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
 import { tintBackground } from '@/lib/monogram'
 import { chipRowState } from '@/lib/search-chip-row'
+import { shortcutsVisible } from '@/lib/search-shortcuts'
 import { handleImageFallbackError } from '@/lib/tmdbConfig'
 import {
   cn,
@@ -439,6 +440,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
   )
 
   const chipRow = chipRowState(status, visibleResults.length)
+  const showShortcuts = shortcutsVisible(status)
 
   const resultsHeading = buildResultsHeading(
     status,
@@ -774,117 +776,119 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
                     )
                   })}
               </CommandGroup>
-              <CommandSeparator />
-              <CommandGroup heading="Shortcuts...">
-                <CommandItem
-                  className="cursor-pointer"
-                  onSelect={() => {
-                    trackCommandShortcutUsed({ shortcut: 'movies' })
-                    runCommand(() => router.push(`/movies`))
-                  }}
-                >
-                  <Icons.playIcon className="mr-2 size-4" />
-                  Movies
-                </CommandItem>
-                <CommandItem
-                  className="cursor-pointer"
-                  onSelect={() => {
-                    trackCommandShortcutUsed({ shortcut: 'series' })
-                    runCommand(() => router.push(`/tv-shows`))
-                  }}
-                >
-                  <Tv className="mr-2 size-4" />
-                  Series
-                </CommandItem>
-                <CommandItem
-                  className="cursor-pointer"
-                  onSelect={() => {
-                    trackCommandShortcutUsed({ shortcut: 'home' })
-                    runCommand(() => router.push(`/`))
-                  }}
-                >
-                  <Home className="mr-2 size-4" />
-                  Home
-                </CommandItem>
-                {/* The palette is the fastest route to anywhere on this site for
+              {showShortcuts && <CommandSeparator />}
+              {showShortcuts && (
+                <CommandGroup heading="Shortcuts...">
+                  <CommandItem
+                    className="cursor-pointer"
+                    onSelect={() => {
+                      trackCommandShortcutUsed({ shortcut: 'movies' })
+                      runCommand(() => router.push(`/movies`))
+                    }}
+                  >
+                    <Icons.playIcon className="mr-2 size-4" />
+                    Movies
+                  </CommandItem>
+                  <CommandItem
+                    className="cursor-pointer"
+                    onSelect={() => {
+                      trackCommandShortcutUsed({ shortcut: 'series' })
+                      runCommand(() => router.push(`/tv-shows`))
+                    }}
+                  >
+                    <Tv className="mr-2 size-4" />
+                    Series
+                  </CommandItem>
+                  <CommandItem
+                    className="cursor-pointer"
+                    onSelect={() => {
+                      trackCommandShortcutUsed({ shortcut: 'home' })
+                      runCommand(() => router.push(`/`))
+                    }}
+                  >
+                    <Home className="mr-2 size-4" />
+                    Home
+                  </CommandItem>
+                  {/* The palette is the fastest route to anywhere on this site for
                 the people who use it most, which makes it the one place the
                 plans should not be missing from. Supporters get the same row
                 pointing at the same page, worded as their plan rather than a
                 pitch — see FooterSupportCard for the rest of that promise. */}
-                <CommandItem
-                  className="cursor-pointer"
-                  onSelect={() => {
-                    if (!supporter)
-                      trackSupportCtaClicked({ surface: 'command_menu' })
-                    runCommand(() => router.push(`/support`))
-                  }}
-                >
-                  <Heart className="mr-2 size-4" />
-                  <div className="flex flex-col">
-                    <span>{supporter ? 'Your plan' : 'Support Reely'}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {supporter
-                        ? 'Manage or change your supporter membership'
-                        : `From $${SUPPORT_PRICES.monthly} a month · keeps the site free`}
-                    </span>
-                  </div>
-                </CommandItem>
-                <CommandItem
-                  className="cursor-pointer"
-                  onSelect={() => {
-                    trackCommandShortcutUsed({ shortcut: 'portfolio' })
-                    runCommand(() =>
-                      window.open(siteConfig.author.website, '_blank')
-                    )
-                  }}
-                >
-                  <div className="flex items-center gap-4">
-                    <Avatar>
-                      <AvatarImage alt="" src="/personal-logo.png" />
-                      <AvatarFallback>G</AvatarFallback>
-                    </Avatar>
-                    Portfolio
-                  </div>
-                </CommandItem>
-                {COMPANION_APPS.map((app) => {
-                  const AppIcon = APP_ICONS[app.slug]
-                  return (
-                    <CommandItem
-                      key={app.slug}
-                      className="cursor-pointer"
-                      onSelect={() => {
-                        trackCommandShortcutUsed({ shortcut: app.slug })
-                        runCommand(() => openStoreListing(app))
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <AppIcon className="size-9" />
-                        <div className="flex flex-col">
-                          <span>{app.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {app.tagline} · {storesLabel(app)}
-                          </span>
+                  <CommandItem
+                    className="cursor-pointer"
+                    onSelect={() => {
+                      if (!supporter)
+                        trackSupportCtaClicked({ surface: 'command_menu' })
+                      runCommand(() => router.push(`/support`))
+                    }}
+                  >
+                    <Heart className="mr-2 size-4" />
+                    <div className="flex flex-col">
+                      <span>{supporter ? 'Your plan' : 'Support Reely'}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {supporter
+                          ? 'Manage or change your supporter membership'
+                          : `From $${SUPPORT_PRICES.monthly} a month · keeps the site free`}
+                      </span>
+                    </div>
+                  </CommandItem>
+                  <CommandItem
+                    className="cursor-pointer"
+                    onSelect={() => {
+                      trackCommandShortcutUsed({ shortcut: 'portfolio' })
+                      runCommand(() =>
+                        window.open(siteConfig.author.website, '_blank')
+                      )
+                    }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <Avatar>
+                        <AvatarImage alt="" src="/personal-logo.png" />
+                        <AvatarFallback>G</AvatarFallback>
+                      </Avatar>
+                      Portfolio
+                    </div>
+                  </CommandItem>
+                  {COMPANION_APPS.map((app) => {
+                    const AppIcon = APP_ICONS[app.slug]
+                    return (
+                      <CommandItem
+                        key={app.slug}
+                        className="cursor-pointer"
+                        onSelect={() => {
+                          trackCommandShortcutUsed({ shortcut: app.slug })
+                          runCommand(() => openStoreListing(app))
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <AppIcon className="size-9" />
+                          <div className="flex flex-col">
+                            <span>{app.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {app.tagline} · {storesLabel(app)}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </CommandItem>
-                  )
-                })}
-                <CommandItem
-                  className="cursor-pointer"
-                  onSelect={() => {
-                    trackCommandShortcutUsed({ shortcut: 'pro_email' })
-                    runCommand(() => {
-                      window.location.href = proMailto('Any plan', null)
-                    })
-                  }}
-                >
-                  <div className="flex items-center gap-4">
-                    <Icons.mail className="size-5" />
-                    Get Pro by email
-                  </div>
-                </CommandItem>
-              </CommandGroup>
-              <CommandSeparator />
+                      </CommandItem>
+                    )
+                  })}
+                  <CommandItem
+                    className="cursor-pointer"
+                    onSelect={() => {
+                      trackCommandShortcutUsed({ shortcut: 'pro_email' })
+                      runCommand(() => {
+                        window.location.href = proMailto('Any plan', null)
+                      })
+                    }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <Icons.mail className="size-5" />
+                      Get Pro by email
+                    </div>
+                  </CommandItem>
+                </CommandGroup>
+              )}
+              {showShortcuts && <CommandSeparator />}
             </>
           )}
         </CommandList>

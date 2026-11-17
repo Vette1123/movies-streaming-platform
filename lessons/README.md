@@ -200,3 +200,4 @@ with the work, not after.
 | 2026-11-17 | [404-landing fleet, og:url, relay hosts](2026-11-17-error-landing-fleet.md) | A visit that landed on an error page and never clicked is not a person; gate analytics init on it. |
 | 2026-11-17 | [Fleet history and Next 16.4.6](2026-11-17-fleet-history-and-next-patch.md) | A fleet gate ships with a dated {humans} exclusion for what the fleet already sent. |
 | 2026-11-17 | [The search palette shifted on every keystroke](2026-11-17-search-chip-row-cls.md) | Field CLS 0.8 on /movies came from the search chip row being removed and re-added per keystroke; reserve the space, and probe with soft-keyboard-style input. |
+| 2026-11-17 | [The first search still shifted 0.247](2026-11-17-search-first-query-cls.md) | The shortcuts group under the idle hint was pushed off screen by the taller skeleton; render shortcuts for idle only. |
