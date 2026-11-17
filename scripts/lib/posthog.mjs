@@ -39,10 +39,19 @@ export const TEST_COHORT_ID = 173293
 export const NOT_FLEET = `NOT (properties.$os IN ('Windows', 'Mac OS X', 'Linux') AND ifNull(toFloat(properties.$screen_height) / nullIf(toFloat(properties.$screen_width), 0), 0) BETWEEN 0.85 AND 1.2)`
 
 /**
+ * The 404-landing fleet of 2026-11-17 04:00-14:00 UTC (lessons/2026-11-17-error-
+ * landing-fleet.md): 291 "people", desktop Chrome, direct, Linux 1536x960 or
+ * Windows 1920x1080, one 404 movie page each, zero clicks. The client has
+ * dropped it since (landedOnErrorPage); this drops what it already sent. No
+ * real visitor in that window shared those buckets. TRUE for an event to KEEP.
+ */
+export const NOT_ERROR_LANDING_FLEET = `NOT (timestamp >= toDateTime('2026-11-17 04:00:00') AND timestamp < toDateTime('2026-11-17 14:00:00') AND properties.$browser = 'Chrome' AND properties.$referring_domain = '$direct' AND ((properties.$os = 'Linux' AND properties.$screen_width = 1536 AND properties.$screen_height = 960) OR (properties.$os = 'Windows' AND properties.$screen_width = 1920 AND properties.$screen_height = 1080)))`
+
+/**
  * Drop-in WHERE clause for "people, not us and not a bot fleet".
  * Expand `{humans}` in any query with it.
  */
-export const HUMANS = `${AFTER_BOT_BLOCK} AND (person_id IS NULL OR person_id NOT IN COHORT ${TEST_COHORT_ID}) AND ${NOT_FLEET}`
+export const HUMANS = `${AFTER_BOT_BLOCK} AND (person_id IS NULL OR person_id NOT IN COHORT ${TEST_COHORT_ID}) AND ${NOT_FLEET} AND ${NOT_ERROR_LANDING_FLEET}`
 
 const POLL_MS = 2000
 const POLL_LIMIT = 90

@@ -30,6 +30,7 @@ import {
 import {
   AFTER_BOT_BLOCK,
   HUMANS,
+  NOT_ERROR_LANDING_FLEET,
   NOT_FLEET,
   TEST_COHORT_ID,
 } from './lib/posthog.mjs'
@@ -61,11 +62,13 @@ export const PROJECT_SETTINGS = {
   product_description:
     'Reely (reely.space) — a free web app to discover, track and stream movies and TV shows, built on TMDB. Visitors browse and search titles, open a detail page, press play on an embedded or house player, keep a watchlist and watch history in the browser, and can sign in and become supporters (arranged by email, granted by hand). Global audience, mostly mobile. Core conversion: media_played. Activation: first_play. Every custom event carries `area`; pageviews carry a `route` template.',
   // What "filter out internal and test users" means on every Trends/Funnel
-  // tile: our own browsers, the near-square desktop bot fleet, and anything
+  // tile: our own browsers, the near-square desktop bot fleet, the 17 Nov
+  // 404-landing fleet, and anything
   // before the bot block (a 90-day window otherwise draws the August fleet).
   test_account_filters: [
     { key: 'id', type: 'cohort', value: TEST_COHORT_ID, operator: 'not_in' },
     { key: NOT_FLEET, type: 'hogql', value: null },
+    { key: NOT_ERROR_LANDING_FLEET, type: 'hogql', value: null },
     { key: AFTER_BOT_BLOCK, type: 'hogql', value: null },
   ],
 }

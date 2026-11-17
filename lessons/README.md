@@ -198,3 +198,4 @@ with the work, not after.
 | 2026-11-17 | [SEO and marketing sweep](2026-11-17-seo-marketing-sweep.md) | A sitemap URL must answer indexable; measure meta length on decoded text, not raw HTML. |
 | 2026-11-17 | [Bing: hub links missing from sitemaps](2026-11-17-bing-recommendations-hub-links.md) | Every title a baked page links to goes in the sitemap; read it from the exported HTML. |
 | 2026-11-17 | [404-landing fleet, og:url, relay hosts](2026-11-17-error-landing-fleet.md) | A visit that landed on an error page and never clicked is not a person; gate analytics init on it. |
+| 2026-11-17 | [Fleet history and Next 16.4.6](2026-11-17-fleet-history-and-next-patch.md) | A fleet gate ships with a dated {humans} exclusion for what the fleet already sent. |

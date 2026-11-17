@@ -7,7 +7,11 @@ import {
   section,
   sectionBody,
 } from '../scripts/lib/posthog-insights.mjs'
-import { AFTER_BOT_BLOCK, HUMANS } from '../scripts/lib/posthog.mjs'
+import {
+  AFTER_BOT_BLOCK,
+  HUMANS,
+  NOT_ERROR_LANDING_FLEET,
+} from '../scripts/lib/posthog.mjs'
 import { pct, unpivot } from '../scripts/posthog-comparisons.mjs'
 import {
   ALERTS,
@@ -129,6 +133,12 @@ describe('the dashboard spec', () => {
     // Without it a 90-day window draws the August fleet: the "100,000 users" bug.
     const keys = PROJECT_SETTINGS.test_account_filters.map((f) => f.key)
     expect(keys).toContain(AFTER_BOT_BLOCK)
+  })
+
+  it('drops the 17 Nov 404-landing fleet from {humans} and every Trends/Funnel tile', () => {
+    const keys = PROJECT_SETTINGS.test_account_filters.map((f) => f.key)
+    expect(keys).toContain(NOT_ERROR_LANDING_FLEET)
+    expect(HUMANS).toContain(NOT_ERROR_LANDING_FLEET)
   })
 
   it('puts every alert tile on a board', () => {
