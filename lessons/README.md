@@ -207,3 +207,4 @@ with the work, not after.
 | 2026-11-17 | [The fourth rating pill wrapped alone](2026-11-17-rating-pills-one-row.md) | Mark one-line rows data-one-row; pnpm shots fails when they wrap. |
 | 2026-11-17 | [LazyMotion: built, measured, reverted](2026-11-17-lazy-motion-rejected.md) | domMax still downloads after hydration; the domAnimation + domMax split was measured too and made `/` worse (+15 KB downloaded, Lighthouse -5). |
 | 2026-11-17 | [Four animations that were quietly broken](2026-11-17-motion-repairs.md) | The hero zoom ran for nobody for a month: its keyframes sat inside the reduced-motion block. Look at the running animation, not the diff. |
+| 2026-11-18 | [Slow tap attribution](2026-11-18-slow-tap-attribution.md) | No fix for a slow tap until the field names the script behind it. |

@@ -23,6 +23,7 @@ import {
 } from '@/lib/media'
 import type { PlayerIncident } from '@/lib/player-hop'
 import { ph } from '@/lib/posthog-client'
+import type { SlowInteractionProps } from '@/lib/slow-interactions'
 
 export const EVENTS = {
   // Playback (primary conversion)
@@ -54,6 +55,7 @@ export const EVENTS = {
   FILTER_PRESET_APPLIED: 'filter_preset_applied',
   // Navigation health
   PAGE_NOT_FOUND: 'page_not_found',
+  SLOW_INTERACTION: 'slow_interaction',
   // Reliability — any caught API / data-fetch failure (server actions, TMDB,
   // react-query). Handled errors don't surface as unhandled $exceptions, so we
   // record them explicitly to catch regressions like a flaky episode list.
@@ -160,6 +162,7 @@ export const EVENT_AREA = {
   filter_preset_saved: 'browse',
   filter_preset_applied: 'browse',
   page_not_found: 'health',
+  slow_interaction: 'health',
   api_error: 'health',
   season_selected: 'detail',
   watch_history_added: 'library',
@@ -558,6 +561,11 @@ export function trackInviteShared(props: { method: 'copy' | 'share' }): void {
 
 export function trackPageNotFound(props: { path?: string }): void {
   track(EVENTS.PAGE_NOT_FOUND, props)
+}
+
+/** A tap over 500 ms on a real device: see lib/slow-interactions. */
+export function trackSlowInteraction(props: SlowInteractionProps): void {
+  track(EVENTS.SLOW_INTERACTION, props)
 }
 
 // ---- Reliability / error tracking -------------------------------------------

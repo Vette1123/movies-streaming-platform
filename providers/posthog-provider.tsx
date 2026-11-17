@@ -4,7 +4,11 @@ import { PropsWithChildren, Suspense, useEffect, useRef } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import type { CaptureResult, ConfigDefaults } from 'posthog-js'
 
-import { trackImageHostFallback, trackPageview } from '@/lib/analytics'
+import {
+  trackImageHostFallback,
+  trackPageview,
+  trackSlowInteraction,
+} from '@/lib/analytics'
 import { shouldDropException } from '@/lib/error-noise'
 import { onIdle } from '@/lib/idle'
 import { interactionGate } from '@/lib/interaction-gate'
@@ -15,6 +19,7 @@ import {
   loadPostHog,
   setPostHogInitializer,
 } from '@/lib/posthog-client'
+import { installSlowInteractionReporter } from '@/lib/slow-interactions'
 import { subscribePrimaryImageHost } from '@/lib/tmdbConfig'
 
 /**
@@ -253,6 +258,9 @@ if (analyticsEnabled()) {
   // scheduleInit). Call sites are safe in the meantime: ph() queues anything
   // captured before the module lands and replays it in order afterwards.
   scheduleInit()
+  // Names the scripts behind any tap over 500 ms; posthog-js INP attribution
+  // does not (18 Nov: episode cards at 300-2,000 ms, nothing named).
+  installSlowInteractionReporter(trackSlowInteraction)
 }
 
 /**
