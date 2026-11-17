@@ -202,3 +202,4 @@ with the work, not after.
 | 2026-11-17 | [The search palette shifted on every keystroke](2026-11-17-search-chip-row-cls.md) | Field CLS 0.8 on /movies came from the search chip row being removed and re-added per keystroke; reserve the space, and probe with soft-keyboard-style input. |
 | 2026-11-17 | [The first search still shifted 0.247](2026-11-17-search-first-query-cls.md) | The shortcuts group under the idle hint was pushed off screen by the taller skeleton; render shortcuts for idle only. |
 | 2026-11-17 | [Episode cards still swapped the player inside the tap](2026-11-17-episode-card-inp.md) | A paint-first fix on one play surface goes on every surface that starts playback. |
+| 2026-11-17 | [Three usage-report alarms, none a code bug](2026-11-17-usage-alarms-triage.md) | Check a reach alarm as a per-day rate over its own denominator before blaming that week's deploy. |
