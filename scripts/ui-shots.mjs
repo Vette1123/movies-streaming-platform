@@ -5,7 +5,9 @@
  * Phone and desktop screenshots of each route (first screen, full page, and
  * viewport-height slices), plus the one layout check a screenshot can hide:
  * nothing may be wider than the viewport. Exits 1 naming each overflowing
- * element and how far. Refuses to grade a Cloudflare challenge page.
+ * element and how far. A list marked `data-one-row` must also keep its items on
+ * one line from a 375 px phone up (the hero's rating pills stranded Metascore
+ * alone on a second row, 17 Nov). Refuses to grade a Cloudflare challenge page.
  * Limits: Chrome only; layout after interaction (palette, dialogs) is not covered.
  */
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
@@ -46,6 +48,19 @@ const OVERFLOW = `(() => {
     out.push(el.tagName.toLowerCase() + (cls ? '.' + cls : '') + ' +' + Math.round(r.right - vw) + 'px')
   }
   return JSON.stringify({ scroll: document.documentElement.scrollWidth - vw, items: out.slice(0, 8) })
+})()`
+
+// Runs in the page: each visible [data-one-row] list whose items sit on more
+// than one line, from 375 px wide up (a 320 px phone may wrap).
+const ONE_ROW = `(() => {
+  if (document.documentElement.clientWidth < 375) return '[]'
+  const out = []
+  for (const list of document.querySelectorAll('[data-one-row]')) {
+    const items = [...list.children].filter((c) => c.getBoundingClientRect().width > 0)
+    const rows = new Set(items.map((c) => Math.round(c.getBoundingClientRect().top)))
+    if (rows.size > 1) out.push(list.getAttribute('data-one-row') + ': ' + items.length + ' items on ' + rows.size + ' rows')
+  }
+  return JSON.stringify(out)
 })()`
 
 rmSync(OUT, { recursive: true, force: true })
@@ -94,6 +109,10 @@ try {
         failures.push(`${route} ${vp.name}`)
         for (const item of items) console.log(`    ${item}`)
       }
+      for (const wrapped of JSON.parse(await evaluate(ONE_ROW))) {
+        console.log(`    WRAPPED ${wrapped}`)
+        failures.push(`${route} ${vp.name} (${wrapped})`)
+      }
     }
   }
 } finally {
@@ -101,6 +120,6 @@ try {
 }
 console.log(`shots: ${OUT}`)
 if (failures.length) {
-  console.error(`::error::${failures.length} view(s) scroll sideways: ${failures.join(', ')}`)
+  console.error(`::error::${failures.length} view(s) scroll sideways or wrap a one-row list: ${failures.join(', ')}`)
   process.exit(1)
 }

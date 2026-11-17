@@ -497,7 +497,7 @@ export const DetailsHero = ({
                     {/* The whole synopsis is in the section below; this is the
                       homepage's clamp, stepping down a whole line on a short
                       viewport rather than slicing one in half. */}
-                    <p className="line-clamp-2 max-w-2xl text-sm leading-relaxed text-white/85 drop-shadow-sm sm:line-clamp-3 lg:text-lg [@media(max-height:640px)]:line-clamp-1">
+                    <p className="mt-1 line-clamp-2 max-w-2xl text-sm leading-relaxed text-white/85 drop-shadow-sm sm:line-clamp-3 lg:text-lg [@media(max-height:640px)]:line-clamp-1">
                       {media?.overview}
                     </p>
                     {resumeSlot ? (

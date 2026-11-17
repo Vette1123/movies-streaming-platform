@@ -132,8 +132,12 @@ export function RatingsPills({
   if (!tiles.length) return null
   return (
     <ul
+      data-one-row="rating pills"
       className={cn(
-        'flex flex-wrap items-center gap-2 text-[15px] leading-none font-semibold',
+        // Four pills need ~372px at full size and a 390px phone has 350, so the
+        // fourth wrapped alone (Metascore, 17 Nov). Below sm they tighten to
+        // fit one row; `pnpm shots` fails if a data-one-row list wraps again.
+        'flex flex-wrap items-center gap-1.5 text-sm leading-none font-semibold sm:gap-2 sm:text-[15px]',
         className
       )}
     >
@@ -146,12 +150,12 @@ export function RatingsPills({
               // Solid tint, no backdrop-blur: on the home hero these sit over
               // a playing trailer preview, and a backdrop-filter re-blurs
               // what is behind each pill on every video frame.
-              'flex items-center gap-2 rounded-full bg-black/60 py-1.5 pr-3 pl-2 ring-1 ring-white/10',
+              'flex items-center gap-1.5 rounded-full bg-black/60 py-1.5 pr-2.5 pl-1.5 ring-1 ring-white/10 sm:gap-2 sm:pr-3 sm:pl-2',
               TONE_CLASS[tile.tone]
             )}
           >
             {/* The mark IS the label here: a TMDB badge already says TMDB. */}
-            <Mark aria-hidden className="h-[20px] w-auto shrink-0" />
+            <Mark aria-hidden className="h-[18px] w-auto shrink-0 sm:h-[20px]" />
             <span className="sr-only">{tile.label}</span>
             <span
               className={cn('font-bold tabular-nums', TONE_CLASS[tile.tone])}
