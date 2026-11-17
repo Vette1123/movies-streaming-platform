@@ -253,22 +253,34 @@ for (const path of [...new Set(SNIPPET_PAGES)]) {
 // landed on as missing from the sitemap, one of them as never submitted to
 // IndexNow. lib/sitemap-sections.ts advertises them now (buildLinkedMediaIds); this is
 // the check that says so.
+//
+// The hubs too: person, franchise, genre and year pages linked 3,638 titles
+// no sitemap listed on 2026-11-17 (Bing: "important pages missing in
+// sitemaps"). scripts/sitemap-linked.mjs adds them after the build.
 {
-  const { html } = await get('/movies/550')
-  const linked = [
-    ...new Set(
-      [...html.matchAll(/href="(\/(?:movies|tv-shows)\/\d+)"/g)].map(
-        (m) => m[1]
-      )
-    ),
-  ]
   const paths = new Set(locs.map((u) => new URL(u).pathname))
-  const missing = linked.filter((p) => !paths.has(p))
-  check(
-    'sitemap lists every title a detail page links to',
-    linked.length > 0 && missing.length === 0,
-    `${linked.length} linked, ${missing.length} missing${missing.length ? `: ${missing.slice(0, 5).join(', ')}` : ''}`
-  )
+  for (const page of [
+    '/movies/550',
+    '/person/287',
+    '/collection/10',
+    '/movies/genre/drama',
+    `/tv-shows/year/${new Date().getFullYear()}`,
+  ]) {
+    const { html } = await get(page)
+    const linked = [
+      ...new Set(
+        [...html.matchAll(/href="(\/(?:movies|tv-shows)\/\d+)"/g)].map(
+          (m) => m[1]
+        )
+      ),
+    ]
+    const missing = linked.filter((p) => !paths.has(p))
+    check(
+      `sitemap lists every title ${page} links to`,
+      linked.length > 0 && missing.length === 0,
+      `${linked.length} linked, ${missing.length} missing${missing.length ? `: ${missing.slice(0, 5).join(', ')}` : ''}`
+    )
+  }
 }
 
 // ---- pages that must NOT be indexed ----------------------------------------
