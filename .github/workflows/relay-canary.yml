@@ -47,7 +47,7 @@ jobs:
         continue-on-error: true
         run: node scripts/relay-canary.mjs
         env:
-          RELAY_URL: ${{ inputs.relay_url || 'https://reely-resolver-relay.reely.deno.net' }}
+          RELAY_URL: ${{ inputs.relay_url }}
 
       - name: Open the outage issue
         if: steps.canary.outcome == 'failure'
