@@ -64,6 +64,32 @@ describe('withSiteSocial', () => {
     ])
   })
 
+  // 2026-11-17: /start set a canonical and no openGraph, so it inherited the
+  // root layout's og:url — the homepage — and unfurled as the homepage.
+  it("points og:url at the page's canonical, with or without an openGraph", () => {
+    const start = withSiteSocial({
+      title: 'What should I watch?',
+      description: 'Pick a few films.',
+      alternates: { canonical: '/start' },
+    })
+    expect(start.openGraph).toMatchObject({
+      url: '/start',
+      title: 'What should I watch?',
+      description: 'Pick a few films.',
+      siteName: 'Reely',
+    })
+    const ogNoUrl = withSiteSocial({
+      alternates: { canonical: '/press' },
+      openGraph: { title: 'Press' },
+    })
+    expect(ogNoUrl.openGraph).toMatchObject({ url: '/press' })
+  })
+
+  it('leaves a page with neither canonical nor openGraph alone', () => {
+    const bare = { title: 'x' }
+    expect(withSiteSocial(bare)).toBe(bare)
+  })
+
   it('wraps every page that sets openGraph', () => {
     const files: string[] = []
     const walk = (dir: string) => {

@@ -178,6 +178,24 @@ export function isSquareScreenFleet({
   return ratio >= SQUARE_FLEET_RATIO.min && ratio <= SQUARE_FLEET_RATIO.max
 }
 
+/**
+ * Did the document this visit landed on answer with an error status?
+ *
+ * On 2026-11-17 a fleet showed up as 285 people in nine hours, each one a
+ * single random /movies/<id> that 404s: 1920x1080 Chrome, direct, rotating
+ * timezones, gone in about a second, never a click. Screen, UA and country
+ * do not separate it from real people; landing on an error page and never
+ * touching it does. providers/posthog-provider.tsx waits for a press on
+ * those landings instead of initialising on idle.
+ *
+ * `responseStatus` is Chromium-only (every one of the fleet). Elsewhere it is
+ * undefined, and 0 for cached or cross-origin answers, so this says false and
+ * analytics behaves as before.
+ */
+export const landedOnErrorPage = (
+  navigation: { responseStatus?: number } | undefined
+): boolean => (navigation?.responseStatus ?? 0) >= 400
+
 const isAutomated = (): boolean => {
   try {
     // Set by every CDP-driven browser (Puppeteer, Playwright, Selenium) unless

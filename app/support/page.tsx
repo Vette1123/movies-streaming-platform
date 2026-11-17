@@ -29,7 +29,7 @@ import { SupporterCount } from '@/components/support/supporter-count'
 import { TvLinkPreview } from '@/components/support/tv-link-preview'
 
 export const metadata: Metadata = withSiteSocial({
-  title: pageTitle(`Support ${siteConfig.name}`),
+  title: pageTitle(`Support ${siteConfig.name}, the Free Movie & TV Tracker`),
   description: `Reely is free and stays free. Supporting it keeps your library on every device, unlocks lists, alerts and more, and pays for the servers that keep it running.`,
   alternates: { canonical: '/support' },
   openGraph: {

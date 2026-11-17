@@ -12,7 +12,9 @@ import { buttonVariants } from '@/components/ui/button'
 import { SponsorCard } from '@/components/sponsor-card'
 
 export const metadata: Metadata = withSiteSocial({
-  title: pageTitle(`Advertise on ${siteConfig.name}`),
+  title: pageTitle(
+    `Advertise on ${siteConfig.name}: Sponsor a Movie & TV Site`
+  ),
   description:
     'Sponsor Reely: one card on nearly every page, homepage to episode pages. One sponsor at a time, booked by the month or paid per order, with your coupon on it.',
   alternates: { canonical: '/advertise' },

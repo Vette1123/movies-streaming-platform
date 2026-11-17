@@ -4,7 +4,7 @@ import { siteConfig } from '@/config/site'
 import { withSiteSocial } from '@/lib/page-metadata'
 
 export const metadata: Metadata = withSiteSocial({
-  title: 'Match Night',
+  title: 'Match Night: Pick a Movie Together',
   description:
     'Two people, one deck, one code. Swipe what you would watch tonight — when you both like the same title, it is a match and the movie-night decision is made.',
   alternates: { canonical: '/match-night' },

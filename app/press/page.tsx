@@ -16,7 +16,7 @@ import { JsonLd } from '@/lib/structured-data'
 // the sitemap actually carries.
 
 export const metadata: Metadata = withSiteSocial({
-  title: 'Press',
+  title: 'Press Kit: Free Movie & TV Tracker',
   description:
     'Press kit for Reely, a free movie and TV tracker with Rotten Tomatoes, IMDb and Metacritic scores on every title. Ready copy blocks and a direct press contact.',
   alternates: { canonical: '/press' },
