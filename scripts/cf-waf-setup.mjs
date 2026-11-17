@@ -391,7 +391,7 @@ const NOT_MACHINE_PATH =
   ` and not starts_with(http.request.uri.path, "${LIBRARY_INGEST_PREFIX}")`
 
 /**
- * The playback worker's custom domain, exempt from the site's WAF.
+ * Machine-called custom domains in this zone, exempt from the site's WAF.
  *
  * play.reely.space lives in THIS zone, so every rule below applies to it too
  * once the hostname is attached — and the player is machine-called in ways
@@ -401,10 +401,16 @@ const NOT_MACHINE_PATH =
  * pages needed. Nothing is given away: every player route demands a signed
  * ticket, and its page shell is one static asset.
  *
- * SHIP THIS BEFORE the hostname is attached — after attachment every rule
- * below would already apply to play.reely.space.
+ * relay.reely.space is the playback relay's public front (a pipe worker in
+ * front of the Netlify edge deployment, 2026-11-17). Every caller is a
+ * machine too — the player worker, the site's health gate, the canary — plus
+ * the video element's Range fetches; a challenge there kills playback the
+ * same way it would on play.reely.space.
+ *
+ * SHIP THIS BEFORE a hostname is attached — after attachment every rule
+ * below would already apply to it.
  */
-const PLAY_HOST_EXEMPT = 'not (http.host eq "play.reely.space")'
+const PLAY_HOST_EXEMPT = 'not (http.host in {"play.reely.space" "relay.reely.space"})'
 
 /**
  * Everything a page needs in order to BE a page.

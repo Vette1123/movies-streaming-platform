@@ -6,15 +6,17 @@
 
 /**
  * The relay the player resolves through FIRST — the worker pairs it with
- * `RELAY_SECRET` at RELAY_URLS position 1. Since 2026-11-17 this is the
- * Netlify Edge Function (https://reely-relay.netlify.app): the old home, the
- * `reely` org on Deno Deploy, was suspended org-wide (ORGANIZATION_SUSPENDED)
- * on 2026-11-16 and Deno Deploy itself sunsets ~April 2027 (Deno joined
- * Cloudflare). The relay code runs unmodified on Netlify's Deno runtime
- * through a Deno.env shim; the vault CDN (bcdn.*) refuses Cloudflare-egress
- * bytes, which is why the relay cannot simply become a CF Worker.
+ * `RELAY_SECRET` at RELAY_URLS position 1. Since 2026-11-17 the relay code
+ * runs on a Netlify Edge Function (the old home, the `reely` org on Deno
+ * Deploy, was suspended org-wide on 2026-11-16, and Deno Deploy itself
+ * sunsets ~April 2027). The address here is NOT the netlify.app host: the
+ * relay's /file URLs are handed to the browser's video element, and some
+ * ISPs TCP-block *.netlify.app, so `reely-relay-front` (a Cloudflare pipe
+ * worker) fronts it at this hostname — browsers hit CF's edge, the vault
+ * still sees Netlify's egress. The player worker, the site's health gate
+ * and the canary all resolve through this same front.
  */
-export const RELAY_URL = 'https://reely-relay.netlify.app'
+export const RELAY_URL = 'https://relay.reely.space'
 
 /**
  * The failover relay on the suspended Deno org. It answers 503 SUSPENDED on
