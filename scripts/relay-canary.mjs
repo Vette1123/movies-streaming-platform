@@ -50,7 +50,9 @@ const UA =
 export const TITLES = [
   { name: 'Fight Club', query: 'ty=movie&id=550' },
   { name: 'Inception', query: 'ty=movie&id=27205' },
-  { name: 'Game of Thrones S1E1', query: 'ty=tv&id=1399&s=1&ep=1' },
+  // Not Game of Thrones: since 17 Nov vidlink answers `null` for it, so it
+  // failed every run and one 429 elsewhere paged an outage (#217).
+  { name: 'Breaking Bad S1E1', query: 'ty=tv&id=1396&s=1&ep=1' },
 ]
 
 // The verdict on one walk is shared with the Worker's /api/stream/health.
