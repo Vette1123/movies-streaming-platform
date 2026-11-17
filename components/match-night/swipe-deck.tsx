@@ -12,6 +12,7 @@ import {
 } from 'framer-motion'
 import { Heart, Info, Search, Undo2, X } from 'lucide-react'
 
+import { cardExit, type SwipeDirection } from '@/lib/hero-motion'
 import { matchCardHref, type MatchCard } from '@/lib/match-night'
 import { getPosterImageURL } from '@/lib/utils'
 
@@ -31,7 +32,7 @@ const COMMIT_VELOCITY = 520
 
 const STACK_DEPTH = 3
 
-export type SwipeDirection = 1 | -1
+export type { SwipeDirection }
 
 /** Poster art at the size the card actually paints - w500 covers a 2x 288px
  * card. The page used to hand these the `original` (w-2560) builder, which is
@@ -118,16 +119,15 @@ function TopCard({
       style={{ x, rotate }}
       initial={reduceMotion ? false : { scale: 0.96, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      exit={
-        reduceMotion
-          ? { opacity: 0 }
-          : {
-              x: exitDirection * 520,
-              rotate: exitDirection * 18,
-              opacity: 0,
-              transition: { duration: 0.28, ease: [0.16, 1, 0.3, 1] },
-            }
-      }
+      // The direction comes through AnimatePresence's `custom`: a removed
+      // card still holds the props of its last render, so reading
+      // exitDirection here threw it the way the PREVIOUS decision went.
+      custom={exitDirection}
+      variants={{
+        exit: (direction: SwipeDirection) =>
+          cardExit(direction, !!reduceMotion),
+      }}
+      exit="exit"
       transition={{ type: 'spring', stiffness: 320, damping: 30 }}
       className="absolute inset-0 z-10 cursor-grab overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-2xl active:cursor-grabbing"
     >
@@ -252,7 +252,7 @@ export function SwipeDeck({
           </div>
         ))}
 
-        <AnimatePresence initial={false}>
+        <AnimatePresence initial={false} custom={exitDirection}>
           <TopCard
             key={top.id}
             card={top}

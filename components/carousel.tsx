@@ -800,13 +800,16 @@ export function Carousel({
           </motion.div>
         )}
 
-        {/* Enhanced Navigation arrows with smooth animations */}
+        {/* Navigation arrows. framer owns their motion (entrance, hover scale and
+            colour, tap): a CSS transition-all on the same button eased every
+            frame framer wrote over 300ms, so hover and tap lagged, and the CSS
+            hover:scale stacked a second scale on framer's (17 Nov). */}
         {hasMultipleSlides && (
           <>
             {/* Left Arrow */}
             <motion.button
               onClick={() => handleButtonClick(-1)}
-              className="absolute top-1/2 left-3 z-30 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white opacity-0 shadow-lg backdrop-blur-md transition-all duration-300 group-hover:opacity-100 hover:scale-105 hover:bg-white/20 focus:opacity-100 focus:ring-2 focus:ring-white/30 focus:outline-none sm:left-6 sm:size-12 lg:flex lg:opacity-0"
+              className="absolute top-1/2 left-3 z-30 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white shadow-lg backdrop-blur-md focus:ring-2 focus:ring-white/30 focus:outline-none sm:left-6 sm:size-12 lg:flex"
               aria-label="Previous slide"
               initial={CAROUSEL_ARROW_VARIANTS.initial('left')}
               animate={CAROUSEL_ARROW_VARIANTS.animate}
@@ -825,7 +828,7 @@ export function Carousel({
             {/* Right Arrow */}
             <motion.button
               onClick={() => handleButtonClick(1)}
-              className="absolute top-1/2 right-3 z-30 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white opacity-0 shadow-lg backdrop-blur-md transition-all duration-300 group-hover:opacity-100 hover:scale-105 hover:bg-white/20 focus:opacity-100 focus:ring-2 focus:ring-white/30 focus:outline-none sm:right-6 sm:size-12 lg:flex lg:opacity-0"
+              className="absolute top-1/2 right-3 z-30 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white shadow-lg backdrop-blur-md focus:ring-2 focus:ring-white/30 focus:outline-none sm:right-6 sm:size-12 lg:flex"
               aria-label="Next slide"
               initial={CAROUSEL_ARROW_VARIANTS.initial('right')}
               animate={CAROUSEL_ARROW_VARIANTS.animate}

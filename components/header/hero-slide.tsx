@@ -14,6 +14,7 @@ import {
 } from '@/lib/analytics'
 import { isBackPending } from '@/lib/back-restore'
 import { canWarmHeroArt, heroArtReady } from '@/lib/hero-art'
+import { kenBurnsClass } from '@/lib/hero-motion'
 import { heroCopyEnters } from '@/lib/hero-title'
 import { onIdleAfterLoad } from '@/lib/idle'
 import { COVER_BACKDROP_SIZES, COVER_POSTER_SIZES } from '@/lib/image-sizes'
@@ -54,20 +55,17 @@ interface HeroSlideProps {
   active?: boolean
 }
 
-// Ken Burns runs on the slide you can SEE, and nowhere else: the carousel
-// keeps a slide either side mounted so their artwork is decoded before they
-// scroll in, and animating those would mean three full-viewport backdrops
-// scaling at once. Off-slides are invisible, so they get no animation and no
-// promotion. On a weak device, nowhere at all.
+// Ken Burns RUNS only on the slide you can see: the carousel keeps a slide
+// either side mounted so their artwork is decoded before they scroll in, and
+// running those would mean three full-viewport backdrops scaling at once. The
+// neighbours carry it paused, so a swipe shows no jump (lib/hero-motion). On
+// a weak device, nowhere at all.
 const readConnection = () =>
   (
     navigator as Navigator & {
       connection?: Parameters<typeof canWarmHeroArt>[0]
     }
   ).connection
-
-const kenBurns = (active: boolean, lowPower: boolean) =>
-  active && !lowPower ? 'animate-hero-kenburns motion-reduce:animate-none' : ''
 
 // Hero copy fades up when a slide arrives: title block, then ratings, then
 // the actions. NEVER on the page's first paint — the copy (and the page's
@@ -343,7 +341,7 @@ export function HeroSlide({
           <BlurredImage
             src={getImageURL(media.backdrop_path)}
             alt={title}
-            className={`block size-full object-cover object-center ${kenBurns(active, lowPower)}`}
+            className={`block size-full object-cover object-center ${kenBurnsClass(active, lowPower)}`}
             fill
             // Full-bleed AND `object-cover`, which is why this is not `100vw`:
             // on any viewport taller than 16:9 the cover math paints the backdrop
@@ -604,7 +602,7 @@ export function HeroSlide({
           </div>
 
           <div
-            className={`hidden shrink-0 transition-all duration-500 ease-out lg:flex ${
+            className={`hidden shrink-0 transition-[opacity,filter] duration-500 ease-out lg:flex ${
               cinematic ? 'opacity-0 blur-sm' : 'blur-0 opacity-100'
             }`}
           >
