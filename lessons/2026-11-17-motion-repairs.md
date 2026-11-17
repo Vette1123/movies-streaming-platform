@@ -18,6 +18,12 @@ Verified fine and left alone: hero swipe follows the finger and settles (no
 long frames at 4x CPU), touch hover is gated by Tailwind 4's `(hover:hover)`,
 timers and listeners are cleaned up, no autoplay by design (`autoPlay={false}`).
 
+Cost of the zoom, measured on live after the fix (390 px, 4x CPU, a capable-
+phone profile, one swipe per run): frames over 300 ms were 0 in 5 swipes with
+the zoom running and 1 in 5 with it forced off; the slow frames that do occur
+are React work (MessagePort.onmessage) or unattributed, with 22-38 ms of
+render and layout, so not the zoom.
+
 ## Mistakes
 - The October fix was checked by reading the diff, not by looking at a
   running hero, so the misplaced keyframes shipped and stayed a month.
