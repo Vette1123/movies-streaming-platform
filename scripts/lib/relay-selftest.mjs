@@ -19,16 +19,31 @@
 export const RELAY_URL = 'https://relay.reely.space'
 
 /**
- * The failover relay on the suspended Deno org. It answers 503 SUSPENDED on
- * every route while the org is suspended; if Deno support lifts that, it
- * resumes as free failover with no change on our side (the player pairs it
- * as RELAY_SECRET_2, key K3). The canary walks both so a report says what a
- * play would hit. The site's health gate (lib/pro/relay-health.ts) stays on
- * relay 1 only: with failover the player survives relay 1's death without
- * any gate change, and a second selftest walk per colo per TTL is not worth
- * the Worker subrequests on the route that is 63% of invocations.
+ * The failover relay: a SECOND Netlify site running the identical edge
+ * bundle under its own key (paired as the player's RELAY_SECRET_2). It exists
+ * because the failover story cannot lean on deno 2 alone: the `reely` org on
+ * Deno Deploy was suspended 2026-11-16 and support has not answered, so a
+ * Netlify-wide problem would otherwise leave no relay at all. Same account
+ * (a second free account was not worth the setup), so it shares the
+ * account-level risks and covers site-level ones: a bad deploy on relay 1,
+ * an accidental delete or privacy flip, isolate churn. Browsers reach it
+ * through the same front worker, at the second custom domain — the ISP block
+ * argument applies to this host exactly as it did to relay 1.
  */
-export const RELAY_2_URL = 'https://reely-resolver-relay-2.reely.deno.net'
+export const RELAY_2_URL = 'https://relay-b.reely.space'
+
+/**
+ * The last relay in the player's walk: the suspended Deno org. It answers
+ * 503 SUSPENDED on every route while the suspension stands; if Deno support
+ * lifts that, it resumes as free failover with no change on our side (the
+ * player pairs it as RELAY_SECRET_3, key K3). The canary walks all three so
+ * a report says what a play would hit. The site's health gate
+ * (lib/pro/relay-health.ts) stays on relay 1 only: with failover the player
+ * survives relay 1's death without any gate change, and a second selftest
+ * walk per colo per TTL is not worth the Worker subrequests on the route
+ * that is 63% of invocations.
+ */
+export const RELAY_3_URL = 'https://reely-resolver-relay-2.reely.deno.net'
 
 /** The title the health check walks: long-running and widely carried. */
 export const HEALTH_QUERY = 'ty=movie&id=550'

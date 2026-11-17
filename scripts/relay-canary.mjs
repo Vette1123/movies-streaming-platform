@@ -26,6 +26,7 @@ import { pathToFileURL } from 'node:url'
 
 import {
   RELAY_2_URL,
+  RELAY_3_URL,
   RELAY_URL,
   selftestPassed,
   selftestReason,
@@ -39,6 +40,7 @@ const PLAYER = process.env.PLAYER_URL ?? 'https://play.reely.space'
 const RELAYS = [
   process.env.RELAY_URL || RELAY_URL,
   process.env.RELAY_2_URL || RELAY_2_URL,
+  process.env.RELAY_3_URL || RELAY_3_URL,
 ]
 // A current browser string: the WAF challenges empty and frozen user-agents.
 const UA =
