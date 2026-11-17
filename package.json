@@ -54,6 +54,7 @@
     "share:probe": "node scripts/share-probe.mjs",
     "trial:probe": "node scripts/trial-probe.mjs",
     "search:probe": "node scripts/search-scroll-probe.mjs",
+    "cls:probe": "node scripts/cls-probe.mjs",
     "vt:probe": "node scripts/view-transition-probe.mjs",
     "resume:probe": "node scripts/resume-probe.mjs",
     "pro": "node scripts/grant-pro.mjs",

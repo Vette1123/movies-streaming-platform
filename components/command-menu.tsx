@@ -33,6 +33,7 @@ import { COMPANION_APPS, openStoreListing, storesLabel } from '@/lib/apps'
 import { SEARCH_DEBOUNCE } from '@/lib/constants'
 import { mediaDetailHref, resolveMediaType } from '@/lib/media'
 import { tintBackground } from '@/lib/monogram'
+import { chipRowState } from '@/lib/search-chip-row'
 import { handleImageFallbackError } from '@/lib/tmdbConfig'
 import {
   cn,
@@ -437,6 +438,8 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
     outcome
   )
 
+  const chipRow = chipRowState(status, visibleResults.length)
+
   const resultsHeading = buildResultsHeading(
     status,
     recent.length,
@@ -478,8 +481,14 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
           onValueChange={handleValueChange}
           isLoading={isLoading}
         />
-        {status === 'results' && visibleResults.length > 0 && (
-          <div className="flex shrink-0 items-center gap-1.5 border-b px-3 py-2">
+        {chipRow !== 'none' && (
+          <div
+            aria-hidden={chipRow === 'reserved' || undefined}
+            className={cn(
+              'flex shrink-0 items-center gap-1.5 border-b px-3 py-2',
+              chipRow === 'reserved' && 'invisible'
+            )}
+          >
             {(
               [
                 ['all', 'All', counts.all],
