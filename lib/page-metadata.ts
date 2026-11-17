@@ -37,8 +37,31 @@ export const feedAlternate = {
   ],
 }
 
+const canonicalOf = (meta: Metadata) => {
+  const canonical = meta.alternates?.canonical
+  return typeof canonical === 'string' ? canonical : undefined
+}
+
+const plainTitle = (title: Metadata['title']) => {
+  if (typeof title === 'string') return title
+  if (title && 'absolute' in title) return title.absolute
+  return undefined
+}
+
+// A page with a canonical but no openGraph of its own inherits the root
+// layout's, og:url included: /start unfurled as the homepage. Its own title,
+// description and canonical make the openGraph it should have had.
+const ownOpenGraph = (meta: Metadata): OpenGraph | undefined => {
+  if (meta.openGraph) return meta.openGraph
+  if (!canonicalOf(meta)) return undefined
+  return {
+    title: plainTitle(meta.title),
+    description: meta.description ?? undefined,
+  }
+}
+
 export function withSiteSocial(meta: Metadata): Metadata {
-  const og = meta.openGraph
+  const og = ownOpenGraph(meta)
   if (!og) return meta
   const images = og.images ?? '/opengraph-image.png'
   const twitter = meta.twitter ?? {}
@@ -48,6 +71,7 @@ export function withSiteSocial(meta: Metadata): Metadata {
       type: 'website',
       siteName: siteConfig.openGraph.siteName,
       locale: siteConfig.openGraph.locale,
+      url: canonicalOf(meta),
       ...og,
       images,
     } as OpenGraph,

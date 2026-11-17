@@ -11,6 +11,7 @@ import { interactionGate } from '@/lib/interaction-gate'
 import { enrichPersonProfile } from '@/lib/person'
 import {
   analyticsEnabled,
+  landedOnErrorPage,
   loadPostHog,
   setPostHogInitializer,
 } from '@/lib/posthog-client'
@@ -217,18 +218,25 @@ function scheduleInit() {
     return
   }
 
+  // A visit that LANDED on an error page waits for a click or key press: no
+  // idle init, and scrolling does not count. That is the whole signature of
+  // the 2026-11-17 fleet (see landedOnErrorPage), which loaded one random
+  // 404 and left. A person who lands on a 404 and clicks anything is counted
+  // in full, page_not_found included: ph() queued it and init replays it.
+  const errorLanding = landedOnErrorPage(
+    performance.getEntriesByType('navigation')[0] as
+      { responseStatus?: number } | undefined
+  )
+
   // The { timeout } is a HARD ceiling: if the browser hasn't gone idle within 2s,
   // it runs anyway. Analytics never waits indefinitely on a busy main thread,
   // while init stays off the LCP/INP critical path in the common (idle-soon)
   // case.
-  const cancelIdle = onIdle(initPosthog, 2000)
+  const cancelIdle = errorLanding ? () => {} : onIdle(initPosthog, 2000)
 
-  const events: (keyof WindowEventMap)[] = [
-    'pointerdown',
-    'keydown',
-    'scroll',
-    'wheel',
-  ]
+  const events: (keyof WindowEventMap)[] = errorLanding
+    ? ['pointerdown', 'keydown']
+    : ['pointerdown', 'keydown', 'scroll', 'wheel']
   let flushed = false
   const onFirstGesture = () => {
     if (flushed) return

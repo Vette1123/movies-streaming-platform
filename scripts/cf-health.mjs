@@ -437,7 +437,26 @@ const decodePath = (path) => {
   }
 }
 
-const bucketFor = ({ clientRequestPath, edgeResponseStatus }) => {
+// play.reely.space (the Reely Player) and relay.reely.space /
+// relay-b.reely.space (its stream relay) answer only their own paths;
+// everything else, their root and favicon included, is a 404 by design.
+// Without the host these read as "404 /" — the homepage, apparently — and
+// were the top unclassified rows on 2026-11-17 (294 + 105 in 24h).
+const RELAY_HOST = /^(play|relay(-[a-z0-9]+)?)\.reely\.space$/
+
+const bucketFor = ({
+  clientRequestPath,
+  clientRequestHTTPHost,
+  edgeResponseStatus,
+}) => {
+  // Only the paths a browser or scanner asks every host for: a 4xx on the
+  // player's or relay's real paths is still unclassified, and still news.
+  if (
+    RELAY_HOST.test(clientRequestHTTPHost ?? '') &&
+    /^\/(favicon\.ico|robots\.txt)?$/.test(clientRequestPath)
+  ) {
+    return 'player/relay host: path it does not serve (404, by design)'
+  }
   const path = decodePath(clientRequestPath)
   return (
     BUCKETS.find(
@@ -451,7 +470,7 @@ async function checkClientErrors(zone) {
   const filter = `datetime_geq:"${SINCE}",datetime_leq:"${UNTIL}",requestSource:"eyeball",edgeResponseStatus_geq:400,edgeResponseStatus_lt:500`
   const { zones } = await gql(`query{viewer{zones(filter:{zoneTag:"${zone}"}){
     httpRequestsAdaptiveGroups(limit:2000,filter:{${filter}},orderBy:[count_DESC]){
-      count dimensions{clientRequestPath edgeResponseStatus}}}}}`)
+      count dimensions{clientRequestPath clientRequestHTTPHost edgeResponseStatus}}}}}`)
 
   const tally = new Map()
   const unknown = []
@@ -474,7 +493,7 @@ async function checkClientErrors(zone) {
   )
   for (const row of unknown.slice(0, 12)) {
     console.log(
-      `    ${String(row.count).padStart(6)}  ${row.dimensions.edgeResponseStatus} ${row.dimensions.clientRequestPath.slice(0, 80)}`
+      `    ${String(row.count).padStart(6)}  ${row.dimensions.edgeResponseStatus} ${row.dimensions.clientRequestHTTPHost === 'www.reely.space' ? '' : row.dimensions.clientRequestHTTPHost}${row.dimensions.clientRequestPath.slice(0, 80)}`
     )
   }
 }

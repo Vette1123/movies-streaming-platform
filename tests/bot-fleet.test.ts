@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import {
   isShanghaiDesktopFleet,
   isSquareScreenFleet,
+  landedOnErrorPage,
   SQUARE_FLEET_RATIO,
 } from '@/lib/posthog-client'
 
@@ -110,5 +111,24 @@ describe('NOT_FLEET', () => {
   it('drops history with the same band the client gate drops live', () => {
     const { min, max } = SQUARE_FLEET_RATIO
     expect(NOT_FLEET).toContain(`BETWEEN ${min} AND ${max})`)
+  })
+})
+
+// 2026-11-17: 285 "people" in 9 hours, each landing on one random
+// /movies/<id> that 404s, 1920x1080 Chrome, direct, gone in a second, never a
+// click. Analytics waits for a press when the landing answered an error.
+describe('landedOnErrorPage', () => {
+  it('is true when the landing document answered 4xx or 5xx', () => {
+    expect(landedOnErrorPage({ responseStatus: 404 })).toBe(true)
+    expect(landedOnErrorPage({ responseStatus: 500 })).toBe(true)
+  })
+
+  it('is false for a normal landing, and where the browser cannot say', () => {
+    expect(landedOnErrorPage({ responseStatus: 200 })).toBe(false)
+    // Safari has no responseStatus; 0 is a cross-origin or cached answer.
+    // Neither withholds analytics.
+    expect(landedOnErrorPage({ responseStatus: 0 })).toBe(false)
+    expect(landedOnErrorPage({})).toBe(false)
+    expect(landedOnErrorPage(undefined)).toBe(false)
   })
 })
