@@ -4,14 +4,24 @@
 // offers the Reely Player at all. If they disagreed, the canary could page
 // about an outage the site was still sending supporters into.
 
-/** The relay the player resolves through. Public: the canary names it too. */
-export const RELAY_URL = 'https://reely-resolver-relay.reely.deno.net'
+/**
+ * The relay the player resolves through FIRST — the worker pairs it with
+ * `RELAY_SECRET` at RELAY_URLS position 1. Since 2026-11-17 this is the
+ * Netlify Edge Function (https://reely-relay.netlify.app): the old home, the
+ * `reely` org on Deno Deploy, was suspended org-wide (ORGANIZATION_SUSPENDED)
+ * on 2026-11-16 and Deno Deploy itself sunsets ~April 2027 (Deno joined
+ * Cloudflare). The relay code runs unmodified on Netlify's Deno runtime
+ * through a Deno.env shim; the vault CDN (bcdn.*) refuses Cloudflare-egress
+ * bytes, which is why the relay cannot simply become a CF Worker.
+ */
+export const RELAY_URL = 'https://reely-relay.netlify.app'
 
 /**
- * The failover relay, deployed 2026-11-16. Same code, its own RELAY_SECRET
- * (the worker pairs it as RELAY_SECRET_2); it serves only what relay 1
- * cannot. The canary walks both so a report says what a play would hit.
- * The site's health gate (lib/pro/relay-health.ts) deliberately stays on
+ * The failover relay on the suspended Deno org. It answers 503 SUSPENDED on
+ * every route while the org is suspended; if Deno support lifts that, it
+ * resumes as free failover with no change on our side (the player pairs it
+ * as RELAY_SECRET_2, key K3). The canary walks both so a report says what a
+ * play would hit. The site's health gate (lib/pro/relay-health.ts) stays on
  * relay 1 only: with failover the player survives relay 1's death without
  * any gate change, and a second selftest walk per colo per TTL is not worth
  * the Worker subrequests on the route that is 63% of invocations.
