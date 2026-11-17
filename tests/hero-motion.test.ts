@@ -43,7 +43,10 @@ describe('cardExit', () => {
   it('hands the direction to the leaving card through AnimatePresence', () => {
     const deck = readFileSync('components/match-night/swipe-deck.tsx', 'utf8')
     expect(deck).toMatch(/<AnimatePresence[^>]*custom=\{exitDirection\}/)
-    expect(deck).toMatch(/exit: \(direction: SwipeDirection\) => cardExit\(/)
+    // \s+ so Prettier may wrap the arrow body onto its own line.
+    expect(deck).toMatch(
+      /exit:\s*\(direction: SwipeDirection\)\s*=>\s*cardExit\(/
+    )
   })
 })
 

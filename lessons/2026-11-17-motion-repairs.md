@@ -27,6 +27,9 @@ timers and listeners are cleaned up, no autoplay by design (`autoPlay={false}`).
 - The first live probe read the active slide at scale 1 and blamed headless
   Chrome's low-power detection. Overriding cores and memory changed nothing;
   reading `animationName` next to `transform` showed the keyframes were missing.
+- Ran the tests, THEN Prettier. Prettier wrapped the exit arrow onto two lines,
+  the source check matched one line only, and CI failed the first deploy.
+  Format first, test last.
 
 ## What worked
 - A live probe that reads computed styles mid-gesture (`touchMove` held,
