@@ -17,6 +17,7 @@ import {
   type PlaybackPosition,
 } from '@/lib/playback-positions'
 import { episodesShownAtFirst } from '@/lib/season-tabs'
+import { startEpisode } from '@/lib/start-episode'
 import { cn, dateFormatter, getImageURL } from '@/lib/utils'
 import { useAccount } from '@/hooks/use-account'
 import { useCompletedMedia } from '@/hooks/use-completed-media'
@@ -222,19 +223,22 @@ export const Episodes = ({
         episode: episode?.episode_number,
       })
     }
-    // What the tap ASKED for, first and synchronously. Clicking a card IS the
-    // play intent, so start the embed directly instead of letting the URL
-    // trigger it — the params can already point at this episode (arriving from
+    // What the tap ASKED for, first, right after the tap paints (the player
+    // swap inside the click was the card's INP). Clicking a card IS the play
+    // intent, so start the embed directly instead of letting the URL trigger
+    // it — the params can already point at this episode (arriving from
     // continue-watching), and then nothing would change.
-    requestPlay({
-      season: Number(selectedSeason),
-      episode: episode?.episode_number,
-    })
-    router.push(
-      `?season=${selectedSeason}&episode=${episode?.episode_number}`,
-      { scroll: false }
+    startEpisode(
+      { season: Number(selectedSeason), episode: episode?.episode_number },
+      {
+        play: requestPlay,
+        navigate: (target) =>
+          router.push(`?season=${target.season}&episode=${target.episode}`, {
+            scroll: false,
+          }),
+        scroll: scrollToTop,
+      }
     )
-    scrollToTop()
 
     /*
      * Everything below is bookkeeping, and it used to run BEFORE the play —
