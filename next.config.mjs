@@ -95,6 +95,11 @@ const baseConfig = {
     // refuse to start. The build's type check runs `tsc` instead (the native
     // 7.x one). The linter keeps its own TypeScript 6 — see .pnpmfile.cjs.
     useTypeScriptCli: true,
+    // Pages only change on deploy, so the client router keeps what it fetched:
+    // 30 min for prefetched pages, 5 min for one reached without a prefetch
+    // (every card link: they warm on intent). Back to a title you just left
+    // costs no request. tests/router-cache.test.ts pins it.
+    staleTimes: { static: 1800, dynamic: 300 },
   },
 }
 
