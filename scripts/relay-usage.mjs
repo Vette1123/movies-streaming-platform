@@ -64,8 +64,12 @@ const CREDITS = { deploy: 15, perGB: 20, per10kRequests: 2 }
 const CF_FRONT_DAILY_CAP = 100_000 // CF Workers free plan, per day, per account
 
 const HOSTS = ['relay.reely.space', 'relay-b.reely.space']
-const SITE_A = '9b37506f-ff6d-4e7a-a540-68112688a8ce' // reely-relay
-const SITE_B = '9b7ba541-5a85-4d82-8c6d-e4f87fa7efdc' // reely-relay-b
+const SITE_A = '9b37506f-ff6d-4e7a-a540-68112688a8ce' // reely-relay (team Reely)
+// Since 2026-11-18 relay-b lives in its own account, so its deploys bill that
+// wallet. Its pre-split deploys (3 this period) were billed to team Reely and
+// are no longer visible once the old site is deleted — the first period
+// undercounts wallet A by those; the dashboard remains the truth.
+const SITE_B = '47406758-6292-428a-b851-0bee16c682b1' // reely-relay-b (own account)
 
 const wrangler = fs.readFileSync(path.join(root, 'wrangler.jsonc'), 'utf8')
 const CF_ACCOUNT = wrangler.match(/"account_id":\s*"([^"]+)"/)?.[1]

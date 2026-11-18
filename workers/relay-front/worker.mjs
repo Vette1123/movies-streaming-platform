@@ -9,7 +9,13 @@
  * 427s Cloudflare-egress bytes, which is why the relays are not CF workers).
  *
  *   relay.reely.space   -> reely-relay.netlify.app     (relay 1, RELAY_SECRET)
- *   relay-b.reely.space -> reely-relay-b.netlify.app  (relay 2, RELAY_SECRET_2)
+ *   relay-b.reely.space -> reely-relay-b2.netlify.app (relay 1b, RELAY_SECRET_2)
+ *
+ * Since 2026-11-18 relay-b lives in its own Netlify account (site
+ * reely-relay-b2) so one credit pool pausing can never take both relay homes
+ * down at once; the site name carries a 2 only because Netlify names are
+ * global and the old site still held "reely-relay-b". The public hostnames
+ * did not move.
  *
  * One rewrite: the relays stamp /file URLs with the host they saw
  * (netlify.app) inside their JSON answers (resolve, selftest). Those are
@@ -34,7 +40,7 @@ const PAIRS = [
     public: 'https://relay.reely.space',
   },
   {
-    origin: 'https://reely-relay-b.netlify.app',
+    origin: 'https://reely-relay-b2.netlify.app',
     public: 'https://relay-b.reely.space',
   },
 ]

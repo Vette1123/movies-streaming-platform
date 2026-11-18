@@ -8,9 +8,14 @@ talk to Cloudflare while the vault still sees Netlify's egress (it 427s
 Cloudflare-egress bytes — the reason the relays cannot be CF Workers).
 
 ```
-relay.reely.space   -> reely-relay.netlify.app    (relay 1,  RELAY_SECRET)
-relay-b.reely.space -> reely-relay-b.netlify.app  (relay 2,  RELAY_SECRET_2)
+relay.reely.space   -> reely-relay.netlify.app     (relay 1,  RELAY_SECRET)
+relay-b.reely.space -> reely-relay-b2.netlify.app  (relay 1b, RELAY_SECRET_2)
 ```
+
+Relay 1b moved to its own Netlify account on 2026-11-18 (site name
+`reely-relay-b2` — Netlify names are global and the old site held the plain
+name), so a credit-pool pause takes one relay home down, never both. The
+public hostnames did not change.
 
 It rewrites only the relays' small JSON answers (the `/file` URLs they stamp
 with the netlify host they saw); the byte stream passes through untouched.
