@@ -30,6 +30,7 @@ import {
   RELAY_URL,
   selftestPassed,
   selftestReason,
+  vaultRefused,
 } from './lib/relay-selftest.mjs'
 
 const SITE = process.env.SITE_URL ?? 'https://www.reely.space'
@@ -59,16 +60,24 @@ export const TITLES = [
 export { selftestPassed, selftestReason }
 
 /**
- * The whole verdict. The site and player layers must pass. Titles fail the run
- * only when most of them fail: a single title can leave the provider's catalog
- * (it happened to 656908) without anything being broken.
+ * The whole verdict. The site and player layers must pass. A title failure
+ * pages only when a HARD failure is involved and most titles fail, or when
+ * EVERY title fails; vault-egress refusals alone are degradation - witnessed
+ * hourly, not paged (lessons 2026-11-18: polling only feeds the limiter, and
+ * an outage issue per hour for a partial degradation is alarm fatigue).
  */
 export function verdict(layers, titles) {
-  const failedTitles = titles.filter((t) => !t.ok).length
-  const titlesOk = failedTitles * 2 < titles.length
+  const failed = titles.filter((t) => !t.ok)
+  const degraded = failed.filter((t) => t.degradedOnly).length
+  const titlesOk =
+    failed.length === 0 ||
+    (degraded === failed.length
+      ? failed.length < titles.length
+      : failed.length * 2 < titles.length)
   return {
     ok: layers.every((l) => l.ok) && titlesOk,
-    failedTitles,
+    failedTitles: failed.length,
+    degradedTitles: degraded,
   }
 }
 
@@ -199,8 +208,17 @@ async function checkTitle({ query }) {
       miss.stages = stages
     }
   }
+  // A miss is DEGRADATION, not a broken relay, when the vault resolved the
+  // walk and refused only the byte read (vaultRefused), or the relay home is
+  // the suspended Deno org (its 503 page is environmental, never a signal).
+  const degradedOnly = misses.every(
+    (m) =>
+      vaultRefused(m.stages) ||
+      String(selftestReason(m.stages)).includes('SUSPENDED')
+  )
   return {
     ok: false,
+    degradedOnly,
     detail: misses
       .map((m) => `${relayHost(m.relay)}: ${selftestReason(m.stages)}`)
       .join(' | '),
@@ -218,19 +236,27 @@ async function main() {
   for (const title of TITLES) {
     titles.push({ name: title.name, ...(await timed(() => checkTitle(title))) })
   }
-  const { ok, failedTitles } = verdict(layers, titles)
+  const { ok, failedTitles, degradedTitles } = verdict(layers, titles)
 
   const row = (r) =>
     `| ${r.ok ? 'pass' : '**FAIL**'} | ${r.name} | ${r.ms}ms | ${String(r.detail).replaceAll('|', '/').replaceAll('\n', ' ')} |`
   const report = [
-    ok ? '## Reely Player: playing' : '## Reely Player: BROKEN',
+    ok
+      ? degradedTitles
+        ? '## Reely Player: playing (degraded - vault refuses some titles)'
+        : '## Reely Player: playing'
+      : '## Reely Player: BROKEN',
     '',
     '| | Check | Time | Detail |',
     '|---|---|---|---|',
     ...layers.map(row),
     ...titles.map(row),
     '',
-    `${failedTitles} of ${titles.length} titles failed; the run fails when most do.`,
+    `${failedTitles} of ${titles.length} titles failed` +
+      (degradedTitles
+        ? ` - ${degradedTitles} vault-degraded: the walk resolves and the title is carried, the mbVault CDN only refuses this egress's Range read; witnessed hourly, not an outage (lessons 2026-11-18)`
+        : '') +
+      '. Pages on hard failures across most titles, or when every title fails.',
     ok
       ? ''
       : `Re-walk one by hand: \`curl -s "${RELAYS[0]}/selftest?ty=movie&id=550&force=1"\`. The provider walk lives in reely-resolver-relay/relay.ts.`,

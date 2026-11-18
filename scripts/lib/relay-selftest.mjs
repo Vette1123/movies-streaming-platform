@@ -75,6 +75,23 @@ export function selftestReason(stages) {
 }
 
 /**
+ * The vault refused this egress's Range read - degradation, not a broken
+ * relay. The walk itself succeeded (the title is carried and resolved:
+ * master is a file, resolvedIn elapsed) and only the 1KB byte proof was
+ * refused, 429 in ~25ms. Measured 2026-11-18: the mbVault family
+ * (bcdnxw.hakunaymatata.com) answers 429 to Range reads from both Netlify
+ * relays' egress while the mwVault family (bcdn.hakunaymatata.com) serves,
+ * and relay 3's Deno egress - the one that used to serve mbVault - is
+ * suspended. A viewer cannot play such a title today; the canary witnesses
+ * that hourly WITHOUT paging (polling only feeds the limiter, and an
+ * outage issue per hour for a partial degradation is alarm fatigue), and
+ * pages the moment a hard failure or a whole-board refusal appears.
+ */
+export function vaultRefused(stages) {
+  return Boolean(stages?.master?.isFile && stages?.segment?.status === 429)
+}
+
+/**
  * Whether the site should offer the player, from one /selftest answer.
  *
  * A cooling relay is NOT down: it walked recently and got rate-limited, which
