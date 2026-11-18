@@ -33,9 +33,10 @@
 //    per host; `observability.enabled` went live in the 2026-11-18 front
 //    deploy, so history starts there.
 //
-// A second wallet is supported for the day relay-b moves to its own Netlify
-// account: set NETLIFY_AUTH_TOKEN_B (and NETLIFY_ACCOUNT_B), and site B is
-// counted against that pool instead — its own 300 credits, its own pause.
+// THE SECOND WALLET IS LIVE (2026-11-18): relay-b runs on its own Netlify
+// account, so NETLIFY_AUTH_TOKEN_B / NETLIFY_ACCOUNT_B are set and site B is
+// counted against its pool — its own 300 credits, its own pause. Unset the
+// token and the gauge falls back to counting both sites on team Reely.
 //
 // Read-only: one Netlify account GET + one deploys GET per site, and two CF
 // telemetry counts per host. Exits 1 only when the primary credit pool
