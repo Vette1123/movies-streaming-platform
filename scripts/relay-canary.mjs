@@ -38,11 +38,39 @@ const SITE = process.env.SITE_URL ?? 'https://www.reely.space'
 // mints into every ticket URL since 2026-11-16. Workers.dev stays live as
 // the fallback origin; probing the domain is what a visitor does.
 const PLAYER = process.env.PLAYER_URL ?? 'https://play.reely.space'
+// The two Netlify fronts are walked for every title. The Deno home (relay 3)
+// joins only when a single /status probe says it is alive (see
+// includeRelay3): the org has been suspended since 2026-11-17, and walking it
+// per title spent three doomed walks per run - each a resolve, two vault
+// reads and a self-hop - against a 503 page that can only ever say
+// "suspended". One cheap probe per run still witnesses the suspension and
+// detects the day it lifts, at a third of the requests.
 const RELAYS = [
   process.env.RELAY_URL || RELAY_URL,
   process.env.RELAY_2_URL || RELAY_2_URL,
-  process.env.RELAY_3_URL || RELAY_3_URL,
 ]
+let relay3State = 'not probed'
+let relay3Ms = 0
+async function includeRelay3() {
+  const relay3 = process.env.RELAY_3_URL || RELAY_3_URL
+  const t0 = Date.now()
+  try {
+    const res = await fetch(`${relay3}/status`, {
+      headers: { 'user-agent': UA },
+      signal: AbortSignal.timeout(15000),
+    })
+    relay3Ms = Date.now() - t0
+    if (res.ok) {
+      RELAYS.push(relay3)
+      relay3State = 'alive - joined the walks'
+    } else {
+      relay3State = `${res.status} (suspended?) - walks skipped`
+    }
+  } catch (error) {
+    relay3Ms = Date.now() - t0
+    relay3State = `unreachable (${String(error).slice(0, 50)}) - walks skipped`
+  }
+}
 // A current browser string: the WAF challenges empty and frozen user-agents.
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36'
@@ -233,10 +261,14 @@ async function checkTitle({ query }) {
 }
 
 async function main() {
+  await includeRelay3()
   const layers = [
     { name: 'Site ticket endpoint', ...(await timed(checkTicket)) },
     { name: 'Player shell', ...(await timed(checkPlayer)) },
     { name: 'Player session route', ...(await timed(checkSession)) },
+    // Informational, never an alarm: the suspension is environmental, and
+    // the row exists so the skipped walks are visible, not silent.
+    { name: 'Relay 3 (deno home)', ok: true, ms: relay3Ms, detail: relay3State },
   ]
   // One at a time: three walks at once is how a canary earns a 429.
   const titles = []
