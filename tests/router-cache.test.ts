@@ -9,7 +9,7 @@ describe('client router cache', () => {
   it('keeps prefetched pages 30 min and un-prefetched ones 5 min', async () => {
     const { default: config } = await import('../next.config.mjs')
     const stale = config.experimental?.staleTimes
-    expect(stale?.static).toBeGreaterThanOrEqual(1800)
-    expect(stale?.dynamic).toBeGreaterThanOrEqual(300)
+    expect(stale?.static).toBe(7200) // 2 h; under a day so an open tab picks up a deploy
+    expect(stale?.dynamic).toBe(1800)
   })
 })

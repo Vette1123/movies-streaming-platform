@@ -36,3 +36,4 @@ here and costs nothing either; left alone, noted for a later look.
   this one. No `/cdn-cgi/image` means no transform cache to protect.
 - A guard that exists for a rate limit does not go away because another site
   has no such limit.
+- staleTimes raised to 2 h static / 30 min dynamic (was 30 min / 5 min). The router cache lives only in an open tab and never revalidates, so keep it under a day: a longer value shows old pages, and old chunk names, to a tab left open across a deploy. The test pins the exact values.
