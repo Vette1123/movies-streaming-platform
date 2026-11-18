@@ -95,9 +95,27 @@ export function SiteHeader() {
             <Popover>
               <PopoverTrigger
                 aria-label="Our apps"
-                className={buttonVariants({ size: 'icon', variant: 'ghost' })}
+                className={cn(
+                  buttonVariants({ size: 'icon', variant: 'ghost' }),
+                  'w-auto px-1.5'
+                )}
               >
-                <Icons.apps className="size-5" />
+                {/* The three real icons, overlapped, where a generic phone
+                    glyph was (same as the Social Downloader footer): the apps
+                    are recognisable before the menu opens. 20px each: at 16px
+                    under the overlap they read as dots. The ring in the page
+                    colour cuts each icon from the one beneath it. */}
+                <span className="flex -space-x-1.5" aria-hidden>
+                  {COMPANION_APPS.map((app) => {
+                    const Icon = APP_ICONS[app.slug]
+                    return (
+                      <Icon
+                        key={app.slug}
+                        className="size-5 ring-2 ring-background"
+                      />
+                    )
+                  })}
+                </span>
                 <span className="sr-only">Our apps</span>
               </PopoverTrigger>
               <PopoverContent align="end" className="w-72 p-2">
