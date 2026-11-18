@@ -2,6 +2,7 @@
   "name": "reely-relay-front",
   "main": "worker.mjs",
   "compatibility_date": "2026-11-01",
+  "observability": { "enabled": true },
   "routes": [
     { "pattern": "relay.reely.space", "custom_domain": true },
     { "pattern": "relay-b.reely.space", "custom_domain": true },
