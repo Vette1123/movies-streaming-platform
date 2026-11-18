@@ -26,7 +26,6 @@ import { pathToFileURL } from 'node:url'
 
 import {
   RELAY_2_URL,
-  RELAY_3_URL,
   RELAY_URL,
   selftestPassed,
   selftestReason,
@@ -38,39 +37,14 @@ const SITE = process.env.SITE_URL ?? 'https://www.reely.space'
 // mints into every ticket URL since 2026-11-16. Workers.dev stays live as
 // the fallback origin; probing the domain is what a visitor does.
 const PLAYER = process.env.PLAYER_URL ?? 'https://play.reely.space'
-// The two Netlify fronts are walked for every title. The Deno home (relay 3)
-// joins only when a single /status probe says it is alive (see
-// includeRelay3): the org has been suspended since 2026-11-17, and walking it
-// per title spent three doomed walks per run - each a resolve, two vault
-// reads and a self-hop - against a 503 page that can only ever say
-// "suspended". One cheap probe per run still witnesses the suspension and
-// detects the day it lifts, at a third of the requests.
+// The two Netlify fronts are the whole relay chain since 2026-11-18 (the
+// Deno org is gone for good): relay 1 is primary, relay-b is the failover
+// the player hops to when relay 1 is cooling or down. Both are walked for
+// every title, in that order — the same order the player asks them in.
 const RELAYS = [
   process.env.RELAY_URL || RELAY_URL,
   process.env.RELAY_2_URL || RELAY_2_URL,
 ]
-let relay3State = 'not probed'
-let relay3Ms = 0
-async function includeRelay3() {
-  const relay3 = process.env.RELAY_3_URL || RELAY_3_URL
-  const t0 = Date.now()
-  try {
-    const res = await fetch(`${relay3}/status`, {
-      headers: { 'user-agent': UA },
-      signal: AbortSignal.timeout(15000),
-    })
-    relay3Ms = Date.now() - t0
-    if (res.ok) {
-      RELAYS.push(relay3)
-      relay3State = 'alive - joined the walks'
-    } else {
-      relay3State = `${res.status} (suspended?) - walks skipped`
-    }
-  } catch (error) {
-    relay3Ms = Date.now() - t0
-    relay3State = `unreachable (${String(error).slice(0, 50)}) - walks skipped`
-  }
-}
 // A current browser string: the WAF challenges empty and frozen user-agents.
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36'
@@ -183,7 +157,8 @@ async function selftest(relay, query) {
   try {
     return JSON.parse(text)
   } catch {
-    // Deno's own error page, a proxy, a dead deploy: say what came back.
+    // An HTML error page (a paused site, a proxy), a dead deploy: say what
+    // came back.
     throw new Error(`/selftest answered ${res.status}: ${text.slice(0, 120)}`)
   }
 }
@@ -197,7 +172,7 @@ const relayHost = (relay) => new URL(relay).host
  * the title at all, wait out any cooldown once and re-walk the cooling ones
  * before declaring failure — a burst of real viewers must not page anybody.
  *
- * A relay that answers non-JSON (Deno's 503 suspension page, a proxy error)
+ * A relay that answers non-JSON (a paused site's HTML page, a proxy error)
  * is a miss on that relay, never an abort: the walk moves to the next one,
  * exactly as the player's askRelays does.
  */
@@ -244,13 +219,9 @@ async function checkTitle({ query }) {
     }
   }
   // A miss is DEGRADATION, not a broken relay, when the vault resolved the
-  // walk and refused only the byte read (vaultRefused), or the relay home is
-  // the suspended Deno org (its 503 page is environmental, never a signal).
-  const degradedOnly = misses.every(
-    (m) =>
-      vaultRefused(m.stages) ||
-      String(selftestReason(m.stages)).includes('SUSPENDED')
-  )
+  // walk and refused only the byte read (vaultRefused). Anything else - a
+  // paused site's page, a 5xx, a timeout - is a hard failure and pages.
+  const degradedOnly = misses.every((m) => vaultRefused(m.stages))
   return {
     ok: false,
     degradedOnly,
@@ -261,14 +232,10 @@ async function checkTitle({ query }) {
 }
 
 async function main() {
-  await includeRelay3()
   const layers = [
     { name: 'Site ticket endpoint', ...(await timed(checkTicket)) },
     { name: 'Player shell', ...(await timed(checkPlayer)) },
     { name: 'Player session route', ...(await timed(checkSession)) },
-    // Informational, never an alarm: the suspension is environmental, and
-    // the row exists so the skipped walks are visible, not silent.
-    { name: 'Relay 3 (deno home)', ok: true, ms: relay3Ms, detail: relay3State },
   ]
   // One at a time: three walks at once is how a canary earns a 429.
   const titles = []

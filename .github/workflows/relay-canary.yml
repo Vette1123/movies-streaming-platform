@@ -49,6 +49,27 @@ jobs:
         env:
           RELAY_URL: ${{ inputs.relay_url }}
 
+      # The wallet gauge (scripts/relay-usage.mjs): informational, never an
+      # alarm — the canary above already pages on the failure mode the wallet
+      # causes (a paused project). Needs NETLIFY_AUTH_TOKEN; without the
+      # secret the step fails softly and the canary run is unaffected.
+      - name: Wallet gauge (informational)
+        if: always()
+        continue-on-error: true
+        run: |
+          node scripts/relay-usage.mjs | tee wallet.txt
+          {
+            echo '<details><summary>Relay wallet</summary>'
+            echo
+            echo '<pre>'
+            cat wallet.txt
+            echo '</pre>'
+            echo '</details>'
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+
       - name: Open the outage issue
         if: steps.canary.outcome == 'failure'
         run: |
