@@ -47,13 +47,20 @@ const RELAYS = [
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36'
 
-/** Long-running, widely carried titles: one vanishing upstream is not an outage. */
+/**
+ * Long-running, widely carried titles: one vanishing upstream is not an
+ * outage. The vault family a title mints to is per-title and stable
+ * (surveyed 2026-11-18): bcdn.hakunaymatata.com serves the Netlify egress,
+ * bcdnxw.hakunaymatata.com refuses its Range reads (429, no Retry-After) -
+ * so exactly ONE title here walks the refusing family (the degradation
+ * witness, see vaultRefused) and two prove the byte path on the serving
+ * family. Two witnesses would double the feed into a limiter for zero
+ * extra signal: both fronts' walks of the same family answer alike.
+ */
 export const TITLES = [
   { name: 'Fight Club', query: 'ty=movie&id=550' },
+  { name: 'The Dark Knight', query: 'ty=movie&id=155' },
   { name: 'Inception', query: 'ty=movie&id=27205' },
-  // Not Game of Thrones: since 17 Nov vidlink answers `null` for it, so it
-  // failed every run and one 429 elsewhere paged an outage (#217).
-  { name: 'Breaking Bad S1E1', query: 'ty=tv&id=1396&s=1&ep=1' },
 ]
 
 // The verdict on one walk is shared with the Worker's /api/stream/health.
