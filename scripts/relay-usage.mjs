@@ -135,7 +135,7 @@ if (fail < HOSTS.length) {
     `  → ${n ? 'note: history accrues from the 2026-11-18 observability enable' : 'n is 0 until history accrues (observability enabled 2026-11-18)'}`
   )
   console.log(
-    `  → at today's rate: ~${monthlyReq.toLocaleString()} requests/month = ${monthlyCredits} web-request credit${monthlyCredits === 1 ? '' : 's'} (${((monthlyCredits / PLAN_CREDITS) * 100).toFixed(1)}% of the pool)`
+    `  → at today's rate: ~${monthlyReq.toLocaleString()} requests/month = ${monthlyCredits} web-request credit${monthlyCredits === 1 ? '' : 's'} (${((monthlyCredits / PLAN_CREDITS) * 100).toFixed(1)}% of the pool; upper bound - front cache hits never reach the relay)`
   )
   const busiest = Object.entries(rate24).sort((a, b) => b[1] - a[1])[0]
   if (busiest?.[1])

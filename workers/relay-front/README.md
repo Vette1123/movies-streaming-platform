@@ -32,3 +32,12 @@ fronts accrues CF telemetry. That is the input to the relay wallet gauge:
 them against the Netlify team's 300-credit monthly pool, and reads the live
 credit balance from the Netlify accounts API (see the relay repo's
 NETLIFY.md for the credit model).
+
+The worker also edge-caches `/pl`, `/seg` and `/resolve` answers per colo
+(`CACHE_RULES` in `worker.mjs`; `x-front-cache: hit|miss|bypass` says which
+path answered). A signed URL is its own auth, so the same URL is the same
+bytes for every viewer — N viewers of one title collapse toward ~1 upstream
+fetch per segment per colo for the cache's life, which is what keeps the
+bandwidth meter (20 credits/GB — the one a video relay hits) tolerable at
+scale. `/file` streaming and `/selftest` are never cached: ranges differ per
+viewer, and a selftest is a live witness, not a shareable answer.
