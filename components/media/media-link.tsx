@@ -3,7 +3,10 @@
 import React from 'react'
 import Link from 'next/link'
 
-import { usePrefetchIntent } from '@/hooks/use-prefetch-intent'
+import {
+  mediaLinkPrefetch,
+  usePrefetchIntent,
+} from '@/hooks/use-prefetch-intent'
 import { preloadHeroImage } from '@/components/header/hero-image'
 import { LinkPendingBar } from '@/components/media/link-pending-bar'
 
@@ -22,6 +25,8 @@ type MediaLinkProps = React.ComponentPropsWithRef<'a'> & {
    * starts downloading on the press instead of after the page arrives.
    */
   art?: { backdrop_path?: string | null; poster_path?: string | null } | null
+  /** First cards of a rail: also prefetch when scrolled into view. */
+  eager?: boolean
 }
 
 const TO_DETAILS = ['to-details']
@@ -54,6 +59,7 @@ function chain<E>(theirs?: (event: E) => void, ours?: (event: E) => void) {
 export function MediaLink({
   href,
   art,
+  eager,
   children,
   ref,
   ...rest
@@ -98,7 +104,7 @@ export function MediaLink({
     <Link
       ref={ref}
       href={href}
-      prefetch={false}
+      prefetch={mediaLinkPrefetch(eager)}
       // Names the navigation for the details hero's <ViewTransition>, which
       // fades in only for this type. Next 16.4 hands it to React's
       // addTransitionType; it also reaches CSS as

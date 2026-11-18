@@ -15,6 +15,7 @@ import {
   railEntranceDelay,
 } from '@/lib/rail-scroll'
 import { cn, itemRedirect } from '@/lib/utils'
+import { isEagerCard } from '@/hooks/use-prefetch-intent'
 import { useRailRestore } from '@/hooks/use-rail-restore'
 import { Card } from '@/components/card'
 import { SeeAllLink } from '@/components/see-all-link'
@@ -266,6 +267,7 @@ export const List = ({
                   item={item}
                   itemType={itemType}
                   posterSizes={RAIL_POSTER_SIZES}
+                  eager={isEagerCard(index)}
                 />
               </div>
             ))}

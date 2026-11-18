@@ -96,10 +96,12 @@ const baseConfig = {
     // 7.x one). The linter keeps its own TypeScript 6 — see .pnpmfile.cjs.
     useTypeScriptCli: true,
     // Pages only change on deploy, so the client router keeps what it fetched:
-    // 2 h for prefetched pages, 30 min for one reached without a prefetch
+    // 5 h for both: the deploy cron fires every 6 h (.github/workflows/deploy.yml),
+    // so an open tab never holds a page from before the last rebuild for long.
+    // Was: 2 h prefetched, 30 min for one reached without a prefetch
     // (every card link: they warm on intent). Back to a title you just left
     // costs no request. tests/router-cache.test.ts pins it.
-    staleTimes: { static: 7200, dynamic: 1800 },
+    staleTimes: { static: 18000, dynamic: 18000 },
   },
 }
 

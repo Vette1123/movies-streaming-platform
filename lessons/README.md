@@ -210,3 +210,4 @@ with the work, not after.
 | 2026-11-18 | [Slow tap attribution](2026-11-18-slow-tap-attribution.md) | No fix for a slow tap until the field names the script behind it. |
 | 2026-11-18 | [Header apps trigger shows real icons](2026-11-18-header-apps-real-icons.md) | Overlapped icons under 20px read as dots; size from a screenshot |
 | 2026-11-18 | [Router cache port from the portfolio](2026-11-18-router-cache-port.md) | Only staleTimes carried over; the hover prefetch gate and image-cache purge fixes solve problems Reely does not have. |
+| 2026-11-18 | [Router cache to the rebuild cadence](2026-11-18-router-cache-cadence.md) | 5 h router cache sits under the 6 h deploy cron; only the first row of a rail viewport-prefetches. |

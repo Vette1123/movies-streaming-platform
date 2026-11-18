@@ -6,10 +6,10 @@ import { describe, expect, it } from 'vitest'
 // card link here (they warm on intent, see hooks/use-prefetch-intent.ts): going
 // back to a title you just left re-fetched its payload.
 describe('client router cache', () => {
-  it('keeps prefetched pages 30 min and un-prefetched ones 5 min', async () => {
+  it('keeps pages 5 h, under the 6 h rebuild cadence', async () => {
     const { default: config } = await import('../next.config.mjs')
     const stale = config.experimental?.staleTimes
-    expect(stale?.static).toBe(7200) // 2 h; under a day so an open tab picks up a deploy
-    expect(stale?.dynamic).toBe(1800)
+    expect(stale?.static).toBe(18000) // 5 h; the deploy cron fires every 6 h
+    expect(stale?.dynamic).toBe(18000)
   })
 })

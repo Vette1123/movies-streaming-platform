@@ -12,6 +12,7 @@ import {
   staticRailCard,
 } from '@/lib/rail-scroll'
 import { cn, getPosterImageURL, itemRedirect } from '@/lib/utils'
+import { isEagerCard } from '@/hooks/use-prefetch-intent'
 import { BlurredImage } from '@/components/blurred-image'
 import { MediaLink } from '@/components/media/media-link'
 import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
@@ -97,6 +98,7 @@ export function StaticRail({
                 <MediaLink
                   href={`${itemRedirect(itemType)}/${item.id}`}
                   art={item}
+                  eager={isEagerCard(index)}
                   className="block w-full"
                 >
                   {item?.poster_path ? (

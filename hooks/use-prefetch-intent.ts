@@ -51,3 +51,19 @@ export function usePrefetchIntent(href: string) {
 
   return useIntentProps(warm)
 }
+
+/**
+ * Cards per rail that prefetch as they scroll into view; the rest of a rail
+ * warms on intent only. One row, so a homepage adds a handful of requests, not
+ * one per poster (100+ tripped the zone rate limit).
+ */
+export const EAGER_PREFETCH_CARDS = 6
+
+export function isEagerCard(index: number) {
+  return index < EAGER_PREFETCH_CARDS
+}
+
+/** `undefined` = Next's default viewport prefetch; `false` = intent warming only. */
+export function mediaLinkPrefetch(eager?: boolean) {
+  return eager ? undefined : false
+}

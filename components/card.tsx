@@ -31,6 +31,8 @@ interface CardProps {
   itemType?: ItemType
   isTruncateOverview?: boolean
   posterSizes?: string
+  /** First cards of a rail: prefetch in view, not only on intent. */
+  eager?: boolean
 }
 
 // The card's visual frame, shared by both branches below so the touch card and
@@ -44,6 +46,7 @@ const CardComponent = ({
   itemType = 'movie',
   isTruncateOverview = true,
   posterSizes,
+  eager,
 }: CardProps) => {
   const title = getMediaTitle(item)
   const releaseDate = getMediaReleaseDate(item)
@@ -141,6 +144,7 @@ const CardComponent = ({
     <MediaLink
       href={href}
       art={item}
+      eager={eager}
       // Block-level so the poster's `w-full` resolves against the grid track
       // / rail item width instead of an inline <a>'s shrink-to-fit box.
       className="block w-full"
