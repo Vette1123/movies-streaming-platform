@@ -22,6 +22,8 @@ Challenge Passage is 1 day. A visitor whose first API call comes back challenged
 - The first instinct was to challenge only documents. A visitor landing on the static homepage and searching would have hit a challenged fetch that no fetch can solve, and search would have silently broken. Every challenged API needs a way for a browser to pass it.
 - Installing the fetch hook in a `useEffect` would have lost to the page's own first query, because child effects run before parent effects. It is installed at module evaluation instead.
 
+- The cloud-ASN block (#224) also refused our own CI: GitHub Actions is Azure. The deploy's IndexNow diff fetched ~1,000 live pages, each 403 retried 4 times, and `deploy:full` sat for 40 minutes until cancelled. Fixed in #227 with a secret `x-reely-ci` header on the allowlist rule; a 403 is no longer retried. Any network block must be checked against where our own automation runs.
+
 ## What worked
 
 - Reusing the same rule slot. The free plan's 5 custom rules were all spent, and broadening the existing challenge rule cost none.
@@ -31,3 +33,4 @@ Challenge Passage is 1 day. A visitor whose first API call comes back challenged
 
 - A new public `/api/*` route that anybody can call goes in `CHALLENGE_API_PREFIXES`. A route a machine calls (player, Kodi, a fetcher) goes in the exempt comment, never in the list.
 - Any client that cannot run JavaScript and must reach a challenged path needs an explicit exemption, like `KODI_UA`.
+- Before blocking a network, list every job of ours that runs from it (CI, probes, canaries) and give it a pass first.
