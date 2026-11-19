@@ -1,6 +1,7 @@
 // Can the Reely Player play right now? Read-only; spends no free title.
 //
 //   pnpm relay:canary
+//   pnpm relay:fallback   (relay-b alone - the weekly fallback proof)
 //
 // The player depends on a provider we do not control. Its gate changed on
 // 2026-09-05, 10-08, 10-16, 10-30 and 11-07, and every time the first signal
@@ -44,10 +45,24 @@ const PLAYER = process.env.PLAYER_URL ?? 'https://play.reely.space'
 // Both are walked for every title, in that order - the same order the player
 // asks them in - but the walk stops at the first usable answer, so a healthy
 // relay 1 means relay-b is not touched (exactly what the player does).
-const RELAYS = [
+const CONFIGURED_RELAYS = [
   process.env.RELAY_URL || RELAY_URL,
   process.env.RELAY_2_URL || RELAY_2_URL,
 ]
+/**
+ * `RELAY_ONLY=2` walks the fallback alone - the one thing the hourly run can
+ * never prove, because it stops at the primary. The weekly fallback canary
+ * (.github/workflows/relay-fallback.yml) sets it: a cold fallback that has
+ * rotted is discovered on a Monday, not on the day relay 1 (Netlify) pauses.
+ */
+const ONLY =
+  process.env.RELAY_ONLY?.trim() ||
+  (process.argv.includes('--fallback-only') ? '2' : '')
+const RELAYS =
+  ONLY === '1' || ONLY === '2'
+    ? [CONFIGURED_RELAYS[Number(ONLY) - 1]]
+    : CONFIGURED_RELAYS
+const ONLY_HOME = { 1: 'relay 1', 2: 'relay-b' }[ONLY] ?? null
 // A current browser string: the WAF challenges empty and frozen user-agents.
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36'
@@ -250,12 +265,13 @@ async function main() {
 
   const row = (r) =>
     `| ${r.ok ? 'pass' : '**FAIL**'} | ${r.name} | ${r.ms}ms | ${String(r.detail).replaceAll('|', '/').replaceAll('\n', ' ')} |`
+  const scope = ONLY_HOME ? ` (${ONLY_HOME} only)` : ''
   const report = [
     ok
       ? degradedTitles
-        ? '## Reely Player: playing (degraded - vault refuses some titles)'
-        : '## Reely Player: playing'
-      : '## Reely Player: BROKEN',
+        ? `## Reely Player: playing${scope} (degraded - vault refuses some titles)`
+        : `## Reely Player: playing${scope}`
+      : `## Reely Player: BROKEN${scope}`,
     '',
     '| | Check | Time | Detail |',
     '|---|---|---|---|',
