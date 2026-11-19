@@ -29,6 +29,13 @@ export const CLOUD_ASNS = [
   51167, // Contabo
   45102, // Alibaba Cloud
   132203, // Tencent Cloud
+  // Measured after the first cut went live: the same Chrome/131 fleet moved to
+  // rented proxy space. M247 (AS9009) was in that set too and is deliberately
+  // NOT here: consumer VPNs run on it, so real people do.
+  207990, // HostRoyale
+  203020, // HostRoyale
+  133499, // HostRoyale
+  150436, // BytePlus (ByteDance cloud)
 ]
 
 // Only the routes that run the Worker. Static assets cost nothing, so a cloud
