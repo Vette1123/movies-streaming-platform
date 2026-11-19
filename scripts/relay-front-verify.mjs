@@ -28,11 +28,22 @@ import { fileURLToPath } from 'node:url'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const env = readFileSync(join(ROOT, '.env.local'), 'utf8')
 const readKey = (name) =>
-  env.match(new RegExp(`^${name}=(.+)$`, 'm'))?.[1]?.trim().replace(/^['"]|['"]$/g, '')
+  env
+    .match(new RegExp(`^${name}=(.+)$`, 'm'))?.[1]
+    ?.trim()
+    .replace(/^['"]|['"]$/g, '')
 
 const FRONTS = [
-  { url: 'https://relay.reely.space', key: readKey('RELAY_KEY_RELAY1'), name: 'relay 1' },
-  { url: 'https://relay-b.reely.space', key: readKey('RELAY_KEY_RELAY2'), name: 'relay 1b' },
+  {
+    url: 'https://relay.reely.space',
+    key: readKey('RELAY_KEY_RELAY1'),
+    name: 'relay 1',
+  },
+  {
+    url: 'https://relay-b.reely.space',
+    key: readKey('RELAY_KEY_RELAY2'),
+    name: 'relay 1b',
+  },
 ]
 const PROBE = 'ty=movie&id=550' // Fight Club — long-carried; its absence is an outage, not churn
 
@@ -42,7 +53,9 @@ async function jfetch(url, opts = {}) {
   let lastErr
   for (let a = 1; a <= 6; a++) {
     try {
-      return await (await fetch(url, { ...opts, signal: AbortSignal.timeout(30000) })).json()
+      return await (
+        await fetch(url, { ...opts, signal: AbortSignal.timeout(30000) })
+      ).json()
     } catch (e) {
       lastErr = e
       await sleep(1500 * a)
@@ -59,7 +72,11 @@ for (const front of FRONTS) {
   }
 
   if (!front.key) {
-    line(false, 'pairing key', `RELAY_KEY missing from .env.local for ${front.name}`)
+    line(
+      false,
+      'pairing key',
+      `RELAY_KEY missing from .env.local for ${front.name}`
+    )
     continue
   }
 

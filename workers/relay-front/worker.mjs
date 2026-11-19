@@ -48,7 +48,11 @@ const PAIRS = [
 const CACHE_RULES = [
   // Playlists: the relay keeps its rewritten playlists 10 min (PLAYLIST_CACHE_S);
   // mirror that, so a cold isolate never becomes a viewer's second fetch.
-  { match: (p) => p.startsWith('/pl/'), ttl: 600, type: 'application/vnd.apple.mpegurl' },
+  {
+    match: (p) => p.startsWith('/pl/'),
+    ttl: 600,
+    type: 'application/vnd.apple.mpegurl',
+  },
   // Segments are immutable over the relay's own 3h segment cache
   // (SEGMENT_CACHE_S); 30 min here stays well inside the vault's signed
   // life (3600 measured) and never outlives a token window.
@@ -56,7 +60,12 @@ const CACHE_RULES = [
   // Resolve answers: bursts only - the relay's RESOLVED cache is the long
   // layer. Only answers that actually carry sources are kept, so a 200
   // `{error: no stream}` JSON is never cached for a minute.
-  { match: (p) => p === '/resolve', ttl: 60, type: 'application/json', needs: '"sources"' },
+  {
+    match: (p) => p === '/resolve',
+    ttl: 60,
+    type: 'application/json',
+    needs: '"sources"',
+  },
 ]
 
 export default {

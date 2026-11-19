@@ -155,7 +155,10 @@ export function RatingsPills({
             )}
           >
             {/* The mark IS the label here: a TMDB badge already says TMDB. */}
-            <Mark aria-hidden className="h-[18px] w-auto shrink-0 sm:h-[20px]" />
+            <Mark
+              aria-hidden
+              className="h-[18px] w-auto shrink-0 sm:h-[20px]"
+            />
             <span className="sr-only">{tile.label}</span>
             <span
               className={cn('font-bold tabular-nums', TONE_CLASS[tile.tone])}

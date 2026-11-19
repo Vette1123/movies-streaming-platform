@@ -12,6 +12,7 @@
  */
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+
 import { openHeadlessChrome, sleep } from './lib/headless-chrome.mjs'
 
 function arg(name, fallback) {
@@ -26,7 +27,12 @@ const ROUTES = arg(
 ).split(',')
 const OUT = resolve(arg('out', '.ui-shots'))
 const VIEWPORTS = [
-  { name: 'phone', width: Number(arg('phone-width', 390)), height: 844, mobile: true },
+  {
+    name: 'phone',
+    width: Number(arg('phone-width', 390)),
+    height: 844,
+    mobile: true,
+  },
   { name: 'desktop', width: 1440, height: 900, mobile: false },
 ]
 
@@ -65,7 +71,10 @@ const ONE_ROW = `(() => {
 
 rmSync(OUT, { recursive: true, force: true })
 mkdirSync(OUT, { recursive: true })
-const browser = await openHeadlessChrome({ port: Number(arg('port', 9335)), label: 'ui-shots' })
+const browser = await openHeadlessChrome({
+  port: Number(arg('port', 9335)),
+  label: 'ui-shots',
+})
 const { send, evaluate } = browser
 const failures = []
 try {
@@ -87,7 +96,10 @@ try {
       }
       const slug = `${route.replace(/\W+/g, '_') || '_'}-${vp.name}`
       const shot = async (file, full) => {
-        const r = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: full })
+        const r = await send('Page.captureScreenshot', {
+          format: 'png',
+          captureBeyondViewport: full,
+        })
         writeFileSync(join(OUT, file), Buffer.from(r.result.data, 'base64'))
       }
       await shot(`${slug}.png`, false)
@@ -120,6 +132,8 @@ try {
 }
 console.log(`shots: ${OUT}`)
 if (failures.length) {
-  console.error(`::error::${failures.length} view(s) scroll sideways or wrap a one-row list: ${failures.join(', ')}`)
+  console.error(
+    `::error::${failures.length} view(s) scroll sideways or wrap a one-row list: ${failures.join(', ')}`
+  )
   process.exit(1)
 }

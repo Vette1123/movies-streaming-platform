@@ -1,16 +1,17 @@
 # Four animations that were quietly broken
 
 ## What
+
 An animation audit (code read against the improve-animations bar, then a live
 touch-swipe probe on a 390 px phone) with one rule from the owner: keep every
 animation exactly as designed, fix only what is broken.
 
-| Animation | What was broken | Fix |
-|---|---|---|
+| Animation              | What was broken                                                                                                                                                                                                                                                                                                 | Fix                                                                                     |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | Hero Ken Burns push-in | Not running for anyone since 21 Oct. `b64dfe3` restored it but put `@keyframes hero-kenburns` inside `@media (prefers-reduced-motion: reduce)`, so it only existed for people who asked for less motion, and `motion-reduce:animate-none` switches it off for them. Live: animation-name set, transform `none`. | Keyframes moved into `@theme` beside the others; pinned by `tests/hero-motion.test.ts`. |
-| Hero swipe | Only the active slide carried the zoom, so on release the arriving slide jumped 1 -> 1.05 and the leaving one fell back to 1 while still in view. | `lib/hero-motion` `kenBurnsClass`: neighbours carry it paused. |
-| Match Night card throw | A card flew off the way the PREVIOUS decision went. Live: thrown left after a like, it travelled to x=+520. A removed card keeps its last props, so `exit` read the stale direction. | `custom={exitDirection}` on AnimatePresence + an `exit` variant function (`cardExit`). |
-| Hero arrows (desktop) | `transition-all duration-300` eased every frame framer wrote, so hover/tap lagged; CSS `hover:scale-105` stacked on framer's scale; the CSS opacity classes were dead (framer's inline opacity wins). | Framer owns the motion; dead and fighting classes removed. Same look. |
+| Hero swipe             | Only the active slide carried the zoom, so on release the arriving slide jumped 1 -> 1.05 and the leaving one fell back to 1 while still in view.                                                                                                                                                               | `lib/hero-motion` `kenBurnsClass`: neighbours carry it paused.                          |
+| Match Night card throw | A card flew off the way the PREVIOUS decision went. Live: thrown left after a like, it travelled to x=+520. A removed card keeps its last props, so `exit` read the stale direction.                                                                                                                            | `custom={exitDirection}` on AnimatePresence + an `exit` variant function (`cardExit`).  |
+| Hero arrows (desktop)  | `transition-all duration-300` eased every frame framer wrote, so hover/tap lagged; CSS `hover:scale-105` stacked on framer's scale; the CSS opacity classes were dead (framer's inline opacity wins).                                                                                                           | Framer owns the motion; dead and fighting classes removed. Same look.                   |
 
 Also: the lg poster panel's `transition-all` became `transition-[opacity,filter]`.
 
@@ -25,6 +26,7 @@ are React work (MessagePort.onmessage) or unattributed, with 22-38 ms of
 render and layout, so not the zoom.
 
 ## Mistakes
+
 - The October fix was checked by reading the diff, not by looking at a
   running hero, so the misplaced keyframes shipped and stayed a month.
 - The audit's first suspect list included the carousel progress pill; the hero
@@ -38,6 +40,7 @@ render and layout, so not the zoom.
   Format first, test last.
 
 ## What worked
+
 - A live probe that reads computed styles mid-gesture (`touchMove` held,
   `getComputedStyle(img).transform`) and samples the thrown card's x every
   frame. Both failed on live before the fix.
@@ -45,6 +48,7 @@ render and layout, so not the zoom.
   to production.
 
 ## Rules
+
 - Keyframes live in `@theme` (or top level), never only inside a
   `prefers-reduced-motion` block; the reduced block may only redefine them.
 - An exit that depends on how the element left takes its value through

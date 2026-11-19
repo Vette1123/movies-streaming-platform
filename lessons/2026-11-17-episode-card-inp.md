@@ -1,6 +1,7 @@
 # Episode cards still swapped the player inside the tap
 
 ## What
+
 Mobile INP on `/tv-shows/*`, attributed by target (PostHog, 14 days). The
 Watch Now button was fixed on 11 Nov (`ad9e259`, `lib/after-paint.ts`): TV
 p75 for it went from 460 ms to 104 ms. The episode card's stretched button
@@ -16,6 +17,7 @@ same order, so play still comes before the URL push. Pinned in
 green with the deferred one.
 
 ## Mistakes
+
 - The first INP pass (a subagent) stopped at "the Play button is already
   fixed". The 14-day window straddled that fix, and the per-target table
   mixed pre-fix and post-fix rows. The card was the one target that got
@@ -25,10 +27,12 @@ green with the deferred one.
   same job (starting playback) stayed broken for six days.
 
 ## What worked
+
 - Splitting attributed INP at the deploy date showed which targets the fix
   covered and which it missed.
 
 ## Rules
+
 - A deferral fix for one play surface gets applied to every surface that
   starts playback. Grep for the player call (`requestPlay`, `startPlayback`),
   not just the component that was reported.

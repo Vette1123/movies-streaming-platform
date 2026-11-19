@@ -24,21 +24,27 @@ describe('startEpisode', () => {
 
   it('starts nothing inside the tap', () => {
     const calls: string[] = []
-    startEpisode({ season: 2, episode: 5 }, {
-      play: () => calls.push('play'),
-      navigate: () => calls.push('navigate'),
-      scroll: () => calls.push('scroll'),
-    })
+    startEpisode(
+      { season: 2, episode: 5 },
+      {
+        play: () => calls.push('play'),
+        navigate: () => calls.push('navigate'),
+        scroll: () => calls.push('scroll'),
+      }
+    )
     expect(calls).toEqual([])
   })
 
   it('plays, then points the URL, then scrolls, after the next paint', () => {
     const calls: string[] = []
-    startEpisode({ season: 2, episode: 5 }, {
-      play: (t) => calls.push(`play ${t.season}x${t.episode}`),
-      navigate: (t) => calls.push(`navigate ${t.season}x${t.episode}`),
-      scroll: () => calls.push('scroll'),
-    })
+    startEpisode(
+      { season: 2, episode: 5 },
+      {
+        play: (t) => calls.push(`play ${t.season}x${t.episode}`),
+        navigate: (t) => calls.push(`navigate ${t.season}x${t.episode}`),
+        scroll: () => calls.push('scroll'),
+      }
+    )
     for (const f of frames.splice(0)) f(0)
     vi.advanceTimersByTime(0)
     expect(calls).toEqual(['play 2x5', 'navigate 2x5', 'scroll'])

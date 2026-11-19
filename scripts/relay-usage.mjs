@@ -54,7 +54,9 @@ const CF_TOKEN = process.env.CLOUDFLARE_API_TOKEN
 const NF_TOKEN = process.env.NETLIFY_AUTH_TOKEN
 
 if (!CF_TOKEN || !NF_TOKEN) {
-  console.error('Need CLOUDFLARE_API_TOKEN and NETLIFY_AUTH_TOKEN (in .env.local).')
+  console.error(
+    'Need CLOUDFLARE_API_TOKEN and NETLIFY_AUTH_TOKEN (in .env.local).'
+  )
   process.exit(1)
 }
 
@@ -111,7 +113,10 @@ const telemetryCount = async (host, since) => {
     `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/workers/observability/telemetry/query`,
     {
       method: 'POST',
-      headers: { Authorization: `Bearer ${CF_TOKEN}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${CF_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
         queryId: 'relay-usage',
         timeframe: { from: since, to },
@@ -119,14 +124,24 @@ const telemetryCount = async (host, since) => {
         dry: false,
         parameters: {
           datasets: ['cloudflare-workers'],
-          filters: [{ key: '$workers.event.request.url', operation: 'includes', type: 'string', value: host }],
+          filters: [
+            {
+              key: '$workers.event.request.url',
+              operation: 'includes',
+              type: 'string',
+              value: host,
+            },
+          ],
           calculations: [{ operator: 'count', alias: 'n' }],
         },
       }),
     }
   )
   const body = await res.json().catch(() => null)
-  if (!body?.success) throw new Error(`telemetry query failed (${res.status}): ${JSON.stringify(body?.errors ?? body).slice(0, 200)}`)
+  if (!body?.success)
+    throw new Error(
+      `telemetry query failed (${res.status}): ${JSON.stringify(body?.errors ?? body).slice(0, 200)}`
+    )
   return Number(body.result?.calculations?.[0]?.aggregates?.[0]?.value ?? 0)
 }
 
@@ -140,7 +155,9 @@ async function walletPeriod(wallet) {
   const res = await netlify(wallet.token, `/accounts/${wallet.account}`)
   if (!res.ok) return null
   const acct = await res.json()
-  const end = acct.next_usage_period_start ? new Date(acct.next_usage_period_start) : null
+  const end = acct.next_usage_period_start
+    ? new Date(acct.next_usage_period_start)
+    : null
   const start = end ? new Date(end) : new Date(to)
   if (end) start.setMonth(start.getMonth() - 1)
   else start.setDate(start.getDate() - 30)
@@ -162,7 +179,9 @@ async function deployCount(wallet, start) {
       `/sites/${site.id}/deploys?state=ready&production=true&per_page=50`
     )
     if (!res.ok) {
-      lines.push(`  ${site.label.padEnd(14)} deploys unreadable (${res.status})`)
+      lines.push(
+        `  ${site.label.padEnd(14)} deploys unreadable (${res.status})`
+      )
       continue
     }
     const parsed = await res.json().catch(() => [])
@@ -188,12 +207,18 @@ const perWallet = []
 for (const wallet of WALLETS) {
   const p = await walletPeriod(wallet)
   if (!p) {
-    console.log(`== netlify wallet "${wallet.name}": account read FAILED — the credit pool is the number that must not hide ==`)
+    console.log(
+      `== netlify wallet "${wallet.name}": account read FAILED — the credit pool is the number that must not hide ==`
+    )
     hardFail++
     continue
   }
-  const daysLeft = p.end ? Math.max(0, Math.ceil((p.end - to) / 86_400_000)) : '?'
-  console.log(`== netlify wallet "${wallet.name}" (credit-free: ${PLAN_CREDITS}/month, hard limit) ==`)
+  const daysLeft = p.end
+    ? Math.max(0, Math.ceil((p.end - to) / 86_400_000))
+    : '?'
+  console.log(
+    `== netlify wallet "${wallet.name}" (credit-free: ${PLAN_CREDITS}/month, hard limit) ==`
+  )
   console.log(
     `  period: ${p.start.toISOString().slice(0, 10)} -> ${p.end ? p.end.toISOString().slice(0, 10) : '?'} (${daysLeft} days left)`
   )
@@ -212,21 +237,33 @@ for (const wallet of WALLETS) {
 }
 
 // 2. Front request rate per host.
-console.log(`\n== front requests (CF telemetry, window ${(to - from) / 3_600_000}h) ==`)
+console.log(
+  `\n== front requests (CF telemetry, window ${(to - from) / 3_600_000}h) ==`
+)
 let telemetryFail = 0
 const rate24 = {}
 for (const host of HOSTS) {
   try {
-    const [n24, n48] = [await telemetryCount(host, from), await telemetryCount(host, from48)]
+    const [n24, n48] = [
+      await telemetryCount(host, from),
+      await telemetryCount(host, from48),
+    ]
     rate24[host] = n24
-    console.log(`  ${host.padEnd(20)} 24h ${String(n24).padStart(7)} | 48h ${String(n48).padStart(7)}`)
+    console.log(
+      `  ${host.padEnd(20)} 24h ${String(n24).padStart(7)} | 48h ${String(n48).padStart(7)}`
+    )
   } catch (e) {
     telemetryFail++
-    console.log(`  ${host.padEnd(20)} telemetry error: ${String(e).slice(0, 120)}`)
+    console.log(
+      `  ${host.padEnd(20)} telemetry error: ${String(e).slice(0, 120)}`
+    )
   }
 }
 
-const deployCredits = perWallet.reduce((a, w) => a + w.deploys * CREDITS.deploy, 0)
+const deployCredits = perWallet.reduce(
+  (a, w) => a + w.deploys * CREDITS.deploy,
+  0
+)
 let monthlyReqCredits = 0
 if (telemetryFail < HOSTS.length) {
   const n = Object.values(rate24).reduce((a, b) => a + b, 0)
@@ -249,11 +286,14 @@ console.log(
   `  bandwidth: dashboard only — ${PLAN_CREDITS} credits = ${PLAN_CREDITS / CREDITS.perGB} GB ≈ ten 1.5 GB films; the front cache (shared /pl, /seg, /resolve) is what keeps repeats off this meter`
 )
 for (const w of perWallet) {
-  const conservLeft = PLAN_CREDITS - w.deploys * CREDITS.deploy - monthlyReqCredits
+  const conservLeft =
+    PLAN_CREDITS - w.deploys * CREDITS.deploy - monthlyReqCredits
   console.log(
     `  wallet "${w.name}": ~${conservLeft} of ${PLAN_CREDITS} credits left before bandwidth (deploys exact, requests upper bound)`
   )
 }
 
-console.log('\nWhen the pool empties every Netlify project pauses — the relay canary (scripts/relay-canary.mjs) is the outage alarm; this is the wallet gauge.')
+console.log(
+  '\nWhen the pool empties every Netlify project pauses — the relay canary (scripts/relay-canary.mjs) is the outage alarm; this is the wallet gauge.'
+)
 process.exit(hardFail ? 1 : 0)
