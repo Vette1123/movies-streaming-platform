@@ -8,14 +8,15 @@
  * talk to Cloudflare's edge while the VAULT still sees Netlify's egress (it
  * 427s Cloudflare-egress bytes, which is why the relays are not CF workers).
  *
- *   relay.reely.space   -> reely-relay.netlify.app     (relay 1, RELAY_SECRET)
- *   relay-b.reely.space -> reely-relay-b2.netlify.app (relay 1b, RELAY_SECRET_2)
+ *   relay.reely.space   -> reely-relay.netlify.app (relay 1, RELAY_SECRET)
+ *   relay-b.reely.space -> origin-b.reely.space    (relay 1b, RELAY_SECRET_2)
  *
- * Since 2026-11-18 relay-b lives in its own Netlify account (site
- * reely-relay-b2) so one credit pool pausing can never take both relay homes
- * down at once; the site name carries a 2 only because Netlify names are
- * global and the old site still held "reely-relay-b". The public hostnames
- * did not move.
+ * Since 2026-11-19 relay-b lives on an Oracle Always Free VM (Jeddah) behind
+ * the Cloudflare Tunnel `reely-oracle-b`, so it spends no Netlify credits and
+ * one credit pool pausing can never take both relay homes down at once. The
+ * vault sees the VM's egress, not Cloudflare's, because the tunnel carries
+ * the request TO the VM and the VM fetches the vault itself. The public
+ * hostnames did not move.
  *
  * One rewrite: the relays stamp /file URLs with the host they saw
  * (netlify.app) inside their JSON answers (resolve, selftest). Those are
@@ -40,7 +41,7 @@ const PAIRS = [
     public: 'https://relay.reely.space',
   },
   {
-    origin: 'https://reely-relay-b2.netlify.app',
+    origin: 'https://origin-b.reely.space',
     public: 'https://relay-b.reely.space',
   },
 ]
@@ -67,6 +68,17 @@ const CACHE_RULES = [
     needs: '"sources"',
   },
 ]
+
+/**
+ * The origin's own host, in both schemes, swapped for the public front. A VM
+ * home sits behind cloudflared, which talks plain http to the relay on
+ * 127.0.0.1, so the relay stamps `http://origin-b...` into its answers; a
+ * Netlify home stamps `https://`. Either must leave as the https front.
+ */
+export const toPublic = (text, pair) =>
+  text
+    .replaceAll(pair.origin, pair.public)
+    .replaceAll(pair.origin.replace(/^https:/, 'http:'), pair.public)
 
 export default {
   async fetch(req, ctx) {
@@ -120,14 +132,13 @@ export default {
     const out = new Headers(res.headers)
     if (!out.has('cache-control')) out.set('cache-control', 'no-store')
     const loc = out.get('location')
-    if (loc && loc.startsWith(pair.origin))
-      out.set('location', pair.public + loc.slice(pair.origin.length))
+    if (loc) out.set('location', toPublic(loc, pair))
 
     const ct = res.headers.get('content-type') ?? ''
     let jsonText = null
     let final
     if (res.status < 300 && ct.includes('application/json')) {
-      jsonText = (await res.text()).replaceAll(pair.origin, pair.public)
+      jsonText = toPublic(await res.text(), pair)
       out.delete('content-length')
       final = new Response(jsonText, { status: res.status, headers: out })
     } else {

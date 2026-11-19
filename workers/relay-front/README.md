@@ -8,24 +8,24 @@ talk to Cloudflare while the vault still sees Netlify's egress (it 427s
 Cloudflare-egress bytes — the reason the relays cannot be CF Workers).
 
 ```
-relay.reely.space   -> reely-relay.netlify.app     (relay 1,  RELAY_SECRET)
-relay-b.reely.space -> reely-relay-b2.netlify.app  (relay 1b, RELAY_SECRET_2)
+relay.reely.space   -> reely-relay.netlify.app  (relay 1,  RELAY_SECRET)
+relay-b.reely.space -> origin-b.reely.space     (relay 1b, RELAY_SECRET_2)
 ```
 
-Relay 1b moved to its own Netlify account on 2026-11-18 (site name
-`reely-relay-b2` — Netlify names are global and the old site held the plain
-name), so a credit-pool pause takes one relay home down, never both. The
-public hostnames did not change.
+Relay 1b moved to an Oracle Always Free VM on 2026-11-19, reached through the
+Cloudflare Tunnel `reely-oracle-b` (setup: the relay repo's `deploy/README.md`).
+It spends no Netlify credits, and a credit-pool pause takes one relay home
+down, never both. The public hostnames did not change. Behind the tunnel the
+relay sees plain http, so it stamps `http://origin-b...` URLs; the front
+rewrites both schemes (`toPublic`).
 
 It rewrites only the relays' small JSON answers (the `/file` URLs they stamp
 with the netlify host they saw); the byte stream passes through untouched.
 
 ## Deploy
 
-```bash
-cd workers/relay-front
-CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... npx wrangler deploy
-```
+CI deploys it: the `Deploy relay front` step of `.github/workflows/deploy.yml`
+runs `wrangler deploy` here on every push to main. Never deploy it by hand.
 
 The custom domains carry over from `wrangler.jsonc` — a first-time deploy of
 a NEW hostname must happen BEFORE the WAF rules apply to it

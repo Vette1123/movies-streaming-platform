@@ -316,6 +316,15 @@ jobs:
           CF_ZONE_NAME: reely.space
           WAF_PERMISSIVE: ${{ vars.WAF_PERMISSIVE }}
 
+      # The relay fronts (relay / relay-b .reely.space). After the WAF step on
+      # purpose: a new origin host is exempted there before the front sends
+      # it traffic. Plain wrangler, no build; a no-op when nothing changed.
+      - name: Deploy relay front
+        run: pnpm exec wrangler deploy
+        working-directory: workers/relay-front
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
       # Post-deploy smoke test = our outage alert. Curl the critical routes and
       # FAIL the job (→ GitHub emails on the red run) unless every one answers
       # 2xx. This is what catches a regression like the homepage 500 ("Too many
