@@ -50,6 +50,7 @@ import { siteConfig } from '@/config/site'
 import { ownsPath } from '@/lib/api/account-paths'
 import { bearerOf, sessionCookieOf } from '@/lib/auth/session'
 import { blockedTitleEntry } from '@/lib/blocked-titles'
+import { CHALLENGE_HOP_PATH, safeReturnPath } from '@/lib/challenge-hop'
 import { loadDirectory } from '@/lib/community/routes'
 import { smartQuery } from '@/lib/filter-query'
 import { isImdbId } from '@/lib/imdb-id'
@@ -531,6 +532,13 @@ async function libraryHasCached(ctx, env, origin, target) {
 
 async function handleApi(pathname, url, request, ctx, env) {
   const q = url.searchParams
+
+  // Reached only after Cloudflare's challenge on this path was solved (see
+  // lib/challenge-hop.ts): send the visitor back to where they were.
+  if (pathname === CHALLENGE_HOP_PATH) {
+    const back = new URL(safeReturnPath(q.get('next')), url.origin)
+    return Response.redirect(back.href, 302)
+  }
 
   if (pathname === '/api/stream/health') {
     const health = await relayHealthCached(ctx, env, url.origin)
