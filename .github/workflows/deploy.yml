@@ -225,6 +225,9 @@ jobs:
       - run: pnpm run deploy:full
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # The IndexNow diff reads the live site through the WAF
+          # (CI_HEADER in scripts/cf-waf-setup.mjs); CI runs on Azure.
+          CI_WAF_BYPASS: ${{ secrets.CI_WAF_BYPASS }}
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           TMDB_HEADER_KEY: ${{ secrets.TMDB_HEADER_KEY }}
           NEXT_PUBLIC_TMDB_BASEURL: ${{ secrets.NEXT_PUBLIC_TMDB_BASEURL }}
@@ -317,6 +320,7 @@ jobs:
         run: pnpm run waf:apply
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CI_WAF_BYPASS: ${{ secrets.CI_WAF_BYPASS }}
           CF_ZONE_NAME: reely.space
           WAF_PERMISSIVE: ${{ vars.WAF_PERMISSIVE }}
 
