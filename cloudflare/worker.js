@@ -2005,15 +2005,32 @@ async function handleTrialRelease(request, env) {
   })
 }
 
+/**
+ * The relay watchdog's tick. Five minutes is the shortest cadence Cloudflare
+ * crons allow, and this one costs two `/health` fetches that no provider ever
+ * sees - see lib/relay-watch.ts for why it is not `/selftest`.
+ */
+const RELAY_WATCH_CRON = '*/5 * * * *'
+
 const worker = {
   /**
-   * The hourly sweep for new-episode alerts. Imported lazily so its TMDB and
-   * push code is evaluated only in the isolate that actually runs a cron tick,
-   * never in one serving requests.
+   * Two triggers, two jobs. The hourly one is the new-episode sweep; the
+   * five-minute one is the relay watchdog. Both imports are lazy so their code
+   * is evaluated only in the isolate that actually runs a cron tick, never in
+   * one serving requests.
    */
   async scheduled(event, env, ctx) {
     copyEnv(env)
     if (!env.DB) return
+    if (event.cron === RELAY_WATCH_CRON) {
+      const { runRelayWatch } = await import('@/lib/relay-watch')
+      ctx.waitUntil(
+        runRelayWatch(env)
+          .then((result) => console.log('relay-watch', JSON.stringify(result)))
+          .catch((error) => console.error('relay-watch failed', String(error)))
+      )
+      return
+    }
     const { runSweep } = await import('@/lib/push/sweep')
     ctx.waitUntil(sweepPlayerTrials(env.DB, Date.now()))
     ctx.waitUntil(

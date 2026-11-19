@@ -87,9 +87,21 @@
   // tick (lib/push/sweep.ts) so one invocation can never approach the
   // 50-subrequest cap. Cron invocations are free of the request budget that page
   // views compete for.
+  //
+  // The five-minute tick is the relay watchdog (lib/relay-watch.ts): one
+  // provider-free /health per relay home, a mail only when the answer changes.
+  // It lives here because the site is the one thing up whenever a visitor can
+  // reach Reely at all - a watcher hosted on either relay home dies with it.
   "triggers": {
-    "crons": ["0 * * * *"],
+    "crons": ["0 * * * *", "*/5 * * * *"],
   },
+  // The watchdog's mail, through Cloudflare Email Routing (already on the
+  // zone). Email Routing delivers a Worker's mail only to VERIFIED destination
+  // addresses - a routed alias like support@ is not one - and the one verified
+  // address is the owner's inbox. This repo is public, so the address is not
+  // pinned here: the Worker reads it from the ALERT_EMAIL_TO secret. Unpinned
+  // still cannot mail strangers: unverified destinations are refused.
+  "send_email": [{ "name": "ALERT_EMAIL" }],
   // Preserve vars configured in the Cloudflare Dashboard on deploy
   "keep_vars": true,
   "vars": {

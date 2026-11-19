@@ -1,0 +1,71 @@
+# Is the COLD fallback able to play? Weekly, read-only, fallback only.
+#
+# The hourly canary walks relay 1 first and stops at the first usable answer,
+# so a healthy primary means relay-b is never touched - exactly what the
+# player does, and exactly why the fallback (relay-b, the Oracle VM) can rot
+# unnoticed until the day relay 1 on Netlify pauses. This run walks relay-b alone for the same three titles
+# (RELAY_ONLY=2), so a broken fallback is found on a Monday.
+#
+# Three provider walks a week: nothing against the vault's daily allowance,
+# and it never overlaps the hourly canary's egress.
+#
+# Its issue is labelled `relay-fallback`, not `relay-down`: a dead fallback
+# while the primary carries is not an outage, and it must not page as one.
+name: Relay fallback canary
+
+on:
+  schedule:
+    # Mondays, 05:17 UTC - off the hour and off the hourly canary's :23.
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: relay-fallback
+  cancel-in-progress: false
+
+jobs:
+  fallback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPORT_FILE: report.md
+      RELAY_ONLY: '2'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - id: canary
+        continue-on-error: true
+        run: node scripts/relay-canary.mjs
+
+      - name: Open the fallback issue
+        if: steps.canary.outcome == 'failure'
+        run: |
+          gh label create relay-fallback --color FBCA04 --description 'Relay-b (the cold fallback) cannot play' --force
+          open=$(gh issue list --state open --label relay-fallback --json number --jq '.[0].number')
+          if [ -z "$open" ]; then
+            [ -s report.md ] || echo 'The canary crashed before writing a report; see the run log.' > report.md
+            printf '\n\nRun: %s/%s/actions/runs/%s\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" >> report.md
+            gh issue create --title 'Relay fallback (relay-b) cannot play' --label relay-fallback --body-file report.md
+          else
+            echo "Issue #$open already open; not adding noise."
+          fi
+          exit 1
+
+      - name: Close the fallback issue
+        if: steps.canary.outcome == 'success'
+        run: |
+          for n in $(gh issue list --state open --label relay-fallback --json number --jq '.[].number'); do
+            gh issue close "$n" --comment "Recovered.
+
+          $(cat report.md)"
+          done
