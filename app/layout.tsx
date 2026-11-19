@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils'
 import { AccountBoot } from '@/components/account/account-boot'
 import { BackRestore } from '@/components/back-restore'
+import { ChallengeHop } from '@/components/challenge-hop'
 import { IconSprite } from '@/components/icon-sprite'
 import { Footer } from '@/components/layouts/footer'
 import { SiteHeader } from '@/components/layouts/site-header'
@@ -329,6 +330,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         {/* Defs for the icons that repeat per card — see components/icon-sprite.
             Must be in the document for any <use href="#i-…"> on the page. */}
         <IconSprite />
+        <ChallengeHop />
         {/*
           Sticky footer, three lines of it: the shell is a full-height column,
           the content region is the only part allowed to grow, and the footer is

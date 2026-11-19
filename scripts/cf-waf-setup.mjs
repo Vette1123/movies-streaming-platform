@@ -60,6 +60,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import { AI_CRAWLER_UAS } from './lib/ai-crawlers.mjs'
+import { challengeExpr } from './lib/challenge.mjs'
 import { cloudAsnExpr } from './lib/cloud-asn.mjs'
 import { loadLocalEnv } from './load-env.mjs'
 
@@ -585,25 +586,17 @@ const BLOCK_FROZEN_UAS_RULE = {
 //     ordering alone would not.
 // managed_challenge, not block: a misclassified real client gets a puzzle and
 // still reaches the page, rather than a door in the face.
+//
+// 2026-11-19: no longer "non-browser clients" only. Every client on the
+// Worker-billed pages and public APIs answers it, browser UA or not, because
+// the fleet that hit 93% of the cap wore real Chrome strings. What is covered
+// and why lives in scripts/lib/challenge.mjs.
 const CHALLENGE_DETAIL_SCRAPERS_RULE = {
-  description: `${TAG} challenge non-browser clients on detail pages`,
-  expression: [
-    '(starts_with(http.request.uri.path, "/movies/") or starts_with(http.request.uri.path, "/tv-shows/") or starts_with(http.request.uri.path, "/collection/"))',
-    'not (starts_with(http.request.uri.path, "/movies/genre") or starts_with(http.request.uri.path, "/tv-shows/genre"))',
-    // Year hubs (/movies/year/2019) are prerendered assets that never reach the
-    // Worker. Challenging a crawler on one buys nothing and costs the ranking
-    // the page exists for.
-    'not (starts_with(http.request.uri.path, "/movies/year") or starts_with(http.request.uri.path, "/tv-shows/year"))',
-    'not cf.client.bot',
-    // The playback worker's own hostname: its /play shell and /api/* routes are
-    // nothing like these paths, and the rule's whole purpose is the site's
-    // expensive detail renders. See PLAY_HOST_EXEMPT.
-    PLAY_HOST_EXEMPT,
-    // Does not look like a browser at all. The frozen-fingerprint case — a
-    // scraper that copies a real browser string — is BLOCK_FROZEN_UAS_RULE
-    // above, which covers every path rather than only these.
-    `not (${orExpr(BROWSER_UAS)})`,
-  ].join(' and '),
+  description: `${TAG} challenge every client on Worker pages and public APIs`,
+  expression: challengeExpr({
+    assetExpr: assetExpr(),
+    hostExempt: PLAY_HOST_EXEMPT,
+  }),
   action: 'managed_challenge',
 }
 
@@ -904,6 +897,21 @@ async function main() {
       body: JSON.stringify({ value: 'off' }),
     })
   })
+
+  // Challenge Passage: how long a solved challenge (cf_clearance) lasts. One day
+  // so a real visitor answers it once per day of browsing, not every 30 minutes
+  // (the default). It does not help a scraper: a challenge is served by
+  // Cloudflare and costs no invocation, and what a solved one buys a fleet is
+  // the same either way. See scripts/lib/challenge.mjs.
+  await step(
+    'Challenge Passage 1 day (needs Zone Settings: Edit)',
+    async () => {
+      await cf(`/zones/${zoneId}/settings/challenge_ttl`, {
+        method: 'PATCH',
+        body: JSON.stringify({ value: 86400 }),
+      })
+    }
+  )
 
   // TLS hardening. All three are free-plan zone settings and idempotent.
   //
