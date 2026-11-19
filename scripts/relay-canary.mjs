@@ -37,10 +37,13 @@ const SITE = process.env.SITE_URL ?? 'https://www.reely.space'
 // mints into every ticket URL since 2026-11-16. Workers.dev stays live as
 // the fallback origin; probing the domain is what a visitor does.
 const PLAYER = process.env.PLAYER_URL ?? 'https://play.reely.space'
-// The two Netlify fronts are the whole relay chain since 2026-11-18 (the
-// Deno org is gone for good): relay 1 is primary, relay-b is the failover
-// the player hops to when relay 1 is cooling or down. Both are walked for
-// every title, in that order — the same order the player asks them in.
+// Two relay homes make the chain: relay 1 on an Oracle Always Free VM behind
+// a Cloudflare Tunnel, relay-b on Netlify Edge Functions as the cold fallback
+// (since 2026-11-19; the Deno org is gone for good). relay 1 is primary;
+// relay-b is the failover the player hops to when relay 1 is cooling or down.
+// Both are walked for every title, in that order - the same order the player
+// asks them in - but the walk stops at the first usable answer, so a healthy
+// relay 1 means relay-b is not touched (exactly what the player does).
 const RELAYS = [
   process.env.RELAY_URL || RELAY_URL,
   process.env.RELAY_2_URL || RELAY_2_URL,
@@ -52,12 +55,13 @@ const UA =
 /**
  * Long-running, widely carried titles: one vanishing upstream is not an
  * outage. The vault family a title mints to is per-title and stable
- * (surveyed 2026-11-18): bcdn.hakunaymatata.com serves the Netlify egress,
- * bcdnxw.hakunaymatata.com refuses its Range reads (429, no Retry-After) -
- * so exactly ONE title here walks the refusing family (the degradation
- * witness, see vaultRefused) and two prove the byte path on the serving
- * family. Two witnesses would double the feed into a limiter for zero
- * extra signal: both fronts' walks of the same family answer alike.
+ * (surveyed 2026-11-18 on Netlify's egress): bcdn.hakunaymatata.com serves
+ * relay-b's Range reads, bcdnxw.hakunaymatata.com refuses them
+ * (429, no Retry-After) - so exactly ONE title here walks the refusing family
+ * (the degradation witness, see vaultRefused) and two prove the byte path on
+ * the serving family. Two witnesses would double the feed into a limiter for
+ * zero extra signal. The Oracle VM has its own egress and served the serving
+ * family on 2026-11-19; the walk reports whatever each home actually gets.
  */
 export const TITLES = [
   { name: 'Fight Club', query: 'ty=movie&id=550' },

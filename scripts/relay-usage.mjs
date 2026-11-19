@@ -3,12 +3,14 @@
 //   node scripts/relay-usage.mjs         # last 24h
 //   node scripts/relay-usage.mjs 168     # last 7d
 //
-// 1. THE NETLIFY CREDIT POOL. Both relay sites are one team ("Reely") on the
-//    credit-free plan: 300 credits/month, a hard limit — when the balance
-//    empties, EVERY project on the team pauses, the relays included, and
-//    visitors see `Site not available` (no card on file, so no auto top-up).
+// 1. THE NETLIFY CREDIT POOL. Relay-b (the cold fallback, `reely-relay-b2`)
+//    is the only relay home still on Netlify, on a credit-free plan: 300
+//    credits/month, a hard limit — when the balance empties, EVERY project
+//    on that account pauses and visitors see `Site not available` (no card
+//    on file, so no auto top-up). Relay 1 left Netlify on 2026-11-19 for an
+//    Oracle Always Free VM, so the primary path spends none of this pool.
 //    The meters that spend it (Netlify "How credits work", fetched 2026-11-18):
-//      production deploy   15 credits  — `npm run deploy` ships 2 sites = 30
+//      production deploy   15 credits  — `npm run deploy` ships 1 site = 15
 //      bandwidth           20 credits / GB — the relay proxies video bytes
 //      web requests        2 credits / 10k — edge functions are measured here
 //
@@ -28,19 +30,14 @@
 //
 // 2. THE FRONT REQUEST RATE. Every request a viewer (or the canary) sends the
 //    CF front — relay.reely.space / relay-b.reely.space, the hosts browsers
-//    can actually reach — is one web request on the team, plus one more for
-//    /selftest's own hop to its netlify.app origin. CF telemetry counts them
-//    per host; `observability.enabled` went live in the 2026-11-18 front
-//    deploy, so history starts there.
+//    can actually reach — is counted per host from CF telemetry
+//    (`observability.enabled`, live since the 2026-11-18 front deploy). Only
+//    relay-b's requests become Netlify web requests (plus /selftest's own hop
+//    to its netlify.app origin); relay 1's end at the Oracle VM.
 //
-// THE SECOND WALLET IS LIVE (2026-11-18): relay-b runs on its own Netlify
-// account, so NETLIFY_AUTH_TOKEN_B / NETLIFY_ACCOUNT_B are set and site B is
-// counted against its pool — its own 300 credits, its own pause. Unset the
-// token and the gauge falls back to counting both sites on team Reely.
-//
-// Read-only: one Netlify account GET + one deploys GET per site, and two CF
-// telemetry counts per host. Exits 1 only when the primary credit pool
-// itself cannot be read — that is the number that must not hide.
+// Read-only: one Netlify account GET + one deploys GET, and two CF telemetry
+// counts per host. Exits 1 only when the credit pool itself cannot be read —
+// that is the number that must not hide.
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -51,28 +48,29 @@ loadLocalEnv()
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const CF_TOKEN = process.env.CLOUDFLARE_API_TOKEN
-const NF_TOKEN = process.env.NETLIFY_AUTH_TOKEN
+const NF_TOKEN = process.env.NETLIFY_AUTH_TOKEN_B
 
 if (!CF_TOKEN || !NF_TOKEN) {
   console.error(
-    'Need CLOUDFLARE_API_TOKEN and NETLIFY_AUTH_TOKEN (in .env.local).'
+    'Need CLOUDFLARE_API_TOKEN and NETLIFY_AUTH_TOKEN_B (in .env.local).'
   )
   process.exit(1)
 }
 
-/** Team "Reely" (account 6afb92f2c79b626d3cee5375) — hosts both relay sites. */
-const NF_ACCOUNT = '6afb92f2c79b626d3cee5375'
+/** The fallback's account (`NETLIFY_ACCOUNT_B`) — relay-b only. */
+const NF_ACCOUNT = process.env.NETLIFY_ACCOUNT_B ?? ''
 const PLAN_CREDITS = 300
 const CREDITS = { deploy: 15, perGB: 20, per10kRequests: 2 }
 const CF_FRONT_DAILY_CAP = 100_000 // CF Workers free plan, per day, per account
 
-const HOSTS = ['relay.reely.space', 'relay-b.reely.space']
-const SITE_A = '9b37506f-ff6d-4e7a-a540-68112688a8ce' // reely-relay (team Reely)
-// Since 2026-11-18 relay-b lives in its own account, so its deploys bill that
-// wallet. Its pre-split deploys (3 this period) were billed to team Reely and
-// are no longer visible once the old site is deleted — the first period
-// undercounts wallet A by those; the dashboard remains the truth.
-const SITE_B = '47406758-6292-428a-b851-0bee16c682b1' // reely-relay-b (own account)
+const HOSTS = [
+  { host: 'relay.reely.space', netlify: false },
+  { host: 'relay-b.reely.space', netlify: true },
+]
+// Relay-b is the only Netlify home left: relay 1 moved to the Oracle VM on
+// 2026-11-19 and spends nothing here. The old `reely-relay` site (team Reely)
+// is idle and can be deleted once the move has soaked.
+const SITE_B = '47406758-6292-428a-b851-0bee16c682b1' // reely-relay-b2 (fallback)
 
 const wrangler = fs.readFileSync(path.join(root, 'wrangler.jsonc'), 'utf8')
 const CF_ACCOUNT = wrangler.match(/"account_id":\s*"([^"]+)"/)?.[1]
@@ -86,22 +84,12 @@ const from48 = to - 48 * 3600 * 1000
 
 const WALLETS = [
   {
-    name: 'Reely',
+    name: 'Reely B (relay-b fallback)',
     token: NF_TOKEN,
     account: NF_ACCOUNT,
-    sites: [{ id: SITE_A, label: 'reely-relay' }],
+    sites: [{ id: SITE_B, label: 'reely-relay-b2' }],
   },
 ]
-if (process.env.NETLIFY_AUTH_TOKEN_B) {
-  WALLETS.push({
-    name: 'Reely B',
-    token: process.env.NETLIFY_AUTH_TOKEN_B,
-    account: process.env.NETLIFY_ACCOUNT_B ?? '',
-    sites: [{ id: SITE_B, label: 'reely-relay-b' }],
-  })
-} else {
-  WALLETS[0].sites.push({ id: SITE_B, label: 'reely-relay-b' })
-}
 
 const netlify = (token, route) =>
   fetch(`https://api.netlify.com/api/v1${route}`, {
@@ -242,7 +230,7 @@ console.log(
 )
 let telemetryFail = 0
 const rate24 = {}
-for (const host of HOSTS) {
+for (const { host } of HOSTS) {
   try {
     const [n24, n48] = [
       await telemetryCount(host, from),
@@ -264,14 +252,18 @@ const deployCredits = perWallet.reduce(
   (a, w) => a + w.deploys * CREDITS.deploy,
   0
 )
+const netlifyHosts = HOSTS.filter((h) => h.netlify)
+const netlifyRateOk = netlifyHosts.every((h) => rate24[h.host] !== undefined)
 let monthlyReqCredits = 0
-if (telemetryFail < HOSTS.length) {
-  const n = Object.values(rate24).reduce((a, b) => a + b, 0)
+if (netlifyRateOk) {
+  const n = netlifyHosts.reduce((a, h) => a + rate24[h.host], 0)
   const monthlyReq = Math.round((n / 24) * 30.44)
   monthlyReqCredits = Math.ceil((monthlyReq * CREDITS.per10kRequests) / 10_000)
   console.log(
     `  → at today's rate: ~${monthlyReq.toLocaleString()} requests/month = ${monthlyReqCredits} web-request credit${monthlyReqCredits === 1 ? '' : 's'} (${((monthlyReqCredits / PLAN_CREDITS) * 100).toFixed(1)}% of the pool; upper bound - front cache hits never reach the relay)`
   )
+}
+if (telemetryFail < HOSTS.length) {
   const busiest = Object.entries(rate24).sort((a, b) => b[1] - a[1])[0]
   if (busiest?.[1])
     console.log(

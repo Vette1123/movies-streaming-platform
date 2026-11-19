@@ -42,7 +42,7 @@ const FRONTS = [
   {
     url: 'https://relay-b.reely.space',
     key: readKey('RELAY_KEY_RELAY2'),
-    name: 'relay 1b',
+    name: 'relay-b',
   },
 ]
 const PROBE = 'ty=movie&id=550' // Fight Club — long-carried; its absence is an outage, not churn

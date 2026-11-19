@@ -6,29 +6,26 @@
 
 /**
  * The relay the player resolves through FIRST — the worker pairs it with
- * `RELAY_SECRET` at RELAY_URLS position 1. Since 2026-11-17 the relay code
- * runs on a Netlify Edge Function (the old home, the `reely` org on Deno
- * Deploy, was suspended org-wide on 2026-11-16, and Deno Deploy itself
- * sunsets ~April 2027). The address here is NOT the netlify.app host: the
- * relay's /file URLs are handed to the browser's video element, and some
- * ISPs TCP-block *.netlify.app, so `reely-relay-front` (a Cloudflare pipe
- * worker) fronts it at this hostname — browsers hit CF's edge, the vault
- * still sees Netlify's egress. The player worker, the site's health gate
- * and the canary all resolve through this same front.
+ * `RELAY_SECRET` at RELAY_URLS position 1. Since 2026-11-19 it runs on an
+ * Oracle Cloud Always Free VM behind the Cloudflare Tunnel `reely-oracle-b`
+ * (the Deno org was suspended org-wide on 2026-11-16, and Netlify's shared
+ * egress was refused by the vault). The address here is NOT the tunnel host:
+ * the relay's /file URLs are handed to the browser's video element, so
+ * `reely-relay-front` (a Cloudflare pipe worker) fronts it at this hostname —
+ * browsers hit CF's edge, the vault still sees the VM's egress. The player
+ * worker, the site's health gate and the canary all resolve through this
+ * same front.
  */
 export const RELAY_URL = 'https://relay.reely.space'
 
 /**
- * The failover relay: a SECOND Netlify site running the identical edge
- * bundle under its own key (paired as the player's RELAY_SECRET_2). It exists
- * because a single relay home is a single failure domain: a Netlify-wide
- * problem would otherwise leave no relay at all, and the player hops here
- * when relay 1 is cooling or down. Same account (a second free account was
- * not worth the setup), so it shares the account-level risks and covers
- * site-level ones: a bad deploy on relay 1, an accidental delete or privacy
- * flip, isolate churn. Browsers reach it through the same front worker, at
- * the second custom domain — the ISP block argument applies to this host
- * exactly as it did to relay 1.
+ * The cold fallback (relay-b): the same Deno relay on Netlify Edge
+ * Functions, reached by browsers through the second front hostname. It runs
+ * under its own key, paired as the player's `RELAY_SECRET_2`. A separately
+ * hosted home is the point: an Oracle outage, a bad VM deploy or a tunnel
+ * failure takes relay 1 down without taking relay-b with it, and the player
+ * hops here when relay 1 is cooling or down. Netlify's 300-credit pool is
+ * the fallback's only budget (setup: the relay repo's NETLIFY.md).
  */
 export const RELAY_2_URL = 'https://relay-b.reely.space'
 

@@ -401,14 +401,15 @@ const NOT_MACHINE_PATH =
  * pages needed. Nothing is given away: every player route demands a signed
  * ticket, and its page shell is one static asset.
  *
- * relay.reely.space is the playback relay's public front (a pipe worker in
- * front of the Netlify edge deployment, 2026-11-17). Every caller is a
+ * relay.reely.space is relay 1's public front (a pipe worker in front of the
+ * Oracle VM since 2026-11-19, Netlify before that). Every caller is a
  * machine too — the player worker, the site's health gate, the canary — plus
  * the video element's Range fetches; a challenge there kills playback the
- * same way it would on play.reely.space.
+ * same way it would on play.reely.space. relay-b.reely.space is the same
+ * pipe in front of the Netlify fallback, with the same callers.
  *
- * origin-b.reely.space is relay-b's VM home behind a Cloudflare Tunnel
- * (2026-11-19). Only the relay-b front and the canary call it, both machines;
+ * origin-b.reely.space is relay 1's VM home behind a Cloudflare Tunnel
+ * (2026-11-19). Only the relay front and the canary call it, both machines;
  * it is exactly as exposed as the Netlify origin it replaced.
  *
  * SHIP THIS BEFORE a hostname is attached — after attachment every rule

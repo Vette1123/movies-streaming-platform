@@ -1,47 +1,50 @@
 /**
  * reely-relay-front - the playback relays' public face.
  *
- * The resolver relay lives on Netlify Edge Functions, but its /file URLs are
- * handed to the BROWSER (the video element streams them directly), and some
- * ISPs - ours included - TCP-block *.netlify.app. This worker is attached to
- * two custom domains and pipes each to its Netlify deployment, so browsers
- * talk to Cloudflare's edge while the VAULT still sees Netlify's egress (it
- * 427s Cloudflare-egress bytes, which is why the relays are not CF workers).
+ * Relay 1 lives on an Oracle Always Free VM and relay-b on Netlify Edge
+ * Functions, but their /file URLs are handed to the BROWSER (the video
+ * element streams them directly), and a raw *.netlify.app host is TCP-blocked
+ * on some ISPs - ours included. This worker is attached to both custom
+ * domains and pipes each to its home, so browsers talk to Cloudflare's edge
+ * while the VAULT still sees the relay home's own egress (it 427s
+ * Cloudflare-egress bytes, which is why the relays are not CF workers).
  *
- *   relay.reely.space   -> reely-relay.netlify.app (relay 1, RELAY_SECRET)
- *   relay-b.reely.space -> origin-b.reely.space    (relay 1b, RELAY_SECRET_2)
+ *   relay.reely.space   -> origin-b.reely.space      (relay 1,  RELAY_SECRET)
+ *   relay-b.reely.space -> reely-relay-b2.netlify.app (relay-b, RELAY_SECRET_2)
  *
- * Since 2026-11-19 relay-b lives on an Oracle Always Free VM (Jeddah) behind
- * the Cloudflare Tunnel `reely-oracle-b`, so it spends no Netlify credits and
- * one credit pool pausing can never take both relay homes down at once. The
- * vault sees the VM's egress, not Cloudflare's, because the tunnel carries
- * the request TO the VM and the VM fetches the vault itself. The public
- * hostnames did not move.
+ * Since 2026-11-19 relay 1 has run on an Oracle Always Free VM (Jeddah)
+ * behind the Cloudflare Tunnel `reely-oracle-b`: the primary home, spending
+ * no Netlify credits, with the vault seeing the VM's egress rather than
+ * Cloudflare's because the tunnel carries the request TO the VM and the VM
+ * fetches the vault itself. Netlify is the cold fallback (relay-b, its own
+ * credit pool), so one wallet pause or bad deploy can never take both homes
+ * down at once. The public hostnames did not move.
  *
- * One rewrite: the relays stamp /file URLs with the host they saw
- * (netlify.app) inside their JSON answers (resolve, selftest). Those are
- * small plain-text responses, so they are host-rewritten before they leave;
- * the byte stream of /file passes through untouched. Upstream fetches always
- * ask for identity encoding so the rewrite never sees compressed bytes.
+ * One rewrite: the relays stamp /file URLs with the host they saw (the
+ * tunnel host or netlify.app) inside their JSON answers (resolve, selftest).
+ * Those are small plain-text responses, so they are host-rewritten before
+ * they leave; the byte stream of /file passes through untouched. Upstream
+ * fetches always ask for identity encoding so the rewrite never sees
+ * compressed bytes.
  *
  * CACHE (CACHE_RULES below): /pl, /seg and /resolve answers are cached per
  * colo and shared across viewers. The relay marks its answers `private`
  * because its own cache is per-isolate, but a signed URL IS the auth - the
  * same URL carries the same bytes for everyone - so this front can share
- * them. Every edge hit is a Netlify invocation and a Netlify egress that
- * never happen, and on the hosting team's credit wallet (lessons
- * 2026-11-18: bandwidth at 20 credits/GB is the meter a video relay hits)
- * that is the whole point: N viewers of one title collapse toward ~1
- * upstream fetch per segment per colo for the cache's life.
+ * them. Every edge hit is an upstream invocation and an egress that never
+ * happen - a VM fetch on relay 1, a Netlify invocation and credit on relay-b
+ * (lessons 2026-11-18: bandwidth at 20 credits/GB is the meter a Netlify
+ * relay hits) - so N viewers of one title collapse toward ~1 upstream fetch
+ * per segment per colo for the cache's life.
  */
 
 const PAIRS = [
   {
-    origin: 'https://reely-relay.netlify.app',
+    origin: 'https://origin-b.reely.space',
     public: 'https://relay.reely.space',
   },
   {
-    origin: 'https://origin-b.reely.space',
+    origin: 'https://reely-relay-b2.netlify.app',
     public: 'https://relay-b.reely.space',
   },
 ]
@@ -80,7 +83,7 @@ export const toPublic = (text, pair) =>
     .replaceAll(pair.origin, pair.public)
     .replaceAll(pair.origin.replace(/^https:/, 'http:'), pair.public)
 
-export default {
+const worker = {
   async fetch(req, ctx) {
     const u = new URL(req.url)
 
@@ -180,3 +183,5 @@ export default {
     return final
   },
 }
+
+export default worker

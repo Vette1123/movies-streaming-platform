@@ -51,8 +51,10 @@ jobs:
 
       # The wallet gauge (scripts/relay-usage.mjs): informational, never an
       # alarm — the canary above already pages on the failure mode the wallet
-      # causes (a paused project). Needs NETLIFY_AUTH_TOKEN; without the
-      # secret the step fails softly and the canary run is unaffected.
+      # causes (a paused project). Relay-b is the only Netlify home left;
+      # relay 1 runs on the Oracle VM and spends no credits there. Needs
+      # NETLIFY_AUTH_TOKEN_B; without the secret the step fails softly and the
+      # canary run is unaffected.
       - name: Wallet gauge (informational)
         if: always()
         continue-on-error: true
@@ -68,7 +70,6 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_AUTH_TOKEN_B: ${{ secrets.NETLIFY_AUTH_TOKEN_B }}
           NETLIFY_ACCOUNT_B: ${{ secrets.NETLIFY_ACCOUNT_B }}
 
