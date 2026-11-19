@@ -51,6 +51,33 @@ describe('checkRelayHealth', () => {
     )
   })
 
+  it('is up when only the cold fallback answers, as the player would be', async () => {
+    const seen: string[] = []
+    const onlyFallback = (async (url: string) => {
+      seen.push(url)
+      const body = url.startsWith('https://relay-b.reely.space')
+        ? WALKED
+        : NOV_13
+      return new Response(JSON.stringify(body), { status: 200 })
+    }) as unknown as typeof fetch
+    expect(await checkRelayHealth(undefined, onlyFallback)).toEqual({
+      up: true,
+    })
+    expect(seen).toHaveLength(2)
+    expect(seen[0]).toContain('https://relay.reely.space')
+    expect(seen[1]).toContain('https://relay-b.reely.space')
+  })
+
+  it('walks the primary alone while it answers', async () => {
+    const seen: string[] = []
+    const primary = (async (url: string) => {
+      seen.push(url)
+      return new Response(JSON.stringify(WALKED), { status: 200 })
+    }) as unknown as typeof fetch
+    expect(await checkRelayHealth(undefined, primary)).toEqual({ up: true })
+    expect(seen).toHaveLength(1)
+  })
+
   it('reads a dead deploy or an unreachable relay as down', async () => {
     const html = answering('<html>502 Bad Gateway</html>', 502)
     expect((await checkRelayHealth(undefined, html)).up).toBe(false)
