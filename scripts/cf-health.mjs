@@ -117,6 +117,33 @@ const band = (value, warnAt, limit) => {
   return true
 }
 
+/**
+ * `pnpm cf:health 3 --quota`: the hourly quota alarm (.github/workflows/
+ * quota-watch.yml). Account-wide, every Worker together, because that is what
+ * Cloudflare counts against the 100k/day cap. Fails at QUOTA_ALARM of the cap
+ * projected from the window, so a scrape is caught hours before Cloudflare's own
+ * email: on 2026-11-19 a cloud-hosted fleet took the account to 93% before
+ * anyone looked.
+ */
+const QUOTA_ALARM = 0.5
+
+async function checkQuota() {
+  const filter = `datetime_geq:"${SINCE}",datetime_leq:"${UNTIL}"`
+  const { accounts } =
+    await gql(`query{viewer{accounts(filter:{accountTag:"${ACCOUNT_ID}"}){
+    w: workersInvocationsAdaptive(limit:100,filter:{${filter}}){
+      dimensions{scriptName} sum{requests}}}}}`)
+  const rows = accounts[0].w
+  const perDay = (sum(rows, (r) => r.sum.requests) / HOURS) * 24
+  const cap = LIMITS.invocationsPerDay
+  grade(
+    perDay < cap * QUOTA_ALARM,
+    `Account invocations: ${Math.round(perDay).toLocaleString()}/day projected from ${HOURS}h (${pct(perDay, cap).toFixed(0)}% of cap, alarm at ${QUOTA_ALARM * 100}%)`,
+    rows.map((r) => `${r.dimensions.scriptName} ${r.sum.requests}`).join(', ') +
+      ' — run `pnpm cf:cpu 3` for the route, then check the WAF (scripts/cf-waf-setup.mjs)'
+  )
+}
+
 /** Worker CPU, invocation count and kills — the free-plan budget. */
 async function checkWorker() {
   const filter = `datetime_geq:"${SINCE}",datetime_leq:"${UNTIL}",scriptName:"${SCRIPT_NAME}"`
@@ -546,6 +573,12 @@ async function showTimeline(zone) {
       `    ${hour.slice(0, 16)}  ${String(v.invocations).padStart(9)}  ${String(v.killed).padStart(6)}  ${String(v.http5xx).padStart(11)}${flag}`
     )
   }
+}
+
+if (process.argv.includes('--quota')) {
+  console.log(`Account Worker quota — last ${HOURS}h (${SINCE} → ${UNTIL})\n`)
+  await checkQuota()
+  process.exit(results.some((r) => r.status === false) ? 1 : 0)
 }
 
 const zone = await zoneId()

@@ -213,3 +213,4 @@ with the work, not after.
 | 2026-11-18 | [Router cache to the rebuild cadence](2026-11-18-router-cache-cadence.md) | 5 h router cache sits under the 6 h deploy cron; only the first row of a rail viewport-prefetches. |
 | 2026-11-19 | [Relay-b moves to the Oracle VM](2026-11-19-relay-b-to-oracle.md) | Behind the tunnel the relay stamps http:// URLs; the front rewrites both schemes, and now deploys from CI. |
 | 2026-11-19 | [Relay watchdog](2026-11-19-relay-watchdog.md) | Email Routing only mails verified destinations, and the draft had primary/fallback swapped; check both against the live system. |
+| 2026-11-19 | [Cloud-hosted scraper fleet](2026-11-19-cloud-asn-fleet.md) | UA lists only catch the last attacker; block cloud ASNs on Worker-billed paths and watch the quota hourly. |

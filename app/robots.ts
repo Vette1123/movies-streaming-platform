@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next'
 
+import aiCrawlers from '@/config/ai-crawlers.json'
 import blockedCrawlers from '@/config/blocked-crawlers.json'
 import { siteConfig } from '@/config/site'
 
@@ -107,6 +108,18 @@ export default function robots(): MetadataRoute.Robots {
         allow: CRAWL_ALLOW,
         disallow: CRAWL_DISALLOW,
         crawlDelay: 10,
+      },
+      // The AI knowledge crawlers (GPTBot, ClaudeBot, meta-externalagent) are
+      // wanted for the pages and not for the JSON. On 2026-11-19 GPTBot alone
+      // took ~7,800 Worker invocations, 4,400 of them /api/media/ payloads it
+      // gets no citation from: the tail page's HTML already carries the title,
+      // <h1> and JSON-LD the Worker injects. So no /api/ allow-list here, and
+      // half the rate of the `*` group.
+      {
+        userAgent: aiCrawlers.knowledge,
+        allow: CRAWL_ALLOW.filter((p) => !p.startsWith('/api/')),
+        disallow: CRAWL_DISALLOW,
+        crawlDelay: 20,
       },
       // Everything else, at a rate this site can afford.
       //
