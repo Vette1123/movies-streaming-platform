@@ -211,3 +211,4 @@ with the work, not after.
 | 2026-11-18 | [Header apps trigger shows real icons](2026-11-18-header-apps-real-icons.md) | Overlapped icons under 20px read as dots; size from a screenshot |
 | 2026-11-18 | [Router cache port from the portfolio](2026-11-18-router-cache-port.md) | Only staleTimes carried over; the hover prefetch gate and image-cache purge fixes solve problems Reely does not have. |
 | 2026-11-18 | [Router cache to the rebuild cadence](2026-11-18-router-cache-cadence.md) | 5 h router cache sits under the 6 h deploy cron; only the first row of a rail viewport-prefetches. |
+| 2026-11-19 | [Relay-b moves to the Oracle VM](2026-11-19-relay-b-to-oracle.md) | Behind the tunnel the relay stamps http:// URLs; the front rewrites both schemes, and now deploys from CI. |

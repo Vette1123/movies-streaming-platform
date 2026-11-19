@@ -1,5 +1,6 @@
 {
   "name": "reely-relay-front",
+  "account_id": "90d6fc64545d1c449331032979dcbfb5",
   "main": "worker.mjs",
   "compatibility_date": "2026-11-01",
   "observability": { "enabled": true },

@@ -407,11 +407,15 @@ const NOT_MACHINE_PATH =
  * the video element's Range fetches; a challenge there kills playback the
  * same way it would on play.reely.space.
  *
+ * origin-b.reely.space is relay-b's VM home behind a Cloudflare Tunnel
+ * (2026-11-19). Only the relay-b front and the canary call it, both machines;
+ * it is exactly as exposed as the Netlify origin it replaced.
+ *
  * SHIP THIS BEFORE a hostname is attached — after attachment every rule
  * below would already apply to it.
  */
 const PLAY_HOST_EXEMPT =
-  'not (http.host in {"play.reely.space" "relay.reely.space" "relay-b.reely.space"})'
+  'not (http.host in {"play.reely.space" "relay.reely.space" "relay-b.reely.space" "origin-b.reely.space"})'
 
 /**
  * Everything a page needs in order to BE a page.
