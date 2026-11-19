@@ -312,6 +312,27 @@ const BLOCK_RULE_FIRST = {
   action: 'block',
 }
 
+/**
+ * Our own CI, reading our own site. The deploy's IndexNow diff fetches ~1,000
+ * live pages from GitHub Actions, which is Azure — AS8075, refused by the
+ * cloud-ASN block since 2026-11-19. Every page 403'd, was retried four times,
+ * and the deploy sat in `deploy:full` for 40 minutes. A secret header
+ * (CI_WAF_BYPASS, in .env.local and the repo secrets) is the one thing a
+ * scraper cannot copy from a UA list. Required: applying without it would strip
+ * CI's pass and stall the next deploy the same way.
+ */
+export const CI_HEADER = 'x-reely-ci'
+
+function ciBypassExpr() {
+  const secret = process.env.CI_WAF_BYPASS
+  if (!secret || !/^[A-Za-z0-9]{32,}$/.test(secret)) {
+    throw new Error(
+      'CI_WAF_BYPASS is unset or not 32+ alphanumerics. It lives in .env.local and the CI_WAF_BYPASS repo secret.'
+    )
+  }
+  return `any(http.request.headers["${CI_HEADER}"][*] eq "${secret}")`
+}
+
 const ALLOW_RULE = {
   description: `${TAG} allow social scrapers and verified search bots`,
   // `cf.client.bot` is true for bots Cloudflare verified via reverse DNS
@@ -319,7 +340,7 @@ const ALLOW_RULE = {
   // rate limit and Super Bot Fight Mode phases. NOTE: it does NOT exempt them
   // from free-plan Bot Fight Mode (that runs before these phases) — which is
   // why Bot Fight Mode is kept disabled below.
-  expression: `(cf.client.bot) or ${orExpr(SCRAPER_UAS)}`,
+  expression: `(cf.client.bot) or ${orExpr(SCRAPER_UAS)} or ${ciBypassExpr()}`,
   action: 'skip',
   action_parameters: {
     ruleset: 'current',

@@ -131,9 +131,18 @@ async function fetchText(url) {
   // unreadable, so a throttled run does not submit a thousand pages unchanged.
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
-      const res = await fetch(url, { headers: { 'User-Agent': BROWSER_UA } })
+      // The CI pass through the WAF (CI_HEADER in scripts/cf-waf-setup.mjs):
+      // CI runs on Azure, which the cloud-ASN block refuses.
+      const headers = { 'User-Agent': BROWSER_UA }
+      if (process.env.CI_WAF_BYPASS) {
+        headers['x-reely-ci'] = process.env.CI_WAF_BYPASS
+      }
+      const res = await fetch(url, { headers })
       if (res.ok) return await res.text()
       if (res.status === 404) return null
+      // A WAF refusal does not clear on retry; four tries with pauses across
+      // ~1,000 pages is what stalled the deploy for 40 minutes.
+      if (res.status === 403) return null
     } catch {
       // network blip: retry
     }
