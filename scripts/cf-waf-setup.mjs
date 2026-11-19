@@ -60,6 +60,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import { AI_CRAWLER_UAS } from './lib/ai-crawlers.mjs'
+import { cloudAsnExpr } from './lib/cloud-asn.mjs'
 import { loadLocalEnv } from './load-env.mjs'
 
 loadLocalEnv()
@@ -543,14 +544,19 @@ const uaEqAny = (uas) =>
 // and API calls. That is the trade, taken knowingly: the ten strings were 61%
 // of the entire zone, their daily counts sit within 6% of each other, and no
 // browser on that list has been current for two years.
+//
+// Also carries the cloud-ASN block (scripts/lib/cloud-asn.mjs) since
+// 2026-11-19: same action, same position, and the free plan's five custom rules
+// are all spent, so it is an `or` here rather than a sixth rule.
 const BLOCK_FROZEN_UAS_RULE = {
-  description: `${TAG} block frozen scraper fingerprints`,
+  description: `${TAG} block frozen scraper fingerprints and cloud scrapers`,
   expression:
-    `(${uaEqAny(STALE_BROWSER_UAS)})` +
+    `(((${uaEqAny(STALE_BROWSER_UAS)})` +
     ` and ${notAnyPath(EXEMPT_PATHS)}` +
     ` and ${NOT_MACHINE_PATH}` +
-    ` and ${PLAY_HOST_EXEMPT}` +
-    ` and not (${assetExpr()})`,
+    ` and not (${assetExpr()}))` +
+    ` or (${cloudAsnExpr()}))` +
+    ` and ${PLAY_HOST_EXEMPT}`,
   action: 'block',
 }
 
@@ -613,7 +619,7 @@ const RATELIMIT_RULE = {
   // limit and silently kill "load more" on scroll. Exclude genre paths (still
   // just starts_with, so free-plan compatible).
   expression:
-    '(starts_with(http.request.uri.path, "/movies/") or starts_with(http.request.uri.path, "/tv-shows/")) and not (starts_with(http.request.uri.path, "/movies/genre") or starts_with(http.request.uri.path, "/tv-shows/genre")) and not (starts_with(http.request.uri.path, "/movies/year") or starts_with(http.request.uri.path, "/tv-shows/year"))' +
+    '(starts_with(http.request.uri.path, "/movies/") or starts_with(http.request.uri.path, "/tv-shows/") or starts_with(http.request.uri.path, "/collection/") or starts_with(http.request.uri.path, "/api/media/") or starts_with(http.request.uri.path, "/api/collection/") or starts_with(http.request.uri.path, "/api/season-details")) and not (starts_with(http.request.uri.path, "/movies/genre") or starts_with(http.request.uri.path, "/tv-shows/genre")) and not (starts_with(http.request.uri.path, "/movies/year") or starts_with(http.request.uri.path, "/tv-shows/year"))' +
     ` and ${PLAY_HOST_EXEMPT}`,
   // Free plan only allows `block` for rate limits (no managed_challenge).
   action: 'block',
@@ -626,10 +632,16 @@ const RATELIMIT_RULE = {
   // prefetch + real page-views still stack up. 300 req/10s (~1800/min) sits well
   // above any real browse session while still blocking bulk scrapers that hammer
   // full HTML pages. Was 100/10s; a homepage of carousels tripped it on load.
+  //
+  // 120/10s since 2026-11-19, and the bucket now includes the Worker-billed JSON
+  // (/api/media|collection|season-details) and /collection/. The carousel storm
+  // that forced 300 was viewport prefetch, which is gone; one detail view is now
+  // the document plus one or two API calls, so 120 is still ~40 detail pages in
+  // 10 seconds. A single IP walking ids faster than that is a scrape.
   ratelimit: {
     characteristics: ['ip.src', 'cf.colo.id'],
     period: 10,
-    requests_per_period: 300,
+    requests_per_period: 120,
     mitigation_timeout: 10,
   },
 }

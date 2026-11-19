@@ -1,0 +1,60 @@
+# Is a scraper eating the Worker quota? Hourly, read-only.
+#
+# On 2026-11-19 a cloud-hosted fleet took the account to 93k of its 100k free
+# daily requests, and the first alarm was Cloudflare's own email near the cap.
+# This projects the last 3 hours account-wide (`pnpm cf:health 3 --quota`) and,
+# past 50% of the cap:
+#   - opens ONE issue labelled `quota` (GitHub notifies the repo owner) and fails;
+#   - on recovery, closes it with the passing report.
+name: Quota watch
+
+on:
+  schedule:
+    - cron: '37 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: quota-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - id: quota
+        continue-on-error: true
+        run: node scripts/cf-health.mjs 3 --quota | tee report.txt
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Open or close the quota issue
+        if: always()
+        run: |
+          set +e
+          gh label create quota --color B60205 --description 'Worker quota alarm' 2>/dev/null
+          open=$(gh issue list --label quota --state open --json number --jq '.[0].number')
+          body=$(printf '```\n%s\n```\n\n[Run](%s/%s/actions/runs/%s)' "$(cat report.txt)" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")
+          if [ "${{ steps.quota.outcome }}" = "failure" ]; then
+            if [ -z "$open" ]; then
+              gh issue create --label quota --title 'Worker quota past 50% of the free cap' --body "$body"
+            else
+              gh issue comment "$open" --body "$body"
+            fi
+            exit 1
+          elif [ -n "$open" ]; then
+            gh issue close "$open" --comment "$body"
+          fi
