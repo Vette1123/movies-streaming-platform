@@ -1,19 +1,14 @@
-// Inter glyph subsets bundled as base64 so OG / icon ImageResponse renders
-// don't make any network calls. Cloudflare Workers had ~50% of /opengraph-image
-// requests returning 503 (error 1102, CPU time exceeded) because fetching
-// Google Fonts CSS + woff2 on every render + Satori rasterization was tipping
-// over the worker CPU budget. WhatsApp scrapes once with no retry, so a single
-// 503 meant no preview when sharing reely.space.
+// Inter subsets bundled as base64 so the build-time card and icon renders
+// (pnpm og:build, pnpm icons:build) make no network calls. Each file covers
+// OG_GLYPHS in scripts/lib/og-glyphs.mjs, printable ASCII and a few symbols.
 //
-// To regenerate after editing the OG_INTER_GLYPHS_* strings below:
-//   pnpm fonts:og
+// To regenerate after changing that set: pnpm fonts:og
 
+import { INTER_500_TTF_B64 } from './inter-500'
 import { INTER_700_TTF_B64 } from './inter-700'
 import { INTER_900_TTF_B64 } from './inter-900'
 
-export const OG_INTER_GLYPHS_900 = 'Reely R'
-export const OG_INTER_GLYPHS_700 =
-  'Find what to watch, then keep track.Trending rails, deep filters, instant search, a watchlist and a watch history.OPEN SOURCEreely.spaceMOVIESTV SHOWSTRENDINGMade bymohamedgado.com'
+export type InterWeight = 500 | 700 | 900
 
 function decodeBase64(b64: string): ArrayBuffer {
   const bin = atob(b64)
@@ -22,12 +17,22 @@ function decodeBase64(b64: string): ArrayBuffer {
   return bytes.buffer
 }
 
-const INTER_700 = decodeBase64(INTER_700_TTF_B64)
-const INTER_900 = decodeBase64(INTER_900_TTF_B64)
+const INTER: Record<InterWeight, string> = {
+  500: INTER_500_TTF_B64,
+  700: INTER_700_TTF_B64,
+  900: INTER_900_TTF_B64,
+}
 
-export async function loadInter(
-  weight: 700 | 900,
-  _text: string
-): Promise<ArrayBuffer> {
-  return weight === 900 ? INTER_900 : INTER_700
+export function loadInter(weight: InterWeight): ArrayBuffer {
+  return decodeBase64(INTER[weight])
+}
+
+/** Inter at every bundled weight, for `new ImageResponse(el, { fonts })`. */
+export function interFonts() {
+  return ([500, 700, 900] as const).map((weight) => ({
+    name: 'Inter',
+    data: loadInter(weight),
+    weight,
+    style: 'normal' as const,
+  }))
 }

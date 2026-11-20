@@ -4,6 +4,7 @@ import { populateHomePageData } from '@/services/movies'
 
 import { siteConfig } from '@/config/site'
 import { resolveMediaType } from '@/lib/media'
+import { SITE_CARD } from '@/lib/og/share-image'
 import { feedAlternate, withSiteSocial } from '@/lib/page-metadata'
 import { getRatingsForItems } from '@/lib/ratings'
 import {
@@ -60,12 +61,12 @@ export const metadata: Metadata = withSiteSocial({
     description: HOME_DESCRIPTION,
     url: siteConfig.websiteURL,
     type: 'website',
-    images: '/opengraph-image.png',
+    images: SITE_CARD,
   },
   twitter: {
     title: `${siteConfig.name} — Discover & Track Movies and TV Shows`,
     description: HOME_DESCRIPTION,
-    images: '/opengraph-image.png',
+    images: SITE_CARD,
   },
 })
 

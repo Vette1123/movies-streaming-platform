@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { SITE_CARD } from '@/lib/og/share-image'
 import { withSiteSocial } from '@/lib/page-metadata'
 
 export const metadata: Metadata = withSiteSocial({
@@ -9,7 +10,7 @@ export const metadata: Metadata = withSiteSocial({
     'Start a title, share a code, and everyone stays on the same second — play, pause and seeks follow the host automatically, so movie night works from anywhere.',
   alternates: { canonical: '/watch-together' },
   openGraph: {
-    images: '/opengraph-image.png',
+    images: SITE_CARD,
     title: 'Watch Together (beta)',
     description: 'One code, same second, wherever everyone is.',
     url: `${siteConfig.websiteURL}/watch-together`,

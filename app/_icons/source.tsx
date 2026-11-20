@@ -190,7 +190,7 @@ export async function buildSplashInput(size: {
 }
 
 async function imageResponseOptions(width: number, height: number) {
-  const font = await loadInter(900, 'R')
+  const font = loadInter(900)
   return {
     width,
     height,

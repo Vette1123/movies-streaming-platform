@@ -2,6 +2,7 @@ import React from 'react'
 import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { SITE_CARD } from '@/lib/og/share-image'
 import { withSiteSocial } from '@/lib/page-metadata'
 import { DisclaimerContent } from '@/components/disclaimer/disclaimer-content'
 
@@ -22,13 +23,13 @@ export const metadata: Metadata = withSiteSocial({
     description: DESCRIPTION,
     url: `${siteConfig.websiteURL}/disclaimer`,
     type: 'article',
-    images: '/opengraph-image.png',
+    images: SITE_CARD,
   },
   twitter: {
     card: 'summary_large_image',
     title: `Disclaimer | ${siteConfig.name}`,
     description: DESCRIPTION,
-    images: '/opengraph-image.png',
+    images: SITE_CARD,
   },
 })
 

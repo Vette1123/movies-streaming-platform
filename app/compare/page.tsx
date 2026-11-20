@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { SITE_CARD } from '@/lib/og/share-image'
 import { withSiteSocial } from '@/lib/page-metadata'
 import { CompareView } from '@/components/profile/compare-view'
 
@@ -14,7 +15,7 @@ export const metadata: Metadata = withSiteSocial({
   // Without its own, a sent compare link unfurled as the homepage — and
   // sending the link is the whole point of this page.
   openGraph: {
-    images: '/opengraph-image.png',
+    images: SITE_CARD,
     title: 'Taste match',
     description:
       'Two Reely profiles, side by side: what you both rated highest.',

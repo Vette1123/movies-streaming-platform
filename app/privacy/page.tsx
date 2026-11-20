@@ -3,6 +3,7 @@ import Link from 'next/link'
 
 import { siteConfig } from '@/config/site'
 import { PRO_EMAIL, SUPPORT_EMAIL, supportMailto } from '@/config/support'
+import { SITE_CARD } from '@/lib/og/share-image'
 import { withSiteSocial } from '@/lib/page-metadata'
 import { LegalPage } from '@/components/legal/legal-page'
 
@@ -16,7 +17,7 @@ export const metadata: Metadata = withSiteSocial({
     description: `What ${siteConfig.name} stores, what it does not, and how to delete it.`,
     url: `${siteConfig.websiteURL}/privacy`,
     type: 'article',
-    images: '/opengraph-image.png',
+    images: SITE_CARD,
   },
 })
 

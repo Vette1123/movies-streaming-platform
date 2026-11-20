@@ -16,6 +16,7 @@ import {
   SUPPORT_FEATURE_GROUPS,
   TV_FEATURE,
 } from '@/config/support-features'
+import { SITE_CARD } from '@/lib/og/share-image'
 import { withSiteSocial } from '@/lib/page-metadata'
 import { pageTitle } from '@/lib/seo-title'
 import { cn } from '@/lib/utils'
@@ -33,7 +34,7 @@ export const metadata: Metadata = withSiteSocial({
   description: `Reely is free and stays free. Supporting it keeps your library on every device, unlocks lists, alerts and more, and pays for the servers that keep it running.`,
   alternates: { canonical: '/support' },
   openGraph: {
-    images: '/opengraph-image.png',
+    images: SITE_CARD,
     title: `Support ${siteConfig.name}`,
     description:
       'Free stays free. Support keeps your library everywhere and pays the bills.',
