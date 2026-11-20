@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { SITE_CARD } from '@/lib/og/share-image'
 import { withSiteSocial } from '@/lib/page-metadata'
 
 export const metadata: Metadata = withSiteSocial({
@@ -9,7 +10,7 @@ export const metadata: Metadata = withSiteSocial({
     'Pick a mood — cozy, adrenaline, mind-bending, scare me — and get a hand-tuned stack of movies and shows that fit it right now, with trailers and where to watch.',
   alternates: { canonical: '/mood' },
   openGraph: {
-    images: '/opengraph-image.png',
+    images: SITE_CARD,
     title: "What's your mood?",
     description: 'Pick a mood, get the stack that fits it.',
     url: `${siteConfig.websiteURL}/mood`,

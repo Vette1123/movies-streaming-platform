@@ -11,6 +11,7 @@ import { APPEARANCE_BOOT_SCRIPT } from '@/lib/appearance'
 import { RETURNING_SCRIPT } from '@/lib/back-restore'
 import { fontSans } from '@/lib/fonts'
 import { IMAGE_RESCUE_SCRIPT } from '@/lib/image-rescue'
+import { SITE_CARD } from '@/lib/og/share-image'
 import { feedAlternate } from '@/lib/page-metadata'
 import {
   JsonLd,
@@ -121,15 +122,7 @@ export const metadata: Metadata = {
     description: siteConfig.description,
     url: siteConfig.websiteURL,
     ttl: siteConfig.openGraph.ttl,
-    images: [
-      {
-        url: '/opengraph-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'Reely — Watch movies & TV shows free. Discover, track, and stream.',
-        type: 'image/png',
-      },
-    ],
+    images: [SITE_CARD],
   },
 
   twitter: {
@@ -138,7 +131,7 @@ export const metadata: Metadata = {
     creator: siteConfig.twitter.creator,
     title: `${siteConfig.name} — Movie & TV Show Tracker`,
     description: siteConfig.description,
-    images: ['/opengraph-image.png'],
+    images: [SITE_CARD],
   },
 
   appleWebApp: {

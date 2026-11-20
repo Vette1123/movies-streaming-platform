@@ -5,6 +5,7 @@ import { Mail } from 'lucide-react'
 import { PLACEMENTS, type Offer } from '@/config/offers'
 import { siteConfig } from '@/config/site'
 import { GITHUB_SPONSORS_URL, PRO_EMAIL, sponsorMailto } from '@/config/support'
+import { SITE_CARD } from '@/lib/og/share-image'
 import { withSiteSocial } from '@/lib/page-metadata'
 import { pageTitle } from '@/lib/seo-title'
 import { cn } from '@/lib/utils'
@@ -19,7 +20,7 @@ export const metadata: Metadata = withSiteSocial({
     'Sponsor Reely: one card on nearly every page, homepage to episode pages. One sponsor at a time, booked by the month or paid per order, with your coupon on it.',
   alternates: { canonical: '/advertise' },
   openGraph: {
-    images: '/opengraph-image.png',
+    images: SITE_CARD,
     title: `Advertise on ${siteConfig.name}`,
     description:
       'One sponsor card on nearly every page. One sponsor at a time, your coupon on it.',

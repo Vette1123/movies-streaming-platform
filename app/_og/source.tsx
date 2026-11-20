@@ -1,421 +1,530 @@
 // Design source for /opengraph-image.png.
 //
-// This file is intentionally inside `app/_og/` (leading-underscore = private
-// folder, not a route). The PNG is generated at build time by
-// `pnpm og:build` and committed at `public/opengraph-image.png` so the
-// preview never hits the worker — WhatsApp's one-shot scrape stays reliable.
+// Private folder (leading underscore), not a route. `pnpm og:build` renders it
+// once and the PNG is committed at `public/opengraph-image.png`, so an unfurl
+// never touches the Worker (WhatsApp scrapes once, with no retry).
 //
-// To change the OG design: edit the JSX below, then run `pnpm og:build`,
-// commit `public/opengraph-image.png`, deploy.
+// To change the card: edit OG_COPY or the JSX, run `pnpm og:build`, LOOK at
+// the PNG, commit it. Copy follows the launch-kit rule (docs/marketing/
+// launch-kit.md): the catalogue and the tracking, never a streaming pitch.
+// tests/og-card.test.ts checks the wording and that every character is in the
+// bundled font subset.
 
-import {
-  loadInter,
-  OG_INTER_GLYPHS_700,
-  OG_INTER_GLYPHS_900,
-} from '../_fonts/load'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
-export const OG_ALT =
-  'Reely — Watch movies & TV shows free. Discover, track, and stream.'
+import { interFonts } from '../_fonts/load'
+
 export const OG_SIZE = { width: 1200, height: 630 }
 export const OG_CONTENT_TYPE = 'image/png'
 
-export async function buildOpenGraphImageInput() {
-  const [interBlack, interBold] = await Promise.all([
-    loadInter(900, OG_INTER_GLYPHS_900),
-    loadInter(700, OG_INTER_GLYPHS_700),
-  ])
+export const OG_COPY = {
+  badge: 'Open source',
+  label: 'Movie & TV tracker',
+  statement: 'Find what to watch.',
+  promise: 'Then keep track.',
+  tagline:
+    'Trending rails, four rating sources on every title, deep filters, a watchlist and a watch history.',
+  rating: '8.6',
+  toast: 'Added to watchlist',
+  upNext: 'Up next · S2 E4',
+  chips: ['Movies', 'TV shows', 'Every rating'],
+  host: 'reely.space',
+}
 
-  const jsx = (
+const BLUE_GRADIENT =
+  'linear-gradient(100deg, #93c5fd 0%, #60a5fa 45%, #818cf8 100%)'
+
+/** Poster art: drawn gradients, never real artwork, so the card owns every pixel. */
+const POSTERS = [
+  {
+    art: 'linear-gradient(160deg, #f59e0b 0%, #b45309 45%, #1c0a02 100%)',
+    tilt: -11,
+    x: 0,
+    y: 34,
+  },
+  {
+    art: 'linear-gradient(160deg, #a78bfa 0%, #4c1d95 50%, #0b0420 100%)',
+    tilt: 10,
+    x: 196,
+    y: 30,
+  },
+]
+
+function brandMark() {
+  const png = readFileSync(
+    join(process.cwd(), 'public', 'android-chrome-192x192.png')
+  )
+  return `data:image/png;base64,${png.toString('base64')}`
+}
+
+function Star({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#fbbf24">
+      <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" />
+    </svg>
+  )
+}
+
+function Check({ size, stroke }: { size: number; stroke: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={stroke}
+      strokeWidth="3.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
+  )
+}
+
+/** Title and meta lines on a poster, as bars: the shape of a card, no words to translate. */
+function PosterLines({ width }: { width: number }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div
+        style={{
+          display: 'flex',
+          width,
+          height: 12,
+          borderRadius: 999,
+          background: 'rgba(255,255,255,0.85)',
+        }}
+      />
+      <div
+        style={{
+          display: 'flex',
+          width: width * 0.55,
+          height: 9,
+          borderRadius: 999,
+          background: 'rgba(255,255,255,0.45)',
+        }}
+      />
+    </div>
+  )
+}
+
+function SidePoster({ art, tilt, x, y }: (typeof POSTERS)[number]) {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: x,
+        top: y,
+        width: 190,
+        height: 285,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        padding: 18,
+        borderRadius: 22,
+        backgroundImage: art,
+        border: '1px solid rgba(255,255,255,0.14)',
+        boxShadow: '0 30px 60px rgba(0,0,0,0.55)',
+        transform: `rotate(${tilt}deg)`,
+        opacity: 0.88,
+      }}
+    >
+      <PosterLines width={110} />
+    </div>
+  )
+}
+
+/** The front poster: the title a visitor just found, with its rating and a play button. */
+function HeroPoster() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: 92,
+        top: 0,
+        width: 220,
+        height: 330,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        padding: 18,
+        borderRadius: 26,
+        backgroundImage:
+          'radial-gradient(circle at 70% 18%, rgba(147,197,253,0.65) 0%, rgba(147,197,253,0) 45%), linear-gradient(165deg, #2563eb 0%, #1e3a8a 50%, #050a1f 100%)',
+        border: '1px solid rgba(147,197,253,0.45)',
+        boxShadow:
+          '0 40px 80px rgba(0,0,0,0.6), 0 0 70px rgba(59,130,246,0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '6px 12px',
+            borderRadius: 999,
+            fontSize: 20,
+            fontWeight: 900,
+            color: '#fef3c7',
+            background: 'rgba(2,5,20,0.6)',
+            border: '1px solid rgba(251,191,36,0.4)',
+          }}
+        >
+          <Star size={18} />
+          {OG_COPY.rating}
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div
+          style={{
+            width: 72,
+            height: 72,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 999,
+            background: 'rgba(255,255,255,0.16)',
+            border: '1.5px solid rgba(255,255,255,0.55)',
+          }}
+        >
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="#ffffff">
+            <path d="M8 5.5v13l11-6.5z" />
+          </svg>
+        </div>
+      </div>
+      <PosterLines width={140} />
+    </div>
+  )
+}
+
+function UpNext() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        right: -18,
+        top: 74,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 9,
+        padding: '12px 16px',
+        borderRadius: 16,
+        fontSize: 17,
+        fontWeight: 700,
+        color: '#dbeafe',
+        background: 'rgba(8,14,38,0.92)',
+        border: '1px solid rgba(96,165,250,0.35)',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+      }}
+    >
+      {OG_COPY.upNext}
+      <div
+        style={{
+          display: 'flex',
+          width: 150,
+          height: 6,
+          borderRadius: 999,
+          background: 'rgba(255,255,255,0.12)',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            width: 96,
+            height: 6,
+            borderRadius: 999,
+            backgroundImage: BLUE_GRADIENT,
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function WatchlistToast() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: 4,
+        bottom: 0,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 11,
+        padding: '12px 18px',
+        borderRadius: 16,
+        fontSize: 18,
+        fontWeight: 700,
+        color: '#dcfce7',
+        background: 'rgba(6,26,20,0.95)',
+        border: '1px solid rgba(74,222,128,0.42)',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.55)',
+      }}
+    >
+      <div
+        style={{
+          width: 26,
+          height: 26,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 999,
+          background: '#22c55e',
+        }}
+      >
+        <Check size={15} stroke="#052e16" />
+      </div>
+      {OG_COPY.toast}
+    </div>
+  )
+}
+
+/** What the product does, drawn: a found title, fanned between two more, then tracked. */
+function Scene() {
+  return (
+    <div
+      style={{ display: 'flex', position: 'relative', width: 390, height: 370 }}
+    >
+      {POSTERS.map((poster) => (
+        <SidePoster key={poster.art} {...poster} />
+      ))}
+      <HeroPoster />
+      <UpNext />
+      <WatchlistToast />
+    </div>
+  )
+}
+
+function Chips() {
+  return (
+    <div style={{ display: 'flex', gap: 12 }}>
+      {OG_COPY.chips.map((label) => (
+        <div
+          key={label}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 9,
+            padding: '10px 18px',
+            borderRadius: 999,
+            fontSize: 19,
+            fontWeight: 700,
+            color: 'rgba(226,232,240,0.85)',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+          }}
+        >
+          <Check size={16} stroke="#60a5fa" />
+          {label}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function openGraphCard() {
+  return (
     <div
       style={{
         width: '100%',
         height: '100%',
         display: 'flex',
-        background: '#020514',
-        padding: 24,
+        position: 'relative',
         fontFamily: 'Inter',
+        color: '#f8fafc',
+        background: '#020514',
+        overflow: 'hidden',
       }}
     >
       <div
         style={{
-          flex: 1,
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          background:
+            'radial-gradient(ellipse 680px 460px at 0% 0%, rgba(37,99,235,0.34) 0%, transparent 70%), radial-gradient(ellipse 620px 520px at 100% 100%, rgba(99,102,241,0.3) 0%, transparent 70%), radial-gradient(ellipse 420px 320px at 80% 30%, rgba(59,130,246,0.22) 0%, transparent 70%)',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          opacity: 0.5,
+          backgroundImage:
+            'linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
+        }}
+      />
+
+      <div
+        style={{
+          position: 'relative',
           display: 'flex',
           flexDirection: 'column',
-          position: 'relative',
-          overflow: 'hidden',
-          borderRadius: 28,
-          border: '1px solid rgba(96,165,250,0.25)',
-          backgroundImage:
-            'radial-gradient(150% 120% at 100% 0%, #1e3a8a 0%, #0c1e4d 35%, #060b1f 70%, #020514 100%)',
+          width: '100%',
+          height: '100%',
+          padding: '52px 60px',
         }}
       >
         <div
           style={{
-            position: 'absolute',
-            top: -260,
-            right: -180,
-            width: 720,
-            height: 720,
-            background:
-              'radial-gradient(circle, rgba(96,165,250,0.30), rgba(96,165,250,0) 65%)',
             display: 'flex',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: -240,
-            left: -200,
-            width: 620,
-            height: 620,
-            background:
-              'radial-gradient(circle, rgba(59,130,246,0.10), rgba(59,130,246,0) 70%)',
-            display: 'flex',
-          }}
-        />
-
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 1,
-            background:
-              'linear-gradient(90deg, rgba(148,163,184,0) 0%, rgba(148,163,184,0.35) 50%, rgba(148,163,184,0) 100%)',
-            display: 'flex',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 1,
-            background:
-              'linear-gradient(90deg, rgba(148,163,184,0) 0%, rgba(148,163,184,0.35) 50%, rgba(148,163,184,0) 100%)',
-            display: 'flex',
-          }}
-        />
-
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '46px 64px 0',
+            justifyContent: 'space-between',
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              padding: '8px 18px',
-              borderRadius: 999,
-              border: '1px solid rgba(96,165,250,0.35)',
-              background: 'rgba(30,58,138,0.25)',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                width: 8,
-                height: 8,
-                borderRadius: 4,
-                background: '#60a5fa',
-                marginRight: 12,
-                boxShadow: '0 0 12px rgba(96,165,250,0.9)',
-              }}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- satori, not the DOM */}
+            <img
+              src={brandMark()}
+              width={54}
+              height={54}
+              alt=""
+              style={{ borderRadius: 14 }}
             />
             <div
               style={{
                 display: 'flex',
-                fontSize: 18,
-                color: '#cbd5e1',
-                fontWeight: 700,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
+                fontSize: 34,
+                fontWeight: 900,
+                letterSpacing: -1,
               }}
             >
-              Open source
+              Reely
             </div>
           </div>
-
           <div
             style={{
               display: 'flex',
-              fontSize: 18,
-              color: '#64748b',
+              alignItems: 'center',
+              gap: 10,
+              padding: '10px 20px',
+              borderRadius: 999,
+              fontSize: 19,
               fontWeight: 700,
-              letterSpacing: '0.32em',
-              textTransform: 'uppercase',
+              color: '#bfdbfe',
+              background: 'rgba(37,99,235,0.14)',
+              border: '1px solid rgba(96,165,250,0.4)',
             }}
           >
-            reely.space
+            <div
+              style={{
+                display: 'flex',
+                width: 9,
+                height: 9,
+                borderRadius: 999,
+                background: '#60a5fa',
+                boxShadow: '0 0 12px #60a5fa',
+              }}
+            />
+            {OG_COPY.badge}
           </div>
         </div>
 
         <div
           style={{
             display: 'flex',
-            alignItems: 'center',
             flex: 1,
-            padding: '0 64px',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
-              flex: 1,
-              maxWidth: 720,
+              gap: 20,
+              width: 650,
             }}
           >
             <div
               style={{
                 display: 'flex',
-                fontSize: 188,
-                fontWeight: 900,
-                color: 'transparent',
-                letterSpacing: '-0.07em',
-                lineHeight: 0.95,
-                backgroundImage:
-                  'linear-gradient(180deg, #ffffff 0%, #93c5fd 60%, #3b82f6 100%)',
-                backgroundClip: 'text',
-              }}
-            >
-              Reely
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                fontSize: 38,
-                color: '#e2e8f0',
-                marginTop: 24,
+                fontSize: 20,
                 fontWeight: 700,
-                letterSpacing: '-0.012em',
-                lineHeight: 1.15,
+                letterSpacing: 2.6,
+                textTransform: 'uppercase',
+                color: '#93c5fd',
               }}
             >
-              Find what to watch, then keep track.
+              {OG_COPY.label}
             </div>
-
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  fontSize: 66,
+                  fontWeight: 900,
+                  letterSpacing: -2.4,
+                  lineHeight: 1.05,
+                }}
+              >
+                {OG_COPY.statement}
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  fontSize: 66,
+                  fontWeight: 900,
+                  letterSpacing: -2.4,
+                  lineHeight: 1.05,
+                  color: 'transparent',
+                  backgroundImage: BLUE_GRADIENT,
+                  backgroundClip: 'text',
+                }}
+              >
+                {OG_COPY.promise}
+              </div>
+            </div>
             <div
               style={{
                 display: 'flex',
                 fontSize: 24,
-                color: '#94a3b8',
-                marginTop: 18,
                 fontWeight: 500,
                 lineHeight: 1.45,
-                maxWidth: 640,
+                color: 'rgba(203,213,225,0.82)',
+                width: 590,
               }}
             >
-              Trending rails, deep filters, instant search, a watchlist and a
-              watch history.
+              {OG_COPY.tagline}
             </div>
           </div>
-
-          <div
-            style={{
-              display: 'flex',
-              marginLeft: 24,
-              marginRight: 8,
-              position: 'relative',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <svg
-              width="280"
-              height="280"
-              viewBox="0 0 280 280"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <defs>
-                <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#3b82f6" />
-                  <stop offset="55%" stopColor="#1d4ed8" />
-                  <stop offset="100%" stopColor="#0c1e4d" />
-                </linearGradient>
-                <radialGradient id="hl" cx="22%" cy="18%" r="55%">
-                  <stop offset="0%" stopColor="#ffffff" stopOpacity="0.55" />
-                  <stop offset="55%" stopColor="#ffffff" stopOpacity="0.08" />
-                  <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-                </radialGradient>
-                <radialGradient id="sh" cx="78%" cy="82%" r="55%">
-                  <stop offset="0%" stopColor="#020514" stopOpacity="0.5" />
-                  <stop offset="100%" stopColor="#020514" stopOpacity="0" />
-                </radialGradient>
-              </defs>
-              <rect
-                x="2"
-                y="2"
-                width="276"
-                height="276"
-                rx="46"
-                fill="none"
-                stroke="rgba(96,165,250,0.35)"
-                strokeWidth="1"
-              />
-              <rect
-                x="8"
-                y="8"
-                width="264"
-                height="264"
-                rx="42"
-                fill="url(#card)"
-              />
-              <rect
-                x="8"
-                y="8"
-                width="264"
-                height="264"
-                rx="42"
-                fill="url(#hl)"
-              />
-              <rect
-                x="8"
-                y="8"
-                width="264"
-                height="264"
-                rx="42"
-                fill="url(#sh)"
-              />
-              <rect
-                x="8.5"
-                y="8.5"
-                width="263"
-                height="263"
-                rx="41.5"
-                fill="none"
-                stroke="rgba(255,255,255,0.22)"
-                strokeWidth="1"
-              />
-              <path d="M 114 92 L 114 188 L 196 140 Z" fill="#ffffff" />
-            </svg>
-          </div>
+          <Scene />
         </div>
 
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '0 64px 46px',
+            justifyContent: 'space-between',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div
-              style={{
-                display: 'flex',
-                fontSize: 18,
-                color: '#64748b',
-                fontWeight: 500,
-                letterSpacing: '0.06em',
-              }}
-            >
-              Made by
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                fontSize: 18,
-                color: '#cbd5e1',
-                fontWeight: 700,
-                letterSpacing: '0.06em',
-                marginLeft: 8,
-              }}
-            >
-              mohamedgado.com
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div
-              style={{
-                display: 'flex',
-                fontSize: 16,
-                color: '#475569',
-                fontWeight: 600,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-              }}
-            >
-              Movies
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                width: 4,
-                height: 4,
-                borderRadius: 2,
-                background: '#3b82f6',
-                marginLeft: 14,
-                marginRight: 14,
-              }}
-            />
-            <div
-              style={{
-                display: 'flex',
-                fontSize: 16,
-                color: '#475569',
-                fontWeight: 600,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-              }}
-            >
-              TV Shows
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                width: 4,
-                height: 4,
-                borderRadius: 2,
-                background: '#3b82f6',
-                marginLeft: 14,
-                marginRight: 14,
-              }}
-            />
-            <div
-              style={{
-                display: 'flex',
-                fontSize: 16,
-                color: '#475569',
-                fontWeight: 600,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-              }}
-            >
-              Trending
-            </div>
+          <Chips />
+          <div
+            style={{
+              display: 'flex',
+              fontSize: 20,
+              fontWeight: 700,
+              color: 'rgba(148,163,184,0.75)',
+            }}
+          >
+            {OG_COPY.host}
           </div>
         </div>
       </div>
     </div>
   )
+}
 
-  return {
-    jsx,
-    options: {
-      ...OG_SIZE,
-      fonts: [
-        {
-          name: 'Inter',
-          data: interBlack,
-          weight: 900,
-          style: 'normal' as const,
-        },
-        {
-          name: 'Inter',
-          data: interBold,
-          weight: 700,
-          style: 'normal' as const,
-        },
-      ],
-    },
-  }
+export async function buildOpenGraphImageInput() {
+  return { jsx: openGraphCard(), options: { ...OG_SIZE, fonts: interFonts() } }
 }

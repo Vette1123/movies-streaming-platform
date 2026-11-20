@@ -8,6 +8,7 @@ import {
   supportMailto,
   supportPriceLine,
 } from '@/config/support'
+import { SITE_CARD } from '@/lib/og/share-image'
 import { withSiteSocial } from '@/lib/page-metadata'
 import { LegalPage } from '@/components/legal/legal-page'
 
@@ -23,7 +24,7 @@ export const metadata: Metadata = withSiteSocial({
     description: DESCRIPTION,
     url: `${siteConfig.websiteURL}/terms`,
     type: 'article',
-    images: '/opengraph-image.png',
+    images: SITE_CARD,
   },
 })
 

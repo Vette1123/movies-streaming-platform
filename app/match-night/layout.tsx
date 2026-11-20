@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { SITE_CARD } from '@/lib/og/share-image'
 import { withSiteSocial } from '@/lib/page-metadata'
 
 export const metadata: Metadata = withSiteSocial({
@@ -9,7 +10,7 @@ export const metadata: Metadata = withSiteSocial({
     'Two people, one deck, one code. Swipe what you would watch tonight — when you both like the same title, it is a match and the movie-night decision is made.',
   alternates: { canonical: '/match-night' },
   openGraph: {
-    images: '/opengraph-image.png',
+    images: SITE_CARD,
     title: 'Match Night',
     description: 'Swipe together, match on a title, stop arguing.',
     url: `${siteConfig.websiteURL}/match-night`,

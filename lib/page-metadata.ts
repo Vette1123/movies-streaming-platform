@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
+import { SITE_CARD } from '@/lib/og/share-image'
 
 type OpenGraph = NonNullable<Metadata['openGraph']>
 type OgImages = OpenGraph['images']
@@ -63,7 +64,7 @@ const ownOpenGraph = (meta: Metadata): OpenGraph | undefined => {
 export function withSiteSocial(meta: Metadata): Metadata {
   const og = ownOpenGraph(meta)
   if (!og) return meta
-  const images = og.images ?? '/opengraph-image.png'
+  const images = og.images ?? SITE_CARD
   const twitter = meta.twitter ?? {}
   return {
     ...meta,

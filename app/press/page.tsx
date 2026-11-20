@@ -3,6 +3,7 @@ import { Metadata } from 'next'
 
 import { siteConfig } from '@/config/site'
 import { SUPPORT_EMAIL, supportMailto } from '@/config/support'
+import { SITE_CARD } from '@/lib/og/share-image'
 import { withSiteSocial } from '@/lib/page-metadata'
 import { JsonLd } from '@/lib/structured-data'
 
@@ -26,16 +27,14 @@ export const metadata: Metadata = withSiteSocial({
       'A free movie and TV tracker: four rating sources on every title, a page for every actor and director, no account to start.',
     url: `${siteConfig.websiteURL}/press`,
     type: 'website',
-    images: [
-      { url: '/opengraph-image.png', width: 1200, height: 630, alt: 'Reely' },
-    ],
+    images: [SITE_CARD],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Reely — press kit',
     description:
       'A free movie and TV tracker: four rating sources on every title, a page for every actor and director, no account to start.',
-    images: ['/opengraph-image.png'],
+    images: [SITE_CARD],
   },
 })
 

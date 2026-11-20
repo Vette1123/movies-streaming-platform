@@ -5,6 +5,7 @@ import { getPeopleWithPages } from '@/services/people'
 
 import { siteConfig } from '@/config/site'
 import { hubPortraitSrc } from '@/lib/image-loader'
+import { SITE_CARD } from '@/lib/og/share-image'
 import { withSiteSocial } from '@/lib/page-metadata'
 import { breadcrumbJsonLd, itemListJsonLd, JsonLd } from '@/lib/structured-data'
 import { getPosterImageURL } from '@/lib/utils'
@@ -22,7 +23,7 @@ export const metadata: Metadata = withSiteSocial({
   description: DESCRIPTION,
   alternates: { canonical: '/people' },
   openGraph: {
-    images: '/opengraph-image.png',
+    images: SITE_CARD,
     title: `${TITLE} on ${siteConfig.name}`,
     description: DESCRIPTION,
     url: `${siteConfig.websiteURL}/people`,

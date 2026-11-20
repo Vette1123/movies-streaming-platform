@@ -24,9 +24,10 @@ first gallery image on the Product Hunt draft. Until 31 Aug 2026 it read "FREE
 TO STREAM / Watch movies & TV shows. Free. … no signup, no paywall" — the exact
 framing the paragraph above forbids, shipping on every share while the written
 copy stayed careful. It now reads "OPEN SOURCE / Find what to watch, then keep
-track." Re-read the image, not just the file, after `pnpm og:build` (and run
-`pnpm fonts:og` first — the glyph subset in `app/_fonts/load.ts` is built from
-that exact string, so new characters render as blanks otherwise).
+track." Since 20 Nov 2026 it reads "MOVIE & TV TRACKER / Find what to watch. Then keep
+track." over a drawn poster fan. Re-read the image, not just the file, after
+`pnpm og:build`. `tests/og-card.test.ts` checks the card's words against this
+rule and against the bundled font subset (`scripts/lib/og-glyphs.mjs`).
 
 ## Copy, at the lengths listings actually ask for
 

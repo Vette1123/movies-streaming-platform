@@ -2,6 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
+import { SITE_CARD } from '@/lib/og/share-image'
 import { withSiteSocial } from '@/lib/page-metadata'
 
 // Next replaces openGraph/twitter wholesale instead of merging them with the
@@ -19,7 +20,7 @@ describe('withSiteSocial', () => {
       siteName: 'Reely',
       locale: 'en_US',
       type: 'website',
-      images: '/opengraph-image.png',
+      images: SITE_CARD,
     })
   })
 
