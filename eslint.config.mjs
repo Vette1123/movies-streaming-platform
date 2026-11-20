@@ -10,6 +10,7 @@ const config = [
     // that has never run `build:worker` lints clean without this.
     ignores: [
       'dist/**',
+      'video/**',
       '.cache/**',
       'public/**',
       'node_modules/**',

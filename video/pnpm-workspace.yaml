@@ -1,0 +1,3 @@
+# Its own root, so an install here never touches the site's lockfile.
+packages: []
+minimumReleaseAge: 0

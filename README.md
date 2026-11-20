@@ -16,6 +16,12 @@
 
 ### 🚀 [Watch on Reely Space →](https://www.reely.space)
 
+### 🎬 Watch the 26-second film
+
+[![The Reely film: find what to watch, then keep track. Play the 1080p60 cut](docs/films/reely-film-poster.jpg)](docs/films/reely-film-1080p60.mp4)
+
+[1080p, 16:9](docs/films/reely-film-1080p60.mp4) · [vertical 9:16 for Reels, TikTok and Shorts](docs/films/reely-reel-9x16-60.mp4). Both are 60 fps, cut to their own soundtrack and built from real screens of the app ([`video/`](video/README.md)).
+
 Browse trending titles, open detail pages, and pick up where you left off, all from one keyboard-friendly UI.
 
 Reely is a movie and TV show tracker built on the TMDB API. It is prerendered to static assets for speed, animated, and instrumented with PostHog analytics.
