@@ -215,3 +215,4 @@ with the work, not after.
 | 2026-11-19 | [Relay watchdog](2026-11-19-relay-watchdog.md) | Email Routing only mails verified destinations, and the draft had primary/fallback swapped; check both against the live system. |
 | 2026-11-19 | [Cloud-hosted scraper fleet](2026-11-19-cloud-asn-fleet.md) | UA lists only catch the last attacker; block cloud ASNs on Worker-billed paths and watch the quota hourly. |
 | 2026-11-20 | [Managed Challenge on Worker pages and APIs](2026-11-20-managed-challenge.md) | A challenged fetch cannot be solved; give the browser a top-level hop, installed before the first query. |
+| 2026-11-20 | [Meta AI search crawler + `/null` 404s](2026-11-20-meta-webindexer.md) | Meta has two crawlers (`meta-externalagent`, `meta-webindexer`); allow both, and read a path shape before grepping for a bad id. |

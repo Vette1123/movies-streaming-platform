@@ -94,6 +94,14 @@ describe('AI crawlers', () => {
     return named ? userAgent : '*'
   }
 
+  // 2026-11-20: Meta AI search fetches pages as meta-webindexer, not
+  // meta-externalagent, and took a 403 on every Worker-rendered detail page.
+  it('lets Meta AI search index the site, not only learn from it', () => {
+    expect(wanted).toEqual(
+      expect.arrayContaining(['meta-webindexer', 'meta-externalagent'])
+    )
+  })
+
   it.each(wanted)('%s may crawl a detail page', (userAgent) => {
     expect(allowedFor(groupFor(userAgent), '/movies/16619')).toBe(true)
   })
