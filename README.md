@@ -1,5 +1,5 @@
 <a href="https://www.reely.space">
-  <img src="./public/opengraph-image.png" alt="Reely — discover, track, and stream movies and TV shows" width="100%" />
+  <img src="./public/opengraph-image.png" alt="Reely, the open-source movie and TV tracker: find what to watch, then keep track." width="100%" />
 </a>
 
 # 🎬 Reely
@@ -9,7 +9,7 @@
 [![Deploy](https://github.com/Vette1123/movies-streaming-platform/actions/workflows/deploy.yml/badge.svg)](https://github.com/Vette1123/movies-streaming-platform/actions/workflows/deploy.yml)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38BDF8?logo=tailwindcss&logoColor=white)
 ![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)
 ![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=pwa&logoColor=white)
