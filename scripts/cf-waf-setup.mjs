@@ -61,7 +61,7 @@ import { fileURLToPath } from 'node:url'
 
 import { AI_CRAWLER_UAS } from './lib/ai-crawlers.mjs'
 import { challengeExpr } from './lib/challenge.mjs'
-import { cloudAsnExpr } from './lib/cloud-asn.mjs'
+import { cloudAsnExpr, trustedBotExpr } from './lib/cloud-asn.mjs'
 import { loadLocalEnv } from './load-env.mjs'
 
 loadLocalEnv()
@@ -340,7 +340,9 @@ const ALLOW_RULE = {
   // rate limit and Super Bot Fight Mode phases. NOTE: it does NOT exempt them
   // from free-plan Bot Fight Mode (that runs before these phases) — which is
   // why Bot Fight Mode is kept disabled below.
-  expression: `(cf.client.bot) or ${orExpr(SCRAPER_UAS)} or ${ciBypassExpr()}`,
+  // A verified bot on a cloud network must also name itself to skip (see
+  // trustedBotExpr): the 2026-11-20 fleet was verified and anonymous.
+  expression: `${trustedBotExpr()} or ${orExpr(SCRAPER_UAS)} or ${ciBypassExpr()}`,
   action: 'skip',
   action_parameters: {
     ruleset: 'current',

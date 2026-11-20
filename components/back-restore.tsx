@@ -93,6 +93,15 @@ export function BackRestore() {
       clearTimeout(timer)
       timer = setTimeout(flush, SAVE_DELAY_MS)
     }
+    // `manual` is stored on the history entry, so a refresh used to load with
+    // the browser's own restore switched off: the page painted at the top (the
+    // hero) and jumped down once this effect ran. Handing the entry back to the
+    // browser as the document goes lets a refresh or a full-page Back restore
+    // before the first paint; restoreScroll above only corrects what moved.
+    const onPageHide = () => {
+      flush()
+      history.scrollRestoration = 'auto'
+    }
     // A pathname that did not change is a dialog or a filter, not a new page.
     const onPopState = () => {
       if (location.pathname !== lastPath.current) markBack()
@@ -105,13 +114,13 @@ export function BackRestore() {
     window.addEventListener('popstate', onPopState)
     // A tap can land inside the delay after the scroll that found the poster.
     document.addEventListener('click', flush, true)
-    window.addEventListener('pagehide', flush)
+    window.addEventListener('pagehide', onPageHide)
     return () => {
       clearTimeout(timer)
       window.removeEventListener('scroll', onScroll, { capture: true })
       window.removeEventListener('popstate', onPopState)
       document.removeEventListener('click', flush, true)
-      window.removeEventListener('pagehide', flush)
+      window.removeEventListener('pagehide', onPageHide)
     }
   }, [])
 

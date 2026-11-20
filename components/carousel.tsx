@@ -250,6 +250,15 @@ export function Carousel({
     [handleHoverStart]
   )
 
+  // A mouse entering or a key focusing the stage comes a few hundred ms before
+  // its arrow click or arrow key: enough to decode the neighbour it reveals,
+  // which before the idle slot would slide in as the black base.
+  const onStageEnter = React.useCallback(() => {
+    setNeighboursReady(true)
+    handleHoverStart()
+  }, [handleHoverStart])
+  const readyNeighbours = React.useCallback(() => setNeighboursReady(true), [])
+
   const onStageClickCapture = React.useCallback((e: React.MouseEvent) => {
     const click = { x: e.clientX, y: e.clientY, detail: e.detail }
     if (!isSwipeClick(pointerDownRef.current, click)) return
@@ -581,7 +590,8 @@ export function Carousel({
         // focus-visible keeps the ring for keyboard users and drops it for
         // pointer input, which is exactly who was seeing the border.
         className={`group relative overflow-hidden outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white/70 ${stageClassName}`}
-        onMouseEnter={handleHoverStart}
+        onMouseEnter={onStageEnter}
+        onFocus={readyNeighbours}
         onMouseLeave={handleHoverEnd}
         // A phone has no hover, so nothing ever froze the rotation while a
         // finger was on its way to Watch Now — the slide could change out from
