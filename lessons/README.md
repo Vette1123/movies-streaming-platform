@@ -217,3 +217,4 @@ with the work, not after.
 | 2026-11-20 | [Managed Challenge on Worker pages and APIs](2026-11-20-managed-challenge.md) | A challenged fetch cannot be solved; give the browser a top-level hop, installed before the first query. |
 | 2026-11-20 | [Meta AI search crawler + `/null` 404s](2026-11-20-meta-webindexer.md) | Meta has two crawlers (`meta-externalagent`, `meta-webindexer`); allow both, and read a path shape before grepping for a bad id. |
 | 2026-11-20 | [The share card, redrawn](2026-11-20-og-card-redesign.md) | The copy rule fixed the card but not its alt text, which kept saying "free… stream" on every page. |
+| 2026-11-20 | [GitHub repo SEO](2026-11-20-github-repo-seo.md) | The GitHub social preview has no API and does not follow the site: re-upload it after every OG redesign |
