@@ -28,3 +28,5 @@ The in-repo files stay, linked with `?raw=true` so a tap plays the file itself.
 
 - A README video is a `user-attachments` URL on its own line, under 10 MB.
 - Link committed media with `?raw=true`, never the blob page.
+- Every cut gets its own player. The vertical 9:16 reel shipped first as a text link
+  only, and the owner asked for it to play too.

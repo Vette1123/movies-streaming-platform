@@ -20,6 +20,10 @@
 
 https://github.com/user-attachments/assets/9a34668e-a1e1-4313-9422-d4b1d1b9f8f5
 
+**Vertical 9:16**, for Reels, TikTok and Shorts:
+
+https://github.com/user-attachments/assets/604804f0-70b4-456c-a9df-d7e78aa441e5
+
 [1080p, 16:9](docs/films/reely-film-1080p60.mp4?raw=true) · [vertical 9:16 for Reels, TikTok and Shorts](docs/films/reely-reel-9x16-60.mp4?raw=true). Both are 60 fps, cut to their own soundtrack and built from real screens of the app ([`video/`](video/README.md)).
 
 Browse trending titles, open detail pages, and pick up where you left off, all from one keyboard-friendly UI.
