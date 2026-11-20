@@ -1,0 +1,24 @@
+{
+  "name": "reely-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Promo films for Reely. Its own package and deps; never bundled with the site.",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio",
+    "capture": "node tools/capture.mjs",
+    "beat": "node tools/beat.mjs reely",
+    "typecheck": "tsc --noEmit",
+    "build": "node tools/render.mjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.506",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.506"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "typescript": "5.9.3"
+  }
+}
