@@ -219,3 +219,4 @@ with the work, not after.
 | 2026-11-20 | [The share card, redrawn](2026-11-20-og-card-redesign.md) | The copy rule fixed the card but not its alt text, which kept saying "free… stream" on every page. |
 | 2026-11-20 | [GitHub repo SEO](2026-11-20-github-repo-seo.md) | The GitHub social preview has no API and does not follow the site: re-upload it after every OG redesign |
 | 2026-11-20 | [Promo film](2026-11-20-promo-film.md) | Capture from the dev server (the WAF challenges headless Chrome), and take every promise from the app's own copy |
+| 2026-11-20 | [README film as an inline player](2026-11-20-readme-inline-film.md) | A README video is a user-attachments URL on its own line; a committed mp4 is only a file page |
