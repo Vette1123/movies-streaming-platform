@@ -18,6 +18,18 @@ import { MediaLink } from '@/components/media/media-link'
 import { MediaPosterFallback } from '@/components/media/media-poster-fallback'
 import { SeeAllLink } from '@/components/see-all-link'
 
+const RailPoster = ({ path, title }: { path: string; title: string }) => (
+  <BlurredImage
+    src={getPosterImageURL(path)}
+    alt={title}
+    width={250}
+    height={375}
+    sizes={RAIL_POSTER_SIZES}
+    loading="lazy"
+    className="rounded-lg object-cover"
+  />
+)
+
 interface StaticRailProps {
   title: string
   items: MediaType[]
@@ -107,20 +119,33 @@ export function StaticRail({
                     // to the interactive List is a same-URL cache hit, no reflash).
                     <div className="rounded-lg shadow-lg">
                       {card.poster ? (
-                        <BlurredImage
-                          src={getPosterImageURL(item.poster_path)}
-                          alt={posterTitle}
-                          width={250}
-                          height={375}
-                          sizes={RAIL_POSTER_SIZES}
-                          className="rounded-lg object-cover"
+                        <RailPoster
+                          path={item.poster_path}
+                          title={posterTitle}
                         />
                       ) : (
-                        // Same box, and the link keeps its name for a crawler
-                        // and a screen reader.
-                        <div className="aspect-2/3 w-full rounded-lg bg-slate-900">
-                          <span className="sr-only">{posterTitle}</span>
-                        </div>
+                        <>
+                          {/* Same box, and the link keeps its name for a
+                              crawler and a screen reader. */}
+                          <div
+                            className={cn(
+                              'aspect-2/3 w-full rounded-lg bg-slate-900',
+                              card.widePoster && '2xl:hidden'
+                            )}
+                          >
+                            <span className="sr-only">{posterTitle}</span>
+                          </div>
+                          {card.widePoster && (
+                            // display:none below 2xl: a lazy image there is
+                            // never fetched. See RAIL_WIDE_POSTER_COUNT.
+                            <div className="hidden 2xl:block">
+                              <RailPoster
+                                path={item.poster_path}
+                                title={posterTitle}
+                              />
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   ) : (

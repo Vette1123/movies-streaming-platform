@@ -8,7 +8,11 @@ import {
   MAX_SHOWN_IMAGES,
   rememberImage,
 } from '@/lib/image-memory'
-import { RAIL_ENTRANCE_COUNT, staticRailCard } from '@/lib/rail-scroll'
+import {
+  RAIL_ENTRANCE_COUNT,
+  RAIL_WIDE_POSTER_COUNT,
+  staticRailCard,
+} from '@/lib/rail-scroll'
 
 const picture = (currentSrc: string) =>
   ({ currentSrc, src: currentSrc }) as HTMLImageElement
@@ -74,6 +78,16 @@ describe('a page rebuilt by Back', () => {
   it('keeps the static rail entrance on a first visit only', () => {
     expect(staticRailCard(0, false).entrance).toBe(true)
     expect(staticRailCard(0, true).entrance).toBe(false)
+  })
+
+  it('ships posters for every card a 2xl screen shows, not just six', () => {
+    expect(staticRailCard(0, false).widePoster).toBe(false)
+    expect(staticRailCard(RAIL_ENTRANCE_COUNT, false).widePoster).toBe(true)
+    expect(staticRailCard(RAIL_WIDE_POSTER_COUNT - 1, false).widePoster).toBe(
+      true
+    )
+    expect(staticRailCard(RAIL_WIDE_POSTER_COUNT, false).widePoster).toBe(false)
+    expect(staticRailCard(RAIL_ENTRANCE_COUNT, true).widePoster).toBe(false)
   })
 
   it('has every poster, so it never shows an empty box', () => {
