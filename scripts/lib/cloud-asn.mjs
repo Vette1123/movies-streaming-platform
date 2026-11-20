@@ -67,16 +67,44 @@ const startsWithAny = (prefixes) =>
 const pathIsAny = (paths) =>
   paths.map((p) => `http.request.uri.path eq "${p}"`).join(' or ')
 
+// 2026-11-20: the fleet came back as a Cloudflare-verified bot. Every request
+// carried `cf.client.bot`, so ALLOW_RULE skipped the rest of the ruleset and
+// this block never saw it: ~800 requests per IP per day from Azure and AWS,
+// all with the same plain UA (`Chrome/131.0 Safari/537.36`, a two-part version
+// no real Chrome sends), and no reverse DNS a search engine would publish.
+// Every crawler this site wants names itself in its UA (Googlebot, bingbot,
+// GPTBot, PerplexityBot, meta-externalagent: all `compatible;` or `*bot`), so
+// on a cloud network the verified flag only counts with a name attached.
+// Off a cloud network nothing changes.
+export const BOT_NAME_TOKENS = ['bot', 'Bot', 'compatible', 'crawler', 'spider']
+
+export const namesItselfBot = (ua = '') =>
+  BOT_NAME_TOKENS.some((token) => ua.includes(token))
+
+const namesItselfExpr = () =>
+  BOT_NAME_TOKENS.map((t) => `(http.user_agent contains "${t}")`).join(' or ')
+
+const cloudExpr = () => `(ip.src.asnum in {${CLOUD_ASNS.join(' ')}})`
+
+/** A verified bot on a cloud network that will not say what it is. */
+export const unnamedCloudBotExpr = () =>
+  `(${cloudExpr()} and not (${namesItselfExpr()}))`
+
+/** The verified bots that may skip the ruleset. */
+export const trustedBotExpr = () =>
+  `(cf.client.bot and not ${unnamedCloudBotExpr()})`
+
 export const cloudAsnExpr = () =>
-  `(ip.src.asnum in {${CLOUD_ASNS.join(' ')}})` +
+  cloudExpr() +
   ` and (${startsWithAny(WORKER_PATH_PREFIXES)})` +
   ` and not (${startsWithAny(STATIC_HUB_PREFIXES)})` +
   ` and not (${pathIsAny(SMOKE_PATHS)})` +
-  ' and not cf.client.bot'
+  ` and not (cf.client.bot and (${namesItselfExpr()}))`
 
 /** The same decision as cloudAsnExpr(), for the test. */
-export function isRefusedCloudRequest({ asn, path, verifiedBot }) {
-  if (verifiedBot || !CLOUD_ASNS.includes(asn)) return false
+export function isRefusedCloudRequest({ asn, path, verifiedBot, ua = '' }) {
+  if (!CLOUD_ASNS.includes(asn)) return false
+  if (verifiedBot && namesItselfBot(ua)) return false
   if (SMOKE_PATHS.includes(path)) return false
   if (STATIC_HUB_PREFIXES.some((p) => path.startsWith(p))) return false
   return WORKER_PATH_PREFIXES.some((p) => path.startsWith(p))

@@ -72,31 +72,108 @@ function writeLastHop(now: number) {
   }
 }
 
+/** Where the silent pass lands: a static file, so it costs no invocation. */
+export const SILENT_PASS_LANDING = '/robots.txt'
+
+/**
+ * Non-interactive solves measured 4-7s on production (Cloudflare firewall
+ * events, 2026-11-20). Past this the challenge wants a click, which only the
+ * visible hop can offer.
+ */
+export const SILENT_PASS_TIMEOUT_MS = 10_000
+
+/**
+ * A request we can send again unchanged: no body, or a string body. A stream
+ * or a consumed Request body cannot be replayed.
+ */
+export function isReplayable(
+  input: RequestInfo | URL,
+  init?: RequestInit
+): boolean {
+  const body = init?.body
+  if (body !== undefined && body !== null && typeof body !== 'string') {
+    return false
+  }
+  if (typeof input === 'string' || input instanceof URL) return true
+  return input.body === null
+}
+
+let silentPass: Promise<boolean> | null = null
+
+/**
+ * Solves the challenge in a hidden same-origin frame, so the page never moves.
+ *
+ * 2026-11-20: 2 of 7 visible hops were abandoned. The visitor saw "Verifying
+ * you are human", went Back before the 4-7s solve finished, and the 2-minute
+ * cooldown then left search, filters and seasons failing without a word. The
+ * frame needs no Back button and no cooldown: a challenge costs no invocation.
+ * One frame at a time, shared by every fetch that was challenged meanwhile.
+ */
+function solveSilently(): Promise<boolean> {
+  if (silentPass) return silentPass
+  silentPass = new Promise<boolean>((resolve) => {
+    const frame = document.createElement('iframe')
+    frame.title = 'Security check'
+    frame.setAttribute('aria-hidden', 'true')
+    frame.tabIndex = -1
+    // Off screen rather than display:none, so the check still renders and runs.
+    frame.style.cssText =
+      'position:fixed;left:-10000px;top:0;width:360px;height:360px;border:0;opacity:0;pointer-events:none'
+    const finish = (passed: boolean) => {
+      clearTimeout(timer)
+      frame.remove()
+      silentPass = null
+      resolve(passed)
+    }
+    const timer = setTimeout(() => finish(false), SILENT_PASS_TIMEOUT_MS)
+    frame.onload = () => {
+      try {
+        if (frame.contentWindow?.location.pathname === SILENT_PASS_LANDING) {
+          finish(true)
+        }
+      } catch {
+        // Not readable yet: the challenge page is still in charge.
+      }
+    }
+    frame.src = `${CHALLENGE_HOP_PATH}?next=${encodeURIComponent(SILENT_PASS_LANDING)}`
+    document.body.appendChild(frame)
+  })
+  return silentPass
+}
+
+function hopVisibly() {
+  const now = Date.now()
+  if (!mayHop(readLastHop(), now)) return
+  writeLastHop(now)
+  window.location.assign(hopUrl(window.location))
+}
+
 /**
  * Wraps window.fetch once, so every caller (api-client, hooks with raw fetch,
- * React Query) gets the hop without knowing about it.
+ * React Query) gets the pass without knowing about it: a challenged answer is
+ * solved in a hidden frame and the request sent again, and only when that
+ * fails does the page hop through the visible challenge.
  */
 export function installChallengeHop() {
   const w = window as Window & { __reelyChallengeHop?: boolean }
   if (w.__reelyChallengeHop) return
   w.__reelyChallengeHop = true
   const original = window.fetch.bind(window)
+  const challenged = (res: Response, input: RequestInfo | URL) =>
+    isChallengedApi(
+      res.status,
+      res.headers.get('cf-mitigated'),
+      requestUrl(input),
+      window.location.origin
+    )
   window.fetch = async (input, init) => {
     const res = await original(input, init)
-    if (
-      isChallengedApi(
-        res.status,
-        res.headers.get('cf-mitigated'),
-        requestUrl(input),
-        window.location.origin
-      )
-    ) {
-      const now = Date.now()
-      if (mayHop(readLastHop(), now)) {
-        writeLastHop(now)
-        window.location.assign(hopUrl(window.location))
-      }
+    if (!challenged(res, input)) return res
+    if (isReplayable(input, init) && (await solveSilently())) {
+      const retry = await original(input, init)
+      if (!challenged(retry, input)) return retry
     }
+    hopVisibly()
     return res
   }
 }

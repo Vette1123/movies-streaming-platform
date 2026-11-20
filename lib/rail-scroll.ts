@@ -106,13 +106,13 @@ export const railPosterInStaticHtml = (index: number) =>
 
 /**
  * Cards a 2xl rail can put on screen: 250px cards on a 274px pitch inside 160px
- * of gutter, so a 3840px screen shows 14. Six only covers ~1700px, and on a
- * 2560px monitor cards 7-9 sat as dark boxes until the interactive rail took
- * over after load + idle (seconds on a reload). These render behind `2xl:block`
- * with `loading="lazy"`: below 2xl they are display:none, which a lazy image
- * never fetches, so a phone pays nothing for them.
+ * of gutter, so 3840px shows 14 and a 5120px ultrawide 18-19. Six only covers
+ * ~1700px, and on a 2560px monitor cards 7-9 sat as dark boxes until the
+ * interactive rail took over after load + idle (seconds on a reload). These
+ * render behind `2xl:block` with `loading="lazy"`: below 2xl they are
+ * display:none, which a lazy image never fetches, so a phone pays nothing.
  */
-export const RAIL_WIDE_POSTER_COUNT = 14
+export const RAIL_WIDE_POSTER_COUNT = 20
 
 /**
  * What a static rail's card does. A rail rebuilt by Back has nothing to race

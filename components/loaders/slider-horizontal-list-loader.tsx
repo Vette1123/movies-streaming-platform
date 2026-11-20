@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { RAIL_WIDE_POSTER_COUNT } from '@/lib/rail-scroll'
+
 import { SkeletonContainer } from '../ui/skeleton'
 
 // Mirrors the real row (full-bleed padding, accent-bar heading, tall 2:3 posters
@@ -12,8 +14,9 @@ export const SliderHorizontalListLoader = () => {
         <div className="h-5 w-[3px] rounded-full bg-muted" />
         <div className="h-6 w-44 rounded-lg bg-muted" />
       </div>
+      {/* As many cells as the widest screen shows; the row clips the rest. */}
       <div className="flex gap-6 overflow-hidden">
-        {Array.from({ length: 8 }).map((_, i) => (
+        {Array.from({ length: RAIL_WIDE_POSTER_COUNT }).map((_, i) => (
           <SkeletonContainer key={i}>
             <div className="aspect-2/3 w-40 shrink-0 rounded-lg bg-muted/80 sm:w-[190px] lg:w-[230px] 2xl:w-[250px]" />
           </SkeletonContainer>

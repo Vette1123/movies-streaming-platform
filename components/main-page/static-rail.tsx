@@ -57,6 +57,12 @@ export function StaticRail({
   itemType = 'movie',
   rebuilt = false,
 }: StaticRailProps) {
+  // The first scroll of the track (swipe, wheel, keys) renders every poster. A
+  // rail swiped before the interactive List takes over (load + idle, seconds on
+  // a phone) otherwise slides dark boxes into view. Same track element, so the
+  // scroll position and the gesture are untouched; the images stay lazy.
+  const [scrolled, setScrolled] = React.useState(false)
+  const onTrackScroll = scrolled ? undefined : () => setScrolled(true)
   return (
     <nav className="cv-auto px-5 py-6 sm:p-8 lg:px-12 lg:py-10 xl:px-16 2xl:px-20">
       {/* Identical resting heading to components/list.tsx (title left, See all
@@ -94,6 +100,7 @@ export function StaticRail({
         <div
           data-rail={title}
           className={cn(RAIL_TRACK_CLASS, 'no-scrollbar -my-4 gap-6 py-4')}
+          onScroll={onTrackScroll}
         >
           {items.map((item, index) => {
             const posterTitle = getMediaTitle(item) || 'Poster'
@@ -118,7 +125,7 @@ export function StaticRail({
                     // identical reserved box + dark-crossfade reveal (and the swap
                     // to the interactive List is a same-URL cache hit, no reflash).
                     <div className="rounded-lg shadow-lg">
-                      {card.poster ? (
+                      {card.poster || scrolled ? (
                         <RailPoster
                           path={item.poster_path}
                           title={posterTitle}
