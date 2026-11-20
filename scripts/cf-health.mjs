@@ -407,6 +407,10 @@ const BUCKETS = [
   // Not a bot and not an error — 404 means "no opinion", which is the answer we
   // want. It recurs daily, so it is classified rather than left as noise.
   ['chrome private prefetch proxy probe', /^\/\.well-known\/traffic-advice$/],
+  // A crawler lifting the bare token `null` out of inline JS and resolving it
+  // as a relative URL: /person/31 → /person/null, / → /null. 175 in 24h on
+  // 2026-11-20, ~95% meta-webindexer; no href, src or JSON-LD url renders it.
+  ['bot: relative "null" lifted from page JS (404, no such link)', /\/null$/],
 ]
 
 /**

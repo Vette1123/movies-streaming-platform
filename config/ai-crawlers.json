@@ -8,7 +8,8 @@
     "Claude-SearchBot",
     "Claude-User",
     "DuckAssistBot",
-    "MistralAI-User"
+    "MistralAI-User",
+    "meta-webindexer"
   ],
   "_knowledge": "The crawlers behind what an assistant knows without searching. Google-Extended and Applebot-Extended are not here because they are robots.txt switches, not crawlers: Googlebot and Applebot do the fetching, and those are already allowed.",
   "knowledge": ["GPTBot", "ClaudeBot", "meta-externalagent"]
