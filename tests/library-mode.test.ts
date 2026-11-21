@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   CHUNK_SIZE,
@@ -146,6 +146,15 @@ describe('chunk math', () => {
 })
 
 describe('tokens', () => {
+  // Signing reads the clock itself: pin it to NOW, or a second ticking over
+  // between module load and the sign makes exp NOW + 601 (flaked CI, 2026-11-21).
+  // Only Date is faked; WebCrypto's promises still resolve.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(NOW * 1000)
+  })
+  afterEach(() => vi.useRealTimers())
+
   it('round-trips a library token', async () => {
     const token = await signLibraryToken(
       SECRET,
