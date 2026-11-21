@@ -151,3 +151,155 @@ export async function submitSitemaps(
   }
   return result
 }
+
+// ── Daily health (pnpm seo:daily, .github/workflows/seo-daily.yml) ─────────
+// Ported from portfolio-v1's bing-check, plus a Search Console sitemap read:
+// the check that would have caught tv.xml sitting unread for six days.
+
+/** A sitemap Google has not read for longer than this is a problem. */
+export const SITEMAP_STALE_DAYS = 7
+const DAY_MS = 86_400_000
+
+/** Search Console's own view of the property's sitemaps. Throws on refusal. */
+export async function readGscSitemaps(sa, site, fetchImpl = fetch) {
+  const token = await googleAccessToken(sa, fetchImpl)
+  const res = await fetchImpl(
+    `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site)}/sitemaps`,
+    { headers: { authorization: `Bearer ${token}` } }
+  )
+  if (!res.ok) throw new Error(`gsc sitemaps ${await failure(res)}`)
+  return (await res.json()).sitemap ?? []
+}
+
+/**
+ * One problem per expected feed Google does not know, has not read within
+ * SITEMAP_STALE_DAYS, or reports errors in. Warnings are not problems: Reely's
+ * sit in the thousands and never meant anything (2026-11-21 audit).
+ */
+export function gscSitemapProblems(list, feeds, now = new Date()) {
+  const byPath = new Map(list.map((s) => [s.path, s]))
+  const problems = []
+  for (const feed of feeds) {
+    const s = byPath.get(feed)
+    if (!s) {
+      problems.push(`${feed}: not in Search Console`)
+      continue
+    }
+    if (Number(s.errors) > 0) problems.push(`${feed}: ${s.errors} errors`)
+    const read = s.lastDownloaded ? Date.parse(s.lastDownloaded) : NaN
+    if (!(now.getTime() - read <= SITEMAP_STALE_DAYS * DAY_MS))
+      problems.push(
+        `${feed}: not read by Google since ${s.lastDownloaded ?? 'ever'}`
+      )
+  }
+  return problems
+}
+
+export const BING_CALLS = [
+  'GetUrlSubmissionQuota',
+  'GetCrawlIssues',
+  'GetCrawlStats',
+]
+/** Crawl-stat counters watched for a jump. */
+const BING_COUNTERS = [
+  'Code5xx',
+  'DnsFailures',
+  'ConnectionTimeout',
+  'BlockedByRobotsTxt',
+  'ContainsMalware',
+]
+/** InIndex below this share of the last week's best counts as a drop. */
+export const INDEX_DROP_RATIO = 0.8
+const WEEK = 7
+
+/** Bing's own words for a failure ("ERROR!!! InvalidApiKey"), not just the status. */
+function bingReason(text) {
+  try {
+    return String(JSON.parse(text)?.Message ?? text).slice(0, 200)
+  } catch {
+    return text.slice(0, 200)
+  }
+}
+
+/** One call per BING_CALLS entry; throws with Bing's reason on the first refusal. */
+export async function readBing(key, site, fetchImpl = fetch) {
+  /** @type {Record<string, any>} */
+  const out = {}
+  for (const call of BING_CALLS) {
+    const res = await fetchImpl(
+      `${BING_API}/${call}?siteUrl=${encodeURIComponent(site)}&apikey=${encodeURIComponent(key)}`
+    )
+    const text = await res.text()
+    if (!res.ok)
+      throw new Error(`bing ${call} ${res.status} ${bingReason(text)}`)
+    out[call] = JSON.parse(text).d
+  }
+  return out
+}
+
+/** Bing's "/Date(1781654400000)/" as YYYY-MM-DD. */
+const bingDay = (d) =>
+  new Date(Number(String(d).match(/-?\d+/)?.[0] ?? NaN))
+    .toISOString()
+    .slice(0, 10)
+
+const median = (xs) => {
+  const s = [...xs].sort((a, b) => a - b)
+  return s.length ? s[Math.floor(s.length / 2)] : 0
+}
+
+/**
+ * A counter is a problem when it jumps above its own week: more than 1.5 × the
+ * prior seven days' median, plus 5. Not portfolio-v1's "anything above 0":
+ * Reely's Code5xx sits near 40 every day and both sites carry a robots.txt
+ * block or two, so a zero baseline would fail every run and mean nothing.
+ *
+ * @returns {{ lines: string[], problems: string[] }}
+ */
+export function bingSummary({
+  GetUrlSubmissionQuota: quota,
+  GetCrawlIssues: issues,
+  GetCrawlStats: stats,
+}) {
+  const lines = []
+  const problems = []
+  lines.push(
+    `quota: ${quota?.DailyQuota} a day, ${quota?.MonthlyQuota} a month`
+  )
+  if (!(Number(quota?.DailyQuota) > 0))
+    problems.push(`URL submission quota is ${quota?.DailyQuota} today`)
+
+  const list = issues ?? []
+  lines.push(`crawl issues: ${list.length}`)
+  if (list.length)
+    problems.push(
+      `${list.length} crawl issues: ${list
+        .slice(0, 5)
+        .map((i) => `${i.Url} (${i.HttpCode})`)
+        .join(', ')}`
+    )
+
+  const days = [...(stats ?? [])].sort((a, b) =>
+    bingDay(a.Date).localeCompare(bingDay(b.Date))
+  )
+  const last = days.at(-1)
+  if (!last) {
+    problems.push('no crawl stats')
+    return { lines, problems }
+  }
+  const prior = days.slice(-WEEK - 1, -1)
+  lines.push(
+    `crawl ${bingDay(last.Date)}: ${last.CrawledPages} crawled, ${last.InIndex} in index, ${last.CrawlErrors} errors (4xx ${last.Code4xx}, 5xx ${last.Code5xx}, timeouts ${last.ConnectionTimeout})`
+  )
+  for (const k of BING_COUNTERS) {
+    const base = median(prior.map((d) => Number(d[k]) || 0))
+    if (Number(last[k]) > base * 1.5 + 5)
+      problems.push(
+        `${k} ${last[k]} on ${bingDay(last.Date)} (week median ${base})`
+      )
+  }
+  const best = Math.max(0, ...prior.map((d) => Number(d.InIndex) || 0))
+  if (best > 0 && last.InIndex < best * INDEX_DROP_RATIO)
+    problems.push(`in index fell to ${last.InIndex} from ${best} this week`)
+  return { lines, problems }
+}
