@@ -96,7 +96,7 @@ concluding the rule is wrong.
 - Verify mail DNS against a public resolver, not only the Cloudflare API.
 - Email Routing spans three permission scopes (zone settings for enable, Zone →
   Email Routing Rules, Account → Email Routing Addresses). One `Authentication
-error` does not mean the whole feature is out of reach.
+  error` does not mean the whole feature is out of reach.
 - Receiving mail does not soften SPF/DKIM/DMARC. Those govern who may send _as_
   the domain; Email Routing forwards under its own envelope sender (SRS), so
   `p=reject` and `-all` stay correct. See `scripts/cf-dns-hardening.mjs`.

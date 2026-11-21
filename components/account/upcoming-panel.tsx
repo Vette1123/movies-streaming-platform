@@ -151,6 +151,8 @@ export function UpcomingPanel() {
   // against a clock that moves while the list renders is how a row ends up
   // saying "Tomorrow" next to one that says "In 1 days".
   const todayStamp = useMemo(
+    // Memoised once per mount on purpose: today is read at mount, like the rest of the panel.
+    // oxlint-disable-next-line react/purity
     () => Date.parse(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`),
     []
   )

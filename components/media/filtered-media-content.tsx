@@ -79,7 +79,7 @@ export const FilteredMediaContent = ({
       !isError
     ) {
       const timeoutId = setTimeout(() => {
-        fetchNextPage()
+        void fetchNextPage()
       }, 100) // Small debounce to prevent rapid calls
 
       return () => clearTimeout(timeoutId)

@@ -170,6 +170,8 @@ export const FilterSidebar = ({
   hasActiveFilters,
 }: FilterSidebarProps) => {
   const isMovie = mediaType === 'movie'
+  // The year bounds the filter range; a render straddling New Year is harmless.
+  // oxlint-disable-next-line react/purity
   const currentYear = new Date().getFullYear()
   const genres = useGenres(mediaType)
   const providers = useWatchProviders(mediaType, filter.watchRegion)

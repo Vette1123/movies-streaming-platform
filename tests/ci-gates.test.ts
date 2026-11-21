@@ -8,7 +8,7 @@ const ci = readFileSync(
 
 describe('a pull request is checked for everything the repo enforces', () => {
   // Formatting went unchecked until 2026-11-14 and 6 files drifted on main.
-  it.each(['pnpm typecheck', 'pnpm lint', 'pnpm prettier:check', 'pnpm test'])(
+  it.each(['pnpm typecheck', 'pnpm lint', 'pnpm format:check', 'pnpm test'])(
     'runs %s',
     (command) => {
       expect(ci).toContain(`run: ${command}`)

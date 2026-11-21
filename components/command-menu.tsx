@@ -334,7 +334,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
       setQuery(term)
       if (!term.trim()) return
       setIsLoading(true)
-      runSearch(term)
+      void runSearch(term)
     },
     [runSearch, setIsLoading]
   )
@@ -355,7 +355,7 @@ export function CommandMenu({ ...props }: CommandDialogProps) {
       return
     }
     setIsLoading(true)
-    debouncedRunSearch(trimmed)
+    void debouncedRunSearch(trimmed)
   }
 
   const handleOpenChange = (next: boolean) => {

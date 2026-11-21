@@ -111,7 +111,7 @@ export function normaliseChanges(input: unknown, now: number): SyncChange[] {
 }
 
 /** The body, or null if it is over the cap. See hmac-webhook.ts for the shape. */
-async function readJsonBounded(request: Request): Promise<unknown | null> {
+async function readJsonBounded(request: Request): Promise<unknown> {
   if (Number(request.headers.get('Content-Length')) > MAX_SYNC_BYTES)
     return null
   const text = await request.text()

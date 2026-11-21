@@ -51,7 +51,7 @@ export const MediaContent = ({
       !isFetchingNextPage &&
       !isError
     ) {
-      fetchNextPage()
+      void fetchNextPage()
     }
   }, [
     enableFilters,

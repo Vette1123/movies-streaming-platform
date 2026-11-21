@@ -75,6 +75,8 @@ function ExternalLink({ href, label }: { href: string; label: string }) {
 }
 
 export function Footer() {
+  // Server-rendered per build: the year changes with the deploy, never between renders.
+  // oxlint-disable-next-line react/purity
   const year = new Date().getFullYear()
   // The year hubs are built from the same clock the pages are, so the link is
   // always to a year that exists. Kept out of SITE_LINKS because that list is a

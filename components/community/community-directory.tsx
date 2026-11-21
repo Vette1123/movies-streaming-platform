@@ -180,13 +180,7 @@ function countLine(list: DirectoryList): string {
   return `${list.count} ${list.count === 1 ? 'title' : 'titles'}${who}`
 }
 
-function Avatar({
-  picture,
-  name,
-}: {
-  picture: string | null
-  name: string | null
-}) {
+function Avatar({ picture }: { picture: string | null; name: string | null }) {
   if (picture) {
     return (
       // A Google avatar on Google's own host, 48px, already the right size and

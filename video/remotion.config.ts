@@ -1,6 +1,6 @@
+import { Config } from '@remotion/cli/config'
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { Config } from '@remotion/cli/config'
 
 Config.setEntryPoint('./src/index.ts')
 // PNG frames: a JPEG generation before H.264 is where dark gradients start to band.

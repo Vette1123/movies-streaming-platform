@@ -50,7 +50,7 @@ const OVERFLOW = `(() => {
       p = p.parentElement
     }
     if (clipped) continue
-    const cls = (el.getAttribute('class') || '').split(/\s+/).slice(0, 3).join('.')
+    const cls = (el.getAttribute('class') || '').split(/\\s+/).slice(0, 3).join('.')
     out.push(el.tagName.toLowerCase() + (cls ? '.' + cls : '') + ' +' + Math.round(r.right - vw) + 'px')
   }
   return JSON.stringify({ scroll: document.documentElement.scrollWidth - vw, items: out.slice(0, 8) })

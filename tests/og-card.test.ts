@@ -1,5 +1,5 @@
-import fs from 'node:fs'
 import { OG_GLYPHS } from '@/scripts/lib/og-glyphs.mjs'
+import fs from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 import { SITE_CARD, SITE_CARD_ALT } from '@/lib/og/share-image'

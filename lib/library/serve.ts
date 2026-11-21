@@ -331,10 +331,6 @@ export async function handleLibraryIngest(
     }
     if (bytes.length !== expected)
       return json({ error: 'bad chunk length' }, 400)
-    const contentType =
-      typeof b.contentType === 'string' && b.contentType.length <= 100
-        ? b.contentType
-        : contentTypeFor(rel)
     const key = `${unit.prefix}/${rel}`
     await db
       .prepare(

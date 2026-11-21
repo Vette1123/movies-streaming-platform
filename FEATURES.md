@@ -136,7 +136,7 @@ via postMessage into the player frame.
   host can send the invite before pressing play and a guest can see the
   room exists. The guest poll idles while there is no frame to steer.
 - **Prod-verified by curl**: room `U5LDD3` → beat `{position:742.5,
-playing:true}` → state round-trips exactly.
+  playing:true}` → state round-trips exactly.
 
 ---
 

@@ -217,7 +217,7 @@ function copyEnv(env) {
 const json = (body, init = {}) =>
   Response.json(body, {
     ...init,
-    headers: { 'Cache-Control': CACHE_CONTROL, ...(init.headers || {}) },
+    headers: { 'Cache-Control': CACHE_CONTROL, ...init.headers },
   })
 
 /**

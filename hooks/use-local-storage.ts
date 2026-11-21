@@ -2,9 +2,6 @@
 
 import { useCallback, useSyncExternalStore } from 'react'
 
-import { MovieDetails } from '@/types/movie-details'
-import { SeriesDetails } from '@/types/series-details'
-
 export interface WatchedItem {
   id: number
   type: 'movie' | 'series'

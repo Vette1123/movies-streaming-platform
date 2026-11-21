@@ -1,6 +1,6 @@
-import { readFileSync } from 'node:fs'
 import type { MediaSummary } from '@/services/media-summary'
 import { RELATED_LIMIT, slimSummary } from '@/services/media-summary'
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 import { mediaFacts } from '@/lib/seo-facts'

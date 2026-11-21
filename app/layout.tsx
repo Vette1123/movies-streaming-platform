@@ -1,5 +1,4 @@
 import '@/styles/globals.css'
-
 import type { Metadata, Viewport } from 'next'
 import { CSPostHogProvider } from '@/providers/posthog-provider'
 import { QueryProvider } from '@/providers/query-provider'

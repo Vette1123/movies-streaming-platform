@@ -8,7 +8,7 @@ Three measuring tools were lying, and one queue was never read:
   transition's `ready` and `finished` promises without catching them. A
   transition the browser SKIPS — a second navigation interrupting the first, or
   the tab going hidden mid-animation — rejects both with `AbortError:
-Transition was skipped`, nothing catches it, and the browser reports an
+  Transition was skipped`, nothing catches it, and the browser reports an
   unhandled rejection. PostHog filed it, and it became issue #112. The guard
   in `lib/view-transition.ts` wraps the two promises so an abort RESOLVES:
   the transition is still skipped (the browser's decision), but nothing
@@ -22,7 +22,7 @@ Transition was skipped`, nothing catches it, and the browser reports an
   been ignored for months.
 - **The error-tracking queue.** 68 open issues, of which two were live. The
   other 66 were errors fixed months ago that nobody closed. `pnpm
-errors:triage` now closes the dead ones (it asks PostHog what it has seen
+  errors:triage` now closes the dead ones (it asks PostHog what it has seen
   in the last N days and only closes an issue whose error has not been seen)
   and leaves the live ones open.
 - **The pull-request queue.** PR #44 (+7,538/-2,243 across 96 files) was
@@ -59,7 +59,7 @@ errors:triage` now closes the dead ones (it asks PostHog what it has seen
 
 - **Read the actual User-Agent strings.** Fourteen daily "Googlebot 403s"
   turned out to be `Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X …)
-(compatible; Googlebot/2.1; …)` asking for `/.env`. Cloudflare's log was
+  (compatible; Googlebot/2.1; …)` asking for `/.env`. Cloudflare's log was
   the evidence; the guess was not.
 - **Made the probe fail on purpose.** With the guard removed, the view
   transition probe reports "1 unhandled rejection(s) from a skipped

@@ -85,7 +85,7 @@ new PerformanceObserver((l) => { for (const e of l.getEntries()) if (!e.hadRecen
   for (let i = 0; i < 60 && !button; i++) {
     await sleep(500)
     button = await evaluate(`(() => {
-      const b = [...document.querySelectorAll('button')].find((b) => /Search\.\.\./.test(b.textContent) && b.getBoundingClientRect().width > 0)
+      const b = [...document.querySelectorAll('button')].find((b) => /Search\\.\\.\\./.test(b.textContent) && b.getBoundingClientRect().width > 0)
       if (!b || !Object.keys(b).some((k) => k.startsWith('__react'))) return null
       const r = b.getBoundingClientRect()
       return { x: r.x + r.width / 2, y: r.y + r.height / 2 }

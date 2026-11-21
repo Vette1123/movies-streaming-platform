@@ -73,6 +73,8 @@ const GUARDED = '__reelyGuarded'
 export function installViewTransitionAbortGuard(
   host: Document = document
 ): boolean {
+  // Read off the document to be wrapped and re-bound in guardViewTransition, never called bare.
+  // oxlint-disable-next-line typescript/unbound-method
   const start = host.startViewTransition
   if (!start) return false
   if ((start as unknown as Record<string, unknown>)[GUARDED]) return false

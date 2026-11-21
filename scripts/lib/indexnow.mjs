@@ -106,7 +106,7 @@ export function htmlRouteFor(url, baseUrl = BASE_URL) {
 
 /** Run `fn` over `items` with at most `limit` in flight. */
 export async function mapLimit(items, limit, fn) {
-  const out = new Array(items.length)
+  const out = Array.from({ length: items.length })
   let next = 0
   const worker = async () => {
     while (next < items.length) {

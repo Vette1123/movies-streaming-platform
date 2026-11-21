@@ -10,9 +10,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 pnpm dev                # dev server (Turbopack) — http://localhost:3000
-pnpm lint               # ESLint 10 (its typescript-eslint runs on TS 6 — see .pnpmfile.cjs)
+pnpm lint               # oxlint, type-aware (tsgolint on TypeScript 7); config in .oxlintrc.json
 pnpm typecheck          # tsc --noEmit on TypeScript 7 (native)
-pnpm prettier:check     # verify formatting; prettier:format to write
+pnpm format:check       # verify formatting (oxfmt); `pnpm format` to write
 pnpm build              # next build (rarely needed)
 
 # Cloudflare (static export + Worker)
@@ -55,7 +55,7 @@ Loaded on demand (path-scoped rules in `.claude/rules/`, read the one matching t
 
 - **No nested ternaries** — extract a small pure module-scoped helper instead. Simple single-level ternaries are fine.
 - Prefer pure helper functions over inline branching; `useMemo`/`React.memo` for non-trivial compute or referential stability.
-- Prettier: **no semicolons, single quotes, 2-space, es5 trailing commas**. Imports are auto-sorted by `@ianvs/prettier-plugin-sort-imports` — the group order is defined in `prettier.config.js`; don't hand-reorder against it.
+- oxfmt (Prettier-compatible): **no semicolons, single quotes, 2-space, es5 trailing commas**. oxfmt also sorts imports and Tailwind classes, with the group order in `.oxfmtrc.json` (`sortImports`). Don't hand-reorder against it.
 - **Commit subjects must start with the Conventional Commit type** (`feat`/`fix`/`docs`/…) — no leading/trailing `@` or paste artifacts (this bit us once). **Do not add a `Co-Authored-By: Claude` trailer** in this repo.
 
 ## Environment

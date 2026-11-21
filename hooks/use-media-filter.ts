@@ -154,7 +154,7 @@ export const useMediaFilter = ({
     refetch,
   } = useInfiniteQuery({
     queryKey: [queryKey, 'filtered', filterParams],
-    queryFn: async ({ pageParam = 1 }) => {
+    queryFn: async ({ pageParam }) => {
       return discoverFunction(filterParams, { page: pageParam })
     },
     getNextPageParam: (lastPage, pages) => {
@@ -211,7 +211,7 @@ export const useMediaFilter = ({
       if (updates.watchRegion !== undefined)
         urlUpdates.watchRegion = updates.watchRegion || DEFAULT_WATCH_REGION
 
-      setUrlState(urlUpdates)
+      void setUrlState(urlUpdates)
     },
     [setUrlState, mediaType]
   )
@@ -241,7 +241,7 @@ export const useMediaFilter = ({
         filter_type: 'genre',
         value: { genreId, state: nextState },
       })
-      setUrlState({ selectedGenres: selected, excludedGenres: excluded })
+      void setUrlState({ selectedGenres: selected, excludedGenres: excluded })
     },
     [urlState, setUrlState, mediaType]
   )
@@ -255,7 +255,7 @@ export const useMediaFilter = ({
 
   const clearFilters = useCallback(() => {
     trackFiltersCleared({ media_type: mediaType })
-    setUrlState(defaultValues)
+    void setUrlState(defaultValues)
   }, [setUrlState, mediaType])
 
   const trackedFetchNextPage = useCallback(() => {

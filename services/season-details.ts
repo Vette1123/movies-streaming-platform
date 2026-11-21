@@ -18,7 +18,7 @@ import { fetchClient } from '@/lib/fetch-client'
 const trimEpisodes = (season: SeasonDetails): SeasonDetails => ({
   ...season,
   episodes: (season.episodes ?? []).map(
-    ({ crew, guest_stars, ...episode }) => episode
+    ({ crew: _crew, guest_stars: _guestStars, ...episode }) => episode
   ),
 })
 

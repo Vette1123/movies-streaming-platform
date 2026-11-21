@@ -1,0 +1,166 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // oxlint replaced ESLint on 2026-11-21 (lessons/2026-11-21-oxc.md). The rules below keep what
+  // eslint-config-next/core-web-vitals and eslint-plugin-tailwindcss enforced; on top of that the
+  // whole `correctness` category is on, and type-aware rules run through tsgolint (TypeScript 7).
+  "plugins": [
+    "eslint",
+    "typescript",
+    "oxc",
+    "unicorn",
+    "react",
+    "nextjs",
+    "jsx-a11y",
+    "import"
+  ],
+  "categories": { "correctness": "error" },
+  "options": { "typeAware": true },
+  "env": { "builtin": true, "browser": true, "node": true },
+  // Tailwind class checks (shorthand, contradictions, negative arbitrary values) still come from
+  // eslint-plugin-tailwindcss, run through oxlint's JS plugin support. Class ORDER is oxfmt's job.
+  "jsPlugins": ["eslint-plugin-tailwindcss"],
+  "settings": {
+    // Tailwind 4 keeps its theme in CSS; the plugin has to be told where.
+    "tailwindcss": { "cssConfigPath": "./styles/globals.css" },
+    "next": { "rootDir": ["./"] }
+  },
+  "ignorePatterns": [
+    "dist/**",
+    // The promo films: their own package, deps and typecheck.
+    "video/**",
+    ".cache/**",
+    "public/**",
+    // Build output: .next, the OpenNext/Wrangler dirs and the bundled Worker (scripts/build-worker.mjs).
+    ".next/**",
+    ".open-next/**",
+    ".wrangler/**",
+    ".cloudflare/**",
+    // Agent worktrees: a whole second checkout of this repo living inside it.
+    ".claude/worktrees/**",
+    "**/*.esm.js",
+    "next-env.d.ts"
+  ],
+  "rules": {
+    "no-array-constructor": "error",
+    "no-unused-expressions": "warn",
+    "no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+
+    "nextjs/google-font-display": "warn",
+    "nextjs/google-font-preconnect": "warn",
+    "nextjs/next-script-for-ga": "warn",
+    "nextjs/no-async-client-component": "warn",
+    "nextjs/no-before-interactive-script-outside-document": "warn",
+    "nextjs/no-css-tags": "warn",
+    "nextjs/no-head-element": "warn",
+    "nextjs/no-page-custom-font": "warn",
+    "nextjs/no-styled-jsx-in-document": "warn",
+    "nextjs/no-sync-scripts": "error",
+    "nextjs/no-title-in-document-head": "warn",
+    "nextjs/no-typos": "warn",
+    "nextjs/no-unwanted-polyfillio": "warn",
+    "nextjs/inline-script-id": "error",
+    "nextjs/no-assign-module-variable": "error",
+    "nextjs/no-document-import-in-page": "error",
+    "nextjs/no-duplicate-head": "error",
+    "nextjs/no-head-import-in-document": "error",
+    "nextjs/no-script-component-in-head": "error",
+    "nextjs/no-html-link-for-pages": "off",
+    "nextjs/no-img-element": "warn",
+
+    // Both flag `${error}` on an `unknown` catch value, which is how every error message here is
+    // built on purpose (String() of an Error is its message). No hit was a real [object Object].
+    "typescript/no-base-to-string": "off",
+    "typescript/restrict-template-expressions": "off",
+
+    "react/display-name": "error",
+    "react/jsx-key": "off",
+    "react/jsx-no-comment-textnodes": "error",
+    "react/jsx-no-duplicate-props": "error",
+    "react/jsx-no-undef": "error",
+    "react/no-children-prop": "error",
+    "react/no-danger-with-children": "error",
+    "react/no-direct-mutation-state": "error",
+    "react/no-find-dom-node": "error",
+    "react/no-is-mounted": "error",
+    "react/no-render-return-value": "error",
+    "react/no-string-refs": "error",
+    "react/no-unescaped-entities": "error",
+    "react/jsx-no-target-blank": "off",
+    "react/no-unknown-property": "off",
+    "react/react-in-jsx-scope": "off",
+    // eslint-plugin-react-hooks 7 (React Compiler rules), as eslint-config-next set them.
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/static-components": "error",
+    "react/use-memo": "error",
+    "react/preserve-manual-memoization": "error",
+    "react/incompatible-library": "warn",
+    "react/immutability": "error",
+    "react/globals": "error",
+    "react/refs": "error",
+    "react/set-state-in-effect": "error",
+    "react/error-boundaries": "error",
+    "react/purity": "error",
+    "react/set-state-in-render": "error",
+    "react/unsupported-syntax": "warn",
+
+    "import/no-anonymous-default-export": "warn",
+
+    // eslint-plugin-tailwindcss's `recommended`, minus class order (oxfmt sorts classes now).
+    "tailwindcss/enforces-canonical-classname": "warn",
+    "tailwindcss/enforces-negative-arbitrary-values": "warn",
+    "tailwindcss/enforces-shorthand": "warn",
+    "tailwindcss/important-modifier-suffix": "warn",
+    "tailwindcss/no-contradicting-classname": "error",
+    // Off because its autofix writes CSS that does not exist. MEASURED 2026-08-31: it rewrote
+    // `scale-[1.03]` to `scale-1.03`, and Tailwind's `scale-<number>` is a PERCENTAGE, so the
+    // utility compiled to nothing and the hover zoom on every poster silently stopped.
+    "tailwindcss/no-unnecessary-arbitrary-value": "off",
+
+    "jsx-a11y/alt-text": ["warn", { "elements": ["img"], "img": ["Image"] }],
+    "jsx-a11y/aria-props": "warn",
+    "jsx-a11y/aria-proptypes": "warn",
+    "jsx-a11y/aria-unsupported-elements": "warn",
+    "jsx-a11y/role-has-required-aria-props": "warn",
+    "jsx-a11y/role-supports-aria-props": "warn",
+    // ponytail: the correctness category adds these a11y rules; ESLint never ran them, and
+    // the hits (labels, autofocus, tabIndex on the carousel, the shadcn breadcrumb/card) are UI
+    // changes for their own pass. Turn each on as its hits are fixed.
+    "jsx-a11y/prefer-tag-over-role": "off",
+    "jsx-a11y/click-events-have-key-events": "off",
+    "jsx-a11y/no-static-element-interactions": "off",
+    "jsx-a11y/no-noninteractive-element-interactions": "off",
+    "jsx-a11y/media-has-caption": "off",
+    "jsx-a11y/label-has-associated-control": "off",
+    "jsx-a11y/no-autofocus": "off",
+    "jsx-a11y/no-redundant-roles": "off",
+    "jsx-a11y/heading-has-content": "off",
+    "jsx-a11y/no-noninteractive-tabindex": "off"
+  },
+  "overrides": [
+    {
+      // Plain-JS scripts typed by JSDoc at best: the checker sees `any`, so these two misfire.
+      "files": ["scripts/**"],
+      "rules": {
+        "typescript/require-array-sort-compare": "off",
+        "typescript/no-useless-default-assignment": "off"
+      }
+    },
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx"],
+      "rules": {
+        // proFlag/recentReserve tests evaluate a built snippet with `new Function` on purpose.
+        "typescript/no-implied-eval": "off",
+        // `expect(obj.method).toHaveBeenCalled()` reads a spy, never calls it unbound.
+        "typescript/unbound-method": "off"
+      }
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "endOfLine": "lf",
+  "semi": false,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "es5",
+  "printWidth": 80,
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "cache",
+    ".cache",
+    "package.json",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "public",
+    "CHANGELOG.md",
+    ".yarn",
+    "dist",
+    "node_modules",
+    ".next",
+    "build",
+    ".contentlayer",
+    "data/sitemap-ledger.json",
+    "data/audience.json"
+  ],
+  "sortImports": {
+    "newlinesBetween": false,
+    "customGroups": [
+      {
+        "groupName": "react",
+        "elementNamePattern": ["react", "react/**"]
+      },
+      {
+        "groupName": "next",
+        "elementNamePattern": ["next", "next/**"]
+      },
+      {
+        "groupName": "types",
+        "elementNamePattern": ["types", "@/types/**"]
+      },
+      {
+        "groupName": "config",
+        "elementNamePattern": ["@/config/**"]
+      },
+      {
+        "groupName": "lib",
+        "elementNamePattern": ["@/lib/**"]
+      },
+      {
+        "groupName": "hooks",
+        "elementNamePattern": ["@/hooks/**"]
+      },
+      {
+        "groupName": "ui",
+        "elementNamePattern": ["@/components/ui/**"]
+      },
+      {
+        "groupName": "components",
+        "elementNamePattern": ["@/components/**"]
+      },
+      {
+        "groupName": "styles",
+        "elementNamePattern": ["@/styles/**"]
+      },
+      {
+        "groupName": "app",
+        "elementNamePattern": ["@/app/**"]
+      }
+    ],
+    "groups": [
+      "react",
+      "next",
+      ["type-builtin", "builtin", "type-external", "external"],
+      {
+        "newlinesBetween": true
+      },
+      "types",
+      "config",
+      "lib",
+      "hooks",
+      "ui",
+      "components",
+      "styles",
+      "app",
+      ["type-internal", "internal"],
+      {
+        "newlinesBetween": true
+      },
+      [
+        "type-parent",
+        "parent",
+        "type-sibling",
+        "sibling",
+        "type-index",
+        "index"
+      ],
+      "unknown"
+    ],
+    "internalPattern": []
+  },
+  "sortTailwindcss": {
+    "stylesheet": "./styles/globals.css",
+    "functions": ["cn", "clsx", "cva"]
+  }
+}

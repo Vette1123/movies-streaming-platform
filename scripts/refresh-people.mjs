@@ -31,7 +31,7 @@
 // the ceiling is 20,000 files for the whole site (see .claude/rules/cloudflare.md). The script
 // measures what the last build wrote and spends what is left, so the cap
 // follows the site instead of being a number somebody has to remember.
-import { readdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -43,9 +43,6 @@ loadLocalEnv()
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const FILE = path.join(root, 'data', 'people.json')
 const OUT_DIR = path.join(root, 'out')
-
-/** 20 people per TMDB page. */
-const PEOPLE_PER_PAGE = 20
 
 /**
  * The file cap, and the share of it this feature may spend.

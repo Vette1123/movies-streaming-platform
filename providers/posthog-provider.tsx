@@ -230,7 +230,8 @@ function scheduleInit() {
   // in full, page_not_found included: ph() queued it and init replays it.
   const errorLanding = landedOnErrorPage(
     performance.getEntriesByType('navigation')[0] as
-      { responseStatus?: number } | undefined
+      | { responseStatus?: number }
+      | undefined
   )
 
   // The { timeout } is a HARD ceiling: if the browser hasn't gone idle within 2s,

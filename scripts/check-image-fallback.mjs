@@ -12,12 +12,12 @@
 //
 // Add `--live` to also fetch each URL and print status/type/bytes.
 
+import * as esbuild from 'esbuild'
 import assert from 'node:assert/strict'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import * as esbuild from 'esbuild'
 
 const dir = mkdtempSync(path.join(tmpdir(), 'reely-imgcheck-'))
 const entry = path.join(dir, 'entry.ts')

@@ -24,7 +24,7 @@ export const getHeroExtras = cache(
   async (
     type: ItemType,
     id: number | string,
-    revalidate: number | false | undefined = undefined
+    revalidate?: number | false
   ): Promise<HeroExtras> => {
     const url = `${type}/${id}?language=en-US&append_to_response=videos,images&include_image_language=en,null`
     const data = await fetchClient.get<HeroExtrasResponse>(
