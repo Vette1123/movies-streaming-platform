@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  zod: ^4.6.6
+
 importers:
 
   .:
@@ -1303,8 +1306,8 @@ packages:
   yallist@4.0.0:
     resolution: {integrity: sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==}
 
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
 
 snapshots:
 
@@ -1747,7 +1750,7 @@ snapshots:
       recast: 0.23.11
       remotion: 4.0.506(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       semver: 7.5.3
-      zod: 4.4.3
+      zod: 4.6.7
     transitivePeerDependencies:
       - '@minify-html/node'
       - '@swc/core'
@@ -1797,7 +1800,7 @@ snapshots:
       react-dom: 19.2.0(react@19.2.0)
       remotion: 4.0.506(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       semver: 7.5.3
-      zod: 4.4.3
+      zod: 4.6.7
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -2611,4 +2614,4 @@ snapshots:
 
   yallist@4.0.0: {}
 
-  zod@4.4.3: {}
+  zod@4.6.7: {}

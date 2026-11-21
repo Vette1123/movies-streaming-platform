@@ -1,3 +1,6 @@
 # Its own root, so an install here never touches the site's lockfile.
 packages: []
 minimumReleaseAge: 0
+overrides:
+  # Dependabot #6: zod < 4.6.6 can exhaust memory on oversized collections.
+  zod: ^4.6.6
