@@ -226,3 +226,4 @@ with the work, not after.
 | 2026-11-21 | [PostHog + GitHub sweep](2026-11-21-posthog-gh-sweep.md) | Resolving in PostHog does not close its GitHub mirror: close both in one step |
 | 2026-11-21 | [GSC and Bing audit](2026-11-21-gsc-bing-audit.md) | After a sitemap split, check GSC read every child: tv.xml sat unread for 6 days |
 | 2026-11-21 | [Sitemap submit on deploy](2026-11-21-seo-submit.md) | Submit a sitemap index WITH its children; CI reads out/, never the WAF-guarded live site |
+| 2026-11-21 | [Daily search-engine run](2026-11-21-seo-daily.md) | A health check copied between sites takes its thresholds from the target site's own history |

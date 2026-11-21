@@ -1,6 +1,8 @@
 import { generateKeyPairSync } from 'node:crypto'
 import {
+  bingSummary,
   googleJwt,
+  gscSitemapProblems,
   sitemapFeeds,
   submitSitemaps,
 } from '@/scripts/lib/search-engines.mjs'
@@ -119,5 +121,87 @@ describe('submitSitemaps', () => {
       () => {}
     )
     expect(r).toEqual({ gsc: 'failed', bing: 'ok' })
+  })
+})
+
+describe('gscSitemapProblems', () => {
+  const NOW = new Date('2026-11-21T12:00:00Z')
+  const feeds = sitemapFeeds(ROOT, INDEX)
+  const read = (path: string, lastDownloaded?: string, errors = '0') => ({
+    path,
+    lastDownloaded,
+    errors,
+  })
+
+  it('a child Google never read is a problem (tv.xml, 2026-11-21)', () => {
+    const list = [
+      read(ROOT, '2026-11-21T00:00:00Z'),
+      read(feeds[1], '2026-11-21T00:00:00Z'),
+      read(feeds[2]),
+    ]
+    expect(gscSitemapProblems(list, feeds, NOW)).toEqual([
+      `${feeds[2]}: not read by Google since ever`,
+    ])
+  })
+
+  it('names a child missing from GSC, a stale read and errors', () => {
+    const list = [
+      read(ROOT, '2026-11-10T00:00:00Z'),
+      read(feeds[1], '2026-11-21T00:00:00Z', '3'),
+    ]
+    expect(gscSitemapProblems(list, feeds, NOW)).toEqual([
+      `${ROOT}: not read by Google since 2026-11-10T00:00:00Z`,
+      `${feeds[1]}: 3 errors`,
+      `${feeds[2]}: not in Search Console`,
+    ])
+  })
+
+  it('all read this week with no errors is clean', () => {
+    const list = feeds.map((f) => read(f, '2026-11-15T12:00:01Z'))
+    expect(gscSitemapProblems(list, feeds, NOW)).toEqual([])
+  })
+})
+
+describe('bingSummary', () => {
+  const day = (n: number, over: Record<string, number> = {}) => ({
+    Date: `/Date(${Date.UTC(2026, 10, n)})/`,
+    CrawledPages: 100,
+    InIndex: 1000,
+    CrawlErrors: 0,
+    Code4xx: 0,
+    Code5xx: 40,
+    DnsFailures: 0,
+    ConnectionTimeout: 1,
+    BlockedByRobotsTxt: 1,
+    ContainsMalware: 0,
+    ...over,
+  })
+  const week = [13, 14, 15, 16, 17, 18, 19].map((n) => day(n))
+  const read = (last: ReturnType<typeof day>) => ({
+    GetUrlSubmissionQuota: { DailyQuota: 5, MonthlyQuota: 900 },
+    GetCrawlIssues: [],
+    GetCrawlStats: [...week, last],
+  })
+
+  it('a standing baseline (5xx ~40, a robots block) is not a problem', () => {
+    expect(bingSummary(read(day(20))).problems).toEqual([])
+  })
+
+  it('a counter jumping off its week is (timeouts 1 → 27, 2026-11-20)', () => {
+    expect(
+      bingSummary(read(day(20, { ConnectionTimeout: 27 }))).problems
+    ).toEqual(['ConnectionTimeout 27 on 2026-11-20 (week median 1)'])
+  })
+
+  it('the index dropping below 80% of the week best is', () => {
+    expect(bingSummary(read(day(20, { InIndex: 700 }))).problems).toEqual([
+      'in index fell to 700 from 1000 this week',
+    ])
+  })
+
+  it('no quota left is', () => {
+    const r = read(day(20))
+    r.GetUrlSubmissionQuota.DailyQuota = 0
+    expect(bingSummary(r).problems).toEqual(['URL submission quota is 0 today'])
   })
 })

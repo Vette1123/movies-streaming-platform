@@ -22,3 +22,19 @@ export async function submitSitemapIndex(xml) {
   )
   return result
 }
+
+/**
+ * The live sitemap index body, or null. A browser UA because the WAF
+ * challenges anything else, and the CI pass (CI_HEADER in
+ * scripts/cf-waf-setup.mjs) because GitHub runners sit on Azure.
+ */
+export async function liveSitemapXml() {
+  /** @type {Record<string, string>} */
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/131.0',
+  }
+  if (process.env.CI_WAF_BYPASS)
+    headers['x-reely-ci'] = process.env.CI_WAF_BYPASS
+  const res = await fetch(SITEMAP_URL, { headers }).catch(() => null)
+  return res?.ok ? res.text() : null
+}
