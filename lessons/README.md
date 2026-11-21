@@ -225,3 +225,4 @@ with the work, not after.
 | 2026-11-20 | [Refresh jump, silent challenge, verified fleet](2026-11-20-reload-jump-silent-challenge-verified-fleet.md) | `cf.client.bot` skipped the cloud block: verify a block by the fleet's firewall actions, not the rule's existence |
 | 2026-11-21 | [PostHog + GitHub sweep](2026-11-21-posthog-gh-sweep.md) | Resolving in PostHog does not close its GitHub mirror: close both in one step |
 | 2026-11-21 | [GSC and Bing audit](2026-11-21-gsc-bing-audit.md) | After a sitemap split, check GSC read every child: tv.xml sat unread for 6 days |
+| 2026-11-21 | [Sitemap submit on deploy](2026-11-21-seo-submit.md) | Submit a sitemap index WITH its children; CI reads out/, never the WAF-guarded live site |
