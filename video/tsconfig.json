@@ -7,7 +7,6 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "baseUrl": ".",
     "paths": { "@/*": ["../*"] }
   },
   "include": ["src", "remotion.config.ts"]
