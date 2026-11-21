@@ -1,4 +1,3 @@
-import { generateKeyPairSync } from 'node:crypto'
 import {
   bingSummary,
   googleJwt,
@@ -6,6 +5,7 @@ import {
   sitemapFeeds,
   submitSitemaps,
 } from '@/scripts/lib/search-engines.mjs'
+import { generateKeyPairSync } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 
 const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })

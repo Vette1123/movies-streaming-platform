@@ -63,7 +63,7 @@ export function normaliseCode(value: unknown): string | null {
   if (typeof value !== 'string') return null
   const code = value.toUpperCase().replace(/[\s-]/g, '')
   if (code.length !== CODE_LENGTH) return null
-  if (![...code].every((char) => ALPHABET.includes(char))) return null
+  if (!Array.from(code).every((char) => ALPHABET.includes(char))) return null
   return code
 }
 

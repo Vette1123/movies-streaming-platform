@@ -77,7 +77,7 @@ const { send, evaluate } = browser
 // Answer every /api/search with the synthetic page.
 browser.onEvent((msg) => {
   if (msg.method !== 'Fetch.requestPaused') return
-  send('Fetch.fulfillRequest', {
+  void send('Fetch.fulfillRequest', {
     requestId: msg.params.requestId,
     responseCode: 200,
     responseHeaders: [{ name: 'content-type', value: 'application/json' }],

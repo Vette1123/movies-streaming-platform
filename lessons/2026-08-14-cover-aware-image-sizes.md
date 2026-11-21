@@ -104,7 +104,7 @@ fixed it. `pnpm lint` after a refactor, not just `tsc`.
   number; the audit script is in the scratchpad and is worth rewriting whenever
   this comes up (~40 lines).
 - **Blocking the primary host with CDP** (`Network.setBlockedURLs
-["*ik.imagekit.io*"]`) to prove the fix carries through the wsrv stage. Same
+  ["*ik.imagekit.io*"]`) to prove the fix carries through the wsrv stage. Same
   widths, same quality, WebP instead of AVIF exactly as documented.
 - **A/B by `git stash`.** Measuring the "before" by stashing the whole change,
   running the same script, and popping — rather than trusting a remembered

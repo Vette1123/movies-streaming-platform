@@ -136,7 +136,7 @@ const INDEXABLE = [
   ...locs.slice(0, 6).map((u) => new URL(u).pathname),
 ]
 
-for (const path of [...new Set(INDEXABLE)]) {
+for (const path of new Set(INDEXABLE)) {
   const { status, html } = await get(path)
   const robots = robotsOf(html) ?? ''
   const canonical = canonicalOf(html)
@@ -193,7 +193,7 @@ const SNIPPET_PAGES = [
     .slice(0, 3),
 ]
 
-for (const path of [...new Set(SNIPPET_PAGES)]) {
+for (const path of new Set(SNIPPET_PAGES)) {
   const { status, html } = await get(path)
   const description = decode(descOf(html))
   const title = titleOf(html)

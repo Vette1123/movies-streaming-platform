@@ -167,7 +167,7 @@ pnpm waf:apply    # push the Cloudflare WAF + CDN cache rules
 pnpm lint             # ESLint
 pnpm typecheck        # tsc on TypeScript 7
 pnpm test             # Vitest: accounts, billing, sync, lists, offers
-pnpm prettier:check   # formatting
+pnpm format:check     # formatting (oxfmt)
 ```
 
 Other scripts worth knowing: `pnpm d1:migrate` (D1 schema), `pnpm kodi:zip` (build the Kodi add-on), `pnpm cf:health` (production health), `pnpm relay:canary` (can the Reely Player play), and `pnpm sponsor:stats` (numbers for a sponsor).

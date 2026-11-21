@@ -15,11 +15,11 @@
 //
 // Run: pnpm icons:build  (after editing app/_icons/source.tsx)
 
+import esbuild from 'esbuild'
 import { mkdirSync, rmSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import esbuild from 'esbuild'
 
 import { optimizePng } from './optimize-png.mjs'
 

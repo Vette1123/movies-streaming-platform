@@ -169,7 +169,7 @@ browser.onEvent((msg) => {
     body = request.postData ? JSON.parse(request.postData) : null
   } catch {}
   const reply = answer(new URL(request.url).pathname, body)
-  send('Fetch.fulfillRequest', {
+  void send('Fetch.fulfillRequest', {
     requestId,
     responseCode: reply ? 200 : 404,
     responseHeaders: [{ name: 'content-type', value: 'application/json' }],

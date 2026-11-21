@@ -9,10 +9,10 @@
 // Output is a single ESM file with no external imports, which is exactly what
 // `main` in wrangler.jsonc expects.
 
+import * as esbuild from 'esbuild'
 import { readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import * as esbuild from 'esbuild'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const outfile = path.join(root, '.cloudflare', 'worker.mjs')

@@ -154,7 +154,7 @@ browser.onEvent((msg) => {
   try {
     body = request.postData ? JSON.parse(request.postData) : null
   } catch {}
-  fulfill(requestId, answer(url.pathname, body))
+  void fulfill(requestId, answer(url.pathname, body))
 })
 
 const waitFor = async (what, read, timeoutMs = 20000) => {

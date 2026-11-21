@@ -49,7 +49,7 @@ Fixed:
 - **Shipped a build that ran into Next's 60-second page timeout and called it
   green.** The first `pnpm build:cf` failed outright; the second passed — with
   `Failed to build /sitemap.xml/route (attempt 1 of 3) because it took more than
-60 seconds` buried in the log. A build that only passes on a retry is a build
+  60 seconds` buried in the log. A build that only passes on a retry is a build
   that fails on a slower network, and the deploy workflow runs on every push.
   Fixed with `staticPageGenerationTimeout: 300`. Read the whole log, not the
   exit code.

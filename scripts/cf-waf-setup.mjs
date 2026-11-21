@@ -495,15 +495,10 @@ const BLOCK_RULE = {
   action: 'managed_challenge',
 }
 
-// Every token a real browser puts in its UA. Chrome sends "Chrome" AND "Safari";
-// Edge adds "Edg"; Opera "OPR"; Firefox "Firefox". Anything hitting a detail
-// page with none of these is not a person browsing the site.
-const BROWSER_UAS = ['Chrome', 'Firefox', 'Safari', 'Edg', 'OPR', 'Gecko/']
-
 /**
- * Scrapers that pass BROWSER_UAS by sending a browser string nobody still runs.
+ * Scrapers that pass a "looks like a browser" UA check by sending a browser string nobody still runs.
  *
- * BROWSER_UAS asks "does this look like a browser", which a scraper answers by
+ * That check asks "does this look like a browser", which a scraper answers by
  * copying one. Measured over 24h on 2026-08-31, ONE frozen user-agent string —
  * Firefox 121, shipped December 2023 — accounted for 7,935 Worker invocations,
  * 12% of the whole 100,000/day free-plan budget and 93% of all unverified tail

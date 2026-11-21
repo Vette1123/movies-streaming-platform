@@ -365,6 +365,8 @@ export function subscribeSyncSettled(
 }
 
 function notifySyncSettled(ok: boolean): void {
+  // A snapshot: a listener may unsubscribe itself while the Set is being walked.
+  // oxlint-disable-next-line unicorn/no-useless-spread
   for (const listener of [...settledListeners]) {
     try {
       listener(ok)

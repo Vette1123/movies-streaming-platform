@@ -25,8 +25,7 @@ export const useInfiniteScroll = ({ media, queryKey }: Props) => {
     useInfiniteQuery({
       queryKey: [queryKey],
       initialPageParam: 0,
-      queryFn: ({ pageParam = 1 }) =>
-        getPopularApi(mediaType, Number(pageParam)),
+      queryFn: ({ pageParam }) => getPopularApi(mediaType, Number(pageParam)),
       getNextPageParam: (_, pages) => pages.length + 1,
       initialData: {
         pages: [media],

@@ -114,10 +114,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Nothing else lints: ESLint 10 runs on its own TypeScript 6 while the
-      # app is on 7 (.pnpmfile.cjs), and that split breaks silently if a
-      # dependency bump undoes it. Not on the cron: those runs rebuild code
-      # that already passed here on its push.
+      # Nothing else lints (oxlint, type-aware on the same TypeScript 7 as the
+      # app). Not on the cron: those runs rebuild code that already passed here
+      # on its push.
       - name: Lint
         if: github.event_name != 'schedule'
         run: pnpm lint

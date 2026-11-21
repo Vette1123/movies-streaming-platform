@@ -6,7 +6,6 @@
 // deploy for the comparison to mean anything. scripts/cf-deploy.mjs does that
 // automatically; this CLI is for inspecting the set (--dry-run) or a manual ping.
 import './load-env.mjs'
-
 import { planIndexNow, submitIndexNow } from './lib/indexnow.mjs'
 
 const args = process.argv.slice(2)

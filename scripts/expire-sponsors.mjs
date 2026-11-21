@@ -17,7 +17,7 @@ export function stripExpired(text, now) {
   const removed = []
   const kept = []
   let out = text
-  for (const [open, id, until] of [...text.matchAll(OPEN)]) {
+  for (const [open, id, until] of text.matchAll(OPEN)) {
     const ends = Date.parse(until)
     if (Number.isNaN(ends))
       throw new Error(`sponsor:${id} has an unreadable until=${until}`)

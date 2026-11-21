@@ -28,9 +28,6 @@ const SECRET = 'dGVzdC1zZWNyZXQ'
 // far-future NOW would reject everything as expired.
 const NOW = Math.floor(Date.now() / 1000)
 
-const decodePayload = (token: string): Record<string, unknown> =>
-  JSON.parse(Buffer.from(token.split('.')[0], 'base64url').toString('utf8'))
-
 /** A play token built the way reely-pro-player/src/tokens.mjs builds them. */
 const playerShapedPlayToken = (secret: string, exp: number): string => {
   const body = JSON.stringify({ k: 'p', ty: 'movie', id: 550, exp })

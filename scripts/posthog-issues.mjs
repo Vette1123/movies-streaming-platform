@@ -130,9 +130,9 @@ async function show(id, days) {
        AND toString(properties.$exception_issue_id) = '${safe}'
      GROUP BY route, browser ORDER BY events DESC LIMIT 20`
   )
-  const [issue] = await Promise.all([
-    phApi(cfg, `/error_tracking/issues/${safe}/`).catch(() => null),
-  ])
+  const issue = await phApi(cfg, `/error_tracking/issues/${safe}/`).catch(
+    () => null
+  )
   console.log(
     `\n${issue?.name ?? 'issue'} — ${issue?.status ?? 'unknown status'} — ${safe}`
   )

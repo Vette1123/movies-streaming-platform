@@ -1,6 +1,6 @@
+import { withPostHogConfig } from '@posthog/nextjs-config'
 import { realpathSync } from 'node:fs'
 import path from 'node:path'
-import { withPostHogConfig } from '@posthog/nextjs-config'
 
 // Production is a pure static export on Cloudflare Workers: `next build` writes
 // plain HTML/CSS/JS into `out/`, wrangler uploads it as Workers Static Assets,
@@ -93,7 +93,7 @@ const baseConfig = {
     // The project is on TypeScript 7, whose package has no JS compiler API for
     // Next's in-process checker; without this `next dev` and `next build`
     // refuse to start. The build's type check runs `tsc` instead (the native
-    // 7.x one). The linter keeps its own TypeScript 6 — see .pnpmfile.cjs.
+    // 7.x one).
     useTypeScriptCli: true,
     // Pages only change on deploy, so the client router keeps what it fetched:
     // 5 h for both: the deploy cron fires every 6 h (.github/workflows/deploy.yml),

@@ -24,7 +24,9 @@ export function normaliseUserCode(input: unknown): string | null {
   if (typeof input !== 'string') return null
   const code = input.toUpperCase().replace(/[\s-]/g, '')
   if (code.length !== USER_CODE_LENGTH) return null
-  return [...code].every((char) => CODE_ALPHABET.includes(char)) ? code : null
+  return Array.from(code).every((char) => CODE_ALPHABET.includes(char))
+    ? code
+    : null
 }
 
 /** `ABCD-EFGH`: eight characters are easier to copy off a screen in two. */

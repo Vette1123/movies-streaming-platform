@@ -73,7 +73,7 @@ export function useHeroExtras(
   useEffect(() => {
     if (!enabled || !id || !key) return
     let alive = true
-    load(key, mediaType, id).then((value) => {
+    void load(key, mediaType, id).then((value) => {
       if (alive) setExtras(value)
     })
     return () => {

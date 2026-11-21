@@ -126,7 +126,7 @@ the moment it did not.
 ## What worked
 
 - **`wrangler tail` on the private player worker.** `resolve failed
-StreamResolveError: https://vixsrc.to/api/movie/278 -> 403` named the exact
+  StreamResolveError: https://vixsrc.to/api/movie/278 -> 403` named the exact
   hop and status in one shot. The Worker had that detail all along; the relay
   did not, which is why the relay half took ten times longer to diagnose. That
   asymmetry is now closed.
