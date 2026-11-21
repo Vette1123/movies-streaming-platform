@@ -223,3 +223,4 @@ with the work, not after.
 | 2026-11-20 | [README refresh, sponsor by email](2026-11-20-readme-refresh-sponsor-email.md) | A README mailto uses the site button's subject, so the Gmail auto-reply catches it |
 | 2026-11-20 | [Wide screens: dark rail boxes on reload](2026-11-20-rail-wide-posters.md) | Six static posters only fit ~1700px; 2xl ships 14 behind display:none + lazy |
 | 2026-11-20 | [Refresh jump, silent challenge, verified fleet](2026-11-20-reload-jump-silent-challenge-verified-fleet.md) | `cf.client.bot` skipped the cloud block: verify a block by the fleet's firewall actions, not the rule's existence |
+| 2026-11-21 | [PostHog + GitHub sweep](2026-11-21-posthog-gh-sweep.md) | Resolving in PostHog does not close its GitHub mirror: close both in one step |

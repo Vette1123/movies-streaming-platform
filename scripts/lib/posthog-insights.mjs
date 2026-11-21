@@ -70,6 +70,8 @@ export const trends = ({
   display = 'ActionsLineGraph',
   breakdown,
   breakdownType = 'event',
+  // A breakdown with more values than this comes back truncated and --check fails it.
+  breakdownLimit = 15,
   formula,
   compare = false,
   postfix,
@@ -95,7 +97,7 @@ export const trends = ({
           breakdownFilter: {
             breakdown,
             breakdown_type: breakdownType,
-            breakdown_limit: 15,
+            breakdown_limit: breakdownLimit,
           },
         }
       : {}),

@@ -926,6 +926,8 @@ const growth = {
         interval: 'week',
         from: '-56d',
         breakdown: 'area',
+        // 15 areas + events with none: 16 values overflowed 15 (2026-11-21).
+        breakdownLimit: 25,
       }),
     },
     {
