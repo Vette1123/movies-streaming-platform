@@ -227,3 +227,4 @@ with the work, not after.
 | 2026-11-21 | [GSC and Bing audit](2026-11-21-gsc-bing-audit.md) | After a sitemap split, check GSC read every child: tv.xml sat unread for 6 days |
 | 2026-11-21 | [Sitemap submit on deploy](2026-11-21-seo-submit.md) | Submit a sitemap index WITH its children; CI reads out/, never the WAF-guarded live site |
 | 2026-11-21 | [Daily search-engine run](2026-11-21-seo-daily.md) | A health check copied between sites takes its thresholds from the target site's own history |
+| 2026-11-21 | [seo:gsc and a GSC/Bing/PostHog sweep](2026-11-21-seo-gsc-and-sweep.md) | Judge a title from a clean load or server HTML, never the page reloaded after a Cloudflare challenge |
