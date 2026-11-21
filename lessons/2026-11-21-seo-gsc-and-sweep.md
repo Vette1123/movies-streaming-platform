@@ -11,7 +11,7 @@
   Bing ConnectionTimeout 27 on 2026-11-20 (week median 1) has no match at the edge:
   `cf:health 48` shows 0 failed crawler requests and 16 eyeball 5xx of 492,046. Left red.
 - Dependabot #216 failed on a Prettier warning in a lesson that main has since fixed; asked
-  dependabot to rebase.
+  dependabot to rebase; it closed #216 for #247 (13 updates, verify green), merged.
 - Removed 3 leftover `.claude/worktrees` folders and 3 merged remote branches
   (`git cherry` showed 0 unmerged on each).
 
@@ -23,12 +23,19 @@
 - The ported script's test failed typecheck here (tests are TS, the module was untyped JS);
   fixed with JSDoc types on the module so every caller gets them.
 
+- After merging #247, local `pnpm install` died in `@posthog/cli`'s postinstall (Windows
+  PowerShell `Expand-Archive` could not load its module from the inherited `PSModulePath`), and
+  the half-done install made 2 posthog-client tests fail. Not the bump: CI on Linux was green.
+
 ## What worked
 
 - Listing the properties each service account can see (`webmasters/v3/sites`) answered
   "is access granted" for every site in one call.
 
 ## Rules
+
+- On this PC, a postinstall that unzips with `Expand-Archive` needs
+  `env -u PSModulePath pnpm install`; read a red local test after an aborted install as the install.
 
 - Judge a page's title from a clean load or the server HTML, never the post-challenge reload.
 - curl and fresh browsers get Cloudflare's challenge (403 / "Just a moment"); that is not a
