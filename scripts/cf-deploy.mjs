@@ -26,9 +26,11 @@
 // nobody sees. Set CF_PURGE=false to skip it (e.g. a config-only redeploy).
 import { spawnSync } from 'node:child_process'
 import { setDefaultResultOrder } from 'node:dns'
+import { readFile } from 'node:fs/promises'
 
 import { countFiles } from './lib/asset-budget.mjs'
 import { planIndexNow, submitIndexNow } from './lib/indexnow.mjs'
+import { submitSitemapIndex } from './lib/submit-sitemaps.mjs'
 
 // See scripts/load-env.mjs: AAAA-first resolution turns the purge into a
 // `fetch failed` on any machine without a working IPv6 route, and a failed
@@ -177,6 +179,14 @@ async function postDeploy() {
   const submitted = urlList.length ? await submitIndexNow(urlList) : 0
   if (submitted)
     console.log(`✓ IndexNow pinged (${submitted}/${urlList.length} URLs)`)
+
+  // GSC + Bing re-read the sitemaps only when this deploy changed URLs, the
+  // portfolio-v1 rule: resubmitting an unchanged sitemap tells them nothing.
+  // The built index is what just went live; CI cannot read the live one (WAF).
+  if (urlList.length)
+    await submitSitemapIndex(
+      await readFile('out/sitemap.xml', 'utf8').catch(() => null)
+    )
 
   await annotateDeploy()
 }

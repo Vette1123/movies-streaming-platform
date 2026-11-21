@@ -228,6 +228,10 @@ jobs:
           # The IndexNow diff reads the live site through the WAF
           # (CI_HEADER in scripts/cf-waf-setup.mjs); CI runs on Azure.
           CI_WAF_BYPASS: ${{ secrets.CI_WAF_BYPASS }}
+          # A deploy that changed URLs resubmits the sitemaps to Search Console
+          # and Bing (scripts/lib/search-engines.mjs). Absent, each is skipped.
+          GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+          BING_API_KEY: ${{ secrets.BING_API_KEY }}
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           TMDB_HEADER_KEY: ${{ secrets.TMDB_HEADER_KEY }}
           NEXT_PUBLIC_TMDB_BASEURL: ${{ secrets.NEXT_PUBLIC_TMDB_BASEURL }}

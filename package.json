@@ -30,6 +30,7 @@
     "icons:verify": "node scripts/verify-icons.mjs",
     "apps:icons": "node scripts/build-companion-icons.mjs",
     "seo:verify": "node scripts/verify-seo.mjs",
+    "seo:submit": "node scripts/seo-submit.mjs",
     "lighthouse": "node scripts/lighthouse.mjs",
     "og:build": "node scripts/build-og-image.mjs",
     "embed:probe": "node scripts/embed-probe.mjs",
