@@ -667,6 +667,7 @@ export const DetailsHero = ({
                   // which is what keeps pressing play on the already-playing episode
                   // from restarting it.
                   src={src || undefined}
+                  // oxlint-disable-next-line jsx-a11y/no-autofocus -- the player mounts on the user's Play press; focus moves there so its keys work
                   autoFocus
                   onLoad={() => setLoadedSrc(src ?? null)}
                   content="noindex,nofollow"

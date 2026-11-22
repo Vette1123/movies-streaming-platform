@@ -581,6 +581,7 @@ export function Carousel({
 
   return (
     <CarouselPauseContext.Provider value={pauseControls}>
+      {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- the WAI-ARIA carousel pattern: a focusable region driven by arrow keys */}
       <div
         ref={stageRef}
         data-carousel-stage
@@ -608,6 +609,7 @@ export function Carousel({
         onTouchStart={onStageTouchStart}
         onTouchEnd={onStageTouchEnd}
         onKeyDown={handleKeyDown}
+        // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- same pattern: the region takes focus so the arrow keys reach it
         tabIndex={0}
         role="region"
         aria-roledescription="carousel"

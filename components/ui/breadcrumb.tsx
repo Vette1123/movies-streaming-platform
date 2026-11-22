@@ -25,6 +25,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
         className
       )}
     >
+      {/* oxlint-disable-next-line jsx-a11y/no-redundant-roles -- not redundant: Safari/VoiceOver drops list semantics from a list-style: none list unless the role is explicit */}
       <ol className="flex flex-wrap items-center gap-1" role="list">
         {items.map((item, index) => {
           const isLast = index === items.length - 1

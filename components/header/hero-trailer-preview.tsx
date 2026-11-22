@@ -148,6 +148,7 @@ function TouchFullscreenControls({
   onExitFullscreen,
 }: FullViewControlsProps) {
   return (
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- touch only (FullscreenControls); a tap is how touch toggles play
     <div
       // pointer-events-auto: the cover is pointer-events-none, so this layer
       // catches the tap. A tap anywhere on the film toggles play/pause.
@@ -242,6 +243,7 @@ function DesktopFullscreenControls({
   }, [scheduleHide, clearTimer])
 
   return (
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a pointer shortcut to show the controls; keyboard users have the Play/Pause, Mute and Exit buttons below
     <div
       // pointer-events-auto: the cover itself is pointer-events-none, so this
       // layer is what actually catches taps/moves to summon the controls.

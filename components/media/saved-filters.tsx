@@ -152,6 +152,7 @@ export function SavedFilters({
       {naming ? (
         <div className="flex items-center gap-1.5">
           <input
+            // oxlint-disable-next-line jsx-a11y/no-autofocus -- the field appears because the user just chose to name a filter
             autoFocus
             value={name}
             maxLength={MAX_PRESET_NAME}

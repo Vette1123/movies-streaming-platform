@@ -231,3 +231,4 @@ with the work, not after.
 | 2026-11-21 | [Dependencies to latest](2026-11-21-deps-latest.md) | A TMDB 429 in a local build is the IP: wait and rebuild once; Remotion now pins a patched zod, so the override went |
 | 2026-11-21 | [ESLint and Prettier to oxlint and oxfmt](2026-11-21-oxc.md) | `no-useless-escape` on a regex inside a template string is a bug: ui-shots split classes on the letter "s" |
 | 2026-11-22 | [Bing throttle, timeout floor, staggered cron](2026-11-22-seo-daily-bing-throttle-and-timeouts.md) | A Bing counter jump is ours only when the Worker or the edge shows it too; Worker wall-time quantiles answer it in one query. |
+| 2026-11-22 | [A11y lint rules on](2026-11-22-a11y-lint.md) | Nine a11y rules on; CardTitle renders its children; a list-style: none list keeps role="list" for Safari. |
