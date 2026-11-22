@@ -3,7 +3,6 @@ import { WatchProvider } from '@/services/watch-providers'
 
 import { FilterParams } from '@/types/filter'
 import { MediaResponse } from '@/types/media'
-import { MovieGenre } from '@/types/movie-genre'
 import { ItemType, Param } from '@/types/movie-result'
 import { SeasonDetails } from '@/types/season-details'
 
@@ -73,9 +72,6 @@ export const discoverApi = (
   params: Param = {}
 ): Promise<MediaResponse> =>
   getJson('/api/filter', { ...filterParams, ...params, mediaType })
-
-export const getGenreListApi = (mediaType: ItemType): Promise<MovieGenre[]> =>
-  getJson('/api/genres', { mediaType })
 
 export const getWatchProvidersApi = (
   mediaType: ItemType,

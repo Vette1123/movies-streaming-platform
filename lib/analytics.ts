@@ -809,6 +809,7 @@ export const FEATURE_AREA = {
   recent_searches: 'search',
   skip_intro: 'playback',
   player_trial: 'playback',
+  security_check: 'health',
 } as const satisfies Record<string, EventArea>
 
 export type Feature = keyof typeof FEATURE_AREA
