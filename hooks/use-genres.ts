@@ -1,26 +1,15 @@
-'use client'
-
-import { useQuery } from '@tanstack/react-query'
-
 import { ItemType } from '@/types/movie-result'
-import { getGenreListApi } from '@/lib/api-client'
 import { MOVIES_GENRE, TV_GENRE } from '@/lib/genres'
 
 /**
- * The TMDB genre list for a media type, fetched from the Worker's /api/genres
- * and backed by the bundled static list. The static list renders instantly as
- * placeholder data (so filter chips never pop in), then the live list replaces
- * it once resolved. Any failure keeps the static list — genres never go blank.
+ * The TMDB genre list for a media type: the bundled list, nothing fetched.
+ *
+ * It used to be replaced by /api/genres after paint. TMDB's genre list has not
+ * changed in years, and on 2026-11-20/21 that call was the first challenged
+ * request for visitors landing on /movies and /tv-shows (7 of 31 api_errors),
+ * an invocation plus a security check bought for a list we already ship.
+ * The Worker route stays for old tabs.
  */
 export function useGenres(mediaType: ItemType) {
-  const fallback = mediaType === 'tv' ? TV_GENRE : MOVIES_GENRE
-
-  const { data } = useQuery({
-    queryKey: ['genres', mediaType],
-    queryFn: () => getGenreListApi(mediaType),
-    placeholderData: fallback,
-    staleTime: 1000 * 60 * 60 * 24, // 1 day — matches how rarely genres change
-  })
-
-  return data?.length ? data : fallback
+  return mediaType === 'tv' ? TV_GENRE : MOVIES_GENRE
 }

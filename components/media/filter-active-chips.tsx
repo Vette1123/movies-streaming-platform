@@ -55,7 +55,11 @@ export const FilterActiveChips = ({
   className,
 }: FilterActiveChipsProps) => {
   const genres = useGenres(mediaType)
-  const providers = useWatchProviders(mediaType, filter.watchRegion)
+  const providers = useWatchProviders(
+    mediaType,
+    filter.watchRegion,
+    filter.watchProviders.length > 0
+  )
 
   const chips = React.useMemo<Chip[]>(() => {
     const list: Chip[] = []

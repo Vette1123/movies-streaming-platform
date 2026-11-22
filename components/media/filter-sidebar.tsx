@@ -174,7 +174,6 @@ export const FilterSidebar = ({
   // oxlint-disable-next-line react/purity
   const currentYear = new Date().getFullYear()
   const genres = useGenres(mediaType)
-  const providers = useWatchProviders(mediaType, filter.watchRegion)
 
   // Accordion state is LOCAL now (was URL-synced) so shareable filter links carry
   // only real filters. Genres open by default — the most-used control.
@@ -190,6 +189,11 @@ export const FilterSidebar = ({
   })
   const toggle = (key: string) =>
     setOpen((prev) => ({ ...prev, [key]: !prev[key] }))
+  const providers = useWatchProviders(
+    mediaType,
+    filter.watchRegion,
+    open.providers || filter.watchProviders.length > 0
+  )
 
   // Local mirror of the sliders for smooth dragging; the committed value is
   // pushed to the URL on a debounce (live-apply — no more "Save" buttons).

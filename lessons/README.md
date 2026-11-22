@@ -235,3 +235,4 @@ with the work, not after.
 | 2026-11-22 | [Cross-promo art cache](2026-11-22-cross-promo-art-cache.md) | Every folder in `public/` needs a `_headers` line; the default is a request per view. |
 | 2026-11-22 | [Command-menu avatar to WebP](2026-11-22-command-menu-avatar-webp.md) | 163 KB PNG painted at 32 px; a folder-wide size budget test catches the next one. |
 | 2026-11-22 | [Crawler images off wsrv.nl](2026-11-22-crawler-images-off-wsrv.md) | wsrv.nl robots.txt disallows `/*?*`: every sitemap/JSON-LD image was uncrawlable. |
+| 2026-11-22 | [Challenge shown in place](2026-11-22-challenge-in-place.md) | A hidden challenge frame solved 5 of 15; show it in place before hopping, and stop browse pages making challenged requests they do not need. |
