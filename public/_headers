@@ -66,6 +66,13 @@
 # for an installed app, so the week is about not re-fetching it on every launch.
 /splash/*
   Cache-Control: public, max-age=604800
+# The other apps' icons and promo art on the cross-promo cards. Unhashed, and an
+# app redraws its icon now and then, so a week like the brand assets above, not a
+# year. Without these lines every page view re-asked for each one.
+/apps/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=604800
+/promo/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=604800
 
 # Documents are build-time snapshots refreshed by the 6h scheduled deploy
 # (.github/workflows/deploy.yml), so the shared TTL tracks that interval and the
