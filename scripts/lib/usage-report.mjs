@@ -80,9 +80,14 @@ export function whatToDo({ reach, activation, player, support, rage }) {
   }
   for (const source of player) {
     // A title the provider does not carry yet (a film still in cinemas) is
-    // not the server failing, and the player already hops off it.
-    const failures = source.failures - (source.no_stream ?? 0)
-    const rate = source.plays ? failures / source.plays : 0
+    // not the server failing, and the player already hops off it. Neither is
+    // a silent frame: a working embed waiting for its own play button looks
+    // the same from outside (lib/player-hop.ts silentIsFailure).
+    const failures =
+      source.failures - (source.no_stream ?? 0) - (source.silent ?? 0)
+    // Over attempts, not plays: a server that mostly fails read "325%".
+    const attempts = source.plays + failures
+    const rate = attempts ? failures / attempts : 0
     if (failures >= 10 && rate > 0.3) {
       out.push(
         `Server "${source.source}" failed ${failures} times against ${source.plays} plays (${pct(rate)}) — check it with pnpm embed:probe or move it down the list.`
@@ -90,6 +95,10 @@ export function whatToDo({ reach, activation, player, support, rage }) {
     }
   }
   for (const area of reach) {
+    // Latched once per browser, so its reach tracks the new-browser pool, not
+    // the funnel. The activation-rate rule above measures that. And `health`
+    // is failures (image fallbacks, security checks): it falling is good news.
+    if (area.area === 'activation' || area.area === 'health') continue
     if (area.share_before > 0.05 && area.share < area.share_before * 0.7) {
       out.push(
         `"${area.area}" reach fell from ${pct(area.share_before)} to ${pct(area.share)} of active people — something in it may have broken.`

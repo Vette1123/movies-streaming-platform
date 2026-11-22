@@ -39,6 +39,9 @@ import { COMPARISON_TILES, SCOREBOARD_TILE } from './posthog-comparisons.mjs'
 const ROUTE = `coalesce(properties.route, replaceRegexpAll(properties.$pathname, '/[0-9][^/]*', '/:id'))`
 const SOURCE = `coalesce(nullIf(replaceRegexpAll(toString(properties.$referring_domain), '^www[.]', ''), '$direct'), 'direct')`
 const SERVER = `coalesce(nullIf(toString(properties.source), ''), toString(properties.stream_source), 'unknown')`
+// A failure that is the SERVER's: not a title it does not carry yet, and not a
+// painted frame waiting for its own play button (lib/player-hop.ts).
+const SERVER_FAULT = `event = 'player_failed' AND ifNull(properties.no_stream, false) != true AND ifNull(toString(properties.reason), '') != 'silent'`
 const GENRES = `JSONExtract(ifNull(toString(properties.genres), '[]'), 'Array(String)')`
 
 /** One row per person: first seen, first source/screen, whether they played. */
@@ -542,9 +545,10 @@ const weekly = {
       query: hogql(
         `SELECT ${SERVER} AS server,
                 countIf(event = 'media_played') AS plays,
-                countIf(event = 'player_failed') AS failures,
+                countIf(${SERVER_FAULT}) AS failures,
                 round(100 * failures / greatest(plays + failures, 1), 1) AS failure_pct,
-                uniqIf(person_id, event = 'player_failed') AS people_failed
+                uniqIf(person_id, ${SERVER_FAULT}) AS people_failed,
+                countIf(event = 'player_failed' AND properties.reason = 'silent') AS silent
          FROM events WHERE ${HUMANS} AND timestamp > now() - INTERVAL 7 DAY
            AND event IN ('media_played', 'player_failed')
          GROUP BY server ORDER BY plays + failures DESC LIMIT 20`
@@ -555,7 +559,7 @@ const weekly = {
       size: 'half',
       query: hogql(
         `SELECT toStartOfDay(timestamp) AS day,
-                round(100 * countIf(event = 'player_failed') / greatest(count(), 1), 1) AS failure_pct
+                round(100 * countIf(${SERVER_FAULT}) / greatest(countIf(event = 'media_played' OR ${SERVER_FAULT}), 1), 1) AS failure_pct
          FROM events WHERE ${HUMANS} AND timestamp > now() - INTERVAL 30 DAY
            AND event IN ('media_played', 'player_failed')
          GROUP BY day ORDER BY day`,

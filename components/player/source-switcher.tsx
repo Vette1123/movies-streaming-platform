@@ -17,7 +17,12 @@ import {
 } from '@/config/sources'
 import { signInHref } from '@/lib/account'
 import { trackPlayerFailed, trackSupportCtaClicked } from '@/lib/analytics'
-import { silentNoticeText, stallNoticeText } from '@/lib/player-hop'
+import {
+  SILENT_REPORT_MS,
+  silentIsFailure,
+  silentNoticeText,
+  stallNoticeText,
+} from '@/lib/player-hop'
 import { cn } from '@/lib/utils'
 import { type StreamSourceControl } from '@/hooks/use-stream-source'
 import {
@@ -324,11 +329,18 @@ export function SourceSwitcher({
   const [silentId, setSilentId] = React.useState<string | null>(null)
   React.useEffect(() => {
     if (!loaded || progressing) return
-    const timer = setTimeout(() => {
-      setSilentId(currentId)
-      if (currentId) trackPlayerFailed({ source: currentId, reason: 'silent' })
-    }, STALL_MS)
-    return () => clearTimeout(timer)
+    const offer = setTimeout(() => setSilentId(currentId), STALL_MS)
+    // The report waits longer than the offer (silentIsFailure): progress
+    // arriving in between clears both timers through this effect's cleanup.
+    const report = setTimeout(() => {
+      const visible = document.visibilityState === 'visible'
+      if (currentId && silentIsFailure({ waitedMs: SILENT_REPORT_MS, visible }))
+        trackPlayerFailed({ source: currentId, reason: 'silent' })
+    }, SILENT_REPORT_MS)
+    return () => {
+      clearTimeout(offer)
+      clearTimeout(report)
+    }
   }, [currentId, loaded, progressing])
 
   const silent =

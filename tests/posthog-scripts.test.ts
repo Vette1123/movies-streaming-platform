@@ -120,6 +120,48 @@ describe('usage report', () => {
     expect(todo[1]).toContain('"x" failed 15 times')
   })
 
+  // 2026-11-16..22: `silent` (a painted frame waiting for its own play button)
+  // was booked as a failure, and the default read 18% failing on 7% stalls.
+  it('does not blame a server for frames that were only silent', () => {
+    const todo = whatToDo({
+      reach: [],
+      activation: { new_people: 0, rate: 0 },
+      player: [{ source: 'a', plays: 40, failures: 20, silent: 16 }],
+      support: { cta: 0, checkout: 0 },
+      rage: [],
+    })
+    expect(todo).toEqual([])
+  })
+
+  // "activation" is first_play/first_core_use: once per browser, never for a
+  // browser seen before the latch. Its reach shrinks with the new-browser pool,
+  // so it read 12% -> 6% while the real play rate held at 25% (2026-11-22).
+  // The activation-rate rule above is the measure of that funnel.
+  it('states a failing server as a share of attempts, never above 100%', () => {
+    const [line] = whatToDo({
+      reach: [],
+      activation: { new_people: 0, rate: 0 },
+      player: [{ source: 'v', plays: 4, failures: 13 }],
+      support: { cta: 0, checkout: 0 },
+      rage: [],
+    })
+    expect(line).toContain('(76%)')
+  })
+
+  it('does not read the latched activation area, or fewer failures, as broken', () => {
+    const todo = whatToDo({
+      reach: [
+        { area: 'activation', share_before: 0.12, share: 0.06 },
+        { area: 'health', share_before: 0.1, share: 0.03 },
+      ],
+      activation: { new_people: 0, rate: 0 },
+      player: [],
+      support: { cta: 0, checkout: 0 },
+      rage: [],
+    })
+    expect(todo).toEqual([])
+  })
+
   it('does not blame a server for titles that have no stream yet', () => {
     // 2026-11-10: the house player "failed" 13 times against 11 plays, and 10
     // of those were fresh theatrical releases the provider does not carry.

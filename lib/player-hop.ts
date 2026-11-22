@@ -38,6 +38,30 @@ export function stallNoticeText(autoHopped: boolean): string {
 }
 
 /**
+ * How long a painted embed may play nothing before it counts against its
+ * server. The escape offer still appears at the 9 s stall window; only the
+ * report waits. At 9 s a working embed waiting for its own play button looks
+ * exactly like a dead one, and booking those as failures took the default
+ * server from ~10% to 30-45% a day with its stalls flat (2026-11-16 to 22).
+ */
+export const SILENT_REPORT_MS = 45_000
+
+/**
+ * A silent frame is a server failure only after the full report window, and
+ * only if the viewer was watching it: a hidden tab means they went elsewhere,
+ * which says nothing about the server.
+ */
+export function silentIsFailure({
+  waitedMs,
+  visible,
+}: {
+  waitedMs: number
+  visible: boolean
+}): boolean {
+  return visible && waitedMs >= SILENT_REPORT_MS
+}
+
+/**
  * What the silence notice says. A different failure than the stall above: the
  * frame DID paint, it just plays nothing — which is what a gated or dead
  * provider looks like from outside its iframe. No hop is attempted on this
