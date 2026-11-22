@@ -236,3 +236,4 @@ with the work, not after.
 | 2026-11-22 | [Command-menu avatar to WebP](2026-11-22-command-menu-avatar-webp.md) | 163 KB PNG painted at 32 px; a folder-wide size budget test catches the next one. |
 | 2026-11-22 | [Crawler images off wsrv.nl](2026-11-22-crawler-images-off-wsrv.md) | wsrv.nl robots.txt disallows `/*?*`: every sitemap/JSON-LD image was uncrawlable. |
 | 2026-11-22 | [Challenge shown in place](2026-11-22-challenge-in-place.md) | A hidden challenge frame solved 5 of 15; show it in place before hopping, and stop browse pages making challenged requests they do not need. |
+| 2026-11-22 | [Stream order](2026-11-22-stream-order.md) | "18% failing" was silent frames; the rescue slot sat on a 76%-dead server, and one server played S1E1 for every episode. |

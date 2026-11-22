@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { Download, Share, X } from 'lucide-react'
 
 import { trackFeatureUsed } from '@/lib/analytics'
+import { cn } from '@/lib/utils'
 import { useMounted } from '@/hooks/use-mounted'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
 
@@ -97,8 +98,22 @@ export function InstallPrompt() {
           className="absolute inset-0 rounded-2xl focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(10,12,20,0.82)] focus-visible:outline-hidden"
         />
       )}
-      <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-linear-to-br from-cyan-300 to-cyan-500 text-[#04121a]">
-        <Download className="size-5" strokeWidth={2.5} aria-hidden />
+      {/* On the iOS hint the tile is a picture of Safari's Share button, not a
+          button of ours: a filled cyan square reads as the control, and three
+          iPhone visitors tapped it and nothing happened (PostHog, Nov 2026). */}
+      <div
+        className={cn(
+          'grid size-10 shrink-0 place-items-center rounded-xl',
+          needsIosHint
+            ? 'border border-white/15 bg-white/5 text-white/80'
+            : 'bg-linear-to-br from-cyan-300 to-cyan-500 text-[#04121a]'
+        )}
+      >
+        {needsIosHint ? (
+          <Share className="size-5" strokeWidth={2} aria-hidden />
+        ) : (
+          <Download className="size-5" strokeWidth={2.5} aria-hidden />
+        )}
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-white">Install Reely</p>

@@ -7,6 +7,8 @@ import {
   isViewerChoice,
   mayLeavePlayer,
   playbackAdvanced,
+  SILENT_REPORT_MS,
+  silentIsFailure,
   skipReportFrom,
   stallNoticeText,
 } from '@/lib/player-hop'
@@ -143,5 +145,31 @@ describe('stallNoticeText', () => {
 
   it('names the one server before any hop', () => {
     expect(stallNoticeText(false)).toBe('This server is not responding')
+  })
+})
+
+// `silent` was booked as a server failure 9 s after the frame painted, the
+// same moment the escape offer appears. A working embed waiting for its own
+// play button looks identical at 9 s, so from 2026-11-16 the default server's
+// failure rate read 30-45% a day while its stalls never moved (2026-11-22).
+describe('silentIsFailure', () => {
+  it('is not a failure at the 9 s offer', () => {
+    expect(silentIsFailure({ waitedMs: 9000, visible: true })).toBe(false)
+  })
+
+  it('is a failure once the viewer has waited the report window, watching', () => {
+    expect(silentIsFailure({ waitedMs: SILENT_REPORT_MS, visible: true })).toBe(
+      true
+    )
+  })
+
+  it('is not a failure when the viewer looked away', () => {
+    expect(
+      silentIsFailure({ waitedMs: SILENT_REPORT_MS, visible: false })
+    ).toBe(false)
+  })
+
+  it('waits several stall windows, not one', () => {
+    expect(SILENT_REPORT_MS).toBeGreaterThanOrEqual(30_000)
   })
 })

@@ -67,7 +67,8 @@ const queries = {
            FROM events WHERE {humans} AND ${now} LIMIT 1`,
   player: `SELECT coalesce(nullIf(toString(properties.source), ''), toString(properties.stream_source), 'unknown') AS source,
                   countIf(event = 'media_played') AS plays, countIf(event = 'player_failed') AS failures,
-                  countIf(event = 'player_failed' AND properties.no_stream = true) AS no_stream
+                  countIf(event = 'player_failed' AND properties.no_stream = true) AS no_stream,
+                  countIf(event = 'player_failed' AND properties.reason = 'silent') AS silent
            FROM events WHERE {humans} AND ${now} AND event IN ('media_played', 'player_failed')
            GROUP BY source ORDER BY plays + failures DESC LIMIT 30`,
   support: `SELECT uniqIf(person_id, event = 'support_nudge_shown') AS nudged,
@@ -175,8 +176,16 @@ try {
 
   console.log('\nPLAYER — plays vs failures by server')
   for (const p of r.player) {
+    // Server faults only: a title with no stream yet and a frame that was only
+    // silent (waiting for its own play button) are counted beside, not in.
+    const faults =
+      Number(p.failures) - Number(p.no_stream || 0) - Number(p.silent || 0)
+    const notes = [
+      Number(p.no_stream) && `${p.no_stream} titles with no stream yet`,
+      Number(p.silent) && `${p.silent} silent frames`,
+    ].filter(Boolean)
     console.log(
-      `  ${String(p.source).padEnd(22)} plays ${String(p.plays).padStart(5)}  failures ${String(p.failures).padStart(5)}  (${pct(p.failures, Number(p.plays) + Number(p.failures))})${Number(p.no_stream) ? `, ${p.no_stream} were titles with no stream yet` : ''}`
+      `  ${String(p.source).padEnd(22)} plays ${String(p.plays).padStart(5)}  faults ${String(faults).padStart(5)}  (${pct(faults, Number(p.plays) + faults)})${notes.length ? `; also ${notes.join(', ')}` : ''}`
     )
   }
   if (r.player.some((p) => p.source === 'unknown' && Number(p.plays) > 0)) {

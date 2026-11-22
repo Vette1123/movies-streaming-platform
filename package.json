@@ -69,6 +69,7 @@
     "typecheck": "tsc --noEmit -p .",
     "test:watch": "vitest",
     "stream:chain": "node scripts/stream-chain.mjs",
+    "stream:order": "node scripts/stream-order.mjs",
     "cf:alerts": "node scripts/cf-alerts.mjs"
   },
   "dependencies": {

@@ -120,6 +120,30 @@ describe('path templates (non-vidsrc-shaped providers)', () => {
       'https://a.example/embed/tv/1396/1/7'
     )
   })
+
+  // Only slots 4 and 5 read path templates, so a provider with its own URL
+  // shape could never sit above slot 4: ordering servers by how well they play
+  // was capped by where their path happened to be readable (2026-11-22).
+  it.each([1, 2, 3])(
+    'slot %i honours its MOVIE_PATH and TV_PATH',
+    async (slot) => {
+      const prefix =
+        slot === 1
+          ? 'NEXT_PUBLIC_STREAMING_MOVIES_API'
+          : `NEXT_PUBLIC_STREAM_SOURCE_${slot}`
+      const mod = await importWithEnv({
+        ...BASE_ENV,
+        NEXT_PUBLIC_STREAM_SOURCE_3: 'https://c.example',
+        [`${prefix}_MOVIE_PATH`]: '/embed/{id}',
+        [`${prefix}_TV_PATH`]: '/embedtv/{id}&s={s}&e={e}',
+      })
+      const src = mod.STREAM_SOURCES[slot - 1]
+      expect(mod.movieStreamUrl(src, 550)).toBe(`${src.base}/embed/550`)
+      expect(mod.seriesStreamUrl(src, 119051, { season: 2, episode: 1 })).toBe(
+        `${src.base}/embedtv/119051&s=2&e=1`
+      )
+    }
+  )
 })
 
 describe('visibleSourcesFor tiers', () => {
