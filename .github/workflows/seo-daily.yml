@@ -9,7 +9,7 @@ name: SEO daily
 
 on:
   schedule:
-    - cron: '37 1,7,13,19 * * *'
+    - cron: '37 4,10,16,22 * * *'
   workflow_dispatch:
 
 permissions:

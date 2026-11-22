@@ -76,13 +76,19 @@ export function sitemapFeeds(rootUrl, rootXml) {
   return [rootUrl, ...children]
 }
 
+// Bing's SubmitFeed answers 400 ThrottleUser / ThrottleHost when the same key or host resubmitted
+// recently (one key covers every site, and the daily crons run together). Bing still re-reads the
+// sitemap on its own schedule, so a throttle is not a failed submit.
+const BING_THROTTLE = /Throttle(User|Host)/
+
 const failure = async (res) =>
   `${res.status} ${(await res.text().catch(() => '')).slice(0, 200)}`
 
 /**
  * Submits each feed to GSC (`gscSite`, e.g. sc-domain:reely.space) and Bing
  * (`bingSite`, the verified site URL). Returns `{ gsc, bing }`, each
- * 'ok' | 'skipped' (secret missing) | 'failed'; failures print a CI warning.
+ * 'ok' | 'skipped' (secret missing) | 'failed', and Bing may also be
+ * 'throttled' (see BING_THROTTLE); failures print a CI warning.
  *
  * @param {{ feeds: string[], gscSite: string, bingSite: string }} target
  * @param {Record<string, string | undefined>} [env]
@@ -138,8 +144,16 @@ export async function submitSitemaps(
         )
         log(`seo-submit: Bing ${feed} -> ${res.status}`)
         if (!res.ok) {
-          result.bing = 'failed'
-          warn(`Bing ${feed}: ${await failure(res)}`)
+          const why = await failure(res)
+          if (BING_THROTTLE.test(why)) {
+            if (result.bing === 'ok') result.bing = 'throttled'
+            log(
+              `seo-submit: Bing ${feed} throttled (submitted recently): ${why}`
+            )
+          } else {
+            result.bing = 'failed'
+            warn(`Bing ${feed}: ${why}`)
+          }
         }
       } catch (e) {
         result.bing = 'failed'
@@ -210,6 +224,11 @@ const BING_COUNTERS = [
 ]
 /** InIndex below this share of the last week's best counts as a drop. */
 export const INDEX_DROP_RATIO = 0.8
+// A counter jump is a problem only when it is also more than this share of the day's crawl.
+// 2026-11-21: reely.space had 48 ConnectionTimeout of 6,125 crawled (0.8%, week median 2), while the
+// Worker's wall time held p99.9 3 s with 0 errors and the edge showed 0 failed crawler requests.
+// A gate that is red on that every day gets ignored. A small site (26 crawled) still trips on any jump.
+export const BING_JUMP_SHARE = 0.01
 const WEEK = 7
 
 /** Bing's own words for a failure ("ERROR!!! InvalidApiKey"), not just the status. */
@@ -293,10 +312,12 @@ export function bingSummary({
   )
   for (const k of BING_COUNTERS) {
     const base = median(prior.map((d) => Number(d[k]) || 0))
-    if (Number(last[k]) > base * 1.5 + 5)
-      problems.push(
-        `${k} ${last[k]} on ${bingDay(last.Date)} (week median ${base})`
-      )
+    const n = Number(last[k]) || 0
+    if (n <= base * 1.5 + 5) continue
+    const what = `${k} ${n} on ${bingDay(last.Date)} (week median ${base})`
+    if (n > (Number(last.CrawledPages) || 0) * BING_JUMP_SHARE)
+      problems.push(what)
+    else lines.push(`${what}, under ${BING_JUMP_SHARE * 100}% of the crawl`)
   }
   const best = Math.max(0, ...prior.map((d) => Number(d.InIndex) || 0))
   if (best > 0 && last.InIndex < best * INDEX_DROP_RATIO)

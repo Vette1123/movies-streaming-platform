@@ -20,13 +20,16 @@ const INDEX = `<sitemapindex xmlns="x">
 </sitemapindex>`
 
 type Call = { url: string; init?: RequestInit }
-function fakeFetch(status: (url: string) => number) {
+function fakeFetch(
+  status: (url: string) => number,
+  body: (url: string) => string = () => 'nope'
+) {
   const calls: Call[] = []
   const impl = async (url: string, init?: RequestInit) => {
     calls.push({ url, init })
     if (url.includes('oauth2'))
       return new Response(JSON.stringify({ access_token: 't' }))
-    return new Response('nope', { status: status(url) })
+    return new Response(body(url), { status: status(url) })
   }
   return { calls, impl }
 }
@@ -97,6 +100,22 @@ describe('submitSitemaps', () => {
       bing: 'skipped',
     })
     expect(f.calls).toHaveLength(0)
+  })
+
+  it('a Bing throttle is "throttled", not a failure (2026-11-21 ThrottleUser)', async () => {
+    const f = fakeFetch(
+      (u) => (u.includes('SubmitFeed') ? 400 : 200),
+      () => '{"ErrorCode":4,"Message":"ERROR!!! ThrottleUser"}'
+    )
+    const lines: string[] = []
+    const r = await submitSitemaps(
+      target,
+      { GSC_SERVICE_ACCOUNT_JSON: SA, BING_API_KEY: 'k' },
+      f.impl,
+      (l) => lines.push(l)
+    )
+    expect(r).toEqual({ gsc: 'ok', bing: 'throttled' })
+    expect(lines.filter((l) => l.startsWith('::warning::'))).toHaveLength(0)
   })
 
   it('a rejected submit is reported and warned, never thrown', async () => {
@@ -191,6 +210,16 @@ describe('bingSummary', () => {
     expect(
       bingSummary(read(day(20, { ConnectionTimeout: 27 }))).problems
     ).toEqual(['ConnectionTimeout 27 on 2026-11-20 (week median 1)'])
+  })
+
+  it('a jump under 1% of a big crawl is a line, not a problem (48 of 6,125, 2026-11-21)', () => {
+    const r = bingSummary(
+      read(day(20, { CrawledPages: 6125, ConnectionTimeout: 48 }))
+    )
+    expect(r.problems).toEqual([])
+    expect(r.lines.at(-1)).toBe(
+      'ConnectionTimeout 48 on 2026-11-20 (week median 1), under 1% of the crawl'
+    )
   })
 
   it('the index dropping below 80% of the week best is', () => {
