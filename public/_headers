@@ -54,6 +54,8 @@
   Cache-Control: public, max-age=604800
 /opengraph-image.png
   Cache-Control: public, max-age=604800
+/personal-logo.webp
+  Cache-Control: public, max-age=604800
 # Manifest screenshots, fetched only when Chrome draws the richer install
 # dialog. WebP rather than PNG: they're photographic, and the pair went from
 # 611KB to 134KB.

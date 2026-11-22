@@ -233,3 +233,4 @@ with the work, not after.
 | 2026-11-22 | [Bing throttle, timeout floor, staggered cron](2026-11-22-seo-daily-bing-throttle-and-timeouts.md) | A Bing counter jump is ours only when the Worker or the edge shows it too; Worker wall-time quantiles answer it in one query. |
 | 2026-11-22 | [A11y lint rules on](2026-11-22-a11y-lint.md) | Nine a11y rules on; CardTitle renders its children; a list-style: none list keeps role="list" for Safari. |
 | 2026-11-22 | [Cross-promo art cache](2026-11-22-cross-promo-art-cache.md) | Every folder in `public/` needs a `_headers` line; the default is a request per view. |
+| 2026-11-22 | [Command-menu avatar to WebP](2026-11-22-command-menu-avatar-webp.md) | 163 KB PNG painted at 32 px; a folder-wide size budget test catches the next one. |

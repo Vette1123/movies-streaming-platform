@@ -84,7 +84,7 @@ paths:
   - 'public/mstile-150x150.png'
   - 'public/offline.html'
   - 'public/opengraph-image.png'
-  - 'public/personal-logo.png'
+  - 'public/personal-logo.webp'
   - 'public/promo'
   - 'public/screenshot-narrow.webp'
   - 'public/screenshot-wide.webp'
