@@ -12,7 +12,7 @@ import {
 
 import { PageDetailsProps } from '@/types/page-details'
 import { castNames } from '@/lib/credits'
-import { getMediaHeroImageUrl } from '@/lib/media'
+import { getMediaCrawlerImageUrl } from '@/lib/media'
 import { buildDetailsMetadata, buildMediaStaticParams } from '@/lib/media-page'
 import { notFoundOrThrow } from '@/lib/not-found'
 import { linkablePersonIds } from '@/lib/person-links'
@@ -129,7 +129,7 @@ const TVSeries = async (props: PageDetailsProps) => {
     numberOfSeasons: seriesDetails.number_of_seasons,
     numberOfEpisodes: seriesDetails.number_of_episodes,
     genres: seriesDetails.genres?.map((g) => g.name),
-    imageUrl: getMediaHeroImageUrl(
+    imageUrl: getMediaCrawlerImageUrl(
       seriesDetails.backdrop_path,
       seriesDetails.poster_path
     ),

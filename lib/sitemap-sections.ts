@@ -22,7 +22,7 @@ import {
   buildMediaSitemapEntries,
 } from '@/lib/media-page'
 import { ledgerSitemapEntries, type SitemapLedger } from '@/lib/sitemap-ledger'
-import { getPosterImageURL } from '@/lib/utils'
+import { apiConfig } from '@/lib/tmdbConfig'
 import { yearRange } from '@/components/media/year-page'
 
 // The site's URLs, in three sections, one sitemap file each.
@@ -37,7 +37,8 @@ import { yearRange } from '@/components/media/year-page'
 
 const baseUrl = siteConfig.websiteURL
 
-const sitemapImage = (path: string) => getPosterImageURL(path)
+// TMDB origin, not wsrv: Google may not crawl wsrv.nl (apiConfig.crawlerImage).
+const sitemapImage = (path: string) => apiConfig.crawlerImage(path)
 
 // The sitemap is built from the SAME helper that decides what gets prerendered,
 // not from its own hand-picked list of TMDB pages.

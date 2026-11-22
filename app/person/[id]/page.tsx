@@ -13,6 +13,7 @@ import {
   JsonLd,
   personJsonLd,
 } from '@/lib/structured-data'
+import { apiConfig } from '@/lib/tmdbConfig'
 import { getPosterImageURL } from '@/lib/utils'
 import { BlurredImage, POSTER_QUALITY } from '@/components/blurred-image'
 import { Card } from '@/components/card'
@@ -102,7 +103,7 @@ const PersonPage = async (props: { params: Promise<{ id: string }> }) => {
           name: person.name,
           description: biography || undefined,
           imageUrl: person.profile_path
-            ? getPosterImageURL(person.profile_path)
+            ? apiConfig.crawlerImage(person.profile_path)
             : undefined,
           birthday: person.birthday,
           deathday: person.deathday,

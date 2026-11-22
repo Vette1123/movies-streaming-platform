@@ -26,6 +26,8 @@ describe('public/ images', () => {
   // it replaced was 163 KB for it.
   it('serves the command-menu avatar as a small WebP', () => {
     expect(statSync('public/personal-logo.webp').size).toBeLessThan(10 * 1024)
-    expect(readFileSync('components/command-menu.tsx', 'utf8')).toContain('/personal-logo.webp')
+    expect(readFileSync('components/command-menu.tsx', 'utf8')).toContain(
+      '/personal-logo.webp'
+    )
   })
 })

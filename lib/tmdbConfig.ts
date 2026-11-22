@@ -51,8 +51,8 @@ const apiConfig = {
   // (ImageKit, 2026-10-30, LCP 6.7s on prod).
   //
   // Two of these are read bare, without the loader: `originalImage` by the OG and
-  // Twitter tags and the Worker's metadata, `w500Image` by the image sitemap and
-  // JSON-LD. Their consumers do not all decode WebP, so they keep the source
+  // Twitter tags and the Worker's metadata, `w500Image` by the RSS feed (the
+  // sitemap and JSON-LD use `crawlerImage`, below). Their consumers do not all decode WebP, so they keep the source
   // format, and the 2560 is an unfurl width, not the page's ceiling. Everything
   // on a page goes through lib/image-loader.ts, which sets the width, the
   // quality (65 backdrops / 70 posters) and WebP per candidate.
@@ -71,6 +71,19 @@ const apiConfig = {
   w500Image: (imgPath: string | null | undefined) =>
     withImagePath(imgPath, (path) =>
       buildWsrvURL(`/w500${path}`, undefined, undefined, null)
+    ),
+  // What a search crawler reads bare: the image sitemap and JSON-LD. Google
+  // obeys robots.txt on the image's own host, and wsrv.nl's ends with
+  // `User-agent: *` / `Disallow: /*?*`. Every wsrv URL is a query string, so
+  // Search Console warned on all 13,896 sitemap images (2026-11-22). TMDB's
+  // origin has no robots.txt and serves JPEG, which every consumer decodes.
+  crawlerImage: (
+    imgPath: string | null | undefined,
+    size: 'w500' | 'w1280' = 'w500'
+  ) =>
+    withImagePath(
+      imgPath,
+      (path) => `${TMDB_ORIGIN_IMAGE_BASE}/${size}${path}`
     ),
   // The hero's title wordmark. It renders as a plain <img>, so the loader never
   // sees it and its width and quality are chosen here. Read from `/original` so

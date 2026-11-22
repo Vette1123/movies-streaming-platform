@@ -1,5 +1,9 @@
 import { ItemType } from '@/types/movie-result'
-import { SHARE_IMAGE_HEIGHT, SHARE_IMAGE_WIDTH } from '@/lib/tmdbConfig'
+import {
+  apiConfig,
+  SHARE_IMAGE_HEIGHT,
+  SHARE_IMAGE_WIDTH,
+} from '@/lib/tmdbConfig'
 import { getPosterImageURL, getShareImageURL, itemRedirect } from '@/lib/utils'
 
 // Movies expose `title` / `release_date`; series expose `name` / `first_air_date`.
@@ -110,6 +114,19 @@ export function getMediaHeroImageUrl(
 }
 
 /**
+ * A title's JSON-LD image: the same art as getMediaShareImage, on TMDB's
+ * origin, because Google may not crawl wsrv.nl (see apiConfig.crawlerImage).
+ */
+export function getMediaCrawlerImageUrl(
+  backdropPath?: string | null,
+  posterPath?: string | null
+): string | null {
+  if (backdropPath) return apiConfig.crawlerImage(backdropPath, 'w1280')
+  if (posterPath) return apiConfig.crawlerImage(posterPath)
+  return null
+}
+
+/**
  * A list of TMDB items as schema.org ListItem inputs.
  *
  * Every browse, genre and franchise page renders the same shape and now
@@ -133,7 +150,9 @@ export function toListEntries(
         id: item.id,
         name,
         path: mediaDetailHref(type, item.id),
-        image: item.poster_path ? getPosterImageURL(item.poster_path) : null,
+        image: item.poster_path
+          ? apiConfig.crawlerImage(item.poster_path)
+          : null,
       }
     })
     .filter((entry): entry is NonNullable<typeof entry> => entry !== null)

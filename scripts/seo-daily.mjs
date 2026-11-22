@@ -43,7 +43,7 @@ if (process.env.GSC_SERVICE_ACCOUNT_JSON) {
     )
     for (const s of list)
       console.log(
-        `gsc: ${s.path} read ${s.lastDownloaded ?? 'never'}, ${s.errors ?? 0} errors`
+        `gsc: ${s.path} read ${s.lastDownloaded ?? 'never'}, ${s.errors ?? 0} errors, ${s.warnings ?? 0} warnings`
       )
     problems.push(...gscSitemapProblems(list, feeds).map((p) => `gsc: ${p}`))
   } catch (e) {
