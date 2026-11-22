@@ -12,7 +12,7 @@ import {
 
 import { PageDetailsProps } from '@/types/page-details'
 import { castNames, crewNamesByJob } from '@/lib/credits'
-import { getMediaHeroImageUrl } from '@/lib/media'
+import { getMediaCrawlerImageUrl } from '@/lib/media'
 import { buildDetailsMetadata, buildMediaStaticParams } from '@/lib/media-page'
 import { notFoundOrThrow } from '@/lib/not-found'
 import { linkablePersonIds } from '@/lib/person-links'
@@ -128,7 +128,7 @@ const MoviePage = async (props: PageDetailsProps) => {
     releaseDate: movieDetails.release_date,
     runtime: movieDetails.runtime,
     genres: movieDetails.genres?.map((g) => g.name),
-    imageUrl: getMediaHeroImageUrl(
+    imageUrl: getMediaCrawlerImageUrl(
       movieDetails.backdrop_path,
       movieDetails.poster_path
     ),

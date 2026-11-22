@@ -187,8 +187,11 @@ export async function readGscSitemaps(sa, site, fetchImpl = fetch) {
 
 /**
  * One problem per expected feed Google does not know, has not read within
- * SITEMAP_STALE_DAYS, or reports errors in. Warnings are not problems: Reely's
- * sit in the thousands and never meant anything (2026-11-21 audit).
+ * SITEMAP_STALE_DAYS, or reports errors in. Warnings are printed, not gated.
+ * The thousands Reely had until 2026-11-22 were one per image entry: wsrv.nl's
+ * robots.txt barred Googlebot from every poster (lib/tmdbConfig crawlerImage).
+ * After Google re-reads the sitemaps they should sit near 0; a new climb means
+ * a new cause.
  */
 export function gscSitemapProblems(list, feeds, now = new Date()) {
   const byPath = new Map(list.map((s) => [s.path, s]))

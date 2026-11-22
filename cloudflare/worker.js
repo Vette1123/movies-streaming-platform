@@ -61,7 +61,7 @@ import {
   handleLibraryPlay,
 } from '@/lib/library/serve'
 import { loadPublicList } from '@/lib/lists/routes'
-import { getMediaShareImage } from '@/lib/media'
+import { getMediaCrawlerImageUrl, getMediaShareImage } from '@/lib/media'
 import {
   mosaicPosterUrl,
   mosaicSvg,
@@ -1446,7 +1446,7 @@ async function handleDetailFallback(match, request, env, ctx, url) {
     name: meta.title,
     canonical: meta.canonical,
     description: detail.overview || meta.description,
-    image: meta.image,
+    image: getMediaCrawlerImageUrl(details.backdrop_path, details.poster_path),
     genres: details.genres?.map((genre) => genre.name),
     released: detail.released,
     duration: detail.duration,
@@ -1514,7 +1514,9 @@ async function handleCollectionFallback(match, request, env, ctx, url) {
     name: meta.title,
     description,
     url: meta.canonical,
-    ...(meta.image ? { image: meta.image } : {}),
+    ...(collection.backdrop_path
+      ? { image: getMediaCrawlerImageUrl(collection.backdrop_path) }
+      : {}),
   }
 
   return (
