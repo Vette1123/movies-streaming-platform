@@ -1,0 +1,605 @@
+{
+  "requested": {},
+  "inspected": {
+    "https://www.reely.space": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/advertise": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/collection/10": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/10194": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/1022790": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/1069584": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/1073290": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/1078456": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/collection/10789": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/collection/1084247": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1102372": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/collection/1156666": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/1165374": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/collection/1189668": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/119": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/119581": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/119674": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1214316": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/collection/121938": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1219938": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/collection/1241": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1241984": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/125574": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/1268789": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1287339": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/131292": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/131295": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/131296": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/1314623": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/131635": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1354706": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/1370345": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/137696": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Alternate page with proper canonical tag"
+    },
+    "https://www.reely.space/collection/137697": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/1389156": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1389956": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/1431054": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1432059": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/collection/1434561": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/1440105": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/1444577": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/collection/1449595": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1451578": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1458846": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1458864": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1461530": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1474814": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/collection/1504252": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/1507701": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/collection/150954": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1517102": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/collection/1529614": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/153010": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1539140": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1540907": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/1544712": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/collection/1560779": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/collection/1565": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/disclaimer": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/dmca": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/match-night": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/mood": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/movies": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/genre/action": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/genre/adventure": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/genre/animation": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/movies/genre/comedy": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/genre/crime": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/genre/documentary": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/genre/drama": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/movies/genre/family": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/movies/genre/fantasy": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/genre/history": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/genre/horror": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/genre/music": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/genre/mystery": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/genre/romance": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/genre/science-fiction": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/genre/thriller": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/genre/tv-movie": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/genre/war": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/genre/western": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/movies/year/1990": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/1991": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/1992": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/1993": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/1994": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/1995": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/movies/year/1996": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/1997": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/1998": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/1999": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/movies/year/2000": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2026": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/people": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/press": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/privacy": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/reels": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/start": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/support": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/terms": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/genre/action-and-adventure": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/genre/animation": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/genre/comedy": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/genre/crime": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/genre/documentary": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/genre/drama": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/genre/family": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/genre/kids": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/genre/mystery": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/genre/news": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/tv-shows/genre/reality": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/genre/sci-fi-and-fantasy": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/genre/soap": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/genre/talk": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/genre/war-and-politics": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/genre/western": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2026": {
+      "date": "2026-11-23",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/watch-together": {
+      "date": "2026-11-23",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    }
+  }
+}
