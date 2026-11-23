@@ -28,6 +28,9 @@ const skip = {
   tv: new Set(ledger.gone?.tv ?? []),
 }
 for (const { type, id } of blocked) skip[type]?.add(id)
+// Ledger titles are already listed, in /sitemaps/<type>-ledger-<n>.xml.
+for (const type of ['movie', 'tv'])
+  for (const id of ledger[type] ?? []) skip[type].add(id)
 
 const linked = { movie: new Set(), tv: new Set() }
 let pages = 0

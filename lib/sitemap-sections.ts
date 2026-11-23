@@ -21,7 +21,11 @@ import {
   buildLinkedMediaIds,
   buildMediaSitemapEntries,
 } from '@/lib/media-page'
-import { ledgerSitemapEntries, type SitemapLedger } from '@/lib/sitemap-ledger'
+import {
+  ledgerShards,
+  ledgerSitemapEntries,
+  type SitemapLedger,
+} from '@/lib/sitemap-ledger'
 import { apiConfig } from '@/lib/tmdbConfig'
 import { yearRange } from '@/components/media/year-page'
 
@@ -31,9 +35,9 @@ import { yearRange } from '@/components/media/year-page'
 // it to 45,121 URLs on 2026-11-15, past 80% of the 50,000 a single sitemap
 // file may hold; Google rejects the whole file over the limit, not the excess.
 // /sitemap.xml is now a <sitemapindex> (app/sitemap.xml/route.ts) pointing at
-// /sitemaps/<section>.xml, and each section stays well under the cap: movies
-// and TV are the two that grow, and scripts/sitemap-ledger.mjs holds each of
-// them to 80% on its own. Split a section again here when it trips.
+// /sitemaps/<section>.xml. Movies and TV list only what today's lists reach;
+// the ledger's tail is cut into fixed-size shards below (LEDGER_SHARDS), so no
+// file can grow past the cap.
 
 const baseUrl = siteConfig.websiteURL
 
@@ -334,29 +338,25 @@ const byPriority = (a: { priority?: number; url: string }, b: typeof a) => {
   return diff !== 0 ? diff : a.url.localeCompare(b.url)
 }
 
-/**
- * One title type: the baked ids, the ring they link to, and the ledger's
- * titles an earlier sitemap advertised that today's lists no longer reach.
- * Dropping those is what Bing reported as "important pages missing".
- */
-async function titleSection(
-  type: 'movie' | 'tv',
-  baked: () => Promise<MetadataRoute.Sitemap>,
-  linked: () => Promise<MetadataRoute.Sitemap>
-): Promise<MetadataRoute.Sitemap> {
-  const current = (await Promise.all([baked(), linked()])).flat()
-  const listed = new Set(current.map(({ url }) => url))
-  return [
-    ...current,
-    ...ledgerSitemapEntries(
-      {
-        [type]: SITEMAP_LEDGER[type],
-        gone: (SITEMAP_LEDGER as SitemapLedger).gone,
-      },
-      listed,
-      baseUrl
-    ),
-  ].sort(byPriority)
+// One promise per build: every section and shard of a type reads the same
+// current list, and buildLinkedMediaIds is not free.
+const once = <T>(make: () => Promise<T>) => {
+  let pending: Promise<T> | undefined
+  return () => (pending ??= make())
+}
+
+/** The titles today's lists reach: the baked ids and the ring they link to. */
+const currentTitles = {
+  movie: once(async () =>
+    (await Promise.all([generateMovieUrls(), generateLinkedMovieUrls()]))
+      .flat()
+      .sort(byPriority)
+  ),
+  tv: once(async () =>
+    (await Promise.all([generateTVShowUrls(), generateLinkedTVShowUrls()]))
+      .flat()
+      .sort(byPriority)
+  ),
 }
 
 export const SITEMAP_SECTIONS = {
@@ -368,12 +368,48 @@ export const SITEMAP_SECTIONS = {
     ])
     return [...staticRoutes(), ...collections, ...people].sort(byPriority)
   },
-  movies: () =>
-    titleSection('movie', generateMovieUrls, generateLinkedMovieUrls),
-  tv: () => titleSection('tv', generateTVShowUrls, generateLinkedTVShowUrls),
+  movies: currentTitles.movie,
+  tv: currentTitles.tv,
 } satisfies Record<string, () => Promise<MetadataRoute.Sitemap>>
+
+// The ledger's titles (data/sitemap-ledger.json): every title an earlier
+// sitemap advertised, kept listed after today's lists stop reaching it.
+// Dropping those is what Bing reported as "important pages missing".
+//
+// They used to sit in movies.xml and tv.xml with the current titles. On
+// 2026-11-22 the movie ledger reached 41,688, past 80% of the 50,000 URLs one
+// file may hold, and the daily Ratings job (which refuses to grow past that)
+// failed two days running, so the ledger stopped growing. Now they live in
+// fixed-size shards (/sitemaps/movies-ledger-<n>.xml), cut by position in the
+// id-sorted ledger, so a shard's contents barely move between deploys and the
+// count grows by itself: nothing to split by hand again.
+const LEDGER_PREFIX = { movie: 'movies-ledger', tv: 'tv-ledger' } as const
+const LEDGER = SITEMAP_LEDGER as SitemapLedger
+
+export const LEDGER_SHARDS: Record<
+  string,
+  () => Promise<MetadataRoute.Sitemap>
+> = Object.fromEntries(
+  (['movie', 'tv'] as const).flatMap((type) =>
+    ledgerShards(LEDGER[type] ?? []).map((ids, index) => [
+      `${LEDGER_PREFIX[type]}-${index + 1}`,
+      async () =>
+        ledgerSitemapEntries(
+          { [type]: ids, gone: LEDGER.gone },
+          new Set((await currentTitles[type]()).map(({ url }) => url)),
+          baseUrl
+        ),
+    ])
+  )
+)
 
 export type SitemapSection = keyof typeof SITEMAP_SECTIONS
 
-export const sitemapSectionUrl = (section: SitemapSection) =>
+/** Every file the index lists: the three sections, then the ledger shards. */
+export const sitemapFiles = () => [
+  ...Object.keys(SITEMAP_SECTIONS),
+  ...Object.keys(LEDGER_SHARDS),
+]
+
+export const sitemapSectionUrl = (section: string) =>
   `${baseUrl}/sitemaps/${section}.xml`

@@ -237,3 +237,4 @@ with the work, not after.
 | 2026-11-22 | [Crawler images off wsrv.nl](2026-11-22-crawler-images-off-wsrv.md) | wsrv.nl robots.txt disallows `/*?*`: every sitemap/JSON-LD image was uncrawlable. |
 | 2026-11-22 | [Challenge shown in place](2026-11-22-challenge-in-place.md) | A hidden challenge frame solved 5 of 15; show it in place before hopping, and stop browse pages making challenged requests they do not need. |
 | 2026-11-22 | [Stream order](2026-11-22-stream-order.md) | "18% failing" was silent frames; the rescue slot sat on a 76%-dead server, and one server played S1E1 for every episode. |
+| 2026-11-23 | [Sitemap ledger shards](2026-11-23-sitemap-ledger-shards.md) | The 80% sitemap guard failed the Ratings job 2 days running (ledger and RT scores stuck); the ledger now ships in 20k shards that grow by themselves. |
