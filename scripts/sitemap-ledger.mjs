@@ -21,10 +21,10 @@ const FILE = path.join(
   'data',
   'sitemap-ledger.json'
 )
-// One sitemap file holds 50,000 URLs. Movies and TV each have their own file
-// (/sitemaps/movies.xml, /sitemaps/tv.xml), so each type is held to the limit
-// on its own. Past 80%, split that type again in lib/sitemap-sections.ts.
-const URL_LIMIT = 50_000
+// No size check here: the ledger is served in fixed-size shards
+// (LEDGER_SHARDS in lib/sitemap-sections.ts), so it can grow without any one
+// sitemap file nearing the 50,000-URL limit. Until 2026-11-23 this exited 1 at
+// 80% of one file, which stopped the daily Ratings job and the ledger with it.
 
 const urls = await liveSitemapUrls()
 if (urls === null) {
@@ -108,12 +108,3 @@ await writeFile(FILE, `${JSON.stringify(after)}\n`)
 console.log(
   `[sitemap-ledger] ${urls.length} live URLs; ledger ${count(before)} → ${count(after)} titles`
 )
-const full = ['movie', 'tv'].filter(
-  (type) => (after[type]?.length ?? 0) > URL_LIMIT * 0.8
-)
-for (const type of full) {
-  console.error(
-    `[sitemap-ledger] ${after[type].length} ${type} titles is past 80% of the ${URL_LIMIT}-URL limit of one sitemap file: split that section in lib/sitemap-sections.ts`
-  )
-}
-if (full.length) process.exit(1)

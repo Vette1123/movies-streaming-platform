@@ -1,6 +1,8 @@
+import SITEMAP_LEDGER from '@/data/sitemap-ledger.json'
 import { describe, expect, it } from 'vitest'
 
-import { ledgerSitemapEntries } from '@/lib/sitemap-ledger'
+import { ledgerShards, ledgerSitemapEntries } from '@/lib/sitemap-ledger'
+import { LEDGER_SHARDS } from '@/lib/sitemap-sections'
 
 import {
   detailIds,
@@ -85,5 +87,22 @@ describe('titles TMDB has deleted', () => {
     expect(nextProbe([1, 2, 3, 4, 5], 4, 3)).toEqual([5, 1, 2])
     expect(nextProbe([1, 2, 3], 0, 10)).toEqual([1, 2, 3])
     expect(nextProbe([], 0, 10)).toEqual([])
+  })
+})
+
+// The movie ledger passed 80% of one 50,000-URL sitemap file on 2026-11-22 and
+// the daily job that grows it failed two days running. Shards cap every file.
+describe('ledger shards', () => {
+  it('cuts sorted ids into consecutive shards no larger than the size', () => {
+    expect(ledgerShards([5, 1, 4, 2, 3], 2)).toEqual([[1, 2], [3, 4], [5]])
+    expect(ledgerShards([], 2)).toEqual([])
+  })
+
+  it('serves every ledger title from a shard under the 50,000-URL limit', () => {
+    const shards = ledgerShards(SITEMAP_LEDGER.movie)
+    expect(shards.flat()).toHaveLength(SITEMAP_LEDGER.movie.length)
+    for (const shard of shards) expect(shard.length).toBeLessThanOrEqual(20_000)
+    expect(Object.keys(LEDGER_SHARDS)).toContain('movies-ledger-1')
+    expect(Object.keys(LEDGER_SHARDS)).toContain('tv-ledger-1')
   })
 })

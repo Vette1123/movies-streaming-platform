@@ -34,3 +34,24 @@ export function ledgerSitemapEntries(
       }))
   })
 }
+
+/**
+ * One sitemap file may hold 50,000 URLs and Google rejects the whole file over
+ * that. A shard of 20,000 also keeps each file a few MB, quick to fetch.
+ */
+export const LEDGER_SHARD_SIZE = 20_000
+
+/**
+ * `ids` sorted ascending and cut into consecutive shards of `size`. Cut by
+ * position in the sorted list, so a shard's file stays nearly the same file
+ * between deploys.
+ */
+export function ledgerShards(
+  ids: readonly number[],
+  size = LEDGER_SHARD_SIZE
+): number[][] {
+  const sorted = [...ids].sort((a, b) => a - b)
+  return Array.from({ length: Math.ceil(sorted.length / size) }, (_, i) =>
+    sorted.slice(i * size, (i + 1) * size)
+  )
+}
