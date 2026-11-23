@@ -70,7 +70,8 @@
     "test:watch": "vitest",
     "stream:chain": "node scripts/stream-chain.mjs",
     "stream:order": "node scripts/stream-order.mjs",
-    "cf:alerts": "node scripts/cf-alerts.mjs"
+    "cf:alerts": "node scripts/cf-alerts.mjs",
+    "seo:pending": "node scripts/seo-pending.mjs"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.2.1",
