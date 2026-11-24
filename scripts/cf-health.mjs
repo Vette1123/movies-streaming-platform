@@ -32,6 +32,7 @@ import { fileURLToPath } from 'node:url'
 import { AI_CRAWLER_UAS } from './lib/ai-crawlers.mjs'
 import { isCrawlerFire } from './lib/crawler-403.mjs'
 import { eyeball5xxGrade } from './lib/eyeball-5xx.mjs'
+import { relayHostBucket } from './lib/relay-4xx.mjs'
 import { loadLocalEnv } from './load-env.mjs'
 
 loadLocalEnv()
@@ -468,26 +469,13 @@ const decodePath = (path) => {
   }
 }
 
-// play.reely.space (the Reely Player) and relay.reely.space /
-// relay-b.reely.space (its stream relay) answer only their own paths;
-// everything else, their root and favicon included, is a 404 by design.
-// Without the host these read as "404 /" — the homepage, apparently — and
-// were the top unclassified rows on 2026-11-17 (294 + 105 in 24h).
-const RELAY_HOST = /^(play|relay(-[a-z0-9]+)?)\.reely\.space$/
-
 const bucketFor = ({
   clientRequestPath,
   clientRequestHTTPHost,
   edgeResponseStatus,
 }) => {
-  // Only the paths a browser or scanner asks every host for: a 4xx on the
-  // player's or relay's real paths is still unclassified, and still news.
-  if (
-    RELAY_HOST.test(clientRequestHTTPHost ?? '') &&
-    /^\/(favicon\.ico|robots\.txt)?$/.test(clientRequestPath)
-  ) {
-    return 'player/relay host: path it does not serve (404, by design)'
-  }
+  const relay = relayHostBucket(clientRequestHTTPHost, clientRequestPath)
+  if (relay) return relay
   const path = decodePath(clientRequestPath)
   return (
     BUCKETS.find(
