@@ -466,6 +466,131 @@
       "indexed": true,
       "state": "Submitted and indexed"
     },
+    "https://www.reely.space/movies/year/2001": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2002": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2003": {
+      "date": "2026-11-24",
+      "indexed": false,
+      "state": "Discovered - currently not indexed"
+    },
+    "https://www.reely.space/movies/year/2004": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2005": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2006": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2007": {
+      "date": "2026-11-24",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/movies/year/2008": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2009": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2010": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2011": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2012": {
+      "date": "2026-11-24",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/movies/year/2013": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2014": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2015": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2016": {
+      "date": "2026-11-24",
+      "indexed": false,
+      "state": "Discovered - currently not indexed"
+    },
+    "https://www.reely.space/movies/year/2017": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2018": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2019": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2020": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2021": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2022": {
+      "date": "2026-11-24",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/movies/year/2023": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/movies/year/2024": {
+      "date": "2026-11-24",
+      "indexed": false,
+      "state": "Discovered - currently not indexed"
+    },
+    "https://www.reely.space/movies/year/2025": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
     "https://www.reely.space/movies/year/2026": {
       "date": "2026-11-23",
       "indexed": true,
@@ -590,6 +715,181 @@
       "date": "2026-11-23",
       "indexed": false,
       "state": "Crawled - currently not indexed"
+    },
+    "https://www.reely.space/tv-shows/year/1990": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/1991": {
+      "date": "2026-11-24",
+      "indexed": false,
+      "state": "Discovered - currently not indexed"
+    },
+    "https://www.reely.space/tv-shows/year/1992": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/1993": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/1994": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/1995": {
+      "date": "2026-11-24",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/tv-shows/year/1996": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/1997": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/1998": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/1999": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2000": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2001": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2002": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2003": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2004": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2005": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2006": {
+      "date": "2026-11-24",
+      "indexed": false,
+      "state": "Discovered - currently not indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2007": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2008": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2009": {
+      "date": "2026-11-24",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/tv-shows/year/2010": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2011": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2012": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2013": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2014": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2015": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2016": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2017": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2018": {
+      "date": "2026-11-24",
+      "indexed": false,
+      "state": "URL is unknown to Google"
+    },
+    "https://www.reely.space/tv-shows/year/2019": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2020": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2021": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2022": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2023": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
+    },
+    "https://www.reely.space/tv-shows/year/2024": {
+      "date": "2026-11-24",
+      "indexed": true,
+      "state": "Submitted and indexed"
     },
     "https://www.reely.space/tv-shows/year/2026": {
       "date": "2026-11-23",
