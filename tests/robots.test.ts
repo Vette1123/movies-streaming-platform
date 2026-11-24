@@ -113,3 +113,15 @@ describe('AI crawlers', () => {
     expect(hit).toEqual([])
   })
 })
+
+/**
+ * 2026-11-24: ShapBot (Parallel Web Systems' search-API crawler) took 8,574
+ * requests in a day and 13 of its tail-page hits came back 503 while TMDB
+ * backed off. It sends nobody back, so it is refused both ways.
+ */
+describe('refused crawlers', () => {
+  it('refuses ShapBot in robots.txt and on the WAF block list', () => {
+    expect(allowedFor('ShapBot', '/movies/16619')).toBe(false)
+    expect(blockedCrawlers.aiTraining).toContain('ShapBot')
+  })
+})
