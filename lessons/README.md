@@ -241,3 +241,4 @@ with the work, not after.
 | 2026-11-23 | [seo:pending](2026-11-23-seo-pending.md) | The daily Request Indexing list now exists: URL Inspection API + a 14-day ledger, ranked so section and title pages come before 156 alphabetical collection pages. |
 | 2026-11-24 | [seo:verify through the WAF pass](2026-11-24-seo-verify-waf-pass.md) | 10 "SEO failures" were the managed challenge on our own script; every reader of our live pages now takes `siteHeaders()`. |
 | 2026-11-24 | [relay-host 4xx](2026-11-24-relay-host-4xx.md) | Relay-host scanners are filed by the relay's closed route list plus port, not a wordlist: unclassified 634 → 15. |
+| 2026-11-24 | [refuse ShapBot](2026-11-24-refuse-shapbot.md) | 13 of 16 daily 503s were ShapBot (8.5k req/day, no referrals) outrunning TMDB; refused in robots.txt + WAF. |
