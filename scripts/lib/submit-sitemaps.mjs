@@ -1,4 +1,5 @@
 import { sitemapFeeds, submitSitemaps } from './search-engines.mjs'
+import { siteHeaders } from './site-headers.mjs'
 
 export const GSC_SITE = 'sc-domain:reely.space'
 // Bing verifies the apex; www pages submit under it (measured 2026-11-21).
@@ -29,12 +30,8 @@ export async function submitSitemapIndex(xml) {
  * scripts/cf-waf-setup.mjs) because GitHub runners sit on Azure.
  */
 export async function liveSitemapXml() {
-  /** @type {Record<string, string>} */
-  const headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/131.0',
-  }
-  if (process.env.CI_WAF_BYPASS)
-    headers['x-reely-ci'] = process.env.CI_WAF_BYPASS
-  const res = await fetch(SITEMAP_URL, { headers }).catch(() => null)
+  const res = await fetch(SITEMAP_URL, { headers: siteHeaders() }).catch(
+    () => null
+  )
   return res?.ok ? res.text() : null
 }

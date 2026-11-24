@@ -13,6 +13,8 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import { siteHeaders } from './site-headers.mjs'
+
 export const SITE_HOST = 'www.reely.space'
 export const BASE_URL = `https://${SITE_HOST}`
 export const INDEXNOW_KEY = 'fd71a860ed122d006df9ba7c2c529b88'
@@ -120,24 +122,14 @@ export async function mapLimit(items, limit, fn) {
   return out
 }
 
-// The WAF 403s any UA that is not a browser or a verified crawler (curl, a
-// bare "bot" string), so read our own pages the way a browser does.
-const BROWSER_UA =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36'
-
 async function fetchText(url) {
   // The WAF rate-limits bursts (429/403) and the edge sometimes 5xxs; a page
   // that fails once is retried with a growing pause before it counts as
   // unreadable, so a throttled run does not submit a thousand pages unchanged.
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
-      // The CI pass through the WAF (CI_HEADER in scripts/cf-waf-setup.mjs):
-      // CI runs on Azure, which the cloud-ASN block refuses.
-      const headers = { 'User-Agent': BROWSER_UA }
-      if (process.env.CI_WAF_BYPASS) {
-        headers['x-reely-ci'] = process.env.CI_WAF_BYPASS
-      }
-      const res = await fetch(url, { headers })
+      // Browser UA + the CI pass through the WAF (scripts/lib/site-headers.mjs).
+      const res = await fetch(url, { headers: siteHeaders() })
       if (res.ok) return await res.text()
       if (res.status === 404) return null
       // A WAF refusal does not clear on retry; four tries with pauses across
