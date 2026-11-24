@@ -1,3 +1,4 @@
+import { siteHeaders } from './lib/site-headers.mjs'
 // Checks the deployed pages for the things an SEO crawl reports on, none of
 // which any build step can catch.
 //
@@ -10,9 +11,10 @@
 //
 // Run: pnpm seo:verify              (against production)
 //      pnpm seo:verify http://localhost:3000
+import { loadLocalEnv } from './load-env.mjs'
+
+loadLocalEnv()
 const ORIGIN = process.argv[2] || 'https://reely.space'
-const UA =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36'
 
 const results = []
 const check = (name, pass, detail) => {
@@ -24,7 +26,7 @@ const check = (name, pass, detail) => {
 
 const get = async (path) => {
   const res = await fetch(path.startsWith('http') ? path : `${ORIGIN}${path}`, {
-    headers: { 'user-agent': UA },
+    headers: siteHeaders(),
   })
   return { status: res.status, headers: res.headers, html: await res.text() }
 }
