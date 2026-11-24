@@ -240,3 +240,4 @@ with the work, not after.
 | 2026-11-23 | [Sitemap ledger shards](2026-11-23-sitemap-ledger-shards.md) | The 80% sitemap guard failed the Ratings job 2 days running (ledger and RT scores stuck); the ledger now ships in 20k shards that grow by themselves. |
 | 2026-11-23 | [seo:pending](2026-11-23-seo-pending.md) | The daily Request Indexing list now exists: URL Inspection API + a 14-day ledger, ranked so section and title pages come before 156 alphabetical collection pages. |
 | 2026-11-24 | [seo:verify through the WAF pass](2026-11-24-seo-verify-waf-pass.md) | 10 "SEO failures" were the managed challenge on our own script; every reader of our live pages now takes `siteHeaders()`. |
+| 2026-11-24 | [relay-host 4xx](2026-11-24-relay-host-4xx.md) | Relay-host scanners are filed by the relay's closed route list plus port, not a wordlist: unclassified 634 → 15. |
