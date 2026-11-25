@@ -29,8 +29,28 @@ export const RELAY_URL = 'https://relay.reely.space'
  */
 export const RELAY_2_URL = 'https://relay-b.reely.space'
 
-/** The title the health check walks: long-running and widely carried. */
-export const HEALTH_QUERY = 'ty=movie&id=550'
+/**
+ * The titles the provider walks, and what each one is for.
+ *
+ * The vault family a title mints to is per-title and stable (surveyed
+ * 2026-11-18): bcdnxw.hakunaymatata.com (mbVault) refuses this chain's Range
+ * reads with 429 while bcdn.hakunaymatata.com (mwVault) serves them. One
+ * title stays on the refusing family as the degradation witness; the others
+ * prove the byte path on the serving family.
+ *
+ * `degraded: true` marks the witness. The site's health gate must never walk
+ * it: on 2026-11-25 the gate was pinned to 550, so one refused title answered
+ * "relay down" for every title and /api/pro/ticket 503'd the whole player.
+ * A gate is a sample - sample the family that plays.
+ */
+export const TITLES = [
+  { name: 'Fight Club', query: 'ty=movie&id=550', degraded: true },
+  { name: 'The Dark Knight', query: 'ty=movie&id=155' },
+  { name: 'Inception', query: 'ty=movie&id=27205' },
+]
+
+/** The title the health check walks: the first serving-family witness. */
+export const HEALTH_QUERY = TITLES.find((title) => !title.degraded).query
 
 /**
  * A /selftest answer is a pass only when the walk reached a real segment.
@@ -81,9 +101,18 @@ export function vaultRefused(stages) {
  * A cooling relay is NOT down: it walked recently and got rate-limited, which
  * clears in about 90s, and the canary waits it out for the same reason. Taking
  * the player away from every supporter for a 90-second cooldown would be the
- * fallback causing the outage. Anything else that did not reach a segment is.
+ * fallback causing the outage.
+ *
+ * A vault refusal is NOT down either, for the same reason the canary does not
+ * page on one: the walk resolved, the title is carried, and only this egress's
+ * Range read was refused. Other titles on the serving family still play.
+ * Refusing the whole player over one title's refusal turns a partial
+ * degradation into an outage for all of them - which is exactly what happened
+ * on 2026-11-25, when the gate walked the witness title and every ticket 503'd.
+ * Anything else that did not reach a segment is down.
  */
 export function relayUp(stages) {
   if (stages?.coolingFor) return true
+  if (vaultRefused(stages)) return true
   return selftestPassed(stages)
 }

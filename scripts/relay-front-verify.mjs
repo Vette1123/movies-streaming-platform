@@ -45,7 +45,7 @@ const FRONTS = [
     name: 'relay-b',
   },
 ]
-const PROBE = 'ty=movie&id=550' // Fight Club — long-carried; its absence is an outage, not churn
+const PROBE = 'ty=movie&id=155' // The Dark Knight — on the serving vault family; 550 is the degradation witness and always 429s here
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 /** DNS flakes (ENOTFOUND bursts) are an ISP artifact, not a verdict. */

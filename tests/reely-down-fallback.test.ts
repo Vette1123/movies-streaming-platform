@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { checkRelayHealth } from '@/lib/pro/relay-health'
 import { reelyUpFrom } from '@/hooks/use-reely-up'
 
+import { HEALTH_QUERY, TITLES } from '../scripts/lib/relay-selftest.mjs'
+
 // 2026-11-13: the provider shut the relay out and every Reely play booted into
 // a dead frame before falling back (~40% of the source's plays failed). These
 // pin the three places that must agree it is down: the server's health answer,
@@ -51,6 +53,24 @@ describe('checkRelayHealth', () => {
     )
   })
 
+  it('does not take the player away when one title is vault-refused', async () => {
+    // 2026-11-25: the gate walked Fight Club, the mbVault family refused the
+    // Range read, and /api/pro/ticket answered 503 relay-down for EVERY title.
+    // The walk resolved and the title is carried; other titles still play.
+    const refused = {
+      ok: false,
+      master: {
+        isFile: true,
+        contentType: 'text/html',
+        host: 'bcdnxw.hakunaymatata.com',
+      },
+      segment: { status: 429, bytes: 185, ms: 1 },
+    }
+    expect(await checkRelayHealth(undefined, answering(refused))).toEqual({
+      up: true,
+    })
+  })
+
   it('is up when only the cold fallback answers, as the player would be', async () => {
     const seen: string[] = []
     const onlyFallback = (async (url: string) => {
@@ -85,6 +105,16 @@ describe('checkRelayHealth', () => {
       throw new TypeError('fetch failed')
     }) as unknown as typeof fetch
     expect((await checkRelayHealth(undefined, unreachable)).up).toBe(false)
+  })
+})
+
+describe('the health gate probe title', () => {
+  it('walks a serving-family witness, never the degradation witness', () => {
+    const witness = TITLES.find((title) => title.degraded)
+    expect(witness).toBeDefined()
+    expect(HEALTH_QUERY).not.toBe(witness!.query)
+    // And it is still a title the canary walks, so its breakage is witnessed.
+    expect(TITLES.map((title) => title.query)).toContain(HEALTH_QUERY)
   })
 })
 

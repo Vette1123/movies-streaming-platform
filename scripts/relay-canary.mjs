@@ -26,8 +26,10 @@ import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 
 import {
+  HEALTH_QUERY,
   RELAY_2_URL,
   RELAY_URL,
+  TITLES,
   selftestPassed,
   selftestReason,
   vaultRefused,
@@ -69,20 +71,11 @@ const UA =
 
 /**
  * Long-running, widely carried titles: one vanishing upstream is not an
- * outage. The vault family a title mints to is per-title and stable
- * (surveyed 2026-11-18 on Netlify's egress): bcdn.hakunaymatata.com serves
- * relay-b's Range reads, bcdnxw.hakunaymatata.com refuses them
- * (429, no Retry-After) - so exactly ONE title here walks the refusing family
- * (the degradation witness, see vaultRefused) and two prove the byte path on
- * the serving family. Two witnesses would double the feed into a limiter for
- * zero extra signal. The Oracle VM has its own egress and served the serving
- * family on 2026-11-19; the walk reports whatever each home actually gets.
+ * outage. The list - and which title is the degradation witness - lives in
+ * scripts/lib/relay-selftest.mjs, beside the health gate that must never walk
+ * that witness (2026-11-25: it did, and every ticket 503'd).
  */
-export const TITLES = [
-  { name: 'Fight Club', query: 'ty=movie&id=550' },
-  { name: 'The Dark Knight', query: 'ty=movie&id=155' },
-  { name: 'Inception', query: 'ty=movie&id=27205' },
-]
+export { TITLES }
 
 // The verdict on one walk is shared with the Worker's /api/stream/health.
 export { selftestPassed, selftestReason }
@@ -285,7 +278,7 @@ async function main() {
       '. Pages on hard failures across most titles, or when every title fails.',
     ok
       ? ''
-      : `Re-walk one by hand: \`curl -s "${RELAYS[0]}/selftest?ty=movie&id=550&force=1"\`. The provider walk lives in reely-resolver-relay/relay.ts.`,
+      : `Re-walk one by hand: \`curl -s "${RELAYS[0]}/selftest?${HEALTH_QUERY}&force=1"\`. The provider walk lives in reely-resolver-relay/relay.ts.`,
   ].join('\n')
 
   console.log(report)
