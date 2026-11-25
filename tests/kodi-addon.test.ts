@@ -11,5 +11,7 @@ describe('the Kodi add-on', () => {
       { encoding: 'utf8' }
     )
     expect(run.status, run.stderr).toBe(0)
-  })
+    // The suite itself takes ~0.6 s; spawning python3 while the full run starts
+    // ~158 workers took 12.6 s on Windows (2026-11-25), past the 5 s default.
+  }, 30_000)
 })
