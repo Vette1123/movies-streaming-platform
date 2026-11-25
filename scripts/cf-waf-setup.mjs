@@ -538,6 +538,10 @@ const STALE_BROWSER_UAS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0',
+  // 2026-11-25: 20,821 requests on 24 Nov, #2 string in the zone, all of it in two US bursts
+  // (21:00 and 05:00 UTC) that pushed TMDB into 503s Googlebot, Applebot and Bingbot caught;
+  // absent from the quiet hours. Malformed: since UA reduction a real Chrome sends `131.0.0.0`.
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36',
 ]
 
 const uaEqAny = (uas) =>

@@ -34,6 +34,12 @@ describe('the deploy smoke test gets past our own WAF', () => {
     for (const ua of staleUas()) expect(workflow).not.toContain(ua)
   })
 
+  it('blocks the burst fleet: a two-part Chrome/131.0 no real Chrome sends (24 Nov 503s)', () => {
+    expect(staleUas()).toContain(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36'
+    )
+  })
+
   it('falls back to a Chrome the WAF has not frozen', () => {
     const frozen = new Set(
       staleUas()
