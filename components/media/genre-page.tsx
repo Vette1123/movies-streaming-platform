@@ -7,6 +7,7 @@ import { discoverMovies, discoverSeries } from '@/services/discover'
 import { FilterParams } from '@/types/filter'
 import { MediaResponse } from '@/types/media'
 import { siteConfig } from '@/config/site'
+import { genreIntro } from '@/lib/genre-intro'
 import {
   findMovieGenreBySlug,
   findTvGenreBySlug,
@@ -119,7 +120,13 @@ export async function GenrePage({
   const heading = `${genre.name} ${config.sectionLabel}`
   const canonicalPath = `${config.basePath}/genre/${slug}`
   const url = `${siteConfig.websiteURL}${canonicalPath}`
-  const description = `Popular ${genre.name.toLowerCase()} ${config.bodyPlural}, refreshed regularly.`
+  const entries = toListEntries(initialData?.results ?? [], config.mediaType)
+  const description = genreIntro(
+    genre.name,
+    config.bodyPlural,
+    entries.map((e) => e.name),
+    initialData?.total_results
+  )
 
   return (
     <section className="container h-full py-20 lg:py-36">
@@ -127,10 +134,7 @@ export async function GenrePage({
         data={collectionPageJsonLd({ name: heading, description, url })}
       />
       <JsonLd
-        data={itemListJsonLd(
-          toListEntries(initialData?.results ?? [], config.mediaType),
-          { name: heading, url: canonicalPath }
-        )}
+        data={itemListJsonLd(entries, { name: heading, url: canonicalPath })}
       />
       <JsonLd
         data={breadcrumbJsonLd([
