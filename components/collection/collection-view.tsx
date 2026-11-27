@@ -4,6 +4,7 @@ import { Layers } from 'lucide-react'
 import { CollectionDetails } from '@/types/collection'
 import { MediaType } from '@/types/media'
 import { Movie } from '@/types/movie-result'
+import { collectionIntro } from '@/lib/collection-intro'
 import { toListEntries } from '@/lib/media'
 import { breadcrumbJsonLd, itemListJsonLd, JsonLd } from '@/lib/structured-data'
 import { getImageURL, pluralize } from '@/lib/utils'
@@ -33,6 +34,10 @@ export function CollectionView({
   const parts = React.useMemo(
     () => [...(collection.parts ?? [])].sort(byReleaseDate),
     [collection.parts]
+  )
+  const intro = React.useMemo(
+    () => collectionIntro(collection.name, parts),
+    [collection.name, parts]
   )
 
   return (
@@ -105,6 +110,13 @@ export function CollectionView({
       </section>
 
       <section className="container max-w-(--breakpoint-2xl) py-10 lg:py-14">
+        {/* Below the banner, not in it: the band is a fixed 28rem, and a long
+            overview plus this would push the title under the nav. */}
+        {intro && (
+          <p className="mb-8 max-w-3xl text-sm text-pretty wrap-break-word text-muted-foreground lg:text-base">
+            {intro}
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 lg:gap-8">
           {parts.map((movie) => (
             <Card
